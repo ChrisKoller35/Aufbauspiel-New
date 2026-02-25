@@ -7,6 +7,18 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
+    // TODO: Use TexturePacker or similar to combine sprites into atlas for fewer draw calls.
+    // Steps to migrate:
+    //   1. Run TexturePacker (or `npx free-tex-packer`) on public/assets/sprites/final/
+    //      to produce atlas.png + atlas.json (Phaser 3 / JSON Hash format).
+    //   2. Replace the individual `this.load.image(key, ...)` calls below with:
+    //        this.load.atlas('game_atlas', 'assets/sprites/atlas.png', 'assets/sprites/atlas.json');
+    //   3. Update all `this.add.image(...)` / `this.add.sprite(...)` calls in CityScene,
+    //      GuildUI, etc. to pass the atlas key and frame name instead of individual texture keys.
+    //      Example: this.add.image(x, y, 'game_atlas', 'FARM_GRAIN')
+    //   4. Remove or keep the individual loads as fallback for non-atlas frames.
+    // Benefit: reduces GPU draw calls (potentially 50+ -> 1 per atlas) for better performance.
+
     // --- Progress bar ---
     const width = this.cameras.main.width;
     const height = this.cameras.main.height;

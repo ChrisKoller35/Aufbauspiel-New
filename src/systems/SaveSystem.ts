@@ -5,18 +5,91 @@ import { resetCitizenIdCounter } from '../models/Citizen';
 import { resetFighterIdCounter } from '../models/GuildRoster';
 
 const SAVE_KEY = 'magic_city_save';
+const BACKUP_KEY = 'magic_city_save_backup';
 const CURRENT_VERSION = 4;
+const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
   save(state: GameState): boolean {
     try {
       state.saveVersion = CURRENT_VERSION;
       const json = JSON.stringify(state);
-      localStorage.setItem(SAVE_KEY, json);
-      console.log('Game saved. Size:', json.length, 'bytes');
-      return true;
+      const sizeBytes = json.length;
+
+      if (sizeBytes > SAVE_SIZE_WARNING_BYTES) {
+        console.warn(`Save size (${sizeBytes} bytes) exceeds 4 MB warning threshold!`);
+      }
+      console.log('Game saved. Size:', sizeBytes, 'bytes');
+
+      // --- Backup slot: copy previous save before overwriting ---
+      try {
+        const previous = localStorage.getItem(SAVE_KEY);
+        if (previous) {
+          localStorage.setItem(BACKUP_KEY, previous);
+        }
+      } catch (backupErr) {
+        // Backup failure is non-critical – continue with main save
+        console.warn('Could not write backup save:', backupErr);
+      }
+
+      // --- Main save with QuotaExceeded fallback cascade ---
+      try {
+        localStorage.setItem(SAVE_KEY, json);
+        return true;
+      } catch (e: unknown) {
+        if (!this.isQuotaExceeded(e)) throw e;
+
+        // Step 1: Remove backup to free space, then retry
+        console.warn('QuotaExceededError: removing backup to free space...');
+        try { localStorage.removeItem(BACKUP_KEY); } catch (_) { /* ignore */ }
+        try {
+          localStorage.setItem(SAVE_KEY, json);
+          return true;
+        } catch (e2: unknown) {
+          if (!this.isQuotaExceeded(e2)) throw e2;
+        }
+
+        // Step 2: Trim oldest scoreboard entries, then retry
+        console.warn('QuotaExceededError: trimming scoreboard entries...');
+        if (state.scoreboard && state.scoreboard.length > 10) {
+          state.scoreboard = state.scoreboard.slice(-10);
+          const trimmedJson = JSON.stringify(state);
+          try {
+            localStorage.setItem(SAVE_KEY, trimmedJson);
+            return true;
+          } catch (e3: unknown) {
+            if (!this.isQuotaExceeded(e3)) throw e3;
+          }
+        }
+
+        // Step 3: All fallbacks exhausted
+        console.error('Save failed: storage quota exceeded even after cleanup.');
+        return false;
+      }
     } catch (e) {
       console.error('Save failed:', e);
+      return false;
+    }
+  }
+
+  /** Returns the size in bytes of the current main save slot, or 0 if none. */
+  getSaveSize(): number {
+    const json = localStorage.getItem(SAVE_KEY);
+    return json ? json.length : 0;
+  }
+
+  /**
+   * Estimates whether there is likely enough free localStorage space to save.
+   * Uses a conservative 5 KB probe to detect if storage is near full.
+   */
+  canSave(): boolean {
+    const probe = '__mc_probe__';
+    try {
+      // Write a ~5 KB probe to see if storage accepts new data
+      localStorage.setItem(probe, 'x'.repeat(5 * 1024));
+      localStorage.removeItem(probe);
+      return true;
+    } catch (_) {
       return false;
     }
   }
@@ -53,8 +126,49 @@ export class SaveSystem {
     return localStorage.getItem(SAVE_KEY) !== null;
   }
 
+  hasBackup(): boolean {
+    return localStorage.getItem(BACKUP_KEY) !== null;
+  }
+
+  /** Load the backup save slot. Returns null if no backup exists. */
+  loadBackup(): GameState | null {
+    try {
+      const json = localStorage.getItem(BACKUP_KEY);
+      if (!json) return null;
+
+      const state = JSON.parse(json) as GameState;
+
+      if (state.saveVersion < CURRENT_VERSION) {
+        this.migrate(state);
+      }
+
+      const maxBuildingId = state.buildings.reduce((max, b) => Math.max(max, b.id), 0);
+      const maxCitizenId = state.citizens.reduce((max, c) => Math.max(max, c.id), 0);
+      const maxFighterId = state.fighters.reduce((max, f) => Math.max(max, f.id), 0);
+      resetBuildingIdCounter(maxBuildingId + 1);
+      resetCitizenIdCounter(maxCitizenId + 1);
+      resetFighterIdCounter(maxFighterId + 1);
+
+      console.log('Backup save loaded. Day:', state.day, 'Buildings:', state.buildings.length);
+      return state;
+    } catch (e) {
+      console.error('Backup load failed:', e);
+      return null;
+    }
+  }
+
   deleteSave(): void {
     localStorage.removeItem(SAVE_KEY);
+  }
+
+  /** Check whether an error is a localStorage QuotaExceededError. */
+  private isQuotaExceeded(e: unknown): boolean {
+    if (!(e instanceof Error)) return false;
+    return (
+      e.name === 'QuotaExceededError' ||
+      e.name === 'NS_ERROR_DOM_QUOTA_REACHED' ||
+      e.message.toLowerCase().includes('quota')
+    );
   }
 
   /** Download save as JSON file */
