@@ -1,0 +1,19 @@
+# API Keys & Secrets
+.env
+.env.local
+.env.*.local
+
+# Node
+node_modules/
+dist/
+*.log
+
+# Generated Sprites (optional - kann rein wenn man sie committen will)
+# public/assets/sprites/generated/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# IDE
+.vscode/settings.json
