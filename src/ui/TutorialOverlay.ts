@@ -47,6 +47,17 @@ const TUTORIAL_STEPS: TutorialStep[] = [
 ];
 
 /**
+ * Special banner messages triggered by milestones (not part of step sequence).
+ * Called externally via TutorialOverlay.showMilestoneBanner().
+ */
+export const MILESTONE_BANNERS: Record<string, string> = {
+  first_guild_training: 'Deine erste Gilde ist geboren!',
+  first_expedition_victory: 'Erster Sieg! Ruhm und Beute!',
+  first_boss_kill: 'Bosskampf gewonnen!',
+  rank_up: 'Gildenrang aufgestiegen!',
+};
+
+/**
  * Nicht-blockierendes Tutorial als Hint-Box oben rechts.
  * Spieler kann waehrend des Tutorials normal bauen und interagieren.
  */
@@ -187,6 +198,64 @@ export class TutorialOverlay {
   private completeTutorial(): void {
     this.hide();
     this.onComplete?.();
+  }
+
+  /**
+   * Show a one-time milestone banner (not part of the tutorial step sequence).
+   * Auto-hides after 3 seconds. Used for "Deine erste Gilde ist geboren!" etc.
+   */
+  showMilestoneBanner(message: string): void {
+    // Create temporary banner container
+    const bannerContainer = this.scene.add.container(
+      this.screenX, this.screenY - 10,
+    ).setDepth(975).setAlpha(0);
+
+    const bannerW = this.boxW;
+    const bannerH = 50;
+
+    // Background
+    const bg = this.scene.add.graphics();
+    bg.fillStyle(UI_COLORS.GOLD_MID, 0.15);
+    bg.fillRoundedRect(0, 0, bannerW, bannerH, 8);
+    bg.lineStyle(2, UI_COLORS.GOLD_MID, 0.8);
+    bg.strokeRoundedRect(0, 0, bannerW, bannerH, 8);
+    bannerContainer.add(bg);
+
+    // Star icon
+    bannerContainer.add(
+      this.scene.add.text(12, bannerH / 2, '\u2605', {
+        fontFamily: FONT_FAMILY, fontSize: '20px', color: UI_STR_COLORS.GOLD,
+      }).setOrigin(0, 0.5),
+    );
+
+    // Message text
+    bannerContainer.add(
+      this.scene.add.text(36, bannerH / 2, message, {
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD,
+        fontStyle: 'bold',
+      }).setOrigin(0, 0.5),
+    );
+
+    // Fade in
+    this.scene.tweens.add({
+      targets: bannerContainer,
+      alpha: 1,
+      y: this.screenY - 20,
+      duration: 400,
+      ease: 'Back.easeOut',
+    });
+
+    // Auto-hide after 3s
+    this.scene.time.delayedCall(3000, () => {
+      this.scene.tweens.add({
+        targets: bannerContainer,
+        alpha: 0,
+        y: this.screenY - 40,
+        duration: 500,
+        ease: 'Cubic.easeIn',
+        onComplete: () => bannerContainer.destroy(),
+      });
+    });
   }
 
   private addButton(x: number, y: number, w: number, label: string, onClick: () => void, bgColor: number): void {
