@@ -14,6 +14,7 @@ interface UnitDisplay {
   hpBar: UIProgressBar;
   unitId: number;
   startX: number; // original x for tween-back
+  focusGlow?: Phaser.GameObjects.Graphics; // Feature #14: gold border for pre-combat targeting
 }
 
 /**
@@ -46,8 +47,20 @@ export class CombatOverlay {
   // Pre-combat HP snapshot (for animation)
   private preHpMap: Map<number, number> = new Map();
 
+  // Feature #13: Combat speed (1.0 / 1.5 / 2.0)
+  private combatSpeed: number = 1.0;
+  private speedButtons: UIButton[] = [];
+
+  // Feature #14: Pre-combat targeting
+  private preTargetEnemyId: number | null = null;
+  private countdownTimer?: Phaser.Time.TimerEvent;
+  private countdownText?: Phaser.GameObjects.Text;
+  private targetLabelText?: Phaser.GameObjects.Text;
+
   // Callbacks
   public onComplete?: () => void;
+  /** Feature #14: Called when player clicks an enemy during preview phase */
+  public onPreCombatTarget?: (enemyId: number) => void;
 
   constructor(scene: Phaser.Scene) {
     this.scene = scene;
@@ -96,6 +109,11 @@ export class CombatOverlay {
    */
   show(run: ExpeditionRun, roomIndex: number): void {
     this.state = 'preview';
+    this.preTargetEnemyId = null;
+
+    // Clear any running countdown from a previous fight
+    this.stopCountdown();
+
     const room = run.rooms[roomIndex];
     const isBoss = room.type === 'boss';
 
@@ -116,15 +134,22 @@ export class CombatOverlay {
     // Show combat log (empty for now)
     this.updateLog([]);
 
-    // Show "Kampf!" button
+    // Show "Kampf!" button + speed controls + targeting label
     this.showPreviewActions();
+
+    // Feature #13: Show speed buttons
+    this.showSpeedButtons();
 
     const cam = this.scene.cameras.main;
     this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
     this.container.setVisible(true);
+
+    // Feature #14: Start 2s countdown for pre-combat targeting
+    this.startTargetingCountdown();
   }
 
   hide(): void {
+    this.stopCountdown();
     this.container.setVisible(false);
     this.clearDisplays();
   }
@@ -163,6 +188,62 @@ export class CombatOverlay {
       this.enemyDisplays.push(display);
       this.container.add(display.container);
     });
+  }
+
+  /**
+   * Feature #14: Make enemy displays interactive for pre-combat targeting.
+   * Called after buildEnemyDisplays when entering preview state.
+   */
+  private makeEnemiesTargetable(): void {
+    for (const display of this.enemyDisplays) {
+      const spriteSize = 48;
+      const hitZone = this.scene.add.zone(
+        spriteSize / 2, spriteSize / 2,
+        spriteSize + 20, spriteSize + 20,
+      ).setInteractive({ useHandCursor: true });
+
+      hitZone.on('pointerdown', () => {
+        if (this.state !== 'preview') return;
+        this.setPreCombatTarget(display.unitId);
+      });
+
+      hitZone.on('pointerover', () => {
+        if (this.state !== 'preview') return;
+        // Subtle highlight on hover if not already targeted
+        if (this.preTargetEnemyId !== display.unitId) {
+          display.container.setAlpha(0.8);
+        }
+      });
+
+      hitZone.on('pointerout', () => {
+        if (this.preTargetEnemyId !== display.unitId) {
+          display.container.setAlpha(1.0);
+        }
+      });
+
+      display.container.add(hitZone);
+    }
+  }
+
+  /** Feature #14: Set an enemy as the pre-combat focus target. */
+  private setPreCombatTarget(enemyId: number): void {
+    this.preTargetEnemyId = enemyId;
+
+    // Update glow on all enemy displays
+    for (const display of this.enemyDisplays) {
+      if (!display.focusGlow) {
+        const spriteSize = 48;
+        const glow = this.scene.add.graphics();
+        glow.lineStyle(3, UI_COLORS.PANEL_BORDER, 1);
+        glow.strokeRoundedRect(-4, -4, spriteSize + 8, spriteSize + 8, 4);
+        display.focusGlow = glow;
+        display.container.add(glow);
+      }
+      display.focusGlow.setVisible(display.unitId === enemyId);
+    }
+
+    // Notify callback
+    this.onPreCombatTarget?.(enemyId);
   }
 
   private createUnitDisplay(unit: CombatUnit, x: number, y: number, isEnemy: boolean): UnitDisplay {
@@ -275,10 +356,123 @@ export class CombatOverlay {
       onClick: () => {
         if (this.state !== 'preview') return;
         this.state = 'animating'; // sofort setzen → Doppel-Click-Schutz
+        this.stopCountdown();
         this.onFightClicked?.();
       },
     });
     this.actionContainer.add(fightBtn.container);
+
+    // Feature #14: Countdown text above "Kampf!" button
+    this.countdownText = this.scene.add.text(
+      this.panelW / 2,
+      btnY - 24,
+      'Zielauswahl: 2s...',
+      { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD },
+    ).setOrigin(0.5, 0);
+    this.actionContainer.add(this.countdownText);
+
+    // Feature #14: "Klick = Fokus" label near enemy column
+    this.targetLabelText = this.scene.add.text(
+      this.panelW - 200,
+      this.panelH - 90,
+      'Klick = Fokus',
+      { fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.GOLD },
+    );
+    this.actionContainer.add(this.targetLabelText);
+
+    // Make enemies clickable for targeting
+    this.makeEnemiesTargetable();
+  }
+
+  /**
+   * Feature #13: Show x1/x1.5/x2 speed toggle buttons in top-right area.
+   */
+  private showSpeedButtons(): void {
+    // Remove old speed buttons if any
+    for (const btn of this.speedButtons) {
+      this.container.remove(btn.container, true);
+    }
+    this.speedButtons = [];
+
+    const speeds = [1.0, 1.5, 2.0];
+    const labels = ['x1', 'x1.5', 'x2'];
+    const btnW = 40;
+    const btnH = 22;
+    const btnPad = 4;
+    const startX = this.panelW - (btnW + btnPad) * speeds.length - 10;
+    const btnY = 10;
+
+    speeds.forEach((speed, i) => {
+      const x = startX + i * (btnW + btnPad);
+      const isActive = this.combatSpeed === speed;
+      const btn = createButton(this.scene, {
+        x,
+        y: btnY,
+        width: btnW,
+        height: btnH,
+        label: labels[i],
+        textStyle: {
+          fontFamily: FONT_FAMILY,
+          fontSize: '10px',
+          color: isActive ? UI_STR_COLORS.GOLD : UI_STR_COLORS.DIM,
+        },
+        onClick: () => {
+          this.combatSpeed = speed;
+          // Refresh button highlight states
+          this.updateSpeedButtonHighlights();
+        },
+      });
+      btn.setActive(isActive);
+      this.speedButtons.push(btn);
+      this.container.add(btn.container);
+    });
+  }
+
+  private updateSpeedButtonHighlights(): void {
+    const speeds = [1.0, 1.5, 2.0];
+    for (let i = 0; i < this.speedButtons.length; i++) {
+      const btn = this.speedButtons[i];
+      const isActive = this.combatSpeed === speeds[i];
+      btn.setActive(isActive);
+      btn.labelText?.setColor(isActive ? UI_STR_COLORS.GOLD : UI_STR_COLORS.DIM);
+    }
+  }
+
+  /**
+   * Feature #14: Start the 2-second pre-combat targeting countdown.
+   * After 2s automatically triggers fight.
+   */
+  private startTargetingCountdown(): void {
+    let remaining = 2;
+
+    const tick = () => {
+      if (this.state !== 'preview') return;
+      remaining--;
+      if (remaining > 0) {
+        this.countdownText?.setText(`Zielauswahl: ${remaining}s...`);
+        this.countdownTimer = this.scene.time.delayedCall(1000, tick);
+      } else {
+        // Time's up – auto-fight
+        this.countdownText?.setText('Kampf beginnt...');
+        this.countdownTimer = this.scene.time.delayedCall(300, () => {
+          if (this.state !== 'preview') return;
+          this.state = 'animating';
+          this.stopCountdown();
+          this.onFightClicked?.();
+        });
+      }
+    };
+
+    this.countdownTimer = this.scene.time.delayedCall(1000, tick);
+  }
+
+  private stopCountdown(): void {
+    if (this.countdownTimer) {
+      this.countdownTimer.destroy();
+      this.countdownTimer = undefined;
+    }
+    this.countdownText = undefined;
+    this.targetLabelText = undefined;
   }
 
   /**
@@ -292,36 +486,39 @@ export class CombatOverlay {
   /**
    * Called AFTER processCurrentRoom() to animate the combat result.
    * Compares pre-combat HP snapshot with current HP and animates the difference.
+   * Feature #13: All durations divided by combatSpeed.
    */
   startCombatAnimation(run: ExpeditionRun, room: EncounterRoom): void {
     this.state = 'animating';
     this.actionContainer.removeAll(true);
 
+    const spd = this.combatSpeed;
+
     // Guard: if no displays, skip straight to result
     if (this.partyDisplays.length === 0 && this.enemyDisplays.length === 0) {
       this.updateLog(run.combatLog.slice(-8));
-      this.scene.time.delayedCall(300, () => this.showResult(run));
+      this.scene.time.delayedCall(Math.round(300 / spd), () => this.showResult(run));
       return;
     }
 
     const afterEnemyAttack = () => {
       // Show damage on party
-      this.showDamageNumbers(run.party, this.partyDisplays);
+      this.showDamageNumbers(run.party, this.partyDisplays, spd);
 
       // Animate HP bars to final values
-      this.animateHpBars(run.party, this.partyDisplays);
-      this.animateHpBars(room.enemies, this.enemyDisplays);
+      this.animateHpBars(run.party, this.partyDisplays, spd);
+      this.animateHpBars(room.enemies, this.enemyDisplays, spd);
 
       // Update combat log
       this.updateLog(run.combatLog.slice(-8));
 
       // After HP animation, show result
-      this.scene.time.delayedCall(600, () => this.showResult(run));
+      this.scene.time.delayedCall(Math.round(600 / spd), () => this.showResult(run));
     };
 
     const afterPartyAttack = () => {
       // Show damage on enemies
-      this.showDamageNumbers(room.enemies, this.enemyDisplays);
+      this.showDamageNumbers(room.enemies, this.enemyDisplays, spd);
 
       // Run enemy attack animation
       if (this.enemyDisplays.length === 0) {
@@ -334,7 +531,7 @@ export class CombatOverlay {
           const display = this.enemyDisplays[idx];
           return display ? display.startX - 40 : 0;
         },
-        duration: 200,
+        duration: Math.round(200 / spd),
         yoyo: true,
         ease: 'Power2',
         onComplete: afterEnemyAttack,
@@ -352,14 +549,14 @@ export class CombatOverlay {
         const display = this.partyDisplays[idx];
         return display ? display.startX + 40 : 0;
       },
-      duration: 200,
+      duration: Math.round(200 / spd),
       yoyo: true,
       ease: 'Power2',
       onComplete: afterPartyAttack,
     });
   }
 
-  private showDamageNumbers(units: CombatUnit[], displays: UnitDisplay[]): void {
+  private showDamageNumbers(units: CombatUnit[], displays: UnitDisplay[], spd: number = 1): void {
     for (let i = 0; i < units.length; i++) {
       const unit = units[i];
       const display = displays[i];
@@ -381,7 +578,7 @@ export class CombatOverlay {
           targets: dmgText,
           y: dmgText.y - 30,
           alpha: 0,
-          duration: 800,
+          duration: Math.round(800 / spd),
           ease: 'Power2',
           onComplete: () => dmgText.destroy(),
         });
@@ -398,7 +595,7 @@ export class CombatOverlay {
           targets: healText,
           y: healText.y - 30,
           alpha: 0,
-          duration: 800,
+          duration: Math.round(800 / spd),
           ease: 'Power2',
           onComplete: () => healText.destroy(),
         });
@@ -406,7 +603,7 @@ export class CombatOverlay {
     }
   }
 
-  private animateHpBars(units: CombatUnit[], displays: UnitDisplay[]): void {
+  private animateHpBars(units: CombatUnit[], displays: UnitDisplay[], spd: number = 1): void {
     for (let i = 0; i < units.length; i++) {
       const unit = units[i];
       const display = displays[i];
@@ -420,7 +617,7 @@ export class CombatOverlay {
       this.scene.tweens.add({
         targets: obj,
         pct: finalPct,
-        duration: 500,
+        duration: Math.round(500 / spd),
         ease: 'Power1',
         onUpdate: () => {
           display.hpBar.setProgress(obj.pct);
@@ -441,7 +638,7 @@ export class CombatOverlay {
         this.scene.tweens.add({
           targets: [display.sprite, display.nameText],
           alpha: 0.3,
-          duration: 400,
+          duration: Math.round(400 / spd),
         });
       }
     }
@@ -456,7 +653,6 @@ export class CombatOverlay {
     const btnY = this.panelH - 60;
     const isOver = run.status !== 'exploring';
     const label = isOver ? 'Einsammeln & Schliessen' : 'Weiter';
-    const btnColor = isOver ? UI_COLORS.SUCCESS_BTN_BG : undefined;
 
     const btn = createButton(this.scene, {
       x: this.panelW / 2 - 80,
@@ -561,9 +757,14 @@ export class CombatOverlay {
     this.enemyDisplays = [];
     this.logContainer.removeAll(true);
     this.actionContainer.removeAll(true);
+    // Clean up speed buttons (they live directly on container, not actionContainer)
+    for (const btn of this.speedButtons) this.container.remove(btn.container, true);
+    this.speedButtons = [];
+    this.preTargetEnemyId = null;
   }
 
   destroy(): void {
+    this.stopCountdown();
     this.container.destroy();
   }
 }
