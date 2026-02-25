@@ -102,6 +102,9 @@ export class ExpeditionUI {
     const route = ROUTE_DEFS[run.routeId];
     let y = 45;
 
+    // ── Room Strip (Feature #12) ──
+    y = this.drawRoomStrip(run, y);
+
     // ── Route Info ──
     const statusLabel = run.status === 'exploring' ? 'Unterwegs'
       : run.status === 'victory' ? 'Sieg!'
@@ -123,23 +126,6 @@ export class ExpeditionUI {
       }).setOrigin(1, 0),
     );
     y += 20;
-
-    // Room progress bar
-    const progressW = this.panelW - 40;
-    const progressG = this.scene.add.graphics();
-    progressG.fillStyle(UI_COLORS.PROGRESS_BG, 1);
-    progressG.fillRoundedRect(20, y, progressW, 14, 3);
-    const filled = run.rooms.length > 0 ? (run.currentRoom / run.rooms.length) * progressW : 0;
-    progressG.fillStyle(UI_COLORS.SUCCESS_GREEN, 1);
-    progressG.fillRoundedRect(20, y, filled, 14, 3);
-    this.contentContainer.add(progressG);
-
-    this.contentContainer.add(
-      this.scene.add.text(20 + progressW / 2, y + 1, `Raum ${run.currentRoom} / ${run.rooms.length}`, {
-        fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.LIGHT,
-      }).setOrigin(0.5, 0),
-    );
-    y += 24;
 
     // Zwei-Spalten-Layout: Links Party + Enemies, Rechts Provisions + Loot
     const colLeft = 20;
@@ -415,6 +401,125 @@ export class ExpeditionUI {
       this.contentContainer.setVisible(true);
       this.refresh(state);
     };
+  }
+
+  /**
+   * Feature #12: Room Strip – horizontal row of room icons at top of panel.
+   * Completed rooms: full color. Current room: highlighted. Future rooms: grayed out.
+   * Returns the Y position after the strip.
+   */
+  private drawRoomStrip(run: ExpeditionRun, y: number): number {
+    const STRIP_H = 28;
+    const ICON_SIZE = 20;
+    const PAD = 2;
+    const STRIP_MARGIN = 20;
+    const availW = this.panelW - STRIP_MARGIN * 2;
+    const totalRooms = run.rooms.length;
+
+    if (totalRooms === 0) return y;
+
+    // How many fit per row (icon + padding)
+    const slotW = ICON_SIZE + PAD * 2;
+    const maxPerRow = Math.floor(availW / slotW);
+    const cols = Math.min(totalRooms, maxPerRow);
+
+    // Strip background
+    const stripBg = this.scene.add.graphics();
+    stripBg.fillStyle(UI_COLORS.PANEL_BG_DARK, 0.7);
+    stripBg.fillRoundedRect(STRIP_MARGIN, y, availW, STRIP_H, 4);
+    stripBg.lineStyle(1, UI_COLORS.PANEL_BORDER, 0.3);
+    stripBg.strokeRoundedRect(STRIP_MARGIN, y, availW, STRIP_H, 4);
+    this.contentContainer.add(stripBg);
+
+    const iconY = y + (STRIP_H - ICON_SIZE) / 2;
+
+    for (let i = 0; i < totalRooms; i++) {
+      const col = i % cols;
+      const row = Math.floor(i / cols);
+      // If too many rooms, only draw the first row and show a count at the end
+      if (row > 0) break;
+
+      const room = run.rooms[i];
+      const iconX = STRIP_MARGIN + col * slotW + PAD;
+      const isCompleted = i < run.currentRoom;
+      const isCurrent = i === run.currentRoom && run.status === 'exploring';
+      const isFuture = i > run.currentRoom || run.status !== 'exploring';
+
+      const { color: fillColor, symbol } = this.getRoomIconStyle(room.type);
+
+      const iconG = this.scene.add.graphics();
+      if (isCompleted) {
+        // Completed: full color, slightly dimmed
+        iconG.fillStyle(fillColor, 0.65);
+        iconG.fillRoundedRect(iconX, iconY, ICON_SIZE, ICON_SIZE, 3);
+      } else if (isCurrent) {
+        // Current: full color + gold border
+        iconG.fillStyle(fillColor, 1.0);
+        iconG.fillRoundedRect(iconX, iconY, ICON_SIZE, ICON_SIZE, 3);
+        iconG.lineStyle(2, UI_COLORS.PANEL_BORDER, 1);
+        iconG.strokeRoundedRect(iconX - 1, iconY - 1, ICON_SIZE + 2, ICON_SIZE + 2, 3);
+      } else {
+        // Future: grayed out (fog of war)
+        iconG.fillStyle(UI_COLORS.PANEL_BG, isFuture ? 0.8 : 0.5);
+        iconG.fillRoundedRect(iconX, iconY, ICON_SIZE, ICON_SIZE, 3);
+        iconG.lineStyle(1, 0x444448, 0.6);
+        iconG.strokeRoundedRect(iconX, iconY, ICON_SIZE, ICON_SIZE, 3);
+      }
+      this.contentContainer.add(iconG);
+
+      // Symbol text
+      const symColor = isCompleted ? '#88887A'
+        : isCurrent ? '#FFFFFF'
+        : '#555560';
+      const symText = this.scene.add.text(
+        iconX + ICON_SIZE / 2,
+        iconY + ICON_SIZE / 2,
+        symbol,
+        { fontFamily: FONT_FAMILY, fontSize: '9px', color: symColor },
+      ).setOrigin(0.5);
+      this.contentContainer.add(symText);
+    }
+
+    // If there are more rooms than fit in one row, show overflow indicator
+    if (totalRooms > cols) {
+      const overflowX = STRIP_MARGIN + cols * slotW + PAD + 2;
+      this.contentContainer.add(
+        this.scene.add.text(overflowX, iconY + ICON_SIZE / 2,
+          `+${totalRooms - cols}`, {
+            fontFamily: FONT_FAMILY, fontSize: '8px', color: UI_STR_COLORS.DIM,
+          }).setOrigin(0, 0.5),
+      );
+    }
+
+    // Current room position label (right side of strip)
+    const roomLabel = run.status === 'exploring'
+      ? `${run.currentRoom + 1}/${totalRooms}`
+      : `${totalRooms}/${totalRooms}`;
+    this.contentContainer.add(
+      this.scene.add.text(
+        STRIP_MARGIN + availW - 4,
+        y + STRIP_H / 2,
+        roomLabel,
+        { fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.GOLD },
+      ).setOrigin(1, 0.5),
+    );
+
+    return y + STRIP_H + 4;
+  }
+
+  /** Returns fill color and symbol for a room type (used in room strip). */
+  private getRoomIconStyle(type: string): { color: number; symbol: string } {
+    switch (type) {
+      case 'combat':     return { color: 0xCC3333, symbol: 'X' };
+      case 'boss':       return { color: 0x880000, symbol: 'B' };
+      case 'rest':       return { color: 0x2E7D32, symbol: '+' };
+      case 'hazard':     return { color: 0xB8860B, symbol: '!' };
+      case 'checkpoint': return { color: 0x1565C0, symbol: 'C' };
+      case 'find':       return { color: 0xB8860B, symbol: '?' };
+      case 'merchant':   return { color: 0xA07820, symbol: '$' };
+      case 'survivor':   return { color: 0x2E7D32, symbol: 'S' };
+      default:           return { color: 0x444448, symbol: '?' };
+    }
   }
 
   private drawSectionHeader(x: number, y: number, text: string, color: string): number {
