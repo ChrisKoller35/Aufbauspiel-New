@@ -119,12 +119,11 @@ export class BootScene extends Phaser.Scene {
     });
 
     // --- Music ---
-    this.load.audio('music_city_day', 'assets/audio/music/ambient_city.mp3');
-    this.load.audio('music_menu', 'assets/audio/music/ambient_city.mp3');
+    this.load.audio('music_city', 'assets/audio/music/ambient_city.mp3');
     this.load.audio('music_forest', 'assets/audio/music/ambient_forest.mp3');
-    this.load.audio('music_cave', 'assets/audio/music/ambient_cave.mp3');
-    this.load.audio('music_boss', 'assets/audio/music/ambient_boss.mp3');
     this.load.audio('music_swamp', 'assets/audio/music/ambient_swamp.mp3');
+    this.load.audio('music_cave', 'assets/audio/music/Ecambient_cave.mp3');
+    this.load.audio('music_boss', 'assets/audio/music/ambient_boss.mp3');
   }
 
   create(): void {
