@@ -458,7 +458,7 @@ export class GuildUI {
 
   private renderFighterCard(fighter: GuildFighter, y: number, state: GameState): number {
     const cardW = this.panelW - 40;
-    const cardH = 80;
+    // Injured fighters get a taller card to show the recovery info
     const cls = CLASS_DEFS[fighter.classId];
     const stats = this.gearSystem.getEffectiveStats(fighter);
     const citizen = state.citizens.find(c => c.fighterId === fighter.id);
@@ -468,6 +468,8 @@ export class GuildUI {
     const isInjured = citizen != null && citizen.status === 'INJURED_REST';
     const isOnExpedition = citizen != null && citizen.status === 'ON_EXPEDITION';
 
+    const cardH = isInjured ? 96 : 80;
+
     // NineSlice card background
     const cardBg = createNineSlice(this.scene, 20, y, cardW, cardH, 'UI_CARD_BG',
       isInjured ? UI_COLORS.CARD_BG_LIGHT : UI_COLORS.CARD_BG);
@@ -476,26 +478,46 @@ export class GuildUI {
     }
     this.contentContainer.add(cardBg);
 
+    // ── Verletzt-Badge: Roter Hintergrundstreifen oben im Karten-Header ──
+    if (isInjured) {
+      const badgeBg = this.scene.add.graphics();
+      badgeBg.fillStyle(UI_COLORS.DAMAGE_RED, 0.25);
+      badgeBg.fillRoundedRect(20, y, cardW, 18, { tl: 6, tr: 6, bl: 0, br: 0 });
+      this.contentContainer.add(badgeBg);
+
+      this.contentContainer.add(
+        this.scene.add.text(20 + cardW / 2, y + 3, '⚕ VERLETZT – erholt sich', {
+          fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DAMAGE,
+          fontStyle: 'bold',
+        }).setOrigin(0.5, 0),
+      );
+    }
+
     // Fighter sprite (left side of card)
     const hasSprite = cls?.spriteKey && this.scene.textures.exists(cls.spriteKey);
+    const spriteTop = isInjured ? y + 20 : y;
     const textX = hasSprite ? 86 : 30;
     if (hasSprite) {
       // Small frame around sprite
-      const spriteFrame = createNineSlice(this.scene, 26, y + 8, 48, 48,
+      const spriteFrame = createNineSlice(this.scene, 26, spriteTop + 8, 48, 48,
         'UI_FRAME_GOLD', UI_COLORS.PANEL_BORDER);
       this.contentContainer.add(spriteFrame);
 
       this.contentContainer.add(
-        this.scene.add.image(50, y + 32, cls.spriteKey)
+        this.scene.add.image(50, spriteTop + 32, cls.spriteKey)
           .setDisplaySize(40, 40),
       );
     }
+
+    const nameTop = isInjured ? y + 22 : y;
 
     // Status string with clear distinction between states
     let statusStr = '';
     let statusColor: string = UI_STR_COLORS.INFO;
     if (isInjured) {
-      statusStr = ` [Verletzt – ${Math.ceil(citizen!.injuryTimer)}s]`;
+      // Show timer prominently
+      const timerSec = Math.ceil(citizen!.injuryTimer);
+      statusStr = ` [Erholt sich: ${timerSec}s]`;
       statusColor = UI_STR_COLORS.DAMAGE;
     } else if (isOnExpedition) {
       statusStr = ' [Auf Expedition]';
@@ -509,30 +531,30 @@ export class GuildUI {
     }
 
     // Name + class
-    const nameText = this.scene.add.text(textX, y + 8,
+    const nameText = this.scene.add.text(textX, nameTop + 8,
       `${fighter.name} (${cls?.name ?? fighter.classId})`, {
       fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.INFO,
     });
     this.contentContainer.add(nameText);
 
     // Status badge (placed after name text)
-    const statusText = this.scene.add.text(textX + nameText.width + 6, y + 9, statusStr, {
+    const statusText = this.scene.add.text(textX + nameText.width + 6, nameTop + 9, statusStr, {
       fontFamily: FONT_FAMILY, fontSize: '10px', color: statusColor,
     });
     this.contentContainer.add(statusText);
 
     // Stats
     this.contentContainer.add(
-      this.scene.add.text(textX, y + 26,
+      this.scene.add.text(textX, nameTop + 26,
         `HP:${stats.maxHp}  ATK:${stats.atk}  DEF:${stats.def}  SPD:${stats.spd.toFixed(1)}  CRIT:${(stats.critChance * 100).toFixed(0)}%`, {
-        fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.LIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '10px', color: isInjured ? UI_STR_COLORS.DIM : UI_STR_COLORS.LIGHT,
       }),
     );
 
     // Gear slots with item sprites
-    this.renderGearSlot(textX, y + 42, 'Waffe', fighter.gear.weapon, state);
-    this.renderGearSlot(textX + 150, y + 42, 'Ruestung', fighter.gear.armor, state);
-    this.renderGearSlot(textX + 310, y + 42, 'Schmuck', fighter.gear.trinket, state);
+    this.renderGearSlot(textX, nameTop + 42, 'Waffe', fighter.gear.weapon, state);
+    this.renderGearSlot(textX + 150, nameTop + 42, 'Ruestung', fighter.gear.armor, state);
+    this.renderGearSlot(textX + 310, nameTop + 42, 'Schmuck', fighter.gear.trinket, state);
 
     // Equip buttons (show available gear from stock)
     if (isAvailable) {
@@ -542,7 +564,7 @@ export class GuildUI {
         .map(([id]) => id);
 
       if (gearItems.length > 0) {
-        const equipY = y + 58;
+        const equipY = nameTop + 58;
         for (const itemId of gearItems.slice(0, 4)) {
           const itemDef = ITEM_DEFS[itemId];
           const equipBtn = createButton(this.scene, {
@@ -561,9 +583,10 @@ export class GuildUI {
       }
     }
 
-    // Retire button (NineSlice, far right)
+    // Retire button (NineSlice, far right) – shifted down for injured cards
+    const retireBtnY = isInjured ? y + 24 : y + 8;
     const retireBtn = createButton(this.scene, {
-      x: 20 + cardW - 66, y: y + 8,
+      x: 20 + cardW - 66, y: retireBtnY,
       width: 56, height: 22,
       label: 'Retire',
       textStyle: { fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DAMAGE },

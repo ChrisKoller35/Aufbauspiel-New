@@ -5,7 +5,7 @@ import { resetCitizenIdCounter } from '../models/Citizen';
 import { resetFighterIdCounter } from '../models/GuildRoster';
 
 const SAVE_KEY = 'magic_city_save';
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 
 export class SaveSystem {
   save(state: GameState): boolean {
@@ -177,6 +177,9 @@ export class SaveSystem {
       if (b.upgradeId === undefined) b.upgradeId = null;
       if (b.eventPaused === undefined) b.eventPaused = false;
     }
+
+    // SaveVersion 5: Achievements
+    if (!state.achievements) (state as GameState).achievements = [];
 
     state.saveVersion = CURRENT_VERSION;
   }

@@ -95,19 +95,19 @@ export class HUD {
     this.container.add(this.popSlot.container);
     x += slotSpacing;
 
-    // Satisfaction
+    // Satisfaction (wider due to label: "Zuf: 99% (Hervorragend)")
     this.satisfactionText = this.scene.add.text(x, 8, 'Zuf: 50%', {
       fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
     });
     this.container.add(this.satisfactionText);
-    x += 60;
+    x += 140;
 
-    // Guild Rank
+    // Guild Rank (with progress, e.g. "Rang: Novize (2/3)")
     this.guildRankText = this.scene.add.text(x, 8, 'Rang: Novize', {
       fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
     });
     this.container.add(this.guildRankText);
-    x += 90;
+    x += 130;
 
     // Event indicator (hidden by default)
     this.eventText = this.scene.add.text(x, 8, '', {
@@ -181,16 +181,58 @@ export class HUD {
     // Day
     this.dayText.setText(`Tag ${state.day}`);
 
-    // Satisfaction
+    // Satisfaction with descriptive label
     const sat = Math.round(state.satisfaction ?? 50);
-    const satColor = sat >= 60 ? (UI_STR_COLORS.HEAL ?? '#66BB6A') : sat >= 40 ? UI_STR_COLORS.GOLD : '#FF4444';
-    this.satisfactionText.setText(`Zuf: ${sat}%`);
+    let satLabel: string;
+    let satColor: string;
+    if (sat >= 80) {
+      satLabel = 'Hervorragend';
+      satColor = UI_STR_COLORS.HEAL;
+    } else if (sat >= 60) {
+      satLabel = 'Gut';
+      satColor = '#88CC88';
+    } else if (sat >= 40) {
+      satLabel = 'Akzeptabel';
+      satColor = UI_STR_COLORS.GOLD;
+    } else if (sat >= 20) {
+      satLabel = 'Schlecht';
+      satColor = '#FF9944';
+    } else {
+      satLabel = 'Kritisch';
+      satColor = UI_STR_COLORS.DAMAGE;
+    }
+    this.satisfactionText.setText(`Zuf: ${sat}% (${satLabel})`);
     this.satisfactionText.setColor(satColor);
 
-    // Guild Rank
+    // Guild Rank with progress indicator
     const rank = state.guildStats?.rank ?? 1;
     const rankDef = GUILD_RANK_DEFS.find(r => r.rank === rank);
-    this.guildRankText.setText(`Rang: ${rankDef?.name ?? 'Novize'}`);
+    const MAX_RANK = 5;
+    if (rank >= MAX_RANK) {
+      // Max rank – show star
+      this.guildRankText.setText(`Rang: ${rankDef?.name ?? 'Legende'} ★`);
+    } else {
+      // Compute progress toward next rank
+      const nextRankDef = GUILD_RANK_DEFS.find(r => r.rank === rank + 1);
+      let progressText = '';
+      if (nextRankDef?.conditions) {
+        const cond = nextRankDef.conditions;
+        if (cond.forestShortCompleted != null) {
+          const completed = state.guildStats?.forestShortCompleted ?? 0;
+          progressText = ` (${completed}/${cond.forestShortCompleted})`;
+        } else if (cond.totalBossesDefeated != null) {
+          const defeated = state.guildStats?.totalBossesDefeated ?? 0;
+          progressText = ` (${defeated}/${cond.totalBossesDefeated})`;
+        } else if (cond.forestMediumBossDefeated != null) {
+          const done = state.guildStats?.forestMediumBossDefeated ? 1 : 0;
+          progressText = ` (${done}/1)`;
+        } else if (cond.guildHallT2 != null) {
+          const done = state.guildStats?.guildHallT2 ? 1 : 0;
+          progressText = ` (${done}/1)`;
+        }
+      }
+      this.guildRankText.setText(`Rang: ${rankDef?.name ?? 'Novize'}${progressText}`);
+    }
 
     // Event indicator
     if (state.activeEvent) {

@@ -82,6 +82,11 @@ export interface GameState {
   // Statistics (for future use)
   statistics: Record<string, number>;
 
+  // ── New in SaveVersion 5 ──
+
+  // Freigeschaltete Achievements (IDs)
+  achievements: string[];
+
   // ── New in SaveVersion 4 ──
 
   // Guild Rank System
@@ -151,6 +156,7 @@ export function createNewGameState(): GameState {
     rngSeed: Math.floor(Math.random() * 2147483647),
     scoreboard: [],
     statistics: {},
+    achievements: [],
     // SaveVersion 4 fields
     guildStats: {
       rank: 1,
