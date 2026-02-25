@@ -6,7 +6,7 @@ import { resetFighterIdCounter } from '../models/GuildRoster';
 
 const SAVE_KEY = 'magic_city_save';
 const BACKUP_KEY = 'magic_city_save_backup';
-const CURRENT_VERSION = 4;
+const CURRENT_VERSION = 5;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
@@ -291,6 +291,9 @@ export class SaveSystem {
       if (b.upgradeId === undefined) b.upgradeId = null;
       if (b.eventPaused === undefined) b.eventPaused = false;
     }
+
+    // SaveVersion 5: Achievements
+    if (!state.achievements) (state as GameState).achievements = [];
 
     state.saveVersion = CURRENT_VERSION;
   }
