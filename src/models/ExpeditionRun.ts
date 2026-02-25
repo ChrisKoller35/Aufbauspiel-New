@@ -1,5 +1,16 @@
 export type EncounterType = 'combat' | 'rest' | 'hazard' | 'boss' | 'checkpoint' | 'find' | 'merchant' | 'survivor';
 
+/** Eine wählbare Option in einem Begegnungs-Dialog */
+export interface EncounterChoice {
+  label: string;
+  flavorText: string;
+  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal';
+  /** Stärke des Effekts (Prozent, Goldmenge oder XP-Betrag, je nach effect) */
+  value: number;
+  /** Optionaler Item-Key für effect='item' */
+  itemId?: string;
+}
+
 export interface EncounterRoom {
   index: number;
   type: EncounterType;
@@ -9,6 +20,8 @@ export interface EncounterRoom {
   completed: boolean;
   findGold?: number;
   findItems?: { itemId: string; qty: number }[];
+  /** Wählbare Optionen (für find/rest Räume – Feature #11) */
+  encounterChoices?: { optionA: EncounterChoice; optionB: EncounterChoice };
 }
 
 export interface SpecialEffect {
@@ -79,4 +92,16 @@ export interface ExpeditionRun {
   totalCombatRounds: number;        // Summe aller Kampfrunden (für Score-Berechnung)
   enemiesKilled: number;            // Anzahl besiegter normaler Gegner
   bossesKilled: number;             // Anzahl besiegter Bosse
+  /** Feature #11: Ausstehende Begegnungs-Wahl (find/rest Raum) */
+  pendingChoice?: { roomIndex: number; optionA: EncounterChoice; optionB: EncounterChoice };
+  /** Feature #15: Checkpoint-Dialog ausstehend */
+  pendingCheckpoint?: boolean;
+  /** Feature #16: Händler-Interaktion ausstehend */
+  pendingMerchant?: boolean;
+  /** Feature #16: Anzahl der Käufe beim aktuellen Händler */
+  merchantPurchases?: number;
+  /** Feature #17: Im Survivor-Raum gefundener Spezialist */
+  specialistFound?: string;
+  /** Feature #18: Großmeister-Prüfung aktiv */
+  isGrandmasterTrial?: boolean;
 }

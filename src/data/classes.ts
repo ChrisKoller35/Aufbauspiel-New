@@ -193,7 +193,7 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
       {
         id: 'warsong',
         name: 'Kriegslied',
-        cooldown: 3,
+        cooldown: 6, // GDD Balance: CD 6, min CD 1 (via CD reduction effects)
         effectType: 'buff',
         power: 3,            // +3 ATK for 3 rounds (self for now)
         target: 'self',

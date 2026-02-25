@@ -1,5 +1,5 @@
 import { GameState } from '../models/GameState';
-import { ExpeditionRun, CombatUnit, EncounterRoom } from '../models/ExpeditionRun';
+import { ExpeditionRun, CombatUnit, EncounterRoom, EncounterChoice } from '../models/ExpeditionRun';
 import { GuildFighter, FighterStats } from '../models/GuildRoster';
 import { ENEMY_DEFS } from '../data/enemies';
 import { ROUTE_DEFS } from '../data/routes';
@@ -13,6 +13,7 @@ import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { MODIFIER_DEFS } from '../data/modifiers';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
+import { pickRandomSpecialist } from '../data/specialists';
 
 /**
  * Full expedition engine: encounter processing, auto-battler combat, loot.
@@ -35,6 +36,7 @@ export class ExpeditionSystem {
     fighterIds: number[],
     difficulty: string = 'normal',
     modifierId: string | null = null,
+    isGrandmasterTrial: boolean = false,
   ): ExpeditionRun | null {
     const route = ROUTE_DEFS[routeId];
     if (!route) return null;
@@ -120,6 +122,7 @@ export class ExpeditionSystem {
       totalCombatRounds: 0,
       enemiesKilled: 0,
       bossesKilled: 0,
+      isGrandmasterTrial: isGrandmasterTrial || undefined,
     };
 
     state.activeExpedition = run;
@@ -133,6 +136,15 @@ export class ExpeditionSystem {
   processCurrentRoom(state: GameState): boolean {
     const run = state.activeExpedition;
     if (!run || run.status !== 'exploring') return false;
+
+    // Feature #11: Warte auf Auflösung einer Begegnungs-Wahl
+    if (run.pendingChoice) return false;
+
+    // Feature #15: Warte auf Checkpoint-Dialog
+    if (run.pendingCheckpoint) return false;
+
+    // Feature #16: Warte auf Händler-Interaktion
+    if (run.pendingMerchant) return false;
 
     if (run.currentRoom >= run.rooms.length) {
       run.status = 'victory';
@@ -148,7 +160,7 @@ export class ExpeditionSystem {
         this.processCombat(run, room, rng);
         break;
       case 'rest':
-        this.processRest(run, room);
+        this.processRest(run, room, rng);
         break;
       case 'hazard':
         this.processHazard(run, room);
@@ -162,17 +174,24 @@ export class ExpeditionSystem {
         }
         break;
       case 'find':
-        this.processFind(run, room);
+        this.processFind(run, room, rng);
         break;
       case 'merchant':
         this.processMerchant(run, room);
         break;
       case 'survivor':
-        this.processSurvivor(run, room);
+        this.processSurvivor(run, room, rng);
         break;
     }
 
     run.rngSeed = rng.nextInt(1, 2147483647);
+
+    // Feature #16: Falls Händler ausstehend, Raum NICHT als abgeschlossen markieren
+    if (run.pendingMerchant) return false;
+
+    // Feature #11: Falls Wahl ausstehend, Raum NICHT als abgeschlossen markieren
+    if (run.pendingChoice) return false;
+
     room.completed = true;
 
     // Check team wipe
@@ -186,7 +205,13 @@ export class ExpeditionSystem {
     const totalHp = run.party.reduce((s, u) => s + u.hp, 0);
     const totalMaxHp = run.party.reduce((s, u) => s + u.maxHp, 0);
     if (totalHp / totalMaxHp < 0.2 && !run.desperateResolveUsed) {
-      run.combatLog.push('>> Team HP critical! Auto-retreat available.');
+      run.combatLog.push('>> Team HP kritisch! Auto-Rückzug verfügbar.');
+    }
+
+    // Feature #15: Nach jedem 3. Raum Checkpoint-Dialog setzen (außer bei Todesmarsch)
+    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
+      run.pendingCheckpoint = true;
+      return false;
     }
 
     // Advance to next room
@@ -197,6 +222,213 @@ export class ExpeditionSystem {
     }
 
     return true;
+  }
+
+  // ─── Feature #11: Encounter-Auswahl ─────────────────────────────
+
+  /**
+   * Löst die ausstehende Begegnungs-Wahl auf (0 = Option A, 1 = Option B).
+   */
+  resolveChoice(run: ExpeditionRun, choiceIndex: 0 | 1): boolean {
+    if (!run.pendingChoice) return false;
+
+    const choice = choiceIndex === 0
+      ? run.pendingChoice.optionA
+      : run.pendingChoice.optionB;
+
+    const room = run.rooms[run.pendingChoice.roomIndex];
+    run.pendingChoice = undefined;
+
+    this.applyEncounterChoice(run, choice);
+
+    room.completed = true;
+
+    // Feature #15: Checkpoint nach 3. Raum prüfen
+    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
+      run.pendingCheckpoint = true;
+      return true;
+    }
+
+    // Nächsten Raum betreten
+    run.currentRoom++;
+    if (run.currentRoom >= run.rooms.length) {
+      run.status = 'victory';
+    }
+
+    return true;
+  }
+
+  private applyEncounterChoice(run: ExpeditionRun, choice: EncounterChoice): void {
+    const aliveParty = run.party.filter(u => u.hp > 0);
+
+    switch (choice.effect) {
+      case 'heal': {
+        for (const unit of aliveParty) {
+          const healAmt = Math.floor(unit.maxHp * choice.value / 100);
+          unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
+        }
+        run.combatLog.push(`>> ${choice.label}: Party heilt ${choice.value}% HP.`);
+        break;
+      }
+      case 'risky_heal': {
+        // 60% Chance auf doppelte Heilung, 40% Chance auf Schaden
+        const rng = new SeededRNG(run.rngSeed);
+        run.rngSeed = rng.nextInt(1, 2147483647);
+        const success = rng.chance(0.6);
+        if (success) {
+          for (const unit of aliveParty) {
+            const healAmt = Math.floor(unit.maxHp * choice.value * 2 / 100);
+            unit.hp = Math.min(unit.maxHp, unit.hp + healAmt);
+          }
+          run.combatLog.push(`>> ${choice.label}: Erfolg! Party heilt ${choice.value * 2}% HP.`);
+        } else {
+          for (const unit of aliveParty) {
+            const dmg = Math.floor(unit.maxHp * choice.value / 100);
+            unit.hp = Math.max(1, unit.hp - dmg);
+          }
+          run.combatLog.push(`>> ${choice.label}: Fehlschlag! Party erleidet ${choice.value}% HP Schaden.`);
+        }
+        break;
+      }
+      case 'gold': {
+        run.goldEarned += choice.value;
+        run.combatLog.push(`>> ${choice.label}: +${choice.value} Gold erhalten.`);
+        break;
+      }
+      case 'item': {
+        if (choice.itemId) {
+          run.loot[choice.itemId] = (run.loot[choice.itemId] ?? 0) + choice.value;
+          const itemName = ITEM_DEFS[choice.itemId]?.name ?? choice.itemId;
+          run.combatLog.push(`>> ${choice.label}: +${choice.value}× ${itemName} erhalten.`);
+        }
+        break;
+      }
+      case 'xp': {
+        if (!run.xpEarned) run.xpEarned = {};
+        for (const unit of aliveParty) {
+          run.xpEarned[unit.id] = (run.xpEarned[unit.id] ?? 0) + choice.value;
+        }
+        run.combatLog.push(`>> ${choice.label}: +${choice.value} XP für alle.`);
+        break;
+      }
+    }
+  }
+
+  // ─── Feature #15: Checkpoint-Dialog ─────────────────────────────
+
+  /**
+   * Löst den Checkpoint-Dialog auf.
+   * Bei retreat=true wird die Expedition abgebrochen.
+   */
+  resolveCheckpoint(run: ExpeditionRun, retreat: boolean): void {
+    if (!run.pendingCheckpoint) return;
+    run.pendingCheckpoint = undefined;
+
+    if (retreat) {
+      this.retreat(run);
+      return;
+    }
+
+    // Weiter zur nächsten Kammer
+    run.currentRoom++;
+    if (run.currentRoom >= run.rooms.length) {
+      run.status = 'victory';
+    }
+  }
+
+  // ─── Feature #16: Händler-Encounter ─────────────────────────────
+
+  /**
+   * Kauft einen Gegenstand beim Händler.
+   * Verfügbar: healing_potion (15 Gold), bread (8 Gold), power_bread (25 Gold)
+   */
+  merchantBuy(run: ExpeditionRun, itemId: string): boolean {
+    if (!run.pendingMerchant) return false;
+    if ((run.merchantPurchases ?? 0) >= 2) {
+      run.combatLog.push('>> Händler: Du kannst maximal 2 Gegenstände kaufen.');
+      return false;
+    }
+
+    const MERCHANT_PRICES: Record<string, number> = {
+      healing_potion: 15,
+      bread: 8,
+      power_bread: 25,
+    };
+
+    const price = MERCHANT_PRICES[itemId];
+    if (price === undefined) {
+      run.combatLog.push(`>> Händler: Unbekannter Artikel "${itemId}".`);
+      return false;
+    }
+
+    if (run.goldEarned < price) {
+      run.combatLog.push(`>> Händler: Nicht genug Gold! (Benötigt: ${price}, Vorhanden: ${run.goldEarned})`);
+      return false;
+    }
+
+    run.goldEarned = Math.max(0, run.goldEarned - price);
+    run.loot[itemId] = (run.loot[itemId] ?? 0) + 1;
+    run.merchantPurchases = (run.merchantPurchases ?? 0) + 1;
+
+    const itemName = ITEM_DEFS[itemId]?.name ?? itemId;
+    run.combatLog.push(`>> Händler: ${itemName} gekauft für ${price} Gold.`);
+    return true;
+  }
+
+  /**
+   * Überspringt den Händler und erhält die kostenlose 15%-Heilung.
+   */
+  merchantSkip(run: ExpeditionRun): void {
+    if (!run.pendingMerchant) return;
+    run.pendingMerchant = undefined;
+    run.merchantPurchases = undefined;
+
+    // Kostenlose 15% Heilung wie bisher
+    for (const unit of run.party) {
+      if (unit.hp > 0) {
+        const heal = Math.floor(unit.maxHp * 0.15);
+        unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+      }
+    }
+    run.combatLog.push('>> Händler: Ihr lehnt das Angebot ab. Er heilt eure Wunden kostenlos. (+15% HP)');
+
+    const room = run.rooms[run.currentRoom];
+    room.completed = true;
+
+    // Feature #15: Checkpoint nach 3. Raum
+    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
+      run.pendingCheckpoint = true;
+      return;
+    }
+
+    run.currentRoom++;
+    if (run.currentRoom >= run.rooms.length) {
+      run.status = 'victory';
+    }
+  }
+
+  /**
+   * Schließt den Händler nach Einkäufen ab.
+   */
+  merchantClose(run: ExpeditionRun): void {
+    if (!run.pendingMerchant) return;
+    run.pendingMerchant = undefined;
+    run.merchantPurchases = undefined;
+    run.combatLog.push('>> Händler: Auf Wiedersehen, Abenteurer!');
+
+    const room = run.rooms[run.currentRoom];
+    room.completed = true;
+
+    // Feature #15: Checkpoint nach 3. Raum
+    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
+      run.pendingCheckpoint = true;
+      return;
+    }
+
+    run.currentRoom++;
+    if (run.currentRoom >= run.rooms.length) {
+      run.status = 'victory';
+    }
   }
 
   /**
@@ -320,6 +552,13 @@ export class ExpeditionSystem {
           }
 
           if (skill.effectType === 'heal' && isPlayer) {
+            // Feature #18: Grandmaster Trial – keine Heilungs-Skills während Boss-Kämpfen
+            if (run.isGrandmasterTrial && room.type === 'boss') {
+              run.combatLog.push(`${unit.name}: GROSSMEISTER-PRÜFUNG! Heilung blockiert!`);
+              skill.currentCooldown = skill.cooldown;
+              usedSkill = true;
+              break;
+            }
             const allies = party.filter(u => u.hp > 0);
             const lowest = allies.reduce((a, b) => a.hp < b.hp ? a : b);
             // F5: anti_heal debuff reduces player healing by 50%
@@ -642,19 +881,45 @@ export class ExpeditionSystem {
 
   // ─── Rest & Hazard & Find & Merchant & Survivor ─────────────────────────────────────────────
 
-  private processRest(run: ExpeditionRun, room: EncounterRoom): void {
-    // curse_of_the_forest: Raststätten heilen nicht
-    if (run.activeModifier === 'curse_of_the_forest') {
-      run.combatLog.push('>> Rast: Der Fluch des Waldes verhindert Heilung!');
-      return;
+  private processRest(run: ExpeditionRun, room: EncounterRoom, rng: SeededRNG): void {
+    // Feature #11: Begegnungs-Wahl für Rast-Räume generieren
+    const optionA: EncounterChoice = {
+      label: `Rasten (+${room.healPercent}% HP)`,
+      flavorText: 'Das Team legt eine kurze Rast ein und erholt sich.',
+      effect: 'heal',
+      value: room.healPercent,
+    };
+
+    // Zweite Option variiert per RNG
+    const roll = rng.nextInt(0, 2); // 0, 1 oder 2
+    let optionB: EncounterChoice;
+    if (roll === 0) {
+      optionB = {
+        label: 'Kräuter sammeln (+2 Grüne Kräuter)',
+        flavorText: 'Ein aufmerksamer Blick entdeckt heilsame Kräuter am Wegesrand.',
+        effect: 'item',
+        value: 2,
+        itemId: 'herb_green',
+      };
+    } else if (roll === 1) {
+      optionB = {
+        label: 'Meditieren (+5 XP)',
+        flavorText: 'Stille Besinnung bringt neue Erkenntnisse.',
+        effect: 'xp',
+        value: 5,
+      };
+    } else {
+      optionB = {
+        label: 'Riskant heilen (60% Chance: +60% HP, sonst -30% HP)',
+        flavorText: 'Ein unbekanntes Gebräu – könnte Wunder wirken oder schaden.',
+        effect: 'risky_heal',
+        value: 30,
+      };
     }
-    for (const unit of run.party) {
-      if (unit.hp > 0) {
-        const heal = Math.floor(unit.maxHp * (room.healPercent / 100));
-        unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-      }
-    }
-    run.combatLog.push(`>> Rast: Team heilt ${room.healPercent}%`);
+
+    room.encounterChoices = { optionA, optionB };
+    run.pendingChoice = { roomIndex: room.index, optionA, optionB };
+    run.combatLog.push('>> Rastplatz gefunden! Wähle eine Aktion.');
   }
 
   private processHazard(run: ExpeditionRun, room: EncounterRoom): void {
@@ -672,32 +937,72 @@ export class ExpeditionSystem {
     run.combatLog.push(`>> Hazard! Team erleidet ${room.hazardDamage} Schaden.${hasResist ? ' (Feuerresistenz aktiv!)' : ''}`);
   }
 
-  private processFind(run: ExpeditionRun, room: EncounterRoom): void {
+  private processFind(run: ExpeditionRun, room: EncounterRoom, rng: SeededRNG): void {
     run.combatLog.push('>> Fundstätte entdeckt!');
-    if (room.findGold) {
-      run.goldEarned += room.findGold;
-      run.combatLog.push(`   +${room.findGold} Gold gefunden`);
-    }
-    if (room.findItems) {
-      for (const item of room.findItems) {
-        run.loot[item.itemId] = (run.loot[item.itemId] ?? 0) + item.qty;
-        run.combatLog.push(`   +${item.qty}× ${item.itemId} gefunden`);
+
+    // Feature #11: Begegnungs-Wahl für Fund-Räume generieren
+    const gold = room.findGold ?? 20;
+
+    const optionA: EncounterChoice = {
+      label: `Truhe öffnen (+${gold} Gold)`,
+      flavorText: 'Eine verschlossene Truhe wartet auf euch. Euer Dieb knackt das Schloss.',
+      effect: 'gold',
+      value: gold,
+    };
+
+    // Zweite Option variiert per RNG
+    const roll = rng.nextInt(0, 2); // 0, 1 oder 2
+    let optionB: EncounterChoice;
+    if (roll === 0) {
+      optionB = {
+        label: 'Weitergehen (+5% HP)',
+        flavorText: 'Ihr ignoriert die Truhe und schont eure Kräfte für das Kommende.',
+        effect: 'heal',
+        value: 5,
+      };
+    } else if (roll === 1) {
+      // Erstes findItem oder Fallback auf herb_green
+      const firstItem = room.findItems?.[0];
+      if (firstItem) {
+        const itemName = ITEM_DEFS[firstItem.itemId]?.name ?? firstItem.itemId;
+        optionB = {
+          label: `Versteck durchsuchen (+${firstItem.qty}× ${itemName})`,
+          flavorText: 'Ein gut verborgenes Versteck birgt nützliche Ausrüstung.',
+          effect: 'item',
+          value: firstItem.qty,
+          itemId: firstItem.itemId,
+        };
+      } else {
+        optionB = {
+          label: 'Altes Lager plündern (+2 Grüne Kräuter)',
+          flavorText: 'Ein verlassenes Lager hält noch einige Vorräte bereit.',
+          effect: 'item',
+          value: 2,
+          itemId: 'herb_green',
+        };
       }
+    } else {
+      optionB = {
+        label: 'Wissen sammeln (+8 XP)',
+        flavorText: 'Auf dem Boden liegen alte Bücher und Schriftrollen.',
+        effect: 'xp',
+        value: 8,
+      };
     }
+
+    room.encounterChoices = { optionA, optionB };
+    run.pendingChoice = { roomIndex: room.index, optionA, optionB };
   }
 
   private processMerchant(run: ExpeditionRun, _room: EncounterRoom): void {
-    // Einfacher Händler: kostenlose 15% Heilung
-    for (const unit of run.party) {
-      if (unit.hp > 0) {
-        const heal = Math.floor(unit.maxHp * 0.15);
-        unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-      }
-    }
-    run.combatLog.push('>> Ein reisender Händler heilt eure Wunden. (+15% HP)');
+    // Feature #16: Händler-Interaktion – pendingMerchant setzen, NICHT auto-healen
+    run.pendingMerchant = true;
+    run.merchantPurchases = 0;
+    run.combatLog.push('>> Ein reisender Händler bietet seine Waren an! (Max. 2 Käufe)');
+    run.combatLog.push('   Heiltrankh: 15 Gold | Brot: 8 Gold | Kraft-Brot: 25 Gold');
   }
 
-  private processSurvivor(run: ExpeditionRun, _room: EncounterRoom): void {
+  private processSurvivor(run: ExpeditionRun, _room: EncounterRoom, rng: SeededRNG): void {
     // 3 XP für jedes lebende Party-Mitglied
     const aliveParty = run.party.filter(u => u.hp > 0);
     if (!run.xpEarned) run.xpEarned = {};
@@ -705,6 +1010,19 @@ export class ExpeditionSystem {
       run.xpEarned[u.id] = (run.xpEarned[u.id] ?? 0) + 3;
     }
     run.combatLog.push('>> Ihr findet einen Überlebenden! Er teilt wertvolle Erfahrungen. (+3 XP)');
+
+    // Feature #17: 20% Chance einen Spezialisten zu finden
+    if (rng.chance(0.2)) {
+      // Bereits gefundene Spezialisten ausschließen
+      const ownedSpecialists: string[] = [];
+      if (run.specialistFound) ownedSpecialists.push(run.specialistFound);
+
+      const specialist = pickRandomSpecialist(ownedSpecialists, () => rng.next());
+      if (specialist) {
+        run.specialistFound = specialist.id;
+        run.combatLog.push(`>> SPEZIALIST! ${specialist.name} schließt sich euch an! (${specialist.flavorText})`);
+      }
+    }
   }
 
   // ─── Unit Factories ─────────────────────────────────────────────
