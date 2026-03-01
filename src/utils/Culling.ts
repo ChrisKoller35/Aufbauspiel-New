@@ -30,9 +30,9 @@ export function isInView(
   h: number,
   margin = 64,
 ): boolean {
-  const viewLeft   = cam.scrollX - margin;
-  const viewRight  = cam.scrollX + cam.width  / cam.zoom + margin;
-  const viewTop    = cam.scrollY - margin;
-  const viewBottom = cam.scrollY + cam.height / cam.zoom + margin;
+  const viewLeft   = cam.worldView.x - margin;
+  const viewRight  = cam.worldView.x + cam.width  / cam.zoom + margin;
+  const viewTop    = cam.worldView.y - margin;
+  const viewBottom = cam.worldView.y + cam.height / cam.zoom + margin;
   return x + w > viewLeft && x < viewRight && y + h > viewTop && y < viewBottom;
 }

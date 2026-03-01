@@ -67,6 +67,9 @@ export class PeopleSystem {
 
     state.fighters.push(fighter);
 
+    // Track statistic
+    state.statistics.total_fighters_trained = (state.statistics.total_fighters_trained ?? 0) + 1;
+
     // Update citizen
     citizen.status = 'GUILD_FIGHTER';
     citizen.fighterId = fighter.id;
@@ -85,6 +88,7 @@ export class PeopleSystem {
     if (currentPop < housingCapacity && (state.globalStock.bread ?? 0) >= 1) {
       state.globalStock.bread -= 1;
       state.citizens.push(createCitizen('IDLE'));
+      state.statistics.total_citizens_born = (state.statistics.total_citizens_born ?? 0) + 1;
     }
   }
 

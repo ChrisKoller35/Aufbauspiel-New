@@ -93,9 +93,12 @@ export class TutorialOverlay {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
     if (this.highlightGraphics.visible) {
-      this.highlightGraphics.setPosition(cam.scrollX, cam.scrollY);
+      this.highlightGraphics.setPosition(cam.worldView.x, cam.worldView.y);
+      this.highlightGraphics.setScale(1 / z);
     }
   }
 
@@ -139,14 +142,14 @@ export class TutorialOverlay {
     // Schritt-Anzeige + Titel
     this.container.add(
       this.scene.add.text(10, 8, `Tipp ${this.currentStep + 1}/${TUTORIAL_STEPS.length}`, {
-        fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.MUTED,
+        fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.MUTED,
       }),
     );
 
     // Tutorial-Text
     this.container.add(
       this.scene.add.text(10, 24, step.text, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
         lineSpacing: 3, wordWrap: { width: this.boxW - 20 },
       }),
     );
@@ -264,7 +267,7 @@ export class TutorialOverlay {
     btnBg.fillRoundedRect(x, y, w, 22, 3);
 
     const text = this.scene.add.text(x + w / 2, y + 11, label, {
-      fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.LIGHT,
+      fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.LIGHT,
     }).setOrigin(0.5);
 
     const hitArea = this.scene.add.zone(x + w / 2, y + 11, w, 22).setInteractive();

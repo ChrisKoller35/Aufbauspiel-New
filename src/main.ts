@@ -12,7 +12,7 @@ const config: Phaser.Types.Core.GameConfig = {
   height: 720,
   pixelArt: false,
   antialias: true,
-  roundPixels: false,
+  roundPixels: true,
   backgroundColor: '#3a7a32',
   scale: {
     mode: Phaser.Scale.FIT,
@@ -30,10 +30,10 @@ let game: Phaser.Game | null = null;
 function emergencySave(): void {
   try {
     if (!game) return;
-    const cityScene = game.scene.getScene('CityScene') as CityScene & { state?: unknown };
+    const cityScene = game.scene.getScene('CityScene') as unknown as Record<string, unknown> | null;
     // CityScene exposes its state via a public property; access it generically to
     // avoid a hard import cycle at the module level.
-    const state = (cityScene as Record<string, unknown>)['state'];
+    const state = cityScene?.['gameState'];
     if (state) {
       const ss = new SaveSystem();
       ss.save(state as Parameters<SaveSystem['save']>[0]);

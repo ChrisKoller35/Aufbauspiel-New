@@ -47,7 +47,9 @@ export class BuildingPanel {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.panelX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.panelX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   private create(): void {
@@ -130,8 +132,8 @@ export class BuildingPanel {
     const def = BUILDING_DEFS[building.typeId];
     this.titleText.setText(def.name);
 
-    const style = { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT };
-    const dimStyle = { fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DIM };
+    const style = { fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT };
+    const dimStyle = { fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DIM };
     let y = 34;
 
     // Type + footprint
@@ -142,7 +144,7 @@ export class BuildingPanel {
     if (def.requiresConnectivity) {
       const connected = building.connected;
       this.addLine(12, y, `Status: ${connected ? 'Verbunden' : 'Nicht verbunden!'}`, {
-        fontFamily: FONT_FAMILY, fontSize: '11px',
+        fontFamily: FONT_FAMILY, fontSize: '13px',
         color: connected ? UI_STR_COLORS.HEAL : UI_STR_COLORS.DAMAGE,
       });
       y += 18;
@@ -151,7 +153,7 @@ export class BuildingPanel {
     // Water
     if (def.requirements?.waterSupplied) {
       this.addLine(12, y, `Wasser: ${building.waterSupplied ? 'Ja' : 'Nein'}`, {
-        fontFamily: FONT_FAMILY, fontSize: '11px',
+        fontFamily: FONT_FAMILY, fontSize: '13px',
         color: building.waterSupplied ? UI_STR_COLORS.HEAL : UI_STR_COLORS.DAMAGE,
       });
       y += 18;
@@ -180,7 +182,7 @@ export class BuildingPanel {
         y += 8;
 
         this.addLine(12, y, 'Produktion:', {
-          fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.GOLD,
+          fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
         });
         y += 18;
 
@@ -197,7 +199,7 @@ export class BuildingPanel {
         }
         const outStr = outputs.map(([k, v]) => `${v} ${k}`).join(', ');
         this.addLine(12, y, `Erzeugt: ${outStr}`, {
-          fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.LOOT,
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LOOT,
         }); y += 18;
 
         // Production progress bar (texturiert via UIHelper)
@@ -212,7 +214,7 @@ export class BuildingPanel {
           // Verbleibende-Zeit Text ueber dem Balken
           const remaining = Math.max(0, building.productionTimer);
           this.addLine(12, y - 1, `${remaining.toFixed(0)}s verbleibend`, {
-            fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.DIM,
+            fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
           });
           y += 12;
 
@@ -228,14 +230,60 @@ export class BuildingPanel {
           y += barH + 6;
         } else if (!building.connected) {
           this.addLine(12, y, 'Nicht verbunden – keine Produktion', {
-            fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DAMAGE,
+            fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DAMAGE,
           });
           y += 16;
         } else if (building.assignedWorkerIds.length === 0 && def.workerSlots > 0) {
           this.addLine(12, y, 'Kein Arbeiter zugewiesen', {
-            fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DAMAGE,
+            fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DAMAGE,
           });
           y += 16;
+        } else if (def.manualCraft && !building.producing) {
+          // ── Herstellen-Button for manual craft buildings ──
+          const canCraft = this.canAffordRecipe(state, building, recipe);
+          const btnW = this.panelWidth - 24;
+          const btnH = 26;
+          const btnColor = canCraft ? UI_COLORS.GLASS_ACCENT_GUILD : UI_COLORS.SLOT_BG;
+          const btnGfx = this.scene.add.graphics();
+          btnGfx.fillStyle(canCraft ? 0x1a3020 : 0x111520, 1);
+          btnGfx.fillRoundedRect(12, y, btnW, btnH, 5);
+          btnGfx.lineStyle(2, btnColor, canCraft ? 0.9 : 0.3);
+          btnGfx.strokeRoundedRect(12, y, btnW, btnH, 5);
+          this.contentContainer.add(btnGfx);
+          this.addLine(12 + btnW / 2, y + 13, canCraft ? '⚒ Herstellen' : '⚒ Zu wenig Materialien', {
+            fontFamily: FONT_FAMILY, fontSize: '13px',
+            color: canCraft ? UI_STR_COLORS.HEAL : UI_STR_COLORS.DISABLED,
+            fontStyle: canCraft ? 'bold' : 'normal',
+          }, true);
+          if (canCraft) {
+            const hitZone = this.scene.add.zone(12 + btnW / 2, y + btnH / 2, btnW, btnH).setInteractive();
+            hitZone.on('pointerdown', () => {
+              building.pendingCraft = true;
+              this.rebuildContent(building, state);
+            });
+            hitZone.on('pointerover', () => {
+              btnGfx.clear();
+              btnGfx.fillStyle(0x2a5030, 1);
+              btnGfx.fillRoundedRect(12, y, btnW, btnH, 5);
+              btnGfx.lineStyle(2, UI_COLORS.GLASS_ACCENT_GUILD, 1);
+              btnGfx.strokeRoundedRect(12, y, btnW, btnH, 5);
+            });
+            hitZone.on('pointerout', () => {
+              btnGfx.clear();
+              btnGfx.fillStyle(0x1a3020, 1);
+              btnGfx.fillRoundedRect(12, y, btnW, btnH, 5);
+              btnGfx.lineStyle(2, UI_COLORS.GLASS_ACCENT_GUILD, 0.9);
+              btnGfx.strokeRoundedRect(12, y, btnW, btnH, 5);
+            });
+            this.contentContainer.add(hitZone);
+          }
+          if (building.pendingCraft) {
+            this.addLine(12 + btnW / 2, y + btnH + 6, '⏳ Wartet auf Start...', {
+              fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
+            }, true);
+            y += 16;
+          }
+          y += btnH + 4;
         }
       }
     }
@@ -249,7 +297,7 @@ export class BuildingPanel {
       y += 8;
 
       this.addLine(12, y, 'Rezept wechseln:', {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD,
       });
       y += 18;
 
@@ -278,12 +326,12 @@ export class BuildingPanel {
 
         const label = isActive ? `► ${recipe.name}` : `  ${recipe.name}`;
         this.addLine(16, y + 3, label, {
-          fontFamily: FONT_FAMILY, fontSize: '9px',
+          fontFamily: FONT_FAMILY, fontSize: '11px',
           color: isActive ? UI_STR_COLORS.LOOT : UI_STR_COLORS.DIM,
         });
 
         this.addLine(16, y + 13, outStr, {
-          fontFamily: FONT_FAMILY, fontSize: '8px',
+          fontFamily: FONT_FAMILY, fontSize: '11px',
           color: isActive ? UI_STR_COLORS.HEAL : UI_STR_COLORS.DISABLED,
         });
 
@@ -329,28 +377,28 @@ export class BuildingPanel {
         const spec = SPECIALIST_DEFS[building.specialistId];
         if (spec) {
           this.addLine(12, y, 'Spezialist:', {
-            fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
+            fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD,
           });
           this.addLine(12 + 76, y, `${spec.name} ★`, {
-            fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD_BRIGHT,
+            fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD_BRIGHT,
           });
           y += 16;
           // Flavor text (italic look via smaller size)
           const flavor = `"${spec.flavorText}"`;
           this.addLine(14, y, flavor, {
-            fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.DIM,
+            fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
             wordWrap: { width: this.panelWidth - 28 },
           });
           y += 22;
           const speedBonus = Math.round((1 - spec.productionSpeedMult) * 100);
           this.addLine(12, y, `Bonus: ${speedBonus}% schnellere Produktion`, {
-            fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.HEAL,
+            fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.HEAL,
           });
           y += 16;
         }
       } else {
         this.addLine(12, y, 'Spezialist: — (keiner zugewiesen)', {
-          fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.MUTED,
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.MUTED,
         });
         y += 16;
       }
@@ -360,7 +408,7 @@ export class BuildingPanel {
     if (building.synergySpeedMult < 1.0) {
       const bonusPct = Math.round((1 - building.synergySpeedMult) * 100);
       this.addLine(12, y, `Synergie-Bonus: +${bonusPct}% Produktion`, {
-        fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.HEAL,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.HEAL,
       });
       y += 16;
     }
@@ -373,7 +421,7 @@ export class BuildingPanel {
       y += 8;
 
       this.addLine(12, y, 'Upgrade läuft…', {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD,
       });
       y += 16;
 
@@ -433,15 +481,15 @@ export class BuildingPanel {
         this.contentContainer.add(upgBtnBg);
 
         this.addLine(12 + btnW / 2, y + 7, btnLabel, {
-          fontFamily: FONT_FAMILY, fontSize: '11px', color: labelColor,
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: labelColor,
         }, true);
         this.addLine(12 + btnW / 2, y + 18, costParts, {
-          fontFamily: FONT_FAMILY, fontSize: '9px', color: canAfford ? UI_STR_COLORS.DIM : UI_STR_COLORS.DISABLED,
+          fontFamily: FONT_FAMILY, fontSize: '11px', color: canAfford ? UI_STR_COLORS.DIM : UI_STR_COLORS.DISABLED,
         }, true);
 
         if (!rankOk) {
           this.addLine(12, y + btnH + 2, `Rang ${upgradeDef.unlockCondition.minGuildRank} benötigt`, {
-            fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.DAMAGE,
+            fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DAMAGE,
           });
           y += 12;
         }
@@ -481,7 +529,7 @@ export class BuildingPanel {
       this.contentContainer.add(btnBg);
 
       this.addLine(12 + btnW / 2, y + btnH / 2, 'Abreissen', {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
       }, true);
 
       const hitZone = this.scene.add.zone(12 + btnW / 2, y + btnH / 2, btnW, btnH).setInteractive();
@@ -503,6 +551,20 @@ export class BuildingPanel {
     // Adjust panel height to content
     this.panelHeight = Math.max(200, y + 12);
     this.drawBg();
+  }
+
+  private canAffordRecipe(
+    state: GameState,
+    building: BuildingInstance,
+    recipe: { inputs: Record<string, number> },
+  ): boolean {
+    for (const [item, needed] of Object.entries(recipe.inputs)) {
+      const available = building.connected
+        ? (state.globalStock[item] ?? 0)
+        : (building.localInputBuffer[item] ?? 0);
+      if (available < needed) return false;
+    }
+    return true;
   }
 
   private addLine(x: number, y: number, text: string, styleObj: object, centered = false): void {

@@ -248,6 +248,8 @@ export class SaveSystem {
       // Batch 2 Encounter-Erweiterungen: focusTarget-System
       if (exp.focusTarget === undefined) exp.focusTarget = null;
       if (exp.focusTargetCooldown == null) exp.focusTargetCooldown = 0;
+      // abilitiesUsed sicherstellen (neu)
+      if (!exp.abilitiesUsed) exp.abilitiesUsed = {};
       // Buff-Arrays sicherstellen (vor Batch 2 evtl. nicht vorhanden)
       for (const unit of exp.party ?? []) {
         if (!unit.buffs) unit.buffs = [];
@@ -294,6 +296,9 @@ export class SaveSystem {
 
     // SaveVersion 5: Achievements
     if (!state.achievements) (state as GameState).achievements = [];
+
+    // swampTiles (optional dev field – always ensure defined)
+    if (!state.swampTiles) state.swampTiles = {};
 
     state.saveVersion = CURRENT_VERSION;
   }

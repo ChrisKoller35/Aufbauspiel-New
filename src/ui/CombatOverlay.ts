@@ -3,6 +3,10 @@ import { ExpeditionRun, CombatUnit, EncounterRoom } from '../models/ExpeditionRu
 import { UI_COLORS, UI_STR_COLORS, FONT_FAMILY } from '../rendering/Colors';
 import { createNineSlice, createButton, createProgressBar, UIButton, UIProgressBar } from '../rendering/UIHelper';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
+import { ITEM_DEFS } from '../data/items';
+import { ExpeditionSystem } from '../systems/ExpeditionSystem';
+import { GameState } from '../models/GameState';
+import { ROUTE_DEFS } from '../data/routes';
 
 type CombatState = 'preview' | 'animating' | 'result';
 
@@ -54,8 +58,21 @@ export class CombatOverlay {
   // Feature #14: Pre-combat targeting
   private preTargetEnemyId: number | null = null;
   private countdownTimer?: Phaser.Time.TimerEvent;
-  private countdownText?: Phaser.GameObjects.Text;
-  private targetLabelText?: Phaser.GameObjects.Text;
+
+  // Expedition context for provision use in preview
+  private expeditionSystem: ExpeditionSystem | null = null;
+  private expeditionState: GameState | null = null;
+  private expeditionRun: ExpeditionRun | null = null;
+
+  // Extra containers for preview phase
+  private itemContainer!: Phaser.GameObjects.Container;
+  private abilityContainer!: Phaser.GameObjects.Container;
+
+  // Ability selection state (cleared each time show() is called)
+  // Maps unitId → selected skillId (only one per hero, cleared on fight start)
+  private selectedAbilities = new Map<number, string>();
+  // Current room reference (needed to apply abilities on fight start)
+  private previewRoom: EncounterRoom | null = null;
 
   // Callbacks
   public onComplete?: () => void;
@@ -67,6 +84,12 @@ export class CombatOverlay {
     this.panelW = scene.scale.width - 40;
     this.panelH = scene.scale.height - 40;
     this.create();
+  }
+
+  /** Set expedition context so the preview phase can use provisions. */
+  setExpeditionContext(system: ExpeditionSystem, state: GameState): void {
+    this.expeditionSystem = system;
+    this.expeditionState = state;
   }
 
   private create(): void {
@@ -90,7 +113,7 @@ export class CombatOverlay {
 
     // Room info
     this.roomInfoText = this.scene.add.text(this.panelW / 2, 38, '', {
-      fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DIM,
     }).setOrigin(0.5, 0);
     this.container.add(this.roomInfoText);
 
@@ -101,6 +124,12 @@ export class CombatOverlay {
     // Action button area
     this.actionContainer = this.scene.add.container(0, 0);
     this.container.add(this.actionContainer);
+
+    // Preview-only: abilities and items
+    this.abilityContainer = this.scene.add.container(0, 0);
+    this.container.add(this.abilityContainer);
+    this.itemContainer = this.scene.add.container(0, 0);
+    this.container.add(this.itemContainer);
   }
 
   /**
@@ -126,6 +155,12 @@ export class CombatOverlay {
     for (const u of run.party) this.preHpMap.set(u.id, u.hp);
     for (const e of room.enemies) this.preHpMap.set(e.id, e.hp);
 
+    // Store run reference for provision use
+    this.expeditionRun = run;
+    // Reset ability selection for new room
+    this.selectedAbilities.clear();
+    this.previewRoom = room;
+
     // Build unit displays
     this.clearDisplays();
     this.buildPartyDisplays(run.party);
@@ -134,18 +169,19 @@ export class CombatOverlay {
     // Show combat log (empty for now)
     this.updateLog([]);
 
-    // Show "Kampf!" button + speed controls + targeting label
+    // Show ability cards and item section (preview phase)
+    this.showAbilitySection(run.party, room.enemies, run, room);
+    this.showItemSection(run);
+
+    // Show "Kampf starten!" button + speed controls + targeting label
     this.showPreviewActions();
 
     // Feature #13: Show speed buttons
     this.showSpeedButtons();
 
     const cam = this.scene.cameras.main;
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    this.container.setPosition(cam.worldView.x + this.screenX, cam.worldView.y + this.screenY);
     this.container.setVisible(true);
-
-    // Feature #14: Start 2s countdown for pre-combat targeting
-    this.startTargetingCountdown();
   }
 
   hide(): void {
@@ -159,7 +195,9 @@ export class CombatOverlay {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   // ─── Unit Display Builders ───────────────────────────────
@@ -277,21 +315,21 @@ export class CombatOverlay {
 
     // Name
     const nameText = this.scene.add.text(spriteSize + 10, 2, unit.name, {
-      fontFamily: FONT_FAMILY, fontSize: '11px',
+      fontFamily: FONT_FAMILY, fontSize: '13px',
       color: isEnemy ? UI_STR_COLORS.DAMAGE : UI_STR_COLORS.LIGHT,
     });
     c.add(nameText);
 
     // Stats line
     const statsText = this.scene.add.text(spriteSize + 10, 16, `ATK:${unit.atk} DEF:${unit.def} SPD:${unit.spd.toFixed(1)}`, {
-      fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.DIM,
+      fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
     });
     c.add(statsText);
 
     // HP text
     const hpStr = `${Math.max(0, unit.hp)} / ${unit.maxHp}`;
     const hpText = this.scene.add.text(spriteSize + 10, 30, hpStr, {
-      fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.HEAL,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.HEAL,
     });
     c.add(hpText);
 
@@ -314,7 +352,7 @@ export class CombatOverlay {
         if (!def) continue;
         const abbrev = def.name.substring(0, 3).toUpperCase();
         const badge = this.scene.add.text(badgeX, badgeY, abbrev, {
-          fontFamily: FONT_FAMILY, fontSize: '8px', color: '#ffd700',
+          fontFamily: FONT_FAMILY, fontSize: '11px', color: '#ffd700',
           backgroundColor: '#333',
           padding: { left: 2, right: 2, top: 1, bottom: 1 },
         });
@@ -351,37 +389,327 @@ export class CombatOverlay {
       y: btnY,
       width: 160,
       height: 40,
-      label: 'Kampf!',
+      label: 'Kampf starten!',
       textStyle: { fontFamily: FONT_FAMILY, fontSize: '16px', color: UI_STR_COLORS.LIGHT },
       onClick: () => {
         if (this.state !== 'preview') return;
         this.state = 'animating'; // sofort setzen → Doppel-Click-Schutz
         this.stopCountdown();
+        // Apply all queued ability selections before combat starts
+        const expSystem = this.expeditionSystem;
+        const expRun = this.expeditionRun;
+        const expRoom = this.previewRoom;
+        if (expSystem && expRun && expRoom) {
+          for (const [unitId, skillId] of this.selectedAbilities) {
+            expSystem.useAbilityInPreview(expRun, unitId, skillId, expRoom);
+          }
+        }
+        this.selectedAbilities.clear();
         this.onFightClicked?.();
       },
     });
     this.actionContainer.add(fightBtn.container);
 
-    // Feature #14: Countdown text above "Kampf!" button
-    this.countdownText = this.scene.add.text(
-      this.panelW / 2,
-      btnY - 24,
-      'Zielauswahl: 2s...',
-      { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD },
-    ).setOrigin(0.5, 0);
-    this.actionContainer.add(this.countdownText);
-
-    // Feature #14: "Klick = Fokus" label near enemy column
-    this.targetLabelText = this.scene.add.text(
+    // "Klick = Fokus" hint near enemy column
+    const focusHint = this.scene.add.text(
       this.panelW - 200,
       this.panelH - 90,
       'Klick = Fokus',
-      { fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.GOLD },
+      { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD },
     );
-    this.actionContainer.add(this.targetLabelText);
+    this.actionContainer.add(focusHint);
 
     // Make enemies clickable for targeting
     this.makeEnemiesTargetable();
+  }
+
+  // ─── Preview: Ability Section ────────────────────────────
+
+  /**
+   * Show hero class abilities as toggle buttons (select/deselect before fight starts).
+   * Each hero can queue ONE ability per combat room; effect applies when "Kampf starten!" is clicked.
+   * Abilities permanently used this expedition are shown as dimmed (✓).
+   * Only shown for routes with tier >= 2 (Mission 1 has no abilities).
+   *
+   * Visual states:
+   *  READY     – bright blue border, light bg, white text, clearly clickable
+   *  SELECTED  – amber/gold bg, gold border, gold text (queued, will fire on fight start)
+   *  USED      – dimmed bg, grey text, ✓ marker (permanently used this expedition)
+   *  DEAD HERO – completely dimmed, no interaction
+   */
+  private showAbilitySection(party: CombatUnit[], enemies: CombatUnit[], run: ExpeditionRun, room: EncounterRoom): void {
+    this.abilityContainer.removeAll(true);
+
+    // Mission 1 (tier 1) has no ability section – keeps tutorial simple
+    const routeTier = ROUTE_DEFS[run.routeId]?.tier ?? 1;
+    if (routeTier < 2) return;
+
+    const sectionY = 310;
+    const midX = this.panelW / 2;
+
+    // Colors
+    const C_READY_BG     = 0x1E2A3A;   // dark blue tint – clearly differs from used
+    const C_READY_BORDER = 0x4A90D8; // blue accent for ready state
+    const C_SEL_BG       = 0x4A3810;   // amber/warm gold bg
+    const C_SEL_BORDER   = UI_COLORS.GOLD_MID;  // bright gold border
+    const C_USED_BG      = UI_COLORS.PANEL_BG_DARKER;
+    const C_DEAD_BG      = UI_COLORS.PANEL_BG_DARKER;
+
+    // ── Header ───────────────────────────────────────────────────
+    this.abilityContainer.add(
+      this.scene.add.text(30, sectionY, '── Fähigkeiten (1× pro Mission — Anwählen, dann Kampf starten) ──', {
+        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.INFO,
+      }),
+    );
+
+    const colW = 128;
+    const colPad = 8;
+    let colX = 30;
+    const colHeaderY = sectionY + 14;
+
+    for (const unit of party) {
+      if (unit.skills.length === 0) continue;
+
+      const alreadyUsed = !!run.abilitiesUsed[unit.id];
+      const isDead      = unit.hp <= 0;
+      const canInteract = !alreadyUsed && !isDead;
+      const selectedSkillId = this.selectedAbilities.get(unit.id) ?? null;
+
+      // ── Class name header ──
+      const headerColor = isDead
+        ? UI_STR_COLORS.DIM
+        : alreadyUsed
+          ? UI_STR_COLORS.DIM
+          : UI_STR_COLORS.GOLD;
+      this.abilityContainer.add(
+        this.scene.add.text(colX, colHeaderY, unit.name, {
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: headerColor, fontStyle: 'bold',
+        }),
+      );
+
+      let btnY = colHeaderY + 14;
+
+      for (const skill of unit.skills) {
+        const isSelected = selectedSkillId === skill.id;
+
+        // ── Choose visual state ──
+        let bgColor: number;
+        let borderColor: number;
+        let borderAlpha: number;
+        let textColor: string;
+
+        if (isDead || alreadyUsed) {
+          bgColor = C_USED_BG;
+          borderColor = 0x333333;
+          borderAlpha = 0.25;
+          textColor = UI_STR_COLORS.DIM;
+        } else if (isSelected) {
+          bgColor = C_SEL_BG;
+          borderColor = C_SEL_BORDER;
+          borderAlpha = 1.0;
+          textColor = UI_STR_COLORS.GOLD_BRIGHT;
+        } else {
+          bgColor = C_READY_BG;
+          borderColor = C_READY_BORDER;
+          borderAlpha = 0.85;
+          textColor = UI_STR_COLORS.LIGHT;
+        }
+
+        // ── Draw button ──
+        const bg = this.scene.add.graphics();
+
+        const drawBg = (fillColor: number, bColor: number, bAlpha: number) => {
+          bg.clear();
+          bg.fillStyle(fillColor, 1);
+          bg.fillRoundedRect(colX, btnY, colW, 24, 4);
+          bg.lineStyle(isSelected ? 2 : 1, bColor, bAlpha);
+          bg.strokeRoundedRect(colX, btnY, colW, 24, 4);
+        };
+        drawBg(bgColor, borderColor, borderAlpha);
+        this.abilityContainer.add(bg);
+
+        // Selected indicator ▶ on left side
+        if (isSelected) {
+          this.abilityContainer.add(
+            this.scene.add.text(colX + 6, btnY + 12, '▶', {
+              fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD_BRIGHT,
+            }).setOrigin(0, 0.5),
+          );
+        }
+
+        // Skill name
+        const labelTxt = this.scene.add.text(colX + colW / 2, btnY + 12, skill.name, {
+          fontFamily: FONT_FAMILY, fontSize: '11px', color: textColor,
+        }).setOrigin(0.5);
+        this.abilityContainer.add(labelTxt);
+
+        // Used (✓) marker
+        if (alreadyUsed) {
+          this.abilityContainer.add(
+            this.scene.add.text(colX + colW - 5, btnY + 5, '✓', {
+              fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.HEAL,
+            }).setOrigin(1, 0),
+          );
+        }
+
+        // ── Click interaction (only when hero is available) ──
+        if (canInteract) {
+          const hitZone = this.scene.add.zone(colX + colW / 2, btnY + 12, colW, 24)
+            .setInteractive({ useHandCursor: true });
+
+          const capturedUnitId = unit.id;
+          const capturedSkillId = skill.id;
+
+          hitZone.on('pointerover', () => {
+            if (isSelected) return; // already gold, no hover change
+            drawBg(UI_COLORS.BTN_HOVER, C_READY_BORDER, 1.0);
+          });
+          hitZone.on('pointerout', () => {
+            if (isSelected) return;
+            drawBg(C_READY_BG, C_READY_BORDER, 0.85);
+          });
+          hitZone.on('pointerdown', () => {
+            if (this.state !== 'preview') return;
+            const expRun = this.expeditionRun;
+            if (!expRun) return;
+
+            if (this.selectedAbilities.get(capturedUnitId) === capturedSkillId) {
+              // Toggle OFF – same skill clicked again
+              this.selectedAbilities.delete(capturedUnitId);
+            } else {
+              // Select (or switch to) this skill (replaces any other selection for this hero)
+              this.selectedAbilities.set(capturedUnitId, capturedSkillId);
+            }
+
+            // Rebuild ability section to reflect new selection state
+            this.showAbilitySection(party, enemies, expRun, room);
+          });
+          this.abilityContainer.add(hitZone);
+        }
+
+        btnY += 28;
+      }
+
+      colX += colW + colPad;
+      // Wrap columns if they'd overflow into the enemy side
+      if (colX + colW > midX - 10) colX = 30;
+    }
+
+    // ── Enemy abilities (read-only) ───────────────────────────────
+    this.abilityContainer.add(
+      this.scene.add.text(midX + 10, sectionY, '── Gegnerfähigkeiten ──', {
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DAMAGE,
+      }),
+    );
+    let ey = sectionY + 14;
+    for (const unit of enemies) {
+      if (unit.hp <= 0) continue;
+      for (const skill of unit.skills) {
+        this.abilityContainer.add(
+          this.scene.add.text(midX + 10, ey, `• ${unit.name.substring(0, 10)}: ${skill.name}`, {
+            fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
+          }),
+        );
+        ey += 14;
+      }
+    }
+  }
+
+  // ─── Preview: Item Section ───────────────────────────────
+
+  /** Show usable provisions at the bottom of the preview screen. */
+  private showItemSection(run: ExpeditionRun): void {
+    this.itemContainer.removeAll(true);
+
+    const activeProvisions = run.provisions.filter(p => p.qty > 0);
+    if (activeProvisions.length === 0) return;
+
+    const sectionY = this.panelH - 145;
+
+    this.itemContainer.add(
+      this.scene.add.text(30, sectionY, '── Vorräte (vor Kampf nutzbar) ──', {
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD_BRIGHT,
+      }),
+    );
+
+    let itemX = 30;
+    const itemY = sectionY + 16;
+
+    for (let i = 0; i < run.provisions.length; i++) {
+      const prov = run.provisions[i];
+      if (prov.qty <= 0) continue;
+
+      const itemDef = ITEM_DEFS[prov.itemId as keyof typeof ITEM_DEFS];
+      const name = (itemDef as { name?: string })?.name ?? prov.itemId;
+
+      const frameW = 130;
+      const frameH = 38;
+      const frameBg = this.scene.add.graphics();
+      frameBg.fillStyle(UI_COLORS.CARD_BG, 1);
+      frameBg.fillRoundedRect(itemX, itemY, frameW, frameH, 4);
+      frameBg.lineStyle(1, UI_COLORS.GOLD_MID, 0.4);
+      frameBg.strokeRoundedRect(itemX, itemY, frameW, frameH, 4);
+      this.itemContainer.add(frameBg);
+
+      // Item icon
+      const spriteKey = `ITEM_${prov.itemId.toUpperCase()}`;
+      if (this.scene.textures.exists(spriteKey)) {
+        this.itemContainer.add(
+          this.scene.add.image(itemX + 16, itemY + 19, spriteKey).setDisplaySize(22, 22),
+        );
+      }
+
+      // Name + quantity
+      this.itemContainer.add(
+        this.scene.add.text(itemX + 33, itemY + 5, `${name}`, {
+          fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+        }),
+      );
+      this.itemContainer.add(
+        this.scene.add.text(itemX + 33, itemY + 17, `x${prov.qty}`, {
+          fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD,
+        }),
+      );
+
+      // "Nutzen" button
+      const idx = i; // capture for closure
+      const useBtn = createButton(this.scene, {
+        x: itemX + 68, y: itemY + 14,
+        width: 54, height: 18,
+        label: 'Nutzen',
+        textStyle: { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.HEAL },
+        onClick: () => {
+          if (this.state !== 'preview') return;
+          if (!this.expeditionSystem || !this.expeditionState) return;
+          this.expeditionSystem.useProvision(this.expeditionState, idx);
+          this.refreshPreviewAfterItemUse();
+        },
+      });
+      this.itemContainer.add(useBtn.container);
+
+      itemX += frameW + 8;
+      if (itemX + frameW > this.panelW - 20) itemX = 30;
+    }
+  }
+
+  /** Refresh HP displays and item list after using a provision in preview. */
+  private refreshPreviewAfterItemUse(): void {
+    const run = this.expeditionRun;
+    if (!run) return;
+
+    // Update party HP bars with new HP values
+    for (const display of this.partyDisplays) {
+      const unit = run.party.find(u => u.id === display.unitId);
+      if (!unit) continue;
+      const hpPct = unit.maxHp > 0 ? Math.max(0, unit.hp) / unit.maxHp : 0;
+      display.hpText.setText(`${Math.max(0, unit.hp)} / ${unit.maxHp}`);
+      display.hpBar.setProgress(hpPct);
+      // Update pre-combat snapshot so animation starts from healed HP
+      this.preHpMap.set(unit.id, unit.hp);
+    }
+
+    // Refresh item section (qty changed)
+    this.showItemSection(run);
   }
 
   /**
@@ -413,7 +741,7 @@ export class CombatOverlay {
         label: labels[i],
         textStyle: {
           fontFamily: FONT_FAMILY,
-          fontSize: '10px',
+          fontSize: '13px',
           color: isActive ? UI_STR_COLORS.GOLD : UI_STR_COLORS.DIM,
         },
         onClick: () => {
@@ -438,41 +766,11 @@ export class CombatOverlay {
     }
   }
 
-  /**
-   * Feature #14: Start the 2-second pre-combat targeting countdown.
-   * After 2s automatically triggers fight.
-   */
-  private startTargetingCountdown(): void {
-    let remaining = 2;
-
-    const tick = () => {
-      if (this.state !== 'preview') return;
-      remaining--;
-      if (remaining > 0) {
-        this.countdownText?.setText(`Zielauswahl: ${remaining}s...`);
-        this.countdownTimer = this.scene.time.delayedCall(1000, tick);
-      } else {
-        // Time's up – auto-fight
-        this.countdownText?.setText('Kampf beginnt...');
-        this.countdownTimer = this.scene.time.delayedCall(300, () => {
-          if (this.state !== 'preview') return;
-          this.state = 'animating';
-          this.stopCountdown();
-          this.onFightClicked?.();
-        });
-      }
-    };
-
-    this.countdownTimer = this.scene.time.delayedCall(1000, tick);
-  }
-
   private stopCountdown(): void {
     if (this.countdownTimer) {
       this.countdownTimer.destroy();
       this.countdownTimer = undefined;
     }
-    this.countdownText = undefined;
-    this.targetLabelText = undefined;
   }
 
   /**
@@ -491,6 +789,9 @@ export class CombatOverlay {
   startCombatAnimation(run: ExpeditionRun, room: EncounterRoom): void {
     this.state = 'animating';
     this.actionContainer.removeAll(true);
+    // Hide preview-only sections during combat
+    this.itemContainer.removeAll(true);
+    this.abilityContainer.removeAll(true);
 
     const spd = this.combatSpeed;
 
@@ -711,7 +1012,7 @@ export class CombatOverlay {
     // Header
     this.logContainer.add(
       this.scene.add.text(logX + 5, logY, 'Kampfprotokoll', {
-        fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.DIM,
+        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
       }),
     );
 
@@ -721,7 +1022,7 @@ export class CombatOverlay {
       const color = this.getLogLineColor(line);
       this.logContainer.add(
         this.scene.add.text(logX + 5, y, line, {
-          fontFamily: FONT_FAMILY, fontSize: '9px', color,
+          fontFamily: FONT_FAMILY, fontSize: '11px', color,
         }),
       );
       y += 11;
@@ -757,6 +1058,8 @@ export class CombatOverlay {
     this.enemyDisplays = [];
     this.logContainer.removeAll(true);
     this.actionContainer.removeAll(true);
+    this.abilityContainer.removeAll(true);
+    this.itemContainer.removeAll(true);
     // Clean up speed buttons (they live directly on container, not actionContainer)
     for (const btn of this.speedButtons) this.container.remove(btn.container, true);
     this.speedButtons = [];

@@ -22,7 +22,9 @@ export class RunSummary {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX, cam.scrollY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x, cam.worldView.y);
+    this.container.setScale(1 / z);
   }
 
   isVisible(): boolean {
@@ -81,7 +83,7 @@ export class RunSummary {
     const roomsCleared = run.currentRoom;
     const totalRooms = run.rooms.length;
     this.container.add(this.scene.add.text(cx, y, `${roomsCleared} / ${totalRooms} Raeume`, {
-      fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.MUTED,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.MUTED,
     }).setOrigin(0.5, 0));
     y += 18;
 
@@ -102,10 +104,10 @@ export class RunSummary {
       const color = alive ? UI_STR_COLORS.HEAL : UI_STR_COLORS.DAMAGE;
 
       this.container.add(this.scene.add.text(left + 10, y, unit.name, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: alive ? UI_STR_COLORS.LIGHT : UI_STR_COLORS.DISABLED,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: alive ? UI_STR_COLORS.LIGHT : UI_STR_COLORS.DISABLED,
       }));
       this.container.add(this.scene.add.text(right - 10, y, statusText, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color,
       }).setOrigin(1, 0));
       y += 20;
     }
@@ -124,10 +126,10 @@ export class RunSummary {
         goldTextX = left + 28;
       }
       this.container.add(this.scene.add.text(goldTextX, y, 'Gold', {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD_BRIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD_BRIGHT,
       }));
       this.container.add(this.scene.add.text(right - 10, y, `+${run.goldEarned}`, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.GOLD_BRIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD_BRIGHT,
       }).setOrigin(1, 0));
       y += 18;
     }
@@ -140,16 +142,16 @@ export class RunSummary {
         itemTextX = left + 28;
       }
       this.container.add(this.scene.add.text(itemTextX, y, name, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
       }));
       this.container.add(this.scene.add.text(right - 10, y, `x${qty}`, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
       }).setOrigin(1, 0));
       y += 18;
     }
     if (lootEntries.length === 0 && run.goldEarned === 0) {
       this.container.add(this.scene.add.text(left + 10, y, 'Keine Beute', {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DISABLED,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DISABLED,
       }));
       y += 18;
     }

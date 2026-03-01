@@ -54,7 +54,9 @@ export class StatisticsUI {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   isVisible(): boolean {
@@ -151,7 +153,7 @@ export class StatisticsUI {
     // Fusszeile
     this.contentContainer.add(
       this.scene.add.text(left + colW / 2, y, `Tag ${state.day} – Statistiken werden laufend aktualisiert`, {
-        fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DIM,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DIM,
       }).setOrigin(0.5, 0),
     );
 
@@ -164,7 +166,7 @@ export class StatisticsUI {
     // Label (links)
     this.contentContainer.add(
       this.scene.add.text(x, y, label + ':', {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DIM,
         wordWrap: { width: maxW - 40 },
       }),
     );
@@ -173,7 +175,7 @@ export class StatisticsUI {
     const valueColor = value > 0 ? UI_STR_COLORS.LIGHT : UI_STR_COLORS.DISABLED;
     this.contentContainer.add(
       this.scene.add.text(x + maxW - 4, y, String(value), {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: valueColor,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: valueColor,
       }).setOrigin(1, 0),
     );
   }
@@ -195,6 +197,6 @@ export class StatisticsUI {
     this.screenY = cy - this.panelH / 2;
 
     const cam = this.scene.cameras.main;
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    this.container.setPosition(cam.worldView.x + this.screenX, cam.worldView.y + this.screenY);
   }
 }

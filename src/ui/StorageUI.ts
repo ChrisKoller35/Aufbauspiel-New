@@ -1,9 +1,10 @@
 import Phaser from 'phaser';
 import { GameState } from '../models/GameState';
+import { ITEM_DEFS } from '../data/items';
 import { UI_COLORS, UI_STR_COLORS, FONT_FAMILY } from '../rendering/Colors';
-import { createPanel, createButton, createNineSlice, createDivider } from '../rendering/UIHelper';
+import { createPanel, createButton, createNineSlice, createDivider, drawGlassPanel, drawGlassInfoBar } from '../rendering/UIHelper';
 
-// Ressourcen-Kategorien fuer die Anzeige
+// Feste Ressourcen-Kategorien (immer angezeigt, auch wenn qty=0)
 const RESOURCE_CATEGORIES: { label: string; icon: string; keys: string[] }[] = [
   {
     label: 'Rohstoffe',
@@ -21,23 +22,13 @@ const RESOURCE_CATEGORIES: { label: string; icon: string; keys: string[] }[] = [
     keys: ['iron_scrap', 'herb_green'],
   },
   {
-    label: 'Verbrauchsgegenstaende',
+    label: 'Verbrauchsgegenstände',
     icon: '🧴',
     keys: ['healing_potion', 'power_bread'],
   },
-  {
-    label: 'Ausruestung',
-    icon: '⚔',
-    keys: ['iron_sword', 'iron_shield', 'leather_armor', 'hunter_bow', 'oak_staff'],
-  },
-  {
-    label: 'Schaetze & Relikte',
-    icon: '💎',
-    keys: ['wolf_fang_necklace', 'crystal_shard', 'talisman_fragment'],
-  },
 ];
 
-// Lesbarer Name fuer Ressourcen-Keys
+// Lesbarer Name fuer Ressourcen-Keys (gear names come from ITEM_DEFS.name)
 const DISPLAY_NAMES: Record<string, string> = {
   wood: 'Holz',
   stone: 'Stein',
@@ -46,15 +37,9 @@ const DISPLAY_NAMES: Record<string, string> = {
   flour: 'Mehl',
   bread: 'Brot',
   iron_scrap: 'Eisenschrott',
-  herb_green: 'Gruene Kraeuter',
+  herb_green: 'Grüne Kräuter',
   healing_potion: 'Heiltrank',
   power_bread: 'Kraftbrot',
-  iron_sword: 'Eisenschwert',
-  iron_shield: 'Eisenschild',
-  leather_armor: 'Lederruestung',
-  hunter_bow: 'Jaegerbogen',
-  oak_staff: 'Eichenstab',
-  wolf_fang_necklace: 'Wolfszahn-Kette',
   crystal_shard: 'Kristallsplitter',
   talisman_fragment: 'Talisman-Fragment',
 };
@@ -80,7 +65,9 @@ export class StorageUI {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   isVisible(): boolean {
@@ -97,29 +84,46 @@ export class StorageUI {
       .setDepth(980)
       .setVisible(false);
 
-    // Hintergrund (NineSlice)
-    const bg = createPanel(this.scene, 0, 0, this.panelW, this.panelH, {
-      alpha: 0.96,
-      fallbackColor: UI_COLORS.PANEL_BG_DARK,
-    });
+    // Hintergrund – Dark Glassmorphism (accent: Storage green)
+    const bg = this.scene.add.graphics();
+    drawGlassPanel(bg, 0, 0, this.panelW, this.panelH, UI_COLORS.GLASS_ACCENT_STORAGE, 16);
     this.container.add(bg);
 
     // Titel
     this.container.add(
       this.scene.add.text(this.panelW / 2, 12, 'Lager', {
-        fontFamily: FONT_FAMILY, fontSize: '18px', color: UI_STR_COLORS.GOLD,
+        fontFamily: FONT_FAMILY, fontSize: '18px', color: UI_STR_COLORS.GLASS_STORAGE,
       }).setOrigin(0.5, 0),
     );
 
-    // Schliessen-Button (NineSlice)
-    const closeBtn = createButton(this.scene, {
-      x: this.panelW - 38, y: 6,
-      width: 30, height: 24,
-      label: 'X',
-      textStyle: { fontFamily: FONT_FAMILY, fontSize: '14px', color: UI_STR_COLORS.DAMAGE },
-      onClick: () => this.hide(),
+    // Schliessen-Button – danger red circle
+    const closeBtnBg = this.scene.add.graphics();
+    closeBtnBg.fillStyle(0xE94560, 1);
+    closeBtnBg.fillRoundedRect(this.panelW - 38, 6, 30, 24, 8);
+    closeBtnBg.lineStyle(1, 0xFF6080, 0.6);
+    closeBtnBg.strokeRoundedRect(this.panelW - 38, 6, 30, 24, 8);
+    this.container.add(closeBtnBg);
+
+    const closeText = this.scene.add.text(this.panelW - 38 + 15, 6 + 12, 'X', {
+      fontFamily: FONT_FAMILY, fontSize: '14px', color: '#FFFFFF', fontStyle: 'bold',
+    }).setOrigin(0.5);
+    this.container.add(closeText);
+
+    const closeHit = this.scene.add.zone(this.panelW - 38 + 15, 6 + 12, 30, 24).setInteractive({ useHandCursor: true });
+    closeHit.on('pointerdown', () => this.hide());
+    closeHit.on('pointerover', () => {
+      closeBtnBg.clear();
+      closeBtnBg.fillStyle(0xFF1040, 1);
+      closeBtnBg.fillRoundedRect(this.panelW - 38, 6, 30, 24, 8);
     });
-    this.container.add(closeBtn.container);
+    closeHit.on('pointerout', () => {
+      closeBtnBg.clear();
+      closeBtnBg.fillStyle(0xE94560, 1);
+      closeBtnBg.fillRoundedRect(this.panelW - 38, 6, 30, 24, 8);
+      closeBtnBg.lineStyle(1, 0xFF6080, 0.6);
+      closeBtnBg.strokeRoundedRect(this.panelW - 38, 6, 30, 24, 8);
+    });
+    this.container.add(closeHit);
 
     // Content-Container (wird bei jedem show() neu gebaut)
     this.contentContainer = this.scene.add.container(0, 40);
@@ -145,14 +149,16 @@ export class StorageUI {
     let y = 0;
 
     for (const cat of RESOURCE_CATEGORIES) {
-      // Kategorie-Header (NineSlice)
-      const headerBg = createNineSlice(this.scene, left, y, colW, 22,
-        'UI_HUD_BAR', UI_COLORS.PANEL_BG, 0.8);
+      // Kategorie-Header – glass info bar
+      const headerBg = this.scene.add.graphics();
+      drawGlassInfoBar(headerBg, left, y, colW, 22, 8);
+      headerBg.lineStyle(1, UI_COLORS.GLASS_ACCENT_STORAGE, 0.35);
+      headerBg.strokeRoundedRect(left, y, colW, 22, 8);
       this.contentContainer.add(headerBg);
 
       this.contentContainer.add(
         this.scene.add.text(left + 8, y + 3, `${cat.icon} ${cat.label}`, {
-          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD,
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_STORAGE,
         }),
       );
       y += 26;
@@ -184,8 +190,8 @@ export class StorageUI {
           }),
         );
 
-        // Menge rechts, farbig je nach Bestand
-        const color = amount === 0 ? UI_STR_COLORS.DISABLED : amount >= 10 ? UI_STR_COLORS.HEAL : UI_STR_COLORS.LIGHT;
+        // Menge rechts, farbig je nach Bestand (glass palette)
+        const color = amount === 0 ? UI_STR_COLORS.GLASS_DISABLED : amount >= 10 ? UI_STR_COLORS.GLASS_STORAGE : UI_STR_COLORS.LIGHT;
         this.contentContainer.add(
           this.scene.add.text(left + colW - 12, y, String(amount), {
             fontFamily: FONT_FAMILY, fontSize: '12px', color,
@@ -196,6 +202,95 @@ export class StorageUI {
       }
 
       y += 6; // Abstand zwischen Kategorien
+    }
+
+    // ── Dynamische Gear-Sektion: alle Ausrüstungs-Items aus globalStock ──
+    const gearInStock = Object.entries(stock)
+      .filter(([id, qty]) => qty > 0 && ITEM_DEFS[id]?.gearSlot)
+      .sort(([a], [b]) => {
+        // Sort by tier (ascending): no tier tag = T1
+        const tierA = ITEM_DEFS[a]?.tags.find(t => t.startsWith('tier'));
+        const tierB = ITEM_DEFS[b]?.tags.find(t => t.startsWith('tier'));
+        const numA = tierA ? parseInt(tierA.replace('tier', ''), 10) : 1;
+        const numB = tierB ? parseInt(tierB.replace('tier', ''), 10) : 1;
+        return numA - numB;
+      });
+
+    if (gearInStock.length > 0) {
+      const headerBg = this.scene.add.graphics();
+      drawGlassInfoBar(headerBg, left, y, colW, 22, 8);
+      headerBg.lineStyle(1, UI_COLORS.GLASS_ACCENT_STORAGE, 0.35);
+      headerBg.strokeRoundedRect(left, y, colW, 22, 8);
+      this.contentContainer.add(headerBg);
+      this.contentContainer.add(
+        this.scene.add.text(left + 8, y + 3, '⚔ Ausrüstung', {
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_STORAGE,
+        }),
+      );
+      y += 26;
+
+      for (const [id, qty] of gearInStock) {
+        const def = ITEM_DEFS[id];
+        const name = def?.name ?? id;
+        const tierTag = def?.tags.find(t => t.startsWith('tier'));
+        const tierNum = tierTag ? parseInt(tierTag.replace('tier', ''), 10) : 1;
+        const tierColor = tierNum >= 4 ? UI_STR_COLORS.GOLD_BRIGHT : tierNum >= 3 ? UI_STR_COLORS.LOOT : tierNum >= 2 ? UI_STR_COLORS.INFO : UI_STR_COLORS.LIGHT;
+
+        let textX = left + 12;
+        const spriteKey = `ITEM_${id.toUpperCase()}`;
+        if (this.scene.textures.exists(spriteKey)) {
+          this.contentContainer.add(
+            this.scene.add.image(left + 18, y + 7, spriteKey).setDisplaySize(12, 12),
+          );
+          textX = left + 28;
+        }
+
+        this.contentContainer.add(
+          this.scene.add.text(textX, y, `${name} (T${tierNum})`, {
+            fontFamily: FONT_FAMILY, fontSize: '12px', color: tierColor,
+          }),
+        );
+        this.contentContainer.add(
+          this.scene.add.text(left + colW - 12, y, String(qty), {
+            fontFamily: FONT_FAMILY, fontSize: '12px', color: tierColor,
+          }).setOrigin(1, 0),
+        );
+        y += 18;
+      }
+      y += 6;
+    }
+
+    // ── Spezial-Items (crystal_shard, talisman_fragment) ──
+    const specialKeys = ['crystal_shard', 'talisman_fragment'];
+    const specialInStock = specialKeys.filter(k => (stock[k] ?? 0) > 0);
+    if (specialInStock.length > 0) {
+      const headerBg2 = this.scene.add.graphics();
+      drawGlassInfoBar(headerBg2, left, y, colW, 22, 8);
+      headerBg2.lineStyle(1, UI_COLORS.GLASS_ACCENT_STORAGE, 0.35);
+      headerBg2.strokeRoundedRect(left, y, colW, 22, 8);
+      this.contentContainer.add(headerBg2);
+      this.contentContainer.add(
+        this.scene.add.text(left + 8, y + 3, '💎 Relikte', {
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_STORAGE,
+        }),
+      );
+      y += 26;
+      for (const key of specialInStock) {
+        const qty = stock[key] ?? 0;
+        const name = DISPLAY_NAMES[key] ?? key;
+        this.contentContainer.add(
+          this.scene.add.text(left + 12, y, name, {
+            fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.LIGHT,
+          }),
+        );
+        this.contentContainer.add(
+          this.scene.add.text(left + colW - 12, y, String(qty), {
+            fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.LIGHT,
+          }).setOrigin(1, 0),
+        );
+        y += 18;
+      }
+      y += 6;
     }
 
     // Gesamtwert-Zeile
@@ -209,7 +304,7 @@ export class StorageUI {
 
     this.contentContainer.add(
       this.scene.add.text(left + 8, y, `Gesamt: ${totalItems} Gegenstaende | ${totalGold} Gold`, {
-        fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_DIM,
       }),
     );
 
@@ -220,14 +315,11 @@ export class StorageUI {
 
   private redrawBackground(): void {
     const bg = this.container.getAt(0);
-    if (bg instanceof Phaser.GameObjects.NineSlice) {
-      bg.setSize(this.panelW, this.panelH);
-    } else if (bg instanceof Phaser.GameObjects.Graphics) {
+    if (bg instanceof Phaser.GameObjects.Graphics) {
       bg.clear();
-      bg.fillStyle(UI_COLORS.PANEL_BG_DARK, 0.96);
-      bg.fillRoundedRect(0, 0, this.panelW, this.panelH, 8);
-      bg.lineStyle(2, UI_COLORS.PANEL_BORDER, 1);
-      bg.strokeRoundedRect(0, 0, this.panelW, this.panelH, 8);
+      drawGlassPanel(bg, 0, 0, this.panelW, this.panelH, UI_COLORS.GLASS_ACCENT_STORAGE, 16);
+    } else if (bg instanceof Phaser.GameObjects.NineSlice) {
+      bg.setSize(this.panelW, this.panelH);
     }
 
     // Position neu zentrieren
@@ -236,6 +328,6 @@ export class StorageUI {
 
     // Sofort repositionieren damit kein 1-Frame-Glitch entsteht
     const cam = this.scene.cameras.main;
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    this.container.setPosition(cam.worldView.x + this.screenX, cam.worldView.y + this.screenY);
   }
 }

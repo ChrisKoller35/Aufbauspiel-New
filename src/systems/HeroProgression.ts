@@ -62,9 +62,18 @@ interface LevelBonus {
 
 /** Stat-Bonus pro Level-Up, nach Klasse */
 const LEVEL_BONUSES: Record<string, LevelBonus> = {
-  guardian: { hp: 4, atk: 0.3, def: 0.5 },
-  ranger:  { hp: 2, atk: 0.6, def: 0.1, critChance: 0.01 },
-  cleric:  { hp: 3, atk: 0.2, def: 0.3, spd: 0.02 },
+  // Basis-Klassen
+  guardian:    { hp: 4, atk: 0.3, def: 0.5 },
+  ranger:      { hp: 2, atk: 0.6, def: 0.1, critChance: 0.01 },
+  cleric:      { hp: 3, atk: 0.2, def: 0.3, spd: 0.02 },
+  // Unlock-Klassen
+  berserker:   { hp: 3, atk: 0.5, def: 0.2 },                       // aggressiver DPS
+  assassin:    { hp: 2, atk: 0.6, def: 0.1, critChance: 0.01 },     // burst/crit DPS
+  paladin:     { hp: 4, atk: 0.25, def: 0.4 },                      // defensiver Tank/Heiler
+  bard:        { hp: 2, atk: 0.2, def: 0.2, spd: 0.02 },            // Support, Speed-Fokus
+  witch:       { hp: 2, atk: 0.4, def: 0.1, critChance: 0.01 },     // AoE DPS
+  necromancer: { hp: 2, atk: 0.35, def: 0.2 },                      // Beschwörer-DPS
+  druid:       { hp: 3, atk: 0.25, def: 0.25, spd: 0.01 },          // Heiler/Hybrid
 };
 
 /** Default Bonus wenn Klasse nicht in der Tabelle */

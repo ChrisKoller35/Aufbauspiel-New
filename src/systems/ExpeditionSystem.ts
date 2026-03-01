@@ -37,6 +37,7 @@ export class ExpeditionSystem {
     difficulty: string = 'normal',
     modifierId: string | null = null,
     isGrandmasterTrial: boolean = false,
+    requestedConsumables?: string[],
   ): ExpeditionRun | null {
     const route = ROUTE_DEFS[routeId];
     if (!route) return null;
@@ -96,8 +97,34 @@ export class ExpeditionSystem {
       }
     }
 
-    // Load provisions
-    const provisions = this.provisionSystem.loadProvisions(state, 4, []);
+    // Load provisions: use player-selected consumables or auto-fill from stock
+    let provisions: { itemId: string; qty: number }[];
+    if (requestedConsumables && requestedConsumables.length > 0) {
+      // Manual selection: take one of each requested item from stock
+      provisions = [];
+      for (const itemId of requestedConsumables) {
+        const available = state.globalStock[itemId] ?? 0;
+        if (available > 0) {
+          const existing = provisions.find(p => p.itemId === itemId);
+          if (existing) {
+            existing.qty += 1;
+          } else {
+            provisions.push({ itemId, qty: 1 });
+          }
+          state.globalStock[itemId] = available - 1;
+        }
+      }
+      // Always add 1 guaranteed healing_potion as safety net (if not already selected)
+      provisions.push({ itemId: 'healing_potion', qty: 1 });
+      provisions.push({ itemId: 'bread', qty: 1 });
+      provisions.push({ itemId: 'power_bread', qty: 1 });
+    } else {
+      // Legacy auto-fill
+      provisions = this.provisionSystem.loadProvisions(state, 4, []);
+      provisions.push({ itemId: 'healing_potion', qty: 1 });
+      provisions.push({ itemId: 'bread', qty: 1 });
+      provisions.push({ itemId: 'power_bread', qty: 1 });
+    }
 
     const rng = new SeededRNG(state.rngSeed++);
 
@@ -123,6 +150,7 @@ export class ExpeditionSystem {
       enemiesKilled: 0,
       bossesKilled: 0,
       isGrandmasterTrial: isGrandmasterTrial || undefined,
+      abilitiesUsed: {},
     };
 
     state.activeExpedition = run;
@@ -483,6 +511,76 @@ export class ExpeditionSystem {
     run.provisions = run.provisions.filter(p => p.qty > 0);
   }
 
+  // ─── Pre-Combat Ability Use ────────────────────────────────────
+
+  /**
+   * Use a hero's class ability in the pre-combat preview phase.
+   * Each hero can use their ability only once per expedition.
+   * Returns a human-readable result string (shown in the UI).
+   */
+  useAbilityInPreview(run: ExpeditionRun, unitId: number, skillId: string, room: EncounterRoom): string {
+    if (run.abilitiesUsed[unitId]) return 'Bereits eingesetzt!';
+
+    const unit = run.party.find(u => u.id === unitId);
+    if (!unit || unit.hp <= 0) return 'Held nicht verfügbar.';
+
+    const skill = unit.skills.find(s => s.id === skillId);
+    if (!skill) return 'Fähigkeit nicht gefunden.';
+
+    const aliveParty = run.party.filter(u => u.hp > 0);
+    let result = '';
+
+    switch (skill.effectType) {
+      case 'heal': {
+        const lowest = aliveParty.reduce((a, b) => a.hp < b.hp ? a : b);
+        const healAmt = Math.floor(skill.power);
+        lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
+        result = `${unit.name} wirkt ${skill.name} → ${lowest.name} heilt ${healAmt} HP!`;
+        break;
+      }
+      case 'buff':
+      case 'summon': {
+        const rounds = skill.effectType === 'summon' ? 4 : 3;
+        unit.atk += skill.power;
+        unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: rounds });
+        result = `${unit.name} wirkt ${skill.name} → +${skill.power} ATK für ${rounds} Runden!`;
+        break;
+      }
+      case 'taunt': {
+        // Guardian's Spott: redirect all enemy attacks to Guardian this combat
+        run.guardianTauntActive = true;
+        result = `${unit.name} wirkt ${skill.name} → Alle Angriffe zielen auf den Guardian!`;
+        break;
+      }
+      case 'damage': {
+        const enemy = room.enemies.find(e => e.hp > 0);
+        if (enemy) {
+          const dmg = Math.max(1, Math.floor(unit.atk * skill.power) - enemy.def);
+          enemy.hp -= dmg;
+          result = `${unit.name} wirkt ${skill.name} → ${enemy.name} erleidet ${dmg} Schaden!`;
+        } else {
+          result = `${unit.name} wirkt ${skill.name} → Kein Ziel verfügbar.`;
+        }
+        break;
+      }
+      case 'aoe': {
+        const aliveEnemies = room.enemies.filter(e => e.hp > 0);
+        for (const e of aliveEnemies) {
+          const dmg = Math.max(1, Math.floor(unit.atk * skill.power) - e.def);
+          e.hp -= dmg;
+        }
+        result = `${unit.name} wirkt ${skill.name} → Alle Gegner erleiden Schaden!`;
+        break;
+      }
+      default:
+        result = `${unit.name} wirkt ${skill.name}.`;
+    }
+
+    run.abilitiesUsed[unitId] = true;
+    run.combatLog.push(`[Vorbereitung] ${result}`);
+    return result;
+  }
+
   // ─── Combat ─────────────────────────────────────────────────────
 
   private processCombat(run: ExpeditionRun, room: EncounterRoom, rng: SeededRNG): void {
@@ -523,14 +621,30 @@ export class ExpeditionSystem {
         if (unit.hp <= 0) continue;
 
         const isPlayer = party.includes(unit);
-        const targets = isPlayer
-          ? enemies.filter(u => u.hp > 0)
-          : party.filter(u => u.hp > 0);
+
+        // Build target list - apply Guardian Spott redirect for enemy units
+        let targets: CombatUnit[];
+        if (isPlayer) {
+          targets = enemies.filter(u => u.hp > 0);
+        } else if (run.guardianTauntActive) {
+          // Guardian's Spott: all enemy attacks go to Guardian (even if dead, hp goes negative)
+          // IMPORTANT: search run.party (all), not party (alive only), so dead guardian still absorbs hits
+          const guardian = run.party.find(u => u.classId === 'guardian');
+          if (guardian) {
+            targets = [guardian];
+          } else {
+            run.guardianTauntActive = false;
+            targets = party.filter(u => u.hp > 0);
+          }
+        } else {
+          targets = party.filter(u => u.hp > 0);
+        }
 
         if (targets.length === 0) break;
 
-        // Check skills
+        // Check skills - only for enemy units (player abilities are used pre-combat via ability UI)
         let usedSkill = false;
+        if (!isPlayer) { // enemy skills only
         for (const skill of unit.skills) {
           if (skill.currentCooldown > 0) {
             skill.currentCooldown--;
@@ -543,26 +657,6 @@ export class ExpeditionSystem {
             const lowest = allies.reduce((a, b) => a.hp < b.hp ? a : b);
             let healAmt = skill.power;
             // anti_heal debuff reduces healing by 50%
-            if (lowest.antiHealDebuff) healAmt = Math.floor(healAmt * 0.5);
-            lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
-            run.combatLog.push(`${unit.name} uses ${skill.name} → heals ${lowest.name} for ${healAmt}`);
-            skill.currentCooldown = skill.cooldown;
-            usedSkill = true;
-            break;
-          }
-
-          if (skill.effectType === 'heal' && isPlayer) {
-            // Feature #18: Grandmaster Trial – keine Heilungs-Skills während Boss-Kämpfen
-            if (run.isGrandmasterTrial && room.type === 'boss') {
-              run.combatLog.push(`${unit.name}: GROSSMEISTER-PRÜFUNG! Heilung blockiert!`);
-              skill.currentCooldown = skill.cooldown;
-              usedSkill = true;
-              break;
-            }
-            const allies = party.filter(u => u.hp > 0);
-            const lowest = allies.reduce((a, b) => a.hp < b.hp ? a : b);
-            // F5: anti_heal debuff reduces player healing by 50%
-            let healAmt = skill.power;
             if (lowest.antiHealDebuff) healAmt = Math.floor(healAmt * 0.5);
             lowest.hp = Math.min(lowest.maxHp, lowest.hp + healAmt);
             run.combatLog.push(`${unit.name} uses ${skill.name} → heals ${lowest.name} for ${healAmt}`);
@@ -643,6 +737,7 @@ export class ExpeditionSystem {
             break;
           }
         }
+        } // end if (!isPlayer) - enemy skills only
 
         // Basic attack if no skill used
         if (!usedSkill) {
@@ -757,6 +852,9 @@ export class ExpeditionSystem {
         run.focusTargetCooldown--;
       }
     }
+
+    // Clear Guardian taunt after combat ends
+    run.guardianTauntActive = false;
 
     // Award loot from defeated enemies
     for (const enemy of enemies) {
@@ -1045,6 +1143,7 @@ export class ExpeditionSystem {
       critMult: stats.critMult,
       threat: 0,
       tauntRounds: 0,
+      classId: fighter.classId,
       skills: (cls?.skills ?? []).map(s => ({
         id: s.id,
         name: s.name,

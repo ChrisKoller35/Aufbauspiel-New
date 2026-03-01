@@ -1,11 +1,11 @@
 import Phaser from 'phaser';
 import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../data/buildings';
 import { UI_COLORS, UI_STR_COLORS, FONT_FAMILY } from '../rendering/Colors';
-import { createNineSlice, createButton, UIButton } from '../rendering/UIHelper';
+import { createButton, UIButton, drawGlassPanel, drawGlassInfoBar } from '../rendering/UIHelper';
 import { StatusBar } from './StatusBar';
 import { Sidebar } from './Sidebar';
 
-export type BuildMode = 'none' | 'build' | 'road' | 'demolish';
+export type BuildMode = 'none' | 'build' | 'road' | 'demolish' | 'swamp';
 
 export class BuildMenu {
   private scene: Phaser.Scene;
@@ -26,7 +26,9 @@ export class BuildMenu {
   private screenY!: number;
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   private create(): void {
@@ -35,18 +37,10 @@ export class BuildMenu {
     this.screenY = screenH - 60 - StatusBar.HEIGHT;
     this.container = this.scene.add.container(0, this.screenY).setDepth(900);
 
-    // ── Background bar (NineSlice or Graphics fallback) ──
-    const bg = createNineSlice(
-      this.scene, 0, 0, screenW, 60,
-      'UI_BUILDMENU_BG',
-      UI_COLORS.PANEL_BG, 0.9,
-    );
+    // ── Background bar – Dark Glassmorphism ──
+    const bg = this.scene.add.graphics();
+    drawGlassPanel(bg, 0, 0, screenW, 60, UI_COLORS.GLASS_ACCENT_BUILD, 0);
     this.container.add(bg);
-    // For Graphics fallback, add top border line
-    if (bg instanceof Phaser.GameObjects.Graphics) {
-      bg.lineStyle(2, UI_COLORS.PANEL_BORDER, 1);
-      bg.lineBetween(0, 0, screenW, 0);
-    }
 
     // ── Mode buttons: Build, Road, Demolish ──
     const modes: { label: string; mode: BuildMode }[] = [
@@ -62,7 +56,7 @@ export class BuildMenu {
         width: 90,
         height: 44,
         label: m.label,
-        textStyle: { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT },
+        textStyle: { fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_BUILD },
         onClick: () => {
           if (this.currentMode === m.mode) {
             this.setMode('none');
@@ -71,6 +65,13 @@ export class BuildMenu {
           }
         },
       });
+      // Style the button bg with glass look
+      if (uiBtn.bg instanceof Phaser.GameObjects.Graphics) {
+        (uiBtn.bg as Phaser.GameObjects.Graphics).clear();
+        drawGlassInfoBar(uiBtn.bg as Phaser.GameObjects.Graphics, 0, 0, 90, 44, 8);
+        (uiBtn.bg as Phaser.GameObjects.Graphics).lineStyle(2, UI_COLORS.GLASS_ACCENT_BUILD, 0.5);
+        (uiBtn.bg as Phaser.GameObjects.Graphics).strokeRoundedRect(0, 0, 90, 44, 8);
+      }
       this.container.add(uiBtn.container);
       this.modeButtonRefs.push(uiBtn);
       this.modeButtons.push(uiBtn.container);
@@ -78,7 +79,7 @@ export class BuildMenu {
 
     // ── Cancel hint ──
     const cancelText = this.scene.add.text(screenW - 140, 20, 'ESC = Abbrechen', {
-      fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.DIM,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_DIM,
     });
     this.container.add(cancelText);
 
@@ -95,12 +96,12 @@ export class BuildMenu {
 
       const btn = this.scene.add.container(x, 5);
 
-      // Card background (NineSlice or Graphics fallback)
-      const cardBg = createNineSlice(
-        this.scene, 0, 0, cardW, cardH,
-        'UI_CARD_BG',
-        UI_COLORS.BTN_DARK, 1.0,
-      );
+      // Card background – glass style
+      const cardBg = this.scene.add.graphics();
+      cardBg.fillStyle(UI_COLORS.GLASS_BASE, 0.95);
+      cardBg.fillRoundedRect(0, 0, cardW, cardH, 8);
+      cardBg.lineStyle(2, UI_COLORS.GLASS_ACCENT_BUILD, 0.45);
+      cardBg.strokeRoundedRect(0, 0, cardW, cardH, 8);
       btn.add(cardBg);
 
       // Try to use sprite, fallback to text
@@ -110,12 +111,12 @@ export class BuildMenu {
           .setDisplaySize(34, 34);
       } else {
         icon = this.scene.add.text(32, 18, typeId.substring(0, 3), {
-          fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.LIGHT,
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GLASS_BUILD,
         }).setOrigin(0.5);
       }
 
       const label = this.scene.add.text(32, 44, def.name.substring(0, 8), {
-        fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.DIM,
+        fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.GLASS_DIM,
       }).setOrigin(0.5);
 
       btn.add([icon, label]);
@@ -127,29 +128,25 @@ export class BuildMenu {
         this.onSelectBuilding?.(typeId);
       });
 
-      // Hover: swap texture if NineSlice, else redraw Graphics
+      // Hover: glass glow effect
       btn.on('pointerover', () => {
-        if (cardBg instanceof Phaser.GameObjects.NineSlice) {
-          // Slightly brighten via tint
-          cardBg.setTint(0xBBBBBB);
-        } else {
-          (cardBg as Phaser.GameObjects.Graphics).clear()
-            .fillStyle(UI_COLORS.BTN_DARK_HOVER, 1)
-            .fillRoundedRect(0, 0, cardW, cardH, 6);
-          (cardBg as Phaser.GameObjects.Graphics).lineStyle(2, UI_COLORS.PANEL_BORDER, 0.6);
-          (cardBg as Phaser.GameObjects.Graphics).strokeRoundedRect(0, 0, cardW, cardH, 6);
-        }
+        cardBg.clear();
+        // Glow on hover
+        cardBg.lineStyle(8, UI_COLORS.GLASS_ACCENT_BUILD, 0.18);
+        cardBg.strokeRoundedRect(-4, -4, cardW + 8, cardH + 8, 12);
+        cardBg.lineStyle(4, UI_COLORS.GLASS_ACCENT_BUILD, 0.35);
+        cardBg.strokeRoundedRect(-1, -1, cardW + 2, cardH + 2, 9);
+        cardBg.fillStyle(UI_COLORS.GLASS_OVERLAY, 1);
+        cardBg.fillRoundedRect(0, 0, cardW, cardH, 8);
+        cardBg.lineStyle(2, UI_COLORS.GLASS_ACCENT_BUILD, 0.9);
+        cardBg.strokeRoundedRect(0, 0, cardW, cardH, 8);
       });
       btn.on('pointerout', () => {
-        if (cardBg instanceof Phaser.GameObjects.NineSlice) {
-          cardBg.clearTint();
-        } else {
-          (cardBg as Phaser.GameObjects.Graphics).clear()
-            .fillStyle(UI_COLORS.BTN_DARK, 1)
-            .fillRoundedRect(0, 0, cardW, cardH, 6);
-          (cardBg as Phaser.GameObjects.Graphics).lineStyle(2, UI_COLORS.PANEL_BORDER, 0.6);
-          (cardBg as Phaser.GameObjects.Graphics).strokeRoundedRect(0, 0, cardW, cardH, 6);
-        }
+        cardBg.clear();
+        cardBg.fillStyle(UI_COLORS.GLASS_BASE, 0.95);
+        cardBg.fillRoundedRect(0, 0, cardW, cardH, 8);
+        cardBg.lineStyle(2, UI_COLORS.GLASS_ACCENT_BUILD, 0.45);
+        cardBg.strokeRoundedRect(0, 0, cardW, cardH, 8);
       });
 
       this.container.add(btn);

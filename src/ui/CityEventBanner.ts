@@ -57,14 +57,14 @@ export class CityEventBanner {
 
     // Description
     this.descText = this.scene.add.text(bannerW / 2, 32, '', {
-      fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
       wordWrap: { width: bannerW - 20 },
     }).setOrigin(0.5, 0);
     this.container.add(this.descText);
 
     // Timer
     this.timerText = this.scene.add.text(bannerW - 10, 60, '', {
-      fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.DIM,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DIM,
     }).setOrigin(1, 0);
     this.container.add(this.timerText);
 
@@ -96,7 +96,7 @@ export class CityEventBanner {
         btnBg.fillRoundedRect(0, 0, 80, 22, 4);
         btn.add(btnBg);
         const btnText = this.scene.add.text(40, 11, 'Kaufen', {
-          fontFamily: FONT_FAMILY, fontSize: '11px', color: '#000000',
+          fontFamily: FONT_FAMILY, fontSize: '13px', color: '#000000',
           fontStyle: 'bold',
         }).setOrigin(0.5);
         btn.add(btnText);
@@ -127,12 +127,14 @@ export class CityEventBanner {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
+    const z = cam.zoom;
     const screenW = this.scene.scale.width;
     const bannerW = 360;
     this.container.setPosition(
-      cam.scrollX + (screenW - bannerW) / 2,
-      cam.scrollY + 40,
+      cam.worldView.x + (screenW - bannerW) / 2 / z,
+      cam.worldView.y + 40 / z,
     );
+    this.container.setScale(1 / z);
   }
 
   isVisible(): boolean {

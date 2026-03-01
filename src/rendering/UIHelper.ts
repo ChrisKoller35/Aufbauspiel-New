@@ -181,7 +181,7 @@ export function createButton(
   let labelText: Phaser.GameObjects.Text | undefined;
   if (label) {
     const labelY = iconKey ? height / 2 + iconSize / 2 : height / 2;
-    const style = textStyle ?? { fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.LIGHT };
+    const style = textStyle ?? { fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT };
     labelText = scene.add.text(width / 2, labelY, label, style).setOrigin(0.5);
     container.add(labelText);
   }
@@ -364,7 +364,7 @@ export function createTab(
 
   const textColor = config.active ? UI_STR_COLORS.GOLD : UI_STR_COLORS.DIM;
   const labelText = scene.add.text(width / 2, height / 2, label, {
-    fontFamily: FONT_FAMILY, fontSize: '11px', color: textColor,
+    fontFamily: FONT_FAMILY, fontSize: '13px', color: textColor,
   }).setOrigin(0.5);
   container.add(labelText);
 
@@ -464,7 +464,7 @@ export function createResourceSlot(
   } else {
     container.add(
       scene.add.text(4, height / 2 - 6, fallbackLabel, {
-        fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.GOLD,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.GOLD,
       }),
     );
   }
@@ -480,4 +480,172 @@ export function createResourceSlot(
     valueText,
     setValue: (val: string) => valueText.setText(val),
   };
+}
+
+// ============================================================
+// DARK GLASSMORPHISM GAMING STYLE (UI_DESIGN_GUIDE)
+// Per-Panel Accent Colors + Neon Glow Borders
+// ============================================================
+
+/**
+ * Draws a Dark Glassmorphism panel onto a Graphics object.
+ * Simulates: dark gradient bg + 3px colored border + box-shadow 40px glow.
+ */
+export function drawGlassPanel(
+  g: Phaser.GameObjects.Graphics,
+  x: number, y: number,
+  w: number, h: number,
+  accentColor: number,
+  radius = 16,
+): void {
+  // Glow rings (box-shadow: 0 0 40px rgba(accent, 0.4) simulation)
+  g.lineStyle(16, accentColor, 0.04);
+  g.strokeRoundedRect(x - 8, y - 8, w + 16, h + 16, radius + 8);
+  g.lineStyle(10, accentColor, 0.10);
+  g.strokeRoundedRect(x - 5, y - 5, w + 10, h + 10, radius + 5);
+  g.lineStyle(5,  accentColor, 0.22);
+  g.strokeRoundedRect(x - 2, y - 2, w + 4,  h + 4,  radius + 2);
+
+  // Dark gradient background (linear-gradient(135deg, #1a1a2e, #16213e) simulation)
+  g.fillStyle(UI_COLORS.GLASS_BASE, 1);
+  g.fillRoundedRect(x, y, w, h, radius);
+  // Diagonal overlay: upper-right lighter
+  g.fillStyle(UI_COLORS.GLASS_OVERLAY, 0.55);
+  g.fillRoundedRect(x + Math.floor(w * 0.25), y, Math.floor(w * 0.75), h, radius);
+
+  // Colored border (border: 3px solid accent)
+  g.lineStyle(3, accentColor, 0.88);
+  g.strokeRoundedRect(x, y, w, h, radius);
+
+  // Subtle top-edge shine
+  g.lineStyle(1, 0xFFFFFF, 0.06);
+  g.lineBetween(x + radius, y + 1, x + w - radius, y + 1);
+}
+
+/**
+ * Draws a semi-transparent info bar (rgba(255,255,255,0.08) style).
+ */
+export function drawGlassInfoBar(
+  g: Phaser.GameObjects.Graphics,
+  x: number, y: number,
+  w: number, h: number,
+  radius = 8,
+): void {
+  g.fillStyle(0xFFFFFF, 0.08);
+  g.fillRoundedRect(x, y, w, h, radius);
+  g.lineStyle(1, 0xFFFFFF, 0.12);
+  g.strokeRoundedRect(x, y, w, h, radius);
+}
+
+// ─── Glass Button ───────────────────────────────────────────
+
+export interface GlassButtonConfig {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  label: string;
+  accentColor: number;    // Phaser hex, e.g. UI_COLORS.GLASS_ACCENT_GUILD
+  accentStr: string;      // CSS string, e.g. UI_STR_COLORS.GLASS_GUILD
+  onClick: () => void;
+  fontSize?: string;
+  variant?: 'primary' | 'secondary' | 'danger';
+}
+
+/**
+ * Creates a Dark Glassmorphism button.
+ * primary = gradient fill + glow
+ * secondary = transparent with dim border
+ * danger = red tint
+ */
+export function createGlassButton(
+  scene: Phaser.Scene,
+  config: GlassButtonConfig,
+): Phaser.GameObjects.Container {
+  const {
+    x, y, width, height, label,
+    accentColor, accentStr, onClick,
+    fontSize = '15px',
+    variant = 'primary',
+  } = config;
+  const R = 8;
+  const container = scene.add.container(x, y);
+  const bg = scene.add.graphics();
+
+  const drawNormal = () => {
+    bg.clear();
+    if (variant === 'primary') {
+      bg.fillStyle(0x0b1320, 1);
+      bg.fillRoundedRect(0, 0, width, height, R);
+      // Accent overlay on top half (gradient simulation)
+      bg.fillStyle(accentColor, 0.20);
+      bg.fillRoundedRect(0, 0, width, Math.floor(height * 0.55), R);
+      bg.lineStyle(2, accentColor, 0.65);
+      bg.strokeRoundedRect(0, 0, width, height, R);
+    } else if (variant === 'secondary') {
+      bg.fillStyle(0xFFFFFF, 0.06);
+      bg.fillRoundedRect(0, 0, width, height, R);
+      bg.lineStyle(1, 0xFFFFFF, 0.18);
+      bg.strokeRoundedRect(0, 0, width, height, R);
+    } else {
+      bg.fillStyle(0xE94560, 0.15);
+      bg.fillRoundedRect(0, 0, width, height, R);
+      bg.lineStyle(1, 0xE94560, 0.7);
+      bg.strokeRoundedRect(0, 0, width, height, R);
+    }
+    bg.lineStyle(1, 0xFFFFFF, 0.05);
+    bg.lineBetween(R, 1, width - R, 1);
+  };
+
+  const drawHover = () => {
+    bg.clear();
+    if (variant === 'primary') {
+      // Glow
+      bg.lineStyle(8, accentColor, 0.12);
+      bg.strokeRoundedRect(-4, -4, width + 8, height + 8, R + 4);
+      bg.lineStyle(4, accentColor, 0.28);
+      bg.strokeRoundedRect(-2, -2, width + 4, height + 4, R + 2);
+      // Body
+      bg.fillStyle(0x1a2640, 1);
+      bg.fillRoundedRect(0, 0, width, height, R);
+      bg.fillStyle(accentColor, 0.35);
+      bg.fillRoundedRect(0, 0, width, Math.floor(height * 0.55), R);
+      bg.lineStyle(2, accentColor, 0.95);
+      bg.strokeRoundedRect(0, 0, width, height, R);
+    } else if (variant === 'secondary') {
+      bg.fillStyle(0xFFFFFF, 0.12);
+      bg.fillRoundedRect(0, 0, width, height, R);
+      bg.lineStyle(1, 0xFFFFFF, 0.32);
+      bg.strokeRoundedRect(0, 0, width, height, R);
+    } else {
+      bg.fillStyle(0xE94560, 0.25);
+      bg.fillRoundedRect(0, 0, width, height, R);
+      bg.lineStyle(2, 0xE94560, 0.90);
+      bg.strokeRoundedRect(0, 0, width, height, R);
+    }
+    bg.lineStyle(1, 0xFFFFFF, 0.09);
+    bg.lineBetween(R, 1, width - R, 1);
+  };
+
+  drawNormal();
+  container.add(bg);
+
+  const labelColor = variant === 'primary' ? accentStr
+    : variant === 'secondary' ? '#cccccc'
+    : '#E94560';
+
+  const labelText = scene.add.text(width / 2, height / 2, label, {
+    fontFamily: FONT_FAMILY, fontSize, color: labelColor, fontStyle: 'bold',
+  }).setOrigin(0.5);
+  container.add(labelText);
+
+  container.setInteractive(
+    new Phaser.Geom.Rectangle(0, 0, width, height),
+    Phaser.Geom.Rectangle.Contains,
+  );
+  container.on('pointerover',  () => drawHover());
+  container.on('pointerout',   () => drawNormal());
+  container.on('pointerdown',  onClick);
+
+  return container;
 }

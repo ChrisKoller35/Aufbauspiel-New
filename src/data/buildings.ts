@@ -16,6 +16,7 @@ export interface BuildingDef {
   training: { trainingTimeSec: number; trainingCost: Record<string, number> } | null;
   tags: string[];
   requirements?: { waterSupplied?: boolean };
+  manualCraft?: boolean;  // true = player must click "Herstellen" to start each cycle
   spriteKey: string;
 }
 
@@ -229,6 +230,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['craft', 'gear'],
+    manualCraft: true,
     spriteKey: 'SMITHY',
   },
   IRON_MINE: {
@@ -268,6 +270,25 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['road', 'walkable'],
     spriteKey: 'ROAD',
+  },
+  DUNGEON_CAMP: {
+    id: 'DUNGEON_CAMP',
+    name: 'Dungeon-Lager',
+    tier: 1,
+    category: 'hub',
+    footprint: [4, 4],
+    buildCost: {},
+    buildTimeSec: 0,
+    workerSlots: 0,
+    requiresConnectivity: false,
+    storage: null,
+    recipes: [],
+    radiusEffect: null,
+    housing: null,
+    expeditions: { partySlots: 3, maxActiveRuns: 1 },
+    training: null,
+    tags: ['hub', 'dungeon'],
+    spriteKey: 'GUILD_HALL',
   },
 };
 

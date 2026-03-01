@@ -21,6 +21,7 @@ export interface BuildingInstance {
   upgradeProgress: number;       // seconds of upgrade time completed
   upgradeId: string | null;      // which upgrade is in progress
   eventPaused: boolean;          // true = paused by storm event
+  pendingCraft: boolean;         // true = player triggered manual craft, start next cycle
 }
 
 let nextBuildingId = 1;
@@ -54,6 +55,7 @@ export function createBuildingInstance(
     upgradeProgress: 0,
     upgradeId: null,
     eventPaused: false,
+    pendingCraft: false,
   };
 }
 

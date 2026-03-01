@@ -59,6 +59,18 @@ export class BootScene extends Phaser.Scene {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 
+    // --- Isometric Building Sprites (used when ISO_MODE = true) ---
+    [
+      'ISO_HOUSE', 'ISO_GUILD_HALL', 'ISO_WAREHOUSE',
+      'ISO_FARM_GRAIN', 'ISO_MILL_WIND', 'ISO_BAKERY', 'ISO_LUMBER_CAMP',
+      'ISO_QUARRY', 'ISO_HERB_GARDEN', 'ISO_SMITHY', 'ISO_IRON_MINE', 'ISO_WELL',
+      'ISO_DUNGEON_CAMP', 'ISO_DUNGEON_MOUNTAIN',
+      'ISO_GRASS_TILE', 'ISO_WATER_TILE',
+      'ISO_TREE_LARGE', 'ISO_TREE_PINE', 'ISO_TREE_SMALL',
+    ].forEach(key => {
+      this.load.image(key, `assets/sprites/final/${key}.png`);
+    });
+
     // --- Helden Sprites ---
     ['HERO_GUARDIAN', 'HERO_RANGER', 'HERO_CLERIC',
      'HERO_BERSERKER', 'HERO_ASSASSIN', 'HERO_PALADIN', 'HERO_BARD',
@@ -66,13 +78,21 @@ export class BootScene extends Phaser.Scene {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 
+    // --- Held-Portraits (große Charakter-Illustrationen) ---
+    ['PORTRAIT_GUARDIAN', 'PORTRAIT_RANGER', 'PORTRAIT_CLERIC'].forEach(key => {
+      this.load.image(key, `assets/sprites/final/${key}.png`);
+    });
+
     // --- Boss Sprites ---
-    ['BOSS_ELDER_TREANT', 'BOSS_BANDIT_CHIEF', 'BOSS_CRYSTAL_GOLEM', 'BOSS_SWAMP_HYDRA'].forEach(key => {
+    ['BOSS_ELDER_TREANT', 'BOSS_BANDIT_CHIEF', 'BOSS_CRYSTAL_GOLEM', 'BOSS_SWAMP_HYDRA',
+     'BOSS_SPIDER_QUEEN', 'BOSS_FALLEN_KNIGHT', 'BOSS_SHADOW_LICH', 'BOSS_MAGMA_WYRM',
+     'BOSS_ARCHIV_WATCHER', 'BOSS_ANCIENT_DRAGON'].forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 
     // --- Gegner Sprites ---
     const enemies = [
+      // MVP enemies
       'ENEMY_FOREST_WOLF', 'ENEMY_BANDIT_RAIDER', 'ENEMY_CAVE_SLIME',
       'ENEMY_THORN_SPRITE', 'ENEMY_FUNGAL_CREEPER', 'ENEMY_SHADOW_BAT',
       'ENEMY_MOSS_GOLEM', 'ENEMY_VENOMFANG_SPIDER', 'ENEMY_GOBLIN_SCOUT',
@@ -81,6 +101,12 @@ export class BootScene extends Phaser.Scene {
       'ENEMY_MINE_SPECTER', 'ENEMY_STALACTITE_BAT', 'ENEMY_MAGMA_SLUG',
       'ENEMY_BOG_WITCH', 'ENEMY_SWAMP_TROLL', 'ENEMY_LEECH_SWARM',
       'ENEMY_MIRE_PHANTOM', 'ENEMY_TOXIC_TOAD', 'ENEMY_ROT_WALKER',
+      // Post-MVP enemies (sprites exist in final/)
+      'ENEMY_SKELETON_WARRIOR', 'ENEMY_CURSED_KNIGHT', 'ENEMY_TOMB_WRAITH',
+      'ENEMY_BONE_ARCHER', 'ENEMY_GIANT_SPIDER', 'ENEMY_EGG_SAC_GUARDIAN',
+      'ENEMY_VENOMOUS_LURKER', 'ENEMY_LAVA_GOLEM', 'ENEMY_FLAME_SPIRIT',
+      'ENEMY_ASH_GOLEM', 'ENEMY_CURSED_PRIEST', 'ENEMY_GHOST_MAGE',
+      'ENEMY_TOME_GUARDIAN',
     ];
     enemies.forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
@@ -90,12 +116,42 @@ export class BootScene extends Phaser.Scene {
     [
       'ITEM_BREAD', 'ITEM_HEALING_POTION', 'ITEM_IRON_SWORD',
       'ITEM_IRON_SHIELD', 'ITEM_LEATHER_ARMOR', 'ITEM_CRYSTAL_SHARD',
+      // Post-MVP items (sprites exist in final/)
+      'ITEM_FROSTUMHANG', 'ITEM_FLAMMENWARD', 'ITEM_ANTIDOT_AMULETT',
+      'ITEM_STURMMANTEL', 'ITEM_SCHATTENSCHLEIER', 'ITEM_MAGIESCHILD',
+      // T1 gear
+      'ITEM_HUNTER_BOW', 'ITEM_OAK_STAFF', 'ITEM_WOLF_FANG_NECKLACE',
+      // T2 gear
+      'ITEM_STEEL_SWORD', 'ITEM_LONGBOW', 'ITEM_CRYSTAL_STAFF',
+      'ITEM_STEEL_ARMOR', 'ITEM_RANGER_CLOAK', 'ITEM_CRYSTAL_PENDANT',
+      // T3 boss drops
+      'ITEM_TREANT_HEARTWOOD_SHIELD', 'ITEM_CRYSTAL_GOLEM_CORE',
+      'ITEM_HYDRA_VENOMFANG', 'ITEM_BANDIT_KINGS_CLOAK',
+      'ITEM_SPIDER_SILK_VEST', 'ITEM_FALLEN_KNIGHTS_BLADE',
+      'ITEM_LICH_PHYLACTERY', 'ITEM_WYRM_SCALE_SHIELD',
+      // T4 legendary
+      'ITEM_BLADE_OF_THOUSAND_SHADOWS', 'ITEM_SHIELD_OF_THE_ANCIENT',
+      'ITEM_AMULET_OF_REBIRTH',
+      // Misc
+      'ITEM_POWER_BREAD', 'ITEM_HERB_GREEN', 'ITEM_OLD_COIN',
+      'ITEM_TALISMAN_FRAGMENT',
     ].forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 
+    // --- Specialist Sprites ---
+    ['SPEC_BAKER_MASTER', 'SPEC_HERB_SAGE', 'SPEC_FORGE_SMITH'].forEach(key => {
+      this.load.image(key, `assets/sprites/final/${key}.png`);
+    });
+
     // --- Terrain & Deko Sprites ---
-    ['TERRAIN_GRASS', 'DECO_FLOWER_1', 'DECO_ROCK_1', 'DECO_BUSH_1'].forEach(key => {
+    [
+      'TERRAIN_GRASS', 'TERRAIN_TREE_LARGE', 'TERRAIN_TREE_PINE',
+      'TERRAIN_DIRT', 'TERRAIN_WATER', 'ROAD_COBBLE',
+      'DECO_FLOWER_1', 'DECO_ROCK_1', 'DECO_BUSH_1',
+      'DECO_TREE_SMALL', 'DECO_GRASS_TUFT', 'DECO_STONE_LARGE',
+      'DECO_MUSHROOM', 'DECO_LOG', 'DECO_WILDFLOWER_2',
+    ].forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 

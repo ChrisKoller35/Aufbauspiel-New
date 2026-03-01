@@ -51,10 +51,12 @@ export class ProductionSystem {
         }
       } else {
         // Try to start a new production cycle
-        if (this.canStartRecipe(state, building, recipe)) {
+        const needsManual = def.manualCraft === true;
+        if ((!needsManual || building.pendingCraft) && this.canStartRecipe(state, building, recipe)) {
           this.deductInputs(state, building, recipe);
           building.productionTimer = recipe.cycleTimeSec * building.synergySpeedMult;
           building.producing = true;
+          building.pendingCraft = false;
         }
       }
     }

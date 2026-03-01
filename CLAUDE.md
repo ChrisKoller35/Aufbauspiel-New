@@ -27,14 +27,6 @@ docs/                           ← Referenz-Dokumente
   sprite-prompt-referenz.md     ← Gemini Image API Prompt-Guide
 ```
 
-## GDD (Game Design Documents)
-Die vollständige Spieldokumentation liegt in 5 Teilen vor:
-- `Magic_City_GDD_v2_0_Teil_1_Abschnitte_0-6.md` – Übersicht, Kernloop, Grid, Ressourcen
-- `Magic_City_GDD_v2_0_Teil_2_Abschnitte_7-10.md` – Helden, Expeditionen, Kampf, Gebäude-Details
-- `Magic_City_GDD_v2_0_Teil_3_Abschnitte_11-16.md` – Gildenrang, Siedler, Events, Balancing, UI
-- `Magic_City_GDD_v2_0_Teil_4_Fixes_und_Systeme.md` – Spezialisten, Tutorial, Synergien, Audio
-- `Magic_City_GDD_v2_0_Teil_5_Neue_Systeme_und_Erweiterungen.md` – Post-MVP Content
-
 ## Sprite-System (WICHTIG!)
 
 ### Wenn du einen neuen Sprite brauchst:
@@ -154,8 +146,6 @@ Standard (Subagent):
   Code-Review einzelne Datei      → Subagent
   Balancing-Check                  → Subagent
   UI/UX Gegenpruefung              → Subagent
-  GDD-Abschnitt recherchieren     → Subagent
-
 Bei Mehrwert (Agent Team, User-OK):
   Sprite-Pipeline (mehrere Assets) → Agent Team
   Parallele Feature-Arbeit         → Agent Team

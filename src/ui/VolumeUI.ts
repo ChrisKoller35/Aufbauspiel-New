@@ -71,7 +71,9 @@ export class VolumeUI {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   destroy(): void {
@@ -119,7 +121,7 @@ export class VolumeUI {
     // ── SFX-Slider ─────────────────────────────────────────────
     const sfxY = 36;
     this.sfxLabel = this.scene.add.text(MARGIN, sfxY, 'Effekte: 50%', {
-      fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
     });
     this.container.add(this.sfxLabel);
 
@@ -138,7 +140,7 @@ export class VolumeUI {
     // ── Musik-Slider ────────────────────────────────────────────
     const musicY = 76;
     this.musicLabel = this.scene.add.text(MARGIN, musicY, 'Musik: 30%', {
-      fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
     });
     this.container.add(this.musicLabel);
 
@@ -159,7 +161,7 @@ export class VolumeUI {
       x: PANEL_W / 2 - 36, y: PANEL_H - 34,
       width: 72, height: 24,
       label: this.soundManager.isMuted ? 'Ton an' : 'Stumm',
-      textStyle: { fontFamily: FONT_FAMILY, fontSize: '11px', color: UI_STR_COLORS.LIGHT },
+      textStyle: { fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT },
       onClick: () => {
         this.soundManager.toggleMute();
         this.muteBtn.setLabel(this.soundManager.isMuted ? 'Ton an' : 'Stumm');

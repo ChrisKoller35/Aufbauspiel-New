@@ -22,8 +22,8 @@ export function setupTabVisibility(game: Phaser.Game): void {
 
       // Trigger auto-save: find the CityScene and save its state
       try {
-        const cityScene = game.scene.getScene('CityScene') as Record<string, unknown>;
-        const state = cityScene?.['state'];
+        const cityScene = game.scene.getScene('CityScene') as unknown as Record<string, unknown> | null;
+        const state = cityScene?.['gameState'];
         if (state) {
           const ss = new SaveSystem();
           const saved = ss.save(state as Parameters<SaveSystem['save']>[0]);

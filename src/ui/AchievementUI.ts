@@ -37,7 +37,9 @@ export class AchievementUI {
   }
 
   updatePosition(cam: Phaser.Cameras.Scene2D.Camera): void {
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 
   isVisible(): boolean {
@@ -192,7 +194,7 @@ export class AchievementUI {
     const descColor = isUnlocked ? UI_STR_COLORS.DIM : UI_STR_COLORS.DISABLED;
     this.contentContainer.add(
       this.scene.add.text(textX, y + 26, descText, {
-        fontFamily: FONT_FAMILY, fontSize: '10px', color: descColor,
+        fontFamily: FONT_FAMILY, fontSize: '13px', color: descColor,
         wordWrap: { width: textW },
       }),
     );
@@ -201,7 +203,7 @@ export class AchievementUI {
     if (isUnlocked) {
       this.contentContainer.add(
         this.scene.add.text(x + w - 6, y + h - 12, 'Erhalten!', {
-          fontFamily: FONT_FAMILY, fontSize: '9px', color: UI_STR_COLORS.GOLD,
+          fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.GOLD,
         }).setOrigin(1, 1),
       );
     }
@@ -224,6 +226,8 @@ export class AchievementUI {
     this.screenY = cy - this.panelH / 2;
 
     const cam = this.scene.cameras.main;
-    this.container.setPosition(cam.scrollX + this.screenX, cam.scrollY + this.screenY);
+    const z = cam.zoom;
+    this.container.setPosition(cam.worldView.x + this.screenX / z, cam.worldView.y + this.screenY / z);
+    this.container.setScale(1 / z);
   }
 }

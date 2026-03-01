@@ -46,6 +46,8 @@ export interface CombatUnit {
   buffs: CombatBuff[];
   lootTableId: string | null;
   spriteKey?: string;
+  /** Class ID for player units (e.g. 'guardian', 'ranger') */
+  classId?: string;
   /** Key into ENEMY_DEFS – only set for enemy units */
   defId?: string;
   /** Active special effects from gear (only player units) */
@@ -104,4 +106,8 @@ export interface ExpeditionRun {
   specialistFound?: string;
   /** Feature #18: Großmeister-Prüfung aktiv */
   isGrandmasterTrial?: boolean;
+  /** Tracks which party units have used their one ability this expedition (unit.id → used) */
+  abilitiesUsed: Record<number, boolean>;
+  /** Guardian's Spott ability: when true, all enemy attacks are redirected to the Guardian */
+  guardianTauntActive?: boolean;
 }

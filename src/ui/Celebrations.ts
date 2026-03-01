@@ -16,8 +16,8 @@ export class Celebrations {
     const colors = [0xFFD700, 0xE8C34A, 0xFFA500, 0xFFFFFF, 0xD4A54A];
 
     for (let i = 0; i < 30; i++) {
-      const x = cam.scrollX + Math.random() * screenW;
-      const y = cam.scrollY - 10;
+      const x = cam.worldView.x + Math.random() * screenW;
+      const y = cam.worldView.y - 10;
       const size = 3 + Math.random() * 5;
       const color = colors[Math.floor(Math.random() * colors.length)];
 
@@ -45,8 +45,8 @@ export class Celebrations {
    */
   static flashBanner(scene: Phaser.Scene, text: string, color: string = UI_STR_COLORS.GOLD): void {
     const cam = scene.cameras.main;
-    const cx = cam.scrollX + scene.scale.width / 2;
-    const cy = cam.scrollY + scene.scale.height / 3;
+    const cx = cam.worldView.x + scene.scale.width / 2;
+    const cy = cam.worldView.y + scene.scale.height / 3;
 
     const banner = scene.add.text(cx, cy, text, {
       fontFamily: FONT_FAMILY,
@@ -83,8 +83,8 @@ export class Celebrations {
    */
   static floatingNotification(scene: Phaser.Scene, text: string, color: string = UI_STR_COLORS.LOOT): void {
     const cam = scene.cameras.main;
-    const cx = cam.scrollX + scene.scale.width / 2;
-    const y = cam.scrollY + 50;
+    const cx = cam.worldView.x + scene.scale.width / 2;
+    const y = cam.worldView.y + 50;
 
     // Background
     const bg = scene.add.graphics().setDepth(997);

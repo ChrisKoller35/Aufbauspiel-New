@@ -60,12 +60,15 @@ clean and detailed icon style,
 inspired by modern RPG inventory icons`.trim(),
 
   ICON: `
-2D cartoon illustration style, simple clean icon,
-fantasy medieval RPG UI icon,
-vibrant colors, instantly recognizable shape,
+Bold modern mobile game UI icon, single large symbol centered in frame,
+the icon symbol fills at least 75% of the image area,
+vibrant saturated colors with strong contrast, clean black outlines,
+smooth cel-shading with highlights and shadows, 3D-looking rounded icon style,
 solid bright magenta background (#FF00FF),
-single icon centered, no text,
-clean flat design with subtle shading`.trim(),
+no text, no letters, no border frame around the icon,
+immediately recognizable silhouette at small sizes,
+inspired by Clash of Clans Supercell icon style and premium mobile game UI,
+high quality game asset`.trim(),
 
   SPECIALIST: `
 2D cartoon illustration style, portrait view, head and shoulders,
@@ -87,6 +90,47 @@ hand-painted look, warm rich colors, ornamental details,
 clean edges suitable for 9-slice scaling,
 solid bright magenta background (#FF00FF),
 no text, no labels, inspired by Clash of Clans and mobile RPG UI design`.trim(),
+
+  ISO_BUILDING: `
+2D cartoon illustration style, TRUE isometric 45-degree left-front perspective,
+the building is viewed from slightly above-left so THREE faces are visible:
+- TOP FACE (roof) clearly visible at the top
+- LEFT WALL visible on the left side
+- FRONT WALL visible on the right-front side
+fantasy medieval city builder, vibrant warm colors, magical accents,
+clean black outlines, smooth cel-shading, hand-painted look,
+solid bright magenta background (#FF00FF),
+single building centered in frame filling 70% of image height,
+no text, no UI, rich color palette,
+inspired by Clash of Clans and Boom Beach building art, high quality game asset`.trim(),
+
+  ISO_TREE: `
+2D cartoon illustration style, TRUE isometric 45-degree perspective,
+fantasy medieval game nature asset, vibrant saturated colors,
+clean black outlines, smooth cel-shading, hand-painted look,
+solid bright magenta background (#FF00FF),
+single tree centered in frame, trunk in lower portion, canopy filling upper 2/3,
+the tree casts a subtle isometric shadow to the lower-right,
+no text, no labels, high quality game asset`.trim(),
+
+  ISO_TERRAIN: `
+2D cartoon illustration style, isometric diamond tile viewed from above-left,
+fantasy medieval game terrain tile, exactly fills a diamond/rhombus shape,
+the diamond tile has a visible left face (darker) and top face (lighter),
+vibrant natural colors, clean edges, smooth cel-shading,
+solid bright magenta background (#FF00FF),
+tileable terrain texture, no text, no labels, high quality game asset`.trim(),
+
+  PORTRAIT: `
+Dramatic fantasy character art, full-body illustration,
+fantasy medieval RPG hero in a powerful heroic pose,
+vibrant dramatic lighting with strong highlights and deep shadows,
+painterly digital art style with rich color depth, detailed textures,
+solid bright magenta background (#FF00FF),
+single character centered and tall, filling 85% of image height,
+full body visible from head to toe, armor and weapon clearly shown,
+no text, no labels, no UI, high quality game art,
+inspired by Hearthstone card art and Diablo character splash art`.trim(),
 } as const;
 
 // ─── Typen ───────────────────────────────────────────────────
@@ -542,6 +586,122 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
     `${STYLES.ITEM}, a bone fragment: ancient yellowish bone shard with faint ghostly glow, undead essence, crafting material`),
 
   // ═══════════════════════════════════════════════════════════
+  // ITEMS Post-MVP – T1 WAFFEN & AUSRÜSTUNG
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ITEM_HUNTER_BOW", "item", 16, 16, "post-mvp",
+    "Item: Jägerbogen (T1 Waffe)",
+    `${STYLES.ITEM}, a wooden hunter's bow with a taut string, fantasy RPG style`),
+
+  sprite("ITEM_OAK_STAFF", "item", 16, 16, "post-mvp",
+    "Item: Eichenstab (T1 Waffe)",
+    `${STYLES.ITEM}, a gnarled oak magic staff with a glowing green crystal tip`),
+
+  sprite("ITEM_WOLF_FANG_NECKLACE", "item", 16, 16, "post-mvp",
+    "Item: Wolfszahn-Kette (T1 Accessoire)",
+    `${STYLES.ITEM}, a necklace made of wolf fangs on a leather cord`),
+
+  // ═══════════════════════════════════════════════════════════
+  // ITEMS Post-MVP – T2 WAFFEN & AUSRÜSTUNG
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ITEM_STEEL_SWORD", "item", 16, 16, "post-mvp",
+    "Item: Stahlschwert (T2 Waffe)",
+    `${STYLES.ITEM}, a polished steel longsword with a cross-guard, T2 weapon`),
+
+  sprite("ITEM_LONGBOW", "item", 16, 16, "post-mvp",
+    "Item: Langbogen (T2 Waffe)",
+    `${STYLES.ITEM}, an elegant elven longbow made of dark wood, T2 weapon`),
+
+  sprite("ITEM_CRYSTAL_STAFF", "item", 16, 16, "post-mvp",
+    "Item: Kristallstab (T2 Waffe)",
+    `${STYLES.ITEM}, a crystal-topped magic staff glowing blue, T2 weapon`),
+
+  sprite("ITEM_STEEL_ARMOR", "item", 16, 16, "post-mvp",
+    "Item: Stahlrüstung (T2 Rüstung)",
+    `${STYLES.ITEM}, heavy steel plate armor with shoulder guards, T2 armor`),
+
+  sprite("ITEM_RANGER_CLOAK", "item", 16, 16, "post-mvp",
+    "Item: Waldläufermantel (T2 Rüstung)",
+    `${STYLES.ITEM}, a green hooded ranger cloak with leaf clasps, T2 armor`),
+
+  sprite("ITEM_CRYSTAL_PENDANT", "item", 16, 16, "post-mvp",
+    "Item: Kristallanhänger (T2 Accessoire)",
+    `${STYLES.ITEM}, a glowing blue crystal pendant on a silver chain, T2 accessory`),
+
+  // ═══════════════════════════════════════════════════════════
+  // ITEMS Post-MVP – T3 BOSS-DROP AUSRÜSTUNG
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ITEM_TREANT_HEARTWOOD_SHIELD", "item", 16, 16, "post-mvp",
+    "Item: Treant-Herzholzschild (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a shield made from ancient treant heartwood, glowing green runes`),
+
+  sprite("ITEM_CRYSTAL_GOLEM_CORE", "item", 16, 16, "post-mvp",
+    "Item: Kristallgolem-Kern (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a pulsing blue crystal core extracted from a golem`),
+
+  sprite("ITEM_HYDRA_VENOMFANG", "item", 16, 16, "post-mvp",
+    "Item: Hydra-Giftzahn (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a large venomous hydra fang dripping green poison`),
+
+  sprite("ITEM_BANDIT_KINGS_CLOAK", "item", 16, 16, "post-mvp",
+    "Item: Banditenkönigs-Umhang (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a luxurious dark red cloak with gold trim, stolen from a bandit king`),
+
+  sprite("ITEM_SPIDER_SILK_VEST", "item", 16, 16, "post-mvp",
+    "Item: Spinnenseide-Weste (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a lightweight vest woven from enchanted spider silk, shimmering purple`),
+
+  sprite("ITEM_FALLEN_KNIGHTS_BLADE", "item", 16, 16, "post-mvp",
+    "Item: Klinge des Gefallenen Ritters (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a dark cursed greatsword with red glowing runes`),
+
+  sprite("ITEM_LICH_PHYLACTERY", "item", 16, 16, "post-mvp",
+    "Item: Lich-Phylakterium (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a small ornate phylactery glowing with necromantic energy`),
+
+  sprite("ITEM_WYRM_SCALE_SHIELD", "item", 16, 16, "post-mvp",
+    "Item: Wyrmschuppen-Schild (T3 Boss-Drop)",
+    `${STYLES.ITEM}, a large shield covered in red dragon wyrm scales`),
+
+  // ═══════════════════════════════════════════════════════════
+  // ITEMS Post-MVP – T4 LEGENDARY AUSRÜSTUNG
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ITEM_BLADE_OF_THOUSAND_SHADOWS", "item", 16, 16, "post-mvp",
+    "Item: Klinge der 1000 Schatten (T4 Legendary)",
+    `${STYLES.ITEM}, a legendary black katana wreathed in shadow energy, T4`),
+
+  sprite("ITEM_SHIELD_OF_THE_ANCIENT", "item", 16, 16, "post-mvp",
+    "Item: Schild des Uralten (T4 Legendary)",
+    `${STYLES.ITEM}, a massive ancient stone shield with golden dwarven runes, T4`),
+
+  sprite("ITEM_AMULET_OF_REBIRTH", "item", 16, 16, "post-mvp",
+    "Item: Amulett der Wiedergeburt (T4 Legendary)",
+    `${STYLES.ITEM}, a golden phoenix amulet glowing with resurrection magic, T4`),
+
+  // ═══════════════════════════════════════════════════════════
+  // ITEMS Post-MVP – VERBRAUCHSGÜTER & SCHÄTZE
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ITEM_POWER_BREAD", "item", 16, 16, "post-mvp",
+    "Item: Kraftbrot (Verbrauchsgut)",
+    `${STYLES.ITEM}, enchanted golden bread loaf radiating magical energy`),
+
+  sprite("ITEM_HERB_GREEN", "item", 16, 16, "post-mvp",
+    "Item: Grüne Kräuter (Verbrauchsgut)",
+    `${STYLES.ITEM}, a bundle of fresh green healing herbs tied with twine`),
+
+  sprite("ITEM_OLD_COIN", "item", 16, 16, "post-mvp",
+    "Item: Alte Münze (Schatz)",
+    `${STYLES.ITEM}, an ancient worn gold coin with mysterious engravings`),
+
+  sprite("ITEM_TALISMAN_FRAGMENT", "item", 16, 16, "post-mvp",
+    "Item: Talisman-Fragment (Schatz)",
+    `${STYLES.ITEM}, a broken shard of a magical talisman glowing faintly purple`),
+
+  // ═══════════════════════════════════════════════════════════
   // TALISMANE (Post-MVP)
   // ═══════════════════════════════════════════════════════════
 
@@ -572,6 +732,22 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   sprite("SPEC_FORGE_SMITH", "specialist", 32, 32, "post-mvp",
     "Spezialist: Schmiedemeister",
     `${STYLES.SPECIALIST}, a forge master: strong bearded man, leather apron, soot-marked face, holding hammer, muscular arms, determined look`),
+
+  // ═══════════════════════════════════════════════════════════
+  // HELD-PORTRAITS — Große Charakter-Illustrationen (MVP)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("PORTRAIT_GUARDIAN", "unit", 256, 320, "mvp",
+    "Held-Portrait: Guardian (Beschützer)",
+    `${STYLES.PORTRAIT}, a heavily armored knight guardian hero: full plate armor in deep blue and gold, large tower shield with heraldic crest, one-handed sword raised in guard stance, stern noble face with battle-worn expression, golden cape flowing behind, glowing blue runes on armor, protective warrior of the realm`),
+
+  sprite("PORTRAIT_RANGER", "unit", 256, 320, "mvp",
+    "Held-Portrait: Ranger (Waldläufer)",
+    `${STYLES.PORTRAIT}, a swift elven ranger hero: lightweight green-brown leather armor with silver accents, recurve bow in hand with arrow nocked, quiver on back, sharp focused eyes scanning the distance, short dark cape, gloves with protective bracers, agile hunter pose leaning slightly forward, forest and nature attunement visible in earthy tones`),
+
+  sprite("PORTRAIT_CLERIC", "unit", 256, 320, "mvp",
+    "Held-Portrait: Cleric (Heilerin)",
+    `${STYLES.PORTRAIT}, a wise female cleric healer hero: flowing white and gold robes with holy symbols, ornate wooden staff topped with a glowing white gem, gentle powerful expression, warm golden light emanating from staff hand, divine aura around the character, intricate embroidered robes, sacred medallion around neck, healer and protector of the innocent`),
 
   // ═══════════════════════════════════════════════════════════
   // TERRAIN / BIOME TILES (Post-MVP)
@@ -681,29 +857,29 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   // ICONS SIDEBAR & RESSOURCEN (MVP)
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ICON_BUILD", "icon", 48, 48, "mvp",
+  sprite("ICON_BUILD", "icon", 64, 64, "mvp",
     "Icon: Bauen",
-    `${STYLES.ICON}, a construction hammer icon, wooden handle with iron head, simple recognizable shape`),
+    `Game UI icon, pure solid magenta background #FF00FF filling the entire image, centered construction hammer — thick orange wooden handle, heavy dark iron hammerhead at 30-degree angle with metallic highlight, bold cel-shaded 3D style, clean symbol fills 65% of frame, no decorative corner brackets or frames, strong black outlines, no text`),
 
-  sprite("ICON_ROAD", "icon", 48, 48, "mvp",
+  sprite("ICON_ROAD", "icon", 64, 64, "mvp",
     "Icon: Straße",
-    `${STYLES.ICON}, a cobblestone road path icon, winding stone path viewed from above, simple recognizable shape`),
+    `Game UI icon, pure solid magenta background #FF00FF filling the entire image, centered cobblestone road symbol — three grey-beige rectangular stones side by side with dark mortar lines, slight perspective, bold cel-shaded style, clean symbol fills 65% of frame, no decorative corner brackets or frames, strong black outlines, no text`),
 
-  sprite("ICON_GUILD", "icon", 48, 48, "mvp",
+  sprite("ICON_GUILD", "icon", 64, 64, "mvp",
     "Icon: Gilde",
-    `${STYLES.ICON}, a crossed sword and shield icon, medieval heraldic style, simple recognizable shape`),
+    `Game UI icon, pure solid magenta background #FF00FF filling the entire image, centered medieval guild emblem — bright gold heraldic shield with two crossed silver swords behind it, bold cel-shaded 3D metallic style, clean symbol fills 70% of frame, no decorative corner brackets or frames, strong black outlines, no text`),
 
-  sprite("ICON_EXPEDITION", "icon", 48, 48, "mvp",
+  sprite("ICON_EXPEDITION", "icon", 64, 64, "mvp",
     "Icon: Expedition",
-    `${STYLES.ICON}, a compass and treasure map icon, rolled parchment with compass rose, simple recognizable shape`),
+    `Game UI icon, pure solid magenta background #FF00FF filling the entire image, centered compass rose — 8-pointed gold and teal metallic compass, cardinal directions N S E W visible, gleaming metallic sheen, bold cel-shaded style, clean symbol fills 70% of frame, no decorative corner brackets or frames, strong black outlines, no text`),
 
-  sprite("ICON_STORAGE", "icon", 48, 48, "mvp",
+  sprite("ICON_STORAGE", "icon", 64, 64, "mvp",
     "Icon: Lager",
-    `${STYLES.ICON}, a wooden treasure chest icon, closed chest with metal bands, simple recognizable shape`),
+    `Game UI icon, pure solid magenta background #FF00FF filling the entire image, centered wooden treasure chest — dark brown wood planks with gold metal bands and iron lock, 3/4 front view, bold cel-shaded 3D style, clean symbol fills 72% of frame, no decorative corner brackets or frames, strong black outlines, no text`),
 
-  sprite("ICON_HELP", "icon", 48, 48, "mvp",
+  sprite("ICON_HELP", "icon", 64, 64, "mvp",
     "Icon: Hilfe",
-    `${STYLES.ICON}, a question mark on a scroll icon, parchment scroll with golden question mark, simple recognizable shape`),
+    `Game UI icon, pure solid magenta background #FF00FF filling the entire image, centered bold question mark — large bright gold metallic question mark with circular dot below, glowing magical sparkle aura, 3D metallic cel-shaded style, clean symbol fills 68% of frame, no decorative corner brackets or frames, strong black outlines, no text`),
 
   sprite("ICON_WOOD", "icon", 32, 32, "mvp",
     "Icon: Holz (HUD)",
@@ -752,6 +928,210 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   sprite("TERRAIN_GRASS", "terrain", 64, 64, "mvp",
     "Terrain: Gras-Tile (nahtlos)",
     `${STYLES.TERRAIN}, a seamless grass tile texture, lush green with subtle color variation, top-down view, tileable on all edges, natural meadow look`),
+
+  // ─── Visual Overhaul: Map Border & Deko ──────────────────────
+
+  sprite("TERRAIN_TREE_LARGE", "terrain", 64, 80, "mvp",
+    "Großer Laubbaum für Map-Rand",
+    `${STYLES.BUILDING}, a large lush green deciduous oak tree seen from isometric 3/4 top-down perspective, round full canopy with rich green leaves, thick brown trunk, fantasy medieval style, vibrant greens and warm browns, solid bright magenta background (#FF00FF), single tree centered, no ground, no text`),
+
+  sprite("TERRAIN_TREE_PINE", "terrain", 48, 72, "mvp",
+    "Nadelbaum für Map-Rand",
+    `${STYLES.BUILDING}, a tall evergreen pine tree seen from isometric 3/4 top-down perspective, triangular dark green conifer shape, fantasy medieval style, vibrant dark greens, solid bright magenta background (#FF00FF), single tree centered, no ground, no text`),
+
+  sprite("DECO_TREE_SMALL", "terrain", 32, 40, "mvp",
+    "Kleiner Baum für Spielfeld",
+    `${STYLES.BUILDING}, a small young sapling tree seen from isometric 3/4 top-down perspective, tiny round green canopy, thin trunk, cute and compact, fantasy medieval style, solid bright magenta background (#FF00FF), single small tree centered, no ground, no text`),
+
+  sprite("DECO_GRASS_TUFT", "terrain", 32, 32, "mvp",
+    "Deko: Hohes Grasbüschel",
+    `${STYLES.TERRAIN}, a small tuft of tall wild grass blades, green and yellow-green meadow grass, top-down view, transparent look`),
+
+  sprite("DECO_STONE_LARGE", "terrain", 32, 32, "mvp",
+    "Deko: Großer Feldstein",
+    `${STYLES.TERRAIN}, a medium sized mossy grey boulder stone, natural rock with green moss patches, top-down view`),
+
+  sprite("DECO_MUSHROOM", "terrain", 32, 32, "mvp",
+    "Deko: Pilzgruppe",
+    `${STYLES.TERRAIN}, a tiny cluster of three small fantasy mushrooms, red caps with white dots, cute and colorful, top-down view`),
+
+  sprite("DECO_LOG", "terrain", 32, 32, "mvp",
+    "Deko: Gefallener Baumstamm",
+    `${STYLES.TERRAIN}, a small fallen log piece, brown wood with bark texture, moss growing on it, top-down view`),
+
+  sprite("DECO_WILDFLOWER_2", "terrain", 32, 32, "mvp",
+    "Deko: Blaue Wildblumen",
+    `${STYLES.TERRAIN}, tiny blue and purple wildflowers patch, small meadow flowers, delicate and colorful, top-down view`),
+
+  sprite("TERRAIN_DIRT", "terrain", 32, 32, "mvp",
+    "Terrain: Erd-Basis unter Gebäuden",
+    `${STYLES.TERRAIN}, a seamless dirt earth patch tile, brown packed earth with subtle pebbles, top-down view, flat and even surface`),
+
+  sprite("TERRAIN_WATER", "terrain", 64, 64, "mvp",
+    "Terrain: Wasser-Tile für Map-Rand",
+    `${STYLES.TERRAIN}, a seamless water tile, clear blue medieval fantasy pond water with gentle ripples, top-down view, tileable`),
+
+  sprite("ROAD_COBBLE", "terrain", 32, 32, "mvp",
+    "Straße: Kopfsteinpflaster",
+    `${STYLES.TERRAIN}, a seamless cobblestone road tile, grey and brown medieval stone pavement, neat fitted stones, top-down view, tileable on all edges`),
+
+  // ─── Isometric Building Sprites ─────────────────────────────
+  sprite("ISO_HOUSE", "building", 160, 200, "mvp",
+    "ISO: Kleines Wohnhaus (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a small cozy 2-story medieval fantasy house,
+stone-and-timber construction, steep red clay roof tiles visible from above,
+left wall shows grey stone with a shuttered window and climbing ivy,
+front wall shows wooden door with iron hinges and a warm glowing window,
+flower boxes under windows, chimney with smoke puff on roof`),
+
+  sprite("ISO_GUILD_HALL", "building", 256, 320, "mvp",
+    "ISO: Gildenhalle (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a grand medieval guild hall / tavern, large impressive two-story building,
+left side shows tall arched windows with golden light, stone wall with guild banner hanging,
+front facade has large double wooden doors with torch sconces on either side,
+peaked wooden roof with decorative ridge tiles visible from above,
+guild flag banner flying from a rooftop pole, warm and inviting atmosphere`),
+
+  sprite("ISO_WAREHOUSE", "building", 224, 256, "mvp",
+    "ISO: Lagerhaus (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a large medieval warehouse and storage building,
+wide rectangular structure, dark wooden beam roof with terracotta tiles visible from above,
+left wall shows thick stone with small loading hatch and iron reinforcement,
+front face has large double barn doors with loading dock, crates and barrels stacked nearby,
+practical and sturdy building, earthy brown and grey tones`),
+
+  // ─── Isometric Building Sprites – weitere Gebäude ────────────
+  sprite("ISO_FARM_GRAIN", "building", 224, 256, "mvp",
+    "ISO: Getreidefarm (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a medieval grain farm with a large L-shaped wooden barn,
+golden wheat fields visible on the top face / roof area, hay bales on the left side,
+front has open barn doors revealing stored grain sacks, weathervane on barn roof,
+warm golden-yellow and brown tones, rustic rural charm`),
+
+  sprite("ISO_MILL_WIND", "building", 192, 280, "mvp",
+    "ISO: Windmühle (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a classic medieval windmill tower, tall cylindrical stone tower,
+large wooden sail/blade visible rotating to the upper-right in isometric view,
+round conical roof with weathered brown shingles visible from above,
+left wall shows grey stone blocks with a small arched window,
+front face has a wooden door and miller's chute, flour dust detail`),
+
+  sprite("ISO_BAKERY", "building", 160, 200, "mvp",
+    "ISO: Bäckerei (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a cozy medieval bakery shop,
+brick chimney with warm smoke and bread smell curls on top face / roof,
+left wall shows brick facade with a display window showing bread loaves,
+front has a welcoming wooden shop door with a pretzel sign hanging above,
+warm orange-red brick tones, fresh bread baskets near entrance`),
+
+  sprite("ISO_LUMBER_CAMP", "building", 160, 200, "mvp",
+    "ISO: Holzfällerhütte (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a rustic medieval lumber camp with a small wooden cabin,
+log pile neatly stacked on the top face / roof area visible from above,
+left side shows rough-hewn timber walls with an axe mounted on the wall,
+front has a low porch with chopping block and woodchips scattered, tree stump nearby,
+dark brown raw wood tones, earthy and rugged atmosphere`),
+
+  sprite("ISO_QUARRY", "building", 192, 220, "mvp",
+    "ISO: Steinbruch (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a medieval stone quarry with a small worker's shed,
+rough-cut stone blocks piled on the top face area, crane arm visible overhead,
+left wall shows exposed grey rock face with chisel marks,
+front has a wooden shelter with tools (pickaxes, chisels) leaning against it,
+grey and beige stone tones, dusty industrial atmosphere`),
+
+  sprite("ISO_HERB_GARDEN", "building", 192, 220, "mvp",
+    "ISO: Kräutergarten (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a medieval alchemist's herb garden with a small greenhouse,
+colorful herb patches and flower beds visible on the top face from above,
+left wall shows a wooden trellis with climbing vines and hanging dried herbs,
+front has a small archway entrance with potion bottles on shelves inside,
+rich greens and purple flower tones, magical whimsical atmosphere`),
+
+  sprite("ISO_SMITHY", "building", 192, 220, "mvp",
+    "ISO: Schmiede (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a medieval blacksmith's forge and workshop,
+glowing orange forge chimney and metal roof visible from above on the top face,
+left wall shows dark stone with a bellows and weapon rack mounted outside,
+front has a large open workshop door with anvil visible inside, sparks flying,
+dark charcoal and orange ember tones, hot metalworking atmosphere`),
+
+  sprite("ISO_IRON_MINE", "building", 224, 256, "mvp",
+    "ISO: Eisenmine (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a medieval iron ore mine entrance with mine shaft building,
+mine shaft frame and ore cart track visible on top face from above,
+left side shows reinforced wooden mine entrance beams with lanterns,
+front has large wooden mine portal with iron ore chunks scattered,
+dark grey rock and brown timber tones, underground mining atmosphere`),
+
+  sprite("ISO_WELL", "building", 128, 160, "mvp",
+    "ISO: Brunnen (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a charming medieval stone well,
+hexagonal stone well top with wooden roof and bucket-pulley visible from above,
+left side shows mossy grey stones with rope and pulley mechanism,
+front shows the well opening with a bucket hanging, ivy growing on stone,
+grey stone with green moss accents, quaint village atmosphere`),
+
+  sprite("ISO_DUNGEON_CAMP", "building", 192, 240, "mvp",
+    "ISO: Dungeon-Expeditionslager (isometrisch)",
+    `${STYLES.ISO_BUILDING}, a rugged dungeon expedition camp at the entrance to dark mountains,
+a large military tent with a dark grey canvas roof visible from above, wooden palisade fence surrounding the camp,
+left wall shows the palisade stakes with rope bindings and a torch lantern glowing orange,
+front shows the camp gate entrance with crossed spears, a roaring campfire at center with glowing embers,
+dark muted earthy tones, grey-brown wood and dark canvas, adventurous dangerous atmosphere,
+a guild banner hanging from a pole, worn battle-scarred equipment visible, moody dramatic lighting`),
+
+  sprite("ISO_DUNGEON_MOUNTAIN", "building", 384, 480, "mvp",
+    "ISO: Dungeon-Berg mit Höhleneingang (isometrisch, sehr groß)",
+    `${STYLES.ISO_BUILDING}, a massive imposing rocky mountain with a dark dungeon cave entrance,
+the mountain top is craggy jagged grey rock with sparse dead vegetation visible from above,
+left face shows sheer cliff walls with dark cracks, hanging roots, and ancient stone carvings,
+front face has a grand arched dungeon portal entrance glowing with eerie purple-green magical light,
+iron chains and skull decorations flank the entrance, skull-shaped rock formation above the cave mouth,
+very large impressive structure, dark grey and charcoal rock colors, menacing fantasy dungeon atmosphere,
+dead twisted trees clinging to the cliff sides, bats silhouetted in the cave opening`),
+
+  // ─── Isometric Terrain Tiles ─────────────────────────────────
+  sprite("ISO_GRASS_TILE", "terrain", 128, 64, "mvp",
+    "ISO: Gras-Terrain-Kachel (isometrisch)",
+    `${STYLES.ISO_TERRAIN}, a lush green grass terrain tile,
+the diamond shape shows bright varied green grass texture on the top face,
+left face shows dark earthy soil side,
+small grass tufts, tiny wildflowers and clover dots on surface,
+rich warm green tones with natural variation`),
+
+  sprite("ISO_WATER_TILE", "terrain", 128, 64, "mvp",
+    "ISO: Wasser-Terrain-Kachel (isometrisch)",
+    `${STYLES.ISO_TERRAIN}, a clear blue water terrain tile for an ocean/lake border,
+the diamond shape shows shimmering blue water surface on the top face with gentle ripples,
+left face shows dark deep blue water depth,
+small highlights and sparkle reflections on the water surface,
+rich clear blue and teal tones`),
+
+  // ─── Isometric Tree Sprites ───────────────────────────────────
+  sprite("ISO_TREE_LARGE", "terrain", 128, 192, "mvp",
+    "ISO: Großer Baum (isometrisch)",
+    `${STYLES.ISO_TREE}, a large majestic fantasy oak tree in isometric view,
+wide round canopy of rich dark green foliage with lighter highlights,
+visible brown-grey trunk base in lower portion casting shadow to lower-right,
+scattered orange-red autumn leaf details for magical flair,
+canopy fills upper 70% of frame, tall and impressive`),
+
+  sprite("ISO_TREE_PINE", "terrain", 96, 160, "mvp",
+    "ISO: Kiefernbaum (isometrisch)",
+    `${STYLES.ISO_TREE}, a tall conical pine/fir tree in isometric view,
+classic triangular silhouette with layered dark green branches,
+visible brown trunk base and root flares in lower portion,
+snow dusting on branch tips for magical winter fantasy touch,
+clean conical shape pointing upward, elegant and simple`),
+
+  sprite("ISO_TREE_SMALL", "terrain", 80, 112, "mvp",
+    "ISO: Kleiner Baum (isometrisch)",
+    `${STYLES.ISO_TREE}, a small young deciduous tree in isometric view,
+compact round canopy of bright fresh green foliage,
+thin brown trunk visible at base,
+a few small colorful berries or blossoms for charm,
+small and cute, fits between buildings`),
 ];
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────

@@ -45,8 +45,8 @@ export class GearSystem {
    * Calculate effective stats = base + gear bonuses.
    */
   getEffectiveStats(fighter: GuildFighter): FighterStats {
-    const classDef = CLASS_DEFS[fighter.classId];
-    const base = classDef ? classDef.baseStats : fighter.baseStats;
+    // Use fighter.baseStats (includes level-up bonuses), not CLASS_DEFS (static base)
+    const base = fighter.baseStats;
 
     const stats: FighterStats = { ...base, hp: base.maxHp, maxHp: base.maxHp };
 

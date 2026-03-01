@@ -15,7 +15,7 @@ export class Tooltip {
 
     this.bg = scene.add.graphics();
     this.text = scene.add.text(0, 0, '', {
-      fontFamily: FONT_FAMILY, fontSize: '10px', color: UI_STR_COLORS.LIGHT,
+      fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.LIGHT,
       wordWrap: { width: 200 },
     });
 
@@ -41,7 +41,7 @@ export class Tooltip {
     const cam = this.scene.cameras.main;
     const sx = Math.min(x, this.scene.scale.width - w - 4);
     const sy = Math.min(y, this.scene.scale.height - h - 4);
-    this.container.setPosition(cam.scrollX + sx, cam.scrollY + sy);
+    this.container.setPosition(cam.worldView.x + sx, cam.worldView.y + sy);
     this.container.setVisible(true);
   }
 
