@@ -6,7 +6,7 @@ import { resetFighterIdCounter } from '../models/GuildRoster';
 
 const SAVE_KEY = 'magic_city_save';
 const BACKUP_KEY = 'magic_city_save_backup';
-const CURRENT_VERSION = 5;
+const CURRENT_VERSION = 18;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
@@ -101,10 +101,14 @@ export class SaveSystem {
 
       const state = JSON.parse(json) as GameState;
 
-      // Version migration (future-proof)
-      if (state.saveVersion < CURRENT_VERSION) {
+      // Version migration — also handles very old saves without a version field
+      if (!state.saveVersion || state.saveVersion < CURRENT_VERSION) {
         this.migrate(state);
       }
+
+      // Always remove deprecated items
+      delete state.globalStock['war_hammer'];
+      delete state.globalStock['arcane_amulet'];
 
       // Reset ID counters to avoid collisions
       const maxBuildingId = state.buildings.reduce((max, b) => Math.max(max, b.id), 0);
@@ -138,7 +142,7 @@ export class SaveSystem {
 
       const state = JSON.parse(json) as GameState;
 
-      if (state.saveVersion < CURRENT_VERSION) {
+      if (!state.saveVersion || state.saveVersion < CURRENT_VERSION) {
         this.migrate(state);
       }
 
@@ -297,8 +301,122 @@ export class SaveSystem {
     // SaveVersion 5: Achievements
     if (!state.achievements) (state as GameState).achievements = [];
 
-    // swampTiles (optional dev field – always ensure defined)
+    // terrain editor fields – always ensure defined
     if (!state.swampTiles) state.swampTiles = {};
+    if (!state.grayTiles)  state.grayTiles  = {};
+    if (!state.dirtTiles)  state.dirtTiles   = {};
+
+    // SaveVersion 6: UI Theme + Bestiarium + RescuedNpcs + WarMachine + gear schema
+    if (!state.uiTheme) (state as GameState).uiTheme = 'classic';
+
+    // SaveVersion 6: New GameState fields
+    if (!(state as GameState).bestiarium) {
+      (state as GameState).bestiarium = { discovered: [], defeated: [] };
+    }
+    if (!(state as GameState).rescuedNpcs) (state as GameState).rescuedNpcs = [];
+    if (!(state as GameState).warMachineInventory) (state as GameState).warMachineInventory = [];
+    if ((state as GameState).selectedWarMachine === undefined) (state as GameState).selectedWarMachine = null;
+
+    // SaveVersion 6: gear schema migration (weapon → mainHand + offHand)
+    for (const fighter of state.fighters ?? []) {
+      const gear = fighter.gear as Record<string, string | null>;
+      if ('weapon' in gear) {
+        gear['mainHand'] = gear['weapon'] ?? null;
+        delete gear['weapon'];
+      }
+      if (!('offHand' in gear)) {
+        gear['offHand'] = null;
+      }
+    }
+
+    // Stat patch: Paladin DEF reduced from 4 → 3
+    for (const fighter of state.fighters ?? []) {
+      if (fighter.classId === 'paladin' && fighter.baseStats?.def === 4) {
+        fighter.baseStats.def = 3;
+      }
+    }
+
+    // SaveVersion 9: Treasure Chest loot
+    if (!(state as GameState).pendingChestLoot) {
+      (state as GameState).pendingChestLoot = { items: {}, expeditionCount: 0 };
+    }
+
+    // SaveVersion 10: Remove old TREASURE_CHEST buildings (replaced by BANK/VAULT)
+    if ((state as GameState).buildings) {
+      (state as GameState).buildings = (state as GameState).buildings.filter(
+        b => b.typeId !== 'TREASURE_CHEST'
+      );
+    }
+
+
+
+    // SaveVersion 12: Add novizenrobe to globalStock for preview
+    if (!state.globalStock['novizenrobe']) {
+      state.globalStock['novizenrobe'] = 1;
+    }
+
+    // SaveVersion 13: Add all T1/T2 armor items for preview
+    const previewItems = [
+      'chain_armor', 'leather_armor', 'novizenrobe', 'wolf_fang_necklace',
+      'heavy_leather_armor', 'battle_robe', 'steel_armor', 'steel_shield', 'crystal_pendant',
+    ];
+    for (const id of previewItems) {
+      if (!state.globalStock[id]) state.globalStock[id] = 1;
+    }
+
+    // SaveVersion 15: Add T3/T4 weapons + armor for preview
+    const t3t4Items = [
+      'hydra_venomfang', 'fallen_hunters_bow', 'wyrm_scale_shield', 'crystal_golem_staff',
+      'mystic_plate_armor', 'bandit_king_armor', 'spider_silk_robe', 'lich_phylactery',
+      'eternal_hunter_bow', 'worldend_staff', 'soulbreaker', 'aether_guardian_shield',
+      'arcane_blade', 'magitech_shield',
+      'dragonlord_plate', 'shadowhunter_armor', 'magiarch_robe', 'aether_heart',
+    ];
+    for (const id of t3t4Items) {
+      if (!state.globalStock[id]) state.globalStock[id] = 1;
+    }
+
+    // SaveVersion 16: Remove unwanted items from inventory
+    delete state.globalStock['war_hammer'];
+    delete state.globalStock['arcane_amulet'];
+
+    // SaveVersion 17: Restore BANK_V2 if all loot buildings were accidentally demolished
+    const lootTypes = new Set(['BANK_V2', 'BANK', 'BANK_WITH_CHEST', 'VAULT']);
+    const hasLootBuilding = state.buildings.some(b => lootTypes.has(b.typeId));
+    if (!hasLootBuilding) {
+      const maxId = state.buildings.reduce((m, b) => Math.max(m, b.id), 0);
+      state.buildings.push({
+        id: maxId + 1,
+        typeId: 'BANK_V2',
+        x: 12, y: 4,
+        built: true,
+        buildProgress: 0,
+        assignedWorkerIds: [],
+        assignedBuilderId: null,
+        activeRecipeId: null,
+        productionTimer: 0,
+        producing: false,
+        localInputBuffer: {},
+        localOutputBuffer: {},
+        connected: false,
+        waterSupplied: false,
+        tier: 1,
+        synergySpeedMult: 1.0,
+        specialistId: null,
+        upgrading: false,
+        upgradeProgress: 0,
+        upgradeId: null,
+        eventPaused: false,
+        pendingCraft: false,
+      });
+    }
+
+    // SaveVersion 18: Remove the migration-injected BANK_V2 at (12,4) if a real one exists
+    const lootTypes2 = new Set(['BANK_V2', 'BANK', 'BANK_WITH_CHEST', 'VAULT']);
+    const realLootBuildings = state.buildings.filter(b => lootTypes2.has(b.typeId));
+    if (realLootBuildings.length > 1) {
+      state.buildings = state.buildings.filter(b => !(b.typeId === 'BANK_V2' && b.x === 12 && b.y === 4));
+    }
 
     state.saveVersion = CURRENT_VERSION;
   }
