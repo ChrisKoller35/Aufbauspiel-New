@@ -1,4 +1,4 @@
-export type EncounterType = 'combat' | 'rest' | 'hazard' | 'boss' | 'checkpoint' | 'find' | 'merchant' | 'survivor';
+export type EncounterType = 'combat' | 'rest' | 'hazard' | 'boss' | 'checkpoint' | 'find' | 'merchant' | 'survivor' | 'fortification';
 
 /** Eine wählbare Option in einem Begegnungs-Dialog */
 export interface EncounterChoice {
@@ -9,6 +9,15 @@ export interface EncounterChoice {
   value: number;
   /** Optionaler Item-Key für effect='item' */
   itemId?: string;
+}
+
+/** Zustand einer Befestigungsanlage (Mauer, Tor, Turm, Bergfried) */
+export interface FortificationState {
+  name: string;
+  hp: number;
+  maxHp: number;
+  armor: number;
+  spriteKey: string;
 }
 
 export interface EncounterRoom {
@@ -22,6 +31,8 @@ export interface EncounterRoom {
   findItems?: { itemId: string; qty: number }[];
   /** Wählbare Optionen (für find/rest Räume – Feature #11) */
   encounterChoices?: { optionA: EncounterChoice; optionB: EncounterChoice };
+  /** Belagerungsraum: die zu zerstörende Befestigung */
+  fortification?: FortificationState;
 }
 
 export interface SpecialEffect {
@@ -54,6 +65,10 @@ export interface CombatUnit {
   specialEffects?: SpecialEffect[];
   /** Whether anti_heal debuff is active on this unit */
   antiHealDebuff?: boolean;
+  /** Siege: diese Einheit ist eine Kriegsmaschine (Kanone/Katapult) */
+  isWarMachine?: boolean;
+  /** Siege: dieser Gegner bevorzugt die Kriegsmaschine als Angriffsziel */
+  prefersWarMachineTarget?: boolean;
 }
 
 export interface CombatBuff {
@@ -67,9 +82,11 @@ export interface CombatSkill {
   name: string;
   cooldown: number;
   currentCooldown: number;
-  effectType: 'damage' | 'heal' | 'taunt' | 'buff' | 'aoe' | 'summon';
+  effectType: 'damage' | 'heal' | 'taunt' | 'buff' | 'aoe' | 'summon' | 'drain_air';
   power: number;
   target: string;
+  /** Optional: Luftentzug zusätzlich zum normalen Schaden (z.B. Leviathan-Druckwelle) */
+  drainAirAmount?: number;
 }
 
 export interface ExpeditionRun {
@@ -108,6 +125,34 @@ export interface ExpeditionRun {
   isGrandmasterTrial?: boolean;
   /** Tracks which party units have used their one ability this expedition (unit.id → used) */
   abilitiesUsed: Record<number, boolean>;
+  // Air Shield System (Unterwasser-Routen)
+  /** Aktuelle Luft (0-100+) */
+  airShield?: number;
+  /** Maximum Luft (Standard 100 + airBonus von Items) */
+  airShieldMax?: number;
   /** Guardian's Spott ability: when true, all enemy attacks are redirected to the Guardian */
   guardianTauntActive?: boolean;
+  /** Per-round HP snapshots for animated combat playback (transient, not saved) */
+  combatRoundSnapshots?: CombatRoundSnapshot[];
+  /** Siege: die Kriegsmaschine dieser Expedition (nicht in party, separater Slot) */
+  warMachineUnit?: CombatUnit;
+  /** ID des eingesetzten War Machine Items (z.B. 'war_cannon') */
+  warMachineItemId?: string;
+}
+
+/** Snapshot of HP values after a combat round – used by CombatOverlay for round-by-round animation */
+export interface CombatRoundSnapshot {
+  round: number;
+  /** partyHp[unitId] = hp after this round */
+  partyHp: Record<number, number>;
+  /** enemyHp[unitId] = hp after this round */
+  enemyHp: Record<number, number>;
+  /** Combat log entries generated DURING this round */
+  logLines: string[];
+  /** Whether any critical hit occurred this round */
+  hadCrit: boolean;
+  /** Whether a unit died this round */
+  hadDeath: boolean;
+  /** Siege: HP der Befestigung nach dieser Runde */
+  fortificationHp?: number;
 }

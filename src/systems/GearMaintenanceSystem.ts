@@ -44,7 +44,8 @@ export class GearMaintenanceSystem {
 
   private countEquippedItems(fighter: GuildFighter): number {
     let count = 0;
-    if (fighter.gear.weapon) count++;
+    if (fighter.gear.mainHand) count++;
+    if (fighter.gear.offHand) count++;
     if (fighter.gear.armor) count++;
     if (fighter.gear.trinket) count++;
     return count;

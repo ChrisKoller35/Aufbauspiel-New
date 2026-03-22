@@ -17,6 +17,7 @@
 import * as fs from "fs";
 import * as path from "path";
 import sharp from "sharp";
+import { SPRITE_REGISTRY } from "./spriteRegistry.js";
 
 const SPRITES_DIR = path.join("public", "assets", "sprites", "final");
 const GENERATED_DIR = path.join("public", "assets", "sprites", "generated");
@@ -236,13 +237,32 @@ async function main() {
     process.exit(1);
   }
 
-  const files = fs.readdirSync(SPRITES_DIR).filter(f => f.endsWith(".png"));
-  console.log(`${files.length} Sprites gefunden`);
+  // ⚠️ WICHTIG: Nur direkte .png Dateien in final/ — KEINE Unterordner!
+  // "Neue Icons/" enthält handgezeichnete Icons MIT farbigem Slot-Hintergrund.
+  // Diese dürfen NIEMALS durch remove-bg laufen — der Hintergrund ist gewollt!
+  // readdirSync ohne { recursive: true } = Unterordner werden automatisch übersprungen.
+  const files = fs.readdirSync(SPRITES_DIR).filter(f => f.endsWith(".png") && !fs.statSync(path.join(SPRITES_DIR, f)).isDirectory());
+  console.log(`${files.length} Sprites gefunden (Unterordner wie "Neue Icons/" werden übersprungen)`);
   console.log("");
 
-  // Skip-Liste: UI-Sprites die programmatisch generiert werden
+  // Skip-Liste: UI-Sprites und Sprites wo die KI den Hintergrund selbst generiert
   const skipPrefixes = ["UI_", "BG_MAIN_MENU"];
-  const shouldSkip = (name: string) => skipPrefixes.some(p => name.startsWith(p));
+  const keepBgKeys = new Set(SPRITE_REGISTRY.filter(s => s.keepBackground).map(s => s.key));
+  const shouldSkip = (name: string) =>
+    skipPrefixes.some(p => name.startsWith(p)) || keepBgKeys.has(name);
+
+  // Rarity-Icons: nach remove-bg einen farbigen Gradient-Hintergrund hinzufügen
+  const rarityColorMap = new Map(
+    SPRITE_REGISTRY.filter(s => s.rarityColor && !s.keepBackground).map(s => [s.key, s.rarityColor!])
+  );
+
+  // Gradient-Stops pro Rarity-Farbe (dark outer → bright center)
+  const RARITY_GRADIENTS: Record<string, [string, string]> = {
+    green:  ["#051a05", "#1a8a28"],
+    blue:   ["#050a1a", "#1040cc"],
+    violet: ["#0f0520", "#7020cc"],
+    orange: ["#1a0800", "#cc5010"],
+  };
 
   let processed = 0;
   let skipped = 0;
@@ -253,7 +273,8 @@ async function main() {
     const key = file.replace(".png", "");
 
     if (shouldSkip(key)) {
-      console.log(`   SKIP ${key} (UI-Sprite)`);
+      const reason = keepBgKeys.has(key) ? "KI-Hintergrund" : "UI-Sprite";
+      console.log(`   SKIP ${key} (${reason})`);
       skipped++;
       continue;
     }
@@ -267,13 +288,40 @@ async function main() {
     const filePath = path.join(SPRITES_DIR, file);
     try {
       const wasChanged = await processSprite(filePath);
-      if (wasChanged) {
+
+      // Rarity-Icon: transparentes Item auf farbigen Gradient-Hintergrund legen
+      const rarityColor = rarityColorMap.get(key);
+      if (rarityColor) {
+        const stops = RARITY_GRADIENTS[rarityColor] ?? RARITY_GRADIENTS.green;
+        const { width, height } = await sharp(filePath).metadata();
+        const w = width!, h = height!;
+        const gradientSvg = Buffer.from(
+          `<svg xmlns="http://www.w3.org/2000/svg" width="${w}" height="${h}">
+            <defs>
+              <radialGradient id="rg" cx="50%" cy="50%" r="65%">
+                <stop offset="0%"  stop-color="${stops[1]}"/>
+                <stop offset="55%" stop-color="${stops[1]}" stop-opacity="0.7"/>
+                <stop offset="100%" stop-color="${stops[0]}"/>
+              </radialGradient>
+            </defs>
+            <rect width="${w}" height="${h}" fill="${stops[0]}"/>
+            <rect width="${w}" height="${h}" fill="url(#rg)"/>
+          </svg>`
+        );
+        const itemBuf = await sharp(filePath).ensureAlpha().toBuffer();
+        await sharp(gradientSvg)
+          .composite([{ input: itemBuf, blend: "over" }])
+          .png()
+          .toFile(filePath);
+        console.log(`   OK ${key} - Hintergrund entfernt + ${rarityColor} Rarity-BG`);
+      } else if (wasChanged) {
         console.log(`   OK ${key} - Hintergrund entfernt`);
-        processed++;
       } else {
         console.log(`   -- ${key} - kein Hintergrund erkannt`);
         unchanged++;
+        continue;
       }
+      processed++;
     } catch (err) {
       console.error(`   FEHLER ${key}:`, err);
     }

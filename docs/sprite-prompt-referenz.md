@@ -33,35 +33,44 @@ Pro ist ein "Thinking"-Modell: Beschreibende Szenen-Anweisungen statt Keyword-Li
 | 2 | **Composition** | Kamerawinkel, Bildausschnitt | "Close-up portrait", "45 degree top-down isometric" |
 | 3 | **Action** | Was passiert? | "Carefully inspecting a tea bowl" |
 | 4 | **Setting** | Wo und wann? Umgebung, Tageszeit | "Rustic sun-drenched workshop" |
-| 5 | **Style** | Kunststil, Look & Feel | "Pixel art", "Kawaii sticker", "Watercolor" |
+| 5 | **Style** | Kunststil, Look & Feel | "Clean isometric 2D", "Painterly digital painting", "Watercolor" |
 | 6 | **Technical** | Kamera, Licht, Farben, Textur | "Soft bokeh", "Three-point softbox lighting" |
 
 ---
 
 ## 4 - Prompt-Templates
 
-### 4.1 Pixel-Art Sprites (Magic City Standard)
+### 4.1 Isometrische Buildings & Units (Magic City Standard)
 ```
-A [style] pixel art sprite of a [subject], [action or pose], rendered in
-SNES/GBA-inspired style with a limited color palette. [Key visual details].
-Black background, clean edges, [size hint e.g. 64x64 or 128x128].
+A clean isometric 2D sprite of a [subject], [action or pose], rendered in
+modern fantasy RPG style with rich colors and smooth shading. [Key visual details].
+45-degree top-down isometric perspective, magenta (#FF00FF) background,
+clean anti-aliased edges, [size hint e.g. 128x128 or 256x256].
 ```
 
-### 4.2 Stilisierte Illustrationen / Icons
+### 4.2 Item-Icons (Painterly / High-Quality)
 ```
-A [style] sticker of a [subject], featuring [key characteristics] and a
+A full-color painterly digital painting of a [subject], featuring
+[key characteristics] with [color palette]. Rendered in AAA RPG icon style
+(Diablo IV / WoW quality), rich detail, dramatic lighting.
+Magenta (#FF00FF) background, centered composition, 256x256.
+```
+
+### 4.3 Stilisierte Illustrationen / UI-Icons
+```
+A [style] illustration of a [subject], featuring [key characteristics] and a
 [color palette]. The design should have [line style] and [shading style].
-The background must be [transparent/black].
+The background must be [transparent/magenta (#FF00FF)].
 ```
 
-### 4.3 Text im Bild (Logos, UI-Elemente)
+### 4.4 Text im Bild (Logos, UI-Elemente)
 ```
 Create a [image type] for [concept] with the text "[text]" in a [font style].
 The design should be [style description], with a [color scheme].
 ```
 > **Nutze Pro** (`gemini-3-pro-image-preview`) fuer Text im Bild.
 
-### 4.4 Charakter-Konsistenz (verschiedene Ansichten)
+### 4.5 Charakter-Konsistenz (verschiedene Ansichten)
 ```
 A studio portrait of [character] against [background],
 [looking forward / in profile looking right / etc.]

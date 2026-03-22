@@ -33,22 +33,26 @@ detailed proportions, semi-chibi style,
 inspired by mobile RPG character art`.trim(),
 
   ENEMY: `
-2D cartoon illustration style, front-facing 3/4 view,
-fantasy medieval RPG monster creature,
-vibrant colors, clean outlines, menacing but stylized,
+Dramatic 2D cartoon illustration style, front-facing 3/4 view,
+fantasy medieval RPG monster creature, menacing and full of personality,
+vibrant saturated colors with strong contrast, clean black outlines,
+smooth cel-shading with bright highlights and deep shadows,
 solid bright magenta background (#FF00FF),
-single creature centered, no text, no labels,
-detailed with smooth shading,
-inspired by mobile RPG monster designs`.trim(),
+single creature centered and large, filling 75% of image height,
+dynamic aggressive pose suggesting movement or impending attack,
+no text, no labels, detailed creature design with visible texture and unique silhouette,
+inspired by Hearthstone card art and Clash Royale troop designs, high quality game asset`.trim(),
 
   BOSS: `
-2D cartoon illustration style, front-facing 3/4 view,
-fantasy medieval RPG boss monster, imposing and powerful,
-vibrant colors, clean outlines, dramatic lighting and detail,
+Dramatic 2D cartoon illustration style, front-facing 3/4 view,
+fantasy medieval RPG BOSS monster, supremely imposing and terrifying,
+vibrant saturated colors with dramatic cinematic lighting, powerful contrast,
+thick clean black outlines, painterly digital art style with glowing special effects,
 solid bright magenta background (#FF00FF),
-single large creature centered, no text, no labels,
-highly detailed with smooth shading and special effects,
-inspired by mobile RPG boss designs, larger and more menacing than regular enemies`.trim(),
+single massive creature centered, filling 85% of image height, large and epic in scale,
+no text, no labels, powerful dramatic pose radiating raw threat and dominance,
+highly detailed design with glowing elements, rich texture, unique unforgettable silhouette,
+inspired by Hearthstone legendary card art and Diablo boss monster designs`.trim(),
 
   ITEM: `
 2D cartoon illustration style, icon view from slightly above,
@@ -58,6 +62,16 @@ solid bright magenta background (#FF00FF),
 single item centered, no text, no labels,
 clean and detailed icon style,
 inspired by modern RPG inventory icons`.trim(),
+
+  ITEM_EPIC: `
+Stunning modern fantasy RPG legendary item concept art, single item centered and MASSIVE filling 90% of the frame,
+AAA game quality full-color digital oil painting — NOT pixel art, NOT cartoon, NOT sketchy,
+ultra-detailed surface textures: visible metal scratches, gem facets catching light, leather grain, etched runes,
+dramatic cinematic lighting with strong warm key light from top-right, deep atmospheric shadow on left,
+vivid magical energy: blazing elemental glow, sparkling particle trails, aura radiating outward,
+inspired by Diablo IV legendary weapons and Destiny exotic armor — that same jaw-dropping visual quality,
+solid bright magenta background (#FF00FF), no text, no labels, no UI elements, no ground, no pedestal,
+the item must look OVERWHELMINGLY POWERFUL — the kind of weapon that ends wars`.trim(),
 
   ICON: `
 Bold modern mobile game UI icon, single large symbol centered in frame,
@@ -131,6 +145,59 @@ single character centered and tall, filling 85% of image height,
 full body visible from head to toe, armor and weapon clearly shown,
 no text, no labels, no UI, high quality game art,
 inspired by Hearthstone card art and Diablo character splash art`.trim(),
+  ISO_BUILDING_SCIFI: `
+2D cartoon illustration style, TRUE isometric 45-degree left-front perspective,
+the building is viewed from slightly above-left so THREE faces are visible:
+- TOP FACE (roof) clearly visible at the top
+- LEFT WALL visible on the left side
+- FRONT WALL visible on the right-front side
+SCI-FI MEDIEVAL / TECHNO-FANTASY style: massive riveted metal plates combined with rough stone and heavy oak wood,
+visible glowing BLUE or PURPLE arkan-energy veins pulsing through walls and roof,
+reinforced struts and inlaid crystals on the structure,
+the building sits on a platform of dark metallic plates with energy conduit lines,
+vibrant warm colors with cool blue/purple energy accents, magical glowing details,
+clean black outlines, smooth cel-shading, hand-painted look,
+solid bright magenta background (#FF00FF),
+single building centered in frame filling 70% of image height,
+no text, no UI, rich color palette,
+inspired by Arcane (Netflix) architectural style blended with Clash of Clans art, high quality game asset`.trim(),
+
+  ISO_BUILDING_DARK: `
+2D cartoon illustration style, TRUE isometric 45-degree left-front perspective,
+the building is viewed from slightly above-left so THREE faces are visible:
+- TOP FACE (roof) clearly visible at the top
+- LEFT WALL visible on the left side
+- FRONT WALL visible on the right-front side
+CYBERPUNK / DARK INDUSTRIAL style: near-black and dark charcoal concrete brutalist multi-story structure,
+external pipes, thick cables and conduits running exposed across the facade,
+neon accent lights in cyan/teal strips and warm orange glow from windows and signs,
+weathered grungy surfaces with rust stains and scratches, metal railings on balconies,
+dramatic high-contrast between the dark mass and vivid neon/amber accents,
+air conditioning units, satellite dishes and antennas on roof,
+clean black outlines, smooth cel-shading, hand-painted cartoon look,
+solid bright magenta background (#FF00FF),
+single building centered in frame filling 70% of image height,
+no text, no UI, rich dark color palette,
+inspired by Cyberpunk 2077 city buildings and Shadowrun tabletop art, high quality game asset`.trim(),
+
+  ISO_BUILDING_WARM: `
+2D cartoon illustration style, TRUE isometric 45-degree left-front perspective,
+the building is viewed from slightly above-left so THREE faces are visible:
+- TOP FACE (roof) clearly visible at the top
+- LEFT WALL visible on the left side
+- FRONT WALL visible on the right-front side
+STEAMPUNK / WARM INDUSTRIAL style: light grey and beige walls with rust-brown and copper metallic accents,
+many visible external pipes, pressure tanks, steam vents and brass fittings running across the building,
+warm amber-orange glowing windows with cozy interior light, lanterns with soft flame glow,
+plants, vines and flowers growing on walls and balconies adding organic warmth and life,
+rounded dome elements, riveted metal tanks and steam chimneys on the roof,
+charming, lively and inviting despite its industrial character,
+clean black outlines, smooth cel-shading, cartoon 3D render look,
+solid bright magenta background (#FF00FF),
+single building centered in frame filling 70% of image height,
+no text, no UI, warm and richly detailed,
+inspired by Arcane (Netflix) Piltover district and Studio Ghibli industrial buildings, high quality game asset`.trim(),
+
 } as const;
 
 // ─── Typen ───────────────────────────────────────────────────
@@ -149,6 +216,8 @@ export interface SpriteDefinition {
   targetHeight: number;
   phase: SpritePhase;        // mvp = jetzt, post-mvp = später
   description: string;       // Kurzbeschreibung für Logs
+  rarityColor?: string;      // 'green'|'blue'|'violet'|'orange' → Hintergrund-Gradient nach remove-bg
+  keepBackground?: boolean;  // true = KI generiert Hintergrund selbst, remove-bg komplett überspringen
 }
 
 // ─── Helper ──────────────────────────────────────────────────
@@ -159,9 +228,24 @@ function sprite(
   w: number, h: number,
   phase: SpritePhase,
   description: string,
-  prompt: string
+  prompt: string,
+  rarityColor?: string,
+  keepBackground?: boolean
 ): SpriteDefinition {
-  return { key, category, prompt, targetWidth: w, targetHeight: h, phase, description };
+  return { key, category, prompt, targetWidth: w, targetHeight: h, phase, description, rarityColor, keepBackground };
+}
+
+// Rarity-colored icon background: T1=green, T2=blue, T3=violet, T4=orange
+function rarityIcon(item: string, bgColor: string, colorFamily: string): string {
+  return `Create a single fantasy mobile RPG item icon of a ${item}. The icon must have a visible ${bgColor} background tile matching the ${colorFamily} theme. The item is centered on top of the tile. Do not use black backgrounds.
+
+The background tile should be bright, magical, smooth, polished, and clearly visible, with soft glow, subtle gradients, magical energy, and faint decorative texture, but still clean enough to keep the item readable. The assigned color must fill the whole background area behind the item.
+
+Style: premium fantasy mobile game item icon, epic MMORPG loot, stylized but detailed, polished rendering, highly readable at small size, strong silhouette, ornate fantasy craftsmanship, glowing magical effects, clean outlines, centered composition, collectible inventory art.
+
+Layout: single square icon tile, centered item, no overlap, no cropped object, balanced composition, game-ready icon.
+
+No text, no logo, no watermark, no characters, no hands, no environment, no scene, no UI windows, no decorative card frame, no black background.`.trim();
 }
 
 // =============================================================
@@ -281,229 +365,385 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   // BOSSE (MVP)
   // ═══════════════════════════════════════════════════════════
 
-  sprite("BOSS_ELDER_TREANT", "boss", 64, 64, "mvp",
+  sprite("BOSS_ELDER_TREANT", "boss", 96, 96, "mvp",
     "Boss: Alter Treant (Wald)",
-    `${STYLES.BOSS}, an ancient elder treant boss: massive living tree creature, gnarled bark body with glowing green eyes, huge root-arms, moss and vines covering body, leaves as crown, imposing forest guardian, ancient and powerful`),
+    `${STYLES.BOSS}, the Elder Treant boss: colossal ancient tree creature, massive gnarled bark torso with glowing amber eyes, enormous root-arms raised to crush, dense carpet of moss and glowing vines covering body, a crown of autumn leaves and broken branches, face carved into ancient bark, absolute guardian of the deep forest`),
 
-  sprite("BOSS_BANDIT_CHIEF", "boss", 64, 64, "mvp",
+  sprite("BOSS_BANDIT_CHIEF", "boss", 96, 96, "mvp",
     "Boss: Banditenführer (Wald)",
-    `${STYLES.BOSS}, a menacing bandit chief boss: tall muscular human with scarred face, dark leather armor with fur collar, dual-wielding daggers, red bandana, gold chains, intimidating leader pose, treasure behind him`),
+    `${STYLES.BOSS}, the Bandit Chief boss: imposing scarred warrior, fur-trimmed dark leather armor studded with trophies, dual serrated daggers crossed in battle stance, red war-paint on face, gold chains and stolen jewelry, wild hair and beard, a pile of gold coins and weapons behind him, criminal king of the forest`),
 
-  sprite("BOSS_CRYSTAL_GOLEM", "boss", 64, 64, "mvp",
+  sprite("BOSS_CRYSTAL_GOLEM", "boss", 96, 96, "mvp",
     "Boss: Kristallgolem (Höhle)",
-    `${STYLES.BOSS}, a massive crystal golem boss: body made of grey rock with purple crystal shards protruding from shoulders, arms and head, glowing purple crystal core in chest, slow but immovable stance, cave crystal formations around base`),
+    `${STYLES.BOSS}, the Crystal Golem boss: immense stone body bristling with razor purple crystal shards erupting from shoulders and head, pulsing violet crystalline core glowing in chest cavity, fists of solid rock raised to smash, cave stalactites framing the base, slow unstoppable geological force`),
 
-  sprite("BOSS_SWAMP_HYDRA", "boss", 64, 64, "mvp",
+  sprite("BOSS_SWAMP_HYDRA", "boss", 96, 96, "mvp",
     "Boss: Sumpfhydra (Sumpf)",
-    `${STYLES.BOSS}, a three-headed swamp hydra boss: serpentine body with dark green scales, three snake-like heads with yellow eyes and open jaws, rising from murky brown-green swamp water, water dripping, toxic green aura, the largest and most fearsome monster`),
+    `${STYLES.BOSS}, the Swamp Hydra boss: three enormous serpent heads on thick scaly necks, dark green scales with yellow underbelly, each head hissing with open jaws and dripping toxic saliva, rising from murky swamp water, toxic green mist around body, the supreme monster of the marshes`),
 
   // ═══════════════════════════════════════════════════════════
   // BOSSE Post-MVP
   // ═══════════════════════════════════════════════════════════
 
-  sprite("BOSS_SPIDER_QUEEN", "boss", 64, 64, "post-mvp",
+  sprite("BOSS_SPIDER_QUEEN", "boss", 96, 96, "post-mvp",
     "Boss: Spinnenkönigin (Spinnennest)",
-    `${STYLES.BOSS}, a terrifying spider queen boss: massive dark spider with glowing red eyes, crown-like chitin crest on head, egg sacs hanging from web strands, venomous dripping mandibles, dark purple and black coloring, surrounded by smaller spiderlings`),
+    `${STYLES.BOSS}, the Spider Queen boss: colossal spider with a regal chitin crown, glowing crimson compound eyes, thick black and purple carapace, venomous mandibles dripping green ichor, silk-wrapped egg sac throne behind her, smaller spiderlings crawling around massive legs, terrifying matriarch of the nest`),
 
-  sprite("BOSS_FALLEN_KNIGHT", "boss", 64, 64, "post-mvp",
+  sprite("BOSS_FALLEN_KNIGHT", "boss", 96, 96, "post-mvp",
     "Boss: Gefallener Ritter (Ruinen)",
-    `${STYLES.BOSS}, a fallen knight boss: once-noble knight in corroded dark plate armor, ghostly blue glow from helmet visor, broken but still imposing greatsword, tattered cape, undead aura, tragic and menacing`),
+    `${STYLES.BOSS}, the Fallen Knight boss: towering undead warrior in cracked black plate armor etched with faded noble crests, spectral blue flames pour from visor and gauntlet gaps, massive corroded greatsword dragging sparks on the ground, ragged torn royal cape, aura of tragedy and unstoppable cursed might`),
 
-  sprite("BOSS_SHADOW_LICH", "boss", 64, 64, "post-mvp",
+  sprite("BOSS_SHADOW_LICH", "boss", 96, 96, "post-mvp",
     "Boss: Schattenlich (Schattenreich)",
-    `${STYLES.BOSS}, a terrifying shadow lich boss: skeletal figure in flowing dark robes, glowing purple soul fire in eye sockets, floating above ground, dark magic swirling around bony hands, ancient crown, most powerful undead`),
+    `${STYLES.BOSS}, the Shadow Lich boss: ancient skeletal sorcerer in flowing obsidian robes, blazing purple soul-fire in hollow eye sockets, floating three feet above ground, both hands conjuring swirling void magic, ancient rusted crown, ornate phylactery glowing at chest, the most powerful undead in existence`),
 
-  sprite("BOSS_MAGMA_WYRM", "boss", 64, 64, "post-mvp",
+  sprite("BOSS_MAGMA_WYRM", "boss", 96, 96, "post-mvp",
     "Boss: Magmawyrm (Vulkankern)",
-    `${STYLES.BOSS}, a massive magma wyrm boss: serpentine dragon-like creature made of cooling lava and obsidian, glowing orange cracks in dark rock body, magma dripping from jaws, volcanic fire breath, coiled in lava pool`),
+    `${STYLES.BOSS}, the Magma Wyrm boss: massive serpentine dragon forged of cooling lava and volcanic obsidian, brilliant orange-white glowing cracks running through dark rocky body, massive open jaws pouring molten fire, coiled in a pool of lava, wings of hardened magma half-spread, volcanic devastation incarnate`),
 
-  sprite("BOSS_ARCHIV_WATCHER", "boss", 64, 64, "post-mvp",
+  sprite("BOSS_ARCHIV_WATCHER", "boss", 96, 96, "post-mvp",
     "Boss: Archivwächter (Verfluchte Bibliothek)",
-    `${STYLES.BOSS}, an arcane archive watcher boss: floating eldritch eye creature surrounded by orbiting cursed books, tentacles of magical energy, ancient runes glowing, mystical blue and purple, guardian of forbidden knowledge`),
+    `${STYLES.BOSS}, the Archive Watcher boss: enormous floating eldritch eye with a slit reptilian pupil, orbited by cursed ancient tomes and scrolls, writhing magical tentacles of energy extending outward, ancient runes burning gold and blue, mystical purple aura, the all-seeing immortal guardian of forbidden knowledge`),
 
   sprite("BOSS_ANCIENT_DRAGON", "boss", 96, 96, "post-mvp",
     "Boss: Uralter Drache (Drachenhort, 3-Phasen)",
-    `${STYLES.BOSS}, an ancient dragon boss: massive scaled dragon with golden treasure hoard, enormous wings spread wide, fire breath charging, scarred battle-worn scales of deep red and gold, the ultimate final boss, awe-inspiring and terrifying`),
+    `${STYLES.BOSS}, the Ancient Dragon boss: titanic scarred dragon with wings fully spread wide, deep red and gold battle-worn scales, fire breath charging in jaws with visible heat distortion, massive clawed feet planted on a golden treasure hoard, wise cruel ancient eyes, the ultimate final boss radiating unstoppable primordial power`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER – WALD (MVP)
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_FOREST_WOLF", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_FOREST_WOLF", "enemy", 96, 96, "mvp",
     "Gegner: Waldwolf",
-    `${STYLES.ENEMY}, a grey forest wolf: snarling wild wolf, grey fur, aggressive lunging pose, green forest theme`),
+    `${STYLES.ENEMY}, a Forest Wolf: large grey timber wolf with thick matted fur, bared fangs dripping saliva, amber glowing eyes, muscular lunging attack pose, scarred battle-hardened body, dark forest shadows behind it`),
 
-  sprite("ENEMY_BANDIT_RAIDER", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_BANDIT_RAIDER", "enemy", 96, 96, "mvp",
     "Gegner: Banditenräuber",
-    `${STYLES.ENEMY}, a bandit raider: hooded human thug with dagger, dark brown leather clothes, menacing`),
+    `${STYLES.ENEMY}, a Bandit Raider: scarred hooded human rogue, dark brown leather armor with metal rivets, short curved dagger in attack grip, threatening grin, multiple pouches and stolen loot on belt, dangerous forest outlaw`),
 
-  sprite("ENEMY_CAVE_SLIME", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_CAVE_SLIME", "enemy", 96, 96, "mvp",
     "Gegner: Höhlenschleim",
-    `${STYLES.ENEMY}, a cave slime: large green-grey gelatinous blob creature, semi-transparent, wobbling`),
+    `${STYLES.ENEMY}, a Cave Slime: large pulsating gelatinous blob, translucent murky green-grey body with visible trapped bones inside, wobbling offensive stance, acidic bubbles on surface, small beady eyes gleaming in the slime`),
 
-  sprite("ENEMY_THORN_SPRITE", "enemy", 28, 28, "mvp",
+  sprite("ENEMY_THORN_SPRITE", "enemy", 96, 96, "mvp",
     "Gegner: Dornengeist",
-    `${STYLES.ENEMY}, a thorn sprite: tiny floating fey creature made of thorny vines, glowing green eyes, sharp`),
+    `${STYLES.ENEMY}, a Thorn Sprite: small floating fey creature woven from living thorny vines, glowing venomous green eyes, sharp thorn-tipped fingers, hovering with leaves swirling around it, mischievous and dangerous nature spirit`),
 
-  sprite("ENEMY_FUNGAL_CREEPER", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_FUNGAL_CREEPER", "enemy", 96, 96, "mvp",
     "Gegner: Pilzkriecher",
-    `${STYLES.ENEMY}, a fungal creeper: mushroom-headed creature with spore cloud, brown and purple, slow shambling`),
+    `${STYLES.ENEMY}, a Fungal Creeper: hunched creature with a massive spotted mushroom cap for a head, purple and brown mottled body, releasing a toxic spore cloud, shambling aggressive stance, bioluminescent glowing spots on skin`),
 
-  sprite("ENEMY_SHADOW_BAT", "enemy", 28, 28, "mvp",
+  sprite("ENEMY_SHADOW_BAT", "enemy", 96, 96, "mvp",
     "Gegner: Schattenfledermaus",
-    `${STYLES.ENEMY}, a shadow bat: dark purple-black bat with glowing red eyes, wings spread, swooping`),
+    `${STYLES.ENEMY}, a Shadow Bat: large dark purple-black bat with enormous leathery wings fully spread in a dive attack, blazing red eyes, razor fangs, shadowy wisps trailing from wing-tips, creature of pure darkness`),
 
-  sprite("ENEMY_MOSS_GOLEM", "enemy", 36, 36, "mvp",
+  sprite("ENEMY_MOSS_GOLEM", "enemy", 96, 96, "mvp",
     "Gegner: Moosgolem",
-    `${STYLES.ENEMY}, a moss golem: large rock creature covered in green moss, slow heavy stance, forest earth tones`),
+    `${STYLES.ENEMY}, a Moss Golem: large hulking rock creature densely carpeted in thick green moss and small ferns, glowing forest-green eyes in a boulder face, massive fist raised to smash, earth and roots tangled in body`),
 
-  sprite("ENEMY_VENOMFANG_SPIDER", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_VENOMFANG_SPIDER", "enemy", 96, 96, "mvp",
     "Gegner: Giftzahnspinne",
-    `${STYLES.ENEMY}, a venomfang spider: large dark spider with green venom dripping from fangs, eight legs, terrifying`),
+    `${STYLES.ENEMY}, a Venomfang Spider: large menacing dark spider with vivid green venom dripping from oversized curved fangs, all eight hairy legs spread in attack stance, multiple pairs of red eyes gleaming, bright green venom markings on dark body`),
 
-  sprite("ENEMY_GOBLIN_SCOUT", "enemy", 28, 28, "mvp",
+  sprite("ENEMY_GOBLIN_SCOUT", "enemy", 96, 96, "mvp",
     "Gegner: Goblin-Späher",
-    `${STYLES.ENEMY}, a goblin scout: small green-skinned goblin with pointy ears, rusty short sword, ragged clothes`),
+    `${STYLES.ENEMY}, a Goblin Scout: wiry green-skinned goblin with huge pointed ears, beady cunning yellow eyes, worn rusty short sword, tattered patched leather armor, crouched sneaky readied stance, covered in forest mud and grime`),
 
-  sprite("ENEMY_WILD_BOAR", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_WILD_BOAR", "enemy", 96, 96, "mvp",
     "Gegner: Wildschwein",
-    `${STYLES.ENEMY}, a wild boar: angry brown bristly boar with sharp tusks, charging stance, forest creature`),
+    `${STYLES.ENEMY}, a Wild Boar: massive bristling dark brown boar with two huge sharp tusks, small fierce red eyes, coarse spiked fur standing on end, powerful charging stance with front hoof pawing the ground, forest beast in a rage`),
 
-  sprite("ENEMY_HOLLOW_SHADE", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_HOLLOW_SHADE", "enemy", 96, 96, "mvp",
     "Gegner: Hohlschatten",
-    `${STYLES.ENEMY}, a hollow shade: ghostly dark figure, almost invisible, red glowing eyes, shadowy wisps, undead assassin`),
+    `${STYLES.ENEMY}, a Hollow Shade: terrifying near-invisible shadow assassin, body made of swirling darkness with a featureless face save for two burning red eyes, smoke-like edges dissolving into shadow, clawed hand reaching forward, undead phantom`),
 
-  sprite("ENEMY_BRAMBLE_BEAR", "enemy", 36, 36, "mvp",
+  sprite("ENEMY_BRAMBLE_BEAR", "enemy", 96, 96, "mvp",
     "Gegner: Dornenbär",
-    `${STYLES.ENEMY}, a bramble bear: large brown bear with thorny vine growths on body, fierce, forest brute`),
+    `${STYLES.ENEMY}, a Bramble Bear: enormous brown bear fused with wild thorny vines growing through its hide, sharp thorns protruding from shoulders and legs, roaring with mouth open wide, standing on hind legs, furious forest brute`),
 
-  sprite("ENEMY_CURSED_WISP", "enemy", 28, 28, "mvp",
+  sprite("ENEMY_CURSED_WISP", "enemy", 96, 96, "mvp",
     "Gegner: Verfluchtes Irrlicht",
-    `${STYLES.ENEMY}, a cursed wisp: small floating ghostly orb with eerie blue-green glow, spectral trails, healer support`),
+    `${STYLES.ENEMY}, a Cursed Wisp: small eerie floating orb of corrupted ghostly energy, shifting blue-green and sickly purple glow, spectral tendrils trailing behind, hollow screaming face forming in the light, undead support spirit`),
+
+  sprite("ENEMY_FOREST_WISP", "enemy", 96, 96, "mvp",
+    "Gegner: Waldirrlicht",
+    `${STYLES.ENEMY}, a Forest Wisp: gentle but dangerous floating orb of warm golden-green light, swirling leaves orbit around it, soft glow illuminating mist below, small leaf-like wings of pure energy, ethereal nature spirit with a mischievous face`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER – HÖHLE (MVP)
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_CRYSTAL_BEETLE", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_CRYSTAL_BEETLE", "enemy", 96, 96, "mvp",
     "Gegner: Kristallkäfer",
-    `${STYLES.ENEMY}, a crystal beetle: armored insect with crystalline shell, purple crystal spikes, cave creature`),
+    `${STYLES.ENEMY}, a Crystal Beetle: large armored cave insect with a stunning shell made of interlocking purple crystal facets, sharp crystal spike horns, six powerful clawed legs, glowing bioluminescent underbelly, defensive stance with head lowered to charge`),
 
-  sprite("ENEMY_DEEP_CRAWLER", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_DEEP_CRAWLER", "enemy", 96, 96, "mvp",
     "Gegner: Tiefenkriecher",
-    `${STYLES.ENEMY}, a deep crawler: multi-legged cave centipede creature, dark grey, long segmented body, cave dweller`),
+    `${STYLES.ENEMY}, a Deep Crawler: long dark grey cave centipede with many segmented armored legs, razor mandibles at the front, glowing yellow dots along its body, rearing up aggressively from a low stalking pose, cave predator in the darkness`),
 
-  sprite("ENEMY_MINE_SPECTER", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_MINE_SPECTER", "enemy", 96, 96, "mvp",
     "Gegner: Minengeist",
-    `${STYLES.ENEMY}, a mine specter: ghostly miner apparition, translucent grey-blue, pickaxe weapon, undead cave ghost`),
+    `${STYLES.ENEMY}, a Mine Specter: translucent grey-blue ghost of a dead miner, wearing a tattered hardhat and torn overalls, swinging a glowing ghostly pickaxe, hollow screaming face with empty eye sockets, floating just above the ground, cursed cave spirit`),
 
-  sprite("ENEMY_STALACTITE_BAT", "enemy", 28, 28, "mvp",
+  sprite("ENEMY_STALACTITE_BAT", "enemy", 96, 96, "mvp",
     "Gegner: Stalaktit-Fledermaus",
-    `${STYLES.ENEMY}, a stalactite bat: small grey stone-colored bat with sharp rocky wings, cave creature, fast`),
+    `${STYLES.ENEMY}, a Stalactite Bat: grey bat with wings like jagged stone, sharp rocky wing-tips that cut like blades, small glowing red eyes, body camouflaged like cave rock, fangs like stone daggers, swooping dive-attack pose`),
 
-  sprite("ENEMY_MAGMA_SLUG", "enemy", 36, 36, "mvp",
+  sprite("ENEMY_MAGMA_SLUG", "enemy", 96, 96, "mvp",
     "Gegner: Magmaschnecke",
-    `${STYLES.ENEMY}, a magma slug: large glowing orange-red slug creature, lava dripping, rocky shell, cave brute`),
+    `${STYLES.ENEMY}, a Magma Slug: enormous glowing orange-red slug with a hardened cooled lava shell on its back, molten rock dripping from its trail, small burning eyes, body pulsing with intense heat, slow but unstoppable volcanic cave brute`),
+
+  sprite("ENEMY_CAVE_BAT", "enemy", 96, 96, "mvp",
+    "Gegner: Höhlenfledermaus",
+    `${STYLES.ENEMY}, a Cave Bat: brown-grey bat with wide leathery wings dramatically spread in a swooping attack, mouth open revealing sharp fangs, small fierce red beady eyes, matted fur, perfectly adapted cave hunter`),
+
+  sprite("ENEMY_CAVE_GOBLIN", "enemy", 96, 96, "mvp",
+    "Gegner: Höhlengoblin",
+    `${STYLES.ENEMY}, a Cave Goblin: pale bluish-grey skinned goblin with enormous eyes evolved for total darkness, hunched sneaky body, crude stone club raised to strike, pointy ears, nasty grin with broken teeth, dirty cave dwelling ambush predator`),
+
+  sprite("ENEMY_CAVE_SPIDER_QUEEN", "enemy", 96, 96, "mvp",
+    "Gegner: Höhlenspinnenkönigin",
+    `${STYLES.ENEMY}, a Cave Spider Queen: large bloated pale grey spider with a purple crown-like marking on the abdomen, multiple glowing red eyes, thick spiny legs, small spiderlings crawling around her feet, protective and deadly brood mother`),
+
+  sprite("ENEMY_CAVE_GOLEM_SHARD", "enemy", 96, 96, "mvp",
+    "Gegner: Höhlengolem-Splitter",
+    `${STYLES.ENEMY}, a Cave Golem Shard: jagged compact creature assembled from broken rocks and glinting crystal shards, stumpy powerful animated stone body, rough cracked surface, tiny glowing cracks of energy between the stones, aggressive forward-leaning stance`),
+
+  sprite("ENEMY_CAVE_TROLL", "enemy", 96, 96, "mvp",
+    "Gegner: Höhlentroll",
+    `${STYLES.ENEMY}, a Cave Troll: massive hunched grey-stone-skinned troll, huge ape-like arms dragging on the ground, boulders for fists, dull glowing yellow eyes beneath a heavy brow ridge, stalagmites growing from its shoulders, lumbering devastating cave brute`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER – SUMPF (MVP)
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_BOG_WITCH", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_BOG_WITCH", "enemy", 96, 96, "mvp",
     "Gegner: Moorhexe",
-    `${STYLES.ENEMY}, a bog witch: hunched swamp hag with gnarled staff, tattered green robes, healer/support enemy`),
+    `${STYLES.ENEMY}, a Bog Witch: hunched ancient swamp hag in rotting tattered green robes, gnarled driftwood staff topped with a glowing hex rune, warts and mud on grey skin, wild mossy hair, conjuring a bubbling green poison curse, swamp support caster`),
 
-  sprite("ENEMY_SWAMP_TROLL", "enemy", 36, 36, "mvp",
+  sprite("ENEMY_SWAMP_TROLL", "enemy", 96, 96, "mvp",
     "Gegner: Sumpftroll",
-    `${STYLES.ENEMY}, a swamp troll: huge green-brown troll with wooden club, mossy skin, massive brute, slow`),
+    `${STYLES.ENEMY}, a Swamp Troll: colossal green-brown troll with thick mossy hide, dragging a rotted wooden club, muddy matted fur and algae patches on skin, wide flat nose, red eyes glowing with dull rage, knee-deep in swamp water, lumbering unstoppable brute`),
 
-  sprite("ENEMY_LEECH_SWARM", "enemy", 28, 28, "mvp",
+  sprite("ENEMY_LEECH_SWARM", "enemy", 96, 96, "mvp",
     "Gegner: Blutegelschwarm",
-    `${STYLES.ENEMY}, a leech swarm: cluster of dark writhing leeches forming a mass, slimy dark brown-red, disgusting`),
+    `${STYLES.ENEMY}, a Leech Swarm: a writhing pulsating mass of dozens of dark red-brown leeches coiling together into a creature-like form, slimy glistening bodies, tiny sucking mouths all facing outward, a horrifying undulating mass of parasites`),
 
-  sprite("ENEMY_MIRE_PHANTOM", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_MIRE_PHANTOM", "enemy", 96, 96, "mvp",
     "Gegner: Sumpfphantom",
-    `${STYLES.ENEMY}, a mire phantom: ghostly swamp spirit, translucent green-grey, haunting pose, assassin type, deadly`),
+    `${STYLES.ENEMY}, a Mire Phantom: deadly translucent swamp spirit, shifting green-grey ghostly body with a skull-like face, clawed spectral hands reaching forward, tattered burial shroud trailing behind, hovering silently over dark swamp water, assassin of the marsh`),
 
-  sprite("ENEMY_TOXIC_TOAD", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_TOXIC_TOAD", "enemy", 96, 96, "mvp",
     "Gegner: Giftkröte",
-    `${STYLES.ENEMY}, a toxic toad: bloated poison toad with yellow-green skin, purple poison warts, swamp creature`),
+    `${STYLES.ENEMY}, a Toxic Toad: enormous bloated toad with sickly yellow-green warty skin, huge bulging poison glands on back, wide mouth open with dripping purple toxic slime on tongue, beady amber eyes, crouching ready to lunge, noxious swamp creature`),
 
-  sprite("ENEMY_ROT_WALKER", "enemy", 32, 32, "mvp",
+  sprite("ENEMY_ROT_WALKER", "enemy", 96, 96, "mvp",
     "Gegner: Fäulniswandler",
-    `${STYLES.ENEMY}, a rot walker: undead swamp zombie, decaying green-brown flesh, shambling pose, swamp undead fighter`),
+    `${STYLES.ENEMY}, a Rot Walker: horrifying undead swamp zombie with decaying green-brown flesh hanging off exposed bones, tattered rotting rags, shambling arms outstretched, hollow sunken eyes glowing faint green, trailing swamp mud and decomposition, relentless undead fighter`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – RUINEN/KRYPTA
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_SKELETON_WARRIOR", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_SKELETON_WARRIOR", "enemy", 96, 96, "post-mvp",
     "Gegner: Skelettkrieger (Ruinen)",
-    `${STYLES.ENEMY}, a skeleton warrior: animated human skeleton with rusted sword and dented shield, glowing blue eye sockets, crypt dweller`),
+    `${STYLES.ENEMY}, a Skeleton Warrior: animated human skeleton in rusted dented iron armor, wielding a chipped sword and battered shield, glowing blue fire in empty eye sockets, cracked yellowed bones, battle-ready fighting stance, crypt undead soldier`),
 
-  sprite("ENEMY_CURSED_KNIGHT", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_CURSED_KNIGHT", "enemy", 96, 96, "post-mvp",
     "Gegner: Verfluchter Ritter (Ruinen)",
-    `${STYLES.ENEMY}, a cursed knight: ghostly knight in dark corroded armor, spectral blue glow, ethereal sword, haunted ruins guardian`),
+    `${STYLES.ENEMY}, a Cursed Knight: ghostly armored warrior in corroded dark plate armor, spectral blue energy bleeding from visor and armor joints, ethereal sword raised in guard, tattered cape dissolving into mist, haunted ruins guardian still bound by duty`),
 
-  sprite("ENEMY_TOMB_WRAITH", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_TOMB_WRAITH", "enemy", 96, 96, "post-mvp",
     "Gegner: Grabgespenst (Ruinen)",
-    `${STYLES.ENEMY}, a tomb wraith: floating ghostly figure in tattered burial shroud, wailing pose, eerie blue-white glow, undead spirit`),
+    `${STYLES.ENEMY}, a Tomb Wraith: wailing undead spirit in tattered burial shroud, translucent grey-white body with a tortured screaming face, clawed hands outstretched, eerie blue-white glow emanating from within, floating in a swirl of grave dust, undead horror`),
 
-  sprite("ENEMY_BONE_ARCHER", "enemy", 28, 28, "post-mvp",
+  sprite("ENEMY_BONE_ARCHER", "enemy", 96, 96, "post-mvp",
     "Gegner: Knochenschütze (Ruinen)",
-    `${STYLES.ENEMY}, a bone archer: skeleton with ancient bow, quiver of bone arrows, crouching sniper pose, crypt ranged attacker`),
+    `${STYLES.ENEMY}, a Bone Archer: skeleton crouched in sniper stance, drawing an ancient crumbling bow with a bone arrow nocked, quiver of yellowed bone arrows on spine, glowing blue eye sockets tracking a target, nimble undead ranged attacker`),
+
+  sprite("ENEMY_STONE_GUARDIAN", "enemy", 96, 96, "post-mvp",
+    "Gegner: Steinwächter (Ruinen)",
+    `${STYLES.ENEMY}, a Stone Guardian: massive animated stone statue warrior with deeply cracked ancient armor carved from granite, blazing runic eyes of orange fire, raising a colossal stone sword, runes carved across the body glowing with ancient magic, ruins protector`),
+
+  sprite("ENEMY_BONE_KNIGHT", "enemy", 96, 96, "post-mvp",
+    "Gegner: Knochenritter (Ruinen)",
+    `${STYLES.ENEMY}, a Bone Knight: commanding skeleton in dark rusted full plate armor, wielding a large heavy sword and tower shield, blue flame eyes visible through visor, cracked bone hands gripping weapons, elite undead champion of the crypt, disciplined battle stance`),
+
+  sprite("ENEMY_TOMB_HORROR", "enemy", 96, 96, "post-mvp",
+    "Gegner: Grabentsetzen (Ruinen)",
+    `${STYLES.ENEMY}, a Tomb Horror: monstrous undead abomination, massive body grotesquely stitched together from multiple corpses, bandaged limbs of different sizes, hollow skull-like eye sockets glowing sickly yellow, shambling hunched pose, arms dragging on the ground, terrifying brute of pure horror`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – SPINNENNEST
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_GIANT_SPIDER", "enemy", 36, 36, "post-mvp",
+  sprite("ENEMY_GIANT_SPIDER", "enemy", 96, 96, "post-mvp",
     "Gegner: Riesenspinne (Spinnennest)",
-    `${STYLES.ENEMY}, a giant spider: large hairy spider with multiple glowing red eyes, dark brown and black, web strands, cave spider`),
+    `${STYLES.ENEMY}, a Giant Spider: huge hairy dark brown and black spider with eight glowing red eyes, thick spiny legs spread wide, dripping web strands attached to its body, fangs parted and glistening, rearing up in a threatening attack stance, terrifying cave hunter`),
 
-  sprite("ENEMY_EGG_SAC_GUARDIAN", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_EGG_SAC_GUARDIAN", "enemy", 96, 96, "post-mvp",
     "Gegner: Eiersack-Wächter (Spinnennest)",
-    `${STYLES.ENEMY}, an egg sac guardian: bulbous spider protecting translucent egg sac, defensive stance, pale white and green, brood protector`),
+    `${STYLES.ENEMY}, an Egg Sac Guardian: bulbous pale white and green spider with a swollen abdomen full of eggs, protectively curled around a large translucent egg sac, defensive lowered stance, smaller spider hatchlings emerging, devoted deadly brood mother`),
 
-  sprite("ENEMY_VENOMOUS_LURKER", "enemy", 28, 28, "post-mvp",
+  sprite("ENEMY_VENOMOUS_LURKER", "enemy", 96, 96, "post-mvp",
     "Gegner: Giftlauerer (Spinnennest)",
-    `${STYLES.ENEMY}, a venomous lurker: sleek dark spider with bright green venom markings, ambush predator, fast and deadly`),
+    `${STYLES.ENEMY}, a Venomous Lurker: sleek jet-black spider with vivid neon-green venom stripe markings, low crouched ambush predator stance, eight eyes all forward-facing and intent, venom droplets glistening at fang tips, fast and deadly assassin of the nest`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – VULKANKERN
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_LAVA_GOLEM", "enemy", 36, 36, "post-mvp",
+  sprite("ENEMY_LAVA_GOLEM", "enemy", 96, 96, "post-mvp",
     "Gegner: Lavagolem (Vulkan)",
-    `${STYLES.ENEMY}, a lava golem: humanoid creature of cooling lava and obsidian rock, glowing orange cracks, magma dripping, volcanic brute`),
+    `${STYLES.ENEMY}, a Lava Golem: powerful humanoid creature of black cooling obsidian rock, brilliant orange-red lava glowing through deep cracks in its body, magma dripping from fists, heat shimmer rising around it, volcanic eruption pose with arm raised to smash, slow unstoppable volcanic brute`),
 
-  sprite("ENEMY_FLAME_SPIRIT", "enemy", 28, 28, "post-mvp",
+  sprite("ENEMY_FLAME_SPIRIT", "enemy", 96, 96, "post-mvp",
     "Gegner: Flammengeist (Vulkan)",
-    `${STYLES.ENEMY}, a flame spirit: floating fire elemental, swirling orange and yellow flames forming a face, intense heat shimmer`),
+    `${STYLES.ENEMY}, a Flame Spirit: floating fire elemental with a swirling vortex of orange-yellow flames forming a vaguely humanoid body, an angry burning face in the center of the inferno, heat distortion shimmer around it, jets of fire streaming from outstretched arms, pure volcanic spirit`),
 
-  sprite("ENEMY_ASH_GOLEM", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_ASH_GOLEM", "enemy", 96, 96, "post-mvp",
     "Gegner: Aschegolem (Vulkan)",
-    `${STYLES.ENEMY}, an ash golem: crumbling grey-black creature of volcanic ash and cinder, smoldering embers, slow but tough`),
+    `${STYLES.ENEMY}, an Ash Golem: large slow creature built of compacted volcanic ash and cinder, crumbling grey-black body with smoldering orange embers glowing within every crack, ash dust trailing from each movement, hollow burning ember eyes, raised fist ready to crumble into impact`),
+
+  sprite("ENEMY_LAVA_ELEMENTAL", "enemy", 96, 96, "post-mvp",
+    "Gegner: Lavaelementar (Vulkan)",
+    `${STYLES.ENEMY}, a Lava Elemental: swirling humanoid tornado of molten lava, blazing orange-white core radiating intense heat, outer shell of black cooling rock crust breaking apart to reveal inner fire, lava rivers flowing down its body, primal volcanic spirit in attack stance`),
+
+  sprite("ENEMY_FIRE_BAT", "enemy", 96, 96, "post-mvp",
+    "Gegner: Feuerfledermaus (Vulkan)",
+    `${STYLES.ENEMY}, a Fire Bat: sleek bat with wings made of living flame, orange-red fire feathers burning at the edges, bright molten ember eyes, heat trails streaming behind in flight, mouth open revealing fire-breathing teeth, fast agile volcanic predator`),
+
+  sprite("ENEMY_OBSIDIAN_CRAB", "enemy", 96, 96, "post-mvp",
+    "Gegner: Obsidiankrabbe (Vulkan)",
+    `${STYLES.ENEMY}, an Obsidian Crab: massive armored crab with shiny jet-black obsidian shell plates, bright lava cracks glowing orange between every plate, enormous razor-sharp volcanic claws raised in fighting stance, heavy defensive brute of the volcano, cracks smoking with heat`),
+
+  sprite("ENEMY_MAGMA_BROODLING", "enemy", 96, 96, "post-mvp",
+    "Gegner: Magmabrut (Vulkan)",
+    `${STYLES.ENEMY}, a Magma Broodling: small fast lizard-like creature of hardening dark magma, bright glowing orange-red cracks across its body, skittering aggressive forward-leaning pose with claws digging in, smoke rising from its body, fast and deadly volcanic minion`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – VERFLUCHTE BIBLIOTHEK
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ENEMY_CURSED_PRIEST", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_CURSED_PRIEST", "enemy", 96, 96, "post-mvp",
     "Gegner: Verfluchter Priester (Bibliothek)",
-    `${STYLES.ENEMY}, a cursed priest: undead cleric in tattered holy robes, corrupted golden staff, dark magic aura, fallen healer`),
+    `${STYLES.ENEMY}, a Cursed Priest: undead cleric in tattered holy robes now stained black with corruption, golden corrupted staff topped with an inverted holy symbol, dark void magic swirling from hands, sunken undead face with black hollow eyes, fallen healer turned dark magic support`),
 
-  sprite("ENEMY_GHOST_MAGE", "enemy", 32, 32, "post-mvp",
+  sprite("ENEMY_GHOST_MAGE", "enemy", 96, 96, "post-mvp",
     "Gegner: Geistermagier (Bibliothek)",
-    `${STYLES.ENEMY}, a ghost mage: translucent spectral wizard, floating spell book, arcane runes orbiting, blue-purple glow, library guardian`),
+    `${STYLES.ENEMY}, a Ghost Mage: translucent spectral wizard with a semi-visible skull face, floating ancient spell book open in front, arcane glowing runes orbiting its body, blue-purple ghostly glow emanating from within, robes dissolving into mist at the edges, librarian of the dead`),
 
-  sprite("ENEMY_TOME_GUARDIAN", "enemy", 36, 36, "post-mvp",
+  sprite("ENEMY_TOME_GUARDIAN", "enemy", 96, 96, "post-mvp",
     "Gegner: Buchwächter (Bibliothek)",
-    `${STYLES.ENEMY}, a tome guardian: animated suit of armor possessed by cursed books, books floating around body, arcane chains, library protector`),
+    `${STYLES.ENEMY}, a Tome Guardian: animated suit of dark iron armor possessed and kept alive by cursed ancient books, three large tomes orbiting its armored body on arcane chains, pages fluttering with dark energy, glowing rune-carved visor, sentinel posture with mace raised, absolute library protector`),
+
+  // ═══════════════════════════════════════════════════════════
+  // GEGNER – TIEFSEE (MVP)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ENEMY_DEEP_SEA_ANGLER", "enemy", 128, 128, "mvp",
+    "Gegner: Tiefsee-Anglerfisch",
+    `${STYLES.ENEMY}, A terrifying deep-sea anglerfish monster standing upright, bioluminescent lure dangling above its massive toothy maw, pitch-black deep ocean body with glowing blue-green patterns, sunken hollow eyes, rows of needle-sharp fangs dripping with water, fan-like pectoral fins spread menacingly, barnacles and deep-sea crusts on its dark scaly skin, dramatic deep-ocean atmosphere`),
+
+  sprite("ENEMY_JELLYFISH_SWARM", "enemy", 128, 128, "mvp",
+    "Gegner: Quallenschwarm",
+    `${STYLES.ENEMY}, A swarm of bioluminescent jellyfish forming a single threatening entity, dozens of translucent bells glowing electric blue and violet, long trailing venomous tentacles weaving together like whips, ethereal ghostly glow illuminating the surrounding water, pulsating light patterns across each bell, the swarm appears as one dangerous creature, deep sea atmosphere, otherworldly and dangerous`),
+
+  sprite("ENEMY_SEA_SERPENT", "enemy", 128, 128, "mvp",
+    "Gegner: Meeresschlange",
+    `${STYLES.ENEMY}, An ancient massive sea serpent rearing up aggressively, sleek muscular body with iridescent blue-green scales shimmering like the deep ocean, large serpentine head with flared nostrils and venomous fangs, bioluminescent stripe running along its spine, powerful coiled body suggesting immense speed and strength, sharp angular scales and fins along the neck, menacing predatory pose`),
+
+  sprite("ENEMY_DROWNED_KNIGHT", "enemy", 128, 128, "mvp",
+    "Gegner: Ertrunkener Ritter",
+    `${STYLES.ENEMY}, An undead knight that has spent centuries underwater, rusted and corroded plate armor encrusted with barnacles, sea anemones and coral growing from the helmet and pauldrons, glowing sickly green eyes behind the visor, a broken sword trailing seaweed, waterlogged tattered cape drifting as if still submerged, hollow undead menace, cold aquatic undead atmosphere, dark and foreboding`),
+
+  sprite("ENEMY_PRESSURE_CRAB", "enemy", 128, 128, "mvp",
+    "Gegner: Druckkrabbe",
+    `${STYLES.ENEMY}, A massive deep-sea crab with enormous crushing claws, black chitinous shell with dark purple undertones that can withstand immense ocean pressure, angular sharp-edged carapace with heavy reinforced plates, beady luminous red eyes on stalks, froth and bubbles around its razor-sharp claw edges, heavy armored body low to the ground, deep abyssal creature radiating crushing force`),
+
+  sprite("BOSS_LEVIATHAN", "boss", 192, 192, "mvp",
+    "Boss: Leviathan (Tiefsee)",
+    `${STYLES.BOSS}, An absolutely colossal ancient sea leviathan, massive serpentine dragon-like body with dark navy and midnight blue scales, rows of bioluminescent spots running along its entire length in electric blue and cyan, enormous fanged maw wide open revealing rows of teeth and a glowing abyss within, multiple massive fins like dark sails, crushing tentacle-like appendages, ancient ocean god energy, dramatic underwater lighting with rays of pale light cutting through darkness, supremely terrifying and epic scale`),
+
+  // ═══════════════════════════════════════════════════════════
+  // GEGNER – BELAGERUNG (POST-MVP)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ENEMY_WALL_ARCHER", "enemy", 128, 128, "post-mvp",
+    "Gegner: Mauerarcher",
+    `${STYLES.ENEMY}, Medieval fantasy castle wall archer, human soldier in heavy plate armor standing on stone battlements, drawing a longbow, determined grim face, blue/gray stone castle wall background implied, classic fantasy RPG enemy design`),
+
+  sprite("ENEMY_WALL_GUARD", "enemy", 128, 128, "post-mvp",
+    "Gegner: Torwächter",
+    `${STYLES.ENEMY}, Medieval fantasy fortress gate guard, massive heavily armored soldier with full plate armor and tower shield, standing firm in front of iron-banded wooden gate, stoic defender pose`),
+
+  sprite("ENEMY_SIEGE_CROSSBOWMAN", "enemy", 128, 128, "post-mvp",
+    "Gegner: Belagerungs-Armbrustschütze",
+    `${STYLES.ENEMY}, Medieval fantasy siege crossbowman, armored soldier in dark iron plate firing a heavy siege crossbow, aiming directly at viewer, crossbow bolts visible at belt, menacing ranged attacker`),
+
+  sprite("ENEMY_SIEGE_DEFENDER", "enemy", 128, 128, "post-mvp",
+    "Gegner: Elite-Burgverteidiger",
+    `${STYLES.ENEMY}, Medieval fantasy elite castle defender, veteran knight in ornate plate armor with sword and shield bearing fortress crest, battle-scarred but unbroken, powerful defensive stance`),
+
+  sprite("ENEMY_SIEGE_MAGE", "enemy", 128, 128, "post-mvp",
+    "Gegner: Festungsmagier",
+    `${STYLES.ENEMY}, Medieval fantasy battle mage defending a fortress, robed spellcaster in partial mage armor with glowing arcane runes, casting lightning bolt or arcane shield, defending castle walls`),
+
+  // ═══════════════════════════════════════════════════════════
+  // BOSSE – BELAGERUNG (POST-MVP)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("BOSS_IRON_COMMANDER", "boss", 192, 192, "post-mvp",
+    "Boss: Eisenkommandant",
+    `${STYLES.BOSS}, Medieval fantasy Iron Commander boss, imposing general in full black iron plate armor with horned helmet, carrying massive warhammer, cape of crimson, commanding presence radiating tactical genius, veteran of a hundred sieges`),
+
+  sprite("BOSS_FORTRESS_WARDEN", "boss", 192, 192, "post-mvp",
+    "Boss: Festungshüter",
+    `${STYLES.BOSS}, Medieval fantasy Fortress Warden boss, ancient magical stone guardian construct, 15 feet tall, body made of enchanted castle stone with glowing magical runes, massive stone fists, eyes burning with defensive magic, sworn protector of the inner keep`),
+
+  // ═══════════════════════════════════════════════════════════
+  // STADTMAUER – PERIMETER (MVP)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("WALL_SIDE_A", "terrain", 256, 256, "mvp",
+    "Stadtmauer: Mauerabschnitt horizontal (2×1)",
+    `${STYLES.BUILDING}, a medieval stone city wall section: 2-tile-wide horizontal wall segment running diagonally toward lower-right in isometric view, thick gray stone blocks with crenellated battlements on top, narrow arrow slits on the front face, front stone face fully visible to viewer, solid well-fitted stonework, slightly mossy with aged look, faint magical runes carved into the stone, city perimeter defense wall, no gate or tower`),
+
+  sprite("WALL_SIDE_B", "terrain", 256, 256, "mvp",
+    "Stadtmauer: Mauerabschnitt vertikal (1×2)",
+    `${STYLES.BUILDING}, a medieval stone city wall section: 2-tile-long perpendicular wall segment running diagonally toward lower-left in isometric view, thick gray stone blocks with crenellated battlements on top, narrow arrow slits on the visible side face, side stone face fully visible to viewer, solid well-fitted stonework, slightly mossy with aged look, faint magical runes carved into the stone, city perimeter defense wall, no gate or tower, mirror orientation compared to standard wall`),
+
+  sprite("WALL_CORNER_TOWER", "terrain", 192, 256, "mvp",
+    "Stadtmauer: Eckturm (1×1)",
+    `${STYLES.BUILDING}, a medieval stone corner tower: compact round stone tower 1-tile footprint, gray stone masonry with conical dark slate roof, three narrow arrow slits on upper section, slightly taller than adjacent wall segments, torch bracket on outer stone face, crenellated parapet at roofline, symmetrical round design visible equally from all isometric directions, corner junction of city wall, solid imposing presence`),
+
+  // ═══════════════════════════════════════════════════════════
+  // FORTIFIKATIONEN – BELAGERUNG (POST-MVP)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("SIEGE_WALL", "terrain", 256, 256, "post-mvp",
+    "Fortifikation: Burgmauer",
+    `Medieval fantasy fortress/castle architectural element, top-down isometric 3/4 view, stone masonry wall or gate structure, detailed stonework texture, damaged from siege, dramatic cinematic lighting, solid bright magenta background (#FF00FF), no characters, no UI elements, game asset style inspired by Age of Empires and Stronghold Crusader, Stone castle wall section, crenellated battlement top, aged gray stone with moss, arrow slits, partial damage from cannon fire, medieval fortress wall segment`),
+
+  sprite("SIEGE_GATE", "terrain", 256, 256, "post-mvp",
+    "Fortifikation: Burgtor",
+    `Medieval fantasy fortress/castle architectural element, top-down isometric 3/4 view, stone masonry wall or gate structure, detailed stonework texture, damaged from siege, dramatic cinematic lighting, solid bright magenta background (#FF00FF), no characters, no UI elements, game asset style inspired by Age of Empires and Stronghold Crusader, Medieval castle gate with iron-banded wooden doors, portcullis visible, stone archway with defensive murder holes, imposing iron hinges and bolts, partially damaged`),
+
+  sprite("SIEGE_TOWER", "terrain", 256, 256, "post-mvp",
+    "Fortifikation: Verteidigungsturm",
+    `Medieval fantasy fortress/castle architectural element, top-down isometric 3/4 view, stone masonry wall or gate structure, detailed stonework texture, damaged from siege, dramatic cinematic lighting, solid bright magenta background (#FF00FF), no characters, no UI elements, game asset style inspired by Age of Empires and Stronghold Crusader, Medieval round stone defense tower with conical roof, arrow slits on multiple levels, catapult mounting bracket on top, aged weathered stone`),
+
+  sprite("SIEGE_KEEP", "terrain", 256, 256, "post-mvp",
+    "Fortifikation: Bergfried",
+    `Medieval fantasy fortress/castle architectural element, top-down isometric 3/4 view, stone masonry wall or gate structure, detailed stonework texture, damaged from siege, dramatic cinematic lighting, solid bright magenta background (#FF00FF), no characters, no UI elements, game asset style inspired by Age of Empires and Stronghold Crusader, Medieval castle keep/donjon, tall square stone tower with battlements, royal banner torn and hanging, damaged stone from siege bombardment, most heavily fortified structure`),
 
   // ═══════════════════════════════════════════════════════════
   // ITEMS (MVP)
   // ═══════════════════════════════════════════════════════════
+
+  sprite("ITEM_GRAIN", "item", 16, 16, "mvp",
+    "Item: Getreide",
+    `${STYLES.ITEM}, a bundle of grain: golden wheat sheaf, ripe grain stalks tied together, harvest, medieval farming`),
 
   sprite("ITEM_BREAD", "item", 16, 16, "mvp",
     "Item: Brot",
@@ -513,21 +753,61 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
     "Item: Heiltrank",
     `${STYLES.ITEM}, a healing potion: small glass bottle with glowing red-pink liquid, cork stopper, magical healing`),
 
-  sprite("ITEM_IRON_SWORD", "item", 16, 16, "mvp",
-    "Item: Eisenschwert",
-    `${STYLES.ITEM}, an iron sword: simple medieval iron short sword, grey blade, brown leather grip, straight blade`),
+  sprite("ITEM_IRON_SWORD", "item", 256, 256, "mvp",
+    "Item: Eisenschwert (T1)",
+    rarityIcon("an iron sword", "green", "green"), undefined, true),
 
-  sprite("ITEM_IRON_SHIELD", "item", 16, 16, "mvp",
-    "Item: Eisenschild",
-    `${STYLES.ITEM}, an iron shield: round medieval iron shield with rivets, grey metal, simple crest design`),
+  sprite("ITEM_IRON_SHIELD", "item", 128, 128, "mvp",
+    "Item: Eisenschild (T1)",
+    rarityIcon("an iron shield", "green", "green"), undefined, true),
 
-  sprite("ITEM_LEATHER_ARMOR", "item", 16, 16, "mvp",
-    "Item: Lederrüstung",
-    `${STYLES.ITEM}, leather armor: brown leather chest armor/vest, buckles and straps, simple but protective`),
+  sprite("ITEM_LEATHER_ARMOR", "item", 128, 128, "mvp",
+    "Item: Lederrüstung (T1)",
+    `${STYLES.ITEM}, leather armor: brown leather chest armor/vest, buckles and straps, simple but protective`, 'green'),
 
   sprite("ITEM_CRYSTAL_SHARD", "item", 16, 16, "mvp",
     "Item: Kristallsplitter",
     `${STYLES.ITEM}, a crystal shard: glowing purple-pink magical crystal fragment, faceted, radiating magical energy`),
+
+  sprite("ITEM_WOOD", "item", 16, 16, "mvp",
+    "Item: Holz (Ressource)",
+    `${STYLES.ITEM}, wood logs resource: two or three small brown wooden logs stacked, warm brown wood grain texture, natural timber`),
+
+  sprite("ITEM_STONE", "item", 16, 16, "mvp",
+    "Item: Stein (Ressource)",
+    `${STYLES.ITEM}, a stone resource: a rough grey rock chunk, natural stone texture, grey-brown color, basic building material`),
+
+  sprite("ITEM_IRON_SCRAP", "item", 16, 16, "mvp",
+    "Item: Eisenschrott",
+    `${STYLES.ITEM}, iron scrap metal: a rough pile of dark grey iron chunks and metal scraps, rusty edges, industrial resource`),
+
+  sprite("ITEM_MAGITECH_COMPONENT", "item", 16, 16, "mvp",
+    "Item: Magitech-Komponente",
+    `${STYLES.ITEM}, a magitech component: a small mechanical cog/gear fused with a glowing arcane crystal core, purple-gold energy, magical engineering part`),
+
+  sprite("ITEM_WAR_HAMMER", "item", 256, 256, "mvp",
+    "Item: Kriegshammer (T3 Schwerer Hammer)",
+    `${STYLES.ITEM_EPIC.replace('solid bright magenta background (#FF00FF)', 'solid pure BLACK background (#000000)')}, a massive two-handed war hammer with a colossal dark iron hammerhead covered in glowing golden runes, the flat face engraved with a roaring dragon crest, thick reinforced handle wrapped in battle-worn leather with iron rings, crackling golden-orange lightning energy arcing between the runes, weapon radiates raw crushing power and ancient might`),
+
+  sprite("ITEM_ARCANE_BLADE", "item", 256, 256, "mvp",
+    "Item: Arkanklinge (T3 Arkan-Waffe)",
+    `${STYLES.ITEM_EPIC}, an arcane shortsword with a brilliant crystalline blade blazing with intense blue-purple arcane fire, crackling purple lightning arcing along both razor edges, ornate golden crossguard inlaid with pulsing arcane gems, magical runes glowing white-hot, a weapon of raw arcane power`),
+
+  sprite("ITEM_MAGITECH_SHIELD", "item", 256, 256, "mvp",
+    "Item: Magitech-Schild (T3 Arkan-Schild)",
+    `${STYLES.ITEM_EPIC}, a powerful magitech battle shield with a massive glowing arcane crystal core radiating brilliant blue-purple energy, intricate golden energy circuit lines etched across the iron surface, magical barrier aura visible around the rim, runes blazing with arcane power, a masterpiece of magical engineering`),
+
+  sprite("ITEM_ARCANE_AMULET", "item", 256, 256, "mvp",
+    "Item: Arkan-Amulett (T3 Arkan-Schmuck)",
+    `${STYLES.ITEM_EPIC}, a magnificent arcane talisman with a large deep purple gem blazing with inner magical light at center, ornate golden filigree setting with glowing inscription runes, chains of pure arcane energy radiating outward, brilliant purple light beams emanating, an amulet of tremendous magical power`),
+
+  sprite("ITEM_WAR_CATAPULT", "item", 32, 32, "mvp",
+    "Item: Katapult (Kriegsmaschine)",
+    `${STYLES.ITEM}, a war catapult: a sturdy medieval wooden catapult war machine in miniature icon form, dark oak frame with iron reinforcements, a large stone loaded in the sling, battle-ready and imposing`),
+
+  sprite("ITEM_WAR_CANNON", "item", 32, 32, "mvp",
+    "Item: Kanone (Kriegsmaschine)",
+    `${STYLES.ITEM}, a war cannon: a heavy iron cannon with arcane crystal engravings, blue-purple magical glow at the barrel tip, mounted on a dark oak wheeled carriage, magitech war weapon`),
 
   // ═══════════════════════════════════════════════════════════
   // ITEMS Post-MVP – RESISTENZ-AUSRÜSTUNG
@@ -589,35 +869,35 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   // ITEMS Post-MVP – T1 WAFFEN & AUSRÜSTUNG
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ITEM_HUNTER_BOW", "item", 16, 16, "post-mvp",
+  sprite("ITEM_HUNTER_BOW", "item", 128, 128, "mvp",
     "Item: Jägerbogen (T1 Waffe)",
-    `${STYLES.ITEM}, a wooden hunter's bow with a taut string, fantasy RPG style`),
+    `${STYLES.ITEM}, a wooden hunter's bow with a taut string, fantasy RPG style`, 'green'),
 
-  sprite("ITEM_OAK_STAFF", "item", 16, 16, "post-mvp",
+  sprite("ITEM_OAK_STAFF", "item", 128, 128, "mvp",
     "Item: Eichenstab (T1 Waffe)",
-    `${STYLES.ITEM}, a gnarled oak magic staff with a glowing green crystal tip`),
+    `${STYLES.ITEM}, a gnarled oak magic staff with a glowing green crystal tip`, 'green'),
 
-  sprite("ITEM_WOLF_FANG_NECKLACE", "item", 16, 16, "post-mvp",
+  sprite("ITEM_WOLF_FANG_NECKLACE", "item", 128, 128, "mvp",
     "Item: Wolfszahn-Kette (T1 Accessoire)",
-    `${STYLES.ITEM}, a necklace made of wolf fangs on a leather cord`),
+    `${STYLES.ITEM}, a necklace made of wolf fangs on a leather cord`, 'green'),
 
   // ═══════════════════════════════════════════════════════════
   // ITEMS Post-MVP – T2 WAFFEN & AUSRÜSTUNG
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ITEM_STEEL_SWORD", "item", 16, 16, "post-mvp",
+  sprite("ITEM_STEEL_SWORD", "item", 256, 256, "post-mvp",
     "Item: Stahlschwert (T2 Waffe)",
     `${STYLES.ITEM}, a polished steel longsword with a cross-guard, T2 weapon`),
 
-  sprite("ITEM_LONGBOW", "item", 16, 16, "post-mvp",
+  sprite("ITEM_LONGBOW", "item", 256, 256, "post-mvp",
     "Item: Langbogen (T2 Waffe)",
     `${STYLES.ITEM}, an elegant elven longbow made of dark wood, T2 weapon`),
 
-  sprite("ITEM_CRYSTAL_STAFF", "item", 16, 16, "post-mvp",
+  sprite("ITEM_CRYSTAL_STAFF", "item", 256, 256, "post-mvp",
     "Item: Kristallstab (T2 Waffe)",
     `${STYLES.ITEM}, a crystal-topped magic staff glowing blue, T2 weapon`),
 
-  sprite("ITEM_STEEL_ARMOR", "item", 16, 16, "post-mvp",
+  sprite("ITEM_STEEL_ARMOR", "item", 256, 256, "post-mvp",
     "Item: Stahlrüstung (T2 Rüstung)",
     `${STYLES.ITEM}, heavy steel plate armor with shoulder guards, T2 armor`),
 
@@ -633,53 +913,53 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   // ITEMS Post-MVP – T3 BOSS-DROP AUSRÜSTUNG
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ITEM_TREANT_HEARTWOOD_SHIELD", "item", 16, 16, "post-mvp",
+  sprite("ITEM_TREANT_HEARTWOOD_SHIELD", "item", 256, 256, "post-mvp",
     "Item: Treant-Herzholzschild (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a shield made from ancient treant heartwood, glowing green runes`),
+    `${STYLES.ITEM_EPIC}, a massive ancient shield carved from living treant heartwood, deep glowing green nature runes spiraling across the gnarled wood surface, vibrant green life-energy pulsing like a heartbeat through the grain, roots and vines coiling around the edges as if alive, ancient forest power radiating from the core`),
 
-  sprite("ITEM_CRYSTAL_GOLEM_CORE", "item", 16, 16, "post-mvp",
+  sprite("ITEM_CRYSTAL_GOLEM_CORE", "item", 256, 256, "post-mvp",
     "Item: Kristallgolem-Kern (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a pulsing blue crystal core extracted from a golem`),
+    `${STYLES.ITEM_EPIC}, a cracked crystalline golem core pulsing with brilliant blue-white arcane energy, translucent blue crystal with a blazing magical light trapped within, glowing fracture lines on the facets, intense blue light beams shooting outward, pure magical energy barely contained, a crystal heart ripped from a destroyed golem`),
 
-  sprite("ITEM_HYDRA_VENOMFANG", "item", 16, 16, "post-mvp",
-    "Item: Hydra-Giftzahn (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a large venomous hydra fang dripping green poison`),
+  sprite("ITEM_HYDRA_VENOMFANG", "item", 256, 256, "post-mvp",
+    "Item: Hydra-Giftzahn (T3 Boss-Drop, Lifesteal)",
+    `${STYLES.ITEM_EPIC}, a massive curved hydra fang dripping vivid toxic green venom, dark iridescent tooth surface with a blood-red glowing edge, thick green poison pooling at the lethal tip, sinister green energy tendrils swirling upward, a trophy from a slain hydra radiating dark life-draining power`),
 
-  sprite("ITEM_BANDIT_KINGS_CLOAK", "item", 16, 16, "post-mvp",
+  sprite("ITEM_BANDIT_KINGS_CLOAK", "item", 256, 256, "post-mvp",
     "Item: Banditenkönigs-Umhang (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a luxurious dark red cloak with gold trim, stolen from a bandit king`),
+    `${STYLES.ITEM_EPIC}, a magnificent dark crimson bandit king's battle cloak spread wide, rich deep red velvet with skull-embossed golden trim along every edge, dramatic dark shadows billowing behind it, a hidden glint of gold coins visible in a pocket, elegant and dangerous, the mark of a feared outlaw lord`),
 
-  sprite("ITEM_SPIDER_SILK_VEST", "item", 16, 16, "post-mvp",
-    "Item: Spinnenseide-Weste (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a lightweight vest woven from enchanted spider silk, shimmering purple`),
+  sprite("ITEM_SPIDER_SILK_VEST", "item", 256, 256, "post-mvp",
+    "Item: Spinnenseide-Weste (T3 Boss-Drop, Dodge)",
+    `${STYLES.ITEM_EPIC}, a sleek form-fitting vest armor woven entirely from enchanted queen spider silk, shimmering purple-silver iridescent fabric catching light like a prism, intricate web patterns worked into the weave, magical purple threading glowing faintly, impossibly thin yet supernaturally strong`),
 
-  sprite("ITEM_FALLEN_KNIGHTS_BLADE", "item", 16, 16, "post-mvp",
-    "Item: Klinge des Gefallenen Ritters (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a dark cursed greatsword with red glowing runes`),
+  sprite("ITEM_FALLEN_KNIGHTS_BLADE", "item", 256, 256, "post-mvp",
+    "Item: Klinge des Gefallenen Ritters (T3 Boss-Drop, Anti-Heal)",
+    `${STYLES.ITEM_EPIC}, a heavy cursed knight's greatsword with a jagged pitch-black blade, deep crimson glowing runes carved along both edges, dark purple-black energy crackling and coursing through the metal, shadow tendrils bleeding from the crossguard, a weapon that corrupts and curses with every wound it inflicts`),
 
-  sprite("ITEM_LICH_PHYLACTERY", "item", 16, 16, "post-mvp",
-    "Item: Lich-Phylakterium (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a small ornate phylactery glowing with necromantic energy`),
+  sprite("ITEM_LICH_PHYLACTERY", "item", 256, 256, "post-mvp",
+    "Item: Lich-Phylakterium (T3 Boss-Drop, Spell Power)",
+    `${STYLES.ITEM_EPIC}, a sinister obsidian lich phylactery shaped like a skull, glowing green necromantic death-runes carved deep into the black stone, sickly green soul-energy swirling visibly within the cracked surface, magical chains of dark energy wrapped around it, the captured essence of undead power`),
 
-  sprite("ITEM_WYRM_SCALE_SHIELD", "item", 16, 16, "post-mvp",
-    "Item: Wyrmschuppen-Schild (T3 Boss-Drop)",
-    `${STYLES.ITEM}, a large shield covered in red dragon wyrm scales`),
+  sprite("ITEM_WYRM_SCALE_SHIELD", "item", 256, 256, "post-mvp",
+    "Item: Wyrmschuppen-Schild (T3 Boss-Drop, Fire Resist)",
+    `${STYLES.ITEM_EPIC}, a powerful war shield covered entirely in brilliant red dragon wyrm scales, each overlapping scale gleaming like fire-hardened crimson metal, a massive central dragon-eye gem burning with orange-red fire, wisps of actual flame curling from the rim, forged from a slain wyrm's hide`),
 
   // ═══════════════════════════════════════════════════════════
   // ITEMS Post-MVP – T4 LEGENDARY AUSRÜSTUNG
   // ═══════════════════════════════════════════════════════════
 
-  sprite("ITEM_BLADE_OF_THOUSAND_SHADOWS", "item", 16, 16, "post-mvp",
+  sprite("ITEM_BLADE_OF_THOUSAND_SHADOWS", "item", 256, 256, "post-mvp",
     "Item: Klinge der 1000 Schatten (T4 Legendary)",
-    `${STYLES.ITEM}, a legendary black katana wreathed in shadow energy, T4`),
+    `${STYLES.ITEM_EPIC}, a legendary void-black katana with a blade that seems to be made of crystallized darkness itself, the edge vanishing into pure shadow, thousands of tiny shadow wisps trailing upward like smoke, deep violet void runes blazing along the central groove, absolute darkness and death embodied in a weapon`),
 
-  sprite("ITEM_SHIELD_OF_THE_ANCIENT", "item", 16, 16, "post-mvp",
+  sprite("ITEM_SHIELD_OF_THE_ANCIENT", "item", 256, 256, "post-mvp",
     "Item: Schild des Uralten (T4 Legendary)",
-    `${STYLES.ITEM}, a massive ancient stone shield with golden dwarven runes, T4`),
+    `${STYLES.ITEM_EPIC}, a colossal ancient stone shield from the age of gods, its deep grey stone surface entirely covered in blazing golden divine runes of tremendous age and power, a massive central gemstone burning with blinding golden divine light, intricate dwarven inscriptions telling a saga of a thousand battles, absolutely indestructible and divine`),
 
-  sprite("ITEM_AMULET_OF_REBIRTH", "item", 16, 16, "post-mvp",
+  sprite("ITEM_AMULET_OF_REBIRTH", "item", 256, 256, "post-mvp",
     "Item: Amulett der Wiedergeburt (T4 Legendary)",
-    `${STYLES.ITEM}, a golden phoenix amulet glowing with resurrection magic, T4`),
+    `${STYLES.ITEM_EPIC}, a breathtaking legendary golden phoenix amulet with a magnificent phoenix spreading its wings wide at the center, brilliant golden-orange resurrection flames blazing outward, wing-tips set with glowing rubies and sapphires, divine golden light radiating in all directions, the embodiment of rebirth and eternal life`),
 
   // ═══════════════════════════════════════════════════════════
   // ITEMS Post-MVP – VERBRAUCHSGÜTER & SCHÄTZE
@@ -975,111 +1255,255 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
     "Straße: Kopfsteinpflaster",
     `${STYLES.TERRAIN}, a seamless cobblestone road tile, grey and brown medieval stone pavement, neat fitted stones, top-down view, tileable on all edges`),
 
-  // ─── Isometric Building Sprites ─────────────────────────────
+  // ─── Cliff Face Source Textures (for floating island edges) ──
+  sprite("CLIFF_SOURCE_A", "terrain", 128, 192, "mvp",
+    "Klippen-Textur A: Erdreich und Felsen",
+    `A vertical cross-section texture of a fantasy floating island cliff face, viewed directly from the side as a flat texture sheet. The image shows distinct horizontal geological strata filling the ENTIRE image edge to edge: at the very top a thin strip of grass with visible soil and small dangling root tips, below that a thick warm brown earth layer with embedded small pebbles and cut roots, transitioning into grey-brown weathered sedimentary rock with horizontal crack lines and small patches of green moss, and at the bottom dark nearly-black basalt stone. Rich earthy natural colors, painterly game art style with visible brush texture and color variation within each layer. The texture must fill the entire rectangular image with NO empty space and NO background color.`,
+    undefined, true),
+
+  sprite("CLIFF_SOURCE_B", "terrain", 128, 192, "mvp",
+    "Klippen-Textur B: Magischer Kristall-Felsen",
+    `A vertical cross-section texture of a magical fantasy floating island cliff face, viewed directly from the side as a flat texture sheet. The image shows distinct horizontal geological strata filling the ENTIRE image edge to edge: at the top a thin grass edge with twisted root tendrils hanging down, below that reddish-brown sedimentary earth with occasional small glowing purple amethyst crystals embedded in cracks, transitioning into weathered grey stone with green lichen patches and faint blue-glowing ancient vein patterns, and at the bottom dark volcanic basalt. Rich fantasy color palette with subtle magical elements. Painterly game art style. The texture must fill the entire rectangular image with NO empty space and NO background color.`,
+    undefined, true),
+
+  // ─── Cliff Edge Decoration Sprites (3D isometric) ─────────────
+  // Felsblöcke und Pflanzen für natürliche Klippenkante
+
+  sprite("CLIFF_ROCK_LARGE", "terrain", 80, 96, "mvp",
+    "Klippen-Deko: Großer zerklüfteter Felsbrocken",
+    `${STYLES.ISO_TREE}, a large rugged weathered boulder sitting on a cliff edge,
+dark grey and brown stone with deep cracks and rough chipped surface,
+patches of green-grey lichen and dark moss in crevices,
+the rock has an irregular jagged shape with sharp broken edges,
+small loose pebbles and rubble scattered at its base,
+subtle purple crystal vein glowing faintly in one crack,
+dramatic rocky mass, heavy and ancient looking, casting shadow to lower-right`),
+
+  sprite("CLIFF_ROCK_SMALL", "terrain", 48, 48, "mvp",
+    "Klippen-Deko: Kleine Felsgruppe / Trümmer",
+    `${STYLES.ISO_TREE}, a cluster of 3-4 small broken rock fragments on ground,
+dark grey stone rubble with sharp fractured edges,
+tiny green moss patches, a few loose pebbles scattered around,
+the rocks look like they broke off from a larger cliff face,
+natural weathered stone texture, isometric perspective with shadow to lower-right`),
+
+  sprite("CLIFF_CRYSTAL", "terrain", 64, 96, "mvp",
+    "Klippen-Deko: Magische Kristall-Felsformation",
+    `${STYLES.ISO_TREE}, a dramatic crystal formation growing from dark rock,
+3-4 large pointed purple and violet amethyst crystal shards jutting upward at angles,
+the crystals emit a soft magical purple-blue glow illuminating surrounding rock,
+dark grey stone base with cracks where crystals emerge,
+small sparkling particles floating around the crystal tips,
+mystical and ancient, fantasy RPG crystal node, isometric view with shadow to lower-right`),
+
+  sprite("CLIFF_VINE_HANG", "terrain", 48, 96, "mvp",
+    "Klippen-Deko: Hängende Ranken und Wurzeln",
+    `${STYLES.ISO_TREE}, thick twisted vines and ancient tree roots hanging downward,
+dark brown woody roots intertwined with green leafy vines,
+small leaves and tiny glowing blue-green bioluminescent flowers dotted along the vines,
+the vines hang vertically as if draping over a cliff edge,
+some roots are thick and gnarled, others thin and trailing,
+natural organic shapes, fantasy jungle vegetation, isometric perspective`),
+
+  sprite("CLIFF_EDGE_BUSH", "terrain", 64, 64, "mvp",
+    "Klippen-Deko: Randbusch mit sichtbaren Wurzeln",
+    `${STYLES.ISO_TREE}, a wild overgrown bush growing on the edge of a cliff,
+dense dark green foliage with scattered tiny white and yellow flowers,
+thick twisted roots visible below extending over and gripping the rock edge,
+the bush leans slightly outward over the void as if reaching for light,
+a few branches hang down past the cliff face,
+rugged natural growth, fantasy wilderness plant, isometric view with shadow to lower-right`),
+
+  sprite("CLIFF_MUSHROOM_GLOW", "terrain", 48, 64, "mvp",
+    "Klippen-Deko: Glühende Fantasy-Pilze an Felswand",
+    `${STYLES.ISO_TREE}, a cluster of 4-5 fantasy mushrooms growing from dark stone,
+large flat caps in teal and cyan colors with bioluminescent glow,
+the mushrooms emit soft blue-green light illuminating the nearby rock surface,
+thin pale stalks attached to dark grey stone surface,
+small glowing spores floating upward from the caps,
+magical cave mushrooms, ethereal and mysterious, isometric perspective with shadow`),
+
+  // ─── Isometric Building Sprites (Sci-Fi Techno-Fantasy) ──────
   sprite("ISO_HOUSE", "building", 160, 200, "mvp",
-    "ISO: Kleines Wohnhaus (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a small cozy 2-story medieval fantasy house,
-stone-and-timber construction, steep red clay roof tiles visible from above,
-left wall shows grey stone with a shuttered window and climbing ivy,
-front wall shows wooden door with iron hinges and a warm glowing window,
-flower boxes under windows, chimney with smoke puff on roof`),
+    "ISO: Habitat-Pod (Wohngebäude, Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a compact sci-fi habitat pod / crew quarters module,
+top face shows modular roof panels with air recycling vents, solar cell strips and a small status antenna,
+left wall shows dark riveted metal plating with blue energy conduit lines and two hexagonal viewport windows glowing warm amber,
+front has a pressurized airlock door with glowing green access panel and entry light strip,
+small rounded shape, functional crew housing, warm amber interior glow contrasting cool metal exterior`),
 
   sprite("ISO_GUILD_HALL", "building", 256, 320, "mvp",
-    "ISO: Gildenhalle (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a grand medieval guild hall / tavern, large impressive two-story building,
-left side shows tall arched windows with golden light, stone wall with guild banner hanging,
-front facade has large double wooden doors with torch sconces on either side,
-peaked wooden roof with decorative ridge tiles visible from above,
-guild flag banner flying from a rooftop pole, warm and inviting atmosphere`),
+    "ISO: Kommandozentrum / Gilden-Nexus (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a large imposing operations command center and guild nexus,
+top face shows communication array dishes, rotating radar dome and holographic projector emitting blue light,
+left wall displays tall arched energy-windows glowing blue from interior holo-screens, arkan-veined stone buttresses with purple glow,
+front facade has massive reinforced blast doors flanked by glowing shield generator pylons,
+holographic guild crest emblem projected above the entrance, arkan energy crystals embedded at every corner,
+impressive two-story structure radiating power and authority`),
 
   sprite("ISO_WAREHOUSE", "building", 224, 256, "mvp",
-    "ISO: Lagerhaus (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a large medieval warehouse and storage building,
-wide rectangular structure, dark wooden beam roof with terracotta tiles visible from above,
-left wall shows thick stone with small loading hatch and iron reinforcement,
-front face has large double barn doors with loading dock, crates and barrels stacked nearby,
-practical and sturdy building, earthy brown and grey tones`),
+    "ISO: Cargo-Hangar / Lagerbucht (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a large sci-fi armored cargo storage hangar,
+top face shows rows of sealed cargo hatch panels and a retractable loading crane arm,
+left wall shows thick reinforced blast panels with a cargo manifest hologram screen mounted on the wall,
+front has massive double shutter blast doors with yellow caution stripes and automated loading dock,
+stacked metal cargo containers visible near the entrance, industrial and functional military aesthetic`),
 
-  // ─── Isometric Building Sprites – weitere Gebäude ────────────
-  sprite("ISO_FARM_GRAIN", "building", 224, 256, "mvp",
-    "ISO: Getreidefarm (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a medieval grain farm with a large L-shaped wooden barn,
-golden wheat fields visible on the top face / roof area, hay bales on the left side,
-front has open barn doors revealing stored grain sacks, weathervane on barn roof,
-warm golden-yellow and brown tones, rustic rural charm`),
+  // ─── Isometric Building Sprites – Ressourcen ─────────────────
+  sprite("ISO_FARM_GRAIN", "building", 384, 440, "mvp",
+    "ISO: Hydroponik-Bucht / Nahrungsproduktion (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a sci-fi hydroponics production bay and food synthesis unit,
+top face shows transparent cultivation dome panels with glowing cyan and green grow-lights visible through them,
+left side shows metallic walls with bio-tube conduits and nutrient flow pipes running vertically,
+front has sliding glass lab doors with a food production display screen, lush glowing plants visible inside,
+warm teal and green light tones contrast the dark metal hull, living plants thrive inside the industrial shell`),
 
   sprite("ISO_MILL_WIND", "building", 192, 280, "mvp",
-    "ISO: Windmühle (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a classic medieval windmill tower, tall cylindrical stone tower,
-large wooden sail/blade visible rotating to the upper-right in isometric view,
-round conical roof with weathered brown shingles visible from above,
-left wall shows grey stone blocks with a small arched window,
-front face has a wooden door and miller's chute, flour dust detail`),
+    "ISO: Energie-Kollektor-Turm (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a tall sci-fi energy collector tower with a rotating turbine array,
+tall cylindrical metallic tower body with energy absorption panels lining the sides,
+large spinning turbine rotor blades extending to the upper-right in isometric view, glowing at the hub,
+glowing purple arkan energy flows down spiral conduits along the tower exterior,
+front base shows a power distribution hub with thick output cables branching out,
+blue-white crackling energy at the turbine center, powerful and iconic`),
 
   sprite("ISO_BAKERY", "building", 160, 200, "mvp",
-    "ISO: Bäckerei (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a cozy medieval bakery shop,
-brick chimney with warm smoke and bread smell curls on top face / roof,
-left wall shows brick facade with a display window showing bread loaves,
-front has a welcoming wooden shop door with a pretzel sign hanging above,
-warm orange-red brick tones, fresh bread baskets near entrance`),
+    "ISO: Syntheseküche / Nahrungslabor (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a compact sci-fi food synthesis laboratory and processing unit,
+top face shows exhaust steam vents and a small cooling array with blinking status lights,
+left wall shows a reinforced glass panel revealing a glowing fabrication chamber with orange processing glow inside,
+front has a service window with holographic menu display and an automated food dispenser slot,
+warm amber glow from processing units, chemical conduit pipes on the exterior, efficient and functional`),
 
   sprite("ISO_LUMBER_CAMP", "building", 160, 200, "mvp",
-    "ISO: Holzfällerhütte (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a rustic medieval lumber camp with a small wooden cabin,
-log pile neatly stacked on the top face / roof area visible from above,
-left side shows rough-hewn timber walls with an axe mounted on the wall,
-front has a low porch with chopping block and woodchips scattered, tree stump nearby,
-dark brown raw wood tones, earthy and rugged atmosphere`),
+    "ISO: Material-Verarbeitungseinheit (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a compact sci-fi raw material processing and sorting unit,
+top face shows an open-top sorting bay with raw material chunks on a conveyor belt,
+left wall shows rugged armored panels with a mounted laser cutter tool rack and extraction arm,
+front has a loading dock with a material hopper chute and control panel interface with holographic readout,
+sparks and particle effects from material cutting, industrial and rugged, functional workhorse aesthetic`),
 
   sprite("ISO_QUARRY", "building", 192, 220, "mvp",
-    "ISO: Steinbruch (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a medieval stone quarry with a small worker's shed,
-rough-cut stone blocks piled on the top face area, crane arm visible overhead,
-left wall shows exposed grey rock face with chisel marks,
-front has a wooden shelter with tools (pickaxes, chisels) leaning against it,
-grey and beige stone tones, dusty industrial atmosphere`),
+    "ISO: Tiefen-Bohrplattform / Abbau-Anlage (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a sci-fi deep core mining drill platform,
+top face shows the drill shaft opening with rotating drill head machinery and excavated rock debris,
+left wall shows exposed reinforced drilling framework with hydraulic struts and structural supports,
+front has a worker operator shelter booth with core sample display screen and extraction control console,
+dark grey rock and gleaming metal, ore veins lit by drilling equipment lights, industrial extraction atmosphere`),
 
   sprite("ISO_HERB_GARDEN", "building", 192, 220, "mvp",
-    "ISO: Kräutergarten (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a medieval alchemist's herb garden with a small greenhouse,
-colorful herb patches and flower beds visible on the top face from above,
-left wall shows a wooden trellis with climbing vines and hanging dried herbs,
-front has a small archway entrance with potion bottles on shelves inside,
-rich greens and purple flower tones, magical whimsical atmosphere`),
+    "ISO: Xenobotanik-Labor / Kultivierungskapsel (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a sci-fi xenobotany biolab and specimen cultivation pod,
+top face shows a curved transparent dome with exotic bioluminescent alien plants and specimen tubes glowing inside,
+left wall shows metallic lab walls with specimen storage cylinders glowing cyan and purple,
+front has a sealed bio-containment lab entrance with airlock status display and warning lights,
+lush alien-looking plants with bioluminescent glows visible through glass, mysterious scientific atmosphere`),
 
   sprite("ISO_SMITHY", "building", 192, 220, "mvp",
-    "ISO: Schmiede (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a medieval blacksmith's forge and workshop,
-glowing orange forge chimney and metal roof visible from above on the top face,
-left wall shows dark stone with a bellows and weapon rack mounted outside,
-front has a large open workshop door with anvil visible inside, sparks flying,
-dark charcoal and orange ember tones, hot metalworking atmosphere`),
+    "ISO: Montage-Schmiede / Fertigungswerkstatt (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a sci-fi advanced assembly forge and equipment fabrication workshop,
+top face shows factory roof with exhaust stacks glowing orange-red from active energy forge below,
+left wall shows the workshop exterior with robotic arm mount brackets and a blueprint hologram display screen,
+front has a large open workshop bay with a glowing blue-orange energy anvil, sparks flying dramatically,
+dark heat-proof metal walls, weapon racks and finished gear visible inside, hot industrial forge atmosphere`),
 
   sprite("ISO_IRON_MINE", "building", 224, 256, "mvp",
-    "ISO: Eisenmine (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a medieval iron ore mine entrance with mine shaft building,
-mine shaft frame and ore cart track visible on top face from above,
-left side shows reinforced wooden mine entrance beams with lanterns,
-front has large wooden mine portal with iron ore chunks scattered,
-dark grey rock and brown timber tones, underground mining atmosphere`),
+    "ISO: Tiefen-Extraktionsschacht (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a sci-fi deep resource extraction shaft facility,
+top face shows the mine shaft opening with automated extraction machinery and ore scanner beams,
+left side shows massive reinforced metal portal beams with pulsing safety warning lights,
+front has an industrial mine entrance with crawler vehicle tracks leading in and an ore conveyor belt running out,
+dark metallic structure with glowing scan beams illuminating the shaft, powerful drilling operation atmosphere`),
 
   sprite("ISO_WELL", "building", 128, 160, "mvp",
-    "ISO: Brunnen (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a charming medieval stone well,
-hexagonal stone well top with wooden roof and bucket-pulley visible from above,
-left side shows mossy grey stones with rope and pulley mechanism,
-front shows the well opening with a bucket hanging, ivy growing on stone,
-grey stone with green moss accents, quaint village atmosphere`),
+    "ISO: Energie-Knoten / Relais-Säule (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a compact sci-fi energy node and power relay pillar,
+top shows a large glowing arkan energy crystal mounted on the relay cap, pulsing blue-purple,
+left side shows a hexagonal metallic pillar body with stacked energy distribution rings glowing,
+front has a small holographic status display panel showing power grid output and node status,
+energy conduit lines branching outward from the base in all directions, constant energy shimmer and glow`),
 
-  sprite("ISO_DUNGEON_CAMP", "building", 192, 240, "mvp",
-    "ISO: Dungeon-Expeditionslager (isometrisch)",
-    `${STYLES.ISO_BUILDING}, a rugged dungeon expedition camp at the entrance to dark mountains,
-a large military tent with a dark grey canvas roof visible from above, wooden palisade fence surrounding the camp,
-left wall shows the palisade stakes with rope bindings and a torch lantern glowing orange,
-front shows the camp gate entrance with crossed spears, a roaring campfire at center with glowing embers,
-dark muted earthy tones, grey-brown wood and dark canvas, adventurous dangerous atmosphere,
-a guild banner hanging from a pole, worn battle-scarred equipment visible, moody dramatic lighting`),
+  sprite("ISO_TREASURE_CHEST", "building", 512, 640, "mvp",
+    "ISO: Schatztruhe – geschlossen, lange Seite zum Betrachter",
+    `Isometric pixel art building sprite, pure solid magenta background #FF00FF filling the entire image completely.
+A closed wooden treasure chest rendered in isometric pixel art style. Image is 128x160 pixels.
+
+EXACT ORIENTATION — this is critical:
+- The chest is a rectangular box (wider than tall, like a real treasure chest).
+- The chest's LONG AXIS runs from the LEFT side of the image to the RIGHT side of the image (horizontal in the image).
+- The LARGE FRONT FACE of the chest (the long side with the lock) faces toward the BOTTOM of the image — toward the viewer. This face takes up the lower half of the chest in the image.
+- The TOP of the chest is visible from slightly above (standard isometric top-down angle).
+- The small SHORT END faces toward the upper-right of the image.
+- Think of it like a wooden crate or treasure box lying on its side, viewed from slightly above and in front, long side facing you.
+
+Visual details: Dark aged oak wood planks, a horizontal metal band across the front face, an iron lock clasp in the center of the front face. Worn wood grain texture on the top. Small copper rivets at corners.
+Color palette: MUTED medieval — dark brown wood, dull aged bronze/iron hardware, no bright colors, no gems, no glow.
+Rests flat on the ground. Strong black outlines. SNES/GBA pixel art style.`),
+
+  sprite("ISO_TREASURE_CHEST_V2", "building", 512, 640, "mvp",
+    "ISO: Schatztruhe V2 – geschlossen, lange Seite zum Betrachter, wärmere Farben",
+    `Isometric pixel art building sprite, pure solid magenta background #FF00FF filling the entire image completely.
+A closed wooden treasure chest rendered in isometric pixel art style. Image is 128x160 pixels.
+
+EXACT ORIENTATION — this is critical:
+- The chest is a rectangular box (wider than tall, like a real treasure chest).
+- The chest's LONG AXIS runs from the LEFT side of the image to the RIGHT side of the image (horizontal in the image).
+- The LARGE FRONT FACE of the chest (the long side with the lock) faces toward the BOTTOM of the image — toward the viewer. This face takes up the lower half of the chest in the image.
+- The TOP of the chest is visible from slightly above (standard isometric top-down angle).
+- The small SHORT END faces toward the upper-right of the image.
+- Think of it like a wooden crate or treasure box lying on its side, viewed from slightly above and in front, long side facing you.
+
+Visual details: Dark aged oak wood planks with worn grain texture, aged gold metal bands running horizontally across the front face, an ornate iron lock clasp with a keyhole in the center of the front face. Brass corner reinforcements and small copper rivets. A subtle warm glow around the lock hinting at magical contents.
+Color palette: Dark brown oak wood, warm aged gold/brass hardware, rich amber wood tones — warmer and more ornate than the V1 chest.
+Rests flat on the ground. Strong black outlines. SNES/GBA pixel art style. Same quality as existing guild hall and smithy sprites.`),
+
+  sprite("ISO_BANK_V2", "building", 512, 640, "mvp",
+    "ISO: Arkan-Bank mit Truhe (Scifi-Medieval)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a grand two-story arcane city bank and treasury building with a large treasure chest placed prominently beside it,
+BUILDING: top face shows a steep gabled dark charcoal slate roof with heavy iron ridge capping, decorative arkan-crystal finial at the peak glowing warm gold, iron chimney with faint smoke,
+left wall shows two-story dark oak timber frame construction with thick exposed wooden beams, riveted iron reinforcement bands across the planks, arkan-energy veins glowing golden-amber pulsing through the wood grain, two tall arched windows with warm amber interior glow and iron bar grilles,
+front facade: wide heavy oak double doors with oversized iron hinges and iron bolts, stone foundation steps, iron torch brackets flanking the entrance with bright flickering flames, a large ornate carved gold coin-and-scales guild emblem above the door, ivy creeping at the lower corners,
+TREASURE CHEST: a very large closed wooden treasure chest sitting directly beside the front-left of the building on the ground, richly detailed — warm dark oak wood planks with wide gold metal bands and corner iron fittings, a prominent ornate brass lock on the front latch, subtle golden glow emanating from the chest seams hinting at magical contents inside, slightly angled toward viewer for full visibility,
+COLOR PALETTE: deep brown oak, dark charcoal slate, warm amber-gold glow, iron grey hardware — rich and detailed matching the guild hall quality,
+the whole scene reads as a wealthy secure bank full of magical treasure, high detail, premium game asset quality`),
+
+  sprite("ISO_BANK", "building", 512, 640, "mvp",
+    "ISO: Mittelalterliche Fantasie-Bank",
+    `${STYLES.ISO_BUILDING}, a sturdy imposing medieval fantasy bank building,
+top face shows a solid stone roof with iron ridge capping, a gilded weathervane shaped like a coin on top, heavy stone chimney,
+left wall shows thick fortified stone masonry with narrow iron-barred windows with gold coin motif ironwork, stone buttresses reinforcing the wall,
+front facade has a grand stone archway entrance with heavy iron-reinforced oak double doors, stone pillars flanking the entrance with iron torch brackets holding burning flames,
+a large carved golden coin sign mounted above the entrance with decorative ironwork frame, stone steps leading up to the entrance,
+a heavy iron-banded vault door visible through a side arch, iron chains and locks on display,
+warm stone colors with gold and brass accents, authoritative and wealthy atmosphere matching the guild hall style`),
+
+  sprite("ISO_VAULT", "building", 512, 640, "mvp",
+    "ISO: Mittelalterliche Schatzkammer / Tresorgebäude",
+    `${STYLES.ISO_BUILDING}, a low squat heavily fortified medieval fantasy vault building,
+top face shows a flat reinforced stone roof with iron grating across the top, iron rings and chains bolted into the stone, no windows on the roof,
+left wall shows extremely thick dark grey stone masonry with iron reinforcement bands running horizontally, small barred slit windows with heavy iron shutters, mossy stone at the base,
+front facade has a massive iron-banded oak door with multiple iron locks, iron chains crossing the door in an X pattern, iron torch brackets on either side with dim flickering flames,
+a large iron padlock symbol carved in relief into the stone above the entrance, iron gargoyle heads mounted at the corners as waterspouts,
+heavy iron hinges and deadbolts visible on the door frame, aged iron chains draped decoratively around the entrance,
+dark grey stone, aged black iron hardware, mossy weathered stones at ground level, mysterious and impenetrable atmosphere`),
+
+  sprite("ISO_BANK_WITH_CHEST", "building", 512, 640, "mvp",
+    "ISO: Mittelalterliche Bank mit Schatztruhe an der Seite",
+    `${STYLES.ISO_BUILDING}, a sturdy imposing medieval fantasy bank building with a treasure chest placed beside it,
+top face shows a flat stone roof with iron reinforcement bands, decorative gold coin motif finial at the peak,
+left wall shows thick fortified stone masonry with narrow iron-barred windows, a wooden treasure chest with golden metal bands and a heavy brass lock sitting prominently on the ground against the left wall beside the building, the chest is closed and slightly angled toward the viewer,
+front facade has a grand stone archway entrance with heavy iron-reinforced oak double doors, stone pillars flanking the entrance with iron torch brackets holding burning flames,
+a large carved golden coin sign mounted above the entrance with decorative ironwork frame, stone steps leading up to the entrance,
+warm stone colors with gold and brass accents, the treasure chest has warm golden-brown wood planks and shiny brass fittings,
+authoritative and wealthy atmosphere matching the guild hall style, the chest adds a sense of accumulated wealth and treasure`),
+
+  sprite("ISO_DUNGEON_CAMP", "building", 320, 400, "mvp",
+    "ISO: Vorposten-Station / Expeditionslager (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a sci-fi forward military outpost station for deep-zone exploration operations,
+top face shows a communications dish array and a tactical hologram projector emitting blue light,
+left wall shows armored blast barriers with guild insignia hologram and weapon rack mounts,
+front shows the outpost gate with energy barrier shield posts flanking the entrance and sentry position,
+reinforced modular prefab structure, blue shield emitter glow on perimeter poles, tactical combat-ready atmosphere`),
 
   sprite("ISO_DUNGEON_MOUNTAIN", "building", 384, 480, "mvp",
     "ISO: Dungeon-Berg mit Höhleneingang (isometrisch, sehr groß)",
@@ -1090,6 +1514,325 @@ front face has a grand arched dungeon portal entrance glowing with eerie purple-
 iron chains and skull decorations flank the entrance, skull-shaped rock formation above the cave mouth,
 very large impressive structure, dark grey and charcoal rock colors, menacing fantasy dungeon atmosphere,
 dead twisted trees clinging to the cliff sides, bats silhouetted in the cave opening`),
+
+  // ─── Style-Tests: Dark (Cyberpunk) ───────────────────────────
+  sprite("ISO_HOUSE_DARK", "building", 160, 200, "post-mvp",
+    "Style-Test Dark: Wohngebäude Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a 2-3 story residential apartment block,
+stacked floors with metal railings on balconies and small potted plants,
+left wall shows dark concrete with window AC units, exposed pipe runs and a glowing cyan power meter,
+front has a grimy reinforced entry door flanked by neon-lit mailboxes and a flickering orange lantern overhead,
+cracked window patched with tape, satellite dish on roof, rusted drainpipe down one corner`),
+
+  sprite("ISO_GUILD_HALL_DARK", "building", 256, 320, "post-mvp",
+    "Style-Test Dark: Gildenhalle Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a large imposing 4-story guild headquarters and operations center,
+top face shows a communications array dish, antennas and a holographic cyan guild crest projector,
+left wall shows massive dark concrete with guild insignia in cyan neon strip lighting and barred windows,
+front facade has heavy reinforced blast doors flanked by two glowing orange-amber security lanterns,
+thick power conduits and cables run the full height of the building, intimidating and powerful`),
+
+  sprite("ISO_WAREHOUSE_DARK", "building", 224, 256, "post-mvp",
+    "Style-Test Dark: Lagerhaus Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a large dark industrial storage warehouse,
+wide blocky rectangular building with ventilation exhaust units and generator stacks on top face,
+left wall shows reinforced dark metal paneling with a cargo company logo in orange neon and barred vent,
+front has a massive roll-up shutter door with orange hazard stripe markings and a side loading dock,
+stacked metal cargo crates beside the entrance, heavy security gate, gritty dock atmosphere`),
+
+  sprite("ISO_FARM_GRAIN_DARK", "building", 384, 440, "post-mvp",
+    "Dark: Hydroponik-Bucht Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a large cyberpunk vertical farming complex and hydroponic production facility,
+top face shows rows of grimy greenhouse panels with sickly green grow-lights glowing through cracked glass,
+left wall shows dark concrete with external nutrient pipe runs, a flickering cyan monitor and rusted vents,
+front has a reinforced industrial sliding door with orange hazard stripes and a neon food-corp logo,
+condensation dripping from pipes, tangled cables overhead, oppressive industrial food production atmosphere`),
+
+  sprite("ISO_MILL_WIND_DARK", "building", 192, 280, "post-mvp",
+    "Dark: Energie-Kollektor Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a tall dark cyberpunk energy collection tower with spinning turbine blades,
+tall cylindrical structure of riveted dark metal panels with exposed cable runs and warning lights,
+large spinning turbine rotor blades extending to the upper-right with cyan energy glow at the hub,
+front base shows a power distribution junction box with thick cables branching out and orange warning lights,
+electrical arcs and sparks at cable junctions, industrial power generation atmosphere`),
+
+  sprite("ISO_BAKERY_DARK", "building", 160, 200, "post-mvp",
+    "Dark: Synthese-Küche Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a compact cyberpunk food synthesis lab and noodle shop,
+top face shows exhaust steam vents and a satellite dish with blinking status lights,
+left wall shows grimy dark concrete with a neon-lit service window revealing orange fabrication glow inside,
+front has a small automated food dispenser slot with flickering holographic menu and a buzzing neon sign,
+steam rising from vents, stained walls, compact and grungy street food aesthetic`),
+
+  sprite("ISO_LUMBER_CAMP_DARK", "building", 160, 200, "post-mvp",
+    "Dark: Material-Verarbeitung Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a compact cyberpunk raw material processing and scrap sorting unit,
+top face shows an open sorting bay with scrap metal chunks on a rusted conveyor belt,
+left wall shows dark metal panels with a mounted plasma cutter rack and robotic extraction arm,
+front has a loading dock chute with control panel showing cyan holographic readout and orange warning light,
+sparks flying from cutting operations, scrap metal piles nearby, industrial salvage atmosphere`),
+
+  sprite("ISO_QUARRY_DARK", "building", 192, 220, "post-mvp",
+    "Dark: Tiefenbohrung Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk deep core mining drill platform and excavation rig,
+top face shows the drill shaft opening with rotating drill machinery and excavated debris,
+left wall shows exposed dark metal drilling framework with hydraulic struts and orange safety lights,
+front has a cramped operator booth with a glowing cyan core sample display and extraction controls,
+ore dust in the air, harsh flood lights, heavy industrial drilling atmosphere`),
+
+  sprite("ISO_HERB_GARDEN_DARK", "building", 192, 220, "post-mvp",
+    "Dark: Xenobotanik-Labor Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk biolab and specimen containment pod for exotic plants,
+top face shows a cracked transparent dome with eerie bioluminescent specimens glowing cyan and purple inside,
+left wall shows dark concrete with bio-hazard warning signs, specimen storage cylinders glowing sickly green,
+front has a sealed bio-containment entrance with airlock status display and red warning lights,
+alien-looking plants with toxic glow visible through dirty glass, ominous scientific atmosphere`),
+
+  sprite("ISO_SMITHY_DARK", "building", 192, 220, "post-mvp",
+    "Dark: Montage-Schmiede Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk weapons forge and equipment fabrication workshop,
+top face shows factory exhaust stacks glowing hot orange from the active forge below,
+left wall shows dark metal exterior with robotic arm brackets and a flickering blueprint hologram,
+front has a large open workshop bay with a glowing orange-blue energy anvil and flying sparks,
+weapon racks and gear visible inside, graffiti on exterior walls, underground arms dealer atmosphere`),
+
+  sprite("ISO_IRON_MINE_DARK", "building", 224, 256, "post-mvp",
+    "Dark: Extraktionsschacht Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk deep resource extraction shaft and mining facility,
+top face shows the mine shaft opening with automated extraction machinery and orange scanner beams,
+left side shows massive dark metal portal beams with pulsing red-orange safety warning lights,
+front has an industrial mine entrance with crawler tracks leading in and an ore conveyor belt running out,
+harsh flood lighting, toxic dust clouds, heavy-duty extraction operation atmosphere`),
+
+  sprite("ISO_WELL_DARK", "building", 128, 160, "post-mvp",
+    "Dark: Energie-Knoten Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a compact cyberpunk energy relay node and power distribution pillar,
+top shows a glowing cyan energy crystal mounted on the relay cap pulsing with electricity,
+left side shows a hexagonal dark metal pillar body with stacked energy rings glowing cyan,
+front has a small holographic status display showing power grid output with orange warning indicators,
+energy conduit cables branching outward from the base, constant electrical shimmer and sparks`),
+
+  sprite("ISO_ARCANE_SMITHY_DARK", "building", 224, 280, "post-mvp",
+    "Dark: Arkan-Schmiede Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk arcane-tech forge fusing dark crystal magic with heavy machinery,
+top face shows a crackling energy reactor dome with purple-blue arcs radiating outward through the smog,
+left wall shows heavy dark metal plating with embedded glowing arkan runes and crystal conduit veins pulsing,
+front has a reinforced blast door with arkan scanner and holographic rune display glowing purple,
+dark energy crystals embedded in the structure, electrical storms around the reactor, forbidden tech atmosphere`),
+
+  sprite("ISO_MARKETPLACE_DARK", "building", 256, 280, "post-mvp",
+    "Dark: Schwarzmarkt Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk black market bazaar and underground trading hub,
+top face shows a patchwork roof of corrugated metal sheets with neon signs and antenna arrays,
+left wall shows dark concrete with multiple vendor stall windows lit by different colored neon lights,
+front has a wide entrance with hanging bead curtains and a buzzing holographic price board,
+scattered crates and shady merchandise displays, flickering neon signs, underground economy atmosphere`),
+
+  sprite("ISO_WAR_MACHINE_WORKSHOP_DARK", "building", 256, 300, "post-mvp",
+    "Dark: Kriegsmaschinen-Werkstatt Cyberpunk",
+    `${STYLES.ISO_BUILDING_DARK}, a cyberpunk heavy weapons factory and war machine assembly plant,
+top face shows a heavy crane gantry system and armored vehicle chassis under construction,
+left wall shows massive dark reinforced blast doors with orange hazard markings and weapon test range signage,
+front has an open assembly bay with a half-built combat mech visible inside glowing with welding sparks,
+heavy ammunition crates stacked outside, smoke and sparks, military-industrial complex atmosphere`),
+
+  // ─── Medieval (Fantasy) ──────────────────────────────────────
+  sprite("ISO_HOUSE_MED", "building", 160, 200, "post-mvp",
+    "Medieval: Wohnhaus Fantasy",
+    `${STYLES.ISO_BUILDING}, a sturdy 2-story medieval house built from rough-cut grey stone blocks and dark oak timber framing,
+top face shows a steep dark slate roof with weathered stone chimney and iron chimney cap,
+left wall shows heavy grey stone masonry with dark timber cross-bracing, small iron-barred windows with faint amber glow inside,
+front has a thick oak plank door with heavy iron strap hinges and a simple iron ring handle, a stone step at the threshold,
+cobblestone foundation, a wooden rain barrel at one corner, worn and weathered but solid,
+dark earthy tones, heavy and grounded medieval stone construction`),
+
+  sprite("ISO_GUILD_HALL_MED", "building", 256, 320, "post-mvp",
+    "Medieval: Gildenhalle Fantasy",
+    `${STYLES.ISO_BUILDING}, a massive imposing 3-story medieval guild hall of heavy stone and dark timber construction,
+top face shows a steep dark slate roof with iron ridge crest, a stone watchtower rising from one corner with a flag pole,
+left wall shows thick fortress-grade stone masonry with dark timber bracing, tall narrow arched windows with iron grating and warm firelight inside,
+front facade has a grand stone archway entrance with heavy reinforced iron-banded double doors, iron torch brackets with burning flames on either side,
+carved stone guild emblem above the entrance, stone buttresses reinforcing the corners, iron chains and pulleys at the upper level,
+imposing dark stone fortress aesthetic, the seat of power and authority`),
+
+  sprite("ISO_WAREHOUSE_MED", "building", 224, 256, "post-mvp",
+    "Medieval: Lagerhaus Fantasy",
+    `${STYLES.ISO_BUILDING}, a large heavy medieval storage warehouse of rough stone walls and heavy timber frame,
+top face shows a dark wood plank roof with iron fittings, a rope-and-pulley hoist crane arm at the ridge beam,
+left wall shows thick grey stone masonry with a large wooden loading shutter held by iron chains, iron-barred vent,
+front has massive heavy oak double doors with iron reinforcement bands and a large iron padlock and chain,
+stacked wooden crates and iron-bound barrels near the entrance, stone loading dock platform,
+dark industrial storage atmosphere, heavy and functional`),
+
+  sprite("ISO_FARM_GRAIN_MED", "building", 384, 440, "post-mvp",
+    "Medieval: Kornfarm Fantasy",
+    `${STYLES.ISO_BUILDING}, a large medieval grain farm with a heavy stone-and-timber barn and harvested wheat field,
+top face shows a dark wooden plank barn roof with stone chimney, adjacent wheat field with cut stubble and gathered sheaves,
+left side shows the barn wall of rough stone foundation with heavy dark timber planks above, iron tools hung on pegs,
+front has wide open barn doors with heavy iron hinges revealing stacked hay bales inside, a wooden ox cart with grain sacks,
+a stone well and iron water pump nearby, heavy wooden fence posts with rope,
+earthy and grounded farming atmosphere with muted harvest tones`),
+
+  sprite("ISO_MILL_WIND_MED", "building", 192, 280, "post-mvp",
+    "Medieval: Windmühle Fantasy",
+    `${STYLES.ISO_BUILDING}, a tall sturdy medieval windmill built from rough grey stone blocks,
+tall cylindrical stone tower body with weathered grey stone walls and small iron-barred windows,
+four heavy wooden windmill sails extending to the upper-right in isometric view with worn canvas stretched over thick timber frames,
+the cap is a dark conical wooden roof with iron weathervane,
+front base has a heavy arched stone doorway with iron-banded door, stone steps, and flour sacks on a wooden pallet,
+dark stone and heavy timber construction matching quarry and smithy aesthetic`),
+
+  sprite("ISO_BAKERY_MED", "building", 160, 200, "post-mvp",
+    "Medieval: Bäckerei Fantasy",
+    `${STYLES.ISO_BUILDING}, a compact medieval bakery of heavy stone and dark timber construction with a massive stone oven,
+top face shows a dark clay tile roof with a large stone chimney stack billowing dark smoke,
+left wall shows grey stone masonry with dark timber framing and a small iron-barred service window,
+front has a heavy wooden counter built into the stone wall front with iron hooks for hanging bread, a thick oak door with iron hinges,
+flour sacks and iron bread paddles leaning against the stone wall,
+warm orange oven glow visible through the window, heavy stone workshop atmosphere`),
+
+  sprite("ISO_LUMBER_CAMP_MED", "building", 160, 200, "post-mvp",
+    "Medieval: Holzfällerlager Fantasy",
+    `${STYLES.ISO_BUILDING}, a rugged medieval lumber camp with heavy timber log construction,
+top face shows a rough bark-covered log roof with iron fittings and moss growth,
+left wall shows stacked raw timber logs and heavy wooden planks against the cabin wall, iron saw blades hung up,
+front has an open work area with a massive tree stump chopping block with an iron axe embedded in it, a heavy iron sawhorse,
+wood chips and sawdust on the ground, iron chains and hooks on a rack,
+raw and rugged industrial woodworking atmosphere, heavy tools and rough timber`),
+
+  sprite("ISO_QUARRY_MED", "building", 192, 220, "post-mvp",
+    "Medieval: Steinbruch Fantasy",
+    `${STYLES.ISO_BUILDING}, a medieval stone quarry and mason's cutting yard,
+top face shows an open excavation pit with exposed rock layers in different grey and brown tones,
+left wall shows a rough stone cliff face with chisel marks, wooden scaffolding and support beams bracing the quarry walls,
+front has a mason's work shelter with a stone cutting bench, chisels and hammers on a rack, and finished stone blocks stacked neatly,
+a wooden cart loaded with cut stone blocks, rubble and rock chips scattered around,
+dusty hard-working quarry atmosphere with visible tool marks in the stone`),
+
+  sprite("ISO_HERB_GARDEN_MED", "building", 192, 220, "post-mvp",
+    "Medieval: Kräutergarten Fantasy",
+    `${STYLES.ISO_BUILDING}, a medieval apothecary workshop with stone walls and an attached herb drying shed,
+top face shows a dark wood shingle roof with an open-air herb drying rack covered by canvas, bundles of dried herbs hanging,
+left side shows heavy grey stone walls with dark timber framing, a small leaded glass window with faint green glow inside,
+front has a heavy wood and iron door with an apothecary mortar-and-pestle iron sign above, stone shelves with clay jars and bottles,
+raised stone garden beds with dark green herbs in neat rows, a grinding stone and iron cauldron nearby,
+dark mysterious apothecary atmosphere with earthy muted tones`),
+
+  sprite("ISO_SMITHY_MED", "building", 192, 220, "post-mvp",
+    "Medieval: Schmiede Fantasy",
+    `${STYLES.ISO_BUILDING}, a medieval blacksmith forge with roaring fire and heavy anvil,
+top face shows a heavy stone and timber roof with a large brick chimney billowing dark smoke and orange sparks,
+left wall shows dark stone walls blackened by soot with weapon racks displaying swords and shields,
+front has a wide open workshop with a glowing hot forge, a heavy iron anvil in the center, hammer and tongs hanging nearby,
+a water quenching barrel with steam rising, horseshoes and metal ingots stacked on shelves,
+hot industrial atmosphere with orange firelight and dramatic sparks flying from the anvil`),
+
+  sprite("ISO_IRON_MINE_MED", "building", 224, 256, "post-mvp",
+    "Medieval: Eisenmine Fantasy",
+    `${STYLES.ISO_BUILDING}, a medieval iron mine entrance built into massive craggy rock with heavy timber reinforcement,
+top face shows exposed rough craggy rock with heavy wooden support beam framework and iron ore veins visible,
+left side shows the rough rock cliff face with thick timber pit props, iron chains and hanging oil lanterns,
+front has a dark imposing mine entrance portal with massive timber frame and iron reinforcement, rail cart tracks leading inside and a loaded ore cart,
+iron mining tools on a heavy wooden rack, piles of raw iron ore and crushed rock,
+dark deep underground mining atmosphere matching the quarry and smithy stone-and-iron aesthetic`),
+
+  sprite("ISO_WELL_MED", "building", 128, 160, "post-mvp",
+    "Medieval: Brunnen Fantasy",
+    `${STYLES.ISO_BUILDING}, a sturdy medieval stone well with a heavy timber-and-iron frame,
+top shows a dark wooden shingle roof canopy on iron-reinforced timber posts with a heavy iron pulley and chain mechanism,
+left side shows the circular well wall built from rough-cut grey stone blocks with iron banding,
+front has the well opening with a thick timber crossbar holding iron chain and bucket, a stone water trough at the base,
+cobblestones surrounding the well, heavy iron hardware throughout,
+functional and solid medieval stone construction, dark earthy tones`),
+
+  sprite("ISO_ARCANE_SMITHY_MED", "building", 320, 400, "post-mvp",
+    "ISO: Arkan-Schmiede – Großes Magitech-Gebäude (MED)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a large impressive two-story arcane smithy and magitech forge,
+TOP FACE: steep gabled dark charcoal slate roof with heavy iron ridge capping, a large crackling arkan-crystal reactor dome at the peak glowing intense purple-blue, iron smoke chimneys billowing faint magical vapor, iron weather vane shaped like a crossed sword and gear,
+LEFT WALL: massive two-story dark oak timber frame construction with thick exposed wooden beams and iron reinforcement bands, arkan-energy veins glowing vivid purple-blue pulsing through the wood grain, two large arched forge windows with deep orange-purple interior glow and iron bar grilles, exterior crystal formations growing from the base corners emitting soft arcane light,
+FRONT FACADE: enormous heavy reinforced double oak doors with oversized iron hinges and arcane rune carvings, intense purple-orange forge glow blazing from within, two iron torch brackets with magical purple flames flanking the entrance, a large carved emblem above the door showing crossed tools with a crystal — the guild mark of the arcane smiths, stone foundation steps,
+DETAILS: stacked ingots and crystal shards visible near the entrance, iron chain pulley system on the side wall, arcane runic inscriptions etched into wooden beam accents,
+COLOR PALETTE: deep dark brown oak, charcoal slate, vivid purple-blue arkan energy glow, deep orange forge light from within, iron grey hardware — dramatic contrast between warm forge glow and cool arcane magic,
+highly detailed, premium quality, larger and more imposing than other buildings, clearly the most powerful crafting structure in the city`),
+
+  sprite("ISO_MARKETPLACE_MED", "building", 256, 280, "post-mvp",
+    "Medieval: Marktplatz Fantasy",
+    `${STYLES.ISO_BUILDING}, a medieval market hall and trading post built from heavy stone pillars and dark timber framing,
+top face shows a heavy dark wood plank roof with iron ridge fittings over an open-sided market hall structure,
+left side shows thick stone pillar supports with dark timber crossbeams, merchant goods hanging from iron hooks,
+front has a wide stone-arched entrance to the trading hall with iron lantern brackets, wooden merchant tables with goods displayed,
+iron-bound barrels and wooden crates stacked at the sides, a stone weighing platform with iron scales,
+dark industrial trading post atmosphere, heavy stone and timber construction`),
+
+  sprite("ISO_WAR_MACHINE_WORKSHOP_MED", "building", 256, 300, "post-mvp",
+    "Medieval: Kriegswerkstatt Fantasy",
+    `${STYLES.ISO_BUILDING}, a massive medieval siege workshop and armory built from fortress-grade stone with heavy timber crane,
+top face shows a heavy dark stone and timber roof with a large wooden construction crane arm and iron chains,
+left wall shows thick fortress stone walls with iron weapon brackets, mounted siege engine blueprints and heavy timber bracing,
+front has a massive open workshop bay with a half-built trebuchet or battering ram inside, thick timber beams and iron fittings everywhere,
+heavy wooden wheels and iron siege components stacked outside, an iron-bound ammunition chest,
+imposing dark military engineering atmosphere with the weight and scale of medieval warfare`),
+
+  sprite("ISO_DUNGEON_CAMP_MED", "building", 320, 400, "post-mvp",
+    "Medieval: Expeditionslager Fantasy",
+    `${STYLES.ISO_BUILDING}, a fortified medieval expedition outpost built from heavy timber palisade and rough stone,
+top face shows a pointed timber stake palisade wall enclosure with a stone watchtower and iron brazier fire beacon,
+left wall shows rough timber palisade with iron-reinforced gates, heavy shields and weapon racks mounted to the fence,
+front shows the camp gate with heavy iron-banded timber doors, burning iron torch brackets on stone posts and a quest board with parchment maps,
+dark canvas military tents inside the compound, weapon crates and potion barrels, iron campfire cooking rack,
+dark frontier fortress atmosphere at the edge of danger, heavy stone and timber fortification`),
+
+  // ─── Style-Tests: Warm (Steampunk) ───────────────────────────
+  sprite("ISO_HOUSE_WARM", "building", 160, 200, "post-mvp",
+    "Style-Test Warm: Wohngebäude Steampunk",
+    `${STYLES.ISO_BUILDING_WARM}, a cozy 2-story steampunk residential house,
+top face shows a small rounded copper dome with a steam vent chimney and tiny rooftop garden,
+left wall shows light grey walls with exposed copper pipes, a potted plant on a windowsill with warm amber glow,
+front has a charming wooden door with brass knocker, flower boxes under windows and a glowing lantern above,
+vines growing up one corner, pressure gauge mounted on an exterior pipe, friendly and lived-in feeling`),
+
+  sprite("ISO_GUILD_HALL_WARM", "building", 256, 320, "post-mvp",
+    "Style-Test Warm: Gildenhalle Steampunk",
+    `${STYLES.ISO_BUILDING_WARM}, a grand 3-story steampunk guild hall and meeting house,
+top face shows a large brass dome with riveted fittings, pressure tanks and guild banner pole with flag,
+left wall shows wide round-arched windows glowing warm golden, decorative copper pipe columns,
+front has impressive double wooden doors with brass hardware flanked by two large amber lanterns,
+guild crest plaque above the entrance, decorative riveted metal panels, potted plants at the entrance,
+impressive and welcoming, clearly the most important building in the area`),
+
+  sprite("ISO_WAREHOUSE_WARM", "building", 224, 256, "post-mvp",
+    "Style-Test Warm: Lagerhaus Steampunk",
+    `${STYLES.ISO_BUILDING_WARM}, a large steampunk storage warehouse and distribution hub,
+top face shows a barrel-vaulted corrugated roof with steam exhaust pipes and a large copper pressure dome,
+left wall shows beige-grey walls with large round loading hatch, copper pipe runs and visible pressure gauge,
+front has large wooden double doors with brass hardware, a loading dock with rope-and-pulley and crates,
+a steam-powered crane arm extends from one corner, warm glow from interior lights, busy industrial charm`),
+
+  sprite("ISO_ARCANE_SMITHY", "building", 320, 400, "mvp",
+    "ISO: Arkan-Schmiede – Großes Magitech-Gebäude",
+    `${STYLES.ISO_BUILDING_SCIFI}, a large impressive two-story arcane smithy and magitech forge,
+TOP FACE: steep gabled dark charcoal slate roof with heavy iron ridge capping, a large crackling arkan-crystal reactor dome at the peak glowing intense purple-blue, iron smoke chimneys billowing faint magical vapor, iron weather vane shaped like a crossed sword and gear,
+LEFT WALL: massive two-story dark oak timber frame construction with thick exposed wooden beams and iron reinforcement bands, arkan-energy veins glowing vivid purple-blue pulsing through the wood grain, two large arched forge windows with deep orange-purple interior glow and iron bar grilles, exterior crystal formations growing from the base corners emitting soft arcane light,
+FRONT FACADE: enormous heavy reinforced double oak doors with oversized iron hinges and arcane rune carvings, intense purple-orange forge glow blazing from within, two iron torch brackets with magical purple flames flanking the entrance, a large carved emblem above the door showing crossed tools with a crystal — the guild mark of the arcane smiths, stone foundation steps,
+DETAILS: stacked ingots and crystal shards visible near the entrance, iron chain pulley system on the side wall, arcane runic inscriptions etched into wooden beam accents,
+COLOR PALETTE: deep dark brown oak, charcoal slate, vivid purple-blue arkan energy glow, deep orange forge light from within, iron grey hardware — dramatic contrast between warm forge glow and cool arcane magic,
+highly detailed, premium quality, larger and more imposing than other buildings, clearly the most powerful crafting structure in the city`),
+
+  sprite("ISO_MARKETPLACE", "building", 256, 280, "mvp",
+    "ISO: Handels-Nexus / Marktplatz (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a busy sci-fi trade nexus and holographic marketplace hub,
+top face shows an open trading floor with holographic product displays floating above stall positions,
+left wall shows the market exterior with neon-lit shop signs and trade route display screens,
+front has an inviting open arcade entrance with glowing price holo-boards and automated trading terminals,
+vibrant warm amber and neon accent lights, busy commercial energy, merchandise visible on displays`),
+
+  sprite("ISO_WAR_MACHINE_WORKSHOP", "building", 256, 300, "mvp",
+    "ISO: Kriegsmaschinen-Werkstatt (Sci-Fi)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a heavy-duty sci-fi war machine assembly and maintenance workshop,
+top face shows a massive reinforced roof with heavy crane rails and a war machine chassis being assembled,
+left wall shows thick armored panels with mounted weapon racks and engineering tool stations,
+front has an enormous blast-proof hangar door wide enough for heavy vehicles, ramp leading in,
+heavy military aesthetic, dark metal with orange hazard markings, intimidating industrial scale`),
 
   // ─── Isometric Terrain Tiles ─────────────────────────────────
   sprite("ISO_GRASS_TILE", "terrain", 128, 64, "mvp",
@@ -1132,6 +1875,132 @@ compact round canopy of bright fresh green foliage,
 thin brown trunk visible at base,
 a few small colorful berries or blossoms for charm,
 small and cute, fits between buildings`),
+
+  // ─── Sci-Fi Medieval Building Sprites (V2 Style Rework) ──────
+  // Priority: Gildenhaus → Schmiede → Dungeon-Lager → Produktionsgebäude
+  // These replace the medieval-only originals with techno-fantasy hybrid style
+
+  sprite("ISO_GUILD_HALL_V2", "building", 256, 320, "post-mvp",
+    "ISO: Gildenhalle V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a grand techno-medieval guild hall headquarters,
+massive reinforced stone walls with riveted dark metal plates and glowing blue arkan-veins,
+left side shows tall arched windows with pulsing purple energy glow behind stained glass,
+front facade has imposing armored double doors with energy conduit patterns etched into the metal,
+roof has dark metallic tiles with a central crystal spire emitting faint blue light,
+guild banner hangs from an energy-lit pole, holographic guild emblem floating above entrance,
+warm interior light contrasting cool blue energy accents, powerful established atmosphere`),
+
+  sprite("ISO_SMITHY_V2", "building", 192, 220, "post-mvp",
+    "ISO: Schmiede V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval blacksmith forge and arkan-workshop,
+forge chimney on roof emits both orange sparks and faint purple energy wisps,
+left wall shows dark reinforced metal with mounted magitech weapon rack glowing faintly,
+front has an open workshop with hybrid anvil: traditional iron base with glowing blue crystal core,
+energy conduit pipes run along the base of the building connecting to the forge,
+sparks flying from both traditional hammering and arkan-energy forging,
+dark charcoal walls with orange ember glow and blue energy accent lighting`),
+
+  sprite("ISO_DUNGEON_CAMP_V2", "building", 320, 400, "post-mvp",
+    "ISO: Dungeon-Expeditionslager V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a rugged techno-medieval dungeon expedition staging camp,
+reinforced metal-and-wood palisade walls with glowing purple warning sigils on the stakes,
+large command tent with dark canvas stretched over a metal frame structure, energy cables running to it,
+left side shows the palisade with mounted magitech lanterns casting blue light and a holographic map display,
+front gate entrance with crossed energy-tipped spears, a campfire at center with both natural flames and drifting arcane embers,
+tactical equipment crates with glowing lock runes, worn battle-scarred gear rack,
+dark muted earthy tones with blue-purple energy accents, dangerous expedition atmosphere`),
+
+  sprite("ISO_FARM_GRAIN_V2", "building", 224, 256, "post-mvp",
+    "ISO: Getreidefarm V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval grain farm with automated harvest elements,
+wooden barn reinforced with metal plates, roof has solar crystal panels beside golden wheat sheaves,
+left side shows arkan irrigation pipes glowing faintly blue feeding the crop rows,
+front has open barn doors with both traditional grain sacks and a small magitech grain sorter device,
+golden wheat field on the top face with subtle blue energy grid lines in the soil,
+warm golden and brown tones with blue-tech accents, productive agricultural atmosphere`),
+
+  sprite("ISO_LUMBER_CAMP_V2", "building", 160, 200, "post-mvp",
+    "ISO: Holzfällerhütte V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval lumber processing cabin,
+rough hewn timber cabin with riveted metal reinforcement plates on corners,
+log pile on the top face with a small magitech saw blade glowing purple at one end,
+left wall shows raw wood planks with a mounted energy-powered axe and tool rack,
+front has a porch with chopping block, traditional woodchips mixed with faint energy sawdust,
+dark brown wood and gunmetal grey tones with purple energy tool accents`),
+
+  sprite("ISO_QUARRY_V2", "building", 192, 220, "post-mvp",
+    "ISO: Steinbruch V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval stone quarry with magitech cutting tools,
+exposed rock face with arkan-energy drill marks glowing faint purple in the stone,
+metal crane arm with energy cable hoist on the top face lifting cut stone blocks,
+left side shows reinforced worker's shed with energy conduit running to cutting tools,
+front has stacked precision-cut stone blocks and a magitech stone cutter device,
+grey stone and dark metal tones with purple energy tool highlights`),
+
+  sprite("ISO_IRON_MINE_V2", "building", 224, 256, "post-mvp",
+    "ISO: Eisenmine V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval iron mine with magitech extraction,
+reinforced mine shaft frame with energy-powered ore cart track on the top face,
+left side shows metal-plated mine entrance with blue-glowing support beams and safety runes,
+front has the main mine portal with iron ore chunks on a conveyor and arkan sorting crystals,
+energy conduit cables running from the mine to a small processing unit outside,
+dark grey rock and heavy metal tones with blue extraction energy highlights`),
+
+  sprite("ISO_BAKERY_V2", "building", 160, 200, "post-mvp",
+    "ISO: Bäckerei V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval bakery with arkan-heated ovens,
+brick chimney with warm smoke and faint purple energy wisps on the roof,
+left wall shows reinforced brick with a display window of bread loaves glowing warm,
+front has a welcoming door with a pretzel sign and a small magitech oven vent beside it,
+energy conduit pipe runs to the oven providing consistent arkan heat,
+warm orange-red brick with subtle purple energy accent lines`),
+
+  sprite("ISO_HERB_GARDEN_V2", "building", 192, 220, "post-mvp",
+    "ISO: Kräutergarten V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval alchemist greenhouse with arkan growth enhancement,
+crystal glass greenhouse panels on roof glowing with faint purple growth-light from within,
+colorful herb patches on the top face with blue energy irrigation grid visible between rows,
+left wall shows metal trellis with climbing vines enhanced by arkan energy nodes,
+front has an arched entrance with potion bottles and a small holographic plant analysis display,
+rich greens and purple energy tones, magical and scientific atmosphere combined`),
+
+  sprite("ISO_HOUSE_V2", "building", 160, 200, "post-mvp",
+    "ISO: Wohnhaus V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a small techno-medieval residential dwelling,
+stone-and-timber construction reinforced with dark metal plates at the corners,
+steep roof with dark metallic tiles and a small crystal antenna receiver on top,
+left wall shows grey stone with a shuttered window that has a faint blue energy glow at edges,
+front has a reinforced wooden door with arkan lock rune and a warm glowing window,
+energy conduit pipe runs along the foundation connecting to the city grid,
+cozy but technologically integrated atmosphere`),
+
+  sprite("ISO_WAREHOUSE_V2", "building", 224, 256, "post-mvp",
+    "ISO: Lagerhaus V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a large techno-medieval warehouse with magitech inventory system,
+wide reinforced structure with dark metal beam roof and arkan preservation runes on panels,
+left wall shows thick metal-plated stone with a holographic inventory counter glowing blue,
+front has large armored double doors with a magitech loading crane and energy-lit dock,
+crates with glowing preservation sigils stacked nearby, arkan conveyor track on the floor,
+dark metal and stone tones with blue inventory-system energy accents`),
+
+  sprite("ISO_WELL_V2", "building", 128, 160, "post-mvp",
+    "ISO: Brunnen V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval energy-enhanced well and water purifier,
+hexagonal stone well with dark metal reinforcement rings and a small crystal purification device on top,
+glowing blue arkan water visible in the well opening from above,
+left side shows stone and metal with an energy pump mechanism replacing the traditional pulley,
+front shows the well opening with blue-glowing purified water, energy conduit base,
+grey stone with blue water energy accents, essential utility atmosphere`),
+
+  sprite("ISO_MILL_WIND_V2", "building", 192, 280, "post-mvp",
+    "ISO: Windmühle V2 (Sci-Fi Mittelalter)",
+    `${STYLES.ISO_BUILDING_SCIFI}, a techno-medieval windmill with hybrid energy generation,
+tall cylindrical stone tower reinforced with dark metal bands and arkan conduit lines,
+energy-enhanced sail blades with faint blue tips spinning to the upper-right,
+round conical roof with metal shingles and a crystal energy collector on peak,
+left wall shows stone blocks with inlaid energy conduit patterns glowing blue,
+front has a metal-reinforced door and flour chute with magitech grinding sounds visible as energy sparks,
+stone and metal tones with blue energy blade and conduit accents`),
 ];
 
 // ─── Hilfsfunktionen ─────────────────────────────────────────

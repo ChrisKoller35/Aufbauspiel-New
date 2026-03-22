@@ -22,7 +22,6 @@ tools/                          ← Build-Tools & Asset-Generierung
   resizeSprites.ts              ← Sprite-Resizer (nutzt Registry)
   spriteCheck.ts                ← Check & Auto-Generate fehlender Sprites
   generateSounds.ts             ← SFX-Generator (jsfxr)
-  geminiSecondOpinion.ts        ← Gemini Second Opinion Tool
 docs/                           ← Referenz-Dokumente
   sprite-prompt-referenz.md     ← Gemini Image API Prompt-Guide
 ```
@@ -33,12 +32,26 @@ docs/                           ← Referenz-Dokumente
 1. Prüfe zuerst ob er schon in `tools/spriteRegistry.ts` definiert ist
 2. Falls ja: `npm run sprite-check` zeigt ob er als Datei existiert
 3. Falls die Datei fehlt: `npm run sprite-fix` generiert ihn automatisch via Google AI API
-4. Danach: `npm run resize-sprites` skaliert auf Zielgröße
+4. Danach: `npm run resize-sprites` skaliert auf Zielgröße (überspringt bestehende automatisch)
 5. Falls der Sprite noch NICHT in der Registry ist:
    - Füge ihn in `tools/spriteRegistry.ts` ein (nutze die `sprite()` Hilfsfunktion)
    - Wähle den passenden Style aus `STYLES` (BUILDING, UNIT, ENEMY, BOSS, ITEM, ICON, etc.)
    - Setze `phase: "post-mvp"` für neue Features
    - Dann `npm run sprite-fix` zum Generieren
+
+> ⚠️ **WICHTIG nach jedem Sprite-Generate/Resize:**
+> `npm run remove-bg` ausführen! Sonst haben die neuen Sprites noch magenta/schwarze Hintergründe.
+> `resize-sprites` überspringt zwar bestehende Sprites, aber neue werden immer mit Hintergrund generiert.
+> **Reihenfolge:** `sprite-fix` → `resize-sprites` → `remove-bg`
+
+> 🚫 **NIEMALS `remove-bg` auf handgezeichnete Icons anwenden!**
+> `public/assets/sprites/final/Neue Icons/` enthält vom User erstellte Icons mit **gewolltem farbigem Slot-Hintergrund** (grün/blau/violett/orange).
+> `remove-bg` würde diese Hintergründe zerstören — das ist der Fehler aus dem Incident vom 15.03.2026.
+> `remove-bg` liest nur direkte Dateien in `final/`, keine Unterordner → Unterordner sind automatisch sicher.
+
+> 📁 **`final/Neue Icons/` ist ein permanenter Ordner — NIEMALS löschen oder auflösen!**
+> Hier landen alle neuen handgezeichneten Icons bevor sie verarbeitet werden.
+> Der Ordner ist die Quelle für neue Item-Icons und muss dauerhaft erhalten bleiben.
 
 ### Verfügbare npm Scripts:
 ```bash
@@ -50,8 +63,6 @@ npm run generate-sprites -- KEY   # Generiert nur einen bestimmten Sprite
 npm run resize-sprites            # Skaliert alle auf Zielgrößen
 npm run generate-sounds           # Generiert alle SFX (jsfxr)
 npm run generate-all              # Sprites + Resize + Sounds
-npm run second-opinion -- "Frage" # Gemini Second Opinion einholen
-npm run second-opinion -- "Frage" --context datei.ts  # Mit Datei-Kontext
 ```
 
 ### Sprite-Pfade im Code:
@@ -75,7 +86,7 @@ Die Keys entsprechen den Dateinamen ohne Endung.
 ## Konventionen
 - Sprite-Keys: UPPER_SNAKE_CASE (z.B. `HERO_GUARDIAN`, `ENEMY_FOREST_WOLF`)
 - Kategorien: building, unit, enemy, boss, item, terrain, icon, specialist
-- Pixel Art Style: SNES/GBA-inspiriert, schwarzer Hintergrund, limitierte Farbpalette
+- Art Style: Modern Fantasy RPG — KEIN Pixel Art. Buildings/Units: Isometric clean 2D. Items T3+/Epic/Legendary: Full-color painterly digital painting (Diablo IV / WoW Legendary Qualitaet), 256x256
 
 ## Sprite-Prompt-Referenz
 Detaillierte Anleitung fuer optimale Bild-Prompts (Gemini Image API):
@@ -84,6 +95,13 @@ Detaillierte Anleitung fuer optimale Bild-Prompts (Gemini Image API):
 ---
 
 ## Arbeitsregeln
+
+### Qualitaet vor Aufwand
+- **Immer die beste Loesung anstreben, nicht die einfachste.**
+- Wenn eine Loesung "okay, aber nicht gut" ist, nicht akzeptieren nur weil die bessere Variante mehr Aufwand bedeutet.
+- **Proaktiv ehrlich sein:** Wenn eine Loesung Schwaechen hat, sofort sagen – nicht erst wenn der User kritisch nachfragt.
+- Aufwand ist ein Planungsfaktor, kein Entscheidungsfaktor. Die richtige Frage ist "Was ist die beste Loesung?" – nicht "Was ist die schnellste?"
+- Wenn der Agent eine Loesung vorschlaegt: zuerst nach Qualitaet beurteilen, dann nach Aufwand planen.
 
 ### Session-Start
 1. **Scope klaeren** – Aufgabe lesen, alle Schritte identifizieren, kurzen Abarbeitungsplan (Checklist) ausgeben.
@@ -118,10 +136,8 @@ Agent Team Vorschlag:
 - **Kein Ballast:** Grosse Dateien nicht komplett laden, nur relevante Ausschnitte lesen.
 
 ### Second Opinions bei Unsicherheit
-1. **Zwei unabhaengige Meinungen einholen:**
-   - **(a) Gemini** – `npm run second-opinion -- "Frage"` (optional mit `--context datei.ts`)
-   - **(b) Subagent `reviewer`** – Gegenpruefung durch separaten Claude-Subagent
-2. Beide Ergebnisse vergleichen, Entscheidung als **"Annahme:"** notieren.
+1. **Subagent `reviewer`** – Gegenpruefung durch separaten Claude-Subagent
+2. Entscheidung als **"Annahme:"** notieren.
 3. Weiterarbeiten. Nur fragen wenn objektiv blockiert.
 
 Besonders sinnvoll bei: Balancing-Werten, Architektur-Entscheidungen, Game-Design-Fragen.

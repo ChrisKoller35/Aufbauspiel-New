@@ -1,0 +1,1905 @@
+/* ============================================================
+   Magic City â€“ HTML UI Design System
+   Alle CSS-Variablen spiegeln Colors.ts exakt wider.
+   Importiert in main.ts via: import './ui/html/ui.css'
+   ============================================================ */
+
+/* â”€â”€â”€ Design Tokens (mirrors Colors.ts) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+:root {
+  /* Panel backgrounds */
+  --mc-panel-bg:        #2B2D31;
+  --mc-panel-bg-dark:   #1E1F23;
+  --mc-panel-bg-darker: #141518;
+  --mc-panel-border:    #D4A54A;
+
+  /* Navy Dark */
+  --mc-navy-deep:       #0E1018;
+  --mc-navy-panel:      #161929;
+  --mc-navy-card:       #1C2035;
+  --mc-navy-card-light: #242840;
+  --mc-navy-btn:        #1E2236;
+  --mc-navy-btn-hover:  #2A3050;
+  --mc-navy-separator:  #2A2E45;
+
+  /* Buttons */
+  --mc-btn-normal:      #383A40;
+  --mc-btn-hover:       #45474F;
+  --mc-btn-dark:        #2F3136;
+  --mc-btn-dark-hover:  #3B3D44;
+
+  /* Text colors */
+  --mc-light:    #F2F2F2;
+  --mc-dim:      #B0B5BD;
+  --mc-muted:    #9EA3AC;
+  --mc-disabled: #6E7380;
+  --mc-white:    #FFFFFF;
+
+  /* Semantic colors */
+  --mc-gold:       #D4A54A;
+  --mc-gold-bright:#E8C34A;
+  --mc-gold-deco:  #F0C060;
+  --mc-damage:     #EF5350;
+  --mc-heal:       #66BB6A;
+  --mc-loot:       #81C784;
+  --mc-info:       #4FC3F7;
+
+  /* Stat colors */
+  --mc-hp:  #4CAF78;
+  --mc-atk: #E06030;
+  --mc-def: #3A8AC8;
+  --mc-spd: #D4B800;
+  --mc-xp:  #5090F0;
+
+  /* Feature accents */
+  --mc-accent-build:      #F59E0B;
+  --mc-accent-guild:      #FFD700;
+  --mc-accent-expedition: #E94560;
+  --mc-accent-storage:    #22C55E;
+  --mc-accent-hero:       #A855F7;
+
+  /* Role colors */
+  --mc-role-tank:     #3A8AC8;
+  --mc-role-tank-bg:  rgba(58,138,200,0.08);
+  --mc-role-dps:      #E06030;
+  --mc-role-dps-bg:   rgba(224,96,48,0.08);
+  --mc-role-healer:   #4CAF78;
+  --mc-role-healer-bg:rgba(76,175,120,0.08);
+  --mc-role-support:  #A855F7;
+  --mc-role-support-bg:rgba(168,85,247,0.08);
+
+  /* Chip */
+  --mc-chip-bg:     #191D2E;
+  --mc-chip-border: #333766;
+
+  /* Typography */
+  --mc-font: "Segoe UI", "Arial", sans-serif;
+  --mc-font-size-xs:  11px;
+  --mc-font-size-sm:  12px;
+  --mc-font-size-md:  13px;
+  --mc-font-size-base:14px;
+  --mc-font-size-lg:  16px;
+  --mc-font-size-xl:  18px;
+  --mc-font-size-2xl: 22px;
+}
+
+/* â”€â”€â”€ UI Layer Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#ui-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 10;
+  font-family: var(--mc-font);
+  color: var(--mc-light);
+  /* Prevent text selection across UI */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* â”€â”€â”€ Panel Base â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-panel {
+  background: var(--mc-panel-bg);
+  border: 1px solid var(--mc-panel-border);
+  border-radius: 8px;
+  color: var(--mc-light);
+  font-family: var(--mc-font);
+  position: relative;
+  pointer-events: auto;
+}
+
+/* â”€â”€â”€ Modal (positioned absolute within ui-layer) â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-modal {
+  position: absolute;
+  pointer-events: auto;
+}
+
+.mc-modal[hidden],
+[hidden] {
+  display: none !important;
+}
+
+/* Panel open animation */
+@keyframes mc-in {
+  from { opacity: 0; transform: scale(0.96) translateY(-6px); }
+  to   { opacity: 1; transform: scale(1)    translateY(0); }
+}
+.mc-panel:not([hidden]) {
+  animation: mc-in 0.12s ease-out;
+}
+
+/* â”€â”€â”€ Panel Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-panel-header {
+  background: var(--mc-navy-deep);
+  border-bottom: 1px solid var(--mc-panel-border);
+  border-radius: 8px 8px 0 0;
+  padding: 10px 40px 10px 16px;
+  font-size: var(--mc-font-size-xl);
+  font-weight: bold;
+  color: var(--mc-gold);
+  text-align: center;
+}
+
+/* â”€â”€â”€ Close Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 26px;
+  height: 26px;
+  background: var(--mc-damage);
+  border: none;
+  border-radius: 50%;
+  color: #fff;
+  font-size: 13px;
+  font-weight: bold;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  line-height: 1;
+  transition: background 0.1s;
+}
+.mc-close-btn:hover { background: #c62828; }
+
+/* â”€â”€â”€ Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-tabs {
+  display: flex;
+  background: var(--mc-navy-deep);
+  border-bottom: 1px solid var(--mc-panel-border);
+}
+.mc-tab {
+  flex: 1;
+  padding: 8px 6px;
+  text-align: center;
+  cursor: pointer;
+  font-family: var(--mc-font);
+  font-size: var(--mc-font-size-md);
+  color: var(--mc-dim);
+  border: none;
+  background: transparent;
+  pointer-events: auto;
+  transition: background 0.1s, color 0.1s;
+  white-space: nowrap;
+}
+.mc-tab.active {
+  background: var(--mc-btn-normal);
+  color: var(--mc-gold);
+  font-weight: bold;
+}
+.mc-tab:hover:not(.active) {
+  background: var(--mc-navy-card);
+  color: var(--mc-light);
+}
+
+/* â”€â”€â”€ Scrollable Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-scroll {
+  overflow-y: auto;
+  scrollbar-width: auto;
+  scrollbar-color: var(--mc-panel-border) rgba(14,16,24,0.6);
+}
+.mc-scroll::-webkit-scrollbar { width: 10px; }
+.mc-scroll::-webkit-scrollbar-track {
+  background: rgba(14,16,24,0.6);
+  border-left: 1px solid var(--mc-navy-separator);
+}
+.mc-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--mc-gold) 0%, #b8872e 100%);
+  border-radius: 5px;
+  border: 2px solid rgba(14,16,24,0.6);
+  min-height: 40px;
+}
+.mc-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, var(--mc-gold-bright) 0%, var(--mc-gold) 100%);
+  box-shadow: 0 0 6px rgba(212,165,74,0.4);
+}
+
+/* â”€â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-btn {
+  background: var(--mc-btn-dark);
+  border: 1px solid var(--mc-panel-border);
+  border-radius: 4px;
+  color: var(--mc-gold);
+  font-family: var(--mc-font);
+  font-size: var(--mc-font-size-md);
+  cursor: pointer;
+  padding: 6px 12px;
+  pointer-events: auto;
+  text-align: center;
+  transition: background 0.1s, border-color 0.1s;
+  white-space: nowrap;
+}
+.mc-btn:hover:not(:disabled) {
+  background: var(--mc-btn-dark-hover);
+  border-color: var(--mc-gold-bright);
+}
+.mc-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+.mc-btn.danger {
+  background: #7f1d1d;
+  border-color: var(--mc-damage);
+  color: var(--mc-damage);
+}
+.mc-btn.danger:hover:not(:disabled) {
+  background: #991b1b;
+}
+.mc-btn.success {
+  background: #14532d;
+  border-color: var(--mc-heal);
+  color: var(--mc-heal);
+}
+
+/* â”€â”€â”€ Stat Bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-bar-track {
+  height: 6px;
+  background: #111420;
+  border-radius: 3px;
+  overflow: hidden;
+}
+.mc-bar-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+.mc-bar-hp  { background: var(--mc-hp); }
+.mc-bar-atk { background: var(--mc-atk); }
+.mc-bar-def { background: var(--mc-def); }
+
+/* â”€â”€â”€ Labels & Text Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-label-gold    { color: var(--mc-gold); }
+.mc-label-bright  { color: var(--mc-gold-bright); }
+.mc-label-dim     { color: var(--mc-dim); }
+.mc-label-muted   { color: var(--mc-muted); }
+.mc-label-damage  { color: var(--mc-damage); }
+.mc-label-heal    { color: var(--mc-heal); }
+.mc-label-info    { color: var(--mc-info); }
+.mc-label-loot    { color: var(--mc-loot); }
+.mc-label-hp      { color: var(--mc-hp); }
+.mc-label-atk     { color: var(--mc-atk); }
+.mc-label-def     { color: var(--mc-def); }
+.mc-label-spd     { color: var(--mc-spd); }
+.mc-bold          { font-weight: bold; }
+.mc-italic        { font-style: italic; }
+.mc-text-center   { text-align: center; }
+.mc-text-sm       { font-size: var(--mc-font-size-sm); }
+.mc-text-md       { font-size: var(--mc-font-size-md); }
+.mc-text-lg       { font-size: var(--mc-font-size-lg); }
+.mc-text-xl       { font-size: var(--mc-font-size-xl); }
+
+/* â”€â”€â”€ Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-divider {
+  height: 1px;
+  background: var(--mc-navy-separator);
+  margin: 8px 0;
+}
+
+/* â”€â”€â”€ Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-card {
+  background: var(--mc-navy-card);
+  border: 1px solid var(--mc-navy-separator);
+  border-radius: 6px;
+  padding: 10px 12px;
+  transition: border-color 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+.mc-card:hover {
+  border-color: var(--mc-panel-border);
+}
+
+/* â”€â”€â”€ Hero Card (role-themed) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-hero-card {
+  position: relative;
+  overflow: hidden;
+}
+.mc-hero-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  border-radius: 6px 6px 0 0;
+}
+.mc-hero-card[data-role="tank"]    { background: linear-gradient(135deg, var(--mc-navy-card) 60%, var(--mc-role-tank-bg)); }
+.mc-hero-card[data-role="dps"]     { background: linear-gradient(135deg, var(--mc-navy-card) 60%, var(--mc-role-dps-bg)); }
+.mc-hero-card[data-role="healer"]  { background: linear-gradient(135deg, var(--mc-navy-card) 60%, var(--mc-role-healer-bg)); }
+.mc-hero-card[data-role="support"] { background: linear-gradient(135deg, var(--mc-navy-card) 60%, var(--mc-role-support-bg)); }
+.mc-hero-card[data-role="tank"]::before    { background: linear-gradient(90deg, transparent, var(--mc-role-tank), transparent); }
+.mc-hero-card[data-role="dps"]::before     { background: linear-gradient(90deg, transparent, var(--mc-role-dps), transparent); }
+.mc-hero-card[data-role="healer"]::before  { background: linear-gradient(90deg, transparent, var(--mc-role-healer), transparent); }
+.mc-hero-card[data-role="support"]::before { background: linear-gradient(90deg, transparent, var(--mc-role-support), transparent); }
+
+.mc-hero-card:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.3);
+}
+.mc-hero-card[data-role="tank"]:hover    { border-color: var(--mc-role-tank); box-shadow: 0 4px 16px rgba(58,138,200,0.15); }
+.mc-hero-card[data-role="dps"]:hover     { border-color: var(--mc-role-dps); box-shadow: 0 4px 16px rgba(224,96,48,0.15); }
+.mc-hero-card[data-role="healer"]:hover  { border-color: var(--mc-role-healer); box-shadow: 0 4px 16px rgba(76,175,120,0.15); }
+.mc-hero-card[data-role="support"]:hover { border-color: var(--mc-role-support); box-shadow: 0 4px 16px rgba(168,85,247,0.15); }
+
+/* Hero Portrait Frame */
+.mc-hero-portrait {
+  position: relative;
+  border-radius: 8px;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.mc-hero-portrait[data-role="tank"]    { background: linear-gradient(135deg, rgba(58,138,200,0.15), rgba(58,138,200,0.05)); border: 1px solid rgba(58,138,200,0.3); }
+.mc-hero-portrait[data-role="dps"]     { background: linear-gradient(135deg, rgba(224,96,48,0.15), rgba(224,96,48,0.05)); border: 1px solid rgba(224,96,48,0.3); }
+.mc-hero-portrait[data-role="healer"]  { background: linear-gradient(135deg, rgba(76,175,120,0.15), rgba(76,175,120,0.05)); border: 1px solid rgba(76,175,120,0.3); }
+.mc-hero-portrait[data-role="support"] { background: linear-gradient(135deg, rgba(168,85,247,0.15), rgba(168,85,247,0.05)); border: 1px solid rgba(168,85,247,0.3); }
+
+.mc-hero-portrait img {
+  border-radius: 4px;
+}
+
+/* Role Badge (colored pill) */
+.mc-role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: var(--mc-font-size-xs);
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+.mc-role-badge[data-role="tank"]    { background: rgba(58,138,200,0.15); color: var(--mc-role-tank); border: 1px solid rgba(58,138,200,0.3); }
+.mc-role-badge[data-role="dps"]     { background: rgba(224,96,48,0.15); color: var(--mc-role-dps); border: 1px solid rgba(224,96,48,0.3); }
+.mc-role-badge[data-role="healer"]  { background: rgba(76,175,120,0.15); color: var(--mc-role-healer); border: 1px solid rgba(76,175,120,0.3); }
+.mc-role-badge[data-role="support"] { background: rgba(168,85,247,0.15); color: var(--mc-role-support); border: 1px solid rgba(168,85,247,0.3); }
+
+/* Details Button - inviting CTA */
+.mc-btn-details {
+  background: linear-gradient(135deg, #1a2040, #242850);
+  border: 1px solid var(--mc-gold);
+  border-radius: 6px;
+  color: var(--mc-gold);
+  font-family: var(--mc-font);
+  font-size: var(--mc-font-size-md);
+  font-weight: bold;
+  cursor: pointer;
+  padding: 8px 16px;
+  pointer-events: auto;
+  text-align: center;
+  transition: all 0.2s;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+.mc-btn-details::after {
+  content: '';
+  position: absolute;
+  top: 0; left: -100%; right: 100%; bottom: 0;
+  background: linear-gradient(90deg, transparent, rgba(212,165,74,0.1), transparent);
+  transition: left 0.4s, right 0.4s;
+}
+.mc-btn-details:hover {
+  background: linear-gradient(135deg, #242850, #2e3460);
+  border-color: var(--mc-gold-bright);
+  box-shadow: 0 0 12px rgba(212,165,74,0.25), inset 0 1px 0 rgba(212,165,74,0.1);
+  transform: translateY(-1px);
+}
+.mc-btn-details:hover::after {
+  left: 100%; right: -100%;
+}
+
+/* XP Progress Bar on cards */
+.mc-xp-bar {
+  height: 4px;
+  background: rgba(80,144,240,0.15);
+  border-radius: 2px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.mc-xp-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3060b0, #5090F0, #70b0ff);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+/* Skill Chip */
+.mc-skill-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 7px;
+  border-radius: 4px;
+  font-size: var(--mc-font-size-xs);
+  background: rgba(255,255,255,0.04);
+  border: 1px solid rgba(255,255,255,0.08);
+  color: var(--mc-dim);
+  white-space: nowrap;
+}
+.mc-skill-chip .mc-skill-icon {
+  font-size: 10px;
+}
+
+/* â”€â”€â”€ Chip (HUD resource pill) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-chip {
+  background: var(--mc-chip-bg);
+  border: 1px solid var(--mc-chip-border);
+  border-radius: 20px;
+  padding: 4px 10px;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: var(--mc-font-size-md);
+  color: var(--mc-light);
+  white-space: nowrap;
+}
+.mc-chip img {
+  width: 16px;
+  height: 16px;
+  object-fit: contain;
+  image-rendering: auto;
+}
+.mc-chip .mc-chip-val {
+  font-weight: bold;
+  color: var(--mc-white);
+  min-width: 30px;
+}
+
+/* â”€â”€â”€ Status Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-badge {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: var(--mc-font-size-xs);
+  font-weight: bold;
+}
+.mc-badge-ready    { background: #14532d; color: var(--mc-heal); }
+.mc-badge-injured  { background: #7f1d1d; color: var(--mc-damage); }
+.mc-badge-training { background: #78350f; color: var(--mc-gold); }
+
+/* â”€â”€â”€ Overlay Backdrop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+.mc-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  pointer-events: auto;
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   Main Menu
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Keyframe Animations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+/* Gold shimmer sweep across the title */
+@keyframes mc-title-shimmer {
+  0%   { background-position: 200% center; }
+  100% { background-position: -200% center; }
+}
+
+/* Entrance: slide up + fade in */
+@keyframes mc-menu-in {
+  from { opacity: 0; transform: translateY(22px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
+
+/* Hero sprites: gentle float */
+@keyframes mc-hero-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-14px); }
+}
+
+/* Primary button: radiant gold pulse */
+@keyframes mc-btn-glow {
+  0%, 100% { box-shadow: 0 0 14px rgba(212,165,74,0.25), 0 4px 16px rgba(0,0,0,0.5); }
+  50%       { box-shadow: 0 0 28px rgba(212,165,74,0.55), 0 4px 22px rgba(0,0,0,0.5); }
+}
+
+/* â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+#mc-main-menu {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+  z-index: 50;
+}
+
+.mc-menu-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: mc-menu-in 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.mc-menu-body-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+/* â”€â”€ Title â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.mc-menu-title {
+  font-family: var(--mc-font);
+  font-size: 52px;
+  font-weight: 900;
+  letter-spacing: 5px;
+  margin-bottom: 8px;
+  /* Gold shimmer gradient text */
+  background: linear-gradient(
+    90deg,
+    #6B4A0E  0%,
+    #C8922A 20%,
+    #D4A54A 35%,
+    #F5D87A 50%,
+    #D4A54A 65%,
+    #C8922A 80%,
+    #6B4A0E 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: mc-title-shimmer 3.5s linear infinite;
+  filter: drop-shadow(0 3px 10px rgba(212,165,74,0.35));
+}
+
+.mc-menu-subtitle {
+  font-family: var(--mc-font);
+  font-size: 13px;
+  color: #6A7080;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  margin-bottom: 22px;
+}
+
+/* â”€â”€ Panel (Glasmorph card) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.mc-menu-panel {
+  background: rgba(10, 12, 22, 0.88);
+  border: 1px solid rgba(212,165,74,0.45);
+  border-radius: 14px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 26px 30px 22px;
+  width: 380px;
+  box-shadow:
+    0 12px 48px rgba(0,0,0,0.7),
+    0 0 0 1px rgba(255,255,255,0.03) inset,
+    0 1px 0 rgba(212,165,74,0.12) inset;
+}
+
+.mc-menu-welcome {
+  font-family: var(--mc-font);
+  font-size: 13px;
+  color: #6A7080;
+  text-align: center;
+  margin: 0 0 10px;
+  line-height: 1.6;
+  white-space: pre-line;
+}
+
+.mc-menu-lore {
+  font-family: var(--mc-font);
+  font-size: 12px;
+  color: #4A5060;
+  font-style: italic;
+  text-align: center;
+  margin: 0 0 16px;
+  line-height: 1.5;
+  padding: 8px 12px;
+  border-left: 2px solid rgba(212,165,74,0.25);
+  border-right: 2px solid rgba(212,165,74,0.25);
+}
+
+/* â”€â”€ Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.mc-menu-btn-primary {
+  display: block;
+  width: 100%;
+  padding: 14px 0;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #7A5010 0%, #C08820 45%, #D4A54A 60%, #9A6A18 100%);
+  border: 1px solid #C8922A;
+  border-radius: 8px;
+  color: #FFF8E1;
+  font-family: var(--mc-font);
+  font-size: 17px;
+  font-weight: bold;
+  letter-spacing: 1px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: filter 0.18s, transform 0.1s;
+  animation: mc-btn-glow 2.4s ease-in-out infinite;
+  text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+}
+.mc-menu-btn-primary:hover {
+  filter: brightness(1.2);
+  transform: translateY(-2px);
+  animation: none;
+  box-shadow: 0 6px 28px rgba(212,165,74,0.55);
+}
+.mc-menu-btn-primary:active {
+  transform: translateY(0);
+  filter: brightness(0.9);
+}
+
+.mc-menu-btn-secondary {
+  display: block;
+  width: 100%;
+  padding: 12px 0;
+  margin-bottom: 10px;
+  background: rgba(22,25,41,0.75);
+  border: 1px solid rgba(212,165,74,0.32);
+  border-radius: 8px;
+  color: var(--mc-light);
+  font-family: var(--mc-font);
+  font-size: 15px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: background 0.15s, border-color 0.15s, transform 0.1s;
+  letter-spacing: 0.5px;
+}
+.mc-menu-btn-secondary:hover {
+  background: rgba(34,38,64,0.9);
+  border-color: var(--mc-gold);
+  transform: translateY(-1px);
+}
+.mc-menu-btn-secondary:active { transform: translateY(0); }
+
+.mc-menu-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(212,165,74,0.22) 25%,
+    rgba(212,165,74,0.22) 75%,
+    transparent 100%
+  );
+  margin: 12px 0 10px;
+}
+
+.mc-menu-util-row {
+  display: flex;
+  gap: 8px;
+}
+
+.mc-menu-btn-util {
+  flex: 1;
+  padding: 7px 0;
+  background: transparent;
+  border: 1px solid rgba(42,46,69,0.9);
+  border-radius: 6px;
+  color: #4A5060;
+  font-family: var(--mc-font);
+  font-size: 12px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
+}
+.mc-menu-btn-util:hover {
+  color: var(--mc-dim);
+  border-color: rgba(212,165,74,0.25);
+  background: rgba(22,25,41,0.5);
+}
+
+/* â”€â”€ Footer â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.mc-menu-footer {
+  margin-top: 14px;
+  font-family: var(--mc-font);
+  font-size: 11px;
+  color: #30353F;
+  text-align: center;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+}
+
+/* â”€â”€ Hero sprites (flanking the panel) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+
+.mc-menu-hero {
+  width: 108px;
+  height: 128px;
+  object-fit: contain;
+  opacity: 0.82;
+  filter: drop-shadow(0 10px 20px rgba(0,0,0,0.75));
+  pointer-events: none;
+  flex-shrink: 0;
+  animation: mc-hero-float 4.8s ease-in-out infinite;
+}
+.mc-menu-hero-left  { animation-delay: -1.4s; }
+.mc-menu-hero-right { animation-delay: -3.0s; }
+
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   HOLO THEME â€” Sci-Fi Holographic Terminal Look
+   Activated by [data-theme="holo"] on <html>.
+   Overrides all mc-* classes with neon-cyan, scan-lines,
+   monospace font, and futuristic aesthetics.
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Holo Keyframes â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+@keyframes mc-holo-scan-global {
+  0%   { top: -2px; }
+  100% { top: 100%; }
+}
+@keyframes mc-holo-glow-global {
+  0%, 100% { box-shadow: 0 0 16px rgba(0,240,255,0.06), inset 0 0 20px rgba(0,240,255,0.02); }
+  50%      { box-shadow: 0 0 28px rgba(0,240,255,0.12), inset 0 0 30px rgba(0,240,255,0.04); }
+}
+@keyframes mc-holo-border-pulse {
+  0%, 100% { border-color: rgba(0,240,255,0.2); }
+  50%      { border-color: rgba(0,240,255,0.5); }
+}
+@keyframes mc-holo-flicker-global {
+  0%, 97%, 100% { opacity: 1; }
+  98%           { opacity: 0.85; }
+  99%           { opacity: 0.95; }
+}
+
+/* â”€â”€ Holo Design Tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] {
+  --mc-panel-bg:        #080c14;
+  --mc-panel-bg-dark:   #060a12;
+  --mc-panel-bg-darker: #040810;
+  --mc-panel-border:    rgba(0,240,255,0.25);
+
+  --mc-navy-deep:       #060a12;
+  --mc-navy-panel:      #0a1020;
+  --mc-navy-card:       #0c1424;
+  --mc-navy-card-light: #101828;
+  --mc-navy-btn:        #0a1220;
+  --mc-navy-btn-hover:  #101828;
+  --mc-navy-separator:  rgba(0,240,255,0.12);
+
+  --mc-btn-normal:      rgba(0,240,255,0.08);
+  --mc-btn-hover:       rgba(0,240,255,0.15);
+  --mc-btn-dark:        rgba(0,240,255,0.06);
+  --mc-btn-dark-hover:  rgba(0,240,255,0.12);
+
+  --mc-light:    #c8e6ff;
+  --mc-dim:      #6a9abf;
+  --mc-muted:    #4a7a9a;
+  --mc-disabled: #2a4a5a;
+  --mc-white:    #e0f4ff;
+
+  --mc-gold:        #00f0ff;
+  --mc-gold-bright: #40f8ff;
+  --mc-gold-deco:   #00d4e0;
+  --mc-info:        #00f0ff;
+
+  --mc-accent-build:      #00f0ff;
+  --mc-accent-guild:      #00f0ff;
+  --mc-accent-expedition: #ff3860;
+  --mc-accent-storage:    #00ff88;
+  --mc-accent-hero:       #00f0ff;
+
+  --mc-chip-bg:     rgba(0,240,255,0.04);
+  --mc-chip-border: rgba(0,240,255,0.15);
+
+  --mc-font: "Consolas", "Courier New", monospace;
+}
+
+/* â”€â”€ Holo Panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-panel {
+  background: linear-gradient(170deg, #080c14 0%, #0a1628 40%, #060e1c 100%);
+  border: 1px solid rgba(0,240,255,0.25);
+  border-radius: 4px;
+  animation: mc-holo-glow-global 3s ease-in-out infinite,
+             mc-holo-border-pulse 4s ease-in-out infinite,
+             mc-in 0.18s ease-out;
+  position: relative;
+}
+
+/* Scan-lines overlay on panels */
+[data-theme="holo"] .mc-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.012) 2px,
+    rgba(0,240,255,0.012) 4px
+  );
+  pointer-events: none;
+  border-radius: inherit;
+  z-index: 0;
+}
+
+/* Moving scan-line on panels – disabled globally, only detail modals use it */
+[data-theme="holo"] .mc-panel::after {
+  content: none;
+}
+
+/* Ensure panel content is above scan-lines */
+[data-theme="holo"] .mc-panel > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* â”€â”€ Holo Panel Header â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-panel-header {
+  background: rgba(0,240,255,0.04);
+  border-bottom: 1px solid rgba(0,240,255,0.2);
+  border-radius: 4px 4px 0 0;
+  color: #00f0ff;
+  text-shadow: 0 0 12px rgba(0,240,255,0.3);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-family: "Consolas", "Courier New", monospace;
+  animation: mc-holo-flicker-global 8s infinite;
+}
+
+/* â”€â”€ Holo Close Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-close-btn {
+  background: transparent;
+  border: 1px solid #ff3860;
+  border-radius: 2px;
+  color: #ff3860;
+  font-family: "Consolas", monospace;
+  transition: all 0.15s;
+}
+[data-theme="holo"] .mc-close-btn:hover {
+  background: #ff3860;
+  color: #fff;
+}
+
+/* â”€â”€ Holo Tabs â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-tabs {
+  background: rgba(0,240,255,0.03);
+  border-bottom: 1px solid rgba(0,240,255,0.15);
+}
+[data-theme="holo"] .mc-tab {
+  color: #4a7a9a;
+  font-family: "Consolas", "Courier New", monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  border-radius: 0;
+  transition: all 0.15s;
+}
+[data-theme="holo"] .mc-tab.active {
+  background: rgba(0,240,255,0.1);
+  color: #00f0ff;
+  text-shadow: 0 0 8px rgba(0,240,255,0.3);
+  border-bottom: 2px solid #00f0ff;
+}
+[data-theme="holo"] .mc-tab:hover:not(.active) {
+  background: rgba(0,240,255,0.05);
+  color: #80d8e0;
+}
+
+/* â”€â”€ Holo Scrollbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-scroll {
+  scrollbar-color: rgba(0,240,255,0.35) rgba(0,4,12,0.5);
+}
+[data-theme="holo"] .mc-scroll::-webkit-scrollbar { width: 10px; }
+[data-theme="holo"] .mc-scroll::-webkit-scrollbar-track {
+  background: rgba(0,4,12,0.5);
+  border-left: 1px solid rgba(0,240,255,0.1);
+}
+[data-theme="holo"] .mc-scroll::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, rgba(0,240,255,0.3), rgba(0,180,200,0.4));
+  border-radius: 0;
+  border: 2px solid rgba(0,4,12,0.5);
+  box-shadow: 0 0 6px rgba(0,240,255,0.15);
+}
+[data-theme="holo"] .mc-scroll::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, rgba(0,240,255,0.5), rgba(0,200,220,0.5));
+  box-shadow: 0 0 10px rgba(0,240,255,0.3);
+}
+
+/* â”€â”€ Holo Buttons â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-btn {
+  background: rgba(0,240,255,0.06);
+  border: 1px solid rgba(0,240,255,0.25);
+  border-radius: 2px;
+  color: #00f0ff;
+  font-family: "Consolas", "Courier New", monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  font-size: 11px;
+  transition: all 0.15s;
+}
+[data-theme="holo"] .mc-btn:hover:not(:disabled) {
+  background: rgba(0,240,255,0.15);
+  border-color: rgba(0,240,255,0.5);
+  box-shadow: 0 0 12px rgba(0,240,255,0.15);
+}
+[data-theme="holo"] .mc-btn.danger {
+  background: rgba(255,56,96,0.1);
+  border-color: rgba(255,56,96,0.4);
+  color: #ff3860;
+}
+[data-theme="holo"] .mc-btn.danger:hover:not(:disabled) {
+  background: rgba(255,56,96,0.2);
+}
+[data-theme="holo"] .mc-btn.success {
+  background: rgba(0,255,136,0.08);
+  border-color: rgba(0,255,136,0.3);
+  color: #00ff88;
+}
+
+/* â”€â”€ Holo Stat Bars â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-bar-track {
+  background: rgba(0,240,255,0.04);
+  border: 1px solid rgba(0,240,255,0.08);
+  border-radius: 0;
+}
+[data-theme="holo"] .mc-bar-fill {
+  border-radius: 0;
+}
+[data-theme="holo"] .mc-bar-hp  { background: linear-gradient(90deg, rgba(0,255,136,0.3), #00ff88); }
+[data-theme="holo"] .mc-bar-atk { background: linear-gradient(90deg, rgba(255,107,53,0.3), #ff6b35); }
+[data-theme="holo"] .mc-bar-def { background: linear-gradient(90deg, rgba(53,170,255,0.3), #35aaff); }
+
+/* â”€â”€ Holo Divider â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-divider {
+  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.2), rgba(0,240,255,0.4), rgba(0,240,255,0.2), transparent);
+}
+
+/* â”€â”€ Holo Card â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-card {
+  background: rgba(8,16,28,0.85);
+  border: 1px solid rgba(0,240,255,0.15);
+  border-radius: 2px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+[data-theme="holo"] .mc-card:hover {
+  border-color: rgba(0,240,255,0.4);
+  box-shadow: 0 0 10px rgba(0,240,255,0.08);
+}
+
+/* â”€â”€ Holo Hero Cards â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-hero-card[data-role="tank"]    { background: linear-gradient(135deg, rgba(8,16,28,0.85) 60%, rgba(0,140,200,0.08)); }
+[data-theme="holo"] .mc-hero-card[data-role="dps"]     { background: linear-gradient(135deg, rgba(8,16,28,0.85) 60%, rgba(255,107,53,0.08)); }
+[data-theme="holo"] .mc-hero-card[data-role="healer"]  { background: linear-gradient(135deg, rgba(8,16,28,0.85) 60%, rgba(0,255,136,0.08)); }
+[data-theme="holo"] .mc-hero-card[data-role="support"] { background: linear-gradient(135deg, rgba(8,16,28,0.85) 60%, rgba(0,240,255,0.08)); }
+[data-theme="holo"] .mc-hero-card::before { opacity: 0.7; }
+[data-theme="holo"] .mc-hero-card[data-role="tank"]::before    { background: linear-gradient(90deg, transparent, #35aaff, transparent); }
+[data-theme="holo"] .mc-hero-card[data-role="dps"]::before     { background: linear-gradient(90deg, transparent, #ff6b35, transparent); }
+[data-theme="holo"] .mc-hero-card[data-role="healer"]::before  { background: linear-gradient(90deg, transparent, #00ff88, transparent); }
+[data-theme="holo"] .mc-hero-card[data-role="support"]::before { background: linear-gradient(90deg, transparent, #00f0ff, transparent); }
+[data-theme="holo"] .mc-hero-card[data-role="tank"]:hover    { border-color: rgba(53,170,255,0.5); box-shadow: 0 0 15px rgba(53,170,255,0.12); }
+[data-theme="holo"] .mc-hero-card[data-role="dps"]:hover     { border-color: rgba(255,107,53,0.5); box-shadow: 0 0 15px rgba(255,107,53,0.12); }
+[data-theme="holo"] .mc-hero-card[data-role="healer"]:hover  { border-color: rgba(0,255,136,0.5); box-shadow: 0 0 15px rgba(0,255,136,0.12); }
+[data-theme="holo"] .mc-hero-card[data-role="support"]:hover { border-color: rgba(0,240,255,0.5); box-shadow: 0 0 15px rgba(0,240,255,0.12); }
+
+/* Holo Hero Portrait */
+[data-theme="holo"] .mc-hero-portrait { border-radius: 2px; }
+[data-theme="holo"] .mc-hero-portrait[data-role="tank"]    { background: rgba(53,170,255,0.08); border: 1px solid rgba(53,170,255,0.2); }
+[data-theme="holo"] .mc-hero-portrait[data-role="dps"]     { background: rgba(255,107,53,0.08); border: 1px solid rgba(255,107,53,0.2); }
+[data-theme="holo"] .mc-hero-portrait[data-role="healer"]  { background: rgba(0,255,136,0.08); border: 1px solid rgba(0,255,136,0.2); }
+[data-theme="holo"] .mc-hero-portrait[data-role="support"] { background: rgba(0,240,255,0.08); border: 1px solid rgba(0,240,255,0.2); }
+
+/* Holo Role Badge */
+[data-theme="holo"] .mc-role-badge { border-radius: 2px; font-family: "Consolas", monospace; letter-spacing: 1px; }
+[data-theme="holo"] .mc-role-badge[data-role="tank"]    { background: rgba(53,170,255,0.1); color: #35aaff; border: 1px solid rgba(53,170,255,0.25); }
+[data-theme="holo"] .mc-role-badge[data-role="dps"]     { background: rgba(255,107,53,0.1); color: #ff6b35; border: 1px solid rgba(255,107,53,0.25); }
+[data-theme="holo"] .mc-role-badge[data-role="healer"]  { background: rgba(0,255,136,0.1); color: #00ff88; border: 1px solid rgba(0,255,136,0.25); }
+[data-theme="holo"] .mc-role-badge[data-role="support"] { background: rgba(0,240,255,0.1); color: #00f0ff; border: 1px solid rgba(0,240,255,0.25); }
+
+/* Holo Details Button */
+[data-theme="holo"] .mc-btn-details {
+  background: rgba(0,240,255,0.06);
+  border: 1px solid rgba(0,240,255,0.3);
+  border-radius: 2px;
+  color: #00f0ff;
+  font-family: "Consolas", monospace;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0,240,255,0.3);
+}
+[data-theme="holo"] .mc-btn-details:hover {
+  background: rgba(0,240,255,0.15);
+  border-color: rgba(0,240,255,0.6);
+  box-shadow: 0 0 15px rgba(0,240,255,0.2), inset 0 0 20px rgba(0,240,255,0.05);
+  transform: translateY(-1px);
+}
+[data-theme="holo"] .mc-btn-details::after {
+  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.08), transparent);
+}
+
+/* Holo XP Bar */
+[data-theme="holo"] .mc-xp-bar { background: rgba(0,240,255,0.06); border: 1px solid rgba(0,240,255,0.08); border-radius: 0; }
+[data-theme="holo"] .mc-xp-bar-fill { background: linear-gradient(90deg, rgba(0,240,255,0.2), #00f0ff, rgba(0,200,220,0.6)); border-radius: 0; }
+
+/* Holo Skill Chip */
+[data-theme="holo"] .mc-skill-chip {
+  background: rgba(0,240,255,0.04);
+  border: 1px solid rgba(0,240,255,0.12);
+  border-radius: 1px;
+  color: #80d8e0;
+  font-family: "Consolas", monospace;
+  font-size: 10px;
+  letter-spacing: 0.5px;
+}
+
+/* â”€â”€ Holo Chip â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-chip {
+  background: rgba(0,240,255,0.04);
+  border: 1px solid rgba(0,240,255,0.15);
+  border-radius: 2px;
+  font-family: "Consolas", "Courier New", monospace;
+}
+[data-theme="holo"] .mc-chip .mc-chip-val {
+  color: #00f0ff;
+  text-shadow: 0 0 6px rgba(0,240,255,0.3);
+}
+
+/* â”€â”€ Holo Badge â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-badge {
+  border-radius: 2px;
+  font-family: "Consolas", monospace;
+  letter-spacing: 1px;
+}
+[data-theme="holo"] .mc-badge-ready {
+  background: rgba(0,255,136,0.12);
+  color: #00ff88;
+  border: 1px solid rgba(0,255,136,0.3);
+}
+[data-theme="holo"] .mc-badge-injured {
+  background: rgba(255,56,96,0.12);
+  color: #ff3860;
+  border: 1px solid rgba(255,56,96,0.3);
+}
+[data-theme="holo"] .mc-badge-training {
+  background: rgba(0,240,255,0.1);
+  color: #00f0ff;
+  border: 1px solid rgba(0,240,255,0.25);
+}
+
+/* â”€â”€ Holo Backdrop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-backdrop {
+  background: rgba(0,4,12,0.8);
+}
+
+/* â”€â”€ Holo HUD Bar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] #ui-hud {
+  background: linear-gradient(180deg, #080c14 0%, #0a1020 100%) !important;
+  border-bottom: 1px solid rgba(0,240,255,0.25) !important;
+  font-family: "Consolas", "Courier New", monospace !important;
+}
+
+/* â”€â”€ Holo Main Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] .mc-menu-title {
+  background: linear-gradient(
+    90deg,
+    #004050 0%, #00a0b0 20%, #00f0ff 50%, #00a0b0 80%, #004050 100%
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  font-family: "Consolas", "Courier New", monospace;
+  letter-spacing: 8px;
+}
+
+[data-theme="holo"] .mc-menu-panel {
+  background: rgba(4,8,16,0.92);
+  border: 1px solid rgba(0,240,255,0.3);
+  border-radius: 4px;
+  backdrop-filter: blur(20px);
+}
+
+[data-theme="holo"] .mc-menu-btn-primary {
+  background: linear-gradient(135deg, #004050, #006878, #00a0b0, #006878);
+  border: 1px solid rgba(0,240,255,0.5);
+  border-radius: 2px;
+  color: #e0f4ff;
+  font-family: "Consolas", "Courier New", monospace;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  text-shadow: 0 0 8px rgba(0,240,255,0.4);
+  animation: mc-holo-glow-global 2.4s ease-in-out infinite;
+}
+[data-theme="holo"] .mc-menu-btn-primary:hover {
+  animation: none;
+  box-shadow: 0 0 20px rgba(0,240,255,0.3);
+}
+
+[data-theme="holo"] .mc-menu-btn-secondary {
+  background: rgba(0,240,255,0.05);
+  border: 1px solid rgba(0,240,255,0.2);
+  border-radius: 2px;
+  color: #80d8e0;
+  font-family: "Consolas", "Courier New", monospace;
+  letter-spacing: 1px;
+}
+[data-theme="holo"] .mc-menu-btn-secondary:hover {
+  background: rgba(0,240,255,0.1);
+  border-color: rgba(0,240,255,0.4);
+}
+
+[data-theme="holo"] .mc-menu-divider {
+  background: linear-gradient(90deg, transparent, rgba(0,240,255,0.2), rgba(0,240,255,0.4), rgba(0,240,255,0.2), transparent);
+}
+
+[data-theme="holo"] .mc-menu-btn-util {
+  border-color: rgba(0,240,255,0.1);
+  color: #3a6a7a;
+  font-family: "Consolas", monospace;
+}
+[data-theme="holo"] .mc-menu-btn-util:hover {
+  color: #80d8e0;
+  border-color: rgba(0,240,255,0.25);
+  background: rgba(0,240,255,0.05);
+}
+
+[data-theme="holo"] .mc-menu-subtitle,
+[data-theme="holo"] .mc-menu-welcome {
+  color: #3a6a7a;
+  font-family: "Consolas", "Courier New", monospace;
+}
+
+[data-theme="holo"] .mc-menu-footer {
+  color: #1a3a4a;
+  font-family: "Consolas", monospace;
+  letter-spacing: 3px;
+}
+
+[data-theme="holo"] .mc-menu-hero {
+  filter: drop-shadow(0 0 15px rgba(0,240,255,0.3))
+          drop-shadow(0 10px 20px rgba(0,0,0,0.75))
+          brightness(1.05);
+}
+
+/* â”€â”€ Theme Toggle Button â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+#mc-theme-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 12px;
+  color: var(--mc-dim);
+  font-family: var(--mc-font);
+  font-size: 11px;
+  cursor: pointer;
+  pointer-events: auto;
+  transition: all 0.2s;
+  white-space: nowrap;
+  flex-shrink: 0;
+  height: 28px;
+}
+#mc-theme-toggle:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.2);
+  color: var(--mc-light);
+}
+
+[data-theme="holo"] #mc-theme-toggle {
+  background: rgba(0,240,255,0.08);
+  border-color: rgba(0,240,255,0.25);
+  color: #00f0ff;
+}
+[data-theme="holo"] #mc-theme-toggle:hover {
+  background: rgba(0,240,255,0.15);
+  border-color: rgba(0,240,255,0.4);
+  box-shadow: 0 0 8px rgba(0,240,255,0.15);
+}
+
+/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+   HOLO FRAME OVERRIDES â€“ Sidebar, HUD, StatusBar, BuildMenu
+   Full holographic terminal look with scan-lines, glow, brackets
+   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+
+/* â”€â”€ Holo Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] #ui-sidebar {
+  background: linear-gradient(180deg, #060a12 0%, #0a1020 40%, #080c18 100%) !important;
+  border-right: 1px solid rgba(0,240,255,0.2) !important;
+  font-family: "Consolas", "Courier New", monospace !important;
+  position: relative;
+}
+
+/* Sidebar scan-lines */
+[data-theme="holo"] #ui-sidebar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.012) 2px,
+    rgba(0,240,255,0.012) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Sidebar moving scan-line – disabled (too busy) */
+[data-theme="holo"] #ui-sidebar::after {
+  content: none;
+}
+
+/* Sidebar logo in holo */
+[data-theme="holo"] .mc-sidebar-logo {
+  background: rgba(0,240,255,0.04) !important;
+  border: 1px solid rgba(0,240,255,0.2) !important;
+  border-radius: 2px !important;
+  box-shadow: 0 0 8px rgba(0,240,255,0.08) !important;
+  position: relative;
+  z-index: 1;
+}
+[data-theme="holo"] .mc-sidebar-logo-icon {
+  color: #00f0ff !important;
+  text-shadow: 0 0 6px rgba(0,240,255,0.4);
+}
+[data-theme="holo"] .mc-sidebar-logo-label {
+  color: #6a9abf !important;
+  letter-spacing: 2px;
+  font-family: "Consolas", monospace;
+}
+
+/* Sidebar buttons in holo */
+[data-theme="holo"] .mc-sidebar-btn {
+  background: rgba(0,240,255,0.04) !important;
+  border: 1.5px solid rgba(0,240,255,0.15) !important;
+  border-radius: 2px !important;
+  position: relative;
+  z-index: 1;
+  transition: all 0.15s !important;
+}
+[data-theme="holo"] .mc-sidebar-btn:hover {
+  background: rgba(0,240,255,0.10) !important;
+  border-color: rgba(0,240,255,0.4) !important;
+  box-shadow: 0 0 12px rgba(0,240,255,0.15) !important;
+}
+
+/* Sidebar labels in holo â€“ monospace, uppercase, cyan */
+[data-theme="holo"] .mc-sidebar-label {
+  color: #4a7a9a !important;
+  font-family: "Consolas", monospace !important;
+  font-size: 9px !important;
+  letter-spacing: 1px !important;
+  text-transform: uppercase !important;
+}
+
+/* Sidebar shortcut badges in holo */
+[data-theme="holo"] .mc-sidebar-shortcut {
+  background: rgba(0,240,255,0.06) !important;
+  border: 1px solid rgba(0,240,255,0.15) !important;
+  color: #3a6a7a !important;
+  border-radius: 1px !important;
+  font-family: "Consolas", monospace !important;
+}
+
+/* â”€â”€ Holo HUD Bar (extended) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] #ui-hud {
+  background: linear-gradient(180deg, #060a12 0%, #0a1020 100%) !important;
+  border-bottom: 1px solid rgba(0,240,255,0.25) !important;
+  font-family: "Consolas", "Courier New", monospace !important;
+  position: relative;
+}
+
+/* HUD scan-lines */
+[data-theme="holo"] #ui-hud::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.010) 2px,
+    rgba(0,240,255,0.010) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* HUD moving scan-line – disabled (too busy) */
+[data-theme="holo"] #ui-hud::after {
+  content: none;
+}
+
+/* All direct children of HUD above scan-lines */
+[data-theme="holo"] #ui-hud > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* HUD chip labels */
+[data-theme="holo"] .mc-hud-chip-label {
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 9px !important;
+}
+
+/* HUD separator */
+[data-theme="holo"] .mc-hud-separator {
+  background: rgba(0,240,255,0.15) !important;
+}
+
+/* HUD info labels */
+[data-theme="holo"] .mc-hud-info-label {
+  text-transform: uppercase !important;
+  letter-spacing: 1px !important;
+  font-size: 9px !important;
+  color: #3a6a7a !important;
+}
+
+/* HUD info values */
+[data-theme="holo"] .mc-hud-info-value {
+  color: #c8e6ff !important;
+  text-shadow: 0 0 4px rgba(0,240,255,0.15);
+}
+
+/* HUD day label + value */
+[data-theme="holo"] .mc-hud-day-label {
+  text-transform: uppercase !important;
+  letter-spacing: 2px !important;
+  font-size: 9px !important;
+  color: #3a6a7a !important;
+}
+[data-theme="holo"] .mc-hud-day-value {
+  color: #00f0ff !important;
+  text-shadow: 0 0 8px rgba(0,240,255,0.3) !important;
+}
+
+/* HUD training badge in holo */
+[data-theme="holo"] .mc-hud-training-badge {
+  background: rgba(0,240,255,0.06) !important;
+  border: 1px solid rgba(0,240,255,0.25) !important;
+  color: #00f0ff !important;
+  border-radius: 2px !important;
+  font-family: "Consolas", monospace !important;
+  letter-spacing: 1px !important;
+}
+
+/* HUD event badge in holo */
+[data-theme="holo"] .mc-hud-event-badge {
+  background: rgba(255,56,96,0.08) !important;
+  border: 1px solid rgba(255,56,96,0.3) !important;
+  color: #ff3860 !important;
+  border-radius: 2px !important;
+  font-family: "Consolas", monospace !important;
+  letter-spacing: 1px !important;
+}
+
+/* â”€â”€ Holo StatusBar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] #ui-statusbar {
+  background: linear-gradient(90deg, #060a12, #0a1020, #060a12) !important;
+  border-top: 1px solid rgba(0,240,255,0.2) !important;
+  font-family: "Consolas", "Courier New", monospace !important;
+  position: relative;
+}
+
+/* StatusBar scan-lines */
+[data-theme="holo"] #ui-statusbar::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.008) 2px,
+    rgba(0,240,255,0.008) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* StatusBar children above scan-lines */
+[data-theme="holo"] #ui-statusbar > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* StatusBar status text */
+[data-theme="holo"] .mc-statusbar-status {
+  color: #00f0ff !important;
+  text-shadow: 0 0 6px rgba(0,240,255,0.3);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-size: 11px !important;
+}
+
+/* StatusBar hint text */
+[data-theme="holo"] .mc-statusbar-hint {
+  color: #4a7a9a !important;
+  letter-spacing: 0.5px;
+}
+
+/* StatusBar ESC badge */
+[data-theme="holo"] .mc-statusbar-esc {
+  background: rgba(0,240,255,0.04) !important;
+  border: 1px solid rgba(0,240,255,0.12) !important;
+  border-radius: 1px !important;
+  color: #2a4a5a !important;
+  font-family: "Consolas", monospace !important;
+  letter-spacing: 1px !important;
+}
+
+/* â”€â”€ Holo Build Menu â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+[data-theme="holo"] #ui-build-menu {
+  background: linear-gradient(180deg, #0a1020, #060a12) !important;
+  border-top: 1px solid rgba(0,240,255,0.25) !important;
+  font-family: "Consolas", "Courier New", monospace !important;
+  position: relative;
+}
+
+/* BuildMenu scan-lines */
+[data-theme="holo"] #ui-build-menu::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 2px,
+    rgba(0,240,255,0.010) 2px,
+    rgba(0,240,255,0.010) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* BuildMenu moving scan-line – disabled (too busy) */
+[data-theme="holo"] #ui-build-menu::after {
+  content: none;
+}
+
+/* BuildMenu all children above scan-lines */
+[data-theme="holo"] #ui-build-menu > * {
+  position: relative;
+  z-index: 1;
+}
+
+/* Building buttons in holo */
+[data-theme="holo"] .mc-build-building-btn {
+  background: rgba(0,240,255,0.04) !important;
+  border: 1.5px solid rgba(0,240,255,0.12) !important;
+  border-radius: 2px !important;
+  transition: all 0.15s !important;
+}
+[data-theme="holo"] .mc-build-building-btn:hover {
+  background: rgba(0,240,255,0.10) !important;
+  border-color: rgba(0,240,255,0.35) !important;
+  box-shadow: 0 0 10px rgba(0,240,255,0.10) !important;
+}
+
+/* Building name in holo */
+[data-theme="holo"] .mc-build-name {
+  color: #c8e6ff !important;
+  font-size: 10px !important;
+  letter-spacing: 0.5px !important;
+}
+
+/* Building cost chip in holo */
+[data-theme="holo"] .mc-build-cost-chip {
+  color: #00f0ff !important;
+  background: rgba(0,240,255,0.06) !important;
+  border-radius: 1px !important;
+}
+
+/* Build mode shortcut badges in holo */
+[data-theme="holo"] .mc-build-shortcut {
+  background: rgba(0,240,255,0.06) !important;
+  border: 1px solid rgba(0,240,255,0.15) !important;
+  color: #3a6a7a !important;
+  border-radius: 1px !important;
+  font-family: "Consolas", monospace !important;
+}
+
+/* â”€â”€ Holo Corner Bracket Decorations â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* Applied to sidebar and HUD for sci-fi terminal feel */
+
+@keyframes mc-holo-corner-pulse {
+  0%, 100% { opacity: 0.4; }
+  50%      { opacity: 0.8; }
+}
+
+/* ╔═══════════════════════════════════════════════════════════
+   HTMLCombatOverlay – mc-co-* Namespace
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Panel (gleiche Größe/Position wie HTMLExpeditionUI) ─── */
+.mc-combat-overlay {
+  position: absolute;
+  top: 56px;
+  right: 5%;
+  bottom: 82px;
+  left: calc(72px + 5%);
+  max-width: 1200px;
+  margin: 0 auto;
+  background: #1a0f14;
+  border: 1px solid var(--mc-accent-expedition);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  z-index: 95;
+  pointer-events: auto;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.8);
+}
+
+/* ── Header ───────────────────────────────────────────────── */
+.mc-co-header {
+  background: var(--mc-panel-bg-darker);
+  border-bottom: 1px solid rgba(233,69,96,0.6);
+  border-radius: 8px 8px 0 0;
+  padding: 0 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+  height: 52px;
+  gap: 12px;
+}
+.mc-co-title-group {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex: 1;
+}
+.mc-co-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: var(--mc-accent-expedition);
+  line-height: 1.2;
+}
+.mc-co-room-info {
+  font-size: 12px;
+  color: var(--mc-dim);
+  line-height: 1;
+}
+.mc-co-speed-group {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.mc-co-speed {
+  background: var(--mc-btn-dark);
+  border: 1px solid var(--mc-navy-separator);
+  color: var(--mc-dim);
+  border-radius: 3px;
+  padding: 3px 9px;
+  font-size: 12px;
+  font-family: var(--mc-font);
+  cursor: pointer;
+  pointer-events: auto;
+  transition: color 0.1s, border-color 0.1s;
+}
+.mc-co-speed.active {
+  color: var(--mc-gold);
+  border-color: var(--mc-gold);
+}
+.mc-co-speed:hover:not(.active) { color: var(--mc-light); }
+
+/* ── Body: two columns ────────────────────────────────────── */
+.mc-co-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  flex: 1 1 0;
+  min-height: 0;
+  overflow: hidden;
+}
+.mc-co-col {
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--mc-accent-expedition) rgba(14,16,24,0.5);
+}
+.mc-co-party-col { border-right: 1px solid rgba(233,69,96,0.4); }
+
+/* ── Unit Card ────────────────────────────────────────────── */
+.mc-co-unit {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 7px;
+  border-radius: 5px;
+  margin-bottom: 6px;
+  background: var(--mc-navy-card);
+  border: 1px solid var(--mc-navy-separator);
+  position: relative;
+  transition: opacity 0.4s;
+}
+.mc-co-unit.is-dead { opacity: 0.35; }
+.mc-co-unit.is-targeted {
+  box-shadow: 0 0 0 2px var(--mc-gold);
+  border-color: var(--mc-gold);
+}
+.mc-co-sprite {
+  width: 88px;
+  height: 88px;
+  object-fit: contain;
+  border-radius: 4px;
+  background: var(--mc-navy-card-light);
+  flex-shrink: 0;
+  image-rendering: auto;
+}
+.mc-co-sprite-fallback {
+  width: 88px;
+  height: 88px;
+  border-radius: 4px;
+  background: var(--mc-navy-card-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+.mc-co-unit-info { flex: 1; min-width: 0; }
+.mc-co-unit-name  { font-size: 13px; font-weight: bold; margin-bottom: 1px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mc-co-unit-stats { font-size: 11px; color: var(--mc-dim); margin-bottom: 2px; }
+.mc-co-unit-hp    { font-size: 12px; color: var(--mc-heal); margin-bottom: 3px; }
+.mc-co-hp-bar     { height: 8px; }
+.mc-co-badges     { display: flex; flex-wrap: wrap; gap: 3px; margin-bottom: 3px; }
+.mc-co-badge {
+  font-size: 10px;
+  background: #333;
+  color: var(--mc-gold);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+
+/* ── Section Divider (innerhalb der Spalten) ─────────────── */
+.mc-co-section-divider {
+  font-size: 11px;
+  color: var(--mc-info);
+  padding: 6px 0 4px;
+  margin-top: 4px;
+  border-top: 1px solid var(--mc-navy-separator);
+  font-weight: bold;
+  letter-spacing: 0.3px;
+}
+
+/* ── Abilities (direkt in linker Spalte) ─────────────────── */
+.mc-co-abilities-area {
+  padding: 0 2px;
+}
+.mc-co-ability-cols { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 4px; }
+.mc-co-ability-col  { min-width: 110px; flex: 1; }
+
+/* ── Items/Gegnerfähigkeiten (direkt in rechter Spalte) ───── */
+.mc-co-items-area {
+  padding: 0 2px;
+}
+.mc-co-ability-header {
+  font-size: 11px;
+  color: var(--mc-info);
+  margin-bottom: 4px;
+  white-space: nowrap;
+}
+.mc-co-ability-cols { display: flex; gap: 8px; flex-wrap: wrap; }
+.mc-co-ability-col { min-width: 120px; }
+.mc-co-ability-hero {
+  font-size: 12px;
+  font-weight: bold;
+  margin-bottom: 4px;
+}
+.mc-co-ability-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 6px 10px;
+  border-radius: 3px;
+  font-size: 13px;
+  font-family: var(--mc-font);
+  cursor: pointer;
+  pointer-events: auto;
+  background: #1E2A3A;
+  color: var(--mc-light);
+  border: 1px solid rgba(74,144,216,0.85);
+  margin-bottom: 3px;
+  transition: background 0.1s;
+}
+.mc-co-ability-btn.selected {
+  background: #4A3810;
+  color: var(--mc-gold-bright);
+  border: 2px solid var(--mc-gold);
+}
+.mc-co-ability-btn.used,
+.mc-co-ability-btn:disabled {
+  background: var(--mc-panel-bg-darker);
+  color: var(--mc-dim);
+  border-color: rgba(51,51,51,0.25);
+  cursor: not-allowed;
+}
+.mc-co-ability-btn:hover:not(.selected):not(.used):not(:disabled) {
+  background: var(--mc-btn-hover);
+}
+.mc-co-enemy-skill { font-size: 11px; color: var(--mc-dim); margin-bottom: 2px; }
+.mc-co-items-header { font-size: 11px; color: var(--mc-gold-bright); margin-bottom: 4px; }
+.mc-co-items-row { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 4px; }
+.mc-co-item-card {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--mc-navy-card);
+  border: 1px solid rgba(212,165,74,0.3);
+  border-radius: 4px;
+  padding: 3px 6px;
+}
+.mc-co-item-qty  { font-size: 11px; color: var(--mc-gold); font-weight: bold; }
+.mc-co-use-btn   { padding: 2px 7px; font-size: 11px; }
+
+/* ── Log area ─────────────────────────────────────────────── */
+.mc-co-log-area {
+  flex-shrink: 0;
+  background: rgba(14,16,24,0.7);
+  border-top: 1px solid var(--mc-navy-separator);
+  padding: 5px 12px;
+  max-height: 100px;
+  overflow: hidden;
+}
+.mc-co-log-header  { font-size: 11px; color: var(--mc-dim); margin-bottom: 2px; }
+.mc-co-log-line    { font-size: 11px; line-height: 1.35; }
+.mc-co-round-counter {
+  font-size: 13px;
+  color: var(--mc-gold);
+  font-weight: bold;
+  text-align: center;
+  margin-bottom: 3px;
+}
+
+/* ── Actions area ─────────────────────────────────────────── */
+.mc-co-actions-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 8px 16px;
+  flex-shrink: 0;
+  border-top: 1px solid var(--mc-navy-separator);
+  background: rgba(14,16,24,0.4);
+  min-height: 52px;
+  flex-wrap: wrap;
+}
+.mc-co-fight-btn    { font-size: 15px; padding: 9px 28px; }
+.mc-co-continue-btn { font-size: 13px; padding: 7px 22px; }
+.mc-co-focus-hint   { font-size: 11px; color: var(--mc-gold); opacity: 0.7; }
+.mc-co-outcome {
+  font-size: 26px;
+  font-weight: bold;
+  text-shadow: 0 2px 6px #000;
+  animation: mc-co-outcome-zoom 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards;
+}
+.mc-co-room-cleared { font-size: 15px; color: var(--mc-heal); }
+
+/* ── CSS Animations ───────────────────────────────────────── */
+
+/* Attack slide: hero attacks right */
+@keyframes mc-co-slide-right {
+  0%   { transform: translateX(0); }
+  35%  { transform: translateX(50px); }
+  65%  { transform: translateX(50px); }
+  100% { transform: translateX(0); }
+}
+/* Attack slide: enemy attacks left */
+@keyframes mc-co-slide-left {
+  0%   { transform: translateX(0); }
+  35%  { transform: translateX(-50px); }
+  65%  { transform: translateX(-50px); }
+  100% { transform: translateX(0); }
+}
+.mc-co-slide-right { animation: mc-co-slide-right var(--co-slide-dur, 360ms) ease; }
+.mc-co-slide-left  { animation: mc-co-slide-left  var(--co-slide-dur, 360ms) ease; }
+
+/* Floaty damage/heal text */
+@keyframes mc-co-floaty {
+  0%   { transform: translateY(0);     opacity: 1; }
+  100% { transform: translateY(-38px); opacity: 0; }
+}
+.mc-co-floaty {
+  position: absolute;
+  font-weight: bold;
+  pointer-events: none;
+  animation: mc-co-floaty 0.9s ease forwards;
+  text-shadow: 0 1px 3px #000;
+  z-index: 20;
+  white-space: nowrap;
+}
+
+/* Round counter pulse */
+@keyframes mc-co-round-pulse {
+  0%   { transform: scale(1);   }
+  40%  { transform: scale(1.35); }
+  100% { transform: scale(1);   }
+}
+.mc-co-round-counter.pulse {
+  animation: mc-co-round-pulse 0.2s ease;
+}
+
+/* Intro flash overlay */
+@keyframes mc-co-flash {
+  0%   { opacity: 1; }
+  100% { opacity: 0; }
+}
+.mc-co-intro-flash {
+  position: absolute;
+  inset: 0;
+  border-radius: 8px;
+  pointer-events: none;
+  animation: mc-co-flash 0.6s ease forwards;
+  z-index: 20;
+}
+
+/* Intro title zoom */
+@keyframes mc-co-intro-title {
+  0%   { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  35%  { transform: translate(-50%, -50%) scale(1.2);  opacity: 1; }
+  70%  { transform: translate(-50%, -50%) scale(1.2);  opacity: 1; }
+  100% { transform: translate(-50%, -50%) scale(1.5);  opacity: 0; }
+}
+.mc-co-intro-title {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 48px;
+  font-weight: bold;
+  text-shadow: 0 2px 10px #000;
+  pointer-events: none;
+  animation: mc-co-intro-title 1.1s ease forwards;
+  z-index: 21;
+  white-space: nowrap;
+}
+
+/* Outcome text zoom */
+@keyframes mc-co-outcome-zoom {
+  0%   { transform: scale(0.5); opacity: 0; }
+  100% { transform: scale(1);   opacity: 1; }
+}
+
+/* Unit death flash */
+@keyframes mc-co-death-flash {
+  0%   { opacity: 0.55; }
+  100% { opacity: 0;    }
+}
+.mc-co-death-flash {
+  position: absolute;
+  inset: 0;
+  background: #FF0000;
+  border-radius: 5px;
+  pointer-events: none;
+  animation: mc-co-death-flash 0.4s ease forwards;
+}
+
+/* Action banner (skill use) */
+@keyframes mc-co-banner {
+  0%   { opacity: 0; }
+  12%  { opacity: 1; }
+  70%  { opacity: 1; }
+  100% { opacity: 0; transform: translateY(-20px) translateX(-50%); }
+}
+.mc-co-action-banner {
+  position: absolute;
+  font-size: 13px;
+  font-weight: bold;
+  text-shadow: 0 1px 3px #000;
+  pointer-events: none;
+  animation: mc-co-banner 1.5s ease forwards;
+  z-index: 20;
+  white-space: nowrap;
+}

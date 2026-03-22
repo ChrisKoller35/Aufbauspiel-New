@@ -6,7 +6,7 @@ import { resetFighterIdCounter } from '../models/GuildRoster';
 
 const SAVE_KEY = 'magic_city_save';
 const BACKUP_KEY = 'magic_city_save_backup';
-const CURRENT_VERSION = 18;
+const CURRENT_VERSION = 19;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
@@ -417,6 +417,9 @@ export class SaveSystem {
     if (realLootBuildings.length > 1) {
       state.buildings = state.buildings.filter(b => !(b.typeId === 'BANK_V2' && b.x === 12 && b.y === 4));
     }
+
+    // SaveVersion 19: Always remove the migration-injected BANK_V2 at (12,4)
+    state.buildings = state.buildings.filter(b => !(b.typeId === 'BANK_V2' && b.x === 12 && b.y === 4));
 
     state.saveVersion = CURRENT_VERSION;
   }

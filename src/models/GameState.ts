@@ -82,6 +82,15 @@ export interface GameState {
   // Statistics (for future use)
   statistics: Record<string, number>;
 
+  // ── New in SaveVersion 6 ──
+  bestiarium: {
+    discovered: string[];  // enemy IDs, die mindestens 1x angetroffen wurden
+    defeated: string[];    // enemy IDs, die mindestens 1x besiegt wurden
+  };
+  rescuedNpcs: string[];           // NPC IDs aus npcs.ts
+  warMachineInventory: string[];   // Item-IDs der Kriegsmaschinen im Lager
+  selectedWarMachine: string | null; // Ausgewählte Kriegsmaschine für nächste Expedition
+
   // ── New in SaveVersion 5 ──
 
   // Freigeschaltete Achievements (IDs)
@@ -110,9 +119,21 @@ export interface GameState {
   // Satisfaction cache (calculated each tick, not persisted on save)
   satisfaction: number;
 
-  // ── Swamp terrain editor data (dev tool) ──
+  // UI theme: 'classic' (default gold) or 'holo' (sci-fi neon)
+  uiTheme: 'classic' | 'holo';
+
+  // ── Loot Chest (SaveVersion 9) ──
+  // Items accumulate here after each expedition; player opens chest to collect.
+  pendingChestLoot: {
+    items: Record<string, number>; // itemId → qty (gold stored as 'gold')
+    expeditionCount: number;       // how many expeditions contributed
+  };
+
+  // ── Terrain editor data (dev tool) ──
   // key = "gx,gy", value = variant index (0=light, 1=medium, 2=deep)
   swampTiles?: Record<string, number>;
+  grayTiles?:  Record<string, number>;
+  dirtTiles?:  Record<string, number>;
 }
 
 export function createNewGameState(): GameState {
@@ -142,6 +163,7 @@ export function createNewGameState(): GameState {
       iron_sword: 0,
       iron_shield: 0,
       leather_armor: 0,
+      novizenrobe: 1,
       hunter_bow: 0,
       oak_staff: 0,
       wolf_fang_necklace: 0,
@@ -161,6 +183,11 @@ export function createNewGameState(): GameState {
     scoreboard: [],
     statistics: {},
     achievements: [],
+    bestiarium: { discovered: [], defeated: [] },
+    rescuedNpcs: [],
+    warMachineInventory: [],
+    selectedWarMachine: null,
+    pendingChestLoot: { items: {}, expeditionCount: 0 },
     // SaveVersion 4 fields
     guildStats: {
       rank: 1,
@@ -177,8 +204,9 @@ export function createNewGameState(): GameState {
     selectedTalisman: null,
     classesUnlocked: ['guardian', 'ranger', 'cleric'],
     satisfaction: 50,
+    uiTheme: 'classic',
     swampTiles: {
-      // Hand-placed swamp layout (exported from in-game editor)
+      // Hand-placed swamp layout (exported from in-game editor, 2026-03-10)
       '1,9': 2, '0,9': 2, '0,8': 2, '0,7': 2, '0,6': 2, '0,5': 1,
       '1,8': 2, '1,7': 2, '1,6': 1, '1,10': 2, '1,11': 2, '1,12': 2,
       '2,12': 2, '2,9': 2, '1,14': 2, '0,15': 2, '1,13': 2, '2,13': 2,
@@ -191,13 +219,16 @@ export function createNewGameState(): GameState {
       '9,16': 1, '9,17': 1, '10,17': 1, '8,17': 1, '8,16': 1,
       '10,19': 1, '9,19': 1, '9,18': 0, '9,20': 1, '9,22': 1,
       '12,19': 0, '12,20': 0, '12,18': 0, '12,21': 0, '12,22': 0,
-      '12,24': 0, '11,24': 0, '11,22': 0, '13,23': 0, '12,23': 0,
+      '12,24': 2, '11,24': 2, '11,22': 0, '13,23': 0, '12,23': 2,
       '10,18': 0, '11,20': 0, '10,23': 0, '11,18': 0,
       '11,16': 0, '11,14': 0, '10,14': 0,
       '10,10': 0, '10,11': 0, '11,10': 0, '12,11': 0, '12,10': 0,
       '12,12': 0, '11,11': 0, '11,12': 0,
-      '11,25': 0, '10,25': 0, '8,25': 0, '6,25': 0, '4,25': 0, '2,25': 0, '0,25': 0,
-      '3,24': 0, '5,24': 0, '7,24': 0, '8,23': 0,
+      '11,25': 2, '10,25': 2, '8,25': 2, '6,25': 0, '4,25': 0, '2,25': 0, '0,25': 0,
+      '5,24': 0, '3,24': 1, '3,23': 1,
+      '6,22': 2, '7,25': 2, '7,23': 2, '8,24': 0, '7,24': 0, '7,22': 2,
+      '9,24': 2, '10,24': 2, '13,24': 2, '12,25': 2,
+      '1,19': 1, '0,19': 1, '3,18': 1, '1,20': 1, '0,20': 1,
     },
   };
 }

@@ -14,7 +14,11 @@
     "generate-all": "npx tsx tools/generateSprites.ts && npx tsx tools/resizeSprites.ts && npx tsx tools/removeBg.ts && npx tsx tools/generateSounds.ts",
     "sprite-check": "npx tsx tools/spriteCheck.ts",
     "sprite-fix": "npx tsx tools/spriteCheck.ts --fix",
-    "second-opinion": "npx tsx tools/geminiSecondOpinion.ts"
+    "second-opinion": "npx tsx tools/geminiSecondOpinion.ts",
+    "composite-item": "npx tsx tools/compositeItem.ts",
+    "crop-icons": "npx tsx tools/cropAndScaleIcons.ts",
+    "cut-weapon-sheet": "npx tsx tools/cutWeaponSheet.ts",
+    "validate-refs": "npx tsx tools/validateRefs.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

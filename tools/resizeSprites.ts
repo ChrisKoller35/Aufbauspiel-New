@@ -17,8 +17,26 @@ const OUTPUT_DIR = path.join("public", "assets", "sprites", "final");
 const TARGET_SIZES = getTargetSizes();
 
 async function main() {
+  const args = process.argv.slice(2);
+  // --only KEY1 KEY2 ... → nur bestimmte Sprites resizen
+  const onlyIdx = args.indexOf("--only");
+  const onlyKeys: Set<string> | null = onlyIdx >= 0
+    ? new Set(args.slice(onlyIdx + 1).map(k => k.toUpperCase()))
+    : null;
+  // --force → überschreibt auch bereits existierende final/ Sprites
+  const force = args.includes("--force");
+
   console.log("📐 Magic City – Sprite Resizer");
   console.log("=".repeat(50));
+  if (force) {
+    console.log("⚡ Force-Modus: Alle Sprites werden neu skaliert");
+  } else {
+    console.log("🔄 Skip-Modus: Bereits vorhandene final/ Sprites werden übersprungen");
+    console.log("   (--force zum Überschreiben aller Sprites)");
+  }
+  if (onlyKeys && onlyKeys.size > 0) {
+    console.log(`🎯 Nur ausgewählte Sprites: ${[...onlyKeys].join(", ")}`);
+  }
 
   if (!fs.existsSync(INPUT_DIR)) {
     console.error(`❌ Input-Ordner nicht gefunden: ${INPUT_DIR}`);
@@ -28,7 +46,13 @@ async function main() {
 
   fs.mkdirSync(OUTPUT_DIR, { recursive: true });
 
-  const files = fs.readdirSync(INPUT_DIR).filter(f => f.endsWith(".png"));
+  let files = fs.readdirSync(INPUT_DIR).filter(f => f.endsWith(".png"));
+
+  // Filter auf --only Keys falls angegeben
+  if (onlyKeys && onlyKeys.size > 0) {
+    files = files.filter(f => onlyKeys.has(f.replace(".png", "").toUpperCase()));
+  }
+
   console.log(`📁 Gefundene Sprites: ${files.length}`);
   console.log("");
 
@@ -46,6 +70,12 @@ async function main() {
 
     const inputPath = path.join(INPUT_DIR, file);
     const outputPath = path.join(OUTPUT_DIR, file);
+
+    if (!force && fs.existsSync(outputPath)) {
+      console.log(`   ⏭️  ${key}: bereits vorhanden, überspringe`);
+      success++;
+      continue;
+    }
 
     try {
       await sharp(inputPath)

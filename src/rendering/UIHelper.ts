@@ -289,6 +289,7 @@ export function createProgressBar(
   }
 
   const setProgress = (pct: number) => {
+    if (!fillObj.active) return;
     const clamped = Math.max(0, Math.min(1, pct));
     if (fillObj instanceof Phaser.GameObjects.NineSlice) {
       // Resize via setSize – NineSlice stretcht automatisch

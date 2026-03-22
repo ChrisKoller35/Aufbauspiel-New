@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { GameState } from '../models/GameState';
 import { UI_COLORS, UI_STR_COLORS, FONT_FAMILY } from '../rendering/Colors';
-import { Sidebar } from './Sidebar';
+import { HTMLSidebar } from './html/HTMLSidebar';
 
 interface TutorialStep {
   text: string;
@@ -175,7 +175,7 @@ export class TutorialOverlay {
 
       this.highlightGraphics.clear();
       this.highlightGraphics.lineStyle(3, UI_COLORS.GOLD_MID, 1);
-      this.highlightGraphics.strokeRect(2, spotY + 2, Sidebar.WIDTH - 4, 52);
+      this.highlightGraphics.strokeRect(2, spotY + 2, HTMLSidebar.WIDTH - 4, 52);
       this.highlightGraphics.setVisible(true);
       this.highlightGraphics.setAlpha(1);
 

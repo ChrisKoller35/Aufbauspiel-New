@@ -130,18 +130,97 @@ export const RECIPE_DEFS: Record<string, RecipeDef> = {
     outputs: { steel_armor: 1 },
     cycleTimeSec: 120,
   },
-  RCP_RANGER_CLOAK: {
-    id: 'RCP_RANGER_CLOAK',
-    name: 'Waldläufermantel nähen',
-    inputs: { iron_scrap: 1, wood: 2, crystal_shard: 1 },
-    outputs: { ranger_cloak: 1 },
-    cycleTimeSec: 120,
-  },
   RCP_CRYSTAL_PENDANT: {
     id: 'RCP_CRYSTAL_PENDANT',
     name: 'Kristallamulett schleifen',
     inputs: { crystal_shard: 2, talisman_fragment: 1 },
     outputs: { crystal_pendant: 1 },
     cycleTimeSec: 150,
+  },
+
+  // --- Arcane Smithy Recipes ---
+  RCP_MAGITECH_COMPONENT: {
+    id: 'RCP_MAGITECH_COMPONENT',
+    name: 'Magitech-Komponente herstellen',
+    inputs: { crystal_shard: 2, iron_scrap: 2 },
+    outputs: { magitech_component: 1 },
+    cycleTimeSec: 180,
+  },
+  RCP_ARCANE_BLADE: {
+    id: 'RCP_ARCANE_BLADE',
+    name: 'Arkanklinge schmieden',
+    inputs: { iron_scrap: 3, crystal_shard: 2, magitech_component: 1 },
+    outputs: { arcane_blade: 1 },
+    cycleTimeSec: 300,
+  },
+  RCP_MAGITECH_SHIELD: {
+    id: 'RCP_MAGITECH_SHIELD',
+    name: 'Magitech-Schild fertigen',
+    inputs: { iron_scrap: 2, crystal_shard: 2, magitech_component: 1 },
+    outputs: { magitech_shield: 1 },
+    cycleTimeSec: 300,
+  },
+  RCP_ARCANE_PENDANT: {
+    id: 'RCP_ARCANE_PENDANT',
+    name: 'Arkan-Amulett schleifen',
+    inputs: { crystal_shard: 3, magitech_component: 1 },
+    outputs: { arcane_amulet: 1 },
+    cycleTimeSec: 240,
+  },
+
+  // --- Herb Garden T2 Recipes ---
+  RCP_STRENGTH_POTION: {
+    id: 'RCP_STRENGTH_POTION',
+    name: 'Krafttrank brauen',
+    inputs: { herb_fire_root: 1, iron_scrap: 1 },
+    outputs: { potion_strength: 1 },
+    cycleTimeSec: 30,
+  },
+  RCP_MANA_POTION: {
+    id: 'RCP_MANA_POTION',
+    name: 'Manatrank brauen',
+    inputs: { herb_shimmer_shroom: 1, water: 1 },
+    outputs: { potion_mana: 1 },
+    cycleTimeSec: 30,
+    requirements: { waterSupplied: true },
+  },
+  RCP_ANTIDOTE: {
+    id: 'RCP_ANTIDOTE',
+    name: 'Gegengift brauen',
+    inputs: { herb_swamp_blossom: 1, herb_green: 1 },
+    outputs: { potion_antidote: 1 },
+    cycleTimeSec: 30,
+  },
+  RCP_TITAN_BREW: {
+    id: 'RCP_TITAN_BREW',
+    name: 'Titan-Gebräu brauen',
+    inputs: { herb_bone_dust: 1, water: 1 },
+    outputs: { potion_titan: 1 },
+    cycleTimeSec: 45,
+    requirements: { waterSupplied: true },
+  },
+  RCP_SPEED_POTION: {
+    id: 'RCP_SPEED_POTION',
+    name: 'Schnelligkeitstrank brauen',
+    inputs: { herb_moonwort: 2, water: 1 },
+    outputs: { potion_speed: 1 },
+    cycleTimeSec: 40,
+    requirements: { waterSupplied: true },
+  },
+
+  // --- War Machine Workshop Recipes ---
+  RCP_WAR_CATAPULT: {
+    id: 'RCP_WAR_CATAPULT',
+    name: 'Katapult bauen',
+    inputs: { wood: 5, stone: 4, iron_scrap: 3 },
+    outputs: { war_catapult: 1 },
+    cycleTimeSec: 600,
+  },
+  RCP_WAR_CANNON: {
+    id: 'RCP_WAR_CANNON',
+    name: 'Kanone bauen',
+    inputs: { iron_scrap: 5, crystal_shard: 3, magitech_component: 2 },
+    outputs: { war_cannon: 1 },
+    cycleTimeSec: 900,
   },
 };

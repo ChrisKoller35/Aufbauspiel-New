@@ -1,4 +1,5 @@
 import Phaser from 'phaser';
+import './ui/html/ui.css';
 import { BootScene } from './scenes/BootScene';
 import { MainMenuScene } from './scenes/MainMenuScene';
 import { CityScene } from './scenes/CityScene';
@@ -13,7 +14,7 @@ const config: Phaser.Types.Core.GameConfig = {
   pixelArt: false,
   antialias: true,
   roundPixels: true,
-  backgroundColor: '#3a7a32',
+  backgroundColor: '#1c3a18',
   scale: {
     mode: Phaser.Scale.FIT,
     autoCenter: Phaser.Scale.CENTER_BOTH,

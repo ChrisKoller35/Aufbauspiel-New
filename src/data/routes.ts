@@ -7,6 +7,13 @@ export interface EncounterTemplate {
   damage?: number;        // for hazard encounters
   findGold?: number;      // for find encounters
   findItems?: { itemId: string; qty: number }[];  // for find encounters
+  /** Fortification-Encounter: Befestigungsanlage die zerstört werden muss */
+  fortification?: {
+    name: string;
+    hp: number;
+    armor: number;
+    spriteKey: string;
+  };
 }
 
 export interface RouteDef {
@@ -18,6 +25,16 @@ export interface RouteDef {
   bossId: string | null;
   recommendedLevel: string;
   unlockCondition?: { bossesDefeated: string[] };
+  /** Unterwasser-Route: aktiviert das Air Shield System */
+  isUnderwater?: boolean;
+  /** Luft-Verlust pro Raum (Standard: 8) */
+  airDecayPerRoom?: number;
+  /** Belagerungs-Route: aktiviert Kriegsmaschinen-Mechanik */
+  isSiegeRoute?: boolean;
+  /** Zusätzliche Party-Slots für Kriegsmaschine (+1) */
+  extraPartySlots?: number;
+  /** Ob eine Kriegsmaschine zwingend benötigt wird */
+  requiresWarMachine?: boolean;
 }
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -31,7 +48,6 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['forest_bandit'] },
       { type: 'rest', healPercent: 30 },
       { type: 'combat', enemies: ['forest_wolf', 'forest_wolf'] },
-      { type: 'hazard', damage: 5 },
       { type: 'combat', enemies: ['forest_bear'] },
     ],
     bossId: null,
@@ -48,7 +64,6 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'checkpoint' },
       { type: 'rest', healPercent: 25 },
       { type: 'combat', enemies: ['forest_bear', 'forest_wisp'] },
-      { type: 'hazard', damage: 8 },
       { type: 'checkpoint' },
       { type: 'combat', enemies: ['forest_shaman', 'forest_wolf', 'forest_wolf'] },
       { type: 'combat', enemies: ['forest_bear', 'forest_bandit'] },
@@ -190,5 +205,104 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     bossId: 'boss_magma_wyrm',
     recommendedLevel: 'Full T2 gear + level 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
+  },
+
+  // ── Siege Routes ──
+  siege_walls: {
+    id: 'siege_walls',
+    name: 'Die Stadtmauern',
+    tier: 3,
+    rooms: 10,
+    isSiegeRoute: true,
+    extraPartySlots: 1,
+    requiresWarMachine: true,
+    encounters: [
+      { type: 'combat', enemies: ['wall_archer', 'wall_guard'] },
+      { type: 'fortification', enemies: ['wall_archer', 'siege_crossbowman'], fortification: { name: 'Stadtmauer', hp: 90, armor: 30, spriteKey: 'SIEGE_WALL' } },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['siege_crossbowman', 'wall_guard'] },
+      { type: 'rest', healPercent: 25 },
+      { type: 'combat', enemies: ['wall_archer', 'wall_archer', 'wall_guard'] },
+      { type: 'fortification', enemies: ['siege_crossbowman', 'wall_guard', 'wall_archer'], fortification: { name: 'Stadttor', hp: 130, armor: 40, spriteKey: 'SIEGE_GATE' } },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['siege_defender', 'wall_archer'] },
+      { type: 'boss', enemies: ['boss_iron_commander'] },
+    ],
+    bossId: 'boss_iron_commander',
+    recommendedLevel: 'Vollständiges T2 Gear + Kriegsmaschine',
+    unlockCondition: { bossesDefeated: ['boss_fallen_knight'] },
+  },
+  siege_fortress: {
+    id: 'siege_fortress',
+    name: 'Die Festung',
+    tier: 4,
+    rooms: 13,
+    isSiegeRoute: true,
+    extraPartySlots: 1,
+    requiresWarMachine: true,
+    encounters: [
+      { type: 'combat', enemies: ['siege_crossbowman', 'siege_defender'] },
+      { type: 'combat', enemies: ['wall_archer', 'siege_mage'] },
+      { type: 'fortification', enemies: ['siege_crossbowman', 'siege_mage', 'wall_archer'], fortification: { name: 'Wehrturm', hp: 170, armor: 50, spriteKey: 'SIEGE_TOWER' } },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 20 },
+      { type: 'combat', enemies: ['siege_defender', 'siege_defender', 'siege_crossbowman'] },
+      { type: 'hazard', damage: 12 },
+      { type: 'combat', enemies: ['siege_mage', 'siege_defender', 'wall_archer'] },
+      { type: 'fortification', enemies: ['siege_defender', 'siege_mage', 'siege_crossbowman', 'wall_archer'], fortification: { name: 'Burgtor', hp: 180, armor: 55, spriteKey: 'SIEGE_GATE' } },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['siege_defender', 'siege_mage'] },
+      { type: 'fortification', enemies: ['siege_defender', 'siege_mage', 'siege_crossbowman'], fortification: { name: 'Bergfried', hp: 240, armor: 65, spriteKey: 'SIEGE_KEEP' } },
+      { type: 'boss', enemies: ['boss_fortress_warden'] },
+    ],
+    bossId: 'boss_fortress_warden',
+    recommendedLevel: 'Vollständiges T3 Gear + Kriegsmaschine + Level 10+',
+    unlockCondition: { bossesDefeated: ['boss_iron_commander'] },
+  },
+
+  // ── Ocean Routes ──
+  ocean_shallows: {
+    id: 'ocean_shallows',
+    name: 'Versunkene Küste',
+    tier: 2,
+    rooms: 8,
+    isUnderwater: true,
+    airDecayPerRoom: 8,
+    encounters: [
+      { type: 'combat', enemies: ['deep_sea_angler'] },
+      { type: 'combat', enemies: ['jellyfish_swarm', 'jellyfish_swarm'] },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['pressure_crab', 'deep_sea_angler'] },
+      { type: 'find', findGold: 20, findItems: [{ itemId: 'air_crystal', qty: 1 }] },
+      { type: 'combat', enemies: ['sea_serpent'] },
+      { type: 'rest', healPercent: 25 },
+    ],
+    bossId: null,
+    recommendedLevel: 'Vollständige T2 Ausrüstung',
+  },
+  ocean_depths: {
+    id: 'ocean_depths',
+    name: 'Abgrundtiefen',
+    tier: 3,
+    rooms: 13,
+    isUnderwater: true,
+    airDecayPerRoom: 8,
+    encounters: [
+      { type: 'combat', enemies: ['deep_sea_angler', 'jellyfish_swarm'] },
+      { type: 'combat', enemies: ['pressure_crab', 'pressure_crab'] },
+      { type: 'hazard', damage: 5 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['drowned_knight', 'drowned_knight'] },
+      { type: 'combat', enemies: ['sea_serpent', 'jellyfish_swarm'] },
+      { type: 'find', findGold: 25, findItems: [{ itemId: 'air_crystal', qty: 2 }] },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['deep_sea_angler', 'pressure_crab', 'drowned_knight'] },
+      { type: 'combat', enemies: ['sea_serpent', 'pressure_crab'] },
+      { type: 'hazard', damage: 8 },
+      { type: 'rest', healPercent: 25 },
+      { type: 'boss', enemies: ['boss_leviathan'] },
+    ],
+    bossId: 'boss_leviathan',
+    recommendedLevel: 'T3 Ausrüstung empfohlen',
   },
 };

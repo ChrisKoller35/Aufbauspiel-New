@@ -71,7 +71,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
     description: 'Heilt 3 HP pro Runde',
     trigger: 'on_round_end',
     procChance: 1.0,
-    power: 3,
+    power: 9,
   },
   aoe_resist: {
     id: 'aoe_resist',
@@ -96,6 +96,14 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
     trigger: 'on_take_damage',
     procChance: 1.0,
     power: 0.30,
+  },
+  stun_strike: {
+    id: 'stun_strike',
+    name: 'Erschütterungsschlag',
+    description: '25% Chance: Betäubt den Feind für 1 Runde',
+    trigger: 'on_deal_damage',
+    procChance: 0.25,
+    power: 1.0,
   },
 };
 

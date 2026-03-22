@@ -57,16 +57,16 @@ export const UI_COLORS = {
   // Fortschrittsbalken
   PROGRESS_BORDER: 0x4A4A52,
 
-  // Terrain (lebendigeres Grün mit sichtbarem Kontrast)
-  GRID_LINE: 0x2A5A24,
-  GRASS_BG: 0x3A7A32,
-  GRASS_ALT: 0x347230,
-  GRASS_LIGHT: 0x428A38,
-  GRASS_DARK: 0x2E6828,
+  // Terrain (atmosphärisches Dunkelgrün – weniger Farbspreizung = weniger Gitteroptik)
+  GRID_LINE: 0x1E4218,            // Build-Modus Gitternetz (sehr dezent)
+  GRASS_BG: 0x316728,             // Basis-Gras (dunkler, erdiger)
+  GRASS_ALT: 0x2D6024,            // Variante 1 (nah an BG – weniger Checkerboard)
+  GRASS_LIGHT: 0x376C2E,          // Variante 2 (leicht heller, aber dezent)
+  GRASS_DARK: 0x2B5C22,           // Variante 3 (dunkelste, kein extremer Kontrast)
   ROAD_TINT: 0x8B8070,
   WATER_BLUE: 0x4488FF,
-  BORDER_GRASS_DARK: 0x265A20,    // Dunkleres Gras für Map-Rand
-  BORDER_GRASS_MID: 0x2D6B26,     // Mittleres Gras für Map-Rand
+  BORDER_GRASS_DARK: 0x282B30,    // Dunkles Metall für Map-Rand
+  BORDER_GRASS_MID: 0x2E3138,     // Mittleres Metall für Map-Rand
   SHADOW_COLOR: 0x000000,          // Gebäude-Schatten
 
   // Baumodus
@@ -132,10 +132,10 @@ export const UI_COLORS = {
 
 // ─── String-Farben (für Text color) ─────────────────────────
 export const UI_STR_COLORS = {
-  LIGHT: '#F0F0F0',
-  DIM: '#A0A4AB',
-  MUTED: '#82868E',
-  DISABLED: '#5C5F66',
+  LIGHT: '#F2F2F2',
+  DIM: '#B0B5BD',
+  MUTED: '#9EA3AC',
+  DISABLED: '#6E7380',
   DARK: '#2B2D31',
   WHITE: '#FFFFFF',
 
@@ -159,8 +159,8 @@ export const UI_STR_COLORS = {
   GLASS_STORAGE:    '#22C55E',
   GLASS_HERO:       '#A855F7',
   GLASS_MENU:       '#FFD700',
-  GLASS_DIM:        '#AAAAAA',
-  GLASS_DISABLED:   '#666666',
+  GLASS_DIM:        '#B8BCC5',
+  GLASS_DISABLED:   '#7A7F8A',
 } as const;
 
 // ─── Text-Styles (inkl. Font-Familie) ────────────────────────
@@ -196,6 +196,42 @@ export const UI_TEXT_STYLES = {
   LABEL_DIM: { fontFamily: FONT_FAMILY, fontSize: '13px', color: UI_STR_COLORS.DIM },
   CREDITS:  { fontFamily: FONT_FAMILY, fontSize: '12px', color: UI_STR_COLORS.DISABLED },
 } as const;
+
+// ─── Kampfprotokoll Farbzuordnung (shared by CombatOverlay + HTMLExpeditionUI) ──
+export function getLogLineColor(line: string): string {
+  // Special effects (highest priority)
+  if (line.includes('WIEDERGEBURT')) return '#ffd700';
+  if (line.includes('AUSGEWICHEN'))  return '#00e5ff';
+  if (line.includes('DOPPELSCHLAG')) return '#ff8c00';
+  if (line.includes('Reflexion'))    return '#ce93d8';
+  if (line.includes('Lebensraub'))   return UI_STR_COLORS.HEAL;
+  if (line.includes('Regeneration')) return UI_STR_COLORS.HEAL;
+  if (line.includes('AoE-Resistenz')) return '#64b5f6';
+  // Critical hits
+  if (line.includes('CRIT'))    return UI_STR_COLORS.GOLD_BRIGHT;
+  // Boss enrage
+  if (line.includes('ENRAGE'))  return UI_STR_COLORS.DAMAGE;
+  // Heals
+  if (line.includes('heals') || line.includes('heilt') || line.includes('Party heilt') || line.includes('+15% HP'))
+    return UI_STR_COLORS.HEAL;
+  // Buffs
+  if (line.includes('[Vorbereitung]'))             return UI_STR_COLORS.GOLD;
+  if (line.includes('setzt') && line.includes('ein →')) return '#64b5f6';
+  if (line.includes('Taunt for'))                  return '#64b5f6';
+  if (line.includes('ENTSCHLUSS'))                 return '#64b5f6';
+  if (line.includes('ATK für') || line.includes('DEF für')) return '#64b5f6';
+  // Debuffs
+  if (line.includes('Störsender') || line.includes('-SPD'))  return '#ffd54f';
+  if (line.includes('Hazard'))      return '#ffd54f';
+  // Enemy attacks
+  if (line.includes(' attacks '))                          return '#ef9a9a';
+  if (line.includes('uses ') && line.includes('takes '))   return '#ef9a9a';
+  // System lines
+  if (line.startsWith('──') || line.startsWith('!!')) return UI_STR_COLORS.DIM;
+  if (line.includes('>>')) return UI_STR_COLORS.DIM;
+
+  return UI_STR_COLORS.MUTED;
+}
 
 // ─── Grid-Konstanten ────────────────────────────────────────
 export const TILE_SIZE = 32;

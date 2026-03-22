@@ -65,11 +65,30 @@ export class BootScene extends Phaser.Scene {
       'ISO_FARM_GRAIN', 'ISO_MILL_WIND', 'ISO_BAKERY', 'ISO_LUMBER_CAMP',
       'ISO_QUARRY', 'ISO_HERB_GARDEN', 'ISO_SMITHY', 'ISO_IRON_MINE', 'ISO_WELL',
       'ISO_DUNGEON_CAMP', 'ISO_DUNGEON_MOUNTAIN',
+      'ISO_ARCANE_SMITHY', 'ISO_MARKETPLACE', 'ISO_WAR_MACHINE_WORKSHOP',
+      'ISO_TREASURE_CHEST', 'ISO_TREASURE_CHEST_V2',
+      'ISO_BANK_V2', 'ISO_BANK', 'ISO_BANK_WITH_CHEST', 'ISO_VAULT',
       'ISO_GRASS_TILE', 'ISO_WATER_TILE',
       'ISO_TREE_LARGE', 'ISO_TREE_PINE', 'ISO_TREE_SMALL',
+      // Dark (Cyberpunk) variants
+      'ISO_HOUSE_DARK', 'ISO_GUILD_HALL_DARK', 'ISO_WAREHOUSE_DARK',
+      'ISO_FARM_GRAIN_DARK', 'ISO_MILL_WIND_DARK', 'ISO_BAKERY_DARK',
+      'ISO_LUMBER_CAMP_DARK', 'ISO_QUARRY_DARK', 'ISO_HERB_GARDEN_DARK',
+      'ISO_SMITHY_DARK', 'ISO_IRON_MINE_DARK', 'ISO_WELL_DARK',
+      'ISO_ARCANE_SMITHY_DARK', 'ISO_MARKETPLACE_DARK', 'ISO_WAR_MACHINE_WORKSHOP_DARK',
+      // Medieval (Fantasy) variants
+      'ISO_HOUSE_MED', 'ISO_GUILD_HALL_MED', 'ISO_WAREHOUSE_MED',
+      'ISO_FARM_GRAIN_MED', 'ISO_MILL_WIND_MED', 'ISO_BAKERY_MED',
+      'ISO_LUMBER_CAMP_MED', 'ISO_QUARRY_MED', 'ISO_HERB_GARDEN_MED',
+      'ISO_SMITHY_MED', 'ISO_IRON_MINE_MED', 'ISO_WELL_MED',
+      'ISO_ARCANE_SMITHY_MED', 'ISO_MARKETPLACE_MED', 'ISO_WAR_MACHINE_WORKSHOP_MED',
+      'ISO_DUNGEON_CAMP_MED',
+      // Stadtmauer (Perimeter Walls)
+      'WALL_SIDE_A', 'WALL_SIDE_B', 'WALL_CORNER_TOWER',
     ].forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
+
 
     // --- Helden Sprites ---
     ['HERO_GUARDIAN', 'HERO_RANGER', 'HERO_CLERIC',
@@ -86,7 +105,12 @@ export class BootScene extends Phaser.Scene {
     // --- Boss Sprites ---
     ['BOSS_ELDER_TREANT', 'BOSS_BANDIT_CHIEF', 'BOSS_CRYSTAL_GOLEM', 'BOSS_SWAMP_HYDRA',
      'BOSS_SPIDER_QUEEN', 'BOSS_FALLEN_KNIGHT', 'BOSS_SHADOW_LICH', 'BOSS_MAGMA_WYRM',
-     'BOSS_ARCHIV_WATCHER', 'BOSS_ANCIENT_DRAGON'].forEach(key => {
+     'BOSS_ARCHIV_WATCHER', 'BOSS_ANCIENT_DRAGON',
+     // Ozean-Boss
+     'BOSS_LEVIATHAN',
+     // Belagerungs-Bosse
+     'BOSS_IRON_COMMANDER', 'BOSS_FORTRESS_WARDEN',
+    ].forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 
@@ -107,6 +131,12 @@ export class BootScene extends Phaser.Scene {
       'ENEMY_VENOMOUS_LURKER', 'ENEMY_LAVA_GOLEM', 'ENEMY_FLAME_SPIRIT',
       'ENEMY_ASH_GOLEM', 'ENEMY_CURSED_PRIEST', 'ENEMY_GHOST_MAGE',
       'ENEMY_TOME_GUARDIAN',
+      // Ozean-Gegner
+      'ENEMY_DEEP_SEA_ANGLER', 'ENEMY_JELLYFISH_SWARM', 'ENEMY_SEA_SERPENT',
+      'ENEMY_DROWNED_KNIGHT', 'ENEMY_PRESSURE_CRAB',
+      // Belagerungs-Gegner
+      'ENEMY_WALL_ARCHER', 'ENEMY_WALL_GUARD', 'ENEMY_SIEGE_CROSSBOWMAN',
+      'ENEMY_SIEGE_DEFENDER', 'ENEMY_SIEGE_MAGE',
     ];
     enemies.forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
@@ -116,20 +146,29 @@ export class BootScene extends Phaser.Scene {
     [
       'ITEM_BREAD', 'ITEM_HEALING_POTION', 'ITEM_IRON_SWORD',
       'ITEM_IRON_SHIELD', 'ITEM_LEATHER_ARMOR', 'ITEM_CRYSTAL_SHARD',
+      'ITEM_WOOD', 'ITEM_STONE', 'ITEM_IRON_SCRAP', 'ITEM_MAGITECH_COMPONENT', 'ITEM_ARCANE_BLADE',
+      'ITEM_MAGITECH_SHIELD', 'ITEM_ARCANE_AMULET',
+      'ITEM_WAR_CATAPULT', 'ITEM_WAR_CANNON',
       // Post-MVP items (sprites exist in final/)
       'ITEM_FROSTUMHANG', 'ITEM_FLAMMENWARD', 'ITEM_ANTIDOT_AMULETT',
       'ITEM_STURMMANTEL', 'ITEM_SCHATTENSCHLEIER', 'ITEM_MAGIESCHILD',
       // T1 gear
       'ITEM_HUNTER_BOW', 'ITEM_OAK_STAFF', 'ITEM_WOLF_FANG_NECKLACE',
+      'ITEM_CHAIN_ARMOR', 'ITEM_NOVIZENROBE',
       // T2 gear
       'ITEM_STEEL_SWORD', 'ITEM_LONGBOW', 'ITEM_CRYSTAL_STAFF',
-      'ITEM_STEEL_ARMOR', 'ITEM_RANGER_CLOAK', 'ITEM_CRYSTAL_PENDANT',
+      'ITEM_STEEL_ARMOR', 'ITEM_STEEL_SHIELD', 'ITEM_HEAVY_LEATHER_ARMOR',
+      'ITEM_BATTLE_ROBE', 'ITEM_CRYSTAL_PENDANT',
       // T3 boss drops
-      'ITEM_TREANT_HEARTWOOD_SHIELD', 'ITEM_CRYSTAL_GOLEM_CORE',
-      'ITEM_HYDRA_VENOMFANG', 'ITEM_BANDIT_KINGS_CLOAK',
-      'ITEM_SPIDER_SILK_VEST', 'ITEM_FALLEN_KNIGHTS_BLADE',
+      'ITEM_CRYSTAL_GOLEM_STAFF',
+      'ITEM_HYDRA_VENOMFANG', 'ITEM_FALLEN_HUNTERS_BOW',
       'ITEM_LICH_PHYLACTERY', 'ITEM_WYRM_SCALE_SHIELD',
+      'ITEM_MYSTIC_PLATE_ARMOR', 'ITEM_BANDIT_KING_ARMOR', 'ITEM_SPIDER_SILK_ROBE',
       // T4 legendary
+      'ITEM_SOULBREAKER', 'ITEM_ETERNAL_HUNTER_BOW', 'ITEM_WORLDEND_STAFF',
+      'ITEM_AETHER_GUARDIAN_SHIELD',
+      'ITEM_DRAGONLORD_PLATE', 'ITEM_SHADOWHUNTER_ARMOR', 'ITEM_MAGIARCH_ROBE', 'ITEM_AETHER_HEART',
+      // T5 nemesis placeholders
       'ITEM_BLADE_OF_THOUSAND_SHADOWS', 'ITEM_SHIELD_OF_THE_ANCIENT',
       'ITEM_AMULET_OF_REBIRTH',
       // Misc
@@ -141,6 +180,11 @@ export class BootScene extends Phaser.Scene {
 
     // --- Specialist Sprites ---
     ['SPEC_BAKER_MASTER', 'SPEC_HERB_SAGE', 'SPEC_FORGE_SMITH'].forEach(key => {
+      this.load.image(key, `assets/sprites/final/${key}.png`);
+    });
+
+    // --- Belagerungs-Befestigungen ---
+    ['SIEGE_WALL', 'SIEGE_GATE', 'SIEGE_TOWER', 'SIEGE_KEEP'].forEach(key => {
       this.load.image(key, `assets/sprites/final/${key}.png`);
     });
 

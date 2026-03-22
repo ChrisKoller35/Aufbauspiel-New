@@ -23,7 +23,7 @@
  * @param margin Extra pixels added around the viewport to avoid pop-in (default 64).
  */
 export function isInView(
-  cam: { scrollX: number; scrollY: number; width: number; height: number; zoom: number },
+  cam: { scrollX: number; scrollY: number; width: number; height: number; zoom: number; worldView: { x: number; y: number } },
   x: number,
   y: number,
   w: number,

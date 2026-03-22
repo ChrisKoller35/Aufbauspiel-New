@@ -175,8 +175,7 @@ async function autoGenerate(missing: SpriteDefinition[]) {
       const body = {
         contents: [{
           parts: [{
-            text: `Generate a pixel art game sprite image. ${sprite.prompt}.
-            The image must have a solid black background.
+            text: `Generate a game sprite image. ${sprite.prompt}.
             Output ONLY the image, no text.`
           }]
         }],

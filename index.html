@@ -7,14 +7,19 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #1a1a2e; overflow: hidden; }
-    #game-container { width: 100vw; height: 100vh; }
-    canvas {
-      display: block;
+    #game-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
     }
+    canvas { display: block; }
   </style>
 </head>
 <body>
-  <div id="game-container"></div>
+  <div id="game-container">
+    <!-- HTML UI overlay – sits above the Phaser canvas via z-index -->
+    <div id="ui-layer"></div>
+  </div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

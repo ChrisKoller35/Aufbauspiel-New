@@ -15,7 +15,8 @@ export interface GuildFighter {
   name: string;
   baseStats: FighterStats;
   gear: {
-    weapon: string | null;
+    mainHand: string | null;
+    offHand: string | null;
     armor: string | null;
     trinket: string | null;
   };
@@ -33,7 +34,7 @@ export function createGuildFighter(citizenId: number, classId: string, name: str
     classId,
     name,
     baseStats: { ...baseStats },
-    gear: { weapon: null, armor: null, trinket: null },
+    gear: { mainHand: null, offHand: null, armor: null, trinket: null },
     gearNeedsRepair: false,
     xp: 0,
     level: 1,
