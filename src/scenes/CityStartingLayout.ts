@@ -1,28 +1,22 @@
 // ─── Magic City – CityStartingLayout ────────────────────────────────────────
-// Standalone functions for placing the initial buildings and citizens
-// when a new game is created. Extracted from CityScene; no logic changes.
+// Places initial buildings when a new game is created.
+// Buildings are pushed to state.buildings (dense array).
 // ─────────────────────────────────────────────────────────────────────────────
 
-import { GameState, TileData } from '../models/GameState';
+import { GameState } from '../models/GameState';
 import { createBuildingInstance } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
 import { BUILDING_DEFS } from '../data/buildings';
 
 export function placeStartingLayout(state: GameState): void {
-  // WAREHOUSE (4×3) at grid centre
-  placeStarterBuilding(state, 'WAREHOUSE', 18, 17);
-  // HOUSE_T1 (2×2) east of warehouse
-  placeStarterBuilding(state, 'HOUSE_T1', 23, 17);
-  // GUILD_HALL (4×4) west of warehouse
-  placeStarterBuilding(state, 'GUILD_HALL', 13, 16);
+  // General buildings
+  placeBuilding(state, 'WAREHOUSE');
+  placeBuilding(state, 'GUILD_HALL');
+  placeBuilding(state, 'LUMBER_CAMP');     // Holzfällerlager — generates wood from start
+  placeBuilding(state, 'DUNGEON_CAMP');
 
-  // Roads connecting guild hall → warehouse
-  for (let y = 17; y <= 19; y++) placeStarterBuilding(state, 'ROAD', 17, y);
-  // Roads connecting warehouse → house
-  for (let y = 17; y <= 18; y++) placeStarterBuilding(state, 'ROAD', 22, y);
-
-  // DUNGEON_CAMP (4×4) in der Dungeon-Zone
-  placeStarterBuilding(state, 'DUNGEON_CAMP', 4, 16);
+  // Housing
+  placeBuilding(state, 'HOUSE_T1');
 }
 
 export function createStartingCitizens(state: GameState): void {
@@ -31,19 +25,13 @@ export function createStartingCitizens(state: GameState): void {
   }
 }
 
-function placeStarterBuilding(state: GameState, typeId: string, gx: number, gy: number): void {
+function placeBuilding(state: GameState, typeId: string): void {
   const def = BUILDING_DEFS[typeId];
-  const [w, h] = def.footprint;
+  if (!def) return;
 
-  const building = createBuildingInstance(typeId, gx, gy, true);
+  const building = createBuildingInstance(typeId, 0, 0, true);
   if (def.recipes.length > 0) building.activeRecipeId = def.recipes[0];
   building.connected = true;
 
-  const tileData: TileData = { buildingId: building.id, isRoad: typeId === 'ROAD' };
-  for (let dy = 0; dy < h; dy++) {
-    for (let dx = 0; dx < w; dx++) {
-      state.grid[gy + dy][gx + dx] = tileData;
-    }
-  }
   state.buildings.push(building);
 }

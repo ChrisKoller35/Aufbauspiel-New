@@ -37,6 +37,59 @@ export interface RouteDef {
   requiresWarMachine?: boolean;
 }
 
+// ── Dungeon Graph — defines visual map layout & connections ──
+
+export interface DungeonGraphNode {
+  routeId: string;
+  x: number;       // 0-900 px
+  y: number;       // 0-2600 px (0 = top/endgame, 2600 = bottom/start)
+  leadsTo: string[]; // route IDs reachable from this node (toward harder content)
+  isMainPath?: boolean;
+}
+
+export const DUNGEON_GRAPH: DungeonGraphNode[] = [
+  // ── START (bottom) ──
+  { routeId: 'forest_short',       x: 450, y: 2400, leadsTo: ['forest_medium', 'forest_ruins'], isMainPath: true },
+  { routeId: 'forest_ruins',       x: 200, y: 2200, leadsTo: [] },
+
+  // ── EARLY BRANCHES ──
+  { routeId: 'forest_medium',      x: 400, y: 2050, leadsTo: ['swamp_long', 'cave_deep', 'ocean_shallows', 'haunted_woods'], isMainPath: true },
+  { routeId: 'haunted_woods',      x: 160, y: 1880, leadsTo: [] },
+
+  // ── LEFT: Ocean branch ──
+  { routeId: 'ocean_shallows',     x: 130, y: 1720, leadsTo: ['ocean_depths'] },
+  { routeId: 'ocean_depths',       x: 100, y: 1500, leadsTo: ['ocean_abyss'] },
+  { routeId: 'ocean_abyss',        x: 70,  y: 1300, leadsTo: [] },
+
+  // ── RIGHT: Cave branch ──
+  { routeId: 'cave_deep',          x: 700, y: 1830, leadsTo: ['cave_spider', 'cave_tunnels'] },
+  { routeId: 'cave_spider',        x: 820, y: 1670, leadsTo: [] },
+  { routeId: 'cave_tunnels',       x: 720, y: 1480, leadsTo: ['crystal_mines', 'ruins_crypts'] },
+  { routeId: 'crystal_mines',      x: 840, y: 1290, leadsTo: [] },
+
+  // ── MID: Main path + Swamp crossroads ──
+  { routeId: 'swamp_long',         x: 400, y: 1200, leadsTo: ['obsidian_tunnels', 'siege_walls', 'ruins_crypts', 'swamp_village'], isMainPath: true },
+  { routeId: 'swamp_village',      x: 530, y: 1370, leadsTo: [] },
+
+  // ── LEFT: Siege branch ──
+  { routeId: 'siege_walls',        x: 190, y: 980,  leadsTo: ['siege_fortress', 'frozen_pass'] },
+  { routeId: 'frozen_pass',        x: 70,  y: 1080, leadsTo: [] },
+  { routeId: 'siege_fortress',     x: 140, y: 740,  leadsTo: [] },
+
+  // ── RIGHT: Ruins branch (also reachable from cave_tunnels) ──
+  { routeId: 'ruins_crypts',       x: 680, y: 1080, leadsTo: ['ruins_depths'] },
+  { routeId: 'ruins_depths',       x: 740, y: 870,  leadsTo: ['shadow_catacombs', 'obsidian_tunnels'] },
+  { routeId: 'shadow_catacombs',   x: 840, y: 690,  leadsTo: [] },
+
+  // ── UPPER: Volcanic region ──
+  { routeId: 'obsidian_tunnels',   x: 430, y: 650,  leadsTo: ['volcano_core', 'ash_wastes', 'magma_caverns'], isMainPath: true },
+  { routeId: 'ash_wastes',         x: 220, y: 440,  leadsTo: [] },
+  { routeId: 'magma_caverns',      x: 680, y: 440,  leadsTo: [] },
+
+  // ── TOP: Final boss ──
+  { routeId: 'volcano_core',       x: 450, y: 180,  leadsTo: [], isMainPath: true },
+];
+
 export const ROUTE_DEFS: Record<string, RouteDef> = {
   forest_short: {
     id: 'forest_short',
@@ -305,4 +358,252 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     bossId: 'boss_leviathan',
     recommendedLevel: 'T3 Ausrüstung empfohlen',
   },
+
+  // ═══════════════════════════════════════════
+  // ── PLACEHOLDER ROUTES (Dungeon Map Filler) ──
+  // ═══════════════════════════════════════════
+
+  forest_ruins: {
+    id: 'forest_ruins',
+    name: 'Verfallene Lichtung',
+    tier: 1,
+    rooms: 7,
+    encounters: [
+      { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
+      { type: 'combat', enemies: ['forest_bandit'] },
+      { type: 'rest', healPercent: 30 },
+      { type: 'combat', enemies: ['forest_wolf', 'forest_wolf'] },
+      { type: 'hazard', damage: 5 },
+      { type: 'combat', enemies: ['forest_bear', 'forest_bandit'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Starter gear',
+  },
+  haunted_woods: {
+    id: 'haunted_woods',
+    name: 'Geisterwald',
+    tier: 2,
+    rooms: 9,
+    encounters: [
+      { type: 'combat', enemies: ['forest_wolf', 'forest_wisp'] },
+      { type: 'combat', enemies: ['forest_shaman', 'forest_spider'] },
+      { type: 'checkpoint' },
+      { type: 'hazard', damage: 8 },
+      { type: 'combat', enemies: ['forest_bear', 'forest_wisp', 'forest_wisp'] },
+      { type: 'rest', healPercent: 20 },
+      { type: 'combat', enemies: ['forest_shaman', 'forest_wolf', 'forest_wolf'] },
+      { type: 'find', findGold: 12, findItems: [{ itemId: 'herb_green', qty: 1 }] },
+      { type: 'combat', enemies: ['forest_bear', 'forest_shaman', 'forest_wisp'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Iron gear',
+  },
+  cave_tunnels: {
+    id: 'cave_tunnels',
+    name: 'Verschlungene Tunnel',
+    tier: 2,
+    rooms: 8,
+    encounters: [
+      { type: 'combat', enemies: ['cave_bat', 'cave_goblin'] },
+      { type: 'combat', enemies: ['cave_slime', 'cave_slime'] },
+      { type: 'checkpoint' },
+      { type: 'hazard', damage: 8 },
+      { type: 'rest', healPercent: 20 },
+      { type: 'combat', enemies: ['cave_goblin', 'cave_bat', 'cave_bat'] },
+      { type: 'combat', enemies: ['cave_troll'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Full iron gear',
+    unlockCondition: { bossesDefeated: ['boss_crystal_golem'] },
+  },
+  crystal_mines: {
+    id: 'crystal_mines',
+    name: 'Kristallminen',
+    tier: 3,
+    rooms: 10,
+    encounters: [
+      { type: 'combat', enemies: ['crystal_beetle', 'cave_goblin'] },
+      { type: 'combat', enemies: ['deep_crawler', 'crystal_beetle'] },
+      { type: 'checkpoint' },
+      { type: 'hazard', damage: 10 },
+      { type: 'combat', enemies: ['cave_troll', 'crystal_beetle', 'crystal_beetle'] },
+      { type: 'rest', healPercent: 20 },
+      { type: 'find', findGold: 25, findItems: [{ itemId: 'old_coin', qty: 2 }] },
+      { type: 'combat', enemies: ['deep_crawler', 'cave_troll'] },
+      { type: 'combat', enemies: ['crystal_beetle', 'crystal_beetle', 'deep_crawler'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'T2 gear recommended',
+    unlockCondition: { bossesDefeated: ['boss_crystal_golem', 'boss_spider_queen'] },
+  },
+  ocean_abyss: {
+    id: 'ocean_abyss',
+    name: 'Abyssale Tiefe',
+    tier: 4,
+    rooms: 10,
+    isUnderwater: true,
+    airDecayPerRoom: 10,
+    encounters: [
+      { type: 'combat', enemies: ['deep_sea_angler', 'pressure_crab'] },
+      { type: 'combat', enemies: ['drowned_knight', 'jellyfish_swarm'] },
+      { type: 'checkpoint' },
+      { type: 'hazard', damage: 10 },
+      { type: 'combat', enemies: ['sea_serpent', 'drowned_knight'] },
+      { type: 'find', findGold: 30, findItems: [{ itemId: 'air_crystal', qty: 2 }] },
+      { type: 'rest', healPercent: 20 },
+      { type: 'combat', enemies: ['deep_sea_angler', 'sea_serpent'] },
+      { type: 'hazard', damage: 12 },
+      { type: 'combat', enemies: ['drowned_knight', 'pressure_crab', 'deep_sea_angler'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'T3 Ausrüstung + Luftkristalle',
+    unlockCondition: { bossesDefeated: ['boss_leviathan'] },
+  },
+  swamp_village: {
+    id: 'swamp_village',
+    name: 'Sumpfdorf',
+    tier: 2,
+    rooms: 7,
+    encounters: [
+      { type: 'combat', enemies: ['leech_swarm', 'toxic_toad'] },
+      { type: 'merchant' },
+      { type: 'combat', enemies: ['rot_walker', 'leech_swarm'] },
+      { type: 'rest', healPercent: 25 },
+      { type: 'combat', enemies: ['swamp_troll'] },
+      { type: 'find', findGold: 15, findItems: [{ itemId: 'herb_green', qty: 2 }] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Iron gear + T2 items',
+    unlockCondition: { bossesDefeated: ['boss_elder_treant'] },
+  },
+  frozen_pass: {
+    id: 'frozen_pass',
+    name: 'Gefrorener Pass',
+    tier: 3,
+    rooms: 8,
+    encounters: [
+      { type: 'combat', enemies: ['skeleton_warrior', 'skeleton_warrior'] },
+      { type: 'hazard', damage: 10 },
+      { type: 'combat', enemies: ['ghost_mage', 'skeleton_warrior'] },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['bone_knight', 'ghost_mage'] },
+      { type: 'hazard', damage: 12 },
+      { type: 'combat', enemies: ['stone_guardian', 'skeleton_warrior', 'skeleton_warrior'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'T2 gear + Frostschutz',
+    unlockCondition: { bossesDefeated: ['boss_fallen_knight'] },
+  },
+  shadow_catacombs: {
+    id: 'shadow_catacombs',
+    name: 'Schattenkatakomben',
+    tier: 4,
+    rooms: 11,
+    encounters: [
+      { type: 'combat', enemies: ['bone_knight', 'ghost_mage'] },
+      { type: 'combat', enemies: ['tomb_horror', 'skeleton_warrior'] },
+      { type: 'hazard', damage: 12 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['cursed_priest', 'ghost_mage', 'ghost_mage'] },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['stone_guardian', 'bone_knight'] },
+      { type: 'hazard', damage: 14 },
+      { type: 'combat', enemies: ['tomb_horror', 'cursed_priest', 'skeleton_warrior'] },
+      { type: 'combat', enemies: ['stone_guardian', 'tomb_horror', 'bone_knight'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Full T2+ gear',
+    unlockCondition: { bossesDefeated: ['boss_shadow_lich'] },
+  },
+  obsidian_tunnels: {
+    id: 'obsidian_tunnels',
+    name: 'Obsidiantunnel',
+    tier: 3,
+    rooms: 9,
+    encounters: [
+      { type: 'combat', enemies: ['lava_elemental', 'fire_bat'] },
+      { type: 'combat', enemies: ['obsidian_crab', 'fire_bat', 'fire_bat'] },
+      { type: 'checkpoint' },
+      { type: 'hazard', damage: 10 },
+      { type: 'rest', healPercent: 20 },
+      { type: 'combat', enemies: ['ash_golem', 'obsidian_crab'] },
+      { type: 'combat', enemies: ['flame_spirit', 'lava_elemental'] },
+      { type: 'combat', enemies: ['ash_golem', 'fire_bat', 'obsidian_crab'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'T2 gear + Feuerschutz',
+    unlockCondition: { bossesDefeated: ['boss_swamp_hydra'] },
+  },
+  ash_wastes: {
+    id: 'ash_wastes',
+    name: 'Aschewüste',
+    tier: 4,
+    rooms: 10,
+    encounters: [
+      { type: 'combat', enemies: ['ash_golem', 'fire_bat'] },
+      { type: 'hazard', damage: 12 },
+      { type: 'combat', enemies: ['flame_spirit', 'lava_elemental'] },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['ash_golem', 'obsidian_crab', 'fire_bat'] },
+      { type: 'rest', healPercent: 15 },
+      { type: 'hazard', damage: 14 },
+      { type: 'combat', enemies: ['flame_spirit', 'ash_golem', 'lava_elemental'] },
+      { type: 'combat', enemies: ['magma_broodling', 'flame_spirit'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Full T2 gear + Level 8+',
+    unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
+  },
+  magma_caverns: {
+    id: 'magma_caverns',
+    name: 'Magmahöhlen',
+    tier: 4,
+    rooms: 11,
+    encounters: [
+      { type: 'combat', enemies: ['lava_elemental', 'obsidian_crab'] },
+      { type: 'combat', enemies: ['fire_bat', 'fire_bat', 'flame_spirit'] },
+      { type: 'hazard', damage: 12 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['ash_golem', 'lava_elemental', 'fire_bat'] },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['magma_broodling', 'obsidian_crab'] },
+      { type: 'hazard', damage: 14 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['flame_spirit', 'ash_golem', 'lava_elemental'] },
+      { type: 'combat', enemies: ['magma_broodling', 'flame_spirit', 'obsidian_crab'] },
+    ],
+    bossId: null,
+    recommendedLevel: 'Full T2 gear + Level 8+',
+    unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
+  },
+};
+
+// ── Route Image Map — shared between ExpeditionsScreen & DungeonMapScreen ──
+
+/** Map route IDs to expedition tile image names (in assets/tiles/). */
+export const ROUTE_IMAGE_MAP: Record<string, string> = {
+  forest_short: 'exp_forest_short',
+  forest_medium: 'exp_forest_medium',
+  cave_deep: 'exp_cave_deep',
+  cave_spider: 'exp_cave_spider',
+  swamp_long: 'exp_swamp_long',
+  ruins_crypts: 'exp_ruins_crypts',
+  ruins_depths: 'exp_ruins_depths',
+  volcano_core: 'exp_volcano_core',
+  siege_walls: 'exp_siege_walls',
+  siege_fortress: 'exp_siege_fortress',
+  ocean_shallows: 'exp_ocean_shallows',
+  ocean_depths: 'exp_ocean_depths',
+  forest_ruins: 'exp_forest_ruins',
+  haunted_woods: 'exp_haunted_woods',
+  cave_tunnels: 'exp_cave_tunnels',
+  crystal_mines: 'exp_crystal_mines',
+  ocean_abyss: 'exp_ocean_abyss',
+  swamp_village: 'exp_swamp_village',
+  frozen_pass: 'exp_frozen_pass',
+  shadow_catacombs: 'exp_shadow_catacombs',
+  obsidian_tunnels: 'exp_obsidian_tunnels',
+  ash_wastes: 'exp_ash_wastes',
+  magma_caverns: 'exp_magma_caverns',
 };

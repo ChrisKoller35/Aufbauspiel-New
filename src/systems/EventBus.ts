@@ -3,7 +3,8 @@
 // No external dependencies, pure TypeScript generics.
 // ──────────────────────────────────────────────────────────────────
 
-import { SidebarAction } from '../ui/html/HTMLSidebar';
+// SidebarAction inlined here to avoid circular dependency on old UI
+export type SidebarAction = 'build' | 'road' | 'demolish' | 'guild' | 'expedition' | 'storage' | 'menu';
 
 // ─── Event Map ───────────────────────────────────────────────────
 // Every cross-system event with its typed payload.
@@ -15,6 +16,9 @@ export interface GameEventMap {
   'building:upgraded':    { buildingId: number };
   'building:selected':    { buildingId: number };
   'building:deselected':  {};
+
+  // ── Scene sync (Three.js ↔ Phaser) ──
+  'scene:buildingsChanged': {};
 
   // ── Build Mode Events ──
   'mode:changed':         { mode: string; previousMode: string };
@@ -100,17 +104,3 @@ export class EventBus {
   }
 }
 
-// ─── Singleton ───────────────────────────────────────────────────
-// One global instance. Reset via resetEventBus() on scene restart.
-
-let _instance: EventBus | null = null;
-
-export function getEventBus(): EventBus {
-  if (!_instance) _instance = new EventBus();
-  return _instance;
-}
-
-export function resetEventBus(): void {
-  _instance?.clear();
-  _instance = null;
-}

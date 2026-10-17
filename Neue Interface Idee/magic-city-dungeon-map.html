@@ -1,0 +1,624 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic City – Dungeonkarte</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060810;
+  --s1: #0c1220;
+  --s2: #111828;
+  --s3: #192035;
+  --bdr: #242040;
+  --gold: #c8a227;
+  --gl: #e6c060;
+  --gd: #6e5710;
+  --txt: #ddd0b8;
+  --mut: #6b6050;
+}
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  font-family: 'Crimson Text', serif;
+  background: var(--bg);
+  color: var(--txt);
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ── HEADER ── */
+.hdr {
+  display: flex; align-items: center; padding: 10px 22px;
+  background: var(--s1); border-bottom: 1px solid var(--bdr);
+  gap: 14px; flex-shrink: 0; min-height: 52px;
+  z-index: 20; position: relative;
+}
+.hdr-logo { font-family: 'Cinzel Decorative', serif; font-size: 1rem; color: var(--gold); letter-spacing: 2px; }
+.hdr-sep  { color: var(--bdr); }
+.hdr-cur  { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--mut); letter-spacing: 1px; }
+.hdr-space { flex: 1; }
+.hdr-res  { display: flex; gap: 14px; }
+.hdr-res span { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--gold); }
+.btn-back {
+  background: none; border: 1px solid var(--bdr); color: var(--mut);
+  padding: 5px 12px; border-radius: 4px; cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 1px; transition: .2s;
+}
+.btn-back:hover { border-color: var(--gold); color: var(--gold); }
+
+/* ── MAP CONTAINER ── */
+#map-wrap {
+  flex: 1; overflow-y: auto; overflow-x: auto; position: relative;
+  background: var(--bg);
+  scrollbar-width: thin; scrollbar-color: var(--bdr) var(--s1);
+}
+#map-wrap::-webkit-scrollbar { width: 6px; height: 6px; }
+#map-wrap::-webkit-scrollbar-track { background: var(--s1); }
+#map-wrap::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 3px; }
+
+#dungeon-svg {
+  display: block;
+  width: 1000px;
+  height: 2250px;
+  margin: 0 auto;
+}
+
+/* node hover */
+.nd { cursor: pointer; }
+.nd .ring { transition: opacity .2s; }
+.nd:hover .ring { opacity: 1 !important; }
+.nd .shape { transition: filter .2s; }
+.nd:hover .shape { filter: brightness(1.35) drop-shadow(0 0 6px var(--glow-c)); }
+
+/* ── LEGEND ── */
+.legend {
+  position: fixed; bottom: 18px; right: 18px;
+  background: rgba(12,18,32,.93); border: 1px solid var(--bdr);
+  border-radius: 7px; padding: 11px 15px;
+  font-family: 'Cinzel', serif; font-size: 0.63rem; letter-spacing: 1px;
+  z-index: 30; backdrop-filter: blur(4px);
+}
+.legend-t  { color: var(--gold); margin-bottom: 8px; font-size: .68rem; }
+.legend-row { display: flex; align-items: center; gap: 7px; margin-bottom: 5px; color: var(--mut); }
+.ldot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+.lhex { width: 10px; height: 10px; clip-path: polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%); flex-shrink: 0; }
+
+/* ── SCROLL HINT ── */
+#scroll-hint {
+  position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%);
+  font-family: 'Cinzel', serif; font-size: .62rem; letter-spacing: 3px;
+  color: var(--mut); animation: pulse 2.4s ease-in-out infinite; pointer-events: none;
+  z-index: 30; white-space: nowrap;
+}
+#scroll-hint.gone { opacity: 0; transition: opacity .5s; pointer-events: none; }
+@keyframes pulse { 0%,100% { opacity: .3; } 50% { opacity: .9; } }
+
+/* ── MODAL ── */
+.ov {
+  display: none; position: fixed; inset: 0;
+  background: rgba(0,0,0,.8); z-index: 100;
+  align-items: center; justify-content: center;
+}
+.ov.on { display: flex; animation: fi .2s ease; }
+@keyframes fi { from { opacity: 0; } to { opacity: 1; } }
+.modal {
+  background: var(--s1); border: 1px solid var(--bdr);
+  border-radius: 9px; padding: 26px 26px 22px; max-width: 420px;
+  width: 90%; position: relative; animation: ms .25s ease;
+}
+@keyframes ms { from { transform: translateY(8px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+.mcl {
+  position: absolute; top: 10px; right: 12px;
+  background: none; border: none; color: var(--mut);
+  font-size: 1.1rem; cursor: pointer; transition: .15s;
+}
+.mcl:hover { color: var(--txt); }
+#mn-ico  { font-size: 2.8rem; text-align: center; margin-bottom: 10px; }
+#mn-tag  {
+  font-family: 'Cinzel', serif; font-size: .6rem; letter-spacing: 2px;
+  padding: 2px 10px; border-radius: 999px; display: inline-block;
+  margin-bottom: 6px;
+}
+#mn-name { font-family: 'Cinzel', serif; font-size: 1.1rem; color: var(--gold); margin-bottom: 4px; letter-spacing: 1px; }
+#mn-sub  { font-size: .82rem; color: var(--mut); margin-bottom: 14px; font-style: italic; }
+.md {
+  background: var(--s2); border: 1px solid var(--bdr);
+  border-radius: 5px; padding: 13px; margin-bottom: 13px;
+}
+.md p { font-size: .84rem; margin-bottom: 7px; line-height: 1.55; }
+.md p:last-child { margin-bottom: 0; }
+.lbl { color: var(--mut); font-size: .68rem; font-family: 'Cinzel', serif; letter-spacing: 1px; display: block; margin-bottom: 2px; }
+.btn-go {
+  background: linear-gradient(135deg, var(--gd), #7a5c08);
+  border: 1px solid var(--gold); color: var(--gl);
+  padding: 11px 20px; font-family: 'Cinzel', serif;
+  font-size: .8rem; letter-spacing: 2px; cursor: pointer;
+  border-radius: 4px; width: 100%; transition: .2s;
+}
+.btn-go:hover { filter: brightness(1.2); }
+.btn-cp {
+  background: none; border: 1px solid var(--bdr); color: var(--mut);
+  padding: 10px; font-family: 'Cinzel', serif; font-size: .75rem;
+  letter-spacing: 1px; cursor: pointer; border-radius: 4px; width: 100%;
+  transition: .2s;
+}
+.btn-cp:hover { border-color: var(--gold); color: var(--gold); }
+</style>
+</head>
+<body>
+
+<div class="hdr">
+  <button class="btn-back" onclick="history.back()">← Hauptmenü</button>
+  <span class="hdr-logo">⚔ MAGIC CITY</span>
+  <span class="hdr-sep">/</span>
+  <span class="hdr-cur">DUNGEONKARTE — VALDRIS UNTERWELT</span>
+  <div class="hdr-space"></div>
+  <div class="hdr-res">
+    <span>🪙 12.450</span>
+    <span>💎 87</span>
+    <span style="color:var(--mut)">Fortschritt: 3 / 15</span>
+  </div>
+</div>
+
+<div id="map-wrap">
+  <svg id="dungeon-svg" viewBox="0 0 1000 2250" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="f-glow-gold" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="f-glow-red" x="-60%" y="-60%" width="220%" height="220%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="8" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <filter id="f-pulse" x="-80%" y="-80%" width="260%" height="260%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="b"/>
+        <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+      </filter>
+      <radialGradient id="bg-grad" cx="50%" cy="50%">
+        <stop offset="0%" stop-color="#0a0f1f"/>
+        <stop offset="100%" stop-color="#060810"/>
+      </radialGradient>
+      <!-- Boss area dramatic gradient -->
+      <radialGradient id="boss-glow" cx="50%" cy="80%" r="60%">
+        <stop offset="0%" stop-color="#7f0000" stop-opacity="0.18"/>
+        <stop offset="100%" stop-color="#060810" stop-opacity="0"/>
+      </radialGradient>
+      <!-- Start area gradient -->
+      <radialGradient id="start-glow" cx="50%" cy="20%" r="50%">
+        <stop offset="0%" stop-color="#3d2a00" stop-opacity="0.15"/>
+        <stop offset="100%" stop-color="#060810" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+
+    <!-- Background -->
+    <rect width="1000" height="2250" fill="url(#bg-grad)"/>
+    <rect x="0" y="0" width="1000" height="600" fill="url(#boss-glow)"/>
+    <rect x="0" y="1700" width="1000" height="550" fill="url(#start-glow)"/>
+
+    <!-- Grid dots (atmosphere) -->
+    <g id="grid-layer" opacity="0.06"></g>
+
+    <!-- Edges layer -->
+    <g id="edge-layer"></g>
+
+    <!-- Nodes layer -->
+    <g id="node-layer"></g>
+  </svg>
+</div>
+
+<!-- Legend -->
+<div class="legend">
+  <div class="legend-t">DUNGEONLEGENDE</div>
+  <div class="legend-row"><div class="ldot" style="background:#4ade80"></div>Wald</div>
+  <div class="legend-row"><div class="ldot" style="background:#fcd34d"></div>Sumpf</div>
+  <div class="legend-row"><div class="ldot" style="background:#93c5fd"></div>Höhle</div>
+  <div class="legend-row"><div class="ldot" style="background:#c4b5fd"></div>Ruinen</div>
+  <div class="legend-row"><div class="ldot" style="background:#fca5a5"></div>Vulkan</div>
+  <div class="legend-row"><div class="lhex" style="background:#c8a227"></div>Checkpoint</div>
+  <div class="legend-row"><div class="lhex" style="background:#ef4444;clip-path:polygon(50% 0%,100% 25%,100% 75%,50% 100%,0% 75%,0% 25%)"></div>Boss</div>
+</div>
+
+<!-- Scroll hint -->
+<div id="scroll-hint">▲ SCROLLEN ZUR OBERFLÄCHE · TIEFER = GEFÄHRLICHER ▲</div>
+
+<!-- Modal -->
+<div class="ov" id="ov" onclick="if(event.target===this)cm()">
+  <div class="modal">
+    <button class="mcl" onclick="cm()">✕</button>
+    <div id="mn-ico"></div>
+    <div id="mn-tag"></div>
+    <div id="mn-name"></div>
+    <div id="mn-sub"></div>
+    <div class="md" id="mn-detail"></div>
+    <div id="mn-actions"></div>
+  </div>
+</div>
+
+<script>
+const NS = 'http://www.w3.org/2000/svg';
+
+// ─── NODE DATA ──────────────────────────────────────────────────────
+const N = {
+  // ── START ──
+  START: {x:500, y:2080, t:'start',
+    name:'Eingang von Valdris', ico:'🚪', diff:0,
+    sub:'Das Tor zur Unterwelt',
+    desc:'Das uralte Stadttor öffnet sich ins Dunkel. Die Luft riecht nach feuchtem Stein und altem Blut. Kein Umkehren mehr.',
+    rew:'—'},
+
+  // ── LAYER 1 ──
+  N01: {x:310, y:1850, t:'wald',
+    name:'Altes Lager', ico:'🏕️', diff:1,
+    sub:'Waldregion · Sehr leicht',
+    desc:'Ein verlassenes Banditenlager, das langsam von Moos und Efeu verschluckt wird. Unter Asche verbergen sich überraschend viele Schätze.',
+    rew:'300 – 500 🪙'},
+  N02: {x:690, y:1850, t:'sumpf',
+    name:'Moorland', ico:'🌿', diff:1,
+    sub:'Sumpfregion · Sehr leicht',
+    desc:'Trügerisch ruhiges Moor. Ein falscher Schritt, und du versinkst. Dunkelgrüne Stille, die nur durch das Gluckern von Treibsand unterbrochen wird.',
+    rew:'400 – 700 🪙'},
+
+  // ── LAYER 2 ──
+  N03: {x:165, y:1620, t:'wald',
+    name:'Nebelwald', ico:'🌫️', diff:2,
+    sub:'Waldregion · Leicht',
+    desc:'Dichter Nebel verschluckt jeden Laut. Alte Waldgeister dulden keine Eindringlinge – und die Bäume selbst scheinen zu flüstern.',
+    rew:'700 – 1.000 🪙'},
+  N04: {x:395, y:1620, t:'hoehle',
+    name:'Kristallhöhle', ico:'💎', diff:3,
+    sub:'Höhlenregion · Mittel',
+    desc:'Kobolds bewachen schimmernde Edelsteinkammern. Das Funkeln der Kristalle täuscht über die wahre Gefahr hinweg – es sind Hunderte.',
+    rew:'1.400 – 2.000 🪙'},
+  N05: {x:605, y:1620, t:'hoehle',
+    name:'Koboldminen', ico:'⛏️', diff:3,
+    sub:'Höhlenregion · Mittel',
+    desc:'Endlose Tunnel voller Fallen und Koboldschwärme. Die Minen wurden vor Jahrhunderten abgebaut – aber verlassen wurden sie nie.',
+    rew:'1.100 – 1.700 🪙'},
+  N06: {x:835, y:1620, t:'sumpf',
+    name:'Pilzsumpf', ico:'🍄', diff:2,
+    sub:'Sumpfregion · Leicht',
+    desc:'Riesenpilze leuchten giftig in der Dunkelheit. Ihre Sporen lähmen den Geist und rufen Halluzinationen hervor.',
+    rew:'600 – 900 🪙'},
+
+  // ── CHECKPOINT 1 ──
+  CP1: {x:285, y:1380, t:'checkpoint',
+    name:'Waldwacht', ico:'🔥', diff:0,
+    sub:'Checkpoint · Rastpunkt',
+    desc:'Ein Lagerfeuer das seit Jahrhunderten brennt, genährt von uralter Magie. Hier erholt sich dein Team und kann Proviant und Tränke auffüllen.',
+    rew:'Rast · Vollheilung · Inventar'},
+  CP2: {x:715, y:1380, t:'checkpoint',
+    name:'Tiefenwacht', ico:'🪨', diff:0,
+    sub:'Checkpoint · Rastpunkt',
+    desc:'Eine alte Steinkammer tief im Fels. Mysteriöse Runen leuchten an den Wänden – magische Schilde halten Gefahren fern.',
+    rew:'Rast · Vollheilung · Inventar'},
+
+  // ── LAYER 3 ──
+  N07: {x:130, y:1140, t:'wald',
+    name:'Schwarzer Wald', ico:'🌑', diff:2,
+    sub:'Waldregion · Leicht',
+    desc:'Ewige Nacht unter einem toten Blätterdach. Wölfe mit Schattenmagie jagen in Rudeln und Geister folgen deinen Schritten schweigend.',
+    rew:'800 – 1.200 🪙'},
+  N08: {x:345, y:1140, t:'sumpf',
+    name:'Giftsumpf', ico:'☠️', diff:3,
+    sub:'Sumpfregion · Mittel',
+    desc:'Giftige Gase und Sumpfbestien die im Verborgenen lauern. Bring Gegengifte – ohne sie wirst du den Ausgang nicht mehr finden.',
+    rew:'1.200 – 1.800 🪙'},
+  N09: {x:500, y:1140, t:'hoehle',
+    name:'Schattenhöhle', ico:'👁️', diff:3,
+    sub:'Höhlenregion · Mittel',
+    desc:'Dunkelheit frisst jedes Licht. Geisterhafte Augen beobachten dich von den Wänden. Wer allein geht, kehrt nicht zurück.',
+    rew:'1.300 – 1.900 🪙'},
+  N10: {x:655, y:1140, t:'ruinen',
+    name:'Ruinenstadt', ico:'🏛️', diff:4,
+    sub:'Ruinenregion · Schwer',
+    desc:'Einst eine blühende Handelsstadt, nun bewacht von untotem Militär das ihr Gelübde vergessen hat und ewig patrouilliert.',
+    rew:'2.000 – 3.000 🪙'},
+  N11: {x:870, y:1140, t:'vulkan',
+    name:'Aschefelder', ico:'🌋', diff:4,
+    sub:'Vulkanregion · Schwer',
+    desc:'Verbrannte Erde, Asche-Untote und ein Drache der seinen Schlummer langsam beendet. Die Hitze macht jeden Atemzug zur Qual.',
+    rew:'2.800 – 4.200 🪙'},
+
+  // ── CHECKPOINT 2 ──
+  CP3: {x:330, y:895, t:'checkpoint',
+    name:'Ruinenwacht', ico:'⛩️', diff:0,
+    sub:'Checkpoint · Rastpunkt',
+    desc:'Die Mauern einer alten Elfenfestung bieten noch immer Schutz. Ein geheimer Stein verbirgt Vorräte – ein Geschenk der früheren Besitzer.',
+    rew:'Rast · Schmiede · Magie auffüllen'},
+  CP4: {x:670, y:895, t:'checkpoint',
+    name:'Glutwacht', ico:'🔶', diff:0,
+    sub:'Checkpoint · Rastpunkt',
+    desc:'Ein Obsidianbunker gebaut von alten Feuermagiern. Kaum erträgliche Hitze – aber vollkommen sicher. Hier brechen Flammenrituale los wenn Feinde nahen.',
+    rew:'Rast · Feuerresistenz-Buff · Tränke'},
+
+  // ── LAYER 4 ──
+  N12: {x:195, y:650, t:'ruinen',
+    name:'Elfenruinen', ico:'🧝', diff:4,
+    sub:'Ruinenregion · Schwer',
+    desc:'Uralte Elfenmagie schützt Schätze aus der Ersten Ära. Fallen die niemand mehr aktiviert hat – bis jetzt. Jeder Schritt könnte der letzte sein.',
+    rew:'2.200 – 3.400 🪙'},
+  N13: {x:410, y:650, t:'vulkan',
+    name:'Vulkanpfad', ico:'🔥', diff:5,
+    sub:'Vulkanregion · Sehr schwer',
+    desc:'Glutflüsse durchziehen schmale Pfade, Feuerbestien mit zähflüssiger Haut belauern jeden Übergang. Nur für die Mutigsten.',
+    rew:'3.500 – 5.000 🪙'},
+  N14: {x:590, y:650, t:'vulkan',
+    name:'Lavahöhle', ico:'🌊', diff:5,
+    sub:'Vulkanregion · Sehr schwer',
+    desc:'Der Boden schmilzt, die Decke tropft glühend herab. Drachenjunge bewachen ihren erster Schatz und töten ohne Zögern.',
+    rew:'4.000 – 6.000 🪙'},
+  N15: {x:805, y:650, t:'ruinen',
+    name:'Dämonenpfad', ico:'👹', diff:5,
+    sub:'Ruinenregion · Sehr schwer',
+    desc:'Ein Reich der Dämonen unter den Trümmern des alten Kaiserreichs. Nur Legenden kehrten zurück – und ihre Geschichten glaubt niemand.',
+    rew:'5.000 – 8.000 🪙'},
+
+  // ── FINAL CHECKPOINT ──
+  CPF: {x:500, y:410, t:'checkpoint-final',
+    name:'Höllenpforte', ico:'⚔️', diff:0,
+    sub:'Letzter Checkpoint · Vor dem Endkampf',
+    desc:'Das letzte Bollwerk vor dem Drachen. Nur die Stärksten haben diesen Punkt je erreicht. Die Luft brennt vor Magie. Hier ist die letzte Chance zur Rast – danach gibt es kein Zurück.',
+    rew:'Vollheilung · Alle Tränke · Legendärer Buff'},
+
+  // ── BOSS ──
+  BOSS: {x:500, y:195, t:'boss',
+    name:'Drachenfürst Xaroth', ico:'🐉', diff:5,
+    sub:'ENDBOSS · Nur für Legenden',
+    desc:'Der uralte Drache schläft nicht mehr. Jahrhunderte des Wartens enden heute. Sein Feueratem lässt Felsgestein schmelzen. Sein Blick allein lähmt Krieger vor Angst. Sein Hort enthält die größten Schätze der Welt von Valdris.',
+    rew:'LEGENDÄRE BEUTE · EWIGER RUHM · RANG #1'},
+};
+
+// ─── EDGES ───────────────────────────────────────────────────────────
+const EDGES = [
+  ['START','N01'],['START','N02'],
+  ['N01','N03'],['N01','N04'],
+  ['N02','N05'],['N02','N06'],
+  ['N03','CP1'],['N04','CP1'],
+  ['N05','CP2'],['N06','CP2'],
+  ['CP1','N07'],['CP1','N08'],['CP1','N09'],
+  ['CP2','N09'],['CP2','N10'],['CP2','N11'],
+  ['N07','CP3'],['N08','CP3'],
+  ['N09','CP3'],['N09','CP4'],
+  ['N10','CP4'],['N11','CP4'],
+  ['CP3','N12'],['CP3','N13'],
+  ['CP4','N13'],['CP4','N14'],['CP4','N15'],
+  ['N12','CPF'],['N13','CPF'],['N14','CPF'],['N15','CPF'],
+  ['CPF','BOSS'],
+];
+
+// ─── STYLE MAP ────────────────────────────────────────────────────────
+const TC = {
+  wald:             {fill:'#0d2e16', stroke:'#4ade80', text:'#4ade80', glow:'#22c55e'},
+  sumpf:            {fill:'#3a1e05', stroke:'#fcd34d', text:'#fcd34d', glow:'#eab308'},
+  hoehle:           {fill:'#0f1e4a', stroke:'#93c5fd', text:'#93c5fd', glow:'#60a5fa'},
+  ruinen:           {fill:'#250d50', stroke:'#c4b5fd', text:'#c4b5fd', glow:'#a78bfa'},
+  vulkan:           {fill:'#450a0a', stroke:'#fca5a5', text:'#fca5a5', glow:'#ef4444'},
+  start:            {fill:'#1c1500', stroke:'#c8a227', text:'#e6c060', glow:'#c8a227'},
+  checkpoint:       {fill:'#181000', stroke:'#c8a227', text:'#e6c060', glow:'#c8a227'},
+  'checkpoint-final':{fill:'#2a1000',stroke:'#e6c060', text:'#fde68a', glow:'#e6c060'},
+  boss:             {fill:'#2d0000', stroke:'#ef4444', text:'#fca5a5', glow:'#ef4444'},
+};
+const TYPE_LABELS = {
+  wald:'WALDREGION', sumpf:'SUMPFREGION', hoehle:'HÖHLENREGION',
+  ruinen:'RUINENREGION', vulkan:'VULKANREGION', start:'EINGANG',
+  checkpoint:'CHECKPOINT', 'checkpoint-final':'LETZTER CHECKPOINT', boss:'ENDBOSS'
+};
+const TYPE_COLORS_TAG = {
+  wald:'background:rgba(22,101,52,.35);color:#4ade80;border:1px solid #166534',
+  sumpf:'background:rgba(113,63,18,.35);color:#fcd34d;border:1px solid #713f12',
+  hoehle:'background:rgba(30,58,138,.35);color:#93c5fd;border:1px solid #1e3a8a',
+  ruinen:'background:rgba(88,28,135,.35);color:#c4b5fd;border:1px solid #581c87',
+  vulkan:'background:rgba(153,27,27,.35);color:#fca5a5;border:1px solid #991b1b',
+  start:'background:rgba(90,70,0,.35);color:#e6c060;border:1px solid #6e5710',
+  checkpoint:'background:rgba(90,70,0,.35);color:#e6c060;border:1px solid #6e5710',
+  'checkpoint-final':'background:rgba(120,60,0,.4);color:#fde68a;border:1px solid #9a6000',
+  boss:'background:rgba(100,0,0,.4);color:#fca5a5;border:1px solid #7f1d1d',
+};
+
+function getR(t) {
+  if(t === 'boss') return 48;
+  if(t === 'checkpoint-final') return 42;
+  if(t === 'checkpoint') return 34;
+  if(t === 'start') return 30;
+  return 24;
+}
+
+function hexPts(cx, cy, r, rot=0) {
+  const pts = [];
+  for(let i=0;i<6;i++){
+    const a = Math.PI/180*(60*i+rot);
+    pts.push(`${(cx+r*Math.cos(a)).toFixed(2)},${(cy+r*Math.sin(a)).toFixed(2)}`);
+  }
+  return pts.join(' ');
+}
+
+function el(tag, attrs, parent) {
+  const e = document.createElementNS(NS, tag);
+  for(const [k,v] of Object.entries(attrs)) e.setAttribute(k, v);
+  if(parent) parent.appendChild(e);
+  return e;
+}
+function txt(content, attrs, parent) {
+  const t = el('text', attrs, parent);
+  t.textContent = content;
+  return t;
+}
+
+// ─── DRAW BACKGROUND GRID ─────────────────────────────────────────────
+function drawGrid() {
+  const g = document.getElementById('grid-layer');
+  for(let x=50;x<1000;x+=50)
+    for(let y=50;y<2250;y+=50)
+      el('circle',{cx:x,cy:y,r:'0.9',fill:'#c8a227'},g);
+}
+
+// ─── DRAW EDGE ────────────────────────────────────────────────────────
+function drawEdge(aId, bId) {
+  const a = N[aId], b = N[bId];
+  const ra = getR(a.t), rb = getR(b.t);
+  const sx = a.x, sy = a.y - ra;  // top of source
+  const ex = b.x, ey = b.y + rb;  // bottom of target (b is above a)
+  const my = (sy + ey) / 2;
+  const d = `M ${sx},${sy} C ${sx},${my} ${ex},${my} ${ex},${ey}`;
+
+  const g = document.getElementById('edge-layer');
+
+  // Soft wide glow
+  el('path',{d, stroke:'#c8a227','stroke-width':'6', fill:'none', opacity:'0.06'},g);
+  // Thin glow
+  el('path',{d, stroke:'#c8a227','stroke-width':'2.5', fill:'none', opacity:'0.15'},g);
+  // Main dashed line
+  el('path',{d, stroke:'#c8a227','stroke-width':'1.5', fill:'none', opacity:'0.45',
+    'stroke-dasharray':'5 4', 'stroke-linecap':'round'},g);
+}
+
+// ─── DRAW NODE ────────────────────────────────────────────────────────
+function drawNode(id) {
+  const n = N[id];
+  const c = TC[n.t];
+  const r = getR(n.t);
+  const isCP  = n.t==='checkpoint'||n.t==='checkpoint-final';
+  const isHex = isCP || n.t==='boss' || n.t==='start';
+  const rot   = n.t==='boss' ? 30 : (n.t==='start'?30:0);
+
+  const g = document.createElementNS(NS,'g');
+  g.setAttribute('class','nd');
+  g.style.setProperty('--glow-c', c.glow);
+  g.addEventListener('click', ()=>showModal(id));
+  document.getElementById('node-layer').appendChild(g);
+
+  // Outer glow pulse (boss/final checkpoint)
+  if(n.t==='boss'||n.t==='checkpoint-final') {
+    const gl = isHex
+      ? el('polygon',{points:hexPts(n.x,n.y,r+14,rot),fill:c.stroke,opacity:'0.06',filter:'url(#f-glow-red)'},g)
+      : el('circle',{cx:n.x,cy:n.y,r:r+14,fill:c.stroke,opacity:'0.06',filter:'url(#f-glow-red)'},g);
+  }
+
+  // Ambient glow ring
+  const glowRing = isHex
+    ? el('polygon',{points:hexPts(n.x,n.y,r+9,rot),fill:c.stroke,opacity:'0.09',class:'ring'},g)
+    : el('circle',{cx:n.x,cy:n.y,r:r+8,fill:c.stroke,opacity:'0.08',class:'ring'},g);
+
+  // Main shape
+  const shape = isHex
+    ? el('polygon',{points:hexPts(n.x,n.y,r,rot),fill:c.fill,stroke:c.stroke,'stroke-width':'2',class:'shape'},g)
+    : el('circle',{cx:n.x,cy:n.y,r:r,fill:c.fill,stroke:c.stroke,'stroke-width':'2',class:'shape'},g);
+
+  // Inner decorative ring
+  const inner = isHex
+    ? el('polygon',{points:hexPts(n.x,n.y,r*0.62,rot),fill:'none',stroke:c.stroke,'stroke-width':'1',opacity:'0.35'},g)
+    : el('circle',{cx:n.x,cy:n.y,r:r*0.7,fill:'none',stroke:c.stroke,'stroke-width':'0.8',opacity:'0.3'},g);
+
+  // Boss has extra ornament
+  if(n.t==='boss') {
+    el('polygon',{points:hexPts(n.x,n.y,r+4,0),fill:'none',stroke:c.stroke,'stroke-width':'1',opacity:'0.2'},g);
+    // Cross lines
+    el('line',{x1:n.x-r*0.5,y1:n.y,x2:n.x+r*0.5,y2:n.y,stroke:c.stroke,'stroke-width':'1',opacity:'0.25'},g);
+    el('line',{x1:n.x,y1:n.y-r*0.5,x2:n.x,y2:n.y+r*0.5,stroke:c.stroke,'stroke-width':'1',opacity:'0.25'},g);
+  }
+
+  // Emoji icon
+  const emojiSize = (n.t==='boss'?22:isCP?18:n.t==='start'?16:13);
+  const emojiY = n.t==='boss'?n.y+1:isCP?n.y+1:n.y+1;
+  const emojiEl = el('text',{x:n.x,y:emojiY,'text-anchor':'middle','dominant-baseline':'middle',
+    'font-size':emojiSize},g);
+  emojiEl.textContent = n.ico;
+  emojiEl.style.userSelect='none';
+
+  // Name label
+  const nameSize = n.t==='boss'?9.5:isCP?8.5:n.t==='start'?8:7.5;
+  const nameY = n.y + r + 14;
+  txt(n.name, {x:n.x,y:nameY,'text-anchor':'middle',fill:c.text,
+    'font-family':'Cinzel,serif','font-size':nameSize,'letter-spacing':'0.5'}, g);
+
+  // Difficulty stars for regular expedition nodes
+  if(n.diff>0 && !isCP && n.t!=='start' && n.t!=='boss') {
+    txt('★'.repeat(n.diff)+'☆'.repeat(5-n.diff), {
+      x:n.x,y:nameY+11,'text-anchor':'middle',
+      fill:c.stroke,'font-size':'7',opacity:'0.65'
+    },g);
+  }
+
+  // Type badge for special nodes
+  if(isCP) {
+    txt(n.t==='checkpoint-final'?'LETZTER CHECKPOINT':'CHECKPOINT',{
+      x:n.x,y:nameY+11,'text-anchor':'middle',fill:'#c8a227',
+      'font-family':'Cinzel,serif','font-size':'6.5','letter-spacing':'1.5',opacity:'0.65'
+    },g);
+  }
+  if(n.t==='boss') {
+    txt('ENDBOSS',{x:n.x,y:nameY+11,'text-anchor':'middle',fill:'#ef4444',
+      'font-family':'Cinzel,serif','font-size':'6.5','letter-spacing':'1.5',opacity:'0.8'},g);
+  }
+  if(n.t==='start') {
+    // Pulsing start indicator
+    const pulse = el('circle',{cx:n.x,cy:n.y,r:r+16,fill:'none',
+      stroke:'#c8a227','stroke-width':'1.5',opacity:'0.2'},g);
+    pulse.innerHTML='<animate attributeName="r" values="'+(r+14)+';'+(r+22)+';'+(r+14)+'" dur="2.5s" repeatCount="indefinite"/><animate attributeName="opacity" values="0.25;0.05;0.25" dur="2.5s" repeatCount="indefinite"/>';
+    txt('DU BIST HIER',{x:n.x,y:nameY+11,'text-anchor':'middle',fill:'#c8a227',
+      'font-family':'Cinzel,serif','font-size':'6.5','letter-spacing':'1.5',opacity:'0.6'},g);
+  }
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────
+function showModal(id) {
+  const n = N[id];
+  document.getElementById('mn-ico').textContent = n.ico;
+
+  const tag = document.getElementById('mn-tag');
+  tag.textContent = TYPE_LABELS[n.t] || '';
+  tag.setAttribute('style', TYPE_COLORS_TAG[n.t] || '');
+
+  document.getElementById('mn-name').textContent = n.name;
+  document.getElementById('mn-sub').textContent = n.sub;
+
+  const stars = n.diff>0 ? '<span style="color:var(--gold)">'+'★'.repeat(n.diff)+'☆'.repeat(5-n.diff)+'</span>' : '';
+  let detail = `<p style="font-style:italic;margin-bottom:10px">${n.desc}</p>`;
+  if(n.diff>0)
+    detail += `<p><span class="lbl">SCHWIERIGKEIT</span>${stars}</p>`;
+  detail += `<p style="margin-top:7px"><span class="lbl">BELOHNUNG</span><span style="color:var(--gold);font-family:'Cinzel',serif">${n.rew}</span></p>`;
+  document.getElementById('mn-detail').innerHTML = detail;
+
+  let actions = '';
+  if(n.t==='start') {
+    actions = `<button class="btn-cp" onclick="cm()">✕ Schliessen</button>`;
+  } else if(n.t==='checkpoint'||n.t==='checkpoint-final') {
+    actions = `<button class="btn-go" onclick="cm();alert('Dein Team rastet bei ${n.name}. Helden werden vollständig geheilt!')">🔥 HIER RASTEN</button>`;
+  } else if(n.t==='boss') {
+    actions = `<button class="btn-go" style="border-color:#ef4444;color:#fca5a5;background:linear-gradient(135deg,#450a0a,#7f0000)" onclick="cm();alert('Endkampf beginnt! Bereite dich vor.')">🐉 ZUM ENDKAMPF</button>`;
+  } else {
+    actions = `<button class="btn-go" onclick="cm();alert('Expedition nach ${n.name} vorbereiten!\\n→ Zurück zum Hauptmenü zum Teamaufstellen.')">⚔ EXPEDITION STARTEN</button>`;
+  }
+  document.getElementById('mn-actions').innerHTML = actions;
+  document.getElementById('ov').classList.add('on');
+}
+function cm() { document.getElementById('ov').classList.remove('on'); }
+
+// ─── RENDER ──────────────────────────────────────────────────────────
+drawGrid();
+EDGES.forEach(([a,b]) => drawEdge(a,b));
+// Draw nodes in correct z-order: bottom first
+['START','N01','N02','N03','N04','N05','N06','CP1','CP2',
+ 'N07','N08','N09','N10','N11','CP3','CP4',
+ 'N12','N13','N14','N15','CPF','BOSS'].forEach(drawNode);
+
+// ─── SCROLL TO BOTTOM (ENTRANCE) ────────────────────────────────────
+document.addEventListener('DOMContentLoaded', ()=>{
+  const w = document.getElementById('map-wrap');
+  w.scrollTop = w.scrollHeight;
+  let hidden = false;
+  w.addEventListener('scroll', function handler(){
+    if(!hidden){ hidden=true; document.getElementById('scroll-hint').classList.add('gone'); }
+  });
+});
+window.addEventListener('load', ()=>{
+  const w = document.getElementById('map-wrap');
+  w.scrollTop = w.scrollHeight;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,662 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Magic City – UI Konzept</title>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #060810;
+  --s1: #0c1220;
+  --s2: #111828;
+  --s3: #192035;
+  --bdr: #242040;
+  --bdr2: #3a2c12;
+  --gold: #c8a227;
+  --gl: #e6c060;
+  --gd: #6e5710;
+  --txt: #ddd0b8;
+  --mut: #6b6050;
+  --pur: #7c3aed;
+  --red: #991b1b;
+  --grn: #166534;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:'Crimson Text',serif;background:var(--bg);color:var(--txt);height:100vh;overflow:hidden;font-size:16px}
+.screen{display:none;height:100vh;flex-direction:column;animation:fi .3s ease}
+.screen.active{display:flex}
+@keyframes fi{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+
+/* ── HEADER ── */
+.hdr{display:flex;align-items:center;padding:10px 22px;background:var(--s1);border-bottom:1px solid var(--bdr);gap:14px;flex-shrink:0;min-height:52px}
+.hdr-logo{font-family:'Cinzel Decorative',serif;font-size:1rem;color:var(--gold);letter-spacing:2px}
+.hdr-sep{color:var(--bdr);margin:0 2px}
+.hdr-cur{font-family:'Cinzel',serif;font-size:0.78rem;color:var(--mut);letter-spacing:1px}
+.hdr-space{flex:1}
+.res{display:flex;gap:14px}
+.res span{font-family:'Cinzel',serif;font-size:0.78rem;color:var(--gold)}
+.btn-back{background:none;border:1px solid var(--bdr);color:var(--mut);padding:5px 12px;border-radius:4px;cursor:pointer;font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:1px;transition:.2s}
+.btn-back:hover{border-color:var(--gold);color:var(--gold)}
+
+/* ── SCROLLABLE CONTENT ── */
+.content{flex:1;overflow-y:auto;padding:18px 22px}
+.content::-webkit-scrollbar{width:5px}
+.content::-webkit-scrollbar-track{background:var(--s1)}
+.content::-webkit-scrollbar-thumb{background:var(--bdr);border-radius:3px}
+.sec{font-family:'Cinzel',serif;font-size:0.68rem;letter-spacing:3px;color:var(--mut);text-transform:uppercase;margin-bottom:10px;padding-bottom:7px;border-bottom:1px solid var(--bdr)}
+
+/* ══════════════════════════════════
+   MAIN MENU
+══════════════════════════════════ */
+#s-main{background:
+  radial-gradient(ellipse at 15% 60%,rgba(124,58,237,.07) 0%,transparent 55%),
+  radial-gradient(ellipse at 85% 15%,rgba(200,162,39,.05) 0%,transparent 50%),
+  var(--bg)}
+#s-main .hdr{background:transparent;border:none}
+.main-hero{text-align:center;padding:16px 0 10px}
+.main-title{font-family:'Cinzel Decorative',serif;font-size:2.4rem;color:var(--gold);text-shadow:0 0 50px rgba(200,162,39,.4);letter-spacing:5px}
+.main-tagline{font-family:'Cinzel',serif;font-size:0.72rem;color:var(--mut);letter-spacing:4px;margin-top:4px}
+.main-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;padding:12px 22px 22px;flex:1;max-width:860px;margin:0 auto;width:100%}
+.tile{background:var(--s1);border:1px solid var(--bdr);border-radius:8px;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:28px 24px;transition:.25s;position:relative;overflow:hidden}
+.tile::after{content:'';position:absolute;inset:0;opacity:0;transition:.25s;background:radial-gradient(ellipse at center,rgba(200,162,39,.07) 0%,transparent 70%)}
+.tile:hover{border-color:var(--gd);transform:translateY(-3px)}
+.tile:hover::after{opacity:1}
+.tile-icon{font-size:3.2rem;line-height:1;filter:drop-shadow(0 2px 8px rgba(0,0,0,.5))}
+.tile-name{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--gold);letter-spacing:2px}
+.tile-desc{font-size:0.88rem;color:var(--mut);text-align:center;max-width:210px;line-height:1.4}
+.tile-badge{position:absolute;top:10px;right:10px;background:var(--red);color:#fff;font-family:'Cinzel',serif;font-size:0.6rem;padding:2px 7px;border-radius:999px}
+
+/* ══════════════════════════════════
+   EXPEDITIONS
+══════════════════════════════════ */
+.exp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(195px,1fr));gap:10px}
+.exp-card{background:var(--s2);border:1px solid var(--bdr);border-radius:6px;padding:14px;cursor:pointer;transition:.2s}
+.exp-card:hover{border-color:var(--gd);background:var(--s3);transform:translateY(-1px)}
+.exp-tag{display:inline-block;font-family:'Cinzel',serif;font-size:0.6rem;letter-spacing:1px;padding:2px 7px;border-radius:999px;margin-bottom:7px}
+.tw{background:rgba(22,101,52,.3);color:#4ade80;border:1px solid #166534}
+.th{background:rgba(30,58,138,.3);color:#93c5fd;border:1px solid #1e3a8a}
+.ts{background:rgba(113,63,18,.3);color:#fcd34d;border:1px solid #713f12}
+.tr{background:rgba(88,28,135,.3);color:#d8b4fe;border:1px solid #581c87}
+.tv{background:rgba(153,27,27,.3);color:#fca5a5;border:1px solid #991b1b}
+.exp-name{font-family:'Cinzel',serif;font-size:0.9rem;margin-bottom:4px}
+.exp-star{font-size:0.75rem;margin-bottom:4px}
+.exp-blurb{font-size:0.78rem;color:var(--mut);line-height:1.4;margin-bottom:6px}
+.exp-rew{font-family:'Cinzel',serif;font-size:0.75rem;color:var(--gold)}
+
+/* ══════════════════════════════════
+   TEAM SELECTION
+══════════════════════════════════ */
+.team-wrap{display:grid;grid-template-columns:1fr 256px;gap:18px;height:100%}
+.slots{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px}
+.slot{background:var(--s2);border:2px dashed var(--bdr);border-radius:7px;height:76px;display:flex;align-items:center;justify-content:center;font-size:0.75rem;color:var(--mut);font-family:'Cinzel',serif;letter-spacing:1px;cursor:pointer;transition:.2s;flex-direction:column;gap:3px}
+.slot.on{border-style:solid;border-color:var(--gd);background:var(--s3)}
+.slot:hover{border-color:var(--gd)}
+.hlist{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.hsm{background:var(--s2);border:1px solid var(--bdr);border-radius:5px;padding:9px;cursor:pointer;transition:.2s;display:flex;align-items:center;gap:7px}
+.hsm:hover{border-color:var(--gd)}
+.hsm.sel{border-color:var(--gold);background:var(--s3)}
+.hsm-ico{font-size:1.3rem}
+.hsm-nm{font-family:'Cinzel',serif;font-size:0.72rem;color:var(--txt)}
+.hsm-cl{font-size:0.67rem;color:var(--mut)}
+.prov{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:14px}
+.prov-hd{font-family:'Cinzel',serif;font-size:0.8rem;color:var(--gold);margin-bottom:11px;letter-spacing:1px}
+.pr{display:flex;align-items:center;gap:8px;margin-bottom:9px;font-size:0.83rem}
+.pr-ico{font-size:1.1rem;width:26px;text-align:center}
+.pr-lbl{flex:1}
+.pr-ctrl{display:flex;align-items:center;gap:7px}
+.prbtn{background:var(--s3);border:1px solid var(--bdr);color:var(--txt);width:22px;height:22px;display:flex;align-items:center;justify-content:center;cursor:pointer;border-radius:3px;font-size:0.85rem;transition:.15s}
+.prbtn:hover{border-color:var(--gd);color:var(--gold)}
+.prn{font-family:'Cinzel',serif;font-size:0.82rem;color:var(--gold);width:18px;text-align:center}
+.btn-go{background:linear-gradient(135deg,var(--gd),#7a5c08);border:1px solid var(--gold);color:var(--gl);padding:11px 20px;font-family:'Cinzel',serif;font-size:0.8rem;letter-spacing:2px;cursor:pointer;border-radius:4px;width:100%;margin-top:13px;transition:.2s}
+.btn-go:hover{filter:brightness(1.2)}
+
+/* ══════════════════════════════════
+   HEROES
+══════════════════════════════════ */
+.tabs{display:flex;gap:3px;margin-bottom:14px;background:var(--s2);padding:3px;border-radius:5px;border:1px solid var(--bdr)}
+.tab{font-family:'Cinzel',serif;font-size:0.7rem;letter-spacing:1px;padding:7px 14px;border-radius:3px;cursor:pointer;color:var(--mut);transition:.2s;border:none;background:none}
+.tab.on{background:var(--s3);color:var(--gold)}
+.hcards{display:grid;grid-template-columns:repeat(auto-fill,minmax(155px,1fr));gap:10px}
+.hcard{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:14px;text-align:center;cursor:pointer;transition:.2s}
+.hcard:hover{border-color:var(--gd);transform:translateY(-2px)}
+.hc-ico{font-size:2.4rem;margin-bottom:7px}
+.hc-nm{font-family:'Cinzel',serif;font-size:0.82rem;margin-bottom:2px}
+.hc-cl{font-size:0.72rem;color:var(--mut);margin-bottom:7px}
+.hc-lv{background:var(--s3);border:1px solid var(--bdr);border-radius:999px;font-family:'Cinzel',serif;font-size:0.62rem;color:var(--gold);padding:2px 9px;display:inline-block}
+.hc-st{display:flex;justify-content:space-between;margin-top:9px;padding-top:8px;border-top:1px solid var(--bdr);font-size:0.72rem}
+.hc-st span:last-child{color:var(--gold)}
+.lvbar{background:var(--s3);border-radius:999px;height:3px;overflow:hidden;margin-top:6px}
+.lvfill{height:100%;background:linear-gradient(90deg,var(--gd),var(--gold));border-radius:999px}
+.hire-card{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:14px;text-align:center;cursor:pointer;transition:.2s;opacity:.75}
+.hire-card:hover{border-color:var(--gd);opacity:1}
+.hire-cost{color:var(--gold);font-family:'Cinzel',serif;font-size:0.72rem;margin-top:7px}
+.hire-btn{background:var(--s3);border:1px solid var(--gd);color:var(--gold);font-family:'Cinzel',serif;font-size:0.67rem;padding:5px 11px;border-radius:4px;cursor:pointer;margin-top:7px;transition:.2s;width:100%}
+.hire-btn:hover{background:var(--gd)}
+
+/* ══════════════════════════════════
+   BUILDINGS
+══════════════════════════════════ */
+.btabs{display:flex;gap:0;padding:0 22px;background:var(--s1);border-bottom:1px solid var(--bdr)}
+.btab{font-family:'Cinzel',serif;font-size:0.72rem;letter-spacing:1px;padding:11px 18px;cursor:pointer;color:var(--mut);transition:.2s;border:none;background:none;border-bottom:2px solid transparent;margin-bottom:-1px}
+.btab.on{color:var(--gold);border-bottom-color:var(--gold)}
+.bmain{flex:1;overflow:hidden;display:flex;flex-direction:column}
+.bgrid-area{flex:1;overflow-y:auto;padding:16px 22px 10px}
+.bgrid{display:grid;grid-template-columns:repeat(6,1fr);gap:7px;margin-bottom:12px}
+.bcell{aspect-ratio:1;background:var(--s2);border:1px dashed var(--bdr);border-radius:5px;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;transition:.2s;padding:6px;text-align:center}
+.bcell.occ{border-style:solid;border-color:var(--bdr);background:var(--s3)}
+.bcell.occ:hover{border-color:var(--gd)}
+.bcell.emp:hover{border-color:var(--pur);border-style:solid;background:rgba(124,58,237,.05)}
+.bcell-ico{font-size:1.5rem;line-height:1}
+.bcell-nm{font-family:'Cinzel',serif;font-size:0.5rem;letter-spacing:.3px;color:var(--mut);margin-top:3px;line-height:1.2}
+.bshop{background:var(--s1);border-top:2px solid var(--gd);padding:10px 22px;flex-shrink:0}
+.bshop-hd{font-family:'Cinzel',serif;font-size:0.62rem;letter-spacing:2px;color:var(--mut);margin-bottom:7px}
+.bshop-row{display:flex;gap:8px;overflow-x:auto;padding-bottom:3px}
+.bshop-row::-webkit-scrollbar{height:3px}
+.bshop-row::-webkit-scrollbar-thumb{background:var(--bdr)}
+.bitem{flex-shrink:0;background:var(--s2);border:1px solid var(--bdr);border-radius:5px;padding:8px 12px;cursor:pointer;text-align:center;transition:.2s;min-width:85px}
+.bitem:hover{border-color:var(--gd);background:var(--s3)}
+.bitem-ico{font-size:1.3rem}
+.bitem-nm{font-family:'Cinzel',serif;font-size:0.57rem;color:var(--txt);margin-top:3px;display:block}
+.bitem-cost{font-family:'Cinzel',serif;font-size:0.62rem;color:var(--gold);margin-top:2px}
+.craft-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:10px}
+.ccard{background:var(--s2);border:1px solid var(--bdr);border-radius:7px;padding:14px;cursor:pointer;transition:.2s}
+.ccard:hover{border-color:var(--pur)}
+.ccard-hd{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.cico{font-size:1.7rem}
+.cnm{font-family:'Cinzel',serif;font-size:0.82rem}
+.crar{font-size:0.67rem;color:var(--mut)}
+.cingr{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:9px}
+.ingr{background:var(--s3);border:1px solid var(--bdr);border-radius:3px;padding:2px 7px;font-size:0.67rem;color:var(--mut)}
+.cbtn{background:none;border:1px solid var(--pur);color:#a78bfa;font-family:'Cinzel',serif;font-size:0.67rem;padding:5px 12px;border-radius:4px;cursor:pointer;transition:.2s;width:100%}
+.cbtn:hover{background:rgba(124,58,237,.2)}
+
+/* ══════════════════════════════════
+   RANKING
+══════════════════════════════════ */
+.rtable{width:100%;border-collapse:separate;border-spacing:0 3px}
+.rtable th{font-family:'Cinzel',serif;font-size:0.67rem;letter-spacing:2px;color:var(--mut);text-align:left;padding:7px 11px;text-transform:uppercase}
+.rtable td{padding:11px 11px;background:var(--s2);font-size:0.88rem}
+.rtable td:first-child{border-radius:5px 0 0 5px}
+.rtable td:last-child{border-radius:0 5px 5px 0}
+.rn{font-family:'Cinzel',serif;font-size:0.95rem;width:38px;text-align:center}
+.r1{color:#fbbf24}.r2{color:#e5e7eb}.r3{color:#b45309}
+.rnm{font-family:'Cinzel',serif;font-size:0.82rem}
+.rgold{color:var(--gold);font-family:'Cinzel',serif;font-size:0.82rem}
+.ryou{background:rgba(200,162,39,.08)!important}
+
+/* ══════════════════════════════════
+   MODAL
+══════════════════════════════════ */
+.ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.78);z-index:100;align-items:center;justify-content:center;animation:fi .2s ease}
+.ov.on{display:flex}
+.modal{background:var(--s1);border:1px solid var(--bdr);border-radius:9px;padding:26px;max-width:400px;width:90%;position:relative}
+.mcl{position:absolute;top:10px;right:12px;background:none;border:none;color:var(--mut);font-size:1.1rem;cursor:pointer}
+.mt{font-family:'Cinzel',serif;font-size:1.05rem;color:var(--gold);margin-bottom:6px;letter-spacing:1px}
+.ms{font-size:0.83rem;color:var(--mut);margin-bottom:13px}
+.md{background:var(--s2);border:1px solid var(--bdr);border-radius:5px;padding:12px;margin-bottom:12px}
+.md p{font-size:0.83rem;margin-bottom:5px;line-height:1.5}
+.lbl{color:var(--mut);font-size:0.7rem;font-family:'Cinzel',serif;letter-spacing:1px}
+.glow{text-shadow:0 0 24px rgba(200,162,39,.4)}
+</style>
+</head>
+<body>
+
+<!-- ════════════════ MAIN MENU ════════════════ -->
+<div id="s-main" class="screen active">
+  <div class="hdr">
+    <span class="hdr-logo">⚔ MAGIC CITY</span>
+    <div class="hdr-space"></div>
+    <div class="res">
+      <span>🪙 12.450</span>
+      <span>💎 87</span>
+      <span>⚗️ 34</span>
+      <span style="color:var(--mut)">Rang 12 · Stufe 14</span>
+    </div>
+  </div>
+  <div class="main-hero">
+    <div class="main-title glow">MAGIC CITY</div>
+    <div class="main-tagline">✦ &nbsp; Das Schicksal von Valdris liegt in deinen Händen &nbsp; ✦</div>
+  </div>
+  <div class="main-grid">
+    <div class="tile" onclick="nav('expeditions')">
+      <span class="tile-icon">🗺️</span>
+      <span class="tile-name">EXPEDITIONEN</span>
+      <span class="tile-desc">Schicke deine Helden in gefährliche Dungeons</span>
+      <span class="tile-badge">3 neu</span>
+    </div>
+    <div class="tile" onclick="nav('heroes')">
+      <span class="tile-icon">⚔️</span>
+      <span class="tile-name">HELDEN</span>
+      <span class="tile-desc">Verwalte, hire & trainiere deine Recken</span>
+    </div>
+    <div class="tile" onclick="nav('buildings')">
+      <span class="tile-icon">🏰</span>
+      <span class="tile-name">GEBÄUDE & CRAFTING</span>
+      <span class="tile-desc">Baue deine Stadt und schmiede mächtige Items</span>
+    </div>
+    <div class="tile" onclick="nav('ranking')">
+      <span class="tile-icon">🏆</span>
+      <span class="tile-name">RANKING</span>
+      <span class="tile-desc">Vergleiche dich mit anderen Stadtherren</span>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ EXPEDITIONS ════════════════ -->
+<div id="s-expeditions" class="screen">
+  <div class="hdr">
+    <button class="btn-back" onclick="nav('main')">← Zurück</button>
+    <span class="hdr-logo">⚔ MAGIC CITY</span>
+    <span class="hdr-sep">/</span>
+    <span class="hdr-cur">EXPEDITIONEN</span>
+    <div class="hdr-space"></div>
+    <div class="res"><span>🪙 12.450</span><span>💎 87</span></div>
+  </div>
+  <div class="content">
+    <div class="sec">VERFÜGBARE EXPEDITIONEN — 15 DUNGEONS</div>
+    <div class="exp-grid" id="exp-grid"></div>
+  </div>
+</div>
+
+<!-- ════════════════ TEAM SELECT ════════════════ -->
+<div id="s-team" class="screen">
+  <div class="hdr">
+    <button class="btn-back" onclick="nav('expeditions')">← Zurück</button>
+    <span class="hdr-logo">⚔ MAGIC CITY</span>
+    <span class="hdr-sep">/</span>
+    <span class="hdr-cur" id="t-expname">EXPEDITION</span>
+    <div class="hdr-space"></div>
+  </div>
+  <div class="content">
+    <div class="team-wrap">
+      <div>
+        <div class="sec">HELDENTEAM WÄHLEN (max. 4)</div>
+        <div class="slots">
+          <div class="slot" id="sl0">+ Held wählen</div>
+          <div class="slot" id="sl1">+ Held wählen</div>
+          <div class="slot" id="sl2">+ Held wählen</div>
+          <div class="slot" id="sl3">+ Held wählen</div>
+        </div>
+        <div class="sec">DEINE HELDEN</div>
+        <div class="hlist" id="hsel-list"></div>
+      </div>
+      <div>
+        <div class="prov">
+          <div class="prov-hd">⚗️ PROVIANT & AUSRÜSTUNG</div>
+          <div class="pr"><span class="pr-ico">🍖</span><span class="pr-lbl">Rationen</span>
+            <div class="pr-ctrl"><div class="prbtn" onclick="ap('food',-1)">−</div><span class="prn" id="pv-food">3</span><div class="prbtn" onclick="ap('food',1)">+</div></div></div>
+          <div class="pr"><span class="pr-ico">🧪</span><span class="pr-lbl">Heiltränke</span>
+            <div class="pr-ctrl"><div class="prbtn" onclick="ap('pot',-1)">−</div><span class="prn" id="pv-pot">2</span><div class="prbtn" onclick="ap('pot',1)">+</div></div></div>
+          <div class="pr"><span class="pr-ico">🔥</span><span class="pr-lbl">Feuerbomben</span>
+            <div class="pr-ctrl"><div class="prbtn" onclick="ap('bomb',-1)">−</div><span class="prn" id="pv-bomb">1</span><div class="prbtn" onclick="ap('bomb',1)">+</div></div></div>
+          <div class="pr"><span class="pr-ico">🪄</span><span class="pr-lbl">Manatränke</span>
+            <div class="pr-ctrl"><div class="prbtn" onclick="ap('mana',-1)">−</div><span class="prn" id="pv-mana">2</span><div class="prbtn" onclick="ap('mana',1)">+</div></div></div>
+          <div style="border-top:1px solid var(--bdr);padding-top:9px;margin-top:9px;font-size:0.78rem;color:var(--mut)">
+            Kosten: <span style="color:var(--gold);font-family:'Cinzel',serif">🪙 340</span>
+          </div>
+        </div>
+        <button class="btn-go" onclick="alert('Expedition startet! → dein Combat-System übernimmt.')">⚔ EXPEDITION STARTEN</button>
+        <div style="margin-top:12px;font-size:0.75rem;color:var(--mut);text-align:center;font-style:italic;line-height:1.5">
+          Empfohlen: min. 2 Helden<br>Schwierigkeit: <span id="t-diff" style="color:var(--gold)"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ HEROES ════════════════ -->
+<div id="s-heroes" class="screen">
+  <div class="hdr">
+    <button class="btn-back" onclick="nav('main')">← Zurück</button>
+    <span class="hdr-logo">⚔ MAGIC CITY</span>
+    <span class="hdr-sep">/</span>
+    <span class="hdr-cur">HELDEN</span>
+    <div class="hdr-space"></div>
+    <div class="res"><span>🪙 12.450</span></div>
+  </div>
+  <div class="content">
+    <div class="tabs">
+      <button class="tab on" onclick="htab('owned',this)">MEINE HELDEN (7)</button>
+      <button class="tab" onclick="htab('hire',this)">ANHEUERN</button>
+      <button class="tab" onclick="htab('train',this)">TRAINIEREN</button>
+    </div>
+    <div id="ht-owned" class="hcards"></div>
+    <div id="ht-hire" class="hcards" style="display:none"></div>
+    <div id="ht-train" style="display:none">
+      <p style="font-size:0.85rem;color:var(--mut);margin-bottom:14px;font-style:italic">Wähle einen Helden um seine Fähigkeiten gezielt zu verbessern.</p>
+      <div class="hcards" id="ht-train-cards"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ BUILDINGS ════════════════ -->
+<div id="s-buildings" class="screen">
+  <div class="hdr">
+    <button class="btn-back" onclick="nav('main')">← Zurück</button>
+    <span class="hdr-logo">⚔ MAGIC CITY</span>
+    <span class="hdr-sep">/</span>
+    <span class="hdr-cur">GEBÄUDE & CRAFTING</span>
+    <div class="hdr-space"></div>
+  </div>
+  <div class="btabs">
+    <button class="btab on" onclick="btab('grid',this)">STADTPLAN</button>
+    <button class="btab" onclick="btab('craft',this)">⚗️ CRAFTING</button>
+  </div>
+  <div class="bmain">
+    <div id="bt-grid" style="display:flex;flex-direction:column;flex:1;overflow:hidden">
+      <div class="bgrid-area">
+        <div class="sec">DEINE STADT — Klick auf Gebäude für Details · Leeres Feld zum Platzieren</div>
+        <div class="bgrid" id="bgrid"></div>
+      </div>
+      <div class="bshop">
+        <div class="bshop-hd">VERFÜGBAR ZUM KAUF — ziehe auf ein freies Feld oder klicke zum Kaufen</div>
+        <div class="bshop-row" id="bshop"></div>
+      </div>
+    </div>
+    <div id="bt-craft" style="display:none" class="content">
+      <div class="sec">CRAFTING — Stelle mächtige Gegenstände her (Gebäude benötigt)</div>
+      <div class="craft-grid" id="cgrid"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════ RANKING ════════════════ -->
+<div id="s-ranking" class="screen">
+  <div class="hdr">
+    <button class="btn-back" onclick="nav('main')">← Zurück</button>
+    <span class="hdr-logo">⚔ MAGIC CITY</span>
+    <span class="hdr-sep">/</span>
+    <span class="hdr-cur">WELTRANGLISTE</span>
+    <div class="hdr-space"></div>
+  </div>
+  <div class="content">
+    <div class="sec">TOP STADTHERREN VON VALDRIS</div>
+    <table class="rtable">
+      <thead><tr>
+        <th>#</th><th>Spieler</th><th>Stadt</th><th>Helden</th><th>Exped.</th><th>Gold</th>
+      </tr></thead>
+      <tbody id="rtbody"></tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ════════════════ MODALS ════════════════ -->
+<div class="ov" id="ov-building" onclick="if(event.target===this)cm('building')">
+  <div class="modal">
+    <button class="mcl" onclick="cm('building')">✕</button>
+    <div style="font-size:2.8rem;text-align:center;margin-bottom:10px" id="mb-ico"></div>
+    <div class="mt" id="mb-nm"></div>
+    <div class="ms" id="mb-ds"></div>
+    <div class="md" id="mb-dt"></div>
+    <button class="btn-go" id="mb-btn"></button>
+  </div>
+</div>
+
+<div class="ov" id="ov-hero" onclick="if(event.target===this)cm('hero')">
+  <div class="modal">
+    <button class="mcl" onclick="cm('hero')">✕</button>
+    <div style="font-size:3rem;text-align:center;margin-bottom:10px" id="mh-ico"></div>
+    <div class="mt" id="mh-nm"></div>
+    <div class="ms" id="mh-cl"></div>
+    <div class="md" id="mh-dt"></div>
+    <button class="btn-go" onclick="cm('hero')">EXPEDITION SCHICKEN</button>
+  </div>
+</div>
+
+<script>
+// ─── DATA ───────────────────────────────────────────────────────────
+const EXPS = [
+  {id:1,name:'Schwarzer Wald',type:'wald',d:2,rew:'800–1.200 🪙',blurb:'Finsterer Wald voller Wölfe und Dunkelgeister.'},
+  {id:2,name:'Kristallhöhle',type:'hoehle',d:3,rew:'1.400–2.000 🪙',blurb:'Kobolds bewachen schimmernde Edelsteinkammern.'},
+  {id:3,name:'Nebelwald',type:'wald',d:2,rew:'700–1.000 🪙',blurb:'Dichter Nebel verbirgt Gefahren und alte Geister.'},
+  {id:4,name:'Giftsumpf',type:'sumpf',d:3,rew:'1.200–1.800 🪙',blurb:'Giftige Gase und Sumpfbestien lauern überall.'},
+  {id:5,name:'Ruinenstadt',type:'ruinen',d:4,rew:'2.000–3.000 🪙',blurb:'Einst blühend, nun Heimat untoter Wächter.'},
+  {id:6,name:'Vulkanpfad',type:'vulkan',d:5,rew:'3.500–5.000 🪙',blurb:'Glutflüsse und Feuerbestien – nur für Mutige.'},
+  {id:7,name:'Schattenhöhle',type:'hoehle',d:3,rew:'1.300–1.900 🪙',blurb:'Dunkelheit frisst Licht. Geister warten im Nichts.'},
+  {id:8,name:'Moorland',type:'sumpf',d:1,rew:'400–700 🪙',blurb:'Trügerisch ruhiges Moor. Ideal für Einsteiger.'},
+  {id:9,name:'Elfenruinen',type:'ruinen',d:4,rew:'2.200–3.400 🪙',blurb:'Uralte Magie schützt Schätze aus der Ersten Ära.'},
+  {id:10,name:'Lavahöhle',type:'vulkan',d:5,rew:'4.000–6.000 🪙',blurb:'Der Boden brennt. Die Lava steigt. Die Drachen wachen.'},
+  {id:11,name:'Dämonenpfad',type:'ruinen',d:5,rew:'5.000–8.000 🪙',blurb:'Nur Legenden kehrten zurück. Du könntest die nächste sein.'},
+  {id:12,name:'Pilzsumpf',type:'sumpf',d:2,rew:'600–900 🪙',blurb:'Riesenpilze und vergiftete Kreaturen im feuchten Dickicht.'},
+  {id:13,name:'Altes Lager',type:'wald',d:1,rew:'300–500 🪙',blurb:'Verlassenes Banditenlager – überraschend viele Schätze.'},
+  {id:14,name:'Koboldminen',type:'hoehle',d:3,rew:'1.100–1.700 🪙',blurb:'Hunderte Kobolde schützen ihre unterirdischen Schatzkammern.'},
+  {id:15,name:'Aschefelder',type:'vulkan',d:4,rew:'2.800–4.200 🪙',blurb:'Verbrannte Erde, Asche-Untote und ein schlafender Drache.'},
+];
+const TNAMES={wald:'Wald',hoehle:'Höhle',sumpf:'Sumpf',ruinen:'Ruinen',vulkan:'Vulkan'};
+const DIFFS=['','Sehr leicht','Leicht','Mittel','Schwer','Sehr schwer'];
+
+const HEROES=[
+  {id:1,n:'Aldric',k:'Wächter',ico:'🛡️',lv:8,own:true,atk:72,def:90,hp:420},
+  {id:2,n:'Lyara',k:'Waldläuferin',ico:'🏹',lv:6,own:true,atk:88,def:45,hp:280},
+  {id:3,n:'Bruder Einar',k:'Kleriker',ico:'✝️',lv:7,own:true,atk:40,def:60,hp:320},
+  {id:4,n:'Gorm',k:'Berserker',ico:'⚔️',lv:9,own:true,atk:110,def:35,hp:380},
+  {id:5,n:'Nyx',k:'Assassine',ico:'🗡️',lv:5,own:true,atk:95,def:30,hp:230},
+  {id:6,n:'Sir Valdrik',k:'Paladin',ico:'⚜️',lv:7,own:true,atk:75,def:80,hp:400},
+  {id:7,n:'Mira',k:'Bardesse',ico:'🎵',lv:4,own:true,atk:35,def:40,hp:200},
+  {id:8,n:'Hexe Vexra',k:'Hexe',ico:'🔮',lv:6,own:false,atk:105,def:25,hp:220,cost:2400},
+  {id:9,n:'Mortis',k:'Nekromant',ico:'💀',lv:8,own:false,atk:90,def:30,hp:250,cost:3200},
+  {id:10,n:'Sylvan',k:'Druide',ico:'🌿',lv:5,own:false,atk:60,def:55,hp:300,cost:1800},
+];
+
+const BG=[
+  {p:0,n:'Kaserne',ico:'⚔️',ds:'Kämpfer ausbilden & aufleveln.',lv:3,w:5},
+  {p:1,n:'Schmiede',ico:'🔨',ds:'Waffen und Rüstungen schmieden.',lv:2,w:3},
+  {p:2,n:'Taverne',ico:'🍺',ds:'Helden erholen sich nach Expeditionen.',lv:2,w:2},
+  {p:4,n:'Tempel',ico:'⛪',ds:'Segnet Helden mit göttlichem Schutz.',lv:1,w:2},
+  {p:7,n:'Marktplatz',ico:'🏪',ds:'Handel mit seltenen Waren & Rohstoffen.',lv:2,w:4},
+  {p:10,n:'Arkanschmiede',ico:'✨',ds:'Verzaubert Waffen mit Magiener­gie.',lv:1,w:3},
+];
+const SHOP=[
+  {n:'Heilerkammer',ico:'💊',cost:1800,ds:'Heilt verwundete Helden schneller.'},
+  {n:'Wachturm',ico:'🗼',cost:1200,ds:'Verbessert die Stadtverteidigung.'},
+  {n:'Bibliothek',ico:'📚',cost:2200,ds:'Erforscht neue Fähigkeiten & Rezepte.'},
+  {n:'Magierwerkstatt',ico:'🧙',cost:3000,ds:'Ermöglicht mächtige Beschwörungen.'},
+  {n:'Rüstkammer',ico:'🛡️',cost:1600,ds:'Lagert und verbessert Ausrüstung.'},
+  {n:'Söldnerkaserne',ico:'💂',cost:2500,ds:'Stellt zusätzliche Söldner ein.'},
+];
+const CRAFT=[
+  {n:'Drachenklinge',ico:'⚔️',rar:'Legendär',ingr:['Drachenschuppe ×3','Eisenerz ×5','Magiesplitter ×2'],req:'Arkanschmiede'},
+  {n:'Heiltrank T3',ico:'🧪',rar:'Selten',ingr:['Silberkraut ×3','Mondessenz ×1','Klares Wasser ×2'],req:'Heilerkammer'},
+  {n:'Sturmamulett',ico:'⚡',rar:'Selten',ingr:['Blitzkristall ×2','Silberfaden ×3'],req:'Magierwerkstatt'},
+  {n:'Titanrüstung',ico:'🛡️',rar:'Episch',ingr:['Titanerz ×8','Lederstreifen ×4','Magiestein ×1'],req:'Schmiede'},
+  {n:'Schattendolch',ico:'🗡️',rar:'Selten',ingr:['Schattenstahl ×2','Giftextrakt ×3'],req:'Arkanschmiede'},
+  {n:'Manakristall',ico:'💎',rar:'Gewöhnlich',ingr:['Blaue Blüte ×5','Destillat ×2'],req:'Arkanschmiede'},
+];
+const RANK=[
+  {n:'Thordric',c:'Eisenhold',h:10,e:847,g:2840000},
+  {n:'Seraphina',c:'Lichtfels',h:10,e:792,g:2650000},
+  {n:'Darkus',c:'Schattenburg',h:9,e:701,g:2280000},
+  {n:'Maelis',c:'Nebelturm',h:9,e:688,g:2190000},
+  {n:'Brennar',c:'Sturmgipfel',h:8,e:634,g:1970000},
+  {n:'Orynthia',c:'Sterngarten',h:8,e:580,g:1820000},
+  {n:'Keldrin',c:'Aschepfad',h:7,e:512,g:1650000},
+  {n:'Sylvara',c:'Waldkrone',h:7,e:499,g:1580000},
+  {n:'Vortan',c:'Feuerberg',h:7,e:441,g:1420000},
+  {n:'Morthan',c:'Dunkeltal',h:6,e:390,g:1280000},
+  {n:'Greymund',c:'Nebelfeld',h:6,e:351,g:1090000},
+  {n:'DU',c:'Deine Stadt',h:7,e:203,g:312000,you:true},
+];
+
+// ─── STATE ──────────────────────────────────────────────────────────
+const pv={food:3,pot:2,bomb:1,mana:2};
+const sel=[null,null,null,null];
+
+// ─── NAV ────────────────────────────────────────────────────────────
+function nav(sc){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById('s-'+sc).classList.add('active');
+}
+
+// ─── EXPEDITIONS ────────────────────────────────────────────────────
+function renderExps(){
+  const S=(n)=>'★'.repeat(n)+'☆'.repeat(5-n);
+  document.getElementById('exp-grid').innerHTML=EXPS.map(e=>`
+    <div class="exp-card" onclick="openExp(${e.id})">
+      <span class="exp-tag t${e.type.charAt(0)}" style="${tagStyle(e.type)}">${TNAMES[e.type]}</span>
+      <div class="exp-name">${e.name}</div>
+      <div class="exp-star">${S(e.d)} <span style="font-size:.68rem;color:var(--mut);margin-left:4px">${DIFFS[e.d]}</span></div>
+      <div class="exp-blurb">${e.blurb}</div>
+      <div class="exp-rew">+ ${e.rew}</div>
+    </div>`).join('');
+}
+function tagStyle(t){
+  const map={wald:'background:rgba(22,101,52,.3);color:#4ade80;border:1px solid #166534',
+    hoehle:'background:rgba(30,58,138,.3);color:#93c5fd;border:1px solid #1e3a8a',
+    sumpf:'background:rgba(113,63,18,.3);color:#fcd34d;border:1px solid #713f12',
+    ruinen:'background:rgba(88,28,135,.3);color:#d8b4fe;border:1px solid #581c87',
+    vulkan:'background:rgba(153,27,27,.3);color:#fca5a5;border:1px solid #991b1b'};
+  return map[t]||'';
+}
+function openExp(id){
+  const e=EXPS.find(x=>x.id===id);
+  document.getElementById('t-expname').textContent=e.name.toUpperCase();
+  document.getElementById('t-diff').textContent=DIFFS[e.d];
+  sel.fill(null);
+  renderHSel();
+  nav('team');
+}
+
+// ─── TEAM ───────────────────────────────────────────────────────────
+function renderHSel(){
+  const owned=HEROES.filter(h=>h.own);
+  document.getElementById('hsel-list').innerHTML=owned.map(h=>`
+    <div class="hsm ${sel.includes(h.id)?'sel':''}" onclick="toggleSel(${h.id})">
+      <span class="hsm-ico">${h.ico}</span>
+      <div><div class="hsm-nm">${h.n}</div><div class="hsm-cl">${h.k} · Lv${h.lv}</div></div>
+    </div>`).join('');
+  updateSlots();
+}
+function toggleSel(id){
+  const i=sel.indexOf(id);
+  if(i>=0){sel[i]=null}else{const f=sel.indexOf(null);if(f>=0)sel[f]=id;}
+  renderHSel();
+}
+function updateSlots(){
+  for(let i=0;i<4;i++){
+    const s=document.getElementById('sl'+i);
+    const h=sel[i]?HEROES.find(x=>x.id===sel[i]):null;
+    if(h){s.className='slot on';s.innerHTML=`<span style="font-size:1.8rem">${h.ico}</span><span style="font-family:'Cinzel',serif;font-size:.68rem;color:var(--gold)">${h.n}</span>`;}
+    else{s.className='slot';s.innerHTML='+ Held wählen';}
+  }
+}
+function ap(k,d){pv[k]=Math.max(0,Math.min(9,pv[k]+d));document.getElementById('pv-'+k).textContent=pv[k];}
+
+// ─── HEROES ─────────────────────────────────────────────────────────
+function renderHeroes(){
+  const own=HEROES.filter(h=>h.own),hire=HEROES.filter(h=>!h.own);
+  const card=(h,btn)=>`
+    <div class="${btn?'hire-card':'hcard'}" onclick="${btn?'':'showHM('+h.id+')'}">
+      <div class="hc-ico">${h.ico}</div>
+      <div class="hc-nm">${h.n}</div>
+      <div class="hc-cl">${h.k}</div>
+      <div class="hc-lv">Level ${h.lv}</div>
+      <div class="lvbar"><div class="lvfill" style="width:${h.lv*10}%"></div></div>
+      <div class="hc-st"><span>⚔ ATK</span><span>${h.atk}</span></div>
+      <div class="hc-st"><span>🛡 DEF</span><span>${h.def}</span></div>
+      <div class="hc-st"><span>❤️ HP</span><span>${h.hp}</span></div>
+      ${btn?`<div class="hire-cost">🪙 ${h.cost.toLocaleString('de')}</div><button class="hire-btn" onclick="alert('${h.n} angeheuert!')">ANHEUERN</button>`:''}
+    </div>`;
+  document.getElementById('ht-owned').innerHTML=own.map(h=>card(h,false)).join('');
+  document.getElementById('ht-hire').innerHTML=hire.map(h=>card(h,true)).join('');
+  document.getElementById('ht-train-cards').innerHTML=own.map(h=>`
+    <div class="hcard">
+      <div class="hc-ico">${h.ico}</div>
+      <div class="hc-nm">${h.n}</div>
+      <div class="hc-cl">${h.k}</div>
+      <div class="hc-lv">Level ${h.lv}</div>
+      <div class="lvbar"><div class="lvfill" style="width:${h.lv*10}%"></div></div>
+      <button class="hire-btn" style="margin-top:9px;border-color:var(--gd);color:var(--gold)" onclick="alert('Trainingsmenü für ${h.n}')">TRAINIEREN</button>
+    </div>`).join('');
+}
+function htab(t,btn){
+  document.querySelectorAll('.tab').forEach(x=>x.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('ht-owned').style.display=t==='owned'?'grid':'none';
+  document.getElementById('ht-hire').style.display=t==='hire'?'grid':'none';
+  document.getElementById('ht-train').style.display=t==='train'?'block':'none';
+}
+function showHM(id){
+  const h=HEROES.find(x=>x.id===id);
+  document.getElementById('mh-ico').textContent=h.ico;
+  document.getElementById('mh-nm').textContent=h.n;
+  document.getElementById('mh-cl').textContent=h.k+' · Level '+h.lv;
+  document.getElementById('mh-dt').innerHTML=`
+    <p><span class="lbl">ANGRIFF</span><br>${h.atk} / <span style="color:var(--mut)">Sehr hoch</span></p>
+    <p style="margin-top:7px"><span class="lbl">VERTEIDIGUNG</span><br>${h.def}</p>
+    <p style="margin-top:7px"><span class="lbl">LEBENSPUNKTE</span><br>${h.hp}</p>
+    <p style="margin-top:7px"><span class="lbl">STATUS</span><br><span style="color:#4ade80">✔ Bereit für Expedition</span></p>`;
+  document.getElementById('ov-hero').classList.add('on');
+}
+
+// ─── BUILDINGS ──────────────────────────────────────────────────────
+function renderBuildings(){
+  const cells=[];
+  for(let i=0;i<24;i++){
+    const b=BG.find(x=>x.p===i);
+    cells.push(b
+      ?`<div class="bcell occ" onclick="showBM('${b.n}','${b.ico}','${b.ds}',${b.lv},${b.w},true)">
+          <div class="bcell-ico">${b.ico}</div><div class="bcell-nm">${b.n}</div></div>`
+      :`<div class="bcell emp" onclick="alert('Platziere hier ein Gebäude aus der unteren Leiste.')">＋</div>`);
+  }
+  document.getElementById('bgrid').innerHTML=cells.join('');
+  document.getElementById('bshop').innerHTML=SHOP.map(b=>`
+    <div class="bitem" onclick="showBM('${b.n}','${b.ico}','${b.ds}',0,0,false,${b.cost})">
+      <div class="bitem-ico">${b.ico}</div>
+      <span class="bitem-nm">${b.n}</span>
+      <div class="bitem-cost">🪙 ${b.cost.toLocaleString('de')}</div>
+    </div>`).join('');
+}
+function btab(t,btn){
+  document.querySelectorAll('.btab').forEach(x=>x.classList.remove('on'));
+  btn.classList.add('on');
+  document.getElementById('bt-grid').style.display=t==='grid'?'flex':'none';
+  document.getElementById('bt-craft').style.display=t==='craft'?'block':'none';
+}
+function showBM(n,ico,ds,lv,w,own,cost){
+  document.getElementById('mb-ico').textContent=ico;
+  document.getElementById('mb-nm').textContent=n;
+  document.getElementById('mb-ds').textContent=ds;
+  document.getElementById('mb-dt').innerHTML=own
+    ?`<p><span class="lbl">STUFE</span><br>${'★'.repeat(lv)}${'☆'.repeat(Math.max(0,3-lv))} Stufe ${lv}</p>
+       <p style="margin-top:7px"><span class="lbl">ARBEITER</span><br>${w} aktiv</p>
+       <p style="margin-top:7px"><span class="lbl">STATUS</span><br><span style="color:#4ade80">✔ Produziert</span></p>`
+    :`<p><span class="lbl">KAUFPREIS</span><br><span style="color:var(--gold);font-family:'Cinzel',serif;font-size:1rem">🪙 ${cost?.toLocaleString('de')}</span></p>
+       <p style="margin-top:7px"><span class="lbl">BAUZEIT</span><br>~2 Minuten</p>
+       <p style="margin-top:7px"><span class="lbl">VORAUSSETZUNG</span><br><span style="color:var(--mut)">Keine</span></p>`;
+  document.getElementById('mb-btn').textContent=own?'⬆ GEBÄUDE VERBESSERN (🪙 2.400)':'🏗 KAUFEN & AUF RASTER PLATZIEREN';
+  document.getElementById('ov-building').classList.add('on');
+}
+function renderCraft(){
+  const rc={Legendär:'#f59e0b',Episch:'#a78bfa',Selten:'#60a5fa',Gewöhnlich:'#9ca3af'};
+  document.getElementById('cgrid').innerHTML=CRAFT.map(c=>`
+    <div class="ccard">
+      <div class="ccard-hd"><span class="cico">${c.ico}</span>
+        <div><div class="cnm">${c.n}</div>
+        <div class="crar" style="color:${rc[c.rar]}">${c.rar} · ${c.req}</div></div></div>
+      <div class="cingr">${c.ingr.map(i=>`<span class="ingr">${i}</span>`).join('')}</div>
+      <button class="cbtn">⚗️ HERSTELLEN</button>
+    </div>`).join('');
+}
+
+// ─── RANKING ────────────────────────────────────────────────────────
+function renderRank(){
+  const m=['🥇','🥈','🥉'];
+  document.getElementById('rtbody').innerHTML=RANK.map((r,i)=>`
+    <tr>
+      <td class="rn ${i<3?'r'+(i+1):''} ${r.you?'ryou':''}">${m[i]||(i+1)}</td>
+      <td class="${r.you?'ryou':''}" style="font-family:'Cinzel',serif;font-size:.82rem${r.you?';color:var(--gold)':''}">${r.n}${r.you?' ◄ DU':''}</td>
+      <td class="${r.you?'ryou':''}" style="color:var(--mut);font-size:.78rem">${r.c}</td>
+      <td class="${r.you?'ryou':''}" style="text-align:center">${r.h}/10</td>
+      <td class="${r.you?'ryou':''}" style="text-align:center;font-family:'Cinzel',serif;font-size:.78rem">${r.e}</td>
+      <td class="rgold ${r.you?'ryou':''}">${(r.g/1000).toFixed(0)}k 🪙</td>
+    </tr>`).join('');
+}
+
+function cm(id){document.getElementById('ov-'+id).classList.remove('on');}
+
+// ─── INIT ────────────────────────────────────────────────────────────
+renderExps();renderHeroes();renderBuildings();renderCraft();renderRank();
+</script>
+</body>
+</html>

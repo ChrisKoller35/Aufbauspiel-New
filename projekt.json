@@ -1,0 +1,49 @@
+{
+  "schema": "ideenkarte-projekt/1",
+  "id": "magic-city",
+  "name": "Magic City (Aufbauspiel, Vorlage)",
+  "typ": "game",
+  "beschreibung": "Fantasy-Aufbauspiel im Browser (City Builder + RPG-Expeditionen). Dient als Vorlage für das Third-Person-Game Lowland.",
+  "status": "pausiert",
+  "stand": "Letzter Stand 31.03.2026: neue HTML-Oberfläche (Phase 1 fertig, Plan für Phase 2 liegt bereit). Ruht, dient als Vorlage für Lowland.",
+  "markierung": "mehr-ki",
+  "markierungGeprueft": true,
+  "zuletztGeaendert": "2026-03-31",
+  "ordner": {
+    "haupt": "C:\\Users\\chris\\Documents\\Aufbauspiel",
+    "weitere": [
+      "C:\\Users\\chris\\Documents\\Roadmap"
+    ]
+  },
+  "regeln": [
+    "Nur als Vorlage lesen, nicht weiterbauen"
+  ],
+  "repo": "https://github.com/ChrisKoller35/Aufbauspiel-New",
+  "technik": [
+    "TypeScript + Vite, HTML-Oberfläche (Phaser/Three.js im März 2026 entfernt)",
+    "Sprites per Google-Bild-KI (tools/)",
+    "project.godot vorhanden (früher Versuch)"
+  ],
+  "start": "npm run dev",
+  "einstiegsdateien": [
+    "CLAUDE.md",
+    "..\\Roadmap\\HANDOFF-ROADMAP-PART1.md"
+  ],
+  "struktur": [
+    {
+      "ordner": "docs/",
+      "inhalt": "Referenzen, Sprite-Prompts"
+    },
+    {
+      "ordner": "Vorlage Items, Vorlage Ramen",
+      "inhalt": "Grafik-Vorlagen"
+    },
+    {
+      "ordner": "_legacy/",
+      "inhalt": "alte Version"
+    }
+  ],
+  "naechsteAufgaben": [],
+  "aktualisiert": "2026-10-17",
+  "aktualisiertVon": "claude"
+}
