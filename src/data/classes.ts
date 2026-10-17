@@ -373,3 +373,18 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
     background: 'Sie kam nicht mit dem Schiff. Sie war bereits hier, als die anderen landeten. Saß auf einem Fels, aß Beeren, beobachtete. Wie lange sie schon da war, sagt sie nicht. Valdris\' Natur kennt sie besser als jeder andere. Die Neuankömmlinge waren zunächst Störung, dann Notwendigkeit, dann langsam etwas wie Begleitung.\n\nMotivation: Die Insel schützen. Die Menschen sind Teil davon geworden, ob sie will oder nicht.',
   },
 };
+
+// ── Hero Image Map — maps class IDs to hero card portrait images (in assets/heroes/) ──
+
+export const HERO_IMAGE_MAP: Record<string, string> = {
+  guardian: 'hero_guardian',
+  ranger: 'hero_ranger',
+  cleric: 'hero_cleric',
+  berserker: 'hero_berserker',
+  assassin: 'hero_assassin',
+  paladin: 'hero_paladin',
+  bard: 'hero_bard',
+  witch: 'hero_witch',
+  necromancer: 'hero_necromancer',
+  druid: 'hero_druid',
+};

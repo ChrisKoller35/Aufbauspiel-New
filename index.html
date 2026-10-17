@@ -4,22 +4,11 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Magic City – The Guild's Hearth</title>
-  <style>
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #1a1a2e; overflow: hidden; }
-    #game-container {
-      position: relative;
-      width: 100vw;
-      height: 100vh;
-    }
-    canvas { display: block; }
-  </style>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Cinzel+Decorative:wght@700&family=Crimson+Text:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+  <!-- CSS loaded via main.ts import (Vite handles it) -->
 </head>
 <body>
-  <div id="game-container">
-    <!-- HTML UI overlay – sits above the Phaser canvas via z-index -->
-    <div id="ui-layer"></div>
-  </div>
+  <div id="app"></div>
   <script type="module" src="/src/main.ts"></script>
 </body>
 </html>

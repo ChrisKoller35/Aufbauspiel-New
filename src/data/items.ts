@@ -8,6 +8,8 @@ export interface ItemDef {
   type: ItemType;
   stackSize: number;
   baseValue: number;
+  /** Explicit sprite key override. If omitted, derived as ITEM_${id.toUpperCase()} */
+  spriteKey?: string;
   gearSlot?: GearSlot;
   weaponSlotType?: WeaponSlotType;
   statBonuses?: {
@@ -626,6 +628,13 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     flavorText: 'Letzte Reserve. Einmal verwenden. Danach ist Beten die einzige Option.',
   },
 };
+
+/** Resolve sprite key for an item. Uses explicit spriteKey if set, otherwise derives from id. */
+export function getItemSpriteKey(itemId: string): string {
+  const def = ITEM_DEFS[itemId];
+  if (def?.spriteKey) return def.spriteKey;
+  return `ITEM_${itemId.toUpperCase()}`;
+}
 
 export const PROVISION_ITEMS = [
   'bread', 'healing_potion', 'power_bread', 'herb_green',

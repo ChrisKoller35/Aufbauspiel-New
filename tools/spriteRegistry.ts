@@ -263,51 +263,185 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
 
   sprite("FARM_GRAIN", "building", 256, 256, "mvp",
     "Getreidefarm",
-    `${STYLES.BUILDING}, a grain farm: brown plowed field rows with green sprouting wheat and golden ripe wheat ears, rustic wooden fence border, small wooden farmhouse in corner with thatched roof`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy grain farm on a grassy plot.
+Every part of the image is filled with scenery: green grass, a dirt path, wooden fence border.
+Brown plowed field rows with green sprouting wheat and golden ripe wheat ears,
+a small rustic wooden farmhouse in the corner with thatched roof, a scarecrow in the field,
+a wooden cart with hay bales, chickens pecking in the grass, trees along the back edge.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The farm is the main focus at 80% of the frame. No text, no labels.`),
 
-  sprite("MILL_WIND", "building", 256, 192, "mvp",
+  sprite("MILL_WIND", "building", 256, 256, "mvp",
     "Windmühle",
-    `${STYLES.BUILDING}, a stone windmill: circular grey stone base tower, four large wooden windmill blades/sails extending from top, brown wooden door at base, small window`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy stone windmill on a grassy hill.
+Every part of the image is filled with scenery: green grass hillside, wildflowers, a stone path.
+A circular grey stone windmill tower with four large wooden windmill blades spinning,
+brown wooden door at the base, small windows, sacks of flour stacked outside,
+a wooden wheelbarrow nearby, bushes and a low stone wall around the base, trees in the background.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The windmill is the main focus at 75% of the frame. No text, no labels.`),
 
-  sprite("BAKERY", "building", 192, 192, "mvp",
+  sprite("BAKERY", "building", 256, 256, "mvp",
     "Bäckerei",
-    `${STYLES.BUILDING}, a cozy bakery: stone walls with warm orange glow from oven visible through window, stone chimney with wisps of smoke, wooden door, bread sign hanging, warm inviting atmosphere`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy bakery in a cozy village setting.
+Every part of the image is filled with scenery: cobblestone ground, green grass patches, flowers.
+A cozy stone bakery with warm orange glow from the oven visible through the window,
+stone chimney with wisps of smoke, wooden door with a bread sign hanging above it,
+a small wooden display table outside with bread loaves, barrels and crates nearby,
+a wooden bench, hanging flower baskets, warm inviting atmosphere, trees behind.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The bakery is the main focus at 75% of the frame. No text, no labels.`),
 
-  sprite("LUMBER_CAMP", "building", 192, 192, "mvp",
+  sprite("LUMBER_CAMP", "building", 256, 256, "mvp",
     "Holzfällerlager",
-    `${STYLES.BUILDING}, a lumber camp: small wooden log cabin with sloped roof, an axe leaning against the wall, neat stack of cut logs beside it, tree stump with axe marks nearby`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy lumber camp in a forest clearing.
+Every part of the image is filled with scenery: green grass, fallen leaves, dirt ground.
+A small wooden log cabin with sloped roof, an axe embedded in a tree stump,
+neat stacks of cut logs beside the cabin, a sawing bench, wood chips scattered around,
+tall pine and oak trees surrounding the clearing, a wooden fence section, a lantern hanging.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The lumber camp is the main focus at 75% of the frame. No text, no labels.`),
 
-  sprite("QUARRY", "building", 256, 192, "mvp",
+  sprite("QUARRY", "building", 256, 256, "mvp",
     "Steinbruch",
-    `${STYLES.BUILDING}, a stone quarry: exposed grey rock face with chisel marks, small mining cart on rails, pickaxe leaning on rocks, piles of cut stone blocks nearby`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy stone quarry on rocky terrain.
+Every part of the image is filled with scenery: rocky ground, gravel, sparse grass.
+An exposed grey rock face with chisel marks, a small mining cart on wooden rails,
+pickaxes leaning against rocks, piles of cut stone blocks neatly stacked,
+a wooden crane with ropes, a small work shelter with a wooden roof, lanterns for light,
+rocky boulders and sparse bushes around the edges.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The quarry is the main focus at 80% of the frame. No text, no labels.`),
 
-  sprite("WAREHOUSE", "building", 384, 256, "mvp",
+  sprite("WAREHOUSE", "building", 256, 256, "mvp",
     "Lagerhaus",
-    `${STYLES.BUILDING}, a large wooden warehouse: big rectangular building with double barn doors, brown timber walls, visible wooden crates and barrels inside through open door, loading platform at front`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy warehouse on a cobblestone yard.
+Every part of the image is filled with scenery: cobblestone ground, grass edges, wooden crates.
+A large wooden warehouse with double barn doors open, brown timber walls,
+visible wooden crates and barrels inside, a loading platform at the front,
+stacked barrels and sacks outside, a wooden cart for deliveries, rope coils,
+a lantern hanging by the door, trees and bushes along the back.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The warehouse is the main focus at 75% of the frame. No text, no labels.`),
 
-  sprite("HOUSE_T1", "building", 192, 192, "mvp",
+  sprite("HOUSE_T1", "building", 256, 256, "mvp",
     "Wohnhaus Stufe 1",
-    `${STYLES.BUILDING}, a cozy medieval house: wooden plank walls, triangular brown thatched roof, one small yellow-lit window, wooden door, tiny stone chimney with faint smoke, flower box under window`),
+    `Isometric 3/4 top-down perspective of a cozy medieval fantasy cottage in a small garden.
+Every part of the image is filled with scenery: green grass lawn, a stone walkway, flowers.
+A cozy wooden house with plank walls, triangular brown thatched roof,
+one small yellow-lit window, wooden door, tiny stone chimney with faint smoke,
+flower boxes under the window, a small garden fence, a tree beside the house,
+potted plants by the door, a wooden bench, clothesline in the back.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The house is the main focus at 70% of the frame. No text, no labels.`),
 
   sprite("GUILD_HALL", "building", 384, 384, "mvp",
     "Gildenhalle",
-    `${STYLES.BUILDING}, an imposing guild hall: large stone building with reinforced walls, grand wooden double-door entrance, two tall windows with golden light, triangular roof with golden banner and guild crest symbol, most impressive building in town, heraldic flags`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy adventure guild hall in a forest clearing.
+Every part of the image is filled with scenery: green grass on the ground, tall leafy trees filling the top and sides,
+a cobblestone path leading to the entrance, wildflowers scattered in the grass, a wooden fence along one edge.
+The guild hall is a grand stone and dark timber building with a steep slate roof, golden weathervane,
+large ornate wooden double door with torch sconces, arched windows with warm amber glow,
+a quest notice board with scrolls pinned to it, a weapon rack leaning on the wall, a hanging guild sign.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The building is the main focus at 75% of the frame. No text, no labels.`),
 
-  sprite("WELL", "building", 192, 192, "mvp",
+  sprite("WELL", "building", 256, 256, "mvp",
     "Brunnen",
-    `${STYLES.BUILDING}, a stone well: circular cobblestone well with small wooden roof overhead, rope and wooden bucket, blue shimmering water visible inside, slightly magical blue glow from water`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy stone well in a village square.
+Every part of the image is filled with scenery: cobblestone plaza, green grass patches, flowers.
+A circular cobblestone well with a small wooden roof overhead, rope and wooden bucket,
+blue shimmering magical water visible inside with a faint blue glow,
+stone benches nearby, potted flowers around the well, hanging lanterns,
+a wooden signpost, trees and bushes along the edges.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The well is the main focus at 65% of the frame. No text, no labels.`),
 
-  sprite("HERB_GARDEN", "building", 192, 256, "mvp",
+  sprite("HERB_GARDEN", "building", 256, 256, "mvp",
     "Kräutergarten",
-    `${STYLES.BUILDING}, an herb garden: neat rectangular garden beds with colorful herbs and flowers, green, purple, red and yellow plant dots, wooden border fence, small wooden potting shelf, watering can`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy herb garden in a lush setting.
+Every part of the image is filled with scenery: rich green grass, garden soil, stone borders.
+Neat rectangular garden beds with colorful herbs and flowers in green, purple, red and yellow,
+a wooden border fence around the garden, a small wooden potting shelf with clay pots,
+a watering can, garden tools leaning against a post, a small wooden archway with climbing vines,
+butterflies fluttering, trees and hedges in the background.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The herb garden is the main focus at 80% of the frame. No text, no labels.`,
+    undefined, true),
 
-  sprite("SMITHY", "building", 256, 192, "mvp",
+  sprite("SMITHY", "building", 256, 256, "mvp",
     "Schmiede",
-    `${STYLES.BUILDING}, a blacksmith forge: dark stone building with open front showing anvil, bright orange forge fire glow, hammer on anvil, dark smoke from chimney, metal ingots stacked nearby`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy blacksmith forge in a workshop yard.
+Every part of the image is filled with scenery: dirt and stone ground, grass edges, scattered tools.
+A dark stone smithy building with an open front showing the anvil and bright orange forge fire glow,
+a hammer resting on the anvil, dark smoke rising from the chimney,
+metal ingots and iron bars stacked nearby, a weapon rack with swords,
+a water quenching barrel, bellows beside the forge, a wooden cart with ore.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The smithy is the main focus at 75% of the frame. No text, no labels.`,
+    undefined, true),
 
   sprite("IRON_MINE", "building", 256, 256, "mvp",
     "Eisenmine",
-    `${STYLES.BUILDING}, an iron mine entrance: dark cave opening in rocky hillside, wooden support beams framing entrance, small rail tracks leading inside, hanging lantern, pile of dark iron ore outside, mining cart`),
+    `Isometric 3/4 top-down perspective of a medieval fantasy iron mine entrance in a rocky hillside.
+Every part of the image is filled with scenery: rocky terrain, sparse grass, gravel paths.
+A dark cave opening in a rocky hillside with wooden support beams framing the entrance,
+small rail tracks leading inside, a hanging lantern illuminating the entrance,
+piles of dark iron ore outside, a mining cart on rails, pickaxes and shovels,
+wooden crates for ore, a small shelter for miners, boulders and pine trees around.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The mine entrance is the main focus at 75% of the frame. No text, no labels.`,
+    undefined, true),
+
+  sprite("ARCANE_SMITHY", "building", 256, 256, "mvp",
+    "Arkan-Schmiede",
+    `Isometric 3/4 top-down perspective of a medieval fantasy arcane smithy in a magical workshop district.
+Every part of the image is filled with scenery: cobblestone ground, mystical rune circles, arcane energy wisps.
+A large imposing dark stone smithy with glowing purple-blue arcane crystals embedded in the walls,
+an open forge front showing bright orange fire mixed with swirling purple magical energy,
+a massive enchanted anvil with glowing runes, dark smoke and magical sparks rising from the chimney,
+enchanted weapons and glowing ingots displayed on racks outside, arcane crystal formations growing near the base,
+heavy iron-reinforced oak doors with carved rune symbols, purple-flame torch brackets flanking the entrance,
+stacked magical ore and crystal shards nearby, mystical atmosphere with warm forge glow and cool arcane light.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The arcane smithy is the main focus at 75% of the frame. No text, no labels.`),
+
+  sprite("MARKETPLACE", "building", 256, 256, "mvp",
+    "Marktplatz",
+    `Isometric 3/4 top-down perspective of a bustling medieval fantasy marketplace in a town square.
+Every part of the image is filled with scenery: cobblestone plaza, green grass edges, decorative banners.
+A large open-sided market hall with heavy timber frame and colorful canvas awnings in red and gold,
+stone pillar supports, multiple merchant stalls with goods displayed on wooden tables,
+hanging lanterns, barrels and crates of trade goods, a stone fountain in the corner,
+iron scales on a weighing platform, colorful fabric bolts, pottery and exotic items on display,
+a wooden signboard with a trade symbol, busy and vibrant atmosphere with warm afternoon light.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The marketplace is the main focus at 75% of the frame. No text, no labels.`),
+
+  sprite("WAR_MACHINE_WORKSHOP", "building", 256, 256, "mvp",
+    "Kriegsmaschinenwerkstatt",
+    `Isometric 3/4 top-down perspective of a medieval fantasy siege workshop and war machine factory.
+Every part of the image is filled with scenery: dirt and gravel ground, wooden scaffolding, iron fittings.
+A massive stone and timber workshop with wide open bay doors showing a half-built trebuchet inside,
+a tall wooden construction crane with iron chains and pulleys, heavy timber beams and iron bracing,
+large wooden wheels and siege engine components stacked outside, iron-bound ammunition chests,
+a forge area with glowing coals for metalwork, weapon blueprints pinned to a wooden board,
+heavy wooden barricades and iron shields leaning against the walls, military engineering atmosphere.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The war workshop is the main focus at 75% of the frame. No text, no labels.`),
+
+  sprite("BANK", "building", 256, 256, "mvp",
+    "Bank",
+    `Isometric 3/4 top-down perspective of a medieval fantasy bank and treasury building in a prosperous district.
+Every part of the image is filled with scenery: polished cobblestone, manicured hedges, gold-trimmed details.
+A sturdy imposing stone bank building with thick fortified walls and iron-barred narrow windows,
+a grand stone archway entrance with heavy iron-reinforced oak double doors, stone pillars with torch brackets,
+a large carved golden coin emblem mounted above the entrance, stone steps leading up,
+iron-bound treasure chests visible through a side window, gold coins and gem details in the stonework,
+a guard post with a small watchtower, iron gate and chain barrier at the perimeter,
+wealthy authoritative atmosphere with warm gold and cool stone colors, secure and prestigious.
+Style: 2D hand-painted cartoon, clean outlines, warm vibrant colors, smooth shading, fantasy city builder game art.
+The bank is the main focus at 75% of the frame. No text, no labels.`),
 
   sprite("ROAD", "terrain", 64, 64, "mvp",
     "Straßen-Tile",
@@ -317,17 +451,37 @@ export const SPRITE_REGISTRY: SpriteDefinition[] = [
   // HELDEN (MVP)
   // ═══════════════════════════════════════════════════════════
 
-  sprite("HERO_GUARDIAN", "unit", 128, 128, "mvp",
+  sprite("HERO_GUARDIAN", "unit", 256, 256, "mvp",
     "Held: Wächter (Tank)",
-    `${STYLES.UNIT}, a sturdy knight guardian: heavy plate armor, large blue shield with crest, blue tabard, strong protective stance, short sword at side, stocky build indicating tank role`),
+    `A heroic fantasy knight guardian character in a dynamic protective stance, front-facing 3/4 view.
+Heavy polished steel plate armor with blue and silver trim, a large ornate blue shield with a golden lion crest held firmly,
+a sturdy short sword at his side, blue tabard over the armor, strong stocky build indicating a tank role.
+Warm dramatic lighting with slight magical glow from the shield. Rich detailed armor textures.
+Style: 2D hand-painted illustration, modern fantasy RPG character art, clean outlines, vibrant colors, smooth shading.
+Solid bright magenta background (#FF00FF). No text, no labels, no UI elements.
+The character fills 80% of the frame.`),
 
-  sprite("HERO_RANGER", "unit", 128, 128, "mvp",
+  sprite("HERO_RANGER", "unit", 256, 256, "mvp",
     "Held: Waldläufer (DPS)",
-    `${STYLES.UNIT}, a nimble forest ranger: green hooded cloak, leather armor, wooden bow in hand with quiver of arrows on back, slim agile build, keen eyes, forest scout appearance`),
+    `A nimble fantasy forest ranger character in an alert stance, front-facing 3/4 view.
+Dark green hooded cloak flowing in the wind, light brown leather armor with leaf-pattern engravings,
+a finely crafted wooden longbow held ready, a quiver of arrows on the back with green feather fletching,
+slim agile build with keen piercing eyes, small belt pouches and a hunting knife.
+Dappled forest light atmosphere with green and gold tones. Rich detailed textures on leather and cloth.
+Style: 2D hand-painted illustration, modern fantasy RPG character art, clean outlines, vibrant colors, smooth shading.
+Solid bright magenta background (#FF00FF). No text, no labels, no UI elements.
+The character fills 80% of the frame.`),
 
-  sprite("HERO_CLERIC", "unit", 128, 128, "mvp",
+  sprite("HERO_CLERIC", "unit", 256, 256, "mvp",
     "Held: Kleriker (Heiler)",
-    `${STYLES.UNIT}, a gentle cleric healer: flowing white and gold robes, wooden staff with glowing crystal top, golden cross/sun symbol on chest, peaceful wise expression, healing aura suggestion`),
+    `A gentle fantasy cleric healer character in a serene casting pose, front-facing 3/4 view.
+Flowing white and gold ceremonial robes with intricate golden sun embroidery, a tall wooden staff
+topped with a brightly glowing amber crystal emanating warm healing light, a golden sun medallion on the chest,
+peaceful wise expression with soft features, gentle healing aura radiating around the hands.
+Warm golden light atmosphere with divine glow effects. Rich detailed fabric and jewelry textures.
+Style: 2D hand-painted illustration, modern fantasy RPG character art, clean outlines, vibrant colors, smooth shading.
+Solid bright magenta background (#FF00FF). No text, no labels, no UI elements.
+The character fills 80% of the frame.`),
 
   // ═══════════════════════════════════════════════════════════
   // HELDEN Post-MVP (7 neue Klassen)

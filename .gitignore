@@ -1,19 +1,13 @@
-# API Keys & Secrets
-.env
-.env.local
-.env.*.local
+# Godot 4+ specific ignores
+.godot/
+/android/
 
-# Node
-node_modules/
+# Dependencies & Build
+node_modules
 dist/
-*.log
 
-# Generated Sprites (optional - kann rein wenn man sie committen will)
-# public/assets/sprites/generated/
+# Environment & Secrets
+.env
 
-# OS
-Thumbs.db
-.DS_Store
-
-# IDE
-.vscode/settings.json
+# Godot/Asset import files
+*.import

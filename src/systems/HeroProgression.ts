@@ -1,4 +1,4 @@
-import { GuildFighter, FighterStats } from '../models/GuildRoster';
+import { GuildFighter } from '../models/GuildRoster';
 
 // ─── XP / Level Berechnung ──────────────────────────────────────
 // Level N requires: 30 + (N-1) * 20 XP (cumulative from previous level)
@@ -90,7 +90,3 @@ function applyLevelBonus(fighter: GuildFighter): void {
   if (bonus.spd) s.spd = Math.round((s.spd + bonus.spd) * 100) / 100;
 }
 
-/** Level-bereinigte Stats berechnen (für Display, ohne Gear) */
-export function getLevelStats(fighter: GuildFighter): FighterStats {
-  return { ...fighter.baseStats };
-}
