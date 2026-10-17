@@ -1,4 +1,7 @@
-# Gebäude in 2D – drei Ideen (Vorschläge, Christoph entscheidet)
+# Gebäude in 2D – drei Ideen
+
+**Entscheidung (Christoph, 17.10.2026): B + C.** Freischalt-Baum mit Werkstätten, obere Gebäude brauchen einen Bauplan
+aus einem Dungeon. Umsetzung erst nach den Reparaturen (Manager-Issues #18-#23), Schritte in Manager #25-#27.
 
 Was bleiben soll (Christoph): Gebäude werden nacheinander freigeschaltet und gebaut, Crafting hängt an den Gebäuden.
 Problem heute: Gebäude sind nur Bildkarten in einem leeren Raster, Crafting ist ein eigener Reiter ohne Bezug zu ihnen.
