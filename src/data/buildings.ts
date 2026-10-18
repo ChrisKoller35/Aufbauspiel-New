@@ -224,7 +224,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     workerSlots: 1,
     requiresConnectivity: true,
     storage: { localOutputBuffer: 5, localInputBuffer: 10 },
-    recipes: ['RCP_IRON_SWORD', 'RCP_IRON_SHIELD', 'RCP_LEATHER_ARMOR', 'RCP_STEEL_SWORD', 'RCP_LONGBOW', 'RCP_CRYSTAL_STAFF', 'RCP_STEEL_ARMOR', 'RCP_RANGER_CLOAK', 'RCP_CRYSTAL_PENDANT'],
+    recipes: ['RCP_IRON_SWORD', 'RCP_IRON_SHIELD', 'RCP_LEATHER_ARMOR', 'RCP_STEEL_SWORD', 'RCP_LONGBOW', 'RCP_CRYSTAL_STAFF', 'RCP_STEEL_ARMOR', 'RCP_CRYSTAL_PENDANT'],
     radiusEffect: null,
     housing: null,
     expeditions: null,

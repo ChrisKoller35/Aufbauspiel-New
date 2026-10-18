@@ -192,7 +192,7 @@ export function renderBestiariumScreen(container: HTMLElement): void {
         <div style="display:flex;gap:16px;margin-bottom:12px;font-size:13px;opacity:0.8;align-items:center;">
           <span>Entdeckt: ${discoveredCount}/${enemies.length}</span>
           <span>Besiegt: ${defeatedCount}/${enemies.length}</span>
-          <button id="bestiarium-debug-all" style="margin-left:auto;background:var(--s3);border:1px solid var(--bdr);color:var(--gold);padding:4px 12px;border-radius:6px;font-size:0.72rem;cursor:pointer;">🔓 Alle anzeigen (Debug)</button>
+          ${import.meta.env.DEV ? `<button id="bestiarium-debug-all" style="margin-left:auto;background:var(--s3);border:1px solid var(--bdr);color:var(--gold);padding:4px 12px;border-radius:6px;font-size:0.72rem;cursor:pointer;">🔓 Alle anzeigen (Debug)</button>` : ''}
         </div>
         <div class="hcards">
           ${cards}
@@ -202,9 +202,9 @@ export function renderBestiariumScreen(container: HTMLElement): void {
 
   // ─── Event Binding ──────────────────────────────────────────
 
-  // Debug button: discover + defeat all enemies
+  // Debug button: discover + defeat all enemies (dev builds only)
   const debugBtn = el.querySelector('#bestiarium-debug-all') as HTMLElement | null;
-  if (debugBtn && state) {
+  if (import.meta.env.DEV && debugBtn && state) {
     debugBtn.addEventListener('click', () => {
       if (!state.bestiarium) {
         state.bestiarium = { discovered: [], defeated: [] };

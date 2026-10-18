@@ -7,11 +7,13 @@ import { GuildFighter } from '../../models/GuildRoster';
 import { CLASS_DEFS, ClassDef, HERO_IMAGE_MAP } from '../../data/classes';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { GearSystem } from '../../systems/GearSystem';
+import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { xpProgress, xpForNextLevel, totalXpForLevel, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 
 const gearSystem = new GearSystem();
+const classUnlockSystem = new ClassUnlockSystem();
 
 // ─── State ──────────────────────────────────────────────────────
 let gameState: GameState | null = null;
@@ -313,15 +315,22 @@ function renderMyHeroes(): string {
 }
 
 function renderHireTab(): string {
-  const ownedClassIds = new Set(gameState ? gameState.fighters.map(f => f.classId) : []);
-  const available = Object.values(CLASS_DEFS).filter(c => !ownedClassIds.has(c.id));
+  if (!gameState) return '<div class="empty-msg">Kein Spielstand geladen.</div>';
+  const state = gameState;
+  const ownedClassIds = new Set(state.fighters.map(f => f.classId));
+  const available = Object.values(CLASS_DEFS).filter(
+    c => !ownedClassIds.has(c.id) && classUnlockSystem.isClassUnlocked(state, c.id),
+  );
 
   if (available.length === 0) {
-    return '<div class="empty-msg">Alle Klassen bereits rekrutiert!</div>';
+    const allUnlocked = Object.values(CLASS_DEFS).every(c => classUnlockSystem.isClassUnlocked(state, c.id));
+    return allUnlocked
+      ? '<div class="empty-msg">Alle Klassen bereits rekrutiert!</div>'
+      : '<div class="empty-msg">Alle freigeschalteten Klassen bereits rekrutiert. Weitere Klassen werden durch Expeditionen freigeschaltet.</div>';
   }
 
   // Cost scales with how many heroes you already own
-  const owned = gameState ? gameState.fighters.length : 0;
+  const owned = state.fighters.length;
   const cards = available.map(c => {
     const cost = 50 + owned * 30;
     return renderHireCard(c, cost);
@@ -395,7 +404,7 @@ function renderInventarTab(): string {
   if (ownedItems.length === 0) {
     return `
       <div class="empty-msg">Dein Inventar ist leer.</div>
-      <button id="inv-debug-fill" style="margin:12px auto;display:block;background:var(--s3);border:1px solid var(--bdr);color:var(--gold);padding:6px 16px;border-radius:6px;font-size:0.78rem;cursor:pointer;">\uD83D\uDD13 Alle Items einf\u00FCgen (Debug)</button>`;
+      ${import.meta.env.DEV ? `<button id="inv-debug-fill" style="margin:12px auto;display:block;background:var(--s3);border:1px solid var(--bdr);color:var(--gold);padding:6px 16px;border-radius:6px;font-size:0.78rem;cursor:pointer;">\uD83D\uDD13 Alle Items einf\u00FCgen (Debug)</button>` : ''}`;
   }
 
   // Which items are equipped by any hero
@@ -457,7 +466,7 @@ function renderInventarTab(): string {
   return `
     <div class="inv-summary">
       ${totalTypes} Gegenst\u00E4nde (${totalItems} gesamt)
-      <button id="inv-debug-fill" style="margin-left:auto;background:var(--s3);border:1px solid var(--bdr);color:var(--gold);padding:4px 12px;border-radius:6px;font-size:0.72rem;cursor:pointer;float:right;">\uD83D\uDD13 Alle Items (Debug)</button>
+      ${import.meta.env.DEV ? `<button id="inv-debug-fill" style="margin-left:auto;background:var(--s3);border:1px solid var(--bdr);color:var(--gold);padding:4px 12px;border-radius:6px;font-size:0.72rem;cursor:pointer;float:right;">\uD83D\uDD13 Alle Items (Debug)</button>` : ''}
     </div>
     ${html}`;
 }
@@ -560,9 +569,9 @@ export function renderHeroesScreen(container: HTMLElement): void {
     });
   }
 
-  // Debug: fill all items into inventory
+  // Debug: fill all items into inventory (dev builds only)
   const debugFill = el.querySelector('#inv-debug-fill') as HTMLElement | null;
-  if (debugFill && gameState) {
+  if (import.meta.env.DEV && debugFill && gameState) {
     debugFill.addEventListener('click', () => {
       if (!gameState) return;
       for (const [id, def] of Object.entries(ITEM_DEFS)) {

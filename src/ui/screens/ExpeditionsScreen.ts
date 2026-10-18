@@ -9,6 +9,9 @@ import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP } from '../../data/routes';
 import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
+import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
+
+const buildingUpgradeSystem = new BuildingUpgradeSystem();
 
 // ── Module state ──
 
@@ -161,8 +164,8 @@ function buildTeamHTML(): string {
   const routeName = route ? route.name : 'Expedition';
   const recLevel = route ? route.recommendedLevel : '';
 
-  // Slots (2x2 grid, 4 slots) — styled like hero cards
-  const maxSlots = 4;
+  // Slots (2x2 grid, 3 slots / 4 with Guild Hall T2) — styled like hero cards
+  const maxSlots = buildingUpgradeSystem.getPartySlots(gameState);
   let slotsHTML = '';
   for (let i = 0; i < maxSlots; i++) {
     const hero = selectedHeroes[i];
@@ -265,7 +268,7 @@ function bindTeamEvents(el: HTMLElement): void {
     const heroEl = target.closest<HTMLElement>('.hsm[data-hero-id]');
     if (heroEl) {
       const heroId = Number(heroEl.dataset.heroId);
-      if (selectedHeroes.length < 4) {
+      if (selectedHeroes.length < buildingUpgradeSystem.getPartySlots(gameState)) {
         const fighter = gameState.fighters.find(f => f.id === heroId);
         if (fighter && !selectedHeroes.some(h => h.id === heroId)) {
           selectedHeroes.push(fighter);

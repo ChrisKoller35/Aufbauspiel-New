@@ -3,10 +3,11 @@ import { ExpeditionRun } from '../models/ExpeditionRun';
 import { resetBuildingIdCounter } from '../models/Building';
 import { resetCitizenIdCounter } from '../models/Citizen';
 import { resetFighterIdCounter } from '../models/GuildRoster';
+import { BUILDING_DEFS } from '../data/buildings';
 
 const SAVE_KEY = 'magic_city_save';
 const BACKUP_KEY = 'magic_city_save_backup';
-const CURRENT_VERSION = 19;
+const CURRENT_VERSION = 20;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
@@ -108,7 +109,6 @@ export class SaveSystem {
 
       // Always remove deprecated items
       delete state.globalStock['war_hammer'];
-      delete state.globalStock['arcane_amulet'];
 
       // Reset ID counters to avoid collisions
       const maxBuildingId = state.buildings.reduce((max, b) => Math.max(max, b.id), 0);
@@ -350,77 +350,44 @@ export class SaveSystem {
 
 
 
-    // SaveVersion 12: Add novizenrobe to globalStock for preview
-    if (!state.globalStock['novizenrobe']) {
-      state.globalStock['novizenrobe'] = 1;
-    }
-
-    // SaveVersion 13: Add all T1/T2 armor items for preview
-    const previewItems = [
-      'chain_armor', 'leather_armor', 'novizenrobe', 'wolf_fang_necklace',
-      'heavy_leather_armor', 'battle_robe', 'steel_armor', 'steel_shield', 'crystal_pendant',
-    ];
-    for (const id of previewItems) {
-      if (!state.globalStock[id]) state.globalStock[id] = 1;
-    }
-
-    // SaveVersion 15: Add T3/T4 weapons + armor for preview
-    const t3t4Items = [
-      'hydra_venomfang', 'fallen_hunters_bow', 'wyrm_scale_shield', 'crystal_golem_staff',
-      'mystic_plate_armor', 'bandit_king_armor', 'spider_silk_robe', 'lich_phylactery',
-      'eternal_hunter_bow', 'worldend_staff', 'soulbreaker', 'aether_guardian_shield',
-      'arcane_blade', 'magitech_shield',
-      'dragonlord_plate', 'shadowhunter_armor', 'magiarch_robe', 'aether_heart',
-    ];
-    for (const id of t3t4Items) {
-      if (!state.globalStock[id]) state.globalStock[id] = 1;
-    }
-
-    // SaveVersion 16: Remove unwanted items from inventory
-    delete state.globalStock['war_hammer'];
-    delete state.globalStock['arcane_amulet'];
-
-    // SaveVersion 17: Restore BANK_V2 if all loot buildings were accidentally demolished
-    const lootTypes = new Set(['BANK_V2', 'BANK', 'BANK_WITH_CHEST', 'VAULT']);
-    const hasLootBuilding = state.buildings.some(b => lootTypes.has(b.typeId));
-    if (!hasLootBuilding) {
-      const maxId = state.buildings.reduce((m, b) => Math.max(m, b.id), 0);
-      state.buildings.push({
-        id: maxId + 1,
-        typeId: 'BANK_V2',
-        x: 12, y: 4,
-        built: true,
-        buildProgress: 0,
-        assignedWorkerIds: [],
-        assignedBuilderId: null,
-        activeRecipeId: null,
-        productionTimer: 0,
-        producing: false,
-        localInputBuffer: {},
-        localOutputBuffer: {},
-        connected: false,
-        waterSupplied: false,
-        tier: 1,
-        synergySpeedMult: 1.0,
-        specialistId: null,
-        upgrading: false,
-        upgradeProgress: 0,
-        upgradeId: null,
-        eventPaused: false,
-        pendingCraft: false,
-      });
-    }
-
-    // SaveVersion 18: Remove the migration-injected BANK_V2 at (12,4) if a real one exists
-    const lootTypes2 = new Set(['BANK_V2', 'BANK', 'BANK_WITH_CHEST', 'VAULT']);
-    const realLootBuildings = state.buildings.filter(b => lootTypes2.has(b.typeId));
-    if (realLootBuildings.length > 1) {
-      state.buildings = state.buildings.filter(b => !(b.typeId === 'BANK_V2' && b.x === 12 && b.y === 4));
-    }
-
-    // SaveVersion 19: Always remove the migration-injected BANK_V2 at (12,4)
-    state.buildings = state.buildings.filter(b => !(b.typeId === 'BANK_V2' && b.x === 12 && b.y === 4));
+    // SaveVersion 20: Remove buildings whose type no longer exists (e.g. BANK_V2, VAULT,
+    // BANK_WITH_CHEST). City systems read BUILDING_DEFS[typeId] unchecked and would crash.
+    this.removeUnknownBuildings(state);
 
     state.saveVersion = CURRENT_VERSION;
+  }
+
+  private removeUnknownBuildings(state: GameState): void {
+    const removedIds = new Set(
+      state.buildings.filter(b => !BUILDING_DEFS[b.typeId]).map(b => b.id),
+    );
+    if (removedIds.size === 0) return;
+
+    state.buildings = state.buildings.filter(b => !removedIds.has(b.id));
+
+    // Clear grid tiles (footprint of an unknown type is unknown → scan the grid)
+    for (const row of state.grid ?? []) {
+      for (let x = 0; x < row.length; x++) {
+        const tile = row[x];
+        if (tile?.buildingId != null && removedIds.has(tile.buildingId)) row[x] = null;
+      }
+    }
+
+    // Free workers/builders
+    for (const citizen of state.citizens ?? []) {
+      if (citizen.assignedBuildingId != null && removedIds.has(citizen.assignedBuildingId)) {
+        citizen.status = 'IDLE';
+        citizen.assignedBuildingId = null;
+      }
+    }
+
+    // Unassign specialists
+    for (const spec of state.specialists ?? []) {
+      if (spec.assignedBuildingId != null && removedIds.has(spec.assignedBuildingId)) {
+        spec.assignedBuildingId = null;
+      }
+    }
+
+    console.log('Removed buildings with unknown types:', removedIds.size);
   }
 }
