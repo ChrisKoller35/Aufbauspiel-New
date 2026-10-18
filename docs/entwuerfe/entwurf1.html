@@ -1,0 +1,107 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+#map{position:absolute;left:0;top:92px;width:1490px;height:988px;overflow:hidden;background:radial-gradient(ellipse at 50% 40%,#101a2c 0%,#070a14 70%)}
+#plane{position:absolute;left:745px;top:520px;width:1400px;height:1400px;margin-left:-700px;margin-top:-700px;transform:rotateX(60deg) rotateZ(45deg);transform-origin:50% 50%;
+ background:
+  radial-gradient(circle at 30% 30%,rgba(90,120,50,.35),transparent 40%),
+  radial-gradient(circle at 70% 65%,rgba(70,100,40,.3),transparent 45%),
+  linear-gradient(135deg,#3b5a2c 0%,#2e4a24 45%,#2a4322 100%);
+ box-shadow:0 0 0 6px #1b2a16, 0 0 60px 20px rgba(0,0,0,.7);}
+#plane .z{position:absolute}
+.river{background:linear-gradient(180deg,#1f4b6e,#2f7fae 45%,#1f4b6e);box-shadow:inset 0 0 18px rgba(0,0,0,.5);opacity:.95}
+.road{background:repeating-linear-gradient(90deg,#6b5a45 0 6px,#5a4b39 6px 12px);box-shadow:inset 0 0 8px rgba(0,0,0,.45)}
+.road.h{height:46px}.road.v{width:46px}
+.square{background:#6a5a46;box-shadow:inset 0 0 20px rgba(0,0,0,.4)}
+.field{background:repeating-linear-gradient(0deg,#9a8a3a 0 8px,#b5a24a 8px 16px);opacity:.9}
+.rock{background:radial-gradient(circle,#777 0,#555 60%,#3f3f3f 100%);border-radius:40%}
+.plot{position:absolute;border:2px dashed rgba(230,192,96,.75);background:rgba(230,192,96,.08)}
+.plot.lock{border-color:rgba(200,100,100,.7);background:rgba(120,40,40,.12)}
+.b{position:absolute;transform:translate(-50%,-100%);pointer-events:none}
+.b img{display:block;filter:drop-shadow(0 10px 8px rgba(0,0,0,.55))}
+.b .badge{top:auto;bottom:-24px}
+.b.sel img{filter:drop-shadow(0 0 10px rgba(230,192,96,.9)) drop-shadow(0 10px 8px rgba(0,0,0,.6))}
+.sign{position:absolute;transform:translate(-50%,-100%);text-align:center}
+.sign .pole{width:4px;height:26px;background:#6b4a2a;margin:0 auto}
+.sign .board{background:#3a2a14;border:1px solid #8a6a2a;color:var(--gl);font-family:Cinzel,serif;font-size:.6rem;letter-spacing:.5px;padding:4px 8px;border-radius:2px;white-space:nowrap}
+.sign .board small{display:block;font-family:'Crimson Text',serif;font-size:.78rem;color:var(--txt);letter-spacing:0}
+.sign.lock .board{border-color:#8a3a3a;color:#e0a0a0}
+.legend{position:absolute;left:22px;top:110px;display:flex;gap:8px}
+.legend span{font-family:Cinzel,serif;font-size:.62rem;letter-spacing:.5px;padding:4px 10px;border:1px solid var(--bdr);border-radius:3px;background:rgba(6,8,16,.7);color:var(--mut)}
+.legend span.on{color:var(--gl);border-color:var(--gd)}
+.zoom{position:absolute;right:450px;top:110px;display:flex;flex-direction:column;gap:4px}
+.zoom b{width:28px;height:28px;border:1px solid var(--bdr);background:rgba(6,8,16,.7);color:var(--mut);display:flex;align-items:center;justify-content:center;font-family:Cinzel,serif}
+</style></head><body>
+<div class="hdr"><span class="back">← Zurück</span><span class="logo">✕ MAGIC CITY</span><span class="cur">/ &nbsp; STADT</span>
+<div class="res"><span>🪙 17547</span><span>🪵 8763</span><span>🪨 404</span><span>🌾 1629</span><span>🍞 682</span><span>⚙ 5</span><span>💎 5</span><span style="color:var(--mut)">TAG 808</span></div></div>
+<div class="tabs"><span class="tab on">STADT</span><span class="tab">WERKSTÄTTEN</span><span class="tab">AUFBAU</span></div>
+<div id="map">
+ <div id="plane">
+  <div class="z river" style="left:0;top:180px;width:1400px;height:70px"></div>
+  <div class="z road v" style="left:677px;top:0;height:950px"></div>
+  <div class="z road h" style="left:0;top:677px;width:1400px"></div>
+  <div class="z road v" style="left:377px;top:677px;height:723px"></div>
+  <div class="z square" style="left:470px;top:440px;width:460px;height:240px"></div>
+  <div class="z field" style="left:1180px;top:400px;width:200px;height:110px"></div>
+  <div class="z field" style="left:1200px;top:540px;width:180px;height:120px"></div>
+  <div class="z" style="left:940px;top:950px;width:460px;height:340px;background:radial-gradient(circle,rgba(120,70,200,.35),transparent 70%)"></div>
+  <div class="z bridge" style="left:655px;top:170px;width:90px;height:90px;background:#7a5a3a;box-shadow:inset 0 0 10px rgba(0,0,0,.5);border-left:6px solid #4a3620;border-right:6px solid #4a3620"></div>
+ </div>
+ <div class="legend"><span class="on">ALLE</span><span>ROHSTOFFE</span><span>HANDWERK</span><span>WOHNEN</span><span>MAGIE</span></div>
+ <div class="zoom"><b>+</b><b>−</b></div>
+ <div id="objs"></div>
+ <div class="note">Entwurf 1 · Isometrische Stadt: Jedes Gebäude hat seinen Platz. Leere Bauplätze zeigen, was dort hinkommt und was noch fehlt. Klick auf ein Gebäude öffnet rechts seine Werkstatt.</div>
+</div>
+<div class="panel">
+ <h2>Schmiede</h2><div class="sub">Stufe 1 · 1 Arbeiter · Handwerksviertel</div>
+ <div class="sect">Rezept</div>
+ <div class="row sel"><div class="ico" style="background-image:url(SPR/ITEM_SWORD_IRON.png)"></div><div>Eisenschwert<br><span style="color:var(--mut);font-size:.82rem">3 Eisenschrott · 1 Holz</span></div><div class="r">45 s</div></div>
+ <div class="row"><div class="ico" style="background-image:url(SPR/ITEM_ARMOR_LEATHER.png)"></div><div>Lederrüstung<br><span style="color:var(--mut);font-size:.82rem">2 Leder · 1 Eisenschrott</span></div><div class="r">60 s</div></div>
+ <div class="row"><div class="ico" style="background-image:url(SPR/ITEM_HELMET_IRON.png)"></div><div>Eisenhelm<br><span style="color:var(--mut);font-size:.82rem">2 Eisenschrott</span></div><div class="r">40 s</div></div>
+ <div class="sect">Läuft gerade</div>
+ <div class="row" style="display:block"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Eisenschwert</span><span style="color:var(--mut)">noch 18 s</span></div><div class="bar"><i style="width:60%"></i></div></div>
+ <div class="sect">Warteschlange (2 / 4)</div>
+ <div class="row"><div>Eisenschwert</div><div class="r">wartet</div></div>
+ <div class="row"><div>Eisenhelm</div><div class="r">wartet</div></div>
+ <div style="margin-top:18px;display:flex;gap:10px"><span class="btn">HERSTELLEN</span><span class="btn dis">AUSBAUEN (Stufe 2)</span></div>
+ <div class="sect">Was fehlt für Stufe 2</div>
+ <div class="row"><div>30 Holz · 20 Stein · 10 Eisenschrott</div><div class="r">Gildenrang 2 ✓</div></div>
+</div>
+<script>
+const SPR='../../public/assets/sprites/final/';
+document.querySelectorAll('.ico').forEach(e=>e.style.backgroundImage=e.style.backgroundImage.replace('SPR/',SPR));
+const P=1400, CX=745, CY=612; // plane center on screen (map offset 92)
+function proj(u,v){const a=u-P/2,b=v-P/2;return [CX+(a-b)/Math.SQRT2, CY+(a+b)/(2*Math.SQRT2)];}
+// u = plane x (left→right), v = plane y (top→bottom); after rotateZ45+rotateX60 screen: x=(u-v)/√2, y=(u+v)/(2√2)
+const B=[
+ ['ISO_LUMBER_CAMP_MED',300,150,0.8,'',''],
+ ['ISO_LUMBER_CAMP_MED',500,130,0.8,'',''],
+ ['ISO_QUARRY_MED',820,150,0.8,'',''],
+ ['ISO_WAREHOUSE_MED',480,400,0.8,'',''],
+ ['ISO_GUILD_HALL_MED',900,380,0.7,'',''],
+ ['ISO_WELL_MED',560,640,0.7,'',''],
+ ['ISO_MARKETPLACE_MED',830,640,0.8,'',''],
+ ['ISO_MILL_WIND_MED',1320,330,0.85,'',''],
+ ["ISO_BAKERY_MED",1090,500,0.8,'warn','braucht Wasser'],
+ ["ISO_FARM_GRAIN_MED",1340,630,0.5,'',''],
+ ['ISO_HERB_GARDEN_MED',1320,770,0.75,'',''],
+ ['ISO_SMITHY_MED',600,890,0.85,'warn','Eisenschwert 60 %','sel'],
+ ['ISO_BANK',900,930,0.4,'',''],
+ ['ISO_HOUSE_MED',300,1150,0.8,'',''],['ISO_HOUSE_MED',520,1150,0.8,'',''],['ISO_HOUSE_MED',520,1350,0.8,'',''],['ISO_HOUSE_MED',740,1380,0.8,'',''],
+ ['ISO_TREE_PINE',100,100,.9,'',''],['ISO_TREE_PINE',160,60,.9,'',''],['ISO_TREE_LARGE',680,100,.9,'',''],['ISO_TREE_PINE',1250,90,.9,'',''],['ISO_TREE_LARGE',1340,170,.9,'',''],['ISO_TREE_PINE',1150,60,.9,'',''],
+ ['ISO_TREE_LARGE',120,420,.9,'',''],['ISO_TREE_PINE',80,560,.9,'',''],['ISO_TREE_PINE',230,520,.9,'',''],['ISO_TREE_LARGE',300,380,.9,'',''],['ISO_TREE_PINE',140,760,.9,'',''],['ISO_TREE_PINE',260,800,.9,'',''],
+ ['ISO_TREE_PINE',1150,1350,.9,'',''],['ISO_TREE_LARGE',1360,1300,.9,'',''],['ISO_TREE_PINE',950,1380,.9,'',''],['ISO_TREE_LARGE',1100,800,.9,'',''],['ISO_TREE_PINE',1000,1000,.9,'',''],
+];
+const PL=[
+ [1000,150,120,'EISENMINE','20 Holz · 15 Stein · 25 Gold',false],
+ [1050,1130,130,'ARKANSCHMIEDE','braucht Bauplan (Kristallgolem)',true],
+ [1300,1070,140,'KRIEGSMASCHINEN','Gildenrang 4 · Bauplan',true],
+ [300,950,100,'WOHNHAUS','14 Holz',false],
+ [760,1180,100,'WOHNHAUS','14 Holz',false],
+];
+const plane=document.getElementById('plane'), objs=document.getElementById('objs');
+for(const [u,v,s,l,sub,lock] of PL){const d=document.createElement('div');d.className='plot'+(lock?' lock':'');d.style.cssText=`left:${u-s/2}px;top:${v-s/2}px;width:${s}px;height:${s}px`;plane.appendChild(d);}
+const items=[];
+for(const [k,u,v,sc,st,txt,sel] of B){const [x,y]=proj(u,v);items.push({y,html:`<div class="b ${sel||''}" style="left:${x}px;top:${y+10}px"><img src="${SPR}${k}.png" style="transform:scale(${sc});transform-origin:50% 100%">${txt?`<span class="badge ${st}">${txt}</span>`:''}</div>`});}
+for(const [u,v,s,l,sub,lock] of PL){const [x,y]=proj(u,v);items.push({y,html:`<div class="sign ${lock?'lock':''}" style="left:${x}px;top:${y+6}px"><div class="board">${lock?'🔒 ':''}${l}<small>${sub}</small></div><div class="pole"></div></div>`});}
+items.sort((a,b)=>a.y-b.y);objs.innerHTML=items.map(i=>i.html).join('');
+</script></body></html>

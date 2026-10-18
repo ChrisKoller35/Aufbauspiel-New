@@ -1,0 +1,115 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+#board{position:absolute;left:0;top:92px;width:1490px;height:988px;padding:18px 24px;overflow:hidden}
+.chain{display:flex;align-items:center;gap:0;margin-bottom:10px;padding:8px 14px;border:1px solid var(--bdr);border-radius:6px;background:linear-gradient(90deg,rgba(17,24,40,.9),rgba(12,18,32,.6))}
+.chain .ttl{width:150px;flex:none;font-family:Cinzel,serif;font-size:.74rem;letter-spacing:1.5px;color:var(--gl);line-height:1.5}
+.chain .ttl small{display:block;font-family:'Crimson Text',serif;font-size:.85rem;color:var(--mut);letter-spacing:0}
+.node{position:relative;width:150px;flex:none;border:1px solid var(--bdr);border-radius:6px;background:var(--s2);overflow:hidden}
+.node .img{height:78px;background:#0a0e18 center/cover}
+.node .nm{font-family:Cinzel,serif;font-size:.64rem;letter-spacing:.5px;color:var(--txt);padding:6px 8px 2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.node .st{font-size:.8rem;color:var(--mut);padding:0 8px 6px;white-space:nowrap}
+.node .st.ok{color:#9be0a5}.node .st.warn{color:var(--gl)}.node .st.lock{color:#e0a0a0}
+.node .bar{margin:0 8px 8px}
+.node.sel{border-color:var(--gold);box-shadow:0 0 14px rgba(200,162,39,.35)}
+.node.lock .img{filter:grayscale(1) brightness(.45)}
+.node.plot{border-style:dashed;background:transparent}.node.plot .img{background:#0a0e18 center/60% no-repeat;opacity:.5;filter:grayscale(1)}
+.node .cnt{position:absolute;top:6px;right:6px;font-family:Cinzel,serif;font-size:.62rem;background:rgba(6,8,16,.8);border:1px solid var(--bdr);padding:2px 6px;border-radius:3px;color:var(--gl)}
+.node .lk{position:absolute;top:6px;left:6px;font-size:.9rem}
+.arr{width:64px;flex:none;text-align:center;position:relative;height:40px}
+.arr:before{content:'';position:absolute;left:6px;right:6px;top:19px;border-top:2px solid var(--gd)}
+.arr:after{content:'';position:absolute;right:4px;top:14px;border:6px solid transparent;border-left:9px solid var(--gd)}
+.arr span{position:absolute;left:0;right:0;top:-4px;font-size:.72rem;color:var(--gl);background:transparent;font-family:Cinzel,serif;letter-spacing:.3px}
+.arr.dim:before,.arr.dim:after{border-color:transparent;border-left-color:#3a3a4a;border-top-color:#3a3a4a}
+.arr.dim span{color:var(--mut)}
+.plus{width:28px;flex:none;text-align:center;color:var(--mut);font-size:1.3rem}
+.stack{display:flex;flex-direction:column;gap:6px;flex:none}
+.stack .node{width:150px}.stack .node .img{height:44px}
+.out{width:150px;flex:none;border:1px solid var(--gd);border-radius:6px;background:#15120a;padding:10px;text-align:center}
+.out b{display:block;font-family:Cinzel,serif;font-size:.68rem;color:var(--gl);letter-spacing:.5px;margin-bottom:4px}
+.out span{color:var(--mut);font-size:.85rem}
+</style></head><body>
+<div class="hdr"><span class="back">← Zurück</span><span class="logo">✕ MAGIC CITY</span><span class="cur">/ &nbsp; PRODUKTION</span>
+<div class="res"><span>🪙 17547</span><span>🪵 8763</span><span>🪨 404</span><span>🌾 1629</span><span>🍞 682</span><span>⚙ 5</span><span>💎 5</span><span style="color:var(--mut)">TAG 808</span></div></div>
+<div class="tabs"><span class="tab on">PRODUKTION</span><span class="tab">WOHNEN & STADT</span><span class="tab">AUFBAU</span></div>
+<div id="board">
+
+<div class="chain"><div class="ttl">HOLZ & STEIN<small>Grundstoffe für alles</small></div>
+ <div class="stack">
+  <div class="node" data-img="bld_lumber_camp"><div class="img"></div><div class="nm">Holzfällerhütte</div><div class="st ok">+6 Holz / Tag</div><span class="cnt">×2</span></div>
+  <div class="node" data-img="bld_quarry"><div class="img"></div><div class="nm">Steinbruch</div><div class="st ok">+3 Stein / Tag</div></div>
+ </div>
+ <div class="arr"><span>Holz · Stein</span></div>
+ <div class="node" data-img="bld_warehouse"><div class="img"></div><div class="nm">Lagerhaus</div><div class="st warn">404 / 600 Stein</div><div class="bar"><i style="width:67%"></i></div></div>
+ <div class="arr"><span>für Bau</span></div>
+ <div class="out"><b>BAUEN & AUSBAUEN</b><span>alle Gebäude</span></div>
+</div>
+
+<div class="chain"><div class="ttl">BROT<small>Bewohner & Wachstum</small></div>
+ <div class="node" data-img="bld_farm_grain"><div class="img"></div><div class="nm">Getreidefarm</div><div class="st ok">+8 Getreide / Tag</div></div>
+ <div class="arr"><span>Getreide</span></div>
+ <div class="node" data-img="bld_mill_wind"><div class="img"></div><div class="nm">Windmühle</div><div class="st ok">mahlt Mehl</div><div class="bar"><i style="width:35%"></i></div></div>
+ <div class="arr"><span>Mehl</span></div>
+ <div class="node" data-img="bld_bakery"><div class="img"></div><div class="nm">Bäckerei</div><div class="st warn">wartet auf Wasser</div></div>
+ <div class="plus">+</div>
+ <div class="node" data-img="bld_well"><div class="img"></div><div class="nm">Brunnen</div><div class="st warn">zu weit weg</div></div>
+ <div class="arr"><span>Brot</span></div>
+ <div class="node" data-img="bld_house"><div class="img"></div><div class="nm">Wohnhäuser</div><div class="st ok">23 / 28 Bewohner</div><div class="bar"><i style="width:82%"></i></div><span class="cnt">×4</span></div>
+ <div class="arr"><span>Steuern</span></div>
+ <div class="out"><b>GOLD</b><span>+46 / Tag</span></div>
+</div>
+
+<div class="chain"><div class="ttl">WAFFEN & RÜSTUNG<small>für die Helden</small></div>
+ <div class="node plot" data-img="bld_iron_mine"><div class="img"></div><div class="nm">Eisenmine</div><div class="st">Bauplatz · 20 Holz · 15 Stein · 25 Gold</div></div>
+ <div class="arr dim"><span>Eisen</span></div>
+ <div class="node sel" data-img="bld_smithy"><div class="img"></div><div class="nm">Schmiede</div><div class="st warn">Eisenschwert · noch 18 s</div><div class="bar"><i style="width:60%"></i></div><span class="cnt">2 wartend</span></div>
+ <div class="arr"><span>Waffen</span></div>
+ <div class="stack">
+  <div class="node lock" data-img="bld_arcane_smithy"><span class="lk">🔒</span><div class="img"></div><div class="nm">Arkanschmiede</div><div class="st lock">braucht Bauplan</div></div>
+  <div class="node lock" data-img="bld_war_workshop"><span class="lk">🔒</span><div class="img"></div><div class="nm">Kriegsmaschinen</div><div class="st lock">Gildenrang 4</div></div>
+ </div>
+ <div class="arr dim"><span>Epische</span></div>
+ <div class="out"><b>HELDEN</b><span>3 ausgerüstet</span></div>
+</div>
+
+<div class="chain"><div class="ttl">TRÄNKE<small>Heilung & Stärkung</small></div>
+ <div class="node" data-img="bld_herb_garden"><div class="img"></div><div class="nm">Kräutergarten</div><div class="st ok">+4 Kräuter / Tag</div></div>
+ <div class="plus">+</div>
+ <div class="node" data-img="bld_well"><div class="img"></div><div class="nm">Brunnen</div><div class="st ok">Wasser</div></div>
+ <div class="arr"><span>Kräuter</span></div>
+ <div class="node plot" data-img="bld_herb_garden"><div class="img"></div><div class="nm">Alchemistenhütte</div><div class="st">Bauplan aus dem Sumpf</div></div>
+ <div class="arr dim"><span>Tränke</span></div>
+ <div class="out"><b>EXPEDITIONEN</b><span>Proviant & Heiltrank</span></div>
+</div>
+
+<div class="chain"><div class="ttl">STADT<small>Verwaltung & Handel</small></div>
+ <div class="node" data-img="bld_guild_hall"><div class="img"></div><div class="nm">Gildenhaus</div><div class="st ok">3 Helden-Plätze</div></div>
+ <div class="arr"><span>Rang 2</span></div>
+ <div class="node" data-img="bld_marketplace"><div class="img"></div><div class="nm">Marktplatz</div><div class="st ok">Handel offen</div></div>
+ <div class="arr"><span>Gold</span></div>
+ <div class="node" data-img="bld_bank"><div class="img"></div><div class="nm">Bank</div><div class="st ok">+2 % Zinsen</div></div>
+ <div class="arr"><span>Zinsen</span></div>
+ <div class="out"><b>GOLD</b><span>17 547 · +120 / Tag</span></div>
+</div>
+
+<div class="note">Entwurf 2 · Produktionsketten: Die Seite zeigt, was aus was wird. Jede Kette ist eine Zeile, Pfeile zeigen den Weg der Waren. Fehlende Glieder stehen als Bauplatz oder mit Schloss genau dort, wo sie in die Kette gehören.</div>
+</div>
+<div class="panel">
+ <h2>Schmiede</h2><div class="sub">Stufe 1 · 1 Arbeiter · Kette «Waffen & Rüstung»</div>
+ <div class="sect">Rezept</div>
+ <div class="row sel"><div class="ico" data-ico="ITEM_IRON_SWORD"></div><div>Eisenschwert<br><span style="color:var(--mut);font-size:.82rem">3 Eisenschrott · 1 Holz</span></div><div class="r">45 s</div></div>
+ <div class="row"><div class="ico" data-ico="ITEM_LEATHER_ARMOR"></div><div>Lederrüstung<br><span style="color:var(--mut);font-size:.82rem">2 Leder · 1 Eisenschrott</span></div><div class="r">60 s</div></div>
+ <div class="row"><div class="ico" data-ico="ITEM_CHAIN_ARMOR"></div><div>Kettenhemd<br><span style="color:var(--mut);font-size:.82rem">4 Eisenschrott</span></div><div class="r">90 s</div></div>
+ <div class="sect">Läuft gerade</div>
+ <div class="row" style="display:block"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Eisenschwert</span><span style="color:var(--mut)">noch 18 s</span></div><div class="bar"><i style="width:60%"></i></div></div>
+ <div class="sect">Warteschlange (2 / 4)</div>
+ <div class="row"><div>Eisenschwert</div><div class="r">wartet</div></div>
+ <div class="row"><div>Kettenhemd</div><div class="r">wartet</div></div>
+ <div style="margin-top:18px;display:flex;gap:10px"><span class="btn">HERSTELLEN</span><span class="btn dis">AUSBAUEN (Stufe 2)</span></div>
+ <div class="sect">Engpass</div>
+ <div class="row"><div>Eisenschrott: 5 im Lager, 3 pro Schwert.<br><span style="color:var(--mut);font-size:.85rem">Baue die Eisenmine, damit Nachschub kommt.</span></div></div>
+</div>
+<script>
+const B='../../public/assets/buildings/',S='../../public/assets/sprites/final/';
+document.querySelectorAll('.node').forEach(n=>n.querySelector('.img').style.backgroundImage=`url(${B}${n.dataset.img}.png)`);
+document.querySelectorAll('.ico').forEach(e=>e.style.backgroundImage=`url(${S}${e.dataset.ico}.png)`);
+</script></body></html>
