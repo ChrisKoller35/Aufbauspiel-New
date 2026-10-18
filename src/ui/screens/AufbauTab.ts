@@ -4,25 +4,16 @@
 // Nur Anzeige; Klick auf eine Karte öffnet den Kauf-Dialog.
 // ────────────────────────────────────────────────────────────────
 
-import {
-  BUILDING_DEFS, BUILD_MENU_ORDER,
-  getFreischaltHinweise, getFreischaltStatus, getFreischaltStufe,
-} from '../../data/buildings';
+import { BUILDING_DEFS, BUILD_MENU_ORDER, getFreischaltStufe } from '../../data/buildings';
 import { GameState } from '../../models/GameState';
+import { freischaltHinweise, getBuiltTypeIds, getGildenrang } from '../../systems/GebaeudeStatus';
+
+export { getBuiltTypeIds, getGildenrang };
 
 const CARD_W = 150;
 const CARD_H = 92;
 const GAP_X = 64;
 const GAP_Y = 16;
-
-/** Typ-IDs aller fertig gebauten Gebäude. */
-export function getBuiltTypeIds(state: GameState): Set<string> {
-  return new Set(state.buildings.filter(b => b && b.built).map(b => b.typeId));
-}
-
-export function getGildenrang(state: GameState): number {
-  return state.guildStats?.rank ?? 1;
-}
 
 export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) => string): string {
   const built = getBuiltTypeIds(state);
@@ -82,10 +73,12 @@ export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) =
   let cards = '';
   for (const [id, p] of Object.entries(pos)) {
     const def = BUILDING_DEFS[id];
-    const status = getFreischaltStatus(id, built, rang);
+    // Hinweise inkl. fehlendem Bauplan, damit «Baubar» nur steht, wenn BAUEN auch geht
+    const hinweise = built.has(id) ? [] : freischaltHinweise(state, id);
+    const status = built.has(id) ? 'gebaut' : hinweise.length ? 'gesperrt' : 'baubar';
     const label = status === 'gebaut' ? '✓ Gebaut'
       : status === 'baubar' ? 'Baubar'
-      : '🔒 ' + getFreischaltHinweise(id, built, rang).join(', ');
+      : '🔒 ' + hinweise.join(', ');
     cards += `
       <div class="acard ${status}" data-btype="${id}" title="${def.name}"
            style="left:${p.x}px;top:${p.y}px;width:${CARD_W}px;height:${CARD_H}px;${imageStyle(id)}">

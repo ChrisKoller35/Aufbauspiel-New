@@ -3,6 +3,14 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 18.10.2026: Gebäude-Seite
+
+Die Gebäude-Seite hat jetzt die Reiter **Produktion** (Produktionsketten, Entwurf 2), **Wohnen**, **Crafting**
+und **Aufbau**. Das Raster «Stadtplan» und die untere Bauleiste sind entfernt. Zustand je Gebäude:
+`src/systems/GebaeudeStatus.ts`, Engpass-Sätze: `src/systems/EngpassSystem.ts`, Ketten: `src/data/produktionsketten.ts`.
+Wasser liefert jetzt jeder gebaute Brunnen für die ganze Stadt (es gibt keine Karte mehr für einen Umkreis).
+Marktplatz und Bank haben weiterhin keine Wirkung im Spiel, Lager-Grenzen werden nicht geprüft.
+
 ## Kurz
 
 - Das Spiel startet ohne Fehler, `npm run build` ist grün. Aussehen: Hauptmenü mit vier grossen Bildkacheln

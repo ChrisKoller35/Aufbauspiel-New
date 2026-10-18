@@ -46,4 +46,7 @@ des angeklickten Gebäudes: Rezept, läuft gerade, Warteschlange, Herstellen, Au
 Weitere Reiter: **Wohnen** (Wohnhäuser, Bewohner, Zufriedenheit, Brot-Vorrat, Wohnhaus bauen) und **Aufbau** (bestehend).
 Der Reiter «Crafting» kann bleiben als Liste «Was läuft wo», er stellt nichts mehr direkt her.
 
-Umsetzung in drei Bot-Schritten (Manager-Issues): Daten + Ansicht, Klicks + Wohnen-Reiter + Altes entfernen, Engpass + Feinschliff.
+**Umgesetzt 18.10.2026** (statt in drei Bot-Nächten direkt im Thread): Reiter «Produktion» mit echten Zuständen
+(läuft, wartet, bereit, Bauplatz, gesperrt), laufenden Balken und einem Engpass-Satz je Kette; Reiter «Wohnen»;
+Werkstatt-Fenster mit Engpass-Zeile und «1 von N ›» für mehrere Gebäude gleicher Art. Stadtplan und Bauleiste sind weg.
+Abweichung vom Entwurf: «Wohnen» heisst nur «Wohnen», der Reiter «Crafting» bleibt.
