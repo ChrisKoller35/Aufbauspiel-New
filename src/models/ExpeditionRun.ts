@@ -97,7 +97,8 @@ export interface ExpeditionRun {
   combatLog: string[];
   loot: Record<string, number>;
   goldEarned: number;
-  provisions: { itemId: string; qty: number }[];
+  /** gifted = Gratis-Proviant der Gilde, wird nach dem Lauf NICHT ins Lager zurückgegeben */
+  provisions: { itemId: string; qty: number; gifted?: boolean }[];
   status: 'exploring' | 'victory' | 'defeat' | 'retreat';
   lastCheckpoint: number;
   desperateResolveUsed: boolean;
