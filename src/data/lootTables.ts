@@ -9,6 +9,11 @@ export interface LootTableDef {
   id: string;
   entries: LootEntry[];
   guaranteedGold: { min: number; max: number };
+  /**
+   * Bauplan-Item, das beim ERSTEN Sieg über den Boss dieser Tabelle garantiert fällt
+   * (zusätzlich zum normalen Wurf). Merker: GameState.erhalteneBauplaene.
+   */
+  ersterSiegBauplan?: string;
 }
 
 export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
@@ -62,6 +67,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_treant: {
     id: 'loot_boss_treant',
+    ersterSiegBauplan: 'bauplan_marktplatz',
     entries: [
       { itemId: 'wood', weight: 20, minQty: 5, maxQty: 10 },
       { itemId: 'herb_green', weight: 15, minQty: 3, maxQty: 6 },
@@ -75,6 +81,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_golem: {
     id: 'loot_boss_golem',
+    ersterSiegBauplan: 'bauplan_arkanschmiede',
     entries: [
       { itemId: 'iron_scrap', weight: 20, minQty: 5, maxQty: 10 },
       { itemId: 'stone', weight: 15, minQty: 5, maxQty: 8 },
@@ -210,6 +217,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_fallen_knight: {
     id: 'loot_boss_fallen_knight',
+    ersterSiegBauplan: 'bauplan_kriegsmaschinen',
     entries: [
       { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 5 },
       { itemId: 'talisman_fragment', weight: 25, minQty: 2, maxQty: 4 },
@@ -222,6 +230,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_lich: {
     id: 'loot_boss_lich',
+    ersterSiegBauplan: 'bauplan_bank',
     entries: [
       { itemId: 'talisman_fragment', weight: 30, minQty: 2, maxQty: 5 },
       { itemId: 'crystal_shard', weight: 25, minQty: 3, maxQty: 6 },

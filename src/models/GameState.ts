@@ -129,6 +129,10 @@ export interface GameState {
     expeditionCount: number;       // how many expeditions contributed
   };
 
+  // ── Baupläne ──
+  // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).
+  erhalteneBauplaene: string[];
+
   // ── Terrain editor data (dev tool) ──
   // key = "gx,gy", value = variant index (0=light, 1=medium, 2=deep)
   swampTiles?: Record<string, number>;
@@ -188,6 +192,7 @@ export function createNewGameState(): GameState {
     warMachineInventory: [],
     selectedWarMachine: null,
     pendingChestLoot: { items: {}, expeditionCount: 0 },
+    erhalteneBauplaene: [],
     // SaveVersion 4 fields
     guildStats: {
       rank: 1,

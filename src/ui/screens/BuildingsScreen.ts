@@ -396,12 +396,18 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
     if ((state.globalStock[res] ?? 0) < qty) return;
   }
 
+  // Bauplan-Freischaltung: Bauplan muss im Lager liegen
+  const bauplan = def.freischaltung?.bauplan;
+  if (bauplan && (state.globalStock[bauplan] ?? 0) < 1) return;
+
   if (!hasEmptySlot(state, typeId)) return;
 
   // Deduct resources
   for (const [res, qty] of Object.entries(def.buildCost)) {
     state.globalStock[res] = (state.globalStock[res] ?? 0) - qty;
   }
+  // Bauplan wird beim Bau verbraucht
+  if (bauplan) state.globalStock[bauplan] -= 1;
 
   // Create building instance and push to array
   const building = createBuildingInstance(typeId, 0, 0, true);
