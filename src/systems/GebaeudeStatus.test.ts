@@ -133,6 +133,9 @@ describe('EngpassSystem', () => {
     arbeiter(state, schmiede);
     bauen(state, 'IRON_MINE', 'RCP_IRON_1');
     state.globalStock['iron_scrap'] = 0;
+    // Am Lagerfeuer erlaubt die Stadt noch keinen Ausbau: der Satz nennt die nötige Stadtstufe
+    expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('erst die Stadtstufe «Dorf»');
+    state.stadtweg!.stufe = 3;
     expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('baue Eisenmine aus');
   });
 

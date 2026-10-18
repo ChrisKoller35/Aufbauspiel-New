@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
   maxStufe, ausbauKosten, ausbauInfo, ausbauen, zyklusSekunden, arbeitsplaetze, hausKapazitaet, wohnKapazitaet,
-  kapazitaetAufStufe, investiert, vereinigeDoppelte, wirkungsStufe,
+  kapazitaetAufStufe, investiert, vereinigeDoppelte, wirkungsStufe, erlaubteStufe, fehlendeStadtstufe,
 } from './Ausbau';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
@@ -67,6 +67,7 @@ describe('Ausbau: Stufen und Kosten', () => {
 describe('Ausbau: ausbauen', () => {
   it('zieht die Kosten ab, hebt die Stufe und gibt einen zweiten Arbeitsplatz', () => {
     const state = createNewGameState();
+    state.stadtweg!.stufe = 3; // Dorf: Werkstätten bis Stufe 2
     const huette = bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
     arbeiter(state, huette);
     state.globalStock.wood = 100;
@@ -128,6 +129,53 @@ describe('Ausbau: ausbauen', () => {
     markt.tier = 3;
     arbeiter(state, markt);
     expect(wirkungsStufe(state, 'MARKETPLACE')).toBe(2);
+  });
+});
+
+describe('Ausbau: Grenzen der Stadtstufe', () => {
+  it('Werkstätten bis Stufe 2 erst ab dem Dorf, Stufe 3 ab der Stadt', () => {
+    const state = createNewGameState();
+    const huette = bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
+    state.globalStock.wood = 1000;
+    expect(erlaubteStufe(state, 'LUMBER_CAMP')).toBe(1);
+    expect(fehlendeStadtstufe(state, huette)).toBe('Dorf');
+    expect(ausbauInfo(state, huette).hinweis).toBe('braucht Stadtstufe «Dorf» (Hauptmenü)');
+    expect(ausbauen(state, huette)).toBe(false);
+
+    state.stadtweg!.stufe = 3;
+    expect(ausbauen(state, huette)).toBe(true);
+    expect(fehlendeStadtstufe(state, huette)).toBe('Stadt');
+    state.stadtweg!.stufe = 5;
+    expect(ausbauen(state, huette)).toBe(true);
+    expect(fehlendeStadtstufe(state, huette)).toBeNull();
+  });
+
+  it('Wohnviertel wächst mit jeder Stadtstufe um eine Stufe', () => {
+    const state = createNewGameState();
+    const haus = bauen(state, 'HOUSE_T1');
+    state.globalStock.wood = 1000;
+    state.globalStock.stone = 1000;
+    for (let stadt = 1; stadt <= 6; stadt++) {
+      state.stadtweg!.stufe = stadt;
+      expect(erlaubteStufe(state, 'HOUSE_T1')).toBe(stadt);
+    }
+    state.stadtweg!.stufe = 2;
+    expect(ausbauen(state, haus)).toBe(true);
+    expect(ausbauen(state, haus)).toBe(false);
+    expect(fehlendeStadtstufe(state, haus)).toBe('Dorf');
+  });
+
+  it('Gebäude ohne Ausbau-Grenze und ältere Spielstände ohne Stadtweg', () => {
+    const state = createNewGameState();
+    const gilde = bauen(state, 'GUILD_HALL');
+    expect(fehlendeStadtstufe(state, gilde)).toBeNull();
+    delete state.stadtweg;
+    expect(erlaubteStufe(state, 'HOUSE_T1')).toBe(1);
+    // Schon höher ausgebaute Gebäude bleiben, wie sie sind
+    const haus = bauen(state, 'HOUSE_T1');
+    haus.tier = 4;
+    expect(hausKapazitaet(haus)).toBe(24);
+    expect(fehlendeStadtstufe(state, haus)).toBe('Stadt');
   });
 });
 

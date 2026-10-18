@@ -5,6 +5,7 @@
 import { navigateTo, ScreenId } from '../ScreenRouter';
 import { GameState } from '../../models/GameState';
 import { renderHeader } from './HeaderRenderer';
+import { stadtBannerHtml, bindeStadtBanner } from './StadtwegFenster';
 
 /**
  * Renders the main menu screen into the given app container.
@@ -24,6 +25,8 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
       <h1 class="main-title glow">MAGIC CITY</h1>
       <p class="main-tagline">Baue deine Stadt. Forme deine Helden. Erobere das Unbekannte.</p>
     </section>
+
+    ${stadtBannerHtml()}
 
     <div class="main-grid">
       <div class="tile" data-nav="expeditions" style="background-image:url('assets/tiles/tile_expeditions.png')">
@@ -62,6 +65,9 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
       navigateTo(screen);
     }
   });
+
+  // Der Weg zur Magischen Stadt: Stadtstufe, Fortschritt, wachsende Stadt
+  bindeStadtBanner(el, state);
 
   // Background switcher
   const bgEl = el.querySelector('#main-bg') as HTMLElement;

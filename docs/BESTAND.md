@@ -3,6 +3,14 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 18.10.2026 (spät): Der Weg zur Magischen Stadt
+
+Christoph wollte eine Geschichte, das Endgame bleibt der endlose Aufstieg im Dungeon mit Rangliste. Neu: 7
+Stadtstufen (Lagerfeuer bis Magische Stadt) mit Aufgaben, Abgabe und Belohnung, je ein Kapitel der Stadtchronik,
+ein Banner im Hauptmenü mit der wachsenden Stadt als Bild aus Code, und die Stadtstufe begrenzt den Ausbau
+(Wohnviertel, Werkstätten, Marktplatz und Bank). Stufe 7 öffnet die endlose Treppe (nächstes Paket).
+Regeln und Zahlen: `docs/STADTWEG.md`. Bosse und Gildenrang zählen erst nach Manager-Issue #21.
+
 ## Nachtrag 18.10.2026 (abends): Mindmap, ein Gebäude je Art, Wohnviertel
 
 Zweiter Umbau nach Christophs Wunsch: Der Reiter **Produktion** ist eine Mindmap in vier Reihen (Gewinnen →
