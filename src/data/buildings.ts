@@ -1,3 +1,10 @@
+/** Bedingungen, bevor ein Gebäude gebaut werden darf. */
+export interface BuildingFreischaltung {
+  braucht: string[];      // Gebäude-IDs, die bereits stehen müssen
+  gildenrang?: number;    // Mindest-Gildenrang (GuildStats.rank)
+  bauplan?: string;       // Item-ID eines Bauplans (Schritt 2, wird noch nicht geprüft)
+}
+
 export interface BuildingDef {
   id: string;
   name: string;
@@ -17,8 +24,7 @@ export interface BuildingDef {
   tags: string[];
   requirements?: { waterSupplied?: boolean };
   manualCraft?: boolean;  // true = player must click "Herstellen" to start each cycle
-  /** Freischalt-Bedingungen. bauplan = Item-ID, die im Lager liegen muss und beim Bau verbraucht wird. */
-  freischaltung?: { bauplan?: string };
+  freischaltung: BuildingFreischaltung;
   spriteKey: string;
 }
 
@@ -40,6 +46,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['food', 'farm'],
+    freischaltung: { braucht: ['QUARRY'] },
     spriteKey: 'FARM_GRAIN',
   },
   WELL: {
@@ -59,6 +66,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['utility', 'water'],
+    freischaltung: { braucht: ['LUMBER_CAMP'] },
     spriteKey: 'WELL',
   },
   MILL_WIND: {
@@ -78,6 +86,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['food'],
+    freischaltung: { braucht: ['FARM_GRAIN'] },
     spriteKey: 'MILL_WIND',
   },
   BAKERY: {
@@ -98,6 +107,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['food'],
     requirements: { waterSupplied: true },
+    freischaltung: { braucht: ['MILL_WIND', 'WELL'] },
     spriteKey: 'BAKERY',
   },
   LUMBER_CAMP: {
@@ -117,6 +127,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['material'],
+    freischaltung: { braucht: [] },
     spriteKey: 'LUMBER_CAMP',
   },
   QUARRY: {
@@ -136,6 +147,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['material'],
+    freischaltung: { braucht: ['LUMBER_CAMP'] },
     spriteKey: 'QUARRY',
   },
   WAREHOUSE: {
@@ -155,6 +167,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['storage'],
+    freischaltung: { braucht: [] },
     spriteKey: 'WAREHOUSE',
   },
   HOUSE_T1: {
@@ -174,6 +187,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['housing'],
+    freischaltung: { braucht: [] },
     spriteKey: 'HOUSE_T1',
   },
   GUILD_HALL: {
@@ -193,6 +207,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: { partySlots: 3, maxActiveRuns: 1 },
     training: { trainingTimeSec: 0, trainingCost: { gold: 15 } },
     tags: ['hub', 'guild'],
+    freischaltung: { braucht: [] },
     spriteKey: 'GUILD_HALL',
   },
   HERB_GARDEN: {
@@ -213,6 +228,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['herb', 'farm'],
     requirements: { waterSupplied: true },
+    freischaltung: { braucht: ['FARM_GRAIN', 'WELL'] },
     spriteKey: 'HERB_GARDEN',
   },
   SMITHY: {
@@ -233,6 +249,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['craft', 'gear'],
     manualCraft: true,
+    freischaltung: { braucht: ['LUMBER_CAMP', 'QUARRY'] },
     spriteKey: 'SMITHY',
   },
   IRON_MINE: {
@@ -252,6 +269,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['material', 'mine'],
+    freischaltung: { braucht: ['SMITHY'] },
     spriteKey: 'IRON_MINE',
   },
   ROAD: {
@@ -271,6 +289,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['road', 'walkable'],
+    freischaltung: { braucht: [] },
     spriteKey: 'ROAD',
   },
   DUNGEON_CAMP: {
@@ -290,6 +309,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: { partySlots: 3, maxActiveRuns: 1 },
     training: null,
     tags: ['hub', 'dungeon'],
+    freischaltung: { braucht: [] },
     spriteKey: 'GUILD_HALL',
   },
   TREASURE_CHEST: {
@@ -309,6 +329,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['hub', 'loot'],
+    freischaltung: { braucht: [] },
     spriteKey: 'ISO_TREASURE_CHEST',
   },
   ARCANE_SMITHY: {
@@ -329,7 +350,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['craft', 'gear', 'arcane'],
     manualCraft: true,
-    freischaltung: { bauplan: 'bauplan_arkanschmiede' },
+    freischaltung: { braucht: ['IRON_MINE'], gildenrang: 2, bauplan: 'bauplan_arkanschmiede' },
     spriteKey: 'ARCANE_SMITHY',
   },
   MARKETPLACE: {
@@ -349,7 +370,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['utility', 'economy'],
-    freischaltung: { bauplan: 'bauplan_marktplatz' },
+    freischaltung: { braucht: ['GUILD_HALL', 'WAREHOUSE'], gildenrang: 2, bauplan: 'bauplan_marktplatz' },
     spriteKey: 'MARKETPLACE',
   },
   WAR_MACHINE_WORKSHOP: {
@@ -370,7 +391,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['craft', 'war'],
     manualCraft: true,
-    freischaltung: { bauplan: 'bauplan_kriegsmaschinen' },
+    freischaltung: { braucht: ['IRON_MINE', 'GUILD_HALL'], gildenrang: 4, bauplan: 'bauplan_kriegsmaschinen' },
     spriteKey: 'WAR_MACHINE_WORKSHOP',
   },
   BANK: {
@@ -390,7 +411,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['utility', 'economy'],
-    freischaltung: { bauplan: 'bauplan_bank' },
+    freischaltung: { braucht: ['MARKETPLACE'], gildenrang: 3, bauplan: 'bauplan_bank' },
     spriteKey: 'BANK',
   },
 };
@@ -403,3 +424,43 @@ export const BUILD_MENU_ORDER = [
   'ARCANE_SMITHY', 'MARKETPLACE', 'WAR_MACHINE_WORKSHOP',
   'BANK',
 ];
+
+// ── Freischaltung ───────────────────────────────────────────────
+
+export type FreischaltStatus = 'gebaut' | 'baubar' | 'gesperrt';
+
+/** Fehlende Bedingungen als kurze Hinweise, z. B. «braucht Schmiede». Leer = frei. */
+export function getFreischaltHinweise(typeId: string, builtTypeIds: Iterable<string>, gildenrang: number): string[] {
+  const def = BUILDING_DEFS[typeId];
+  if (!def) return [];
+  const built = new Set(builtTypeIds);
+  const hinweise: string[] = [];
+  const fehlend = def.freischaltung.braucht.filter(id => !built.has(id));
+  if (fehlend.length) {
+    hinweise.push(`braucht ${fehlend.map(id => BUILDING_DEFS[id]?.name ?? id).join(' + ')}`);
+  }
+  const rang = def.freischaltung.gildenrang;
+  if (rang && gildenrang < rang) hinweise.push(`braucht Gildenrang ${rang}`);
+  return hinweise;
+}
+
+export function isBuildingUnlocked(typeId: string, builtTypeIds: Iterable<string>, gildenrang: number): boolean {
+  return getFreischaltHinweise(typeId, builtTypeIds, gildenrang).length === 0;
+}
+
+export function getFreischaltStatus(typeId: string, builtTypeIds: Iterable<string>, gildenrang: number): FreischaltStatus {
+  const built = new Set(builtTypeIds);
+  if (built.has(typeId)) return 'gebaut';
+  return isBuildingUnlocked(typeId, built, gildenrang) ? 'baubar' : 'gesperrt';
+}
+
+/** Stufe im Aufbau-Baum: 0 ohne Voraussetzung, sonst 1 + höchste Stufe der Voraussetzungen. */
+export function getFreischaltStufe(typeId: string, seen: ReadonlySet<string> = new Set()): number {
+  const def = BUILDING_DEFS[typeId];
+  if (!def) throw new Error(`Freischaltung: unbekanntes Gebäude ${typeId}`);
+  if (seen.has(typeId)) throw new Error(`Freischaltung: Kreis bei ${typeId}`);
+  const braucht = def.freischaltung.braucht;
+  if (braucht.length === 0) return 0;
+  const next = new Set(seen).add(typeId);
+  return 1 + Math.max(...braucht.map(id => getFreischaltStufe(id, next)));
+}
