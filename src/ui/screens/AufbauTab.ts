@@ -1,12 +1,14 @@
 // ─── Magic City – Aufbau-Reiter ─────────────────────────────────
 // Freischalt-Baum der Gebäude: Stufen von links nach rechts,
 // Karten (gebaut / baubar / gesperrt) mit Verbindungslinien.
-// Nur Anzeige; Klick auf eine Karte öffnet den Kauf-Dialog.
+// Nur Anzeige; Klick auf eine Karte öffnet den Kauf-Dialog oder, wenn
+// das Gebäude steht, sein Fenster mit dem Ausbau (Stufe auf der Karte).
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS, BUILD_MENU_ORDER, getFreischaltStufe } from '../../data/buildings';
 import { GameState } from '../../models/GameState';
-import { freischaltHinweise, getBuiltTypeIds, getGildenrang } from '../../systems/GebaeudeStatus';
+import { freischaltHinweise, getBuiltTypeIds, getGildenrang, dasGebaeude } from '../../systems/GebaeudeStatus';
+import { maxStufe, stufeVon } from '../../systems/Ausbau';
 
 export { getBuiltTypeIds, getGildenrang };
 
@@ -14,6 +16,13 @@ const CARD_W = 150;
 const CARD_H = 92;
 const GAP_X = 64;
 const GAP_Y = 16;
+
+/** «✓ Stufe 2 von 3» bei ausbaubaren Gebäuden, sonst «✓ Gebaut». */
+function gebautLabel(state: GameState, typeId: string): string {
+  const b = dasGebaeude(state, typeId);
+  const max = maxStufe(typeId);
+  return b && max > 1 ? `✓ Stufe ${stufeVon(b)} von ${max}` : '✓ Gebaut';
+}
 
 export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) => string): string {
   const built = getBuiltTypeIds(state);
@@ -76,7 +85,7 @@ export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) =
     // Hinweise inkl. fehlendem Bauplan, damit «Baubar» nur steht, wenn BAUEN auch geht
     const hinweise = built.has(id) ? [] : freischaltHinweise(state, id);
     const status = built.has(id) ? 'gebaut' : hinweise.length ? 'gesperrt' : 'baubar';
-    const label = status === 'gebaut' ? '✓ Gebaut'
+    const label = status === 'gebaut' ? gebautLabel(state, id)
       : status === 'baubar' ? 'Baubar'
       : '🔒 ' + hinweise.join(', ');
     cards += `

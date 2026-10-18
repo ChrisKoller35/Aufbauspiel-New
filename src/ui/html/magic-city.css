@@ -460,41 +460,45 @@ body {
 .bmain { flex: 1; overflow-y: auto; padding: 14px 22px 18px; display: flex; flex-direction: column; }
 [hidden] { display: none !important; }
 
-/* ── Reiter «Produktion» (Produktionsketten) ── */
-.pk { display: flex; flex-direction: column; gap: 10px; }
-.pk-hint { font-size: 0.8rem; color: var(--mut); }
-.pk-kette {
-  border: 1px solid var(--bdr); border-radius: 6px; padding: 8px 14px;
-  background: linear-gradient(90deg, rgba(17,24,40,.9), rgba(12,18,32,.6));
-  display: flex; align-items: center; gap: 12px;
+/* ── Reiter «Produktion» (Mindmap in vier Reihen) ── */
+.pk { display: flex; flex-direction: column; gap: 12px; }
+.pk-top { display: flex; gap: 18px; align-items: flex-start; flex-wrap: wrap; }
+.pk-hint { font-size: 0.8rem; color: var(--mut); flex: 1 1 320px; line-height: 1.35; }
+.pk-engpaesse { flex: 1 1 360px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.pk-eng-item {
+  font: inherit; font-size: 0.78rem; line-height: 1.25; color: #f0c674; text-align: left; cursor: pointer;
+  background: rgba(122,90,20,.12); border: 1px solid rgba(122,90,20,.5); border-radius: 4px; padding: 4px 8px;
 }
-.pk-kopf { width: 150px; flex: none; }
-.pk-kopf h3 { font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 1.5px; color: var(--gl); font-weight: normal; text-transform: uppercase; }
-.pk-kopf small { display: block; font-size: 0.85rem; color: var(--mut); }
-.pk-eng { margin-top: 6px; font-size: 0.78rem; line-height: 1.25; color: #f0c674; }
-.pk-eng::before { content: '⚠ '; }
-.pk-eng.ok { color: #9be0a5; }
-.pk-eng.ok::before { content: ''; }
-.pk-row { display: flex; align-items: center; overflow-x: auto; padding: 4px 0; flex: 1; min-width: 0; }
-.pk-v { flex: none; display: flex; align-items: center; }
-.pk-v:empty { display: none; }
+.pk-eng-item:hover { border-color: var(--gold); color: var(--gl); }
+.pk-eng-ok { font-size: 0.78rem; color: #9be0a5; padding: 4px 0; }
+
+.pk-netz { position: relative; width: max-content; min-width: 100%; padding: 2px 2px 10px; }
+svg.pk-kanten { position: absolute; left: 0; top: 0; pointer-events: none; overflow: visible; z-index: 0; }
+svg.pk-kanten.pk-kanten-txt { z-index: 2; }
+.pk-reihe { position: relative; z-index: 1; display: flex; align-items: flex-start; gap: 10px; }
+.pk-reihe + .pk-reihe { margin-top: 58px; }
+/* Reihen-Titel links neben den Karten, damit die Linien zwischen den Reihen frei bleiben */
+.pk-kopf { width: 112px; flex: none; padding-top: 8px; }
+.pk-kopf h3 { font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 1px; color: var(--gl); font-weight: normal; text-transform: uppercase; line-height: 1.3; }
+.pk-kopf small { display: block; font-size: 0.74rem; color: var(--mut); line-height: 1.3; margin-top: 2px; }
+.pk-row { display: flex; gap: 48px; align-items: stretch; }
 
 .pk-karte {
-  position: relative; width: 136px; flex: none; border: 1px solid var(--bdr); border-radius: 6px;
-  background: var(--s2); overflow: hidden; cursor: pointer; transition: .15s;
+  position: relative; width: 130px; flex: none; border: 1px solid var(--bdr); border-radius: 6px;
+  background: var(--s2); overflow: hidden; cursor: pointer; transition: .15s; display: flex; flex-direction: column;
 }
 .pk-karte:hover { border-color: var(--gold); transform: translateY(-2px); }
-.pk-img { height: 78px; background: #0a0e18 center/cover no-repeat; }
+.pk-img { height: 74px; background: #0a0e18 center/cover no-repeat; flex: none; }
 .pk-nm {
   font-family: 'Cinzel', serif; font-size: 0.64rem; letter-spacing: .5px; color: var(--txt);
   padding: 6px 8px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.pk-st { font-size: 0.8rem; color: var(--mut); padding: 0 8px 6px; line-height: 1.2; }
-.pk-bar { margin: 0 8px 8px; height: 5px; border-radius: 3px; background: var(--s3); overflow: hidden; }
+.pk-st { font-size: 0.78rem; color: var(--mut); padding: 0 8px 6px; line-height: 1.2; }
+.pk-bar { margin: auto 8px 8px; height: 5px; border-radius: 3px; background: var(--s3); overflow: hidden; flex: none; }
 .pk-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gd), var(--gold)); transition: width .4s linear; }
-.pk-cnt {
-  position: absolute; top: 6px; right: 6px; font-family: 'Cinzel', serif; font-size: 0.62rem;
-  background: rgba(6,8,16,.8); border: 1px solid var(--bdr); padding: 2px 6px; border-radius: 3px; color: var(--gl);
+.pk-stufe {
+  position: absolute; top: 6px; right: 6px; font-family: 'Cinzel', serif; font-size: 0.6rem;
+  background: rgba(6,8,16,.85); border: 1px solid var(--gd); padding: 2px 6px; border-radius: 3px; color: var(--gl);
 }
 .pk-lock { position: absolute; top: 6px; left: 6px; font-size: 0.9rem; display: none; }
 
@@ -514,48 +518,70 @@ body {
 .pk-karte.z-bauplatz .pk-img { opacity: .45; filter: grayscale(1); }
 .pk-karte.z-bauplatz .pk-st { color: var(--gl); }
 .pk-karte.z-bauplatz .pk-st::before { content: 'Bauen: '; color: var(--gold); }
-.wohn .pk-karte.z-bauplatz .pk-st::before { content: ''; }
 
-.pk-stapel { display: flex; flex-direction: column; gap: 6px; flex: none; }
-.pk-karte.klein .pk-img { height: 44px; }
+/* Lagerhaus: ein Balken über die ganze Breite */
+.pk-karte.pk-lager {
+  flex: 1 1 auto; width: auto; min-width: 460px; flex-direction: row; align-items: center; gap: 14px;
+  padding-right: 12px; border-color: var(--gd); background: linear-gradient(90deg, rgba(40,32,12,.9), rgba(17,24,40,.8));
+}
+.pk-lager .pk-img { width: 110px; height: 78px; }
+.pk-lager-txt { flex: none; width: 150px; }
+.pk-lager-txt .pk-nm { padding-left: 0; font-size: 0.72rem; color: var(--gl); }
+.pk-lager-txt .pk-st { padding-left: 0; }
+.pk-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
+.pk-chip {
+  font-size: 0.74rem; color: var(--mut); background: rgba(6,8,16,.6); border: 1px solid var(--bdr);
+  border-radius: 3px; padding: 2px 7px; white-space: nowrap;
+}
+.pk-chip b { color: var(--txt); font-weight: 600; }
+
+/* Beute aus den Dungeons (Reihe oben) */
 .pk-quelle { border-color: #3c2d63; }
 .pk-quelle .pk-st { color: #c4b5fd; }
+.pk-quelle.z-wartet { border-color: #3c2d63; }
+.pk-quelle.z-wartet .pk-st { color: #c4b5fd; }
 
-.pk-pfeil { width: 66px; height: 40px; position: relative; text-align: center; }
-.pk-pfeil::before { content: ''; position: absolute; left: 6px; right: 8px; top: 23px; border-top: 2px solid #3a3a4a; }
-.pk-pfeil::after { content: ''; position: absolute; right: 2px; top: 18px; border: 6px solid transparent; border-left: 9px solid #3a3a4a; }
-.pk-pfeil span { position: absolute; left: 0; right: 0; top: 0; font-family: 'Cinzel', serif; font-size: 0.66rem; color: var(--mut); line-height: 1.1; }
-.pk-pfeil.an::before { border-top-color: var(--gold); }
-.pk-pfeil.an::after { border-left-color: var(--gold); }
-.pk-pfeil.an span { color: var(--gl); }
-.pk-plus { width: 30px; text-align: center; color: var(--mut); font-size: 1.4rem; }
-
-.pk-ziel { width: 136px; flex: none; border: 1px solid var(--gd); border-radius: 6px; background: #15120a; padding: 10px; text-align: center; }
+/* Ziele: Bauen, Expeditionen */
+.pk-ziel {
+  width: 130px; flex: none; border: 1px solid var(--gd); border-radius: 6px; background: #15120a; padding: 10px;
+  text-align: center; display: flex; flex-direction: column; justify-content: center; position: relative; z-index: 1;
+}
 .pk-ziel b { display: block; font-family: 'Cinzel', serif; font-size: 0.68rem; color: var(--gl); letter-spacing: .5px; margin-bottom: 4px; text-transform: uppercase; font-weight: normal; }
-.pk-ziel-w { color: var(--txt); font-size: 0.85rem; }
+.pk-ziel-w { color: var(--txt); font-size: 0.82rem; line-height: 1.25; }
 .pk-ziel.link { cursor: pointer; }
 .pk-ziel.link:hover { border-color: var(--gold); }
 .pk-ziel.link b::after { content: ' ›'; }
 
-/* ── Reiter «Wohnen» ── */
-.wohn { display: flex; gap: 18px; align-items: flex-start; }
-.wohn-haeuser { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, 136px); gap: 12px; }
-.wohn-info { width: 300px; flex: none; border: 1px solid var(--bdr); border-radius: 6px; background: var(--s1); padding: 12px 14px; }
-.wohn-zeile { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--s3); font-size: 0.9rem; }
-.wohn-zeile span { color: var(--mut); }
-.wohn-zeile b { font-weight: normal; color: var(--txt); }
-.wohn-zeile b.gut, .wohn-wachstum.gut span { color: #9be0a5; }
-.wohn-zeile b.schlecht, .wohn-wachstum.schlecht span { color: #f0c674; }
-.wohn-wachstum { margin-top: 10px; font-size: 0.85rem; }
-.wohn-wachstum .pk-bar { margin: 6px 0 0; }
-.wohn-tipp { margin-top: 10px; font-size: 0.75rem; color: var(--mut); line-height: 1.3; }
-
-/* Gebäude-Fenster: weiterblättern */
-.bm-next {
-  margin-left: 8px; padding: 2px 8px; font-size: 0.7rem; font-family: 'Cinzel', serif; vertical-align: middle;
-  border: 1px solid var(--gd); border-radius: 3px; background: transparent; color: var(--gl); cursor: pointer;
+/* Verbindungslinien (SVG) */
+path.pk-k { fill: none; stroke-width: 2; stroke: #3a3a4a; }
+path.pk-k.an { stroke: #c8a227; }
+path.pk-k.versorgung { stroke-dasharray: 5 4; }
+text.pk-kl {
+  font-family: 'Cinzel', serif; font-size: 10.5px; fill: var(--mut);
+  paint-order: stroke; stroke: #060810; stroke-width: 4px; stroke-linejoin: round;
 }
-.bm-next:hover { border-color: var(--gold); }
+text.pk-kl.an { fill: var(--gl); }
+
+/* ── Gebäude-Fenster: Angaben, Wachstum, Vorrat, Ausbau ── */
+.bm-stufe {
+  margin-left: 8px; padding: 2px 8px; font-size: 0.66rem; font-family: 'Cinzel', serif; vertical-align: middle;
+  border: 1px solid var(--gd); border-radius: 3px; color: var(--gl); letter-spacing: .5px;
+}
+.bm-zeilen { margin-bottom: 8px; }
+.bm-zeile { display: flex; flex-wrap: wrap; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--s3); font-size: 0.9rem; }
+.bm-zeile span { color: var(--mut); }
+.bm-zeile b { font-weight: normal; color: var(--txt); }
+.bm-zeile b.gut, .bm-wachs.gut span { color: #9be0a5; }
+.bm-zeile b.schlecht, .bm-wachs.schlecht span { color: #f0c674; }
+.bm-zeile small { width: 100%; font-size: 0.72rem; color: var(--mut); line-height: 1.3; margin-top: 2px; }
+.bm-wachs { margin: 4px 0 10px; font-size: 0.85rem; }
+.bm-wachs .pk-bar { margin: 6px 0 0; }
+.bm-vorrat { margin: 4px 0 10px; }
+.bm-info { font-size: 0.78rem; color: var(--mut); line-height: 1.3; }
+.bm-ausbau { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--s3); }
+.bm-ausbau-w { font-size: 0.88rem; margin: 2px 0 6px; }
+.bm-ausbau .btn-ausbau { margin-top: 8px; }
+.bm-ausbau .btn-ausbau[disabled] { opacity: .45; cursor: not-allowed; }
 
 /* ── Aufbau-Reiter (Freischalt-Baum) ── */
 .aufbau { display: flex; flex-direction: column; gap: 12px; }

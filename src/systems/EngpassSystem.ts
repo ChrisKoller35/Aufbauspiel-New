@@ -1,16 +1,17 @@
 // ─── Magic City – Engpass-Suche ─────────────────────────────────
-// Findet, woran ein Gebäude oder eine ganze Produktionskette hängt,
-// und sagt es in einem Satz in Spielersprache, mit dem nächsten Schritt.
+// Findet, woran ein Gebäude oder die ganze Stadt hängt, und sagt es in
+// einem Satz in Spielersprache, mit dem nächsten Schritt.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../data/buildings';
 import { RECIPE_DEFS } from '../data/recipes';
-import { Produktionskette, gliedTypeIds } from '../data/produktionsketten';
+import { netzGebaeudeIds } from '../data/produktionsnetz';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 import {
-  getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, gebaeudeVomTyp, einzelStatus, WarteGrund,
+  getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, dasGebaeude, einzelStatus, WarteGrund,
 } from './GebaeudeStatus';
+import { maxStufe, stufeVon, arbeitsplaetze, besetzt } from './Ausbau';
 
 /** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept). */
 export function lieferantFuer(item: string): string | null {
@@ -27,9 +28,18 @@ function freieBewohner(state: GameState): number {
 }
 
 function wohnHinweis(state: GameState): string {
-  if (state.citizens.length >= wohnKapazitaet(state)) return 'Baue ein Wohnhaus, damit neue Bewohner kommen.';
+  if (state.citizens.length >= wohnKapazitaet(state)) return 'Baue das Wohnviertel aus, damit neue Bewohner kommen.';
   if ((state.globalStock.bread ?? 0) < 1) return 'Neue Bewohner kommen nur mit Brot im Lager.';
   return 'Der nächste Bewohner kommt bald.';
+}
+
+/** «Baue X aus.» oder, auf höchster Stufe, ein ehrlicher Hinweis. */
+function ausbauHinweis(state: GameState, typeId: string): string {
+  const b = dasGebaeude(state, typeId);
+  const name = gebaeudeName(typeId);
+  if (!b) return `Baue ${name}.`;
+  if (stufeVon(b) < maxStufe(typeId)) return `${name} liefert sie: baue ${name} aus, dann geht es schneller.`;
+  return `${name} liefert sie und läuft schon auf höchster Stufe, es braucht Zeit.`;
 }
 
 export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): string | null {
@@ -45,13 +55,12 @@ export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): 
       return freieBewohner(state) > 0
         ? `${name} bekommt gleich einen Arbeiter.`
         : `${name} hat keinen Arbeiter, alle Bewohner arbeiten schon. ${wohnHinweis(state)}`;
+    case 'kein-brot': return 'Neue Bewohner kommen nur mit Brot im Lager: baue die Brot-Kette auf.';
+    case 'voll': return `Das Wohnviertel ist voll (${state.citizens.length}/${wohnKapazitaet(state)}): baue es aus, damit die Stadt wächst.`;
     case 'zutaten': {
       const ware = itemName(grund.item);
       const lieferant = lieferantFuer(grund.item);
-      let weiter: string;
-      if (!lieferant) weiter = `${ware} gibt es als Beute in den Dungeons.`;
-      else if (gebaeudeVomTyp(state, lieferant).length === 0) weiter = `Baue ${gebaeudeName(lieferant)}.`;
-      else weiter = `${gebaeudeName(lieferant)} liefert sie, ein zweites hilft.`;
+      const weiter = lieferant ? ausbauHinweis(state, lieferant) : `${ware} gibt es als Beute in den Dungeons.`;
       return `${ware}: ${grund.vorrat} im Lager, ${grund.bedarf} pro Auftrag. ${weiter}`;
     }
   }
@@ -66,11 +75,7 @@ export function engpassFuerGebaeude(state: GameState, typeId: string): string | 
     case 'bauplatz': return `${name} fehlt noch. Bauen kostet ${kostenText(BUILDING_DEFS[typeId].buildCost)}.`;
     case 'wartet':
     case 'bereit':
-      if (status.grund) return grundSatz(state, typeId, status.grund);
-      if (BUILDING_DEFS[typeId]?.housing && state.citizens.length >= wohnKapazitaet(state)) {
-        return `Wohnhäuser sind voll (${state.citizens.length}/${wohnKapazitaet(state)}). Baue ein Wohnhaus, damit die Stadt wächst.`;
-      }
-      return null;
+      return status.grund ? grundSatz(state, typeId, status.grund) : null;
     case 'laeuft':
       return null;
   }
@@ -78,24 +83,45 @@ export function engpassFuerGebaeude(state: GameState, typeId: string): string | 
 
 /** Engpass eines einzelnen Gebäudes (für das Werkstatt-Fenster). */
 export function engpassFuerInstanz(state: GameState, b: BuildingInstance): string | null {
-  if ((BUILDING_DEFS[b.typeId]?.recipes.length ?? 0) === 0) return null;
+  const def = BUILDING_DEFS[b.typeId];
+  if (!def) return null;
+  if (def.recipes.length === 0) {
+    const status = getGebaeudeStatus(state, b.typeId);
+    return status.grund ? grundSatz(state, b.typeId, status.grund) : null;
+  }
   const grund = einzelStatus(state, b).grund;
   return grund ? grundSatz(state, b.typeId, grund) : null;
 }
 
-/** Erster Engpass entlang einer Kette, oder null, wenn sie rund läuft.
- *  Erst die Gebäude in Reihenfolge, danach Zutaten aus den Dungeons. */
-export function engpassFuerKette(state: GameState, kette: Produktionskette): string | null {
-  for (const glied of kette.glieder) {
-    for (const typeId of gliedTypeIds(glied)) {
-      const satz = engpassFuerGebaeude(state, typeId);
-      if (satz) return satz;
-    }
+export interface Engpass {
+  typeId: string;
+  satz: string;
+}
+
+/**
+ * Die wichtigsten Engpässe der Stadt, höchstens `max`:
+ * zuerst gebaute Gebäude, die warten, dann der nächste Bauplatz, dann das erste gesperrte Gebäude.
+ */
+export function engpaesseDerStadt(state: GameState, max = 3): Engpass[] {
+  const ids = netzGebaeudeIds();
+  const status = ids.map(typeId => ({ typeId, s: getGebaeudeStatus(state, typeId) }));
+  const liste: Engpass[] = [];
+  const nimm = (typeId: string, satz: string | null) => {
+    if (satz && !liste.some(e => e.satz === satz)) liste.push({ typeId, satz });
+  };
+
+  for (const { typeId, s } of status) {
+    if (s.anzahl > 0 && s.grund && s.grund.art !== 'auftrag') nimm(typeId, grundSatz(state, typeId, s.grund));
   }
-  for (const glied of kette.glieder) {
-    if (glied.art === 'quelle' && glied.items.every(item => (state.globalStock[item] ?? 0) < 1)) {
-      return `${glied.titel}: keine im Lager. Sie kommen als Beute aus den Dungeons.`;
-    }
+  // Ausgebaute Gebäude ohne genug Arbeiter: ein Satz für die ganze Stadt
+  const fehlendeArbeiter = state.buildings.reduce((sum, b) => sum + (b && b.built ? arbeitsplaetze(b) - besetzt(b) : 0), 0);
+  if (fehlendeArbeiter > 0 && freieBewohner(state) === 0) {
+    nimm('HOUSE_T1', `Es fehlen ${fehlendeArbeiter} Arbeiter, alle Bewohner arbeiten schon. ${wohnHinweis(state)}`);
   }
-  return null;
+  const bauplatz = status.find(x => x.s.zustand === 'bauplatz');
+  if (bauplatz) nimm(bauplatz.typeId, engpassFuerGebaeude(state, bauplatz.typeId));
+  const gesperrt = status.find(x => x.s.zustand === 'gesperrt');
+  if (gesperrt) nimm(gesperrt.typeId, engpassFuerGebaeude(state, gesperrt.typeId));
+
+  return liste.slice(0, max);
 }

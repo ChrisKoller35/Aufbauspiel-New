@@ -57,7 +57,7 @@ describe('Freischaltung der Gebäude', () => {
   });
 
   it('liefert lesbare Hinweise und Status', () => {
-    expect(getFreischaltHinweise('SMITHY', ['LUMBER_CAMP'], 1)).toEqual(['braucht Steinbruch']);
+    expect(getFreischaltHinweise('SMITHY', ['LUMBER_CAMP'], 1)).toEqual(['braucht Eisenmine']);
     expect(getFreischaltHinweise('ARCANE_SMITHY', ['IRON_MINE'], 1)).toEqual(['braucht Gildenrang 2']);
     expect(getFreischaltHinweise('LUMBER_CAMP', [], 1)).toEqual([]);
     expect(getFreischaltStatus('LUMBER_CAMP', ['LUMBER_CAMP'], 1)).toBe('gebaut');

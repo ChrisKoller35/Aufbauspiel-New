@@ -2,6 +2,7 @@ import { GameState } from '../models/GameState';
 import { BUILDING_DEFS } from '../data/buildings';
 import { RECIPE_DEFS } from '../data/recipes';
 import { CityEventSystem } from './CityEventSystem';
+import { zyklusSekunden } from './Ausbau';
 
 /**
  * Handles recipe-based production for all buildings.
@@ -54,7 +55,8 @@ export class ProductionSystem {
         const needsManual = def.manualCraft === true;
         if ((!needsManual || building.pendingCraft) && this.canStartRecipe(state, building, recipe)) {
           this.deductInputs(state, building, recipe);
-          building.productionTimer = recipe.cycleTimeSec * building.synergySpeedMult;
+          // Stufe 2 und 3 arbeiten doppelt bzw. dreifach so schnell (systems/Ausbau.ts)
+          building.productionTimer = zyklusSekunden(building, recipe);
           building.producing = true;
           building.pendingCraft = false;
         }

@@ -92,7 +92,7 @@ describe('SaveSystem', () => {
     expect(loaded.citizens[0].status).toBe('IDLE');
     expect(loaded.citizens[0].assignedBuildingId).toBeNull();
     expect(loaded.specialists[0].assignedBuildingId).toBeNull();
-    expect(loaded.saveVersion).toBe(20);
+    expect(loaded.saveVersion).toBe(21);
   });
 
   it('legt bei der Migration kein BANK_V2 an und verschenkt keine Test-Gegenstände', () => {
@@ -107,5 +107,52 @@ describe('SaveSystem', () => {
     expect(loaded.buildings.some(b => b.typeId === 'BANK_V2')).toBe(false);
     expect(loaded.buildings).toHaveLength(0);
     expect(loaded.globalStock).toEqual(stockBefore);
+  });
+});
+
+describe('SaveSystem – Version 21: ein Gebäude je Art', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  it('alter Spielstand mit drei Holzfällerhütten lädt als eine Hütte Stufe 3', () => {
+    const saveSystem = new SaveSystem();
+    const state = createNewGameState();
+    state.saveVersion = 20;
+    const huetten = [placeBuilding(state, 'LUMBER_CAMP', 5, 5), placeBuilding(state, 'LUMBER_CAMP', 8, 5), placeBuilding(state, 'LUMBER_CAMP', 11, 5)];
+    for (const h of huetten) {
+      h.connected = true;
+      h.activeRecipeId = 'RCP_WOOD_1';
+      const worker = createCitizen('WORKER');
+      worker.assignedBuildingId = h.id;
+      h.assignedWorkerIds.push(worker.id);
+      state.citizens.push(worker);
+    }
+    const brunnen = placeBuilding(state, 'WELL', 20, 20);
+    writeRawSave(state);
+
+    const loaded = saveSystem.load()!;
+
+    const camps = loaded.buildings.filter(b => b.typeId === 'LUMBER_CAMP');
+    expect(camps).toHaveLength(1);
+    expect(camps[0].tier).toBe(3);
+    expect(camps[0].assignedWorkerIds).toHaveLength(3);
+    expect(loaded.citizens.every(c => c.status === 'WORKER' && c.assignedBuildingId === camps[0].id)).toBe(true);
+    expect(loaded.buildings.map(b => b.typeId).sort()).toEqual(['LUMBER_CAMP', 'WELL']);
+    expect(loaded.grid[20][20]?.buildingId).toBe(brunnen.id);
+    // Kartenfelder zeigen nur noch auf Gebäude, die es gibt
+    const ids = new Set(loaded.buildings.map(b => b.id));
+    expect(loaded.grid.flat().every(t => !t || t.buildingId == null || ids.has(t.buildingId))).toBe(true);
+    expect(loaded.saveVersion).toBe(21);
+  });
+
+  it('ein aktueller Spielstand bleibt beim Laden unverändert', () => {
+    const saveSystem = new SaveSystem();
+    const state = createNewGameState();
+    const camp = placeBuilding(state, 'LUMBER_CAMP', 5, 5);
+    camp.tier = 2;
+    saveSystem.save(state);
+    expect(saveSystem.load()).toEqual(state);
   });
 });
