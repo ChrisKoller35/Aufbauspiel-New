@@ -50,3 +50,9 @@ Der Reiter «Crafting» kann bleiben als Liste «Was läuft wo», er stellt nich
 (läuft, wartet, bereit, Bauplatz, gesperrt), laufenden Balken und einem Engpass-Satz je Kette; Reiter «Wohnen»;
 Werkstatt-Fenster mit Engpass-Zeile und «1 von N ›» für mehrere Gebäude gleicher Art. Stadtplan und Bauleiste sind weg.
 Abweichung vom Entwurf: «Wohnen» heisst nur «Wohnen», der Reiter «Crafting» bleibt.
+
+**Weiterentwickelt 18.10.2026 (abends), Christophs Wunsch nach dem ersten Spielen:** Die Ketten-Zeilen sind einer
+**Mindmap in vier Reihen** gewichen (Gewinnen → Lager → Werkstätten → Stadt; Linien als SVG aus den echten
+Kartenpositionen, Daten in `src/data/produktionsnetz.ts`). Jedes Gebäude gibt es nur einmal und wird ausgebaut
+(«Stufe 2» statt «×2»), das Wohnhaus ist ein **Wohnviertel** mit Stufen, der Reiter «Wohnen» ist weg (alles im
+Fenster des Wohnviertels). Regeln: `../AUSBAU.md`. Der Zustands-Katalog oben gilt weiter, nur «mehrfach gebaut» entfällt.

@@ -3,6 +3,7 @@ import { BUILDING_DEFS } from '../data/buildings';
 import { CLASS_DEFS } from '../data/classes';
 import { createCitizen } from '../models/Citizen';
 import { createGuildFighter } from '../models/GuildRoster';
+import { wohnKapazitaet, arbeitsplaetze } from './Ausbau';
 
 /**
  * Handles worker auto-assignment, guild training, and population growth.
@@ -19,7 +20,8 @@ export class PeopleSystem {
       if (def.workerSlots <= 0) continue;
       if (def.requiresConnectivity && !building.connected) continue;
 
-      while (building.assignedWorkerIds.length < def.workerSlots) {
+      // Stufe N = N Arbeitsplätze (systems/Ausbau.ts)
+      while (building.assignedWorkerIds.length < arbeitsplaetze(building)) {
         const idle = state.citizens.find(c => c.status === 'IDLE');
         if (!idle) break;
 
@@ -82,7 +84,7 @@ export class PeopleSystem {
    * Spawns a new citizen if there's housing capacity, bread available.
    */
   dayTick(state: GameState): void {
-    const housingCapacity = this.getHousingCapacity(state);
+    const housingCapacity = wohnKapazitaet(state);
     const currentPop = state.citizens.length;
 
     if (currentPop < housingCapacity && (state.globalStock.bread ?? 0) >= 1) {
@@ -90,17 +92,5 @@ export class PeopleSystem {
       state.citizens.push(createCitizen('IDLE'));
       state.statistics.total_citizens_born = (state.statistics.total_citizens_born ?? 0) + 1;
     }
-  }
-
-  private getHousingCapacity(state: GameState): number {
-    let capacity = 0;
-    for (const building of state.buildings) {
-      if (!building.built) continue;
-      const def = BUILDING_DEFS[building.typeId];
-      if (!def.housing) continue;
-      if (def.requiresConnectivity && !building.connected) continue;
-      capacity += def.housing.capacity;
-    }
-    return capacity;
   }
 }

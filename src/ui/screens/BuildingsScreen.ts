@@ -1,7 +1,9 @@
 // ─── Magic City – Gebäude-Seite ─────────────────────────────────
-// Reiter «Produktion» (Produktionsketten), «Wohnen», «Crafting» und
-// «Aufbau» (Freischalt-Baum). Hergestellt wird in den Gebäuden
-// (ProductionSystem); diese Seite wählt Rezepte, gibt Aufträge und baut.
+// Reiter «Produktion» (Mindmap der Stadt), «Crafting» und «Aufbau»
+// (Freischalt-Baum). Jedes Gebäude gibt es genau einmal: Bauen schaltet
+// es frei, danach wird es ausgebaut (systems/Ausbau.ts). Hergestellt wird
+// in den Gebäuden (ProductionSystem); diese Seite wählt Rezepte, gibt
+// Aufträge, baut und baut aus.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS, BUILD_MENU_ORDER, BuildingDef } from '../../data/buildings';
@@ -13,12 +15,17 @@ import { STARTING_BUILDING_TYPES } from '../../scenes/CityStartingLayout';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { renderAufbauTab, bindAufbauTab } from './AufbauTab';
-import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab } from './ProduktionTab';
-import { renderWohnenTab, wohnenSignatur, aktualisiereWohnenBalken, bindWohnenTab, WOHN_BAUPLAETZE } from './WohnenTab';
+import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab, ProduktionZiel } from './ProduktionTab';
 import {
   freischaltHinweise, itemName, stockFor, canAffordRecipe, cycleProgress, produktionsHindernis, WarteGrund,
+  dasGebaeude, wachstum, tagFortschritt, wohnKapazitaet,
 } from '../../systems/GebaeudeStatus';
 import { engpassFuerInstanz } from '../../systems/EngpassSystem';
+import {
+  ausbauInfo, ausbauen, ausbauWirkung, maxStufe, stufeVon, arbeitsplaetze, besetzt, zyklusSekunden,
+  erstatteLaufendenZyklus, entferneGebaeude, investiert, wirkungsStufe, marktBonusProzent, bankGoldProTag,
+} from '../../systems/Ausbau';
+import { EconomySystem, STEUER_PRO_BEWOHNER } from '../../systems/EconomySystem';
 
 /** Map building typeId to card background image. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -49,31 +56,20 @@ function getBuildingImageStyle(typeId: string): string {
   return '';
 }
 
-type BuildingsTab = 'produktion' | 'wohnen' | 'crafting' | 'aufbau';
-
-const KATEGORIE_NAME: Record<string, string> = {
-  producer: 'Rohstoffe',
-  refine: 'Verarbeitung',
-  utility: 'Versorgung',
-  storage: 'Lager',
-  housing: 'Wohnen',
-  hub: 'Zentrum',
-  infrastructure: 'Wege',
-};
-
-function kategorieName(cat: string): string {
-  return KATEGORIE_NAME[cat] ?? cat;
-}
+type BuildingsTab = 'produktion' | 'crafting' | 'aufbau';
 
 let cachedState: GameState | null = null;
 let currentTab: BuildingsTab = 'produktion';
-/** Laufende Aktualisierung von Produktion und Wohnen (nur eine gleichzeitig). */
+/** Laufende Aktualisierung der Mindmap (Balken, Zustände, Linien). */
 let liveTimer: number | null = null;
+let globalListenersBound = false;
+const economy = new EconomySystem();
 
 // ── Public API ──────────────────────────────────────────────────
 
 export function initBuildingsScreen(state: GameState): void {
   cachedState = state;
+  bindGlobalListeners();
 }
 
 export function renderBuildingsScreen(container: HTMLElement): void {
@@ -110,17 +106,12 @@ function buildHTML(state: GameState): string {
 
     <div class="btabs">
       <button class="${tabCls('produktion')}" data-tab="produktion">PRODUKTION</button>
-      <button class="${tabCls('wohnen')}" data-tab="wohnen">WOHNEN</button>
       <button class="${tabCls('crafting')}" data-tab="crafting">⚗️ CRAFTING</button>
       <button class="${tabCls('aufbau')}" data-tab="aufbau">AUFBAU</button>
     </div>
 
     <div class="bmain" data-panel="produktion"${panelStyle('produktion')}>
       ${renderProduktionTab(state, getBuildingImageStyle)}
-    </div>
-
-    <div class="bmain" data-panel="wohnen"${panelStyle('wohnen')}>
-      ${renderWohnenTab(state, getBuildingImageStyle('HOUSE_T1'))}
     </div>
 
     <div class="bmain" data-panel="crafting"${panelStyle('crafting')}>
@@ -135,7 +126,7 @@ function buildHTML(state: GameState): string {
 
 // ── Cost Helpers ────────────────────────────────────────────────
 
-/** Cost chips "Holz 12/20" coloured by availability (Kauf-Fenster). */
+/** Cost chips "Holz 12/20" coloured by availability (Kauf- und Ausbau-Fenster). */
 function renderCostDetail(cost: Record<string, number>, state: GameState): string {
   const entries = Object.entries(cost);
   if (entries.length === 0) return '<span class="cost-ok">Gratis</span>';
@@ -144,22 +135,6 @@ function renderCostDetail(cost: Record<string, number>, state: GameState): strin
     const cls = have >= qty ? 'cost-ok' : 'cost-miss';
     return `<span class="ingr ${cls}">${itemName(res)} ${have}/${qty}</span>`;
   }).join('');
-}
-
-// ── Bauplätze ───────────────────────────────────────────────────
-
-const BUILD_SLOTS = 24;
-
-function isHousingType(typeId: string): boolean {
-  const def = BUILDING_DEFS[typeId];
-  return def?.category === 'housing';
-}
-
-function hasEmptySlot(state: GameState, typeId: string): boolean {
-  const housing = isHousingType(typeId);
-  const maxSlots = housing ? WOHN_BAUPLAETZE : BUILD_SLOTS;
-  const count = state.buildings.filter(b => b && isHousingType(b.typeId) === housing).length;
-  return count < maxSlots;
 }
 
 function categoryEmoji(cat: string): string {
@@ -173,6 +148,11 @@ function categoryEmoji(cat: string): string {
     case 'infrastructure': return '🛣️';
     default: return '🏗️';
   }
+}
+
+function stufenText(b: BuildingInstance): string {
+  const max = maxStufe(b.typeId);
+  return max > 1 ? `Stufe ${stufeVon(b)} von ${max}` : '';
 }
 
 // ── Crafting Tab ────────────────────────────────────────────────
@@ -192,20 +172,20 @@ function renderCrafting(state: GameState): string {
 
   for (const typeId of craftingBuildingTypes()) {
     const def = BUILDING_DEFS[typeId];
-    const owned = state.buildings.filter(b => b && b.typeId === typeId);
+    const b = dasGebaeude(state, typeId);
     const recipes = def.recipes.map(id => RECIPE_DEFS[id]).filter((r): r is RecipeDef => !!r);
     if (recipes.length === 0) continue;
 
-    const cards = recipes.map(rcp => renderCraftCard(rcp, def, owned, state)).join('');
-    const badge = owned.length > 0
-      ? `<span class="craft-group-cnt">×${owned.length}${def.manualCraft ? ' · Aufträge per Hand' : ''}</span>`
+    const cards = recipes.map(rcp => renderCraftCard(rcp, def, b, state)).join('');
+    const badge = b
+      ? `<span class="craft-group-cnt">${stufenText(b)}${def.manualCraft ? ' · Aufträge per Hand' : ''}</span>`
       : `<span class="craft-lock">🔒 braucht ${def.name}</span>`;
     const html = `
-      <div class="craft-group${owned.length > 0 ? '' : ' locked'}">
+      <div class="craft-group${b ? '' : ' locked'}">
         <div class="craft-group-hd">${categoryEmoji(def.category)} ${def.name} ${badge}</div>
         <div class="craft-grid">${cards}</div>
       </div>`;
-    (owned.length > 0 ? ownedGroups : lockedGroups).push(html);
+    (b ? ownedGroups : lockedGroups).push(html);
   }
 
   const hint = ownedGroups.length === 0
@@ -215,22 +195,23 @@ function renderCrafting(state: GameState): string {
   return `${hint}${ownedGroups.join('')}${lockedGroups.join('')}`;
 }
 
-function renderCraftCard(rcp: RecipeDef, def: BuildingDef, owned: BuildingInstance[], state: GameState): string {
+function renderCraftCard(rcp: RecipeDef, def: BuildingDef, b: BuildingInstance | undefined, state: GameState): string {
   // Determine rarity from output item tags
   const outputKey = Object.keys(rcp.outputs)[0] ?? '';
   const itemDef = ITEM_DEFS[outputKey];
   const rarity = resolveRarity(itemDef);
   const ico = itemDef ? itemIcon(outputKey) : '⚗️';
-  const locked = owned.length === 0;
+  const locked = !b;
 
   let status = '';
-  if (locked) {
+  if (!b) {
     status = `<span class="craft-lock">braucht ${def.name}</span>`;
-  } else if (owned.some(b => b.activeRecipeId === rcp.id && b.producing)) {
+  } else if (b.activeRecipeId === rcp.id && b.producing) {
     status = '<span class="craft-run">● läuft</span>';
-  } else if (owned.some(b => b.activeRecipeId === rcp.id)) {
+  } else if (b.activeRecipeId === rcp.id) {
     status = '<span class="craft-run">► gewählt</span>';
   }
+  const sekunden = Math.round(b ? zyklusSekunden(b, rcp) : rcp.cycleTimeSec);
 
   return `
     <div class="ccard${locked ? ' locked' : ''}" data-rcp="${rcp.id}" data-btype="${def.id}">
@@ -239,8 +220,8 @@ function renderCraftCard(rcp: RecipeDef, def: BuildingDef, owned: BuildingInstan
         <span class="cnm">${rcp.name}</span>
         <span class="crar ${rarity}">${rarity}</span>
       </div>
-      <div class="cingr">${renderRecipeChips(rcp, state, null)}</div>
-      <div class="ccard-ft">${status}<span class="ccard-time">⏱ ${rcp.cycleTimeSec}s</span></div>
+      <div class="cingr">${renderRecipeChips(rcp, state, b ?? null)}</div>
+      <div class="ccard-ft">${status}<span class="ccard-time">⏱ ${sekunden}s</span></div>
       <button class="btn-craft">${locked ? 'GEBÄUDE BAUEN' : 'ZUR WERKSTATT'}</button>
     </div>`;
 }
@@ -286,22 +267,30 @@ function itemIcon(key: string): string {
   return map[key] ?? '📦';
 }
 
-/** Crafting tab click: open the workshop of an owned building and select the recipe there. */
+/** Crafting tab click: open the workshop of the building and select the recipe there. */
 function openRecipeInWorkshop(root: HTMLElement, typeId: string, rcpId: string, state: GameState): void {
-  const owned = state.buildings.filter(b => b && b.typeId === typeId);
-  if (owned.length === 0) {
+  const b = dasGebaeude(state, typeId);
+  if (!b) {
     showBuyConfirmModal(root, typeId, state);
     return;
   }
-  const target = owned.find(b => b.activeRecipeId === rcpId)
-    ?? owned.find(b => !b.producing)
-    ?? owned[0];
   // Switching is lossless while idle; a running cycle is only switched after confirmation in the modal.
-  if (!target.producing) selectRecipe(state, target, rcpId);
-  showBuildingModal(root, target, state, rcpId);
+  if (!b.producing) selectRecipe(state, b, rcpId);
+  showBuildingModal(root, b, state, rcpId);
 }
 
 // ── Events ──────────────────────────────────────────────────────
+
+function panelFor(root: HTMLElement, tab: BuildingsTab): HTMLElement | null {
+  return root.querySelector(`.bmain[data-panel="${tab}"]`) as HTMLElement | null;
+}
+
+/** Mindmap nachführen (Zustände, Balken, Linien); nur sinnvoll, wenn sie sichtbar ist. */
+function aktualisiereMindmap(root: HTMLElement, state: GameState): void {
+  if (currentTab !== 'produktion') return;
+  const panel = panelFor(root, 'produktion');
+  if (panel) aktualisiereProduktionTab(panel, state);
+}
 
 function switchTab(root: HTMLElement, tabId: BuildingsTab): void {
   currentTab = tabId;
@@ -316,22 +305,27 @@ function switchTab(root: HTMLElement, tabId: BuildingsTab): void {
     const panel = panels[p] as HTMLElement;
     panel.style.display = panel.dataset.panel === tabId ? '' : 'none';
   }
+  // Die Linien hängen an den Kartenpositionen und können erst sichtbar gezeichnet werden
+  if (cachedState) aktualisiereMindmap(root, cachedState);
 }
 
-/** Erstes Gebäude eines Typs, möglichst ein fertiges. */
-function erstesGebaeude(state: GameState, typeId: string): BuildingInstance | undefined {
-  const alle = state.buildings.filter(b => b && b.typeId === typeId);
-  return alle.find(b => b.built) ?? alle[0];
-}
-
-function panelFor(root: HTMLElement, tab: BuildingsTab): HTMLElement | null {
-  return root.querySelector(`.bmain[data-panel="${tab}"]`) as HTMLElement | null;
+/** Linien neu legen, wenn das Fenster seine Grösse ändert oder die Seite aufgerufen wird. */
+function bindGlobalListeners(): void {
+  if (globalListenersBound) return;
+  globalListenersBound = true;
+  const redraw = () => {
+    const root = document.getElementById('s-buildings');
+    if (root && cachedState) aktualisiereMindmap(root, cachedState);
+  };
+  window.addEventListener('resize', redraw);
+  window.addEventListener('mc:navigate', (e) => {
+    if ((e as CustomEvent).detail?.screen === 'buildings') redraw();
+  });
 }
 
 /** Balken und Zustände laufend nachführen, ohne die Seite neu zu zeichnen. */
 function startLiveTimer(root: HTMLElement, state: GameState): void {
   if (liveTimer !== null) window.clearInterval(liveTimer);
-  let wohnSig = wohnenSignatur(state);
   const timer = window.setInterval(() => {
     if (!root.isConnected) {
       window.clearInterval(timer);
@@ -339,22 +333,16 @@ function startLiveTimer(root: HTMLElement, state: GameState): void {
       return;
     }
     if (root.offsetParent === null && root.style.display === 'none') return;
-    if (currentTab === 'produktion') {
-      const panel = panelFor(root, 'produktion');
-      if (panel) aktualisiereProduktionTab(panel, state);
-    } else if (currentTab === 'wohnen') {
-      const panel = panelFor(root, 'wohnen');
-      if (!panel) return;
-      const sig = wohnenSignatur(state);
-      if (sig !== wohnSig) {
-        wohnSig = sig;
-        panel.innerHTML = renderWohnenTab(state, getBuildingImageStyle('HOUSE_T1'));
-      } else {
-        aktualisiereWohnenBalken(panel, state);
-      }
-    }
+    aktualisiereMindmap(root, state);
   }, 500);
   liveTimer = timer;
+}
+
+/** Gebaut → Fenster des Gebäudes, sonst Bau-Dialog (zeigt auch den Sperrgrund). */
+function oeffneGebaeudeOderBau(root: HTMLElement, typeId: string, state: GameState): void {
+  const b = dasGebaeude(state, typeId);
+  if (b) showBuildingModal(root, b, state);
+  else showBuyConfirmModal(root, typeId, state);
 }
 
 function bindEvents(root: HTMLElement, state: GameState): void {
@@ -375,33 +363,21 @@ function bindEvents(root: HTMLElement, state: GameState): void {
     });
   }
 
-  // Produktion: gebaut → Werkstatt, sonst Bau-Dialog; Dungeon-Zutaten und Ziele → andere Seite
+  // Produktion: Gebäude → Fenster, Bauplatz → Bau-Dialog, Dungeon-Zutaten und Ziele → andere Seite
   const produktion = panelFor(root, 'produktion');
   if (produktion) {
     bindProduktionTab(produktion, state, {
-      oeffneGebaeude: typeId => {
-        const b = erstesGebaeude(state, typeId);
-        if (b) showBuildingModal(root, b, state);
-      },
+      oeffneGebaeude: typeId => oeffneGebaeudeOderBau(root, typeId, state),
       kaufen: typeId => showBuyConfirmModal(root, typeId, state),
-      wechseln: screen => navigateTo(screen),
+      wechseln: (ziel: ProduktionZiel) => {
+        if (ziel === 'aufbau') switchTab(root, 'aufbau');
+        else navigateTo(ziel);
+      },
     });
   }
 
-  // Wohnen: Haus → Fenster des Hauses, Bauplatz → Bau-Dialog
-  const wohnen = panelFor(root, 'wohnen');
-  if (wohnen) {
-    bindWohnenTab(wohnen, {
-      oeffneHaus: id => {
-        const b = state.buildings.find(x => x && x.id === id);
-        if (b) showBuildingModal(root, b, state);
-      },
-      kaufen: typeId => showBuyConfirmModal(root, typeId, state),
-    });
-  }
-
-  // Aufbau-Reiter: Karte anklicken → Kauf-Dialog
-  bindAufbauTab(root, typeId => showBuyConfirmModal(root, typeId, state));
+  // Aufbau-Reiter: Karte anklicken → Fenster des Gebäudes oder Bau-Dialog
+  bindAufbauTab(root, typeId => oeffneGebaeudeOderBau(root, typeId, state));
 
   // Recipe cards → open the building's workshop (locked: offer to build it)
   const craftCards = root.querySelectorAll('.ccard');
@@ -414,6 +390,7 @@ function bindEvents(root: HTMLElement, state: GameState): void {
   }
 
   startLiveTimer(root, state);
+  aktualisiereMindmap(root, state);
 }
 
 // ── Buy Confirm Modal ───────────────────────────────────────────
@@ -421,6 +398,13 @@ function bindEvents(root: HTMLElement, state: GameState): void {
 function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState): void {
   const def = BUILDING_DEFS[typeId];
   if (!def) return;
+
+  // Es gibt jedes Gebäude nur einmal: steht es schon, geht es zum Ausbau
+  const vorhanden = dasGebaeude(state, typeId);
+  if (vorhanden) {
+    showBuildingModal(root, vorhanden, state);
+    return;
+  }
 
   // Remove any existing modal
   const prev = root.querySelector('.ov');
@@ -430,28 +414,26 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
     ([res, qty]) => (state.globalStock[res] ?? 0) >= qty
   );
 
-  const hasFreeSlot = hasEmptySlot(state, typeId);
   const hinweise = freischaltHinweise(state, typeId);
   const unlocked = hinweise.length === 0;
-  const canBuild = unlocked && canAfford && hasFreeSlot;
-  const anzahl = state.buildings.filter(b => b && b.typeId === typeId).length;
+  const canBuild = unlocked && canAfford;
 
   const recipeNames = def.recipes.map(id => RECIPE_DEFS[id]?.name).filter(Boolean);
+  const wirkung = ausbauWirkung(typeId, 1);
+  const max = maxStufe(typeId);
 
   const ov = document.createElement('div');
   ov.className = 'ov on';
   ov.innerHTML = `
     <div class="modal">
       <h3>${def.name} bauen?</h3>
-      ${anzahl > 0 ? `<p>Du hast schon ${anzahl}. Ein weiteres arbeitet zusätzlich.</p>` : ''}
       <p><strong>Kosten:</strong></p>
       <div class="cingr">${renderCostDetail(def.buildCost, state)}</div>
-      <p><strong>Kategorie:</strong> ${kategorieName(def.category)}</p>
+      ${wirkung ? `<p><strong>Bringt:</strong> ${wirkung}</p>` : ''}
       ${recipeNames.length > 0 ? `<p><strong>Rezepte:</strong> ${recipeNames.join(', ')}</p>` : ''}
+      ${max > 1 ? `<p class="bm-info">Es gibt jedes Gebäude nur einmal. Danach lässt es sich bis Stufe ${max} ausbauen.</p>` : ''}
       ${!unlocked
         ? `<p style="color:var(--red,#dc2626)"><strong>🔒 Gesperrt:</strong> ${hinweise.join(', ')}</p>`
-        : !hasFreeSlot
-        ? '<p style="color:var(--red,#dc2626)"><strong>Kein freier Bauplatz!</strong></p>'
         : !canAfford
           ? '<p style="color:var(--red,#dc2626)">Nicht genug Ressourcen!</p>'
           : ''
@@ -501,7 +483,7 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
   const bauplan = def.freischaltung?.bauplan;
   if (bauplan && (state.globalStock[bauplan] ?? 0) < 1) return;
 
-  if (!hasEmptySlot(state, typeId)) return;
+  if (dasGebaeude(state, typeId)) return;
   if (freischaltHinweise(state, typeId).length) return;
 
   // Deduct resources
@@ -526,19 +508,9 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
 
 // ── Workshop Logic ──────────────────────────────────────────────
 
-/** Give back the inputs of a running cycle (they are deducted when the cycle starts). */
-function refundRunningCycle(state: GameState, b: BuildingInstance): void {
-  const recipe = b.producing && b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
-  if (!recipe) return;
-  for (const [item, qty] of Object.entries(recipe.inputs)) {
-    if (b.connected) state.globalStock[item] = (state.globalStock[item] ?? 0) + qty;
-    else b.localInputBuffer[item] = (b.localInputBuffer[item] ?? 0) + qty;
-  }
-}
-
 function selectRecipe(state: GameState, b: BuildingInstance, rcpId: string): void {
   if (b.activeRecipeId === rcpId) return;
-  refundRunningCycle(state, b);
+  erstatteLaufendenZyklus(state, b);
   b.activeRecipeId = rcpId;
   b.producing = false;
   b.productionTimer = 0;
@@ -601,7 +573,7 @@ function renderWorkshop(b: BuildingInstance, def: BuildingDef, state: GameState,
         <div class="ws-rcp-hd">
           <span class="cico">${itemIcon(Object.keys(rcp.outputs)[0] ?? '')}</span>
           <span class="ws-rcp-nm">${isActive ? '► ' : ''}${rcp.name}</span>
-          <span class="ccard-time">⏱ ${Math.round(rcp.cycleTimeSec * b.synergySpeedMult)}s</span>
+          <span class="ccard-time">⏱ ${Math.round(zyklusSekunden(b, rcp))}s</span>
         </div>
         <div class="cingr">${renderRecipeChips(rcp, state, b)}</div>
         ${confirm}
@@ -617,56 +589,166 @@ function renderWorkshop(b: BuildingInstance, def: BuildingDef, state: GameState,
     </div>`;
 }
 
-/** Everything the modal body depends on, except the running timer. */
-function workshopSignature(b: BuildingInstance, def: BuildingDef, state: GameState): string {
+// ── Gebäude-Fenster: Angaben, Ausbau ────────────────────────────
+
+interface InfoZeile {
+  label: string;
+  wert: string;
+  cls?: string;
+  /** Erklärung in kleiner Schrift unter der Zeile. */
+  klein?: string;
+}
+
+function prozent(wert: number): string {
+  return `${Math.round(wert * 100)} %`;
+}
+
+/** Die Zeilen oben im Fenster, je nach Gebäude-Art. */
+function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): InfoZeile[] {
+  const zeilen: InfoZeile[] = [];
+
+  if (def.workerSlots > 0) {
+    const plaetze = arbeitsplaetze(b);
+    const da = besetzt(b);
+    zeilen.push({
+      label: 'Arbeiter', wert: `${da} / ${plaetze}`, cls: da < plaetze ? 'schlecht' : 'gut',
+      klein: da < plaetze ? 'Freie Bewohner werden automatisch eingeteilt.' : undefined,
+    });
+  }
+
+  if (def.recipes.length > 0) {
+    const status = !b.built ? '🚧 Im Bau'
+      : b.eventPaused ? '⚠️ Pausiert (Unwetter)'
+      : b.producing ? '✅ Produziert'
+      : '⏸️ Leerlauf';
+    zeilen.push({ label: 'Status', wert: status });
+    return zeilen;
+  }
+
+  if (def.housing) {
+    const bewohner = state.citizens.length;
+    const plaetze = wohnKapazitaet(state);
+    const arbeiten = state.citizens.filter(c => c.status === 'WORKER' || c.status === 'BUILDER').length;
+    const frei = state.citizens.filter(c => c.status === 'IDLE').length;
+    const r = economy.steuerRechnung(state);
+    const zufrieden = Math.round(state.satisfaction ?? 0);
+    let rechnung = `${r.bewohner} Bewohner × ${STEUER_PRO_BEWOHNER} Gold × ${prozent(r.zufriedenheit)} Zufriedenheit`;
+    if (r.heldenBonus !== 1) rechnung += ` × ${r.heldenBonus.toFixed(2)} Helden-Bonus`;
+    if (r.marktProzent) rechnung += ` + ${r.marktProzent} % Marktplatz`;
+    if (r.bank) rechnung += ` + ${r.bank} Gold von der Bank`;
+    zeilen.push({ label: 'Bewohner', wert: `${bewohner} / ${plaetze}`, cls: bewohner > plaetze ? 'schlecht' : 'gut' });
+    zeilen.push({ label: 'Arbeiten · frei', wert: `${arbeiten} · ${frei}` });
+    zeilen.push({ label: 'Zufriedenheit', wert: `${zufrieden} %`, cls: zufrieden >= 50 ? 'gut' : 'schlecht' });
+    zeilen.push({ label: 'Brot im Lager', wert: `${Math.floor(state.globalStock.bread ?? 0)}`, cls: (state.globalStock.bread ?? 0) >= 1 ? 'gut' : 'schlecht' });
+    zeilen.push({ label: 'Steuern pro Tag', wert: `${r.gesamt} Gold`, cls: 'gut', klein: rechnung });
+    return zeilen;
+  }
+
+  if (def.id === 'MARKETPLACE') {
+    const n = wirkungsStufe(state, def.id);
+    zeilen.push({ label: 'Wirkung', wert: `+${marktBonusProzent(n)} % Steuern`, cls: n > 0 ? 'gut' : 'schlecht',
+      klein: n > 0 ? undefined : 'Wirkt erst mit einem Arbeiter.' });
+  } else if (def.id === 'BANK') {
+    const n = wirkungsStufe(state, def.id);
+    zeilen.push({ label: 'Wirkung', wert: `+${bankGoldProTag(n)} Gold / Tag`, cls: n > 0 ? 'gut' : 'schlecht',
+      klein: n > 0 ? undefined : 'Wirkt erst mit einem Arbeiter.' });
+  } else if (def.expeditions) {
+    const slots = state.guildStats?.guildHallT2 ? 4 : def.expeditions.partySlots;
+    zeilen.push({ label: 'Helden in der Gilde', wert: `${state.fighters.length}` });
+    zeilen.push({ label: 'Helden je Expedition', wert: `${slots}` });
+  } else if (def.radiusEffect?.type === 'water') {
+    zeilen.push({ label: 'Wirkung', wert: 'Wasser für Kräutergarten und Bäckerei', cls: 'gut' });
+  }
+  return zeilen;
+}
+
+function renderZeilen(zeilen: InfoZeile[]): string {
+  if (zeilen.length === 0) return '';
+  return `<div class="bm-zeilen">${zeilen.map(z => `
+    <div class="bm-zeile"><span>${z.label}</span><b class="${z.cls ?? ''}">${z.wert}</b>${z.klein ? `<small>${z.klein}</small>` : ''}</div>`).join('')}</div>`;
+}
+
+/** Wohnviertel: wächst die Stadt, und wann kommt der nächste Bewohner? */
+function renderWachstum(state: GameState): string {
+  const w = wachstum(state);
+  const text = w.waechst ? 'Der nächste Bewohner kommt beim Tageswechsel.'
+    : w.grund?.art === 'voll' ? 'Das Wohnviertel ist voll: baue es aus, damit neue Bewohner kommen.'
+    : 'Neue Bewohner kommen nur mit Brot im Lager.';
+  const pct = Math.round(tagFortschritt(state) * 100);
+  return `
+    <div class="bm-wachs ${w.waechst ? 'gut' : 'schlecht'}">
+      <span>${text}</span>
+      <div class="pk-bar"${w.waechst ? '' : ' hidden'}><i style="width:${pct}%"></i></div>
+    </div>`;
+}
+
+/** Lagerhaus: alles, was im Lager liegt. */
+function vorratChips(state: GameState): string {
+  const eintraege = Object.entries(state.globalStock)
+    .map(([item, qty]) => [item, Math.floor(qty ?? 0)] as const)
+    .filter(([, qty]) => qty > 0)
+    .sort((a, b) => itemName(a[0]).localeCompare(itemName(b[0]), 'de'));
+  if (eintraege.length === 0) return '<span class="ws-msg">Das Lager ist leer.</span>';
+  return eintraege.map(([item, qty]) => `<span class="pk-chip"><b>${qty}</b> ${itemName(item)}</span>`).join('');
+}
+
+function renderVorrat(state: GameState): string {
+  return `<span class="lbl">VORRAT</span><div class="pk-chips bm-vorrat">${vorratChips(state)}</div>`;
+}
+
+function renderAusbau(state: GameState, b: BuildingInstance): string {
+  if (maxStufe(b.typeId) <= 1) return '';
+  const info = ausbauInfo(state, b);
+  if (info.naechste === null) {
+    return `<div class="bm-ausbau"><span class="lbl">AUSBAU</span><p class="ws-msg">Höchste Stufe erreicht.</p></div>`;
+  }
+  const geht = b.built && info.bezahlbar;
+  return `
+    <div class="bm-ausbau">
+      <span class="lbl">AUSBAU</span>
+      <p class="bm-ausbau-w"><strong>Stufe ${info.naechste}:</strong> ${info.wirkung}</p>
+      <div class="cingr">${renderCostDetail(info.kosten, state)}</div>
+      ${info.hinweis ? `<p class="ws-msg ws-warn">🔒 ${info.hinweis}</p>` : ''}
+      <button class="btn-craft btn-ausbau"${geht ? '' : ' disabled'}>⬆ AUSBAUEN AUF STUFE ${info.naechste}</button>
+    </div>`;
+}
+
+/** Everything the modal body depends on, except the running bars. */
+function modalSignature(b: BuildingInstance, def: BuildingDef, state: GameState): string {
   const items = new Set<string>();
   for (const id of def.recipes) {
     for (const item of Object.keys(RECIPE_DEFS[id]?.inputs ?? {})) items.add(item);
   }
+  const info = ausbauInfo(state, b);
   return JSON.stringify([
     b.activeRecipeId, b.producing, b.pendingCraft, b.built, b.connected, b.eventPaused,
-    b.waterSupplied, b.assignedWorkerIds.length, b.tier,
+    b.waterSupplied, besetzt(b), b.tier, info.bezahlbar, info.hinweis, info.kosten,
     [...items].map(item => stockFor(state, b, item)),
+    infoZeilen(state, b, def),
+    def.housing ? (wachstum(state).grund?.art ?? 'waechst') : null,
+    def.id === 'WAREHOUSE' ? vorratChips(state) : null,
+    engpassFuerInstanz(state, b),
   ]);
 }
 
 // ── Demolish ────────────────────────────────────────────────────
 
-/** The last building of each starting type is protected. */
-function isProtectedStartBuilding(state: GameState, b: BuildingInstance): boolean {
-  if (!STARTING_BUILDING_TYPES.includes(b.typeId)) return false;
-  return state.buildings.filter(x => x && x.typeId === b.typeId).length <= 1;
+/** Startgebäude bleiben stehen (es gibt jedes Gebäude nur einmal). */
+function isProtectedStartBuilding(b: BuildingInstance): boolean {
+  return STARTING_BUILDING_TYPES.includes(b.typeId);
 }
 
 function executeDemolish(state: GameState, b: BuildingInstance): void {
   const def = BUILDING_DEFS[b.typeId];
-  const idx = state.buildings.indexOf(b);
-  if (!def || idx < 0 || isProtectedStartBuilding(state, b)) return;
+  if (!def || !state.buildings.includes(b) || isProtectedStartBuilding(b)) return;
 
-  // Refund 50% of build cost
-  for (const [res, qty] of Object.entries(def.buildCost)) {
+  // Die Hälfte von allem, was Bau und Ausbau gekostet haben, kommt zurück
+  for (const [res, qty] of Object.entries(investiert(b.typeId, stufeVon(b)))) {
     const refund = Math.floor(qty / 2);
     if (refund > 0) state.globalStock[res] = (state.globalStock[res] ?? 0) + refund;
   }
-
-  // Running cycle inputs and buffered goods go back to the warehouse
-  refundRunningCycle(state, b);
-  for (const buffer of [b.localInputBuffer, b.localOutputBuffer]) {
-    for (const [item, qty] of Object.entries(buffer)) {
-      if (qty > 0) state.globalStock[item] = (state.globalStock[item] ?? 0) + qty;
-    }
-  }
-
-  // Free assigned workers/builders
-  for (const citizen of state.citizens) {
-    const assignedHere = citizen.assignedBuildingId === b.id || b.assignedWorkerIds.includes(citizen.id);
-    if (assignedHere && (citizen.status === 'WORKER' || citizen.status === 'BUILDER')) {
-      citizen.status = 'IDLE';
-      citizen.assignedBuildingId = null;
-    }
-  }
-
-  state.buildings.splice(idx, 1);
+  // Laufender Zyklus und Puffer gehen ins Lager, Arbeiter werden frei
+  entferneGebaeude(state, new Set([b.id]));
 }
 
 // ── Building Detail Modal ───────────────────────────────────────
@@ -680,34 +762,27 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
   if (prev) prev.remove();
 
   const spriteKey = def.spriteKey ?? '';
-  const isProtected = isProtectedStartBuilding(state, bInst);
+  const isProtected = isProtectedStartBuilding(bInst);
   const hasWorkshop = def.recipes.length > 0;
   let confirmSwitchId: string | null = null;
   let confirmDemolish = false;
-
-  // Weitere Gebäude desselben Typs: «1 von 3 ›» blättert weiter
-  const gleiche = state.buildings.filter(b => b && b.typeId === bInst.typeId);
-  const nr = gleiche.indexOf(bInst);
-  const naechstes = gleiche.length > 1 ? gleiche[(nr + 1) % gleiche.length] : null;
 
   const engpassZeile = (): string => {
     const eng = engpassFuerInstanz(state, bInst);
     return eng ? `<p class="ws-msg ws-warn bm-eng"><strong>Engpass:</strong> ${eng}</p>` : '';
   };
 
-  const renderBody = (): string => {
-    const status = !bInst.built ? '🚧 Im Bau'
-      : bInst.eventPaused ? '⚠️ Pausiert (Event)'
-      : bInst.producing ? '✅ Produziert'
-      : '⏸️ Leerlauf';
-    return `
-      <p><strong>Stufe:</strong> ${bInst.tier}</p>
-      <p><strong>Arbeiter:</strong> ${bInst.assignedWorkerIds.length} / ${def.workerSlots}</p>
-      <p><strong>Status:</strong> ${status}</p>
-      <p><strong>Verbunden:</strong> ${bInst.connected ? 'Ja' : 'Nein'}</p>
-      <p><strong>Kategorie:</strong> ${kategorieName(def.category)}</p>
+  const renderBody = (): string => `
+      ${renderZeilen(infoZeilen(state, bInst, def))}
+      ${def.housing ? renderWachstum(state) : ''}
+      ${def.id === 'WAREHOUSE' ? renderVorrat(state) : ''}
       ${engpassZeile()}
-      ${renderWorkshop(bInst, def, state, highlightRecipeId, confirmSwitchId)}`;
+      ${renderWorkshop(bInst, def, state, highlightRecipeId, confirmSwitchId)}
+      ${renderAusbau(state, bInst)}`;
+
+  const renderTitle = (): string => {
+    const stufen = stufenText(bInst);
+    return `${def.name}${stufen ? ` <span class="bm-stufe">${stufen}</span>` : ''}`;
   };
 
   const renderDemolishBtn = (): string => isProtected
@@ -722,7 +797,7 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
         <img src="assets/sprites/final/${spriteKey}.png" style="width:64px;height:64px;object-fit:contain;"
              onerror="this.style.display='none'">
       </div>
-      <h3>${def.name}${naechstes ? ` <button class="bm-next" title="Nächstes ${def.name}">${nr + 1} von ${gleiche.length} ›</button>` : ''}</h3>
+      <h3 class="bm-title">${renderTitle()}</h3>
       <div class="bm-body">${renderBody()}</div>
       <div class="bm-actions" style="display:flex;gap:8px;margin-top:12px;flex-wrap:wrap;align-items:center">
         <span class="bm-demolish">${renderDemolishBtn()}</span>
@@ -733,23 +808,25 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
   root.appendChild(ov);
 
   const body = ov.querySelector('.bm-body') as HTMLElement;
-  let lastSig = workshopSignature(bInst, def, state);
+  const title = ov.querySelector('.bm-title') as HTMLElement;
+  let lastSig = modalSignature(bInst, def, state);
   const refreshBody = () => {
     body.innerHTML = renderBody();
-    lastSig = workshopSignature(bInst, def, state);
+    title.innerHTML = renderTitle();
+    lastSig = modalSignature(bInst, def, state);
   };
 
   if (highlightRecipeId) {
     body.querySelector('.ws-rcp.hl')?.scrollIntoView({ block: 'nearest' });
   }
 
-  // Live progress: full refresh when state changes, otherwise only the bar
+  // Live progress: full refresh when state changes, otherwise only the bars
   const timer = window.setInterval(() => {
     if (!ov.isConnected || !state.buildings.includes(bInst)) {
       window.clearInterval(timer);
       return;
     }
-    if (workshopSignature(bInst, def, state) !== lastSig) {
+    if (modalSignature(bInst, def, state) !== lastSig) {
       refreshBody();
       return;
     }
@@ -761,6 +838,8 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
       const blocker = productionBlocker(bInst, def, recipe);
       txt.textContent = blocker ? `Angehalten: ${blocker}` : `noch ${Math.ceil(bInst.productionTimer)}s`;
     }
+    const wachs = body.querySelector('.bm-wachs .pk-bar > i') as HTMLElement | null;
+    if (wachs) wachs.style.width = `${Math.round(tagFortschritt(state) * 100)}%`;
   }, 500);
 
   const close = () => {
@@ -777,13 +856,6 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
       return;
     }
 
-    if (target.classList.contains('bm-next') && naechstes) {
-      window.clearInterval(timer);
-      ov.remove();
-      showBuildingModal(root, naechstes, state);
-      return;
-    }
-
     if (target.classList.contains('btn-demolish')) {
       if (!confirmDemolish) {
         confirmDemolish = true;
@@ -792,6 +864,11 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
       }
       executeDemolish(state, bInst);
       close();
+      return;
+    }
+
+    if (target.classList.contains('btn-ausbau')) {
+      if (ausbauen(state, bInst)) refreshBody();
       return;
     }
 

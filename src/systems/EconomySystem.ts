@@ -1,36 +1,48 @@
 import { GameState } from '../models/GameState';
-import { BUILDING_DEFS } from '../data/buildings';
 import { FighterSynergySystem } from './FighterSynergySystem';
+import { wirkungsStufe, marktBonusProzent, bankGoldProTag } from './Ausbau';
+
+/** Jeder Bewohner zahlt pro Tag so viel Gold, mal Zufriedenheit (0-1). */
+export const STEUER_PRO_BEWOHNER = 2;
+
+export interface SteuerRechnung {
+  bewohner: number;
+  zufriedenheit: number;   // 0-1
+  heldenBonus: number;     // Faktor aus FighterSynergySystem
+  /** Steuer-Bonus des Marktplatzes in Prozent (0 = wirkt nicht). */
+  marktProzent: number;
+  steuern: number;         // Bewohner × Satz × Zufriedenheit × Boni, abgerundet
+  bank: number;            // fester Betrag der Bank
+  gesamt: number;
+}
 
 /**
  * Handles tax collection and day advancement.
- * Called every day tick (60s).
+ * Called every day tick (DAY_TICK_INTERVAL in main.ts).
+ * Steuern hängen an den Bewohnern, nicht an der Zahl der Häuser:
+ * Brot → Bewohner → Arbeit und Gold. Marktplatz und Bank wirken je
+ * besetztem Arbeitsplatz (systems/Ausbau.ts).
  */
 export class EconomySystem {
   private fighterSynergySystem = new FighterSynergySystem();
 
-  /** Steuern, die beim nächsten Tageswechsel eingehen (auch für die Anzeige). */
+  steuerRechnung(state: GameState): SteuerRechnung {
+    const bewohner = state.citizens.length;
+    const zufriedenheit = Math.max(0, Math.min(1, (state.satisfaction ?? 0) / 100));
+    const heldenBonus = this.fighterSynergySystem.getTaxMultiplier(state);
+    const marktProzent = marktBonusProzent(wirkungsStufe(state, 'MARKETPLACE'));
+    const steuern = Math.floor(bewohner * STEUER_PRO_BEWOHNER * zufriedenheit * heldenBonus * (1 + marktProzent / 100));
+    const bank = bankGoldProTag(wirkungsStufe(state, 'BANK'));
+    return { bewohner, zufriedenheit, heldenBonus, marktProzent, steuern, bank, gesamt: steuern + bank };
+  }
+
+  /** Gold, das beim nächsten Tageswechsel eingeht (auch für die Anzeige). */
   steuernProTag(state: GameState): number {
-    let totalTax = 0;
-    const satisfactionMult = state.satisfaction / 100;
-    const fighterTaxMult = this.fighterSynergySystem.getTaxMultiplier(state);
-
-    for (const building of state.buildings) {
-      if (!building.built) continue;
-      const def = BUILDING_DEFS[building.typeId];
-      if (!def.housing) continue;
-
-      // Only connected houses generate tax
-      if (def.requiresConnectivity && !building.connected) continue;
-
-      totalTax += def.housing.baseTaxPerMin * satisfactionMult * fighterTaxMult;
-    }
-    return Math.floor(totalTax);
+    return this.steuerRechnung(state).gesamt;
   }
 
   dayTick(state: GameState): void {
-    const totalTax = this.steuernProTag(state);
-    state.globalStock.gold = (state.globalStock.gold ?? 0) + totalTax;
+    state.globalStock.gold = (state.globalStock.gold ?? 0) + this.steuernProTag(state);
     state.day++;
   }
 }

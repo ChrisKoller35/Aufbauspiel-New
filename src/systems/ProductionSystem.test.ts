@@ -53,3 +53,36 @@ describe('ProductionSystem', () => {
     expect(state.globalStock['wood']).toBe(woodBefore);
   });
 });
+
+describe('ProductionSystem – Ausbau-Stufen', () => {
+  function zweiterArbeiter(state: ReturnType<typeof createNewGameState>, camp: ReturnType<typeof createBuildingInstance>) {
+    const worker = createCitizen('WORKER');
+    worker.assignedBuildingId = camp.id;
+    camp.assignedWorkerIds.push(worker.id);
+    state.citizens.push(worker);
+  }
+
+  it('Stufe 2 mit zwei Arbeitern liefert doppelt so schnell', () => {
+    const { state, camp } = setupLumberCamp(true);
+    camp.tier = 2;
+    zweiterArbeiter(state, camp);
+    const production = new ProductionSystem();
+    const woodBefore = state.globalStock['wood'];
+
+    // Zyklus 5 s statt 10 s: Start bei 1, fertig bei 6, Start bei 7, fertig bei 12
+    for (let i = 0; i < 13; i++) production.update(state, 1);
+
+    expect(state.globalStock['wood']).toBe(woodBefore + 4);
+  });
+
+  it('Stufe 2 mit nur einem Arbeiter bleibt beim alten Tempo', () => {
+    const { state, camp } = setupLumberCamp(true);
+    camp.tier = 2;
+    const production = new ProductionSystem();
+    const woodBefore = state.globalStock['wood'];
+
+    for (let i = 0; i < 13; i++) production.update(state, 1);
+
+    expect(state.globalStock['wood']).toBe(woodBefore + 2);
+  });
+});

@@ -3,13 +3,22 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
-## Nachtrag 18.10.2026: Gebäude-Seite
+## Nachtrag 18.10.2026 (abends): Mindmap, ein Gebäude je Art, Wohnviertel
 
-Die Gebäude-Seite hat jetzt die Reiter **Produktion** (Produktionsketten, Entwurf 2), **Wohnen**, **Crafting**
+Zweiter Umbau nach Christophs Wunsch: Der Reiter **Produktion** ist eine Mindmap in vier Reihen (Gewinnen →
+Lager → Werkstätten → Stadt, Linien als SVG), jedes Gebäude gibt es **genau einmal** und wird **ausgebaut**
+(Stufen statt Mehrfachbau), das Wohnhaus heisst **Wohnviertel** (6 Plätze je Stufe), Steuern zahlen die
+Bewohner, Marktplatz und Bank wirken jetzt (je besetztem Arbeitsplatz). Reiter «Wohnen» weg. Regeln und
+Zahlen: `docs/AUSBAU.md`. Code: `src/systems/Ausbau.ts`, `src/data/produktionsnetz.ts`,
+`src/ui/screens/ProduktionTab.ts`. Alte Spielstände werden beim Laden verschmolzen (SaveVersion 21).
+Offen: Lager-Grenzen werden weiterhin nicht geprüft; Markt- und Bank-Werte sind vorläufig (Manager #23).
+
+## Nachtrag 18.10.2026 (morgens): Gebäude-Seite
+
+Die Gebäude-Seite hatte ab PR #11 die Reiter **Produktion** (Produktionsketten, Entwurf 2), **Wohnen**, **Crafting**
 und **Aufbau**. Das Raster «Stadtplan» und die untere Bauleiste sind entfernt. Zustand je Gebäude:
-`src/systems/GebaeudeStatus.ts`, Engpass-Sätze: `src/systems/EngpassSystem.ts`, Ketten: `src/data/produktionsketten.ts`.
+`src/systems/GebaeudeStatus.ts`, Engpass-Sätze: `src/systems/EngpassSystem.ts`.
 Wasser liefert jetzt jeder gebaute Brunnen für die ganze Stadt (es gibt keine Karte mehr für einen Umkreis).
-Marktplatz und Bank haben weiterhin keine Wirkung im Spiel, Lager-Grenzen werden nicht geprüft.
 
 ## Kurz
 

@@ -1,8 +1,9 @@
 // ─── Magic City – Zustand der Gebäude ───────────────────────────
 // Reine Funktionen über den Spielstand: Läuft ein Gebäude-Typ, wartet
-// er (und worauf), ist er baubar oder gesperrt? Grundlage für die
-// Reiter «Produktion» und «Wohnen», die Werkstatt und die Engpass-Suche.
-// Die Prüfungen spiegeln ProductionSystem.update.
+// er (und worauf), ist er baubar oder gesperrt? Grundlage für den
+// Reiter «Produktion», die Werkstatt und die Engpass-Suche.
+// Die Prüfungen spiegeln ProductionSystem.update. Es gibt höchstens
+// ein Gebäude je Art (systems/Ausbau.ts), daher steht «Stufe» statt «×N».
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS, BuildingDef, getFreischaltHinweise } from '../data/buildings';
@@ -10,6 +11,11 @@ import { RECIPE_DEFS, RecipeDef } from '../data/recipes';
 import { ITEM_DEFS } from '../data/items';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
+import {
+  zyklusSekunden, wohnKapazitaet, stufeVon, arbeitsplaetze, besetzt, wirkungsStufe, marktBonusProzent, bankGoldProTag,
+} from './Ausbau';
+
+export { wohnKapazitaet };
 
 /** Länge eines Spieltags in Sekunden (DAY_TICK_INTERVAL in main.ts). */
 export const TAG_SEKUNDEN = 30;
@@ -24,7 +30,9 @@ export type WarteGrund =
   | { art: 'kein-wasser' }
   | { art: 'kein-rezept' }
   | { art: 'zutaten'; item: string; vorrat: number; bedarf: number }
-  | { art: 'auftrag' };
+  | { art: 'auftrag' }
+  | { art: 'kein-brot' }
+  | { art: 'voll' };
 
 export interface GebaeudeStatus {
   typeId: string;
@@ -33,7 +41,10 @@ export interface GebaeudeStatus {
   text: string;
   /** 0-1 für den Fortschrittsbalken, null = kein Balken. */
   fortschritt: number | null;
+  /** 0 oder 1 (ein Gebäude je Art). */
   anzahl: number;
+  /** Ausbau-Stufe des Gebäudes, 0 wenn keines steht. */
+  stufe: number;
   grund?: WarteGrund;
   /** Freischalt-Hinweise bei «gesperrt». */
   hinweise?: string[];
@@ -79,6 +90,12 @@ export function gebaeudeVomTyp(state: GameState, typeId: string): BuildingInstan
   return state.buildings.filter(b => b && b.typeId === typeId);
 }
 
+/** Das eine Gebäude einer Art (möglichst ein fertiges), oder undefined. */
+export function dasGebaeude(state: GameState, typeId: string): BuildingInstance | undefined {
+  const alle = gebaeudeVomTyp(state, typeId);
+  return alle.find(b => b.built) ?? alle[0];
+}
+
 /** Vorrat, den ein Gebäude für ein Rezept nutzen kann. */
 export function stockFor(state: GameState, b: BuildingInstance, item: string): number {
   return b.connected ? (state.globalStock[item] ?? 0) : (b.localInputBuffer[item] ?? 0);
@@ -89,7 +106,7 @@ export function canAffordRecipe(state: GameState, b: BuildingInstance, recipe: R
 }
 
 export function cycleProgress(b: BuildingInstance, recipe: RecipeDef): number {
-  const total = recipe.cycleTimeSec * b.synergySpeedMult;
+  const total = zyklusSekunden(b, recipe);
   if (total <= 0) return 1;
   return Math.min(1, Math.max(0, (total - b.productionTimer) / total));
 }
@@ -115,6 +132,8 @@ export function grundText(grund: WarteGrund): string {
     case 'kein-rezept': return 'kein Rezept gewählt';
     case 'zutaten': return `fehlt: ${itemName(grund.item)} ${grund.vorrat}/${grund.bedarf}`;
     case 'auftrag': return 'bereit · Auftrag geben';
+    case 'kein-brot': return 'kein Brot für neue Bewohner';
+    case 'voll': return 'voll · ausbauen';
   }
 }
 
@@ -163,79 +182,84 @@ function buildProgress(b: BuildingInstance, def: BuildingDef | undefined): numbe
 }
 
 /** Ertrag pro Tag eines Rezepts ohne Zutaten, z. B. «+6 Holz / Tag». */
-function ertragText(laufende: BuildingInstance[], recipe: RecipeDef): string {
+function ertragText(b: BuildingInstance, recipe: RecipeDef): string {
   const [item, menge] = Object.entries(recipe.outputs)[0] ?? ['', 0];
-  const proTag = laufende.reduce(
-    (sum, b) => sum + (menge * TAG_SEKUNDEN) / Math.max(1, recipe.cycleTimeSec * b.synergySpeedMult), 0,
-  );
+  const proTag = (menge * TAG_SEKUNDEN) / Math.max(1, zyklusSekunden(b, recipe));
   return `+${Math.round(proTag * 10) / 10} ${itemName(item)} / Tag`;
 }
 
 // ── Gebäude ohne Rezepte ────────────────────────────────────────
 
-export function wohnKapazitaet(state: GameState): number {
-  let capacity = 0;
-  for (const b of state.buildings) {
-    if (!b || !b.built) continue;
-    const def = BUILDING_DEFS[b.typeId];
-    if (!def?.housing) continue;
-    if (def.requiresConnectivity && !b.connected) continue;
-    capacity += def.housing.capacity;
-  }
-  return capacity;
+/** Wächst die Stadt beim nächsten Tageswechsel? Sonst der Grund (wie PeopleSystem.dayTick). */
+export function wachstum(state: GameState): { waechst: boolean; grund?: WarteGrund } {
+  if (state.citizens.length >= wohnKapazitaet(state)) return { waechst: false, grund: { art: 'voll' } };
+  if ((state.globalStock.bread ?? 0) < 1) return { waechst: false, grund: { art: 'kein-brot' } };
+  return { waechst: true };
 }
 
-function bereitText(state: GameState, typeId: string, anzahl: number): string {
-  const def = BUILDING_DEFS[typeId];
-  if (def.housing) return `${state.citizens.length} / ${wohnKapazitaet(state)} Bewohner`;
-  if (def.radiusEffect?.type === 'water') return 'Wasser für die Stadt';
-  if (def.expeditions) return `${def.expeditions.partySlots} Helden-Plätze`;
-  if (typeId === 'WAREHOUSE') {
-    const s = state.globalStock;
-    return `Lager: ${Math.floor(s.wood ?? 0)} Holz · ${Math.floor(s.stone ?? 0)} Stein`;
+/** Fortschritt bis zum nächsten Tageswechsel (0-1). */
+export function tagFortschritt(state: GameState): number {
+  return Math.min(1, Math.max(0, (state.dayTickAccumulator ?? 0) / TAG_SEKUNDEN));
+}
+
+function statusOhneRezept(state: GameState, def: BuildingDef, b: BuildingInstance): GebaeudeStatus {
+  const basis = { typeId: def.id, anzahl: 1, stufe: stufeVon(b) };
+  const s = state.globalStock;
+
+  if (def.housing) {
+    const w = wachstum(state);
+    const bewohner = `${state.citizens.length} / ${wohnKapazitaet(state)} Bewohner`;
+    if (w.waechst) return { ...basis, zustand: 'laeuft', text: `${bewohner} · wächst`, fortschritt: tagFortschritt(state) };
+    const grund = w.grund!;
+    return {
+      ...basis, zustand: grund.art === 'voll' ? 'bereit' : 'wartet',
+      text: `${bewohner} · ${grund.art === 'voll' ? 'voll' : 'kein Brot'}`, fortschritt: null, grund,
+    };
   }
-  // Marktplatz und Bank haben noch keine Wirkung im Spiel
-  return anzahl > 1 ? `${anzahl} gebaut` : 'gebaut';
+  // Marktplatz und Bank wirken nur mit Arbeiter
+  if (def.workerSlots > 0 && b.assignedWorkerIds.length === 0) {
+    return { ...basis, zustand: 'wartet', text: 'kein Arbeiter', fortschritt: null, grund: { art: 'kein-arbeiter' } };
+  }
+  let text = 'gebaut';
+  if (def.radiusEffect?.type === 'water') text = 'Wasser für die Stadt';
+  else if (def.expeditions) text = `${state.fighters.length} Helden in der Gilde`;
+  else if (def.id === 'WAREHOUSE') text = `${Math.floor(s.wood ?? 0)} Holz · ${Math.floor(s.stone ?? 0)} Stein`;
+  else if (def.id === 'MARKETPLACE') text = `+${marktBonusProzent(wirkungsStufe(state, def.id))} % Steuern`;
+  else if (def.id === 'BANK') text = `+${bankGoldProTag(wirkungsStufe(state, def.id))} Gold / Tag`;
+  return { ...basis, zustand: 'bereit', text, fortschritt: null };
 }
 
 // ── Zustand eines Gebäude-Typs ──────────────────────────────────
 
 export function getGebaeudeStatus(state: GameState, typeId: string): GebaeudeStatus {
   const def = BUILDING_DEFS[typeId];
-  const alle = gebaeudeVomTyp(state, typeId);
-  const anzahl = alle.length;
+  const b = dasGebaeude(state, typeId);
 
-  if (anzahl === 0) {
+  if (!b) {
     const hinweise = freischaltHinweise(state, typeId);
     if (hinweise.length > 0) {
-      return { typeId, zustand: 'gesperrt', text: hinweise.join(' · '), fortschritt: null, anzahl, hinweise };
+      return { typeId, zustand: 'gesperrt', text: hinweise.join(' · '), fortschritt: null, anzahl: 0, stufe: 0, hinweise };
     }
-    return { typeId, zustand: 'bauplatz', text: def ? kostenText(def.buildCost) : '', fortschritt: null, anzahl };
+    return { typeId, zustand: 'bauplatz', text: def ? kostenText(def.buildCost) : '', fortschritt: null, anzahl: 0, stufe: 0 };
   }
 
-  const fertige = alle.filter(b => b.built);
-  if (fertige.length === 0) {
-    const s = einzelStatus(state, alle[0]);
-    return { typeId, zustand: 'wartet', text: 'im Bau', fortschritt: s.fortschritt, anzahl, grund: { art: 'im-bau' } };
+  const stufe = stufeVon(b);
+  if (!b.built) {
+    const s = einzelStatus(state, b);
+    return { typeId, zustand: 'wartet', text: 'im Bau', fortschritt: s.fortschritt, anzahl: 1, stufe, grund: { art: 'im-bau' } };
   }
 
-  if (!def || def.recipes.length === 0) {
-    return { typeId, zustand: 'bereit', text: bereitText(state, typeId, anzahl), fortschritt: null, anzahl };
-  }
+  if (!def || def.recipes.length === 0) return statusOhneRezept(state, def, b);
 
-  const status = alle.map(b => ({ b, s: einzelStatus(state, b) }));
-  const laufende = status.filter(x => x.s.laeuft);
-  if (laufende.length > 0) {
-    const erste = laufende[0];
-    const recipe = erste.s.recipe!;
-    const text = Object.keys(recipe.inputs).length === 0
-      ? ertragText(laufende.filter(x => x.s.recipe === recipe).map(x => x.b), recipe)
-      : recipe.name;
-    return { typeId, zustand: 'laeuft', text, fortschritt: erste.s.fortschritt, anzahl };
+  const s = einzelStatus(state, b);
+  if (s.laeuft) {
+    const recipe = s.recipe!;
+    let text = Object.keys(recipe.inputs).length === 0 ? ertragText(b, recipe) : recipe.name;
+    // Nicht alle Arbeitsplätze besetzt: läuft, aber langsamer
+    if (besetzt(b) < arbeitsplaetze(b)) text += ` · ${besetzt(b)}/${arbeitsplaetze(b)} Arbeiter`;
+    return { typeId, zustand: 'laeuft', text, fortschritt: s.fortschritt, anzahl: 1, stufe };
   }
-
-  const erste = status[0].s;
-  const grund = erste.grund ?? { art: 'kein-rezept' as const };
+  const grund = s.grund ?? { art: 'kein-rezept' as const };
   const zustand: Zustand = grund.art === 'auftrag' ? 'bereit' : 'wartet';
-  return { typeId, zustand, text: grundText(grund), fortschritt: erste.fortschritt, anzahl, grund };
+  return { typeId, zustand, text: grundText(grund), fortschritt: s.fortschritt, anzahl: 1, stufe, grund };
 }

@@ -18,7 +18,8 @@ export interface BuildingDef {
   storage: { localOutputBuffer: number; localInputBuffer: number } | { capacity: number; stackSizeDefault: number } | null;
   recipes: string[];
   radiusEffect: { type: string; radiusTiles: number } | null;
-  housing: { capacity: number; baseTaxPerMin: number } | null;
+  /** Plätze auf Stufe 1; jede weitere Stufe gibt PLAETZE_PRO_STUFE dazu (systems/Ausbau.ts). Steuern zahlen die Bewohner. */
+  housing: { capacity: number } | null;
   expeditions: { partySlots: number; maxActiveRuns: number } | null;
   training: { trainingTimeSec: number; trainingCost: Record<string, number> } | null;
   tags: string[];
@@ -172,7 +173,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
   },
   HOUSE_T1: {
     id: 'HOUSE_T1',
-    name: 'Wohnhaus',
+    name: 'Wohnviertel',
     tier: 1,
     category: 'housing',
     footprint: [2, 2],
@@ -183,7 +184,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     storage: null,
     recipes: [],
     radiusEffect: null,
-    housing: { capacity: 4, baseTaxPerMin: 8 },
+    housing: { capacity: 6 },
     expeditions: null,
     training: null,
     tags: ['housing'],
@@ -249,7 +250,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['craft', 'gear'],
     manualCraft: true,
-    freischaltung: { braucht: ['LUMBER_CAMP', 'QUARRY'] },
+    freischaltung: { braucht: ['IRON_MINE'] },
     spriteKey: 'SMITHY',
   },
   IRON_MINE: {
@@ -269,7 +270,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['material', 'mine'],
-    freischaltung: { braucht: ['SMITHY'] },
+    freischaltung: { braucht: ['QUARRY'] },
     spriteKey: 'IRON_MINE',
   },
   ROAD: {
@@ -400,8 +401,8 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     tier: 2,
     category: 'utility',
     footprint: [4, 3],
-    buildCost: {},
-    buildTimeSec: 0,
+    buildCost: { wood: 50, stone: 40, gold: 150 },
+    buildTimeSec: 90,
     workerSlots: 1,
     requiresConnectivity: true,
     storage: null,

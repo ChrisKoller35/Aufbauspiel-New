@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { getGebaeudeStatus, freischaltHinweise } from './GebaeudeStatus';
-import { engpassFuerGebaeude, engpassFuerKette } from './EngpassSystem';
-import { PRODUKTIONSKETTEN } from '../data/produktionsketten';
+import { engpassFuerGebaeude, engpaesseDerStadt } from './EngpassSystem';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
@@ -27,6 +26,7 @@ describe('GebaeudeStatus', () => {
     const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
     expect(s.zustand).toBe('bauplatz');
     expect(s.anzahl).toBe(0);
+    expect(s.stufe).toBe(0);
   });
 
   it('fehlende Voraussetzung: gesperrt mit Hinweis', () => {
@@ -34,6 +34,16 @@ describe('GebaeudeStatus', () => {
     const s = getGebaeudeStatus(state, 'MILL_WIND');
     expect(s.zustand).toBe('gesperrt');
     expect(s.hinweise?.length).toBeGreaterThan(0);
+  });
+
+  it('Schmiede braucht die Eisenmine, die Eisenmine den Steinbruch', () => {
+    const state = createNewGameState();
+    expect(freischaltHinweise(state, 'IRON_MINE').join(' ')).toContain('Steinbruch');
+    bauen(state, 'QUARRY');
+    expect(freischaltHinweise(state, 'IRON_MINE')).toEqual([]);
+    expect(freischaltHinweise(state, 'SMITHY').join(' ')).toContain('Eisenmine');
+    bauen(state, 'IRON_MINE');
+    expect(freischaltHinweise(state, 'SMITHY')).toEqual([]);
   });
 
   it('fehlender Bauplan zählt als Sperre', () => {
@@ -51,6 +61,7 @@ describe('GebaeudeStatus', () => {
     const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
     expect(s.zustand).toBe('laeuft');
     expect(s.text).toMatch(/\/ Tag/);
+    expect(s.stufe).toBe(1);
   });
 
   it('Holzfäller ohne Arbeiter wartet', () => {
@@ -59,6 +70,49 @@ describe('GebaeudeStatus', () => {
     const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
     expect(s.zustand).toBe('wartet');
     expect(s.grund?.art).toBe('kein-arbeiter');
+  });
+
+  it('Stufe 2 mit nur einem Arbeiter: läuft, nennt aber die freien Plätze', () => {
+    const state = createNewGameState();
+    const huette = bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
+    huette.tier = 2;
+    arbeiter(state, huette);
+    const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
+    expect(s.zustand).toBe('laeuft');
+    expect(s.stufe).toBe(2);
+    expect(s.text).toContain('1/2 Arbeiter');
+  });
+
+  it('Wohnviertel: wächst mit Platz und Brot, sonst voll oder kein Brot', () => {
+    const state = createNewGameState();
+    const viertel = bauen(state, 'HOUSE_T1');
+    state.globalStock.bread = 3;
+    for (let i = 0; i < 4; i++) state.citizens.push(createCitizen('IDLE'));
+    expect(getGebaeudeStatus(state, 'HOUSE_T1').zustand).toBe('laeuft');
+
+    state.globalStock.bread = 0;
+    const ohneBrot = getGebaeudeStatus(state, 'HOUSE_T1');
+    expect(ohneBrot.zustand).toBe('wartet');
+    expect(ohneBrot.grund?.art).toBe('kein-brot');
+
+    state.globalStock.bread = 3;
+    for (let i = 0; i < 2; i++) state.citizens.push(createCitizen('IDLE'));
+    const voll = getGebaeudeStatus(state, 'HOUSE_T1');
+    expect(voll.zustand).toBe('bereit');
+    expect(voll.grund?.art).toBe('voll');
+
+    viertel.tier = 2;
+    expect(getGebaeudeStatus(state, 'HOUSE_T1').zustand).toBe('laeuft');
+  });
+
+  it('Marktplatz ohne Arbeiter wartet, mit Arbeiter zeigt er den Steuer-Bonus', () => {
+    const state = createNewGameState();
+    const markt = bauen(state, 'MARKETPLACE');
+    expect(getGebaeudeStatus(state, 'MARKETPLACE').zustand).toBe('wartet');
+    arbeiter(state, markt);
+    const s = getGebaeudeStatus(state, 'MARKETPLACE');
+    expect(s.zustand).toBe('bereit');
+    expect(s.text).toBe('+25 % Steuern');
   });
 });
 
@@ -73,6 +127,15 @@ describe('EngpassSystem', () => {
     expect(satz).toContain('Baue Eisenmine');
   });
 
+  it('steht das Liefergebäude schon, rät der Satz zum Ausbau', () => {
+    const state = createNewGameState();
+    const schmiede = bauen(state, 'SMITHY', 'RCP_IRON_SWORD');
+    arbeiter(state, schmiede);
+    bauen(state, 'IRON_MINE', 'RCP_IRON_1');
+    state.globalStock['iron_scrap'] = 0;
+    expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('baue Eisenmine aus');
+  });
+
   it('Schmiede mit genug Zutaten wartet nur auf den Auftrag: kein Engpass', () => {
     const state = createNewGameState();
     arbeiter(state, bauen(state, 'SMITHY', 'RCP_IRON_SWORD'));
@@ -82,11 +145,24 @@ describe('EngpassSystem', () => {
     expect(engpassFuerGebaeude(state, 'SMITHY')).toBeNull();
   });
 
-  it('Kette meldet das erste fehlende Gebäude in Reihenfolge', () => {
+  it('Engpässe der Stadt: wartende Gebäude zuerst, dann der nächste Bauplatz', () => {
     const state = createNewGameState();
-    const brot = PRODUKTIONSKETTEN.find(k => k.id === 'brot')!;
-    arbeiter(state, bauen(state, 'FARM_GRAIN', 'RCP_GRAIN_1'));
-    const satz = engpassFuerKette(state, brot);
-    expect(satz).toContain('Windmühle');
+    bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
+    const liste = engpaesseDerStadt(state);
+    expect(liste.length).toBeGreaterThan(0);
+    expect(liste[0].typeId).toBe('LUMBER_CAMP');
+    expect(liste[0].satz).toContain('Holzfällerhütte');
+    expect(liste.some(e => getGebaeudeStatus(state, e.typeId).zustand === 'bauplatz')).toBe(true);
+    expect(liste.length).toBeLessThanOrEqual(3);
+  });
+
+  it('volles Wohnviertel wird als Engpass genannt', () => {
+    const state = createNewGameState();
+    bauen(state, 'HOUSE_T1');
+    state.globalStock.bread = 5;
+    for (let i = 0; i < 6; i++) state.citizens.push(createCitizen('IDLE'));
+    const satz = engpaesseDerStadt(state).find(e => e.typeId === 'HOUSE_T1')?.satz ?? '';
+    expect(satz).toContain('voll');
+    expect(satz).toContain('6/6');
   });
 });

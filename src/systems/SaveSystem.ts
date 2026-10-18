@@ -4,10 +4,11 @@ import { resetBuildingIdCounter } from '../models/Building';
 import { resetCitizenIdCounter } from '../models/Citizen';
 import { resetFighterIdCounter } from '../models/GuildRoster';
 import { BUILDING_DEFS } from '../data/buildings';
+import { entferneGebaeude, vereinigeDoppelte } from './Ausbau';
 
 const SAVE_KEY = 'magic_city_save';
 const BACKUP_KEY = 'magic_city_save_backup';
-const CURRENT_VERSION = 20;
+const CURRENT_VERSION = 21;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
@@ -364,6 +365,11 @@ export class SaveSystem {
     // BANK_WITH_CHEST). City systems read BUILDING_DEFS[typeId] unchecked and would crash.
     this.removeUnknownBuildings(state);
 
+    // SaveVersion 21: ein Gebäude je Art. Mehrere gleiche Gebäude werden zu einem
+    // mit entsprechender Stufe verschmolzen (Arbeiter frei, Waren ins Lager).
+    const verschmolzen = vereinigeDoppelte(state);
+    if (verschmolzen > 0) console.log('Doppelte Gebäude zu Stufen verschmolzen:', verschmolzen);
+
     state.saveVersion = CURRENT_VERSION;
   }
 
@@ -372,32 +378,7 @@ export class SaveSystem {
       state.buildings.filter(b => !BUILDING_DEFS[b.typeId]).map(b => b.id),
     );
     if (removedIds.size === 0) return;
-
-    state.buildings = state.buildings.filter(b => !removedIds.has(b.id));
-
-    // Clear grid tiles (footprint of an unknown type is unknown → scan the grid)
-    for (const row of state.grid ?? []) {
-      for (let x = 0; x < row.length; x++) {
-        const tile = row[x];
-        if (tile?.buildingId != null && removedIds.has(tile.buildingId)) row[x] = null;
-      }
-    }
-
-    // Free workers/builders
-    for (const citizen of state.citizens ?? []) {
-      if (citizen.assignedBuildingId != null && removedIds.has(citizen.assignedBuildingId)) {
-        citizen.status = 'IDLE';
-        citizen.assignedBuildingId = null;
-      }
-    }
-
-    // Unassign specialists
-    for (const spec of state.specialists ?? []) {
-      if (spec.assignedBuildingId != null && removedIds.has(spec.assignedBuildingId)) {
-        spec.assignedBuildingId = null;
-      }
-    }
-
+    entferneGebaeude(state, removedIds);
     console.log('Removed buildings with unknown types:', removedIds.size);
   }
 }

@@ -1,6 +1,7 @@
 import { GameState } from '../models/GameState';
 import { BUILDING_DEFS } from '../data/buildings';
 import { FighterSynergySystem } from './FighterSynergySystem';
+import { wohnKapazitaet } from './Ausbau';
 
 /**
  * Updates waterSupplied for all buildings (a built Well supplies the whole city),
@@ -39,17 +40,10 @@ export class SatisfactionSystem {
     );
     satisfaction += anyHouseWatered ? 10 : -10;
 
-    // overcrowd: −10 × max(0, citizens − housingCapacity)
-    let housingCapacity = 0;
-    for (const building of state.buildings) {
-      if (!building.built) continue;
-      const def = BUILDING_DEFS[building.typeId];
-      if (def.housing) {
-        housingCapacity += def.housing.capacity;
-      }
-    }
-    const overcrowdPenalty = Math.max(0, state.citizens.length - housingCapacity);
-    satisfaction -= 10 * overcrowdPenalty;
+    // overcrowd: −5 je Bewohner ohne Platz, höchstens −30 (ein Wohnviertel mit Stufen,
+    // Überfüllung entsteht fast nur noch beim Laden alter Spielstände)
+    const overcrowdPenalty = Math.max(0, state.citizens.length - wohnKapazitaet(state));
+    satisfaction -= Math.min(30, 5 * overcrowdPenalty);
 
     // infra: all requiresConnectivity buildings connected → +0, else −10
     const allConnected = state.buildings.every(
