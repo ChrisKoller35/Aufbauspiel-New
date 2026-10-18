@@ -94,7 +94,7 @@ NPC-Rettung, Talismane, Stadt-Ereignisse, Synergien, Wochen-Herausforderungen: C
 - Brot wird kaum gebraucht (nur für Wachstum), die Brot-Kette (Farm, Mühle, Bäckerei, Brunnen) lohnt sich kaum.
 - Nie erhältlich: Wasser, Glutwurzel, Schimmerpilz, Sumpfblüte, Knochenstaub, Mondkraut. Dadurch sind 5 von 7
   Trank-Rezepten unmöglich. Kristallsplitter fallen nur selten (ca. 5 % in seltener Beute), werden aber für fast
-  alle besseren Rezepte und die Arkanschmiede gebraucht.
+  alle besseren Rezepte und die Arkanschmiede gebraucht. → Behoben 18.10.2026, siehe `docs/BALANCING.md`.
 - Helden: Die drei Startklassen sind viel schwächer als freischaltbare Klassen zum gleichen Preis
   (Wächter 25 Leben / 3 Angriff gegen Berserker 84 / 7). Der erste Wolf hat 35 Leben, mehr als ein Wächter.
 - Belagerungs-Gegner springen auf Angriff 13-34 und Verteidigung 18-26. Mit der Schadensformel machen Helden dort fast
