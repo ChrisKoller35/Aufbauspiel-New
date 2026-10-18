@@ -24,6 +24,7 @@ import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { ScoreboardEntry } from './models/ScoreboardEntry';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
+import { getRouteBauplan } from './data/routes';
 
 document.addEventListener('DOMContentLoaded', () => {
   const app = document.getElementById('app');
@@ -322,6 +323,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Capture loot data before clearing
     const loot = { ...run.loot };
+
+    // Bauplan: garantierter Drop beim ersten Sieg über den Routen-Boss
+    const bauplanDrop = run.bossesKilled > 0 ? getRouteBauplan(run.routeId) : null;
+    const neuerBauplan = bauplanDrop && !state.erhalteneBauplaene.includes(bauplanDrop) ? bauplanDrop : null;
+    if (neuerBauplan) loot[neuerBauplan] = (loot[neuerBauplan] ?? 0) + 1;
     const goldEarned = run.goldEarned ?? 0;
     const hasLoot = goldEarned > 0 || Object.values(loot).some(q => q > 0);
 
@@ -374,6 +380,7 @@ document.addEventListener('DOMContentLoaded', () => {
         state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
       }
       state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
+      if (neuerBauplan) state.erhalteneBauplaene.push(neuerBauplan);
       state.statistics['total_gold_earned'] = (state.statistics['total_gold_earned'] ?? 0) + goldEarned;
 
       // Save

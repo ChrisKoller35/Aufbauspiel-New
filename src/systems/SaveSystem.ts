@@ -106,6 +106,7 @@ export class SaveSystem {
       if (!state.saveVersion || state.saveVersion < CURRENT_VERSION) {
         this.migrate(state);
       }
+      this.ensureNewFields(state);
 
       // Always remove deprecated items
       delete state.globalStock['war_hammer'];
@@ -145,6 +146,7 @@ export class SaveSystem {
       if (!state.saveVersion || state.saveVersion < CURRENT_VERSION) {
         this.migrate(state);
       }
+      this.ensureNewFields(state);
 
       const maxBuildingId = state.buildings.reduce((max, b) => Math.max(max, b.id), 0);
       const maxCitizenId = state.citizens.reduce((max, c) => Math.max(max, c.id), 0);
@@ -226,6 +228,14 @@ export class SaveSystem {
       };
       input.click();
     });
+  }
+
+  /**
+   * Neue Felder mit Standardwert, ohne SaveVersion-Erhöhung.
+   * Läuft bei jedem Laden (migrate() nur bei älteren Versionen).
+   */
+  private ensureNewFields(state: GameState): void {
+    if (!Array.isArray(state.erhalteneBauplaene)) state.erhalteneBauplaene = [];
   }
 
   private migrate(state: GameState): void {

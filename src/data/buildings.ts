@@ -17,6 +17,8 @@ export interface BuildingDef {
   tags: string[];
   requirements?: { waterSupplied?: boolean };
   manualCraft?: boolean;  // true = player must click "Herstellen" to start each cycle
+  /** Freischalt-Bedingungen. bauplan = Item-ID, die im Lager liegen muss und beim Bau verbraucht wird. */
+  freischaltung?: { bauplan?: string };
   spriteKey: string;
 }
 
@@ -327,6 +329,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['craft', 'gear', 'arcane'],
     manualCraft: true,
+    freischaltung: { bauplan: 'bauplan_arkanschmiede' },
     spriteKey: 'ARCANE_SMITHY',
   },
   MARKETPLACE: {
@@ -346,6 +349,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['utility', 'economy'],
+    freischaltung: { bauplan: 'bauplan_marktplatz' },
     spriteKey: 'MARKETPLACE',
   },
   WAR_MACHINE_WORKSHOP: {
@@ -366,6 +370,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['craft', 'war'],
     manualCraft: true,
+    freischaltung: { bauplan: 'bauplan_kriegsmaschinen' },
     spriteKey: 'WAR_MACHINE_WORKSHOP',
   },
   BANK: {
@@ -385,6 +390,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['utility', 'economy'],
+    freischaltung: { bauplan: 'bauplan_bank' },
     spriteKey: 'BANK',
   },
 };
