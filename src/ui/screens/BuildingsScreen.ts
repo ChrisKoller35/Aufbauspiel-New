@@ -45,6 +45,17 @@ function getBuildingImageStyle(typeId: string): string {
 
 type BuildingsTab = 'stadtplan' | 'crafting' | 'aufbau';
 
+/** Freischalt-Hinweise inkl. fehlendem Bauplan (Bauplan muss im Lager liegen). */
+function freischaltHinweise(state: GameState, typeId: string): string[] {
+  const hinweise = getFreischaltHinweise(typeId, getBuiltTypeIds(state), getGildenrang(state));
+  const bauplan = BUILDING_DEFS[typeId]?.freischaltung?.bauplan;
+  if (bauplan && (state.globalStock[bauplan] ?? 0) < 1) {
+    hinweise.push(`braucht ${ITEM_DEFS[bauplan]?.name ?? bauplan}`);
+  }
+  return hinweise;
+}
+
+
 let cachedState: GameState | null = null;
 let currentTab: BuildingsTab = 'stadtplan';
 
@@ -189,13 +200,11 @@ function renderStadtplan(state: GameState): string {
   const houseCells = renderZoneCells(houseBuildings, HOUSE_SLOTS);
 
   // Shop bar – available buildings to buy (with sprites); locked ones greyed out
-  const built = getBuiltTypeIds(state);
-  const rang = getGildenrang(state);
   const shopHTML = BUILD_MENU_ORDER.map(id => {
     const def = BUILDING_DEFS[id];
     if (!def) return '';
     const bgStyle = getBuildingImageStyle(def.id);
-    const hinweise = getFreischaltHinweise(def.id, built, rang);
+    const hinweise = freischaltHinweise(state, def.id);
     if (hinweise.length) {
       return `
       <div class="bitem locked" data-btype="${def.id}" style="${bgStyle}" title="${hinweise.join(', ')}">
@@ -462,7 +471,7 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   );
 
   const hasFreeSlot = hasEmptySlot(state, typeId);
-  const hinweise = getFreischaltHinweise(typeId, getBuiltTypeIds(state), getGildenrang(state));
+  const hinweise = freischaltHinweise(state, typeId);
   const unlocked = hinweise.length === 0;
   const canBuild = unlocked && canAfford && hasFreeSlot;
 
@@ -523,7 +532,7 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
   if (bauplan && (state.globalStock[bauplan] ?? 0) < 1) return;
 
   if (!hasEmptySlot(state, typeId)) return;
-  if (getFreischaltHinweise(typeId, getBuiltTypeIds(state), getGildenrang(state)).length) return;
+  if (freischaltHinweise(state, typeId).length) return;
 
   // Deduct resources
   for (const [res, qty] of Object.entries(def.buildCost)) {
