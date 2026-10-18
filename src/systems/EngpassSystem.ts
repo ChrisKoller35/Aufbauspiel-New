@@ -11,7 +11,7 @@ import { BuildingInstance } from '../models/Building';
 import {
   getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, dasGebaeude, einzelStatus, WarteGrund,
 } from './GebaeudeStatus';
-import { maxStufe, stufeVon, arbeitsplaetze, besetzt } from './Ausbau';
+import { maxStufe, stufeVon, arbeitsplaetze, besetzt, fehlendeStadtstufe } from './Ausbau';
 import { naechsterBau } from './Empfehlung';
 
 /** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept). */
@@ -28,8 +28,18 @@ function freieBewohner(state: GameState): number {
   return state.citizens.filter(c => c.status === 'IDLE').length;
 }
 
+/** Was das Wohnviertel als Nächstes braucht, damit mehr Bewohner Platz haben. */
+function wohnAusbauSatz(state: GameState): string {
+  const b = dasGebaeude(state, 'HOUSE_T1');
+  if (!b) return 'Baue das Wohnviertel.';
+  const stadtstufe = fehlendeStadtstufe(state, b);
+  if (stadtstufe) return `Mehr Ausbau erlaubt erst die Stadtstufe «${stadtstufe}» (Hauptmenü).`;
+  if (stufeVon(b) >= maxStufe(b.typeId)) return 'Das Wohnviertel ist ganz ausgebaut.';
+  return 'Baue das Wohnviertel aus, damit neue Bewohner kommen.';
+}
+
 function wohnHinweis(state: GameState): string {
-  if (state.citizens.length >= wohnKapazitaet(state)) return 'Baue das Wohnviertel aus, damit neue Bewohner kommen.';
+  if (state.citizens.length >= wohnKapazitaet(state)) return wohnAusbauSatz(state);
   if ((state.globalStock.bread ?? 0) < 1) return 'Neue Bewohner kommen nur mit Brot im Lager.';
   return 'Der nächste Bewohner kommt bald.';
 }
@@ -39,6 +49,8 @@ function ausbauHinweis(state: GameState, typeId: string): string {
   const b = dasGebaeude(state, typeId);
   const name = gebaeudeName(typeId);
   if (!b) return `Baue ${name}.`;
+  const stadtstufe = fehlendeStadtstufe(state, b);
+  if (stadtstufe) return `${name} liefert sie. Weiter ausbauen erlaubt erst die Stadtstufe «${stadtstufe}» (Hauptmenü).`;
   if (stufeVon(b) < maxStufe(typeId)) return `${name} liefert sie: baue ${name} aus, dann geht es schneller.`;
   return `${name} liefert sie und läuft schon auf höchster Stufe, es braucht Zeit.`;
 }
@@ -57,7 +69,7 @@ export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): 
         ? `${name} bekommt gleich einen Arbeiter.`
         : `${name} hat keinen Arbeiter, alle Bewohner arbeiten schon. ${wohnHinweis(state)}`;
     case 'kein-brot': return 'Neue Bewohner kommen nur mit Brot im Lager: baue die Brot-Kette auf.';
-    case 'voll': return `Das Wohnviertel ist voll (${state.citizens.length}/${wohnKapazitaet(state)}): baue es aus, damit die Stadt wächst.`;
+    case 'voll': return `Das Wohnviertel ist voll (${state.citizens.length}/${wohnKapazitaet(state)}). ${wohnAusbauSatz(state)}`;
     case 'zutaten': {
       const ware = itemName(grund.item);
       const lieferant = lieferantFuer(grund.item);

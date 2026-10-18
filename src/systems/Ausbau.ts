@@ -6,12 +6,15 @@
 // je Stufe PLAETZE_PRO_STUFE Plätze, Marktplatz und Bank wirken je
 // besetztem Arbeitsplatz, das Gildenhaus Stufe 2 ist der bestehende
 // Ausbau GUILD_HALL_T2 (4 Helden je Expedition). Der Ausbau ist sofort
-// fertig. Reine Funktionen; Anzeige: BuildingsScreen. Regeln: docs/AUSBAU.md.
+// fertig. Wie weit ausgebaut werden darf, gibt die Stadtstufe vor
+// (data/stadtstufen.ts, wie das Rathaus bei Clash of Clans).
+// Reine Funktionen; Anzeige: BuildingsScreen. Regeln: docs/AUSBAU.md.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../data/buildings';
 import { RECIPE_DEFS, RecipeDef } from '../data/recipes';
 import { BUILDING_UPGRADE_DEFS } from '../data/buildingUpgrades';
+import { GrenzArt, stadtStufeFuerAusbau, stadtStufeVon, stufeDef } from '../data/stadtstufen';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 
@@ -37,6 +40,33 @@ export function maxStufe(typeId: string): number {
 export function stufeVon(b: BuildingInstance): number {
   const tier = Number.isFinite(b.tier) ? Math.floor(b.tier) : 1;
   return Math.min(maxStufe(b.typeId), Math.max(1, tier));
+}
+
+// ── Grenzen der Stadtstufe ──────────────────────────────────────
+
+/** Welche Grenze der Stadtstufe für eine Gebäude-Art gilt (null = keine). */
+export function grenzArt(typeId: string): GrenzArt | null {
+  const def = BUILDING_DEFS[typeId];
+  if (!def) return null;
+  if (def.housing) return 'wohnen';
+  if (def.recipes.length > 0) return 'werkstatt';
+  if (typeId === 'MARKETPLACE' || typeId === 'BANK') return 'handel';
+  return null;
+}
+
+/** Höchste Stufe, die die Stadtstufe gerade erlaubt (nie über maxStufe). */
+export function erlaubteStufe(state: GameState, typeId: string): number {
+  const art = grenzArt(typeId);
+  const max = maxStufe(typeId);
+  return art ? Math.min(max, stufeDef(stadtStufeVon(state)).grenzen[art]) : max;
+}
+
+/** Name der Stadtstufe, die für den nächsten Ausbau fehlt, oder null (kein Ausbau mehr oder nicht gesperrt). */
+export function fehlendeStadtstufe(state: GameState, b: BuildingInstance): string | null {
+  const naechste = stufeVon(b) + 1;
+  const art = grenzArt(b.typeId);
+  if (!art || naechste > maxStufe(b.typeId) || naechste <= erlaubteStufe(state, b.typeId)) return null;
+  return stadtStufeFuerAusbau(art, naechste)?.name ?? null;
 }
 
 // ── Arbeitsplätze und Tempo ─────────────────────────────────────
@@ -177,7 +207,10 @@ export function ausbauInfo(state: GameState, b: BuildingInstance): AusbauInfo {
   const naechste = stufe + 1;
   const kosten = ausbauKosten(b.typeId, naechste);
   let hinweis = '';
-  if (b.typeId === 'GUILD_HALL' && (state.guildStats?.rank ?? 1) < GILDE_T2.unlockCondition.minGuildRank) {
+  const stadtstufe = fehlendeStadtstufe(state, b);
+  if (stadtstufe) {
+    hinweis = `braucht Stadtstufe «${stadtstufe}» (Hauptmenü)`;
+  } else if (b.typeId === 'GUILD_HALL' && (state.guildStats?.rank ?? 1) < GILDE_T2.unlockCondition.minGuildRank) {
     hinweis = `braucht Gildenrang ${GILDE_T2.unlockCondition.minGuildRank}`;
   }
   const bezahlbar = !hinweis && Object.entries(kosten).every(([res, qty]) => (state.globalStock[res] ?? 0) >= qty);

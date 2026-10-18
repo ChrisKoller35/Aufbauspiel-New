@@ -29,6 +29,13 @@ export interface GuildStats {
   guildHallT2: boolean;
 }
 
+/** Der Weg zur Magischen Stadt (systems/Stadtweg.ts, data/stadtstufen.ts). */
+export interface StadtwegStand {
+  stufe: number;          // Stadtstufe 1 (Lagerfeuer) bis 7 (Magische Stadt)
+  herzsteine: string[];   // eingesetzte Herzsteine (HerzsteinDef.id)
+  gelesen: number;        // höchstes gelesene Kapitel der Stadtchronik
+}
+
 /** Specialist assignment: maps specialistId → buildingId. */
 export interface SpecialistAssignment {
   specialistId: string;
@@ -129,6 +136,10 @@ export interface GameState {
     expeditionCount: number;       // how many expeditions contributed
   };
 
+  // ── Stadtweg ──
+  // Fehlt in älteren Spielständen; Stadtweg.ts legt es bei Bedarf an.
+  stadtweg?: StadtwegStand;
+
   // ── Baupläne ──
   // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).
   erhalteneBauplaene: string[];
@@ -193,6 +204,7 @@ export function createNewGameState(): GameState {
     selectedWarMachine: null,
     pendingChestLoot: { items: {}, expeditionCount: 0 },
     erhalteneBauplaene: [],
+    stadtweg: { stufe: 1, herzsteine: [], gelesen: 0 },
     // SaveVersion 4 fields
     guildStats: {
       rank: 1,

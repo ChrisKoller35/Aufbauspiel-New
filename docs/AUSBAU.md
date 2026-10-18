@@ -7,6 +7,10 @@ Umgesetzt im Thread «Magic City: Bestandsaufnahme und Bot-Aufgaben». Code: `sr
 (Regeln), `src/data/produktionsnetz.ts` (Knoten und Linien der Mindmap), `src/ui/screens/ProduktionTab.ts`
 (Zeichnen), `src/systems/EconomySystem.ts` (Steuern).
 
+**Nachtrag (spät am 18.10.2026):** Wie weit Wohnviertel, Werkstätten, Marktplatz und Bank ausgebaut werden
+dürfen, bestimmt jetzt die Stadtstufe (Tabelle in `docs/STADTWEG.md`). Die Höchststufen unten gelten weiter,
+man erreicht sie nur nach und nach.
+
 ## Ein Gebäude je Art
 
 - Jedes Gebäude gibt es **genau einmal**. Bauen schaltet es frei (Kosten wie bisher), danach wird es im
