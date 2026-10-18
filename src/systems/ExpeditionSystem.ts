@@ -11,6 +11,16 @@ import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 
+/** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
+export const MERCHANT_PRICES: Record<string, number> = {
+  healing_potion: 15,
+  bread: 8,
+  power_bread: 25,
+};
+
+/** Max. Käufe pro Händler */
+export const MERCHANT_MAX_PURCHASES = 2;
+
 /**
  * Expedition orchestrator: start/advance/finalize expeditions.
  * Combat logic → CombatEngine. Encounter logic → EncounterProcessor.
@@ -104,7 +114,7 @@ export class ExpeditionSystem {
     }
 
     // Load provisions: use player-selected consumables or auto-fill from stock
-    let provisions: { itemId: string; qty: number }[];
+    let provisions: ExpeditionRun['provisions'];
     if (requestedConsumables && requestedConsumables.length > 0) {
       // Manual selection: take one of each requested item from stock
       provisions = [];
@@ -120,17 +130,14 @@ export class ExpeditionSystem {
           state.globalStock[itemId] = available - 1;
         }
       }
-      // Always add 1 guaranteed healing_potion as safety net (if not already selected)
-      provisions.push({ itemId: 'healing_potion', qty: 1 });
-      provisions.push({ itemId: 'bread', qty: 1 });
-      provisions.push({ itemId: 'power_bread', qty: 1 });
     } else {
       // Legacy auto-fill
       provisions = this.provisionSystem.loadProvisions(state, 4, []);
-      provisions.push({ itemId: 'healing_potion', qty: 1 });
-      provisions.push({ itemId: 'bread', qty: 1 });
-      provisions.push({ itemId: 'power_bread', qty: 1 });
     }
+    // Guaranteed safety net (gifted: consumed or lost, never returned to stock)
+    provisions.push({ itemId: 'healing_potion', qty: 1, gifted: true });
+    provisions.push({ itemId: 'bread', qty: 1, gifted: true });
+    provisions.push({ itemId: 'power_bread', qty: 1, gifted: true });
 
     const rng = new SeededRNG(state.rngSeed++);
 
@@ -423,16 +430,10 @@ export class ExpeditionSystem {
    */
   merchantBuy(run: ExpeditionRun, itemId: string): boolean {
     if (!run.pendingMerchant) return false;
-    if ((run.merchantPurchases ?? 0) >= 2) {
+    if ((run.merchantPurchases ?? 0) >= MERCHANT_MAX_PURCHASES) {
       run.combatLog.push('>> Händler: Du kannst maximal 2 Gegenstände kaufen.');
       return false;
     }
-
-    const MERCHANT_PRICES: Record<string, number> = {
-      healing_potion: 15,
-      bread: 8,
-      power_bread: 25,
-    };
 
     const price = MERCHANT_PRICES[itemId];
     if (price === undefined) {
@@ -533,6 +534,47 @@ export class ExpeditionSystem {
    */
   retreat(run: ExpeditionRun): void {
     run.status = 'retreat';
+  }
+
+  /**
+   * What the UI has to do next after a room (combat or not) was processed.
+   * Pending dialogs take precedence over advancing.
+   */
+  nextStep(run: ExpeditionRun): 'checkpoint' | 'merchant' | 'choice' | 'room' | 'finish' {
+    if (run.status !== 'exploring') return 'finish';
+    if (run.pendingCheckpoint) return 'checkpoint';
+    if (run.pendingMerchant) return 'merchant';
+    if (run.pendingChoice) return 'choice';
+    if (run.currentRoom >= run.rooms.length) return 'finish';
+    return 'room';
+  }
+
+  /**
+   * Return unused provisions to stock. Gifted provisions are not returned.
+   */
+  returnProvisions(state: GameState, run: ExpeditionRun): void {
+    this.provisionSystem.returnProvisions(state, run.provisions.filter(p => !p.gifted));
+  }
+
+  /**
+   * Abort an expedition that can no longer be continued (e.g. after reloading the page).
+   * Returns provisions and war machine, releases the fighters. Loot is lost.
+   */
+  abortExpedition(state: GameState): boolean {
+    const run = state.activeExpedition;
+    if (!run) return false;
+
+    this.returnProvisions(state, run);
+    if (run.warMachineItemId) {
+      state.globalStock[run.warMachineItemId] = (state.globalStock[run.warMachineItemId] ?? 0) + 1;
+    }
+    for (const unit of run.party) {
+      const citizen = state.citizens.find(c => c.fighterId === unit.id);
+      if (citizen && citizen.status === 'ON_EXPEDITION') citizen.status = 'IDLE';
+    }
+
+    state.activeExpedition = null;
+    return true;
   }
 
   /**

@@ -11,7 +11,9 @@ import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/A
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
 import { navigateTo, initScreenStyles } from './ui/ScreenRouter';
-import { ExpeditionSystem } from './systems/ExpeditionSystem';
+import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from './systems/ExpeditionSystem';
+import { EncounterChoice } from './models/ExpeditionRun';
+import { ITEM_DEFS } from './data/items';
 import { GearSystem } from './systems/GearSystem';
 import { ProvisionSystem } from './systems/ProvisionSystem';
 import { ProductionSystem } from './systems/ProductionSystem';
@@ -61,6 +63,19 @@ document.addEventListener('DOMContentLoaded', () => {
   const peopleSystem = new PeopleSystem();
   const satisfactionSystem = new SatisfactionSystem();
   const connectivitySystem = new ConnectivitySystem();
+
+  // An expedition running at save time cannot be resumed (combat UI state is transient):
+  // abort it and return provisions so a new expedition can be started.
+  if (expeditionSystem.abortExpedition(state)) {
+    console.warn('Unterbrochene Expedition abgebrochen, Proviant zurück ins Lager.');
+    saveSystem.save(state);
+  }
+
+  // Every run starts at full HP (GearSystem), so stored HP is display-only:
+  // heal heroes wounded by older saves.
+  for (const fighter of state.fighters) {
+    fighter.baseStats.hp = fighter.baseStats.maxHp;
+  }
 
   // Initialize all screens with state
   initHeroesScreen(state);
@@ -129,60 +144,130 @@ document.addEventListener('DOMContentLoaded', () => {
     showNextCombatRoom();
   }
 
-  function showCheckpointDialog(
-    run: NonNullable<GameState['activeExpedition']>,
-    onContinue: () => void,
-    onRetreat: () => void,
-  ): void {
-    // Build a simple modal overlay for the checkpoint decision
-    let overlay = document.getElementById('checkpoint-dialog');
-    if (overlay) overlay.remove();
+  type ActiveRun = NonNullable<GameState['activeExpedition']>;
 
-    overlay = document.createElement('div');
-    overlay.id = 'checkpoint-dialog';
+  interface DialogButton {
+    label: string;
+    primary?: boolean;
+    disabled?: boolean;
+    onClick: () => void;
+  }
+
+  const DIALOG_BTN_BASE = "flex:1 1 140px;padding:12px;border-radius:6px;font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:1px;transition:.2s;";
+  const DIALOG_BTN_PRIMARY = 'background:linear-gradient(135deg,#c8a227,#7a5c08);border:1px solid #c8a227;color:#0f1420;font-weight:700;';
+  const DIALOG_BTN_SECONDARY = 'background:none;border:1px solid #6b7280;color:#9ca3af;';
+
+  /** Simple modal overlay used for all expedition decisions (checkpoint, merchant, choice). */
+  function showExpeditionDialog(icon: string, title: string, bodyHtml: string, buttons: DialogButton[]): void {
+    document.getElementById('expedition-dialog')?.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'expedition-dialog';
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;';
 
+    const box = document.createElement('div');
+    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;text-align:center;font-family:'Cinzel',serif;";
+    box.innerHTML = `
+      <div style="font-size:2rem;margin-bottom:8px;">${icon}</div>
+      <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">${title}</div>
+      ${bodyHtml}
+    `;
+
+    const row = document.createElement('div');
+    row.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
+    for (const b of buttons) {
+      const btn = document.createElement('button');
+      btn.textContent = b.label;
+      btn.disabled = !!b.disabled;
+      btn.style.cssText = DIALOG_BTN_BASE + (b.primary ? DIALOG_BTN_PRIMARY : DIALOG_BTN_SECONDARY)
+        + (b.disabled ? 'opacity:.4;cursor:not-allowed;' : 'cursor:pointer;');
+      btn.addEventListener('click', () => {
+        if (b.disabled) return;
+        overlay.remove();
+        b.onClick();
+      });
+      row.appendChild(btn);
+    }
+    box.appendChild(row);
+    overlay.appendChild(box);
+    document.body.appendChild(overlay);
+  }
+
+  function partyHpHtml(run: ActiveRun): string {
     const hpTotal = run.party.reduce((s, u) => s + u.hp, 0);
     const hpMax = run.party.reduce((s, u) => s + u.maxHp, 0);
     const hpPct = hpMax > 0 ? Math.round(hpTotal / hpMax * 100) : 0;
     const hpColor = hpPct > 60 ? '#4ade80' : hpPct > 30 ? '#eab308' : '#ef4444';
-    const roomsDone = run.currentRoom;
-    const roomsTotal = run.rooms.length;
-
-    overlay.innerHTML = `
-      <div style="background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:400px;width:90%;text-align:center;font-family:'Cinzel',serif;">
-        <div style="font-size:2rem;margin-bottom:8px;">⚑</div>
-        <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">CHECKPOINT ERREICHT</div>
-        <div style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;">Raum ${roomsDone} von ${roomsTotal}</div>
-        <div style="margin-bottom:20px;">
-          <span style="color:${hpColor};font-size:.9rem;">Team HP: ${hpPct}%</span>
-          <div style="background:#1a1a2e;border-radius:4px;height:8px;margin-top:6px;overflow:hidden;">
-            <div style="background:${hpColor};height:100%;width:${hpPct}%;border-radius:4px;transition:.3s"></div>
-          </div>
-        </div>
-        <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">
-          Bei Rückzug behältst du die bisherige Beute.
-        </div>
-        <div style="display:flex;gap:12px;">
-          <button id="cp-retreat" style="flex:1;padding:12px;background:none;border:1px solid #6b7280;color:#9ca3af;border-radius:6px;cursor:pointer;font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:1px;transition:.2s;">RÜCKZUG</button>
-          <button id="cp-continue" style="flex:1;padding:12px;background:linear-gradient(135deg,#c8a227,#7a5c08);border:1px solid #c8a227;color:#0f1420;border-radius:6px;cursor:pointer;font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:1px;font-weight:700;transition:.2s;">WEITER</button>
+    return `
+      <div style="margin-bottom:20px;">
+        <span style="color:${hpColor};font-size:.9rem;">Team HP: ${hpPct}%</span>
+        <div style="background:#1a1a2e;border-radius:4px;height:8px;margin-top:6px;overflow:hidden;">
+          <div style="background:${hpColor};height:100%;width:${hpPct}%;border-radius:4px;transition:.3s"></div>
         </div>
       </div>
     `;
+  }
 
-    document.body.appendChild(overlay);
+  /**
+   * Single decision point after every room (combat or not):
+   * show the pending dialog, enter the next room, or finish.
+   */
+  function continueExpedition(run: ActiveRun): void {
+    switch (expeditionSystem.nextStep(run)) {
+      case 'checkpoint': showCheckpointDialog(run); break;
+      case 'merchant': showMerchantDialog(run); break;
+      case 'choice': showChoiceDialog(run); break;
+      // setTimeout prevents stack overflow with consecutive non-combat rooms
+      case 'room': setTimeout(showNextCombatRoom, 0); break;
+      case 'finish': finishExpedition(); break;
+    }
+  }
 
-    document.getElementById('cp-continue')!.addEventListener('click', () => {
-      overlay!.remove();
-      expeditionSystem.resolveCheckpoint(run, false);
-      onContinue();
-    });
+  function showCheckpointDialog(run: ActiveRun): void {
+    showExpeditionDialog('⚑', 'CHECKPOINT ERREICHT', `
+      <div style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;">Raum ${run.currentRoom + 1} von ${run.rooms.length}</div>
+      ${partyHpHtml(run)}
+      <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">Bei Rückzug behältst du die bisherige Beute.</div>
+    `, [
+      { label: 'RÜCKZUG', onClick: () => { expeditionSystem.resolveCheckpoint(run, true); finishExpedition(); } },
+      { label: 'WEITER', primary: true, onClick: () => { expeditionSystem.resolveCheckpoint(run, false); continueExpedition(run); } },
+    ]);
+  }
 
-    document.getElementById('cp-retreat')!.addEventListener('click', () => {
-      overlay!.remove();
-      expeditionSystem.resolveCheckpoint(run, true);
-      onRetreat();
-    });
+  function showMerchantDialog(run: ActiveRun): void {
+    const purchases = run.merchantPurchases ?? 0;
+    const buyButtons: DialogButton[] = Object.entries(MERCHANT_PRICES).map(([itemId, price]) => ({
+      label: `${ITEM_DEFS[itemId]?.name ?? itemId} (${price} G)`,
+      disabled: run.goldEarned < price || purchases >= MERCHANT_MAX_PURCHASES,
+      onClick: () => { expeditionSystem.merchantBuy(run, itemId); showMerchantDialog(run); },
+    }));
+    const leaveButton: DialogButton = purchases === 0
+      ? { label: 'ABLEHNEN (+15% HP)', primary: true, onClick: () => { expeditionSystem.merchantSkip(run); continueExpedition(run); } }
+      : { label: 'WEITERZIEHEN', primary: true, onClick: () => { expeditionSystem.merchantClose(run); continueExpedition(run); } };
+
+    showExpeditionDialog('🛒', 'REISENDER HÄNDLER', `
+      <div style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;">Beutegold: ${run.goldEarned} · Käufe: ${purchases}/${MERCHANT_MAX_PURCHASES}</div>
+      ${partyHpHtml(run)}
+      <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">Gekaufte Waren kommen mit der Beute ins Lager. Wer nichts kauft, wird kostenlos geheilt.</div>
+    `, [...buyButtons, leaveButton]);
+  }
+
+  function showChoiceDialog(run: ActiveRun): void {
+    const choice = run.pendingChoice;
+    if (!choice) { continueExpedition(run); return; }
+    const option = (c: EncounterChoice): string => `
+      <div style="margin-bottom:10px;">
+        <div style="color:#e5e7eb;font-size:.85rem;">${c.label}</div>
+        <div style="color:#6b7280;font-size:.75rem;">${c.flavorText}</div>
+      </div>`;
+
+    showExpeditionDialog('✦', 'EURE WAHL', `
+      ${partyHpHtml(run)}
+      <div style="margin-bottom:20px;">${option(choice.optionA)}${option(choice.optionB)}</div>
+    `, [
+      { label: choice.optionA.label, primary: true, onClick: () => { expeditionSystem.resolveChoice(run, 0); continueExpedition(run); } },
+      { label: choice.optionB.label, primary: true, onClick: () => { expeditionSystem.resolveChoice(run, 1); continueExpedition(run); } },
+    ]);
   }
 
   function showNextCombatRoom(): void {
@@ -222,47 +307,12 @@ document.addEventListener('DOMContentLoaded', () => {
         combatScreen.startCombatAnimation(run, room);
       };
 
-      combatScreen.onComplete = () => {
-        // Advance to next room if still exploring
-        if (run.status === 'exploring') {
-          // Room was already advanced by processCurrentRoom
-          showNextCombatRoom();
-        } else {
-          finishExpedition();
-        }
-      };
+      // processCurrentRoom already advanced the room or set a pending checkpoint
+      combatScreen.onComplete = () => continueExpedition(run);
     } else {
-      // Non-combat room: process automatically and advance
+      // Non-combat room: process automatically, then handle pending dialogs
       expeditionSystem.processCurrentRoom(state);
-
-      // Checkpoint dialog — ask player to continue or retreat
-      if (run.pendingCheckpoint) {
-        showCheckpointDialog(run, () => showNextCombatRoom(), () => finishExpedition());
-        return; // stop processing until player decides
-      }
-      if (run.pendingMerchant) {
-        run.pendingMerchant = false;
-        const currentRoom = run.rooms[run.currentRoom];
-        if (currentRoom) currentRoom.completed = true;
-        run.currentRoom++;
-        if (run.currentRoom >= run.rooms.length) {
-          run.status = 'victory';
-        }
-      }
-      if (run.pendingChoice) {
-        run.pendingChoice = undefined;
-        run.currentRoom++;
-        if (run.currentRoom >= run.rooms.length) {
-          run.status = 'victory';
-        }
-      }
-
-      if (run.status === 'exploring') {
-        // Use setTimeout to prevent stack overflow with consecutive non-combat rooms
-        setTimeout(showNextCombatRoom, 0);
-      } else {
-        finishExpedition();
-      }
+      continueExpedition(run);
     }
   }
 
@@ -291,12 +341,8 @@ document.addEventListener('DOMContentLoaded', () => {
     if (!state.scoreboard) state.scoreboard = [];
     state.scoreboard.push(entry);
 
-    // Return unused provisions to stock
-    for (const prov of run.provisions) {
-      if (prov.qty > 0) {
-        state.globalStock[prov.itemId] = (state.globalStock[prov.itemId] ?? 0) + prov.qty;
-      }
-    }
+    // Return unused provisions to stock (gifted ones stay with the guild)
+    expeditionSystem.returnProvisions(state, run);
 
     // Track statistics
     state.statistics['total_enemies_killed'] = (state.statistics['total_enemies_killed'] ?? 0) + (run.enemiesKilled ?? 0);
@@ -315,7 +361,6 @@ document.addEventListener('DOMContentLoaded', () => {
       if (fighter) {
         const citizen = state.citizens.find(c => c.fighterId === fighter.id);
         if (citizen) citizen.status = 'IDLE';
-        fighter.baseStats.hp = Math.max(1, unit.hp);
       }
     }
 
