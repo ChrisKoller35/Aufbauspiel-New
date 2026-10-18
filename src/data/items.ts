@@ -33,6 +33,8 @@ export interface ItemDef {
     cooldown: number;
   };
   airBonus?: number;
+  /** Nur Baupläne (Tag 'bauplan'): Building-ID, die dieser Bauplan freischaltet */
+  bauplanFuer?: string;
 }
 
 export const ITEM_DEFS: Record<string, ItemDef> = {
@@ -348,6 +350,37 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['special', 'treasure'],
   },
 
+  // --- Baupläne (garantierter Boss-Drop beim ersten Sieg, schalten Gebäude frei) ---
+  // Nicht verkaufbar (baseValue 0), nicht ausrüstbar (kein gearSlot). Wird beim Bau verbraucht.
+  bauplan_arkanschmiede: {
+    id: 'bauplan_arkanschmiede', name: 'Bauplan: Arkanschmiede', type: 'special',
+    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
+    bauplanFuer: 'ARCANE_SMITHY',
+    tags: ['special', 'bauplan'],
+    flavorText: 'Im Kern des Golems eingeschlossen: Runen, Maße und ein Funken Kristallglut.',
+  },
+  bauplan_marktplatz: {
+    id: 'bauplan_marktplatz', name: 'Bauplan: Marktplatz', type: 'special',
+    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
+    bauplanFuer: 'MARKETPLACE',
+    tags: ['special', 'bauplan'],
+    flavorText: 'Zwischen den Wurzeln des Treants verborgen. Händler haben sich hier einst getroffen.',
+  },
+  bauplan_kriegsmaschinen: {
+    id: 'bauplan_kriegsmaschinen', name: 'Bauplan: Kriegsmaschinen-Werkstatt', type: 'special',
+    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
+    bauplanFuer: 'WAR_MACHINE_WORKSHOP',
+    tags: ['special', 'bauplan'],
+    flavorText: 'Der Ritter trug die Pläne der alten Belagerungsgeräte bis ins Grab.',
+  },
+  bauplan_bank: {
+    id: 'bauplan_bank', name: 'Bauplan: Bank', type: 'special',
+    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
+    bauplanFuer: 'BANK',
+    tags: ['special', 'bauplan'],
+    flavorText: 'Der Lich hortete nicht nur Seelen. Auch seine Schatzkammer war gut geplant.',
+  },
+
   // --- Gold (tracked separately in globalStock but defined here for completeness) ---
   gold: {
     id: 'gold', name: 'Gold', type: 'resource',
@@ -634,6 +667,11 @@ export function getItemSpriteKey(itemId: string): string {
   const def = ITEM_DEFS[itemId];
   if (def?.spriteKey) return def.spriteKey;
   return `ITEM_${itemId.toUpperCase()}`;
+}
+
+/** True, wenn das Item ein Bauplan ist (nicht verkaufbar, nicht ausrüstbar). */
+export function isBauplan(itemId: string): boolean {
+  return ITEM_DEFS[itemId]?.tags.includes('bauplan') ?? false;
 }
 
 export const PROVISION_ITEMS = [

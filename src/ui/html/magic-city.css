@@ -299,7 +299,7 @@ body {
   padding: 11px 18px; cursor: pointer; color: var(--mut); transition: .2s;
   border: none; background: none; border-bottom: 2px solid transparent; margin-bottom: -1px;
 }
-.btab.on { color: var(--gold); border-bottom-color: var(--gold); }
+.btab.on, .btab.active { color: var(--gold); border-bottom-color: var(--gold); }
 
 /* ── Hero Cards ── */
 .hcards {
@@ -514,6 +514,57 @@ body {
   content: ''; position: absolute; inset: 0; z-index: 1;
   background: linear-gradient(to top, rgba(6,8,16,.85) 0%, rgba(6,8,16,.3) 50%, transparent 100%);
 }
+/* Gesperrte Gebäude in der Bauleiste */
+.bitem.locked { filter: grayscale(1); border-style: dashed; }
+.bitem.locked::before { background: rgba(6,8,16,.72); }
+.bitem.locked:hover { transform: none; border-color: var(--mut); }
+.bitem.locked .bitem-nm { color: var(--mut); }
+.bitem-lock { position: absolute; top: 6px; right: 8px; z-index: 2; font-size: 1rem; }
+.bitem-hint { color: #e0c8a0; font-size: 0.65rem; line-height: 1.2; }
+
+/* ── Aufbau-Reiter (Freischalt-Baum) ── */
+.aufbau { display: flex; flex-direction: column; gap: 12px; }
+.aufbau-legend { display: flex; gap: 14px; align-items: center; font-size: 0.75rem; color: var(--mut); }
+.aufbau-legend .lg::before {
+  content: ''; display: inline-block; width: 10px; height: 10px; margin-right: 5px;
+  border-radius: 2px; vertical-align: middle; border: 1px solid;
+}
+.aufbau-legend .lg.gebaut::before { background: var(--grn); border-color: #22c55e; }
+.aufbau-legend .lg.baubar::before { background: var(--gd); border-color: var(--gold); }
+.aufbau-legend .lg.gesperrt::before { background: var(--s3); border-color: var(--bdr); }
+.aufbau-rang { margin-left: auto; font-family: 'Cinzel', serif; color: var(--gold); }
+.aufbau-scroll { overflow: auto; padding: 4px 4px 12px; }
+.aufbau-heads { position: relative; height: 22px; margin-bottom: 6px; }
+.aufbau-head {
+  position: absolute; top: 0; text-align: center;
+  font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 2px; color: var(--mut);
+}
+.aufbau-tree { position: relative; }
+.alink {
+  position: absolute; height: 2px; margin-top: -1px; z-index: 0;
+  transform-origin: 0 50%; background: var(--bdr);
+}
+.alink.done { background: var(--gd); }
+.acard {
+  position: absolute; z-index: 1; overflow: hidden; cursor: pointer;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: 6px 8px;
+  background-color: var(--s2); background-size: cover; background-position: center;
+  border: 1px solid var(--bdr); border-radius: 8px; transition: .2s;
+}
+.acard::before {
+  content: ''; position: absolute; inset: 0; z-index: 0;
+  background: linear-gradient(to top, rgba(6,8,16,.92) 0%, rgba(6,8,16,.4) 60%, transparent 100%);
+}
+.acard > span { position: relative; z-index: 1; text-shadow: 0 1px 4px rgba(0,0,0,.9); }
+.acard-nm { font-family: 'Cinzel', serif; font-size: 0.72rem; color: var(--gold); }
+.acard-st { font-size: 0.64rem; line-height: 1.2; color: #ccc; }
+.acard.gebaut { border-color: #22c55e; }
+.acard.gebaut .acard-st { color: #4ade80; }
+.acard.baubar { border-color: var(--gold); box-shadow: 0 0 10px rgba(200,162,39,.35); }
+.acard.baubar:hover { transform: translateY(-2px); }
+.acard.gesperrt { filter: grayscale(1); border-style: dashed; }
+.acard.gesperrt::before { background: rgba(6,8,16,.72); }
+.acard.gesperrt .acard-nm { color: var(--mut); }
 
 /* ── Crafting ── */
 .craft-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(215px, 1fr)); gap: 10px; }
@@ -525,6 +576,46 @@ body {
 .crar { font-size: 0.67rem; color: var(--mut); }
 .cingr { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 9px; }
 .ingr { background: var(--s3); border: 1px solid var(--bdr); border-radius: 3px; padding: 2px 7px; font-size: 0.67rem; color: var(--mut); }
+.ingr-out { color: var(--gl); }
+.cost-ok { color: #4ade80; }
+.cost-miss { color: #f87171; }
+.ccard-ft { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; font-size: 0.67rem; }
+.ccard-time { font-size: 0.67rem; color: var(--mut); margin-left: auto; }
+.ccard.locked { opacity: .45; filter: grayscale(.8); }
+.ccard.locked:hover { border-color: var(--bdr); opacity: .65; }
+.craft-hint { font-size: 0.75rem; color: var(--mut); margin-bottom: 12px; }
+.craft-group { margin-bottom: 18px; }
+.craft-group-hd {
+  font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold); letter-spacing: 1px;
+  margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--bdr);
+  display: flex; align-items: center; gap: 8px;
+}
+.craft-group.locked .craft-group-hd { color: var(--mut); }
+.craft-group-cnt { font-size: 0.7rem; color: var(--mut); font-family: inherit; }
+.craft-lock { font-size: 0.7rem; color: #f87171; }
+.craft-run { color: #4ade80; }
+
+/* Werkstatt im Gebäude-Fenster */
+.modal.modal-ws { max-width: 560px; max-height: 90vh; overflow-y: auto; }
+.ws { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--bdr); }
+.ws .lbl { display: block; margin-bottom: 6px; }
+.ws-status { background: var(--s2); border: 1px solid var(--bdr); border-radius: 5px; padding: 10px; margin-bottom: 12px; }
+.ws-active { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold); margin-bottom: 7px; }
+.ws-bar { height: 10px; background: var(--s3); border: 1px solid var(--bdr); border-radius: 5px; overflow: hidden; }
+.ws-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gd), var(--gold)); transition: width .5s linear; }
+.ws-bar-txt { font-size: 0.7rem; color: var(--mut); margin-top: 4px; text-align: right; }
+.ws-msg { font-size: 0.75rem; color: var(--mut); }
+.ws-warn { color: #f87171; }
+.ws-list { display: flex; flex-direction: column; gap: 6px; }
+.ws-rcp { background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: .2s; }
+.ws-rcp:hover { border-color: var(--pur); }
+.ws-rcp.on { border-color: var(--gold); background: var(--s3); cursor: default; }
+.ws-rcp.hl { box-shadow: 0 0 0 2px var(--pur); }
+.ws-rcp .cingr { margin-bottom: 0; }
+.ws-rcp-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.ws-rcp-hd .cico { font-size: 1.2rem; }
+.ws-rcp-nm { font-family: 'Cinzel', serif; font-size: 0.8rem; }
+.btn-craft:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Ranking Table ── */
 .rtable { width: 100%; border-collapse: separate; border-spacing: 0 3px; }
