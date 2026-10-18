@@ -1,7 +1,10 @@
 # Gebäude in 2D – drei Ideen
 
 **Entscheidung (Christoph, 17.10.2026): B + C.** Freischalt-Baum mit Werkstätten, obere Gebäude brauchen einen Bauplan
-aus einem Dungeon. Umsetzung erst nach den Reparaturen (Manager-Issues #18-#23), Schritte in Manager #25-#27.
+aus einem Dungeon. Umgesetzt in Manager #25/#26 (PR #9), Werkstatt-Fenster folgt in #27.
+
+**Darstellung der Seite (Christoph, 18.10.2026): Entwurf 2 «Produktionsketten»**, siehe `docs/entwuerfe/README.md`.
+Das Raster «Stadtplan» mit leeren Kästchen und die Bauleiste werden durch Ketten-Zeilen ersetzt.
 
 Was bleiben soll (Christoph): Gebäude werden nacheinander freigeschaltet und gebaut, Crafting hängt an den Gebäuden.
 Problem heute: Gebäude sind nur Bildkarten in einem leeren Raster, Crafting ist ein eigener Reiter ohne Bezug zu ihnen.

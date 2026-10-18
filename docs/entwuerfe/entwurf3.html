@@ -1,0 +1,82 @@
+<!doctype html><html><head><meta charset="utf-8"><link rel="stylesheet" href="base.css">
+<style>
+#board{position:absolute;left:0;top:92px;width:1490px;height:988px;padding:16px 22px;display:grid;grid-template-columns:1fr 1fr;grid-template-rows:1fr 1fr 128px;gap:14px}
+.dist{border:1px solid var(--bdr);border-radius:6px;background:var(--s2);padding:12px 14px;position:relative;overflow:hidden}
+.dist:before{content:'';position:absolute;inset:0;background:var(--tint);opacity:.18;pointer-events:none}
+.dist h3{font-family:Cinzel,serif;font-size:.8rem;letter-spacing:1.5px;color:var(--gl);margin-bottom:2px;position:relative}
+.dist .d{color:var(--mut);font-size:.88rem;margin-bottom:10px;position:relative}
+.cards{display:flex;gap:10px;flex-wrap:wrap;position:relative}
+.card{width:132px;border:1px solid var(--bdr);border-radius:6px;background:var(--s1);overflow:hidden;position:relative}
+.card .img{height:100px;background:#0a0e18 center/cover}
+.card .nm{font-family:Cinzel,serif;font-size:.66rem;letter-spacing:.4px;color:var(--txt);padding:5px 7px 1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .st{font-size:.84rem;color:var(--mut);padding:0 7px 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.card .st.ok{color:#9be0a5}.card .st.warn{color:var(--gl)}.card .st.lock{color:#e0a0a0}
+.card .bar{margin:0 7px 7px}
+.card.sel{border-color:var(--gold);box-shadow:0 0 12px rgba(200,162,39,.35)}
+.card.lock .img{filter:grayscale(1) brightness(.45)}
+.card.next{border-style:dashed;background:transparent}.card.next .img{opacity:.45;filter:grayscale(1)}
+.card .cnt{position:absolute;top:5px;right:5px;font-family:Cinzel,serif;font-size:.6rem;background:rgba(6,8,16,.8);border:1px solid var(--bdr);padding:2px 5px;border-radius:3px;color:var(--gl)}
+.card .lk{position:absolute;top:5px;left:5px}
+.card .tag{position:absolute;top:5px;left:5px;font-family:Cinzel,serif;font-size:.56rem;letter-spacing:.5px;background:rgba(110,87,16,.9);color:#fff;padding:2px 6px;border-radius:3px}
+.wide{grid-column:1/3;display:flex;align-items:center;gap:14px}
+.wide .cards{flex:1}
+.wide .card .img{height:56px}
+.pop{width:220px;flex:none;border-left:1px solid var(--bdr);padding-left:14px}
+.pop b{display:block;font-family:Cinzel,serif;font-size:.66rem;color:var(--gl);letter-spacing:1px;margin-bottom:6px}
+.pop span{color:var(--mut);font-size:.86rem;display:block;margin-bottom:4px}
+</style></head><body>
+<div class="hdr"><span class="back">← Zurück</span><span class="logo">✕ MAGIC CITY</span><span class="cur">/ &nbsp; STADTVIERTEL</span>
+<div class="res"><span>🪙 17547</span><span>🪵 8763</span><span>🪨 404</span><span>🌾 1629</span><span>🍞 682</span><span>⚙ 5</span><span>💎 5</span><span style="color:var(--mut)">TAG 808</span></div></div>
+<div class="tabs"><span class="tab on">STADTVIERTEL</span><span class="tab">WERKSTÄTTEN</span><span class="tab">AUFBAU</span></div>
+<div id="board">
+ <div class="dist" style="--tint:linear-gradient(135deg,#2e5a2c,transparent)"><h3>WALDRAND & BERGE</h3><div class="d">Rohstoffe: Holz, Stein, Eisen</div><div class="cards">
+  <div class="card" data-img="bld_lumber_camp"><div class="img"></div><div class="nm">Holzfällerhütte</div><div class="st ok">+6 Holz / Tag</div><span class="cnt">×2</span></div>
+  <div class="card" data-img="bld_quarry"><div class="img"></div><div class="nm">Steinbruch</div><div class="st ok">+3 Stein / Tag</div></div>
+  <div class="card next" data-img="bld_iron_mine"><span class="tag">NÄCHSTES</span><div class="img"></div><div class="nm">Eisenmine</div><div class="st">20 Holz · 15 Stein · 25 Gold</div></div>
+ </div></div>
+ <div class="dist" style="--tint:linear-gradient(135deg,#7a6a2a,transparent)"><h3>FELDER & KÜCHE</h3><div class="d">Vom Korn zum Brot, dazu Kräuter</div><div class="cards">
+  <div class="card" data-img="bld_farm_grain"><div class="img"></div><div class="nm">Getreidefarm</div><div class="st ok">+8 Getreide / Tag</div></div>
+  <div class="card" data-img="bld_mill_wind"><div class="img"></div><div class="nm">Windmühle</div><div class="st ok">mahlt Mehl</div><div class="bar"><i style="width:35%"></i></div></div>
+  <div class="card" data-img="bld_bakery"><div class="img"></div><div class="nm">Bäckerei</div><div class="st warn">wartet auf Wasser</div></div>
+  <div class="card" data-img="bld_well"><div class="img"></div><div class="nm">Brunnen</div><div class="st ok">Wasser</div></div>
+  <div class="card" data-img="bld_herb_garden"><div class="img"></div><div class="nm">Kräutergarten</div><div class="st ok">+4 Kräuter / Tag</div></div>
+ </div></div>
+ <div class="dist" style="--tint:linear-gradient(135deg,#6a4a1a,transparent)"><h3>MARKTPLATZ</h3><div class="d">Handwerk, Handel, Verwaltung</div><div class="cards">
+  <div class="card sel" data-img="bld_smithy"><div class="img"></div><div class="nm">Schmiede</div><div class="st warn">Eisenschwert · 18 s</div><div class="bar"><i style="width:60%"></i></div><span class="cnt">2 wartend</span></div>
+  <div class="card" data-img="bld_warehouse"><div class="img"></div><div class="nm">Lagerhaus</div><div class="st warn">404 / 600 Stein</div><div class="bar"><i style="width:67%"></i></div></div>
+  <div class="card" data-img="bld_guild_hall"><div class="img"></div><div class="nm">Gildenhaus</div><div class="st ok">3 Helden-Plätze</div></div>
+  <div class="card" data-img="bld_marketplace"><div class="img"></div><div class="nm">Marktplatz</div><div class="st ok">Handel offen</div></div>
+  <div class="card" data-img="bld_bank"><div class="img"></div><div class="nm">Bank</div><div class="st ok">+2 % Zinsen</div></div>
+ </div></div>
+ <div class="dist" style="--tint:linear-gradient(135deg,#4a2a7a,transparent)"><h3>MAGIERHÜGEL</h3><div class="d">Freischalten mit Bauplänen aus den Dungeons</div><div class="cards">
+  <div class="card lock" data-img="bld_arcane_smithy"><span class="lk">🔒</span><div class="img"></div><div class="nm">Arkanschmiede</div><div class="st lock">Bauplan: Kristallgolem</div></div>
+  <div class="card lock" data-img="bld_war_workshop"><span class="lk">🔒</span><div class="img"></div><div class="nm">Kriegsmaschinen</div><div class="st lock">Gildenrang 4 · Bauplan</div></div>
+  <div class="card lock" data-img="bld_herb_garden"><span class="lk">🔒</span><div class="img"></div><div class="nm">Alchemistenhütte</div><div class="st lock">Bauplan: Sumpf</div></div>
+ </div></div>
+ <div class="dist wide" style="--tint:linear-gradient(90deg,#2a3a6a,transparent)"><div style="width:150px;flex:none"><h3>WOHNVIERTEL</h3><div class="d">23 / 28 Bewohner</div></div><div class="cards">
+  <div class="card" data-img="bld_house"><div class="img"></div><div class="nm">Wohnhaus</div><div class="st ok">4 / 4 Bewohner</div></div>
+  <div class="card" data-img="bld_house"><div class="img"></div><div class="nm">Wohnhaus</div><div class="st ok">4 / 4 Bewohner</div></div>
+  <div class="card" data-img="bld_house"><div class="img"></div><div class="nm">Wohnhaus</div><div class="st ok">4 / 4 Bewohner</div></div>
+  <div class="card" data-img="bld_house"><div class="img"></div><div class="nm">Wohnhaus</div><div class="st warn">3 / 4 · wächst</div><div class="bar"><i style="width:40%"></i></div></div>
+  <div class="card next" data-img="bld_house"><span class="tag">BAUEN</span><div class="img"></div><div class="nm">Wohnhaus</div><div class="st">14 Holz</div></div>
+ </div><div class="pop"><b>ZUFRIEDENHEIT 72 %</b><span>Brot: genug für 6 Tage</span><span>Arbeit: 19 von 23 beschäftigt</span><span>Nächster Bewohner in 2 Tagen</span></div></div>
+</div>
+<div class="note" style="bottom:auto;top:1040px;left:24px">Entwurf 3 · Stadtviertel: Gleiche Kartenbilder wie heute, aber nach Vierteln geordnet, mit Zustand auf jeder Karte. Keine leeren Kästchen mehr: Pro Viertel steht nur das nächste baubare Gebäude als Platzhalter.</div>
+<div class="panel">
+ <h2>Schmiede</h2><div class="sub">Stufe 1 · 1 Arbeiter · Marktplatz</div>
+ <div class="sect">Rezept</div>
+ <div class="row sel"><div class="ico" data-ico="ITEM_IRON_SWORD"></div><div>Eisenschwert<br><span style="color:var(--mut);font-size:.82rem">3 Eisenschrott · 1 Holz</span></div><div class="r">45 s</div></div>
+ <div class="row"><div class="ico" data-ico="ITEM_LEATHER_ARMOR"></div><div>Lederrüstung<br><span style="color:var(--mut);font-size:.82rem">2 Leder · 1 Eisenschrott</span></div><div class="r">60 s</div></div>
+ <div class="row"><div class="ico" data-ico="ITEM_CHAIN_ARMOR"></div><div>Kettenhemd<br><span style="color:var(--mut);font-size:.82rem">4 Eisenschrott</span></div><div class="r">90 s</div></div>
+ <div class="sect">Läuft gerade</div>
+ <div class="row" style="display:block"><div style="display:flex;justify-content:space-between;margin-bottom:6px"><span>Eisenschwert</span><span style="color:var(--mut)">noch 18 s</span></div><div class="bar"><i style="width:60%"></i></div></div>
+ <div class="sect">Warteschlange (2 / 4)</div>
+ <div class="row"><div>Eisenschwert</div><div class="r">wartet</div></div>
+ <div class="row"><div>Kettenhemd</div><div class="r">wartet</div></div>
+ <div style="margin-top:18px;display:flex;gap:10px"><span class="btn">HERSTELLEN</span><span class="btn dis">AUSBAUEN (Stufe 2)</span></div>
+</div>
+<script>
+const B='../../public/assets/buildings/',S='../../public/assets/sprites/final/';
+document.querySelectorAll('.card').forEach(n=>n.querySelector('.img').style.backgroundImage=`url(${B}${n.dataset.img}.png)`);
+document.querySelectorAll('.ico').forEach(e=>e.style.backgroundImage=`url(${S}${e.dataset.ico}.png)`);
+</script></body></html>
