@@ -456,71 +456,106 @@ body {
   flex-shrink: 0; margin-left: 8px;
 }
 
-/* ── Building Grid ── */
-.bmain { flex: 1; overflow: hidden; display: flex; flex-direction: column; }
-.bgrid-area { flex: 1; overflow-y: auto; padding: 12px 22px 8px; }
-.bgrid-zones { display: flex; flex-direction: row; gap: 18px; height: 100%; }
-.bgrid-zone { display: flex; flex-direction: column; }
-.bgrid-zone.zone-build { flex: 5; min-width: 0; }
-.bgrid-zone.zone-house { flex: 3; min-width: 0; padding-left: 18px; border-left: 1px solid var(--bdr); }
-.zone-label { font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 2px; color: var(--mut); margin-bottom: 8px; }
-.bgrid-sep { display: none; }
-.bgrid { display: grid; gap: 14px; }
-.bgrid.build-grid { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-.bgrid.house-grid { grid-template-columns: repeat(3, 1fr); }
-.bcell {
-  aspect-ratio: 1; background: var(--s2); border: 1px solid var(--bdr); border-radius: 8px;
-  position: relative; overflow: hidden;
-  cursor: pointer; transition: .2s;
-  background-size: cover; background-position: center;
-  display: flex; flex-direction: column; justify-content: flex-end;
-}
-.bcell.occ { border-color: var(--bdr); padding: 0; }
-.bcell.occ:hover { border-color: var(--gd); transform: translateY(-2px); }
-.bcell.emp { display: flex; align-items: center; justify-content: center; border-style: dashed; font-size: 1.5rem; color: var(--mut); }
-.bcell.emp:hover { border-color: var(--pur); border-style: solid; background: rgba(124,58,237,.08); }
-.bcell-sprite { display: none; }
-.bcell-overlay {
-  position: relative; font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 1px;
-  color: var(--gold); padding: 12px 14px;
-  background: linear-gradient(to top, rgba(6,8,16,.9) 0%, rgba(6,8,16,.5) 60%, transparent 100%);
-  text-align: center; text-shadow: 0 2px 6px rgba(0,0,0,.9);
-}
+/* ── Gebäude-Seite: Reiter-Inhalte ── */
+.bmain { flex: 1; overflow-y: auto; padding: 14px 22px 18px; display: flex; flex-direction: column; }
+[hidden] { display: none !important; }
 
-/* Building shop */
-.bshop { background: var(--s1); border-top: 2px solid var(--gd); padding: 10px 22px; flex-shrink: 0; }
-.bshop-row { display: flex; gap: 10px; overflow-x: auto; overflow-y: hidden; flex-wrap: nowrap; padding-bottom: 6px; }
-.bshop-row::-webkit-scrollbar { height: 4px; }
-.bshop-row::-webkit-scrollbar-thumb { background: var(--gd); border-radius: 2px; }
-.bshop-row::-webkit-scrollbar-track { background: var(--s2); }
-.bitem {
-  background: var(--s2); border: 1px solid var(--bdr); border-radius: 8px;
-  padding: 6px 10px; cursor: pointer; text-align: center; transition: .2s;
-  background-size: cover; background-position: center; position: relative; overflow: hidden;
-  display: flex; flex-direction: column; align-items: center; justify-content: flex-end;
-  width: 130px; height: 110px; flex-shrink: 0;
+/* ── Reiter «Produktion» (Produktionsketten) ── */
+.pk { display: flex; flex-direction: column; gap: 10px; }
+.pk-hint { font-size: 0.8rem; color: var(--mut); }
+.pk-kette {
+  border: 1px solid var(--bdr); border-radius: 6px; padding: 8px 14px;
+  background: linear-gradient(90deg, rgba(17,24,40,.9), rgba(12,18,32,.6));
+  display: flex; align-items: center; gap: 12px;
 }
-.bitem:hover { border-color: var(--gd); transform: translateY(-2px); }
-.bitem-sprite { display: none; }
-.bitem-nm {
-  display: block; font-family: 'Cinzel', serif; font-size: 0.75rem; letter-spacing: 1px;
-  color: var(--gold); text-shadow: 0 2px 6px rgba(0,0,0,.9); z-index: 2;
+.pk-kopf { width: 150px; flex: none; }
+.pk-kopf h3 { font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 1.5px; color: var(--gl); font-weight: normal; text-transform: uppercase; }
+.pk-kopf small { display: block; font-size: 0.85rem; color: var(--mut); }
+.pk-eng { margin-top: 6px; font-size: 0.78rem; line-height: 1.25; color: #f0c674; }
+.pk-eng::before { content: '⚠ '; }
+.pk-eng.ok { color: #9be0a5; }
+.pk-eng.ok::before { content: ''; }
+.pk-row { display: flex; align-items: center; overflow-x: auto; padding: 4px 0; flex: 1; min-width: 0; }
+.pk-v { flex: none; display: flex; align-items: center; }
+.pk-v:empty { display: none; }
+
+.pk-karte {
+  position: relative; width: 136px; flex: none; border: 1px solid var(--bdr); border-radius: 6px;
+  background: var(--s2); overflow: hidden; cursor: pointer; transition: .15s;
 }
-.bitem-cost {
-  display: block; font-size: 0.7rem; color: #ccc; margin-top: 3px;
-  text-shadow: 0 1px 4px rgba(0,0,0,.8); z-index: 2;
+.pk-karte:hover { border-color: var(--gold); transform: translateY(-2px); }
+.pk-img { height: 78px; background: #0a0e18 center/cover no-repeat; }
+.pk-nm {
+  font-family: 'Cinzel', serif; font-size: 0.64rem; letter-spacing: .5px; color: var(--txt);
+  padding: 6px 8px 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.bitem::before {
-  content: ''; position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(to top, rgba(6,8,16,.85) 0%, rgba(6,8,16,.3) 50%, transparent 100%);
+.pk-st { font-size: 0.8rem; color: var(--mut); padding: 0 8px 6px; line-height: 1.2; }
+.pk-bar { margin: 0 8px 8px; height: 5px; border-radius: 3px; background: var(--s3); overflow: hidden; }
+.pk-bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--gd), var(--gold)); transition: width .4s linear; }
+.pk-cnt {
+  position: absolute; top: 6px; right: 6px; font-family: 'Cinzel', serif; font-size: 0.62rem;
+  background: rgba(6,8,16,.8); border: 1px solid var(--bdr); padding: 2px 6px; border-radius: 3px; color: var(--gl);
 }
-/* Gesperrte Gebäude in der Bauleiste */
-.bitem.locked { filter: grayscale(1); border-style: dashed; }
-.bitem.locked::before { background: rgba(6,8,16,.72); }
-.bitem.locked:hover { transform: none; border-color: var(--mut); }
-.bitem.locked .bitem-nm { color: var(--mut); }
-.bitem-lock { position: absolute; top: 6px; right: 8px; z-index: 2; font-size: 1rem; }
-.bitem-hint { color: #e0c8a0; font-size: 0.65rem; line-height: 1.2; }
+.pk-lock { position: absolute; top: 6px; left: 6px; font-size: 0.9rem; display: none; }
+
+.pk-karte.z-laeuft { border-color: #2f6b3a; }
+.pk-karte.z-laeuft .pk-st { color: #9be0a5; }
+.pk-karte.z-laeuft .pk-bar > i { background: linear-gradient(90deg, #166534, #4ade80); }
+.pk-karte.z-wartet { border-color: #7a5a14; }
+.pk-karte.z-wartet .pk-st { color: #f0c674; }
+.pk-karte.z-bereit .pk-st { color: var(--gl); }
+.pk-karte.z-gesperrt .pk-img { filter: grayscale(1) brightness(.45); }
+.pk-karte.z-gesperrt .pk-st {
+  color: #e0a0a0; font-size: 0.72rem; padding-bottom: 0; margin-bottom: 6px;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden;
+}
+.pk-karte.z-gesperrt .pk-lock { display: block; }
+.pk-karte.z-bauplatz { border-style: dashed; border-color: var(--gd); background: transparent; }
+.pk-karte.z-bauplatz .pk-img { opacity: .45; filter: grayscale(1); }
+.pk-karte.z-bauplatz .pk-st { color: var(--gl); }
+.pk-karte.z-bauplatz .pk-st::before { content: 'Bauen: '; color: var(--gold); }
+.wohn .pk-karte.z-bauplatz .pk-st::before { content: ''; }
+
+.pk-stapel { display: flex; flex-direction: column; gap: 6px; flex: none; }
+.pk-karte.klein .pk-img { height: 44px; }
+.pk-quelle { border-color: #3c2d63; }
+.pk-quelle .pk-st { color: #c4b5fd; }
+
+.pk-pfeil { width: 66px; height: 40px; position: relative; text-align: center; }
+.pk-pfeil::before { content: ''; position: absolute; left: 6px; right: 8px; top: 23px; border-top: 2px solid #3a3a4a; }
+.pk-pfeil::after { content: ''; position: absolute; right: 2px; top: 18px; border: 6px solid transparent; border-left: 9px solid #3a3a4a; }
+.pk-pfeil span { position: absolute; left: 0; right: 0; top: 0; font-family: 'Cinzel', serif; font-size: 0.66rem; color: var(--mut); line-height: 1.1; }
+.pk-pfeil.an::before { border-top-color: var(--gold); }
+.pk-pfeil.an::after { border-left-color: var(--gold); }
+.pk-pfeil.an span { color: var(--gl); }
+.pk-plus { width: 30px; text-align: center; color: var(--mut); font-size: 1.4rem; }
+
+.pk-ziel { width: 136px; flex: none; border: 1px solid var(--gd); border-radius: 6px; background: #15120a; padding: 10px; text-align: center; }
+.pk-ziel b { display: block; font-family: 'Cinzel', serif; font-size: 0.68rem; color: var(--gl); letter-spacing: .5px; margin-bottom: 4px; text-transform: uppercase; font-weight: normal; }
+.pk-ziel-w { color: var(--txt); font-size: 0.85rem; }
+.pk-ziel.link { cursor: pointer; }
+.pk-ziel.link:hover { border-color: var(--gold); }
+.pk-ziel.link b::after { content: ' ›'; }
+
+/* ── Reiter «Wohnen» ── */
+.wohn { display: flex; gap: 18px; align-items: flex-start; }
+.wohn-haeuser { flex: 1; display: grid; grid-template-columns: repeat(auto-fill, 136px); gap: 12px; }
+.wohn-info { width: 300px; flex: none; border: 1px solid var(--bdr); border-radius: 6px; background: var(--s1); padding: 12px 14px; }
+.wohn-zeile { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--s3); font-size: 0.9rem; }
+.wohn-zeile span { color: var(--mut); }
+.wohn-zeile b { font-weight: normal; color: var(--txt); }
+.wohn-zeile b.gut, .wohn-wachstum.gut span { color: #9be0a5; }
+.wohn-zeile b.schlecht, .wohn-wachstum.schlecht span { color: #f0c674; }
+.wohn-wachstum { margin-top: 10px; font-size: 0.85rem; }
+.wohn-wachstum .pk-bar { margin: 6px 0 0; }
+.wohn-tipp { margin-top: 10px; font-size: 0.75rem; color: var(--mut); line-height: 1.3; }
+
+/* Gebäude-Fenster: weiterblättern */
+.bm-next {
+  margin-left: 8px; padding: 2px 8px; font-size: 0.7rem; font-family: 'Cinzel', serif; vertical-align: middle;
+  border: 1px solid var(--gd); border-radius: 3px; background: transparent; color: var(--gl); cursor: pointer;
+}
+.bm-next:hover { border-color: var(--gold); }
 
 /* ── Aufbau-Reiter (Freischalt-Baum) ── */
 .aufbau { display: flex; flex-direction: column; gap: 12px; }

@@ -1,10 +1,9 @@
 import { GameState } from '../models/GameState';
 import { BUILDING_DEFS } from '../data/buildings';
-import { manhattanFootprintDist } from '../utils/ManhattanDist';
 import { FighterSynergySystem } from './FighterSynergySystem';
 
 /**
- * Updates waterSupplied for all buildings based on Well radius,
+ * Updates waterSupplied for all buildings (a built Well supplies the whole city),
  * and calculates overall city satisfaction (0–100) stored in state.satisfaction.
  * Called every city tick (or after placement changes).
  */
@@ -12,39 +11,17 @@ export class SatisfactionSystem {
   private fighterSynergySystem = new FighterSynergySystem();
 
   update(state: GameState): void {
-    // ── Step 1: waterSupplied for all buildings (existing logic) ──
-    const wells = state.buildings.filter(
-      b => b.built && BUILDING_DEFS[b.typeId].radiusEffect?.type === 'water',
+    // ── Step 1: waterSupplied ──
+    // Seit dem Umbau auf HTML-Bildschirme (03/2026) gibt es keine Karte mehr,
+    // neue Gebäude stehen alle auf (0,0), alte Spielstände haben noch Kartenpositionen.
+    // Darum versorgt ein fertiger Brunnen die ganze Stadt (früher: Umkreis von 6 Feldern).
+    const hasWell = state.buildings.some(
+      b => b && b.built && BUILDING_DEFS[b.typeId]?.radiusEffect?.type === 'water',
     );
 
     for (const building of state.buildings) {
-      if (building.typeId === 'ROAD') continue;
-      if (!building.built) {
-        building.waterSupplied = false;
-        continue;
-      }
-
-      const def = BUILDING_DEFS[building.typeId];
-      const [bw, bh] = def.footprint;
-
-      let supplied = false;
-      for (const well of wells) {
-        const wellDef = BUILDING_DEFS[well.typeId];
-        const radius = wellDef.radiusEffect!.radiusTiles;
-        const [ww, wh] = wellDef.footprint;
-
-        const dist = manhattanFootprintDist(
-          building.x, building.y, bw, bh,
-          well.x, well.y, ww, wh,
-        );
-
-        if (dist <= radius) {
-          supplied = true;
-          break;
-        }
-      }
-
-      building.waterSupplied = supplied;
+      if (!building || building.typeId === 'ROAD') continue;
+      building.waterSupplied = building.built && hasWell;
     }
 
     // ── Step 2: Satisfaction formula ──

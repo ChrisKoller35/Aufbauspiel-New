@@ -9,7 +9,8 @@ import { FighterSynergySystem } from './FighterSynergySystem';
 export class EconomySystem {
   private fighterSynergySystem = new FighterSynergySystem();
 
-  dayTick(state: GameState): void {
+  /** Steuern, die beim nächsten Tageswechsel eingehen (auch für die Anzeige). */
+  steuernProTag(state: GameState): number {
     let totalTax = 0;
     const satisfactionMult = state.satisfaction / 100;
     const fighterTaxMult = this.fighterSynergySystem.getTaxMultiplier(state);
@@ -24,8 +25,12 @@ export class EconomySystem {
 
       totalTax += def.housing.baseTaxPerMin * satisfactionMult * fighterTaxMult;
     }
+    return Math.floor(totalTax);
+  }
 
-    state.globalStock.gold = (state.globalStock.gold ?? 0) + Math.floor(totalTax);
+  dayTick(state: GameState): void {
+    const totalTax = this.steuernProTag(state);
+    state.globalStock.gold = (state.globalStock.gold ?? 0) + totalTax;
     state.day++;
   }
 }
