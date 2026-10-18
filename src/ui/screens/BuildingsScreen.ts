@@ -2,13 +2,14 @@
 // Stadtplan grid + Crafting recipes in a two-tab layout.
 // ────────────────────────────────────────────────────────────────
 
-import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../../data/buildings';
+import { BUILDING_DEFS, BUILD_MENU_ORDER, getFreischaltHinweise } from '../../data/buildings';
 import { RECIPE_DEFS } from '../../data/recipes';
 import { ITEM_DEFS } from '../../data/items';
 import { GameState } from '../../models/GameState';
 import { createBuildingInstance } from '../../models/Building';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
+import { renderAufbauTab, bindAufbauTab, getBuiltTypeIds, getGildenrang } from './AufbauTab';
 
 /** Map building typeId to card background image. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -80,10 +81,15 @@ function buildHTML(state: GameState): string {
     <div class="btabs">
       <button class="btab active" data-tab="stadtplan">STADTPLAN</button>
       <button class="btab" data-tab="crafting">\u2697\uFE0F CRAFTING</button>
+      <button class="btab" data-tab="aufbau">AUFBAU</button>
     </div>
 
     <div class="bmain" data-panel="stadtplan">
       ${renderStadtplan(state)}
+    </div>
+
+    <div class="bmain" data-panel="aufbau" style="display:none">
+      ${renderAufbauTab(state, getBuildingImageStyle)}
     </div>
 
     <div class="bmain" data-panel="crafting" style="display:none">
@@ -138,7 +144,9 @@ function renderStadtplan(state: GameState): string {
   const buildCells = renderZoneCells(buildBuildings, BUILD_SLOTS);
   const houseCells = renderZoneCells(houseBuildings, HOUSE_SLOTS);
 
-  // Shop bar – available buildings to buy (with sprites)
+  // Shop bar – available buildings to buy (with sprites); locked ones greyed out
+  const built = getBuiltTypeIds(state);
+  const rang = getGildenrang(state);
   const shopHTML = BUILD_MENU_ORDER.map(id => {
     const def = BUILDING_DEFS[id];
     if (!def) return '';
@@ -151,6 +159,15 @@ function renderStadtplan(state: GameState): string {
     if (stoneCost) costParts.push(`\uD83E\uDEA8${stoneCost}`);
     const costStr = costParts.length ? costParts.join(' ') : 'Gratis';
     const bgStyle = getBuildingImageStyle(def.id);
+    const hinweise = getFreischaltHinweise(def.id, built, rang);
+    if (hinweise.length) {
+      return `
+      <div class="bitem locked" data-btype="${def.id}" style="${bgStyle}" title="${hinweise.join(', ')}">
+        <span class="bitem-lock">🔒</span>
+        <span class="bitem-nm">${def.name}</span>
+        <span class="bitem-cost bitem-hint">${hinweise.join('<br>')}</span>
+      </div>`;
+    }
     return `
       <div class="bitem" data-btype="${def.id}" style="${bgStyle}">
         <span class="bitem-nm">${def.name}</span>
@@ -311,6 +328,9 @@ function bindEvents(root: HTMLElement, state: GameState): void {
     });
   }
 
+  // Aufbau-Reiter: Karte anklicken → Kauf-Dialog
+  bindAufbauTab(root, typeId => showBuyConfirmModal(root, typeId, state));
+
   // Craft buttons
   const craftBtns = root.querySelectorAll('.btn-craft');
   for (let i = 0; i < craftBtns.length; i++) {
@@ -338,6 +358,8 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   );
 
   const hasFreeSlot = hasEmptySlot(state, typeId);
+  const hinweise = getFreischaltHinweise(typeId, getBuiltTypeIds(state), getGildenrang(state));
+  const unlocked = hinweise.length === 0;
 
   // Build cost display with current/required amounts
   const costHtml = Object.keys(def.buildCost).length === 0
@@ -348,7 +370,7 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
         return `<span style="color:${color}">${res}: ${have}/${qty}</span>`;
       }).join(' &middot; ');
 
-  const canBuild = canAfford && hasFreeSlot;
+  const canBuild = unlocked && canAfford && hasFreeSlot;
 
   const ov = document.createElement('div');
   ov.className = 'ov on';
@@ -357,7 +379,9 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
       <h3>${def.name} bauen?</h3>
       <p><strong>Kosten:</strong> ${costHtml}</p>
       <p><strong>Kategorie:</strong> ${def.category}</p>
-      ${!hasFreeSlot
+      ${!unlocked
+        ? `<p style="color:var(--red,#dc2626)"><strong>🔒 Gesperrt:</strong> ${hinweise.join(', ')}</p>`
+        : !hasFreeSlot
         ? '<p style="color:var(--red,#dc2626)"><strong>Kein freier Bauplatz!</strong></p>'
         : !canAfford
           ? '<p style="color:var(--red,#dc2626)">Nicht genug Ressourcen!</p>'
@@ -397,6 +421,7 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
   }
 
   if (!hasEmptySlot(state, typeId)) return;
+  if (getFreischaltHinweise(typeId, getBuiltTypeIds(state), getGildenrang(state)).length) return;
 
   // Deduct resources
   for (const [res, qty] of Object.entries(def.buildCost)) {
@@ -412,8 +437,12 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
   // Track statistics
   state.statistics['total_buildings_built'] = (state.statistics['total_buildings_built'] ?? 0) + 1;
 
-  // Re-render
+  // Re-render, stay on the tab the purchase came from (e.g. «Aufbau»)
+  const activeTab = (root.querySelector('.btab.active') as HTMLElement | null)?.dataset.tab;
   reRenderBuildingsScreen(root, state);
+  if (activeTab && activeTab !== 'stadtplan') {
+    (root.querySelector(`.btab[data-tab="${activeTab}"]`) as HTMLElement | null)?.click();
+  }
 }
 
 function hasEmptySlot(state: GameState, typeId: string): boolean {
