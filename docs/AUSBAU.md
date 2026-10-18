@@ -57,6 +57,16 @@ Gebäude kommt genau einmal vor, auf der Karte steht die Stufe. Klick: gebaut �
 Ausbau; Bauplatz oder gesperrt → Bau-Dialog mit Grund; Dungeon-Zutaten → Expeditionen.
 Der Reiter «Wohnen» ist weg (alles steht im Fenster des Wohnviertels), «Crafting» und «Aufbau» bleiben.
 
+**Nachtrag 18.10. abends (Bonus-Aufgabe):** Die Mindmap passt sich der Breite an: genug Platz → normal,
+etwas zu schmal (ab ca. 72 % der vollen Breite, z. B. 1024 px) → als Ganzes verkleinert mit Linien, noch schmaler
+(Handy) → Raster ohne Linien, jede Karte sagt dann selbst, wohin sie liefert («→ Lagerhaus: Holz»).
+Beim Darüberfahren mit der Maus (am Handy: lange drücken) erklärt ein Kasten in einem Satz, wofür das Gebäude gut
+ist, wie es gerade steht und was ein Klick macht (Texte: `src/data/gebaeudeErklaerungen.ts`). Das Gebäude, das sich
+als Nächstes lohnt, ist golden umrandet («Als Nächstes», auch im Aufbau-Reiter und in der Engpass-Leiste);
+Reihenfolge mit Begründung in derselben Datei, Auswahl in `src/systems/Empfehlung.ts` (erstes baubares in der
+Reihenfolge: Steinbruch, Getreidefarm, Eisenmine, Brunnen, Mühle, Schmiede, Bäckerei, Kräutergarten, Marktplatz,
+Arkanschmiede, Bank, Kriegsmaschinen). Karten sind mit Tastatur bedienbar (Tab, Enter).
+
 ## Freischaltung geändert
 
 Damit die Reihenfolge zum Warenfluss passt: **Eisenmine braucht den Steinbruch, Schmiede braucht die Eisenmine**

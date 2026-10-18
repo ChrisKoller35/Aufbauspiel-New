@@ -9,6 +9,7 @@ import { BUILDING_DEFS, BUILD_MENU_ORDER, getFreischaltStufe } from '../../data/
 import { GameState } from '../../models/GameState';
 import { freischaltHinweise, getBuiltTypeIds, getGildenrang, dasGebaeude } from '../../systems/GebaeudeStatus';
 import { maxStufe, stufeVon } from '../../systems/Ausbau';
+import { naechsterBau } from '../../systems/Empfehlung';
 
 export { getBuiltTypeIds, getGildenrang };
 
@@ -27,6 +28,7 @@ function gebautLabel(state: GameState, typeId: string): string {
 export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) => string): string {
   const built = getBuiltTypeIds(state);
   const rang = getGildenrang(state);
+  const empfohlen = naechsterBau(state)?.typeId;
 
   // Spalten nach Stufe aufbauen
   const columns: string[][] = [];
@@ -86,10 +88,10 @@ export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) =
     const hinweise = built.has(id) ? [] : freischaltHinweise(state, id);
     const status = built.has(id) ? 'gebaut' : hinweise.length ? 'gesperrt' : 'baubar';
     const label = status === 'gebaut' ? gebautLabel(state, id)
-      : status === 'baubar' ? 'Baubar'
+      : status === 'baubar' ? (id === empfohlen ? 'Baubar · lohnt sich als Nächstes' : 'Baubar')
       : '🔒 ' + hinweise.join(', ');
     cards += `
-      <div class="acard ${status}" data-btype="${id}" title="${def.name}"
+      <div class="acard ${status}${id === empfohlen ? ' empfohlen' : ''}" data-btype="${id}" title="${def.name}"
            style="left:${p.x}px;top:${p.y}px;width:${CARD_W}px;height:${CARD_H}px;${imageStyle(id)}">
         <span class="acard-nm">${def.name}</span>
         <span class="acard-st">${label}</span>

@@ -12,6 +12,7 @@ import {
   getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, dasGebaeude, einzelStatus, WarteGrund,
 } from './GebaeudeStatus';
 import { maxStufe, stufeVon, arbeitsplaetze, besetzt } from './Ausbau';
+import { naechsterBau } from './Empfehlung';
 
 /** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept). */
 export function lieferantFuer(item: string): string | null {
@@ -100,7 +101,7 @@ export interface Engpass {
 
 /**
  * Die wichtigsten Engpässe der Stadt, höchstens `max`:
- * zuerst gebaute Gebäude, die warten, dann der nächste Bauplatz, dann das erste gesperrte Gebäude.
+ * zuerst gebaute Gebäude, die warten, dann der empfohlene Bauplatz (Empfehlung.ts), dann das erste gesperrte Gebäude.
  */
 export function engpaesseDerStadt(state: GameState, max = 3): Engpass[] {
   const ids = netzGebaeudeIds();
@@ -118,7 +119,8 @@ export function engpaesseDerStadt(state: GameState, max = 3): Engpass[] {
   if (fehlendeArbeiter > 0 && freieBewohner(state) === 0) {
     nimm('HOUSE_T1', `Es fehlen ${fehlendeArbeiter} Arbeiter, alle Bewohner arbeiten schon. ${wohnHinweis(state)}`);
   }
-  const bauplatz = status.find(x => x.s.zustand === 'bauplatz');
+  // Der nächste Bauplatz ist derselbe, den die Mindmap als «Als Nächstes» hervorhebt
+  const bauplatz = naechsterBau(state);
   if (bauplatz) nimm(bauplatz.typeId, engpassFuerGebaeude(state, bauplatz.typeId));
   const gesperrt = status.find(x => x.s.zustand === 'gesperrt');
   if (gesperrt) nimm(gesperrt.typeId, engpassFuerGebaeude(state, gesperrt.typeId));
