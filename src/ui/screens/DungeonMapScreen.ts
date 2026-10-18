@@ -4,7 +4,7 @@
 // ──────────────────────────────────────────────────────────────
 
 import { GameState } from '../../models/GameState';
-import { ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP } from '../../data/routes';
+import { ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP, isRouteAvailable, getRouteLockReasons } from '../../data/routes';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 
@@ -109,18 +109,6 @@ function getBiomeStyle(route: RouteDef): BiomeStyle {
   if (id.includes('cave') || id.includes('crystal') || id.includes('spider')) return { fill: '#0f1e4a', stroke: '#93c5fd', text: '#93c5fd', glow: '#60a5fa', icon: '💎', label: 'Höhle' };
   if (id.includes('haunted')) return { fill: '#0d2e16', stroke: '#4ade80', text: '#86efac', glow: '#22c55e', icon: '👻', label: 'Wald' };
   return { fill: '#0d2e16', stroke: '#4ade80', text: '#4ade80', glow: '#22c55e', icon: '🌲', label: 'Wald' };
-}
-
-// ── Route availability (now checks boss unlocks too) ──
-
-function isRouteAvailable(route: RouteDef, state: GameState): boolean {
-  const playerRank = state.guildStats?.rank ?? 1;
-  if (playerRank < route.tier) return false;
-  if (route.unlockCondition?.bossesDefeated) {
-    const defeated = state.guildStats?.bossesDefeatedIds ?? [];
-    return route.unlockCondition.bossesDefeated.every(b => defeated.includes(b));
-  }
-  return true;
 }
 
 // ── Build graph index ──
@@ -438,16 +426,8 @@ function showRouteModal(routeId: string, state: GameState): void {
 
   // Show unlock requirements if locked
   if (!isAvailable && !isCompleted) {
-    const rankNeeded = route.tier > (state.guildStats?.rank ?? 1);
-    const bossNeeded = route.unlockCondition?.bossesDefeated;
-    if (rankNeeded) detailHtml += `<p style="color:#ef4444">🔒 Gildenrang ${route.tier} benötigt</p>`;
-    if (bossNeeded) {
-      const defeated = state.guildStats?.bossesDefeatedIds ?? [];
-      const missing = bossNeeded.filter(b => !defeated.includes(b));
-      if (missing.length > 0) {
-        const names = missing.map(b => b.replace('boss_', '').replace(/_/g, ' ')).join(', ');
-        detailHtml += `<p style="color:#ef4444">🔒 Besiege: ${names}</p>`;
-      }
+    for (const reason of getRouteLockReasons(route, state)) {
+      detailHtml += `<p style="color:#ef4444">🔒 ${reason}</p>`;
     }
   }
 

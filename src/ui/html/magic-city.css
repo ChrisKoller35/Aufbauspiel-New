@@ -196,6 +196,9 @@ body {
   display: flex; flex-direction: column;
 }
 .exp-card:hover { border-color: var(--gd); transform: translateY(-2px); }
+.exp-card.locked { cursor: not-allowed; filter: grayscale(.85); opacity: .55; }
+.exp-card.locked:hover { border-color: var(--bdr); transform: none; }
+.exp-lock { font-size: 0.7rem; color: #ef4444; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
 .exp-tag {
   display: inline-block; font-family: 'Cinzel', serif; font-size: 0.6rem;
   letter-spacing: 1px; padding: 2px 8px; border-radius: 999px; margin-bottom: 6px;
