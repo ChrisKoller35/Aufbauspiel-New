@@ -525,6 +525,46 @@ body {
 .crar { font-size: 0.67rem; color: var(--mut); }
 .cingr { display: flex; gap: 5px; flex-wrap: wrap; margin-bottom: 9px; }
 .ingr { background: var(--s3); border: 1px solid var(--bdr); border-radius: 3px; padding: 2px 7px; font-size: 0.67rem; color: var(--mut); }
+.ingr-out { color: var(--gl); }
+.cost-ok { color: #4ade80; }
+.cost-miss { color: #f87171; }
+.ccard-ft { display: flex; justify-content: space-between; align-items: center; margin-bottom: 7px; font-size: 0.67rem; }
+.ccard-time { font-size: 0.67rem; color: var(--mut); margin-left: auto; }
+.ccard.locked { opacity: .45; filter: grayscale(.8); }
+.ccard.locked:hover { border-color: var(--bdr); opacity: .65; }
+.craft-hint { font-size: 0.75rem; color: var(--mut); margin-bottom: 12px; }
+.craft-group { margin-bottom: 18px; }
+.craft-group-hd {
+  font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold); letter-spacing: 1px;
+  margin-bottom: 8px; padding-bottom: 5px; border-bottom: 1px solid var(--bdr);
+  display: flex; align-items: center; gap: 8px;
+}
+.craft-group.locked .craft-group-hd { color: var(--mut); }
+.craft-group-cnt { font-size: 0.7rem; color: var(--mut); font-family: inherit; }
+.craft-lock { font-size: 0.7rem; color: #f87171; }
+.craft-run { color: #4ade80; }
+
+/* Werkstatt im Gebäude-Fenster */
+.modal.modal-ws { max-width: 560px; max-height: 90vh; overflow-y: auto; }
+.ws { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--bdr); }
+.ws .lbl { display: block; margin-bottom: 6px; }
+.ws-status { background: var(--s2); border: 1px solid var(--bdr); border-radius: 5px; padding: 10px; margin-bottom: 12px; }
+.ws-active { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold); margin-bottom: 7px; }
+.ws-bar { height: 10px; background: var(--s3); border: 1px solid var(--bdr); border-radius: 5px; overflow: hidden; }
+.ws-bar-fill { height: 100%; background: linear-gradient(90deg, var(--gd), var(--gold)); transition: width .5s linear; }
+.ws-bar-txt { font-size: 0.7rem; color: var(--mut); margin-top: 4px; text-align: right; }
+.ws-msg { font-size: 0.75rem; color: var(--mut); }
+.ws-warn { color: #f87171; }
+.ws-list { display: flex; flex-direction: column; gap: 6px; }
+.ws-rcp { background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: .2s; }
+.ws-rcp:hover { border-color: var(--pur); }
+.ws-rcp.on { border-color: var(--gold); background: var(--s3); cursor: default; }
+.ws-rcp.hl { box-shadow: 0 0 0 2px var(--pur); }
+.ws-rcp .cingr { margin-bottom: 0; }
+.ws-rcp-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.ws-rcp-hd .cico { font-size: 1.2rem; }
+.ws-rcp-nm { font-family: 'Cinzel', serif; font-size: 0.8rem; }
+.btn-craft:disabled { opacity: .5; cursor: not-allowed; }
 
 /* ── Ranking Table ── */
 .rtable { width: 100%; border-collapse: separate; border-spacing: 0 3px; }

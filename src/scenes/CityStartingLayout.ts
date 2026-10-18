@@ -8,15 +8,19 @@ import { createBuildingInstance } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
 import { BUILDING_DEFS } from '../data/buildings';
 
-export function placeStartingLayout(state: GameState): void {
+/** Buildings every new city starts with (the last one of each type cannot be demolished). */
+export const STARTING_BUILDING_TYPES: readonly string[] = [
   // General buildings
-  placeBuilding(state, 'WAREHOUSE');
-  placeBuilding(state, 'GUILD_HALL');
-  placeBuilding(state, 'LUMBER_CAMP');     // Holzfällerlager — generates wood from start
-  placeBuilding(state, 'DUNGEON_CAMP');
-
+  'WAREHOUSE',
+  'GUILD_HALL',
+  'LUMBER_CAMP',     // Holzfällerlager — generates wood from start
+  'DUNGEON_CAMP',
   // Housing
-  placeBuilding(state, 'HOUSE_T1');
+  'HOUSE_T1',
+];
+
+export function placeStartingLayout(state: GameState): void {
+  for (const typeId of STARTING_BUILDING_TYPES) placeBuilding(state, typeId);
 }
 
 export function createStartingCitizens(state: GameState): void {
