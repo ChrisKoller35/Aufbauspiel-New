@@ -14,6 +14,14 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getLogLineColor } from '../../rendering/Colors';
+import { abschnittFuer } from '../../data/treppe';
+import { treppenEtage } from '../../systems/Treppe';
+
+/** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
+const PC_BREITE = '(min-width: 701px)';
+/** Bildgrösse der Einheiten am PC: so gross wie Platz ist, zwischen diesen Werten. */
+const BILD_MAX = 230;
+const BILD_MIN = 84;
 
 type CombatPhase = 'preview' | 'animating' | 'result';
 
@@ -98,6 +106,12 @@ export class CombatScreen {
     this.el = root;
 
     this.buildDOM();
+    let geplant = false;
+    window.addEventListener('resize', () => {
+      if (geplant || !this.isVisible()) return;
+      geplant = true;
+      requestAnimationFrame(() => { geplant = false; this.passeKartenAn(); });
+    });
   }
 
   setExpeditionContext(system: ExpeditionSystem, state: GameState): void {
@@ -191,7 +205,11 @@ export class CombatScreen {
 
     this.titleEl.textContent = isBoss ? 'BOSS KAMPF!' : 'KAMPF';
     this.titleEl.style.color = isBoss ? 'var(--mc-damage)' : 'var(--mc-accent-expedition)';
-    this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
+    // Endlose Treppe: Stockwerk und Abschnitt statt «Raum x / y», Bild des Abschnitts
+    const abschnitt = run.treppe ? abschnittFuer(treppenEtage(run, roomIndex)) : null;
+    this.roomInfoEl.textContent = abschnitt
+      ? `Stockwerk ${treppenEtage(run, roomIndex)} · ${abschnitt.name}`
+      : `Raum ${roomIndex + 1} / ${run.rooms.length}`;
 
     // HP snapshot
     this.preHpMap.clear();
@@ -246,7 +264,7 @@ export class CombatScreen {
       screenEl.style.cssText = 'display:flex;flex-direction:column;width:100vw;height:100vh;overflow-y:auto;overflow-x:hidden;background:#060810;';
     }
     // Set route background image on overlay
-    const routeImg = ROUTE_IMAGE_MAP[run.routeId];
+    const routeImg = ROUTE_IMAGE_MAP[abschnitt ? abschnitt.bild : run.routeId];
     if (routeImg) {
       this.el.style.backgroundImage = `url('assets/tiles/${routeImg}.png')`;
       this.el.style.backgroundSize = 'cover';
@@ -256,6 +274,7 @@ export class CombatScreen {
       this.el.style.backgroundImage = 'none';
       this.el.style.backgroundColor = '#060810';
     }
+    this.passeKartenAn();
   }
 
   hide(): void {
@@ -270,6 +289,48 @@ export class CombatScreen {
   isVisible(): boolean {
     const screenEl = document.getElementById('s-combat');
     return screenEl ? screenEl.style.display !== 'none' : false;
+  }
+
+  /**
+   * Am PC: Bilder der Einheiten so gross wie möglich (höchstens 230 px), aber so,
+   * dass alle Karten einer Spalte ganz sichtbar sind, auch in kleinen Fenstern und
+   * mit Fähigkeiten und Vorräten unter dem Kampffeld. Die Grösse kommt als
+   * `--mc-co-bild` an die Spalte (magic-city.css); sie bleibt während des Kampfes gleich.
+   */
+  private passeKartenAn(): void {
+    if (!window.matchMedia(PC_BREITE).matches) return;
+    for (const col of [this.partyColEl, this.enemyColEl]) {
+      const karten = Array.from(col.children).filter((k): k is HTMLElement => k.classList.contains('mc-co-unit'));
+      if (karten.length === 0 || col.clientHeight === 0) continue;
+      col.style.removeProperty('--mc-co-bild');
+      const stil = getComputedStyle(col);
+      const abstand = parseFloat(stil.rowGap) || 10;
+      const breite = col.clientWidth - parseFloat(stil.paddingLeft) - parseFloat(stil.paddingRight);
+      let hoehe = col.clientHeight - parseFloat(stil.paddingTop) - parseFloat(stil.paddingBottom);
+      // Andere Kästen (Gegnerfähigkeiten) stehen in einer eigenen Zeile darunter
+      for (const k of Array.from(col.children) as HTMLElement[]) {
+        if (!karten.includes(k)) hoehe -= k.offsetHeight + abstand;
+      }
+      // Was die Karte um das Bild herum braucht (Rand, Name, Werte, Leben)
+      const bild = karten[0].querySelector<HTMLElement>('.mc-co-sprite, .mc-co-sprite-fallback');
+      const randBreite = bild ? karten[0].offsetWidth - bild.offsetWidth : 30;
+      const randHoehe = bild ? karten[0].offsetHeight - bild.offsetHeight : 92;
+      // Beste Aufteilung in Spalten und Reihen suchen
+      let groesse = BILD_MIN;
+      for (let spalten = 1; spalten <= karten.length; spalten++) {
+        const reihen = Math.ceil(karten.length / spalten);
+        const proKarteBreit = Math.floor((breite - (spalten - 1) * abstand) / spalten) - randBreite;
+        const proKarteHoch = Math.floor((hoehe - (reihen - 1) * abstand) / reihen) - randHoehe;
+        groesse = Math.max(groesse, Math.min(proKarteBreit, proKarteHoch));
+      }
+      groesse = Math.min(BILD_MAX, groesse);
+      col.style.setProperty('--mc-co-bild', `${groesse}px`);
+      // Bricht Text bei kleinen Karten um, wird die Karte höher: nachmessen
+      for (let i = 0; i < 12 && groesse > BILD_MIN && col.scrollHeight > col.clientHeight + 1; i++) {
+        groesse = Math.max(BILD_MIN, groesse - 8);
+        col.style.setProperty('--mc-co-bild', `${groesse}px`);
+      }
+    }
   }
 
   /** No-op: HTML panels are always screen-space. */
@@ -446,6 +507,11 @@ export class CombatScreen {
     const btn = document.createElement('button');
     btn.className = 'mc-btn mc-co-retreat-btn';
     btn.textContent = 'Rückzug';
+    if (this.expRun?.treppe) {
+      // Treppe: Wer flieht, behält nur die Beute vom letzten Rastplatz
+      btn.textContent = 'Fliehen';
+      btn.title = 'Verliert die Beute seit dem letzten Rastplatz';
+    }
     btn.addEventListener('click', () => {
       this.hide();
       this.onRetreat?.();
@@ -509,11 +575,14 @@ export class CombatScreen {
     const area = document.createElement('div');
     area.className = 'mc-co-abilities-area';
     this.abilitiesAreaEl = area;
-    this.previewStripEl.appendChild(area);
+    // Always first in the strip, also when rebuilt after a click (provisions stay below)
+    this.previewStripEl.prepend(area);
 
     const divider = document.createElement('div');
     divider.className = 'mc-co-section-divider';
-    divider.textContent = 'Fähigkeiten — 1× pro Mission wählbar';
+    divider.textContent = run.treppe
+      ? 'Fähigkeiten — 1× bis zum nächsten Rastplatz'
+      : 'Fähigkeiten — 1× pro Mission wählbar';
     area.appendChild(divider);
 
     const cols = document.createElement('div');
@@ -605,8 +674,9 @@ export class CombatScreen {
   // ─── Preview: Items ───────────────────────────────────────
 
   private buildItemSection(run: ExpeditionRun, room?: EncounterRoom): void {
-    // Clear entire preview strip to avoid duplicates
-    this.previewStripEl.innerHTML = '';
+    // Rebuild only the provisions area: the abilities area in the same strip stays
+    // (clearing the whole strip here used to remove the hero abilities on every show)
+    this.itemsAreaEl?.remove();
     this.itemsAreaEl = null;
     this.enemySkillsAreaEl?.remove();
     this.enemySkillsAreaEl = null;
@@ -1044,8 +1114,6 @@ export class CombatScreen {
     const btnRow = document.createElement('div');
     btnRow.className = 'mc-co-btn-row';
 
-    const retreatBtn = this.createRetreatButton();
-
     const btn = document.createElement('button');
     btn.className = 'mc-btn mc-co-continue-btn';
     btn.textContent = 'Nächste Runde →';
@@ -1054,7 +1122,9 @@ export class CombatScreen {
       onContinue();
     });
 
-    btnRow.appendChild(retreatBtn);
+    // Der Kampf ist schon entschieden: Auf der Treppe würde Fliehen hier nur
+    // die Beute seit dem letzten Rastplatz kosten, also kein Knopf dafür.
+    if (!this.expRun?.treppe) btnRow.appendChild(this.createRetreatButton());
     btnRow.appendChild(btn);
     this.actionsEl.appendChild(btnRow);
   }
@@ -1074,6 +1144,7 @@ export class CombatScreen {
 
       const outcomeText = run.status === 'victory' ? 'SIEG!'
         : run.status === 'defeat' ? 'NIEDERLAGE...'
+        : run.treppe?.patt ? 'UNENTSCHIEDEN'
         : 'RÜCKZUG';
       const outcomeColor = run.status === 'victory' ? 'var(--mc-heal)'
         : run.status === 'defeat' ? 'var(--mc-damage)'
@@ -1087,7 +1158,9 @@ export class CombatScreen {
     } else {
       const cleared = document.createElement('div');
       cleared.className = 'mc-co-room-cleared';
-      cleared.textContent = 'Raum geschafft!';
+      cleared.textContent = run.treppe && this.previewRoom
+        ? `Stockwerk ${treppenEtage(run, this.previewRoom.index)} geschafft!`
+        : 'Raum geschafft!';
       this.actionsEl.appendChild(cleared);
     }
 
@@ -1112,6 +1185,7 @@ export class CombatScreen {
     this.enemyEntries = [];
     this.logLinesEl.innerHTML = '';
     this.actionsEl.innerHTML = '';
+    this.previewStripEl.innerHTML = '';
     this.abilitiesAreaEl = null;
     this.itemsAreaEl = null;
     this.el.querySelectorAll('.mc-co-floaty, .mc-co-action-banner, .mc-co-intro-flash, .mc-co-intro-title, .mc-co-round-counter').forEach(el => el.remove());

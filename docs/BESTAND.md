@@ -3,6 +3,15 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 19.10.2026: Die endlose Treppe
+
+Stadtstufe 7 öffnet jetzt das Endgame: eine Treppe über dem Dungeon, Stockwerk für Stockwerk ein Kampf, jedes 10. ein
+Boss, nach jedem 5. ein Rastplatz, an dem die Beute sicher ist. Die Bestmarke ist das höchste Stockwerk, gestartet
+wird unten oder über einem besiegten Boss-Stockwerk. Eingänge: Routenliste (ganz oben), Dungeon-Karte (über dem
+Vulkankern), Stadtweg-Fenster. Regeln, Zahlen und Eichung: `docs/TREPPE.md`. Rivalen-Gilden und lebende Rangliste
+folgen (Manager-Issue #39). Nebenbei: Die Fähigkeiten der Helden sind vor dem Kampf jetzt zu sehen (waren seit dem
+Import nie sichtbar).
+
 ## Nachtrag 18.10.2026 (spät): Der Weg zur Magischen Stadt
 
 Christoph wollte eine Geschichte, das Endgame bleibt der endlose Aufstieg im Dungeon mit Rangliste. Neu: 7

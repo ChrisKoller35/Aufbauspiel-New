@@ -131,14 +131,33 @@ export interface ExpeditionRun {
   airShield?: number;
   /** Maximum Luft (Standard 100 + airBonus von Items) */
   airShieldMax?: number;
-  /** Guardian's Spott ability: when true, all enemy attacks are redirected to the Guardian */
+  /** Spott-Fähigkeit (Guardian, Paladin): when true, all enemy attacks are redirected to the taunting hero */
   guardianTauntActive?: boolean;
+  /** Wer gespottet hat (unit.id). Fehlt bei alten Spielständen → der Guardian */
+  tauntUnitId?: number;
   /** Per-round HP snapshots for animated combat playback (transient, not saved) */
   combatRoundSnapshots?: CombatRoundSnapshot[];
   /** Siege: die Kriegsmaschine dieser Expedition (nicht in party, separater Slot) */
   warMachineUnit?: CombatUnit;
   /** ID des eingesetzten War Machine Items (z.B. 'war_cannon') */
   warMachineItemId?: string;
+  /** Endlose Treppe: nur bei routeId 'endlose_treppe' (ExpeditionSystem, data/treppe.ts) */
+  treppe?: TreppenLauf;
+}
+
+/** Stand eines Laufs auf der endlosen Treppe. Raum i ist Stockwerk startEtage + i. */
+export interface TreppenLauf {
+  startEtage: number;
+  /** Bestmarke vor diesem Lauf (für «Neue Bestmarke!») */
+  besteVorher: number;
+  /** Höchstes in diesem Lauf geschaffte Stockwerk (startEtage − 1 = noch keins) */
+  geschafft: number;
+  /** Beute beim letzten Rastplatz: Nur sie bleibt, wenn der Lauf nicht am Rastplatz endet */
+  sicher: { loot: Record<string, number>; gold: number };
+  /** Am Rastplatz heimgekehrt: Die ganze Beute bleibt */
+  heimgekehrt?: boolean;
+  /** Ein Kampf blieb bis zur Rundengrenze unentschieden */
+  patt?: boolean;
 }
 
 /** Snapshot of HP values after a combat round – used by CombatOverlay for round-by-round animation */

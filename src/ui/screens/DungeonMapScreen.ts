@@ -7,6 +7,9 @@ import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP, isRouteAvailable, getRouteLockReasons } from '../../data/routes';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
+import { TREPPE_ROUTE_ID, BOSS_ALLE, RAST_ALLE } from '../../data/treppe';
+import { treppeStand } from '../../systems/Treppe';
+import { treppenKunst, treppenKunstInhalt, neueTreppenBildId } from '../components/TreppenKunst';
 
 
 
@@ -123,6 +126,73 @@ function buildGraphIndex(): { nodeMap: Map<string, DungeonGraphNode>; allEdges: 
     }
   }
   return { nodeMap, allEdges };
+}
+
+// ── Endlose Treppe: Eingang über der Karte ──
+
+/** Platz über der Karte (über dem Vulkankern) für den Eingang zur endlosen Treppe. */
+const TREPPE_PLATZ = 420;
+
+/** Torbogen mit der Treppe darin, Name und Bestmarke; Klick öffnet das Fenster wie bei Routen. */
+function buildTreppenEingang(state: GameState, width: number): string {
+  const route = ROUTE_DEFS[TREPPE_ROUTE_ID];
+  if (!route) return '';
+  const offen = isRouteAvailable(route, state);
+  const beste = treppeStand(state)?.besteEtage ?? 0;
+  const id = neueTreppenBildId();
+  const cx = width / 2;
+  const breite = 260;
+  const links = cx - breite / 2;
+  const rechts = cx + breite / 2;
+  const bogenOben = 60;
+  const radius = breite / 2;
+  const unten = 320;
+  const bogen = `M${links},${unten} V${bogenOben + radius} A${radius},${radius} 0 0 1 ${rechts},${bogenOben + radius} V${unten} Z`;
+  const status = !offen
+    ? `🔒 ${getRouteLockReasons(route, state).join(', ')}`
+    : beste > 0 ? `Bestmarke: Stockwerk ${beste}` : 'Offen: Wage den ersten Schritt';
+
+  let sterne = '';
+  for (let i = 0; i < 26; i++) {
+    const x = (i * 137) % width;
+    const y = 12 + ((i * 89) % (TREPPE_PLATZ - 40));
+    sterne += `<circle cx="${x}" cy="${y}" r="${i % 3 === 0 ? 1.3 : 0.8}" fill="#f3e7c4" opacity="${i % 2 ? 0.35 : 0.6}"/>`;
+  }
+
+  // Violetter Schein um das Tor, zu den Rändern hin wie der Rest der Karte;
+  // ein weicher Übergang deckt die Kante zur Karte darunter ab
+  return `
+    <defs>
+      <radialGradient id="${id}-oben" cx="50%" cy="45%" r="55%">
+        <stop offset="0%" stop-color="#24124a"/>
+        <stop offset="55%" stop-color="#0e0a22"/>
+        <stop offset="100%" stop-color="#060810"/>
+      </radialGradient>
+      <linearGradient id="${id}-uebergang" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#060810" stop-opacity="0"/>
+        <stop offset="35%" stop-color="#060810" stop-opacity=".9"/>
+        <stop offset="100%" stop-color="#060810" stop-opacity="0"/>
+      </linearGradient>
+      <clipPath id="${id}-bogen"><path d="${bogen}"/></clipPath>
+    </defs>
+    <rect width="${width}" height="${TREPPE_PLATZ}" fill="url(#${id}-oben)"/>
+    <rect y="${TREPPE_PLATZ - 30}" width="${width}" height="120" fill="url(#${id}-uebergang)"/>
+    <g opacity=".7">${sterne}</g>
+    <text x="${cx}" y="34" text-anchor="middle" fill="#c4b5fd" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.45">ÜBER DEM DUNGEON — ENDGAME</text>
+    <path d="M${cx},${TREPPE_PLATZ + 100} C${cx},${TREPPE_PLATZ + 20} ${cx},${unten + 110} ${cx},${unten + 66}"
+      fill="none" stroke="#c8a227" stroke-width="2.5" opacity="${offen ? 0.55 : 0.15}" stroke-dasharray="${offen ? 'none' : '8 5'}" stroke-linecap="round"/>
+    <g class="dmap-treppe${offen ? '' : ' gesperrt'}" data-treppe="1">
+      <path d="${bogen}" fill="none" stroke="#7c3aed" stroke-width="14" opacity=".18"/>
+      <g class="dmap-treppe-bild" clip-path="url(#${id}-bogen)">
+        <svg x="${links}" y="${bogenOben}" width="${breite}" height="${unten - bogenOben}" viewBox="0 0 400 300" preserveAspectRatio="xMidYMid slice">
+          ${treppenKunstInhalt(id)}
+        </svg>
+      </g>
+      <path class="dmap-treppe-rahmen" d="${bogen}" fill="none" stroke="#c8a227" stroke-width="2.5"/>
+      ${offen ? '' : `<text x="${cx}" y="${(bogenOben + unten) / 2 + 30}" text-anchor="middle" font-size="26" style="user-select:none">🔒</text>`}
+      <text x="${cx}" y="${unten + 26}" text-anchor="middle" fill="#e6c060" font-size="15" font-family="Cinzel, serif" letter-spacing="2">DIE ENDLOSE TREPPE</text>
+      <text x="${cx}" y="${unten + 46}" text-anchor="middle" fill="${offen ? '#c4b5fd' : '#ef4444'}" font-size="10" font-family="Cinzel, serif" letter-spacing="1" opacity="${offen ? 0.95 : 0.8}">${status}</text>
+    </g>`;
 }
 
 // ── SVG World Map ──
@@ -363,14 +433,19 @@ function buildDungeonSVG(state: GameState): string {
       </g>`;
   }
 
+  // The stairs entrance sits above the map: the map itself moves down by TREPPE_PLATZ
+  const totalHeight = HEIGHT + TREPPE_PLATZ;
   return `
-    <svg viewBox="0 0 ${WIDTH} ${HEIGHT}" class="dmap-svg-scroll"
+    <svg viewBox="0 0 ${WIDTH} ${totalHeight}" class="dmap-svg-scroll"
          xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
-         style="width:${WIDTH}px;height:${HEIGHT}px;">
-      ${bgHtml}
-      <defs>${clipDefsHtml}</defs>
-      <g class="dmap-paths">${pathsHtml}</g>
-      <g class="dmap-nodes">${nodesHtml}</g>
+         style="width:${WIDTH}px;height:${totalHeight}px;">
+      <g transform="translate(0 ${TREPPE_PLATZ})">
+        ${bgHtml}
+        <defs>${clipDefsHtml}</defs>
+        <g class="dmap-paths">${pathsHtml}</g>
+        <g class="dmap-nodes">${nodesHtml}</g>
+      </g>
+      ${buildTreppenEingang(state, WIDTH)}
     </svg>`;
 }
 
@@ -387,9 +462,47 @@ function hexPoints(cx: number, cy: number, r: number, rotDeg: number = 0): strin
 
 // ── Modal ──
 
+/** Fenster für die endlose Treppe: Regeln, Bestmarke, Knopf zum Team. */
+function showTreppenModal(route: RouteDef, state: GameState): void {
+  const iconEl = document.getElementById('dmap-m-icon');
+  const tagEl = document.getElementById('dmap-m-tag');
+  const nameEl = document.getElementById('dmap-m-name');
+  const subEl = document.getElementById('dmap-m-sub');
+  const detailEl = document.getElementById('dmap-m-detail');
+  const actionsEl = document.getElementById('dmap-m-actions');
+  const overlay = document.getElementById('dmap-modal');
+  if (!iconEl || !tagEl || !nameEl || !subEl || !detailEl || !actionsEl || !overlay) return;
+
+  const offen = isRouteAvailable(route, state);
+  const stand = treppeStand(state);
+  iconEl.innerHTML = treppenKunst('dmap-m-bild');
+  iconEl.style.marginBottom = '10px';
+  tagEl.innerHTML = '<span style="background:#2a1650;color:#e9d5ff;border:1px solid #7c3aed;padding:2px 10px;border-radius:999px;font-family:Cinzel,serif;font-size:0.6rem;letter-spacing:2px;">ENDGAME</span>';
+  nameEl.textContent = route.name;
+  subEl.textContent = stand && stand.besteEtage > 0 ? `Bestmarke: Stockwerk ${stand.besteEtage}` : 'Ab Stadtstufe 7';
+
+  let detailHtml = '<p>Endlos nach oben, Stockwerk für Stockwerk. Jedes ist ein Kampf und etwas schwerer als das letzte.</p>';
+  detailHtml += `<p><span style="color:#c4b5fd">Boss</span> auf jedem ${BOSS_ALLE}. Stockwerk, <span style="color:#c4b5fd">Rastplatz</span> nach jedem ${RAST_ALLE}.: heilen, Beute sichern, heimkehren oder weiter.</p>`;
+  detailHtml += '<p style="color:#8a7a5a;font-size:0.75rem">Wer fällt oder flieht, verliert die Beute seit dem letzten Rastplatz.</p>';
+  if (!offen) {
+    for (const reason of getRouteLockReasons(route, state)) {
+      detailHtml += `<p style="color:#ef4444">🔒 ${reason}</p>`;
+    }
+  }
+  detailEl.innerHTML = detailHtml;
+  actionsEl.innerHTML = offen
+    ? `<button class="dmap-btn-go" data-go-route="${route.id}">ZUR TREPPE</button>`
+    : '<button class="dmap-btn-locked" disabled>GESPERRT</button>';
+  overlay.classList.add('dmap-modal-on');
+}
+
 function showRouteModal(routeId: string, state: GameState): void {
   const route = ROUTE_DEFS[routeId];
   if (!route) return;
+  if (route.isEndless) {
+    showTreppenModal(route, state);
+    return;
+  }
 
   const biome = getBiomeStyle(route);
   const isCompleted = state.scoreboard.some(s => s.routeId === route.id && s.status === 'victory');
@@ -486,6 +599,12 @@ function bindDungeonEvents(el: HTMLElement): void {
         window.dispatchEvent(new CustomEvent('mc:selectRoute', { detail: { routeId } }));
         navigateTo('team');
       }
+      return;
+    }
+
+    // Endlose Treppe (Eingang über der Karte)
+    if (target.closest('.dmap-treppe') && gameState) {
+      showRouteModal(TREPPE_ROUTE_ID, gameState);
       return;
     }
 

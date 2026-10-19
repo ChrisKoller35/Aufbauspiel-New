@@ -3,7 +3,7 @@
 Christophs Wunsch vom 18.10.2026 (Thread «Magic City: Bestandsaufnahme und Bot-Aufgaben»): eine Geschichte
 einbauen, das Endgame bleibt aber der Dungeon, in dem man **endlos nach oben kämpft** und versucht, auf der
 Rangliste oben zu bleiben. Dieses Paket baut den Weg dorthin: Die Stadt steigt in **7 Stadtstufen** auf, jede
-Stufe erzählt ein Kapitel, die letzte öffnet die endlose Treppe. Die Treppe selbst ist das nächste Paket.
+Stufe erzählt ein Kapitel, die letzte öffnet die endlose Treppe (seit 19.10.2026 im Spiel, siehe `docs/TREPPE.md`).
 
 Code: `src/data/stadtstufen.ts` (Stufen, Kapitel, Herzsteine), `src/systems/Stadtweg.ts` (Regeln),
 `src/ui/screens/StadtwegFenster.ts` (Banner, Fenster, Hinweis), `src/ui/screens/StadtSilhouette.ts` (die Stadt
@@ -93,11 +93,8 @@ Wer schon weit ist, steigt schnell durch die ersten Stufen und bekommt dabei die
 - Die Steuer-Rechnung im Wohnviertel-Fenster nennt den Aufschlag als «+ N % Stadtrecht».
 - Zahlen sind erste Werte; Balancing läuft über Manager-Issue #23.
 
-## Als Nächstes: die endlose Treppe
+## Die endlose Treppe
 
-Christophs Endgame: im Dungeon endlos nach oben kämpfen und oben auf der Rangliste bleiben. Plan:
-- Ab Stufe 7 öffnet sich auf der Dungeon-Karte die Treppe: Stockwerk für Stockwerk, Gegner werden mit jedem
-  Stockwerk stärker, alle paar Stockwerke ein Boss. Die Bestmarke ist das höchste Stockwerk.
-- Rangliste mit Rivalen-Gilden, die selbst weiterklettern (auch während man nicht spielt), damit man dranbleiben
-  muss, um oben zu bleiben. Ohne Server zunächst gespielte Rivalen; eine echte Online-Rangliste wäre ein
-  eigenes Paket.
+Seit 19.10.2026 im Spiel (Teil 1): Ab Stufe 7 führt auf der Dungeon-Karte ein Eingang über dem Vulkankern zur Treppe,
+in der Routenliste steht sie ganz oben, das Banner zeigt die Bestmarke und das Fenster hat den Knopf «Zur Treppe».
+Regeln, Zahlen, Eichung und der Plan für Rivalen und Rangliste: `docs/TREPPE.md`.

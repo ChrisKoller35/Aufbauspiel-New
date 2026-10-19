@@ -68,7 +68,7 @@ function getISOWeek(date: Date): { year: number; week: number } {
 // Konstanten & Pools
 // ---------------------------------------------------------------------------
 
-const ROUTE_IDS = Object.keys(ROUTE_DEFS);
+const ROUTE_IDS = Object.keys(ROUTE_DEFS).filter(id => !ROUTE_DEFS[id].isEndless);
 const DIFFICULTY_IDS = Object.keys(DIFFICULTY_DEFS);   // normal, hard, nightmare, infernal
 const MODIFIER_IDS = Object.keys(MODIFIER_DEFS);
 
