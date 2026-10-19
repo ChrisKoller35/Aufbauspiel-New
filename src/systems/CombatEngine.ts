@@ -8,6 +8,7 @@ import { GearSystem } from './GearSystem';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
+import { treppenEtage } from './Treppe';
 
 /** Check if a unit has a specific active special effect */
 export function hasEffect(unit: CombatUnit, effectId: string): boolean {
@@ -24,7 +25,9 @@ export class CombatEngine {
     const enemies = room.enemies;
     const party = run.party.filter(u => u.hp > 0);
 
-    run.combatLog.push(`── Room ${room.index + 1}: ${room.type === 'boss' ? 'BOSS' : 'Combat'} ──`);
+    run.combatLog.push(run.treppe
+      ? `── Stockwerk ${treppenEtage(run, room.index)}: ${room.type === 'boss' ? 'BOSS' : 'Kampf'} ──`
+      : `── Room ${room.index + 1}: ${room.type === 'boss' ? 'BOSS' : 'Combat'} ──`);
 
     // Initialize round snapshots for animated playback
     run.combatRoundSnapshots = [];
@@ -70,13 +73,15 @@ export class CombatEngine {
         if (isPlayer) {
           targets = enemies.filter(u => u.hp > 0);
         } else if (run.guardianTauntActive) {
-          // Guardian's Spott: redirect attacks to Guardian, but only if alive
-          const guardian = run.party.find(u => u.classId === 'guardian' && u.hp > 0);
-          if (guardian) {
-            targets = [guardian];
+          // Spott: redirect attacks to the taunting hero, but only if alive
+          const taunter = run.party.find(u => u.hp > 0 &&
+            (run.tauntUnitId !== undefined ? u.id === run.tauntUnitId : u.classId === 'guardian'));
+          if (taunter) {
+            targets = [taunter];
           } else {
-            // Guardian died → Spott ends, enemies attack normally
+            // Taunter died → Spott ends, enemies attack normally
             run.guardianTauntActive = false;
+            run.tauntUnitId = undefined;
             targets = party.filter(u => u.hp > 0);
           }
         } else {
@@ -351,8 +356,9 @@ export class CombatEngine {
       });
     }
 
-    // Clear Guardian taunt after combat ends
+    // Clear Spott after combat ends
     run.guardianTauntActive = false;
+    run.tauntUnitId = undefined;
 
     // Award loot from defeated enemies
     for (const enemy of enemies) {
@@ -573,6 +579,7 @@ export class CombatEngine {
 
       // Guardian Taunt Decay (greift in Belagerung nicht, aber Safety)
       run.guardianTauntActive = false;
+      run.tauntUnitId = undefined;
 
       // Snapshot aufzeichnen
       const roundLogLines = run.combatLog.slice(logStartIdx);

@@ -22,7 +22,7 @@ import { EconomySystem } from './systems/EconomySystem';
 import { PeopleSystem } from './systems/PeopleSystem';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
-import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
+import { finalizeExpeditionProgress, ExpeditionProgress, treppeNachNeuladen } from './systems/ExpeditionFinalizer';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { getRouteBauplan } from './data/routes';
@@ -69,6 +69,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // An expedition running at save time cannot be resumed (combat UI state is transient):
   // abort it and return provisions so a new expedition can be started.
+  // On the stairs it counts as fleeing: XP and bosses are booked, the loot of the last rest stays.
+  treppeNachNeuladen(state, expeditionSystem);
   if (expeditionSystem.abortExpedition(state)) {
     console.warn('Unterbrochene Expedition abgebrochen, Proviant zurück ins Lager.');
     saveSystem.save(state);
@@ -470,9 +472,9 @@ document.addEventListener('DOMContentLoaded', () => {
       body += line(treppe.stockwerke === 0 ? 'Kein Stockwerk geschafft'
         : treppe.stockwerke === 1 ? `Stockwerk ${treppe.hoechstes} geschafft`
         : `Stockwerk ${treppe.start} bis ${treppe.hoechstes} geschafft`);
-      body += treppe.neueBestmarke
-        ? line(`Neue Bestmarke: Stockwerk ${treppe.hoechstes}!`, '#c8a227')
-        : line(`Bestmarke: Stockwerk ${Math.max(treppe.besteVorher, treppe.hoechstes)}`, '#9ca3af');
+      const bestmarke = Math.max(treppe.besteVorher, treppe.hoechstes);
+      if (treppe.neueBestmarke) body += line(`Neue Bestmarke: Stockwerk ${treppe.hoechstes}!`, '#c8a227');
+      else if (bestmarke > 0) body += line(`Bestmarke: Stockwerk ${bestmarke}`, '#9ca3af');
       if (treppe.ende === 'patt') body += line('Nach 20 Runden standen die Gegner noch, die Gruppe ist umgekehrt.', '#9ca3af');
       if (treppe.verlorenGold > 0 || treppe.verlorenTeile > 0) {
         const teile = treppe.verlorenTeile > 0

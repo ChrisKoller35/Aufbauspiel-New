@@ -131,8 +131,10 @@ export interface ExpeditionRun {
   airShield?: number;
   /** Maximum Luft (Standard 100 + airBonus von Items) */
   airShieldMax?: number;
-  /** Guardian's Spott ability: when true, all enemy attacks are redirected to the Guardian */
+  /** Spott-Fähigkeit (Guardian, Paladin): when true, all enemy attacks are redirected to the taunting hero */
   guardianTauntActive?: boolean;
+  /** Wer gespottet hat (unit.id). Fehlt bei alten Spielständen → der Guardian */
+  tauntUnitId?: number;
   /** Per-round HP snapshots for animated combat playback (transient, not saved) */
   combatRoundSnapshots?: CombatRoundSnapshot[];
   /** Siege: die Kriegsmaschine dieser Expedition (nicht in party, separater Slot) */

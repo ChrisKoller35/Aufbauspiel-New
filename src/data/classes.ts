@@ -51,7 +51,7 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
         power: 2,          // rounds of taunt
         target: 'self',
         skillType: 'support',
-        description: 'Aktiviert eine laute, grelle Sirene an seiner Rüstung, die alle Feinde zwingt, ihre Angriffe in der nächsten Runde auf ihn zu konzentrieren.',
+        description: 'Aktiviert eine laute, grelle Sirene an seiner Rüstung, die alle Feinde zwingt, im nächsten Kampf nur ihn anzugreifen, solange er steht.',
       },
     ],
     spriteKey: 'HERO_GUARDIAN',
@@ -228,7 +228,7 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
         power: 2,            // 2 rounds of taunt
         target: 'self',
         skillType: 'support',
-        description: 'Hüllt die gesamte Gruppe in eine schützende Licht-Aura, die den erlittenen Gruppenschaden für eine Runde drastisch senkt.',
+        description: 'Ruft ein heiliges Licht auf sich herab, das alle Feinde zwingt, im nächsten Kampf nur ihn anzugreifen, solange er steht.',
       },
     ],
     spriteKey: 'HERO_PALADIN',

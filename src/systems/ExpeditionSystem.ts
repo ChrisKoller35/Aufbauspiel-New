@@ -780,12 +780,24 @@ export class ExpeditionSystem {
         break;
       }
       case 'taunt': {
-        // Guardian's Spott: redirect all enemy attacks to Guardian this combat
+        // Spott: redirect all enemy attacks to the caster this combat
         run.guardianTauntActive = true;
-        result = `${unit.name} wirkt ${skill.name} → Alle Angriffe zielen auf den Guardian!`;
+        run.tauntUnitId = unit.id;
+        result = `${unit.name} wirkt ${skill.name} → Alle Angriffe zielen auf ${unit.name}!`;
         break;
       }
       case 'damage': {
+        if (skill.target === 'all_enemies') {
+          // z.B. Pfeilhagel: trifft jeden lebenden Gegner
+          const aliveEnemies = room.enemies.filter(e => e.hp > 0);
+          for (const e of aliveEnemies) {
+            e.hp -= Math.max(1, Math.floor(Math.max(1, unit.atk - e.def) * skill.power));
+          }
+          result = aliveEnemies.length > 0
+            ? `${unit.name} wirkt ${skill.name} → Alle Gegner erleiden Schaden!`
+            : `${unit.name} wirkt ${skill.name} → Kein Ziel verfügbar.`;
+          break;
+        }
         const enemy = room.enemies.find(e => e.hp > 0);
         if (enemy) {
           const dmg = Math.max(1, Math.floor(Math.max(1, unit.atk - enemy.def) * skill.power));

@@ -20,7 +20,9 @@ Tests: `tests/treppe.test.ts`. Eichung: `npm run treppe-eichung` (`tools/treppeE
 - **Team-Bildschirm:** Bestmarke, Zahl der Aufstiege, die Regeln in drei Zeilen und die Wahl des **Startpunkts**
   (Stockwerk 1, 11, 21 … je nach besiegten Boss-Stockwerken, das höchste ist vorgewählt). Knopf «Aufstieg starten».
 - **Kampf:** Oben steht «Stockwerk N · Abschnitt», der Hintergrund ist das Bild des Gebiets, aus dem die Gegner kommen.
-  Fähigkeiten gelten «1× bis zum nächsten Rastplatz».
+  Fähigkeiten gelten «1× bis zum nächsten Rastplatz». Vor dem Kampf heisst der Rückzug-Knopf «Fliehen» (mit Hinweis,
+  dass die Beute seit dem Rastplatz verloren geht). Während der Kampf abläuft, gibt es ihn auf der Treppe nicht: Der
+  Kampf ist dann schon entschieden, Fliehen würde nur Beute kosten.
 - **Rastplatz** (nach Stockwerk 5, 10, 15 …): Zustand des Teams, was sicher im Gepäck ist, eine Vorschau auf die
   nächsten 5 Stockwerke (mit Boss-Stockwerk) und die Wahl «Heimkehren» oder «Weiter nach oben».
 - **Ende:** Die Zusammenfassung heisst «Heimgekehrt», «Niederlage», «Geflohen» oder «Unentschieden» und zeigt die
@@ -40,8 +42,12 @@ Tests: `tests/treppe.test.ts`. Eichung: `npm run treppe-eichung` (`tools/treppeE
 - Die Bestmarke zählt sofort, wenn ein Stockwerk geschafft ist (auch wenn der Lauf danach verloren geht). Jede neue
   Bestmarke kommt mit Zeitpunkt in `treppe.verlauf`.
 - Startpunkte: Stockwerk 1 oder direkt über einem schon geschafften Boss-Stockwerk (11, 21, 31 …).
-- Wird das Spiel mitten im Lauf neu geladen, gilt das wie Heimkehren am letzten Rastplatz: Die sichere Beute kommt ins
-  Lager.
+- Wird das Spiel mitten im Lauf neu geladen, gilt das wie Fliehen: Erfahrung, Punkte, besiegte Bosse und Statistik
+  werden verbucht (`treppeNachNeuladen()` in `ExpeditionFinalizer.ts`), die Beute vom letzten Rastplatz kommt ins Lager
+  (`abortExpedition()`).
+- Treppen-Bosse sind echte Bosse: Sie kommen ins Monsterbuch und zählen für Gildenrang, Statistik und die besiegten
+  Bosse der Dungeon-Karte (auch für Routen, die man noch nicht geschafft hat). Das ist Absicht, das Endgame soll
+  überall weiterbringen. Baupläne gibt es auf der Treppe keine.
 - Die Treppe ist keine normale Route: Sie kommt nicht in der Wochen-Herausforderung vor, `startExpedition` lehnt sie ab
   (`startTreppe` startet sie).
 
@@ -118,6 +124,16 @@ stärkere Startklassen): `npm run treppe-eichung`, dann die Tabelle hier und, fa
 - Ein Rückzug konnte eine schon verlorene oder gewonnene Expedition nachträglich zum Rückzug machen (`retreat()` ändert
   jetzt nur noch laufende Expeditionen).
 - Gegnername «Aschegollem» → «Aschegolem».
+- Pfeilhagel (Ranger) traf vor dem Kampf nur einen Gegner. Fähigkeiten mit Ziel «alle Gegner» treffen jetzt alle
+  (`useAbilityInPreview`).
+- Göttlicher Schutz (Paladin) lenkte die Angriffe auf einen Guardian in der Gruppe, ohne Guardian wirkte er gar nicht.
+  Jetzt zieht jeder Spott die Angriffe auf den Helden, der ihn wirkt (`run.tauntUnitId`, ältere Spielstände: der
+  Guardian). Die Beschreibungen von Spott und Göttlicher Schutz sagen jetzt, was passiert.
+- Das Kampfprotokoll nennt auf der Treppe das Stockwerk statt der Raumnummer.
+- Die Zusammenfassung zeigt keine «Bestmarke: Stockwerk 0» mehr, wenn noch kein Stockwerk geschafft ist.
+- Kampf am PC (ab 701 px Breite): Seit die Fähigkeiten zu sehen sind, wurden die oberen Heldenkarten abgeschnitten.
+  Fähigkeiten und Vorräte stehen jetzt kompakt nebeneinander, und `CombatScreen.passeKartenAn()` wählt die Bildgrösse
+  je Spalte so, dass alle Karten ganz zu sehen sind (höchstens 230 px wie bisher).
 
 ## Plan: wie es weitergeht
 

@@ -5,7 +5,7 @@ import { ExpeditionRun } from '../src/models/ExpeditionRun';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
-import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
+import { finalizeExpeditionProgress, treppeNachNeuladen } from '../src/systems/ExpeditionFinalizer';
 import { steigeAuf } from '../src/systems/Stadtweg';
 import { treppeOffen, treppeStand, besteEtage, treppenStarts, etageGeschafft } from '../src/systems/Treppe';
 import {
@@ -277,5 +277,39 @@ describe('Ein Lauf', () => {
     expect(system.abortExpedition(state)).toBe(true);
     expect(state.globalStock.gold).toBe(goldVorher + sicherGold);
     expect(state.activeExpedition).toBeNull();
+  });
+
+  test('Neu laden zählt wie Fliehen: Erfahrung, Bosse und Statistik werden verbucht', () => {
+    const { state, system, held } = magischeStadt();
+    const run = system.startTreppe(state, [held.id], 1)!;
+    bisZumRastplatz(state, system, run);
+    system.resolveCheckpoint(run, false);
+    bisZumRastplatz(state, system, run);
+    system.resolveCheckpoint(run, false);
+    system.processCurrentRoom(state);
+    const sicherGold = run.treppe!.sicher.gold;
+    expect(run.goldEarned).toBeGreaterThan(sicherGold);
+    const goldVorher = state.globalStock.gold ?? 0;
+
+    // Wie beim Laden: Der Spielstand kommt aus dem LocalStorage
+    const geladen: GameState = JSON.parse(JSON.stringify(state));
+    const fortschritt = treppeNachNeuladen(geladen, system)!;
+    expect(fortschritt.entry).toMatchObject({ routeId: TREPPE_ROUTE_ID, status: 'retreat', bossesKilled: 1 });
+    expect(fortschritt.xp[0].xp).toBeGreaterThan(0);
+    expect(geladen.statistics.total_bosses_killed).toBe(1);
+    expect(geladen.bestiarium.defeated).toContain(abschnittFuer(10).boss);
+    expect(system.abortExpedition(geladen)).toBe(true);
+    expect(geladen.globalStock.gold).toBe(goldVorher + sicherGold);
+    expect(geladen.activeExpedition).toBeNull();
+    // Ohne Treppen-Lauf passiert beim Laden nichts
+    expect(treppeNachNeuladen(geladen, system)).toBeNull();
+  });
+
+  test('das Kampfprotokoll nennt das Stockwerk', () => {
+    const { state, system, held } = magischeStadt();
+    etageGeschafft(state, 10);
+    const run = system.startTreppe(state, [held.id], 11)!;
+    system.processCurrentRoom(state);
+    expect(run.combatLog).toContain('── Stockwerk 11: Kampf ──');
   });
 });

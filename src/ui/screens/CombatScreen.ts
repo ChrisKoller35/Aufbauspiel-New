@@ -507,6 +507,11 @@ export class CombatScreen {
     const btn = document.createElement('button');
     btn.className = 'mc-btn mc-co-retreat-btn';
     btn.textContent = 'Rückzug';
+    if (this.expRun?.treppe) {
+      // Treppe: Wer flieht, behält nur die Beute vom letzten Rastplatz
+      btn.textContent = 'Fliehen';
+      btn.title = 'Verliert die Beute seit dem letzten Rastplatz';
+    }
     btn.addEventListener('click', () => {
       this.hide();
       this.onRetreat?.();
@@ -1109,8 +1114,6 @@ export class CombatScreen {
     const btnRow = document.createElement('div');
     btnRow.className = 'mc-co-btn-row';
 
-    const retreatBtn = this.createRetreatButton();
-
     const btn = document.createElement('button');
     btn.className = 'mc-btn mc-co-continue-btn';
     btn.textContent = 'Nächste Runde →';
@@ -1119,7 +1122,9 @@ export class CombatScreen {
       onContinue();
     });
 
-    btnRow.appendChild(retreatBtn);
+    // Der Kampf ist schon entschieden: Auf der Treppe würde Fliehen hier nur
+    // die Beute seit dem letzten Rastplatz kosten, also kein Knopf dafür.
+    if (!this.expRun?.treppe) btnRow.appendChild(this.createRetreatButton());
     btnRow.appendChild(btn);
     this.actionsEl.appendChild(btnRow);
   }
