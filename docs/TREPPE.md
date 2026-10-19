@@ -89,15 +89,16 @@ z. B. «Uralter Treant II».
 
 ## Eichung (19.10.2026)
 
-`npm run treppe-eichung` lässt drei Musterteams über das echte `ExpeditionSystem` klettern (je 8 Läufe, an jedem
-Rastplatz weiter) und kämpft einzelne Stockwerke mit vollem Leben (je 20 Kämpfe). Fähigkeiten nutzt die Probe nicht,
-echte Spieler kommen damit etwas höher.
+`npm run treppe-eichung` lässt drei Musterteams (`src/data/musterteams.ts`, Ausrüstung nach den Regeln des Spiels)
+über das echte `ExpeditionSystem` klettern (je 8 Läufe, an jedem Rastplatz weiter) und kämpft einzelne Stockwerke mit
+vollem Leben (je 20 Kämpfe). Fähigkeiten nutzt die Probe nicht, echte Spieler kommen damit etwas höher. Das Team «Gut»
+ist auch das Team im Probespiel.
 
 | Team | Einzelne Stockwerke | Aufstieg ab 1 | ab 11 | ab 21 | ab 31 |
 |---|---|---|---|---|---|
-| Frisch (Stufe 10, Ausrüstung Stufe 3, 3 Helden) | bis 15 immer, Boss 20 nie, 25 zu 30 % | 9-13 | 13-16 | 20-21 | 31 |
-| Gut (Stufe 12, Ausrüstung 3/4, 4 Helden) | bis 25 immer, Boss 30 nie | 18-23 | 18-19 | 22-23 | 31 |
-| Stark (Stufe 15, Ausrüstung 4, 4 Helden) | bis 35 fast immer, Boss 40 nie | 19-23 | 19-23 | 24-25 | 31-33 |
+| Frisch (Stufe 10, Ausrüstung Stufe 3, 3 Helden) | bis 15 immer, Boss 20 nie, 25 zu 30 % | 13-16 | 13-16 | 20-21 | 31 |
+| Gut (Stufe 12, Ausrüstung 3/4, 4 Helden) | bis 25 immer, Boss 30 nie | 18-19 | 18-19 | 22-23 | 31 |
+| Stark (Stufe 15, Ausrüstung 4, 4 Helden) | bis 35 fast immer, Boss 40 nie | 19-23 | 19-23 | 24-26 | 31-33 |
 
 So gelesen: Einzelne Stockwerke sind lange machbar, ein Lauf endet, weil sich der Schaden zwischen den Rastplätzen
 summiert, und bei starken Teams oft als Unentschieden (die Leben der Gegner wachsen schneller als der Schaden der
@@ -107,6 +108,16 @@ weitergeht, braucht es Teil 3 (dauerhafte Verstärkung, siehe Plan).
 
 Neu eichen, wenn sich Kampf, Klassen oder Ausrüstung ändern, zuerst nach Manager-Issue #23 (Mindestschaden,
 stärkere Startklassen): `npm run treppe-eichung`, dann die Tabelle hier und, falls nötig, `STAERKE` anpassen.
+
+## Probespiel
+
+`localhost:5173/?probe` öffnet ein eigenes Spiel, um die Treppe ohne Stadtstufe 7 im richtigen Spiel auszuprobieren:
+Magische Stadt (Stufe 7, alle Herzsteine und Kapitel), vier Helden aus dem Musterteam «Gut» (Guardian, Berserker,
+Ranger, Assassine auf Stufe 12 mit Ausrüstung Stufe 3/4, sie kommen etwa bis Stockwerk 18-23), dazu Gold, Holz, Stein,
+Brot und Heiltränke. Es speichert unter `magic_city_probe` (`nutzeProbespiel()` in `SaveSystem.ts` stellt alle
+SaveSystem-Instanzen um), der richtige Spielstand `magic_city_save` bleibt unberührt. Im Hauptmenü steht unter dem
+Titel «Probespiel · zum richtigen Spiel». Von vorn: `localhost:5173/?probe=neu` (löscht nur das Probespiel).
+Code: `src/systems/Probespiel.ts`, `src/ui/components/ProbespielHinweis.ts`.
 
 ## Spielstand
 
@@ -131,6 +142,8 @@ stärkere Startklassen): `npm run treppe-eichung`, dann die Tabelle hier und, fa
   Guardian). Die Beschreibungen von Spott und Göttlicher Schutz sagen jetzt, was passiert.
 - Das Kampfprotokoll nennt auf der Treppe das Stockwerk statt der Raumnummer.
 - Die Zusammenfassung zeigt keine «Bestmarke: Stockwerk 0» mehr, wenn noch kein Stockwerk geschafft ist.
+- Tempo-Boni der Ausrüstung wurden abgerundet: +0,1 wurde 0, −0,05 wurde −1 (der Held war im Kampf immer zuletzt
+  dran). `GearSystem.getEffectiveStats` rechnet jetzt mit Bruchteilen.
 - Kampf am PC (ab 701 px Breite): Seit die Fähigkeiten zu sehen sind, wurden die oberen Heldenkarten abgeschnitten.
   Fähigkeiten und Vorräte stehen jetzt kompakt nebeneinander, und `CombatScreen.passeKartenAn()` wählt die Bildgrösse
   je Spalte so, dass alle Karten ganz zu sehen sind (höchstens 230 px wie bisher).

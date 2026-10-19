@@ -1,7 +1,8 @@
 import './ui/html/magic-city.css';
 import './ui/html/treppe.css';
 import { GameState, createNewGameState } from './models/GameState';
-import { SaveSystem } from './systems/SaveSystem';
+import { SaveSystem, nutzeProbespiel } from './systems/SaveSystem';
+import { istProbespiel, probespielNeu, richteProbespielEin } from './systems/Probespiel';
 import { renderMainMenu } from './ui/screens/MainMenuScreen';
 import { renderHeroesScreen, initHeroesScreen } from './ui/screens/HeroesScreen';
 import { renderBuildingsScreen, initBuildingsScreen } from './ui/screens/BuildingsScreen';
@@ -32,7 +33,14 @@ document.addEventListener('DOMContentLoaded', () => {
   const app = document.getElementById('app');
   if (!app) return;
 
+  // localhost:5173/?probe: eigenes Spiel zum Ausprobieren der Treppe, eigener Speicherplatz
+  const probe = istProbespiel(location.search);
+  if (probe) nutzeProbespiel();
   const saveSystem = new SaveSystem();
+  if (probe && probespielNeu(location.search)) {
+    saveSystem.deleteSave();
+    history.replaceState(null, '', `${location.pathname}?probe`);
+  }
 
   // Load or create game state
   let state: GameState;
@@ -55,6 +63,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isNewGame) {
     placeStartingLayout(state);
     createStartingCitizens(state);
+    if (probe) richteProbespielEin(state);
   }
 
   // Initialize game systems

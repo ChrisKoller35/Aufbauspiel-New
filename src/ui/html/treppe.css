@@ -61,6 +61,14 @@
   border: 2px solid var(--gold); border-radius: 75px 75px 8px 8px; overflow: hidden;
 }
 
+/* ── Probespiel: Hinweis im Hauptmenü (ui/components/ProbespielHinweis.ts) ── */
+.mc-probe-hinweis {
+  display: inline-block; margin: 8px 0 0; padding: 3px 12px;
+  border: 1px solid #7c3aed; border-radius: 12px; background: rgba(76, 42, 133, .35);
+  color: #e9d5ff; font-size: 0.78rem; letter-spacing: .5px;
+}
+.mc-probe-hinweis a { color: var(--gold); }
+
 @media (prefers-reduced-motion: reduce) {
   .trk-tor, .trk-schein, .trk-rune, .trk-stern { animation: none; }
 }
