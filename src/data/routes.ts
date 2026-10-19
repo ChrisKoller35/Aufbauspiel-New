@@ -135,7 +135,8 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     rooms: 8,
     encounters: [
       { type: 'combat', enemies: ['cave_bat', 'cave_bat', 'cave_bat'] },
-      { type: 'combat', enemies: ['cave_goblin', 'cave_slime'] },
+      // Kristallkäfer: garantiert 1 Kristallsplitter schon in der ersten Höhle
+      { type: 'combat', enemies: ['cave_goblin', 'crystal_beetle'] },
       { type: 'checkpoint' },
       { type: 'rest', healPercent: 20 },
       { type: 'combat', enemies: ['cave_spider_queen', 'cave_goblin'] },
@@ -388,15 +389,16 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     tier: 2,
     rooms: 9,
     encounters: [
-      { type: 'combat', enemies: ['forest_wolf', 'forest_wisp'] },
+      // Verfluchte Irrlichter tragen Mondkraut (loot_haunted_common), nie zwei im selben Kampf
+      { type: 'combat', enemies: ['forest_wolf', 'cursed_wisp'] },
       { type: 'combat', enemies: ['forest_shaman', 'forest_spider'] },
       { type: 'checkpoint' },
       { type: 'hazard', damage: 8 },
-      { type: 'combat', enemies: ['forest_bear', 'forest_wisp', 'forest_wisp'] },
+      { type: 'combat', enemies: ['forest_bear', 'cursed_wisp', 'forest_wisp'] },
       { type: 'rest', healPercent: 20 },
       { type: 'combat', enemies: ['forest_shaman', 'forest_wolf', 'forest_wolf'] },
-      { type: 'find', findGold: 12, findItems: [{ itemId: 'herb_green', qty: 1 }] },
-      { type: 'combat', enemies: ['forest_bear', 'forest_shaman', 'forest_wisp'] },
+      { type: 'find', findGold: 12, findItems: [{ itemId: 'herb_moonwort', qty: 2 }] },
+      { type: 'combat', enemies: ['forest_bear', 'forest_shaman', 'cursed_wisp'] },
     ],
     bossId: null,
     recommendedLevel: 'Iron gear',

@@ -169,6 +169,8 @@ export const RECIPE_DEFS: Record<string, RecipeDef> = {
   },
 
   // --- Herb Garden T2 Recipes ---
+  // Wasser ist keine Zutat: requirements.waterSupplied (Brunnen in Reichweite) genügt.
+  // Seltene Kräuter kommen aus der Beute ihres Gebiets (docs/BALANCING.md).
   RCP_STRENGTH_POTION: {
     id: 'RCP_STRENGTH_POTION',
     name: 'Krafttrank brauen',
@@ -179,7 +181,7 @@ export const RECIPE_DEFS: Record<string, RecipeDef> = {
   RCP_MANA_POTION: {
     id: 'RCP_MANA_POTION',
     name: 'Manatrank brauen',
-    inputs: { herb_shimmer_shroom: 1, water: 1 },
+    inputs: { herb_shimmer_shroom: 1 },
     outputs: { potion_mana: 1 },
     cycleTimeSec: 30,
     requirements: { waterSupplied: true },
@@ -194,7 +196,7 @@ export const RECIPE_DEFS: Record<string, RecipeDef> = {
   RCP_TITAN_BREW: {
     id: 'RCP_TITAN_BREW',
     name: 'Titan-Gebräu brauen',
-    inputs: { herb_bone_dust: 1, water: 1 },
+    inputs: { herb_bone_dust: 1 },
     outputs: { potion_titan: 1 },
     cycleTimeSec: 45,
     requirements: { waterSupplied: true },
@@ -202,7 +204,7 @@ export const RECIPE_DEFS: Record<string, RecipeDef> = {
   RCP_SPEED_POTION: {
     id: 'RCP_SPEED_POTION',
     name: 'Schnelligkeitstrank brauen',
-    inputs: { herb_moonwort: 2, water: 1 },
+    inputs: { herb_moonwort: 2 },
     outputs: { potion_speed: 1 },
     cycleTimeSec: 40,
     requirements: { waterSupplied: true },
