@@ -114,9 +114,10 @@ stärkere Startklassen): `npm run treppe-eichung`, dann die Tabelle hier und, fa
 `localhost:5173/?probe` öffnet ein eigenes Spiel, um die Treppe ohne Stadtstufe 7 im richtigen Spiel auszuprobieren:
 Magische Stadt (Stufe 7, alle Herzsteine und Kapitel), vier Helden aus dem Musterteam «Gut» (Guardian, Berserker,
 Ranger, Assassine auf Stufe 12 mit Ausrüstung Stufe 3/4, sie kommen etwa bis Stockwerk 18-23; angeheuert wie im
-Heldenhaus, die sechs Bewohner bleiben Arbeiter), dazu Gold, Holz, Stein, Brot und Heiltränke. Es speichert unter `magic_city_probe` (`nutzeProbespiel()` in `SaveSystem.ts` stellt alle
-SaveSystem-Instanzen um), der richtige Spielstand `magic_city_save` bleibt unberührt. Im Hauptmenü steht unter dem
-Titel «Probespiel · zum richtigen Spiel». Von vorn: `localhost:5173/?probe=neu` (löscht nur das Probespiel).
+Heldenhaus, die sechs Bewohner bleiben Arbeiter), dazu Gold, Holz, Stein, Brot und Heiltränke. Es speichert unter
+`magic_city_probe` (`nutzeProbespiel()` in `SaveSystem.ts` stellt alle SaveSystem-Instanzen um), der richtige
+Spielstand `magic_city_save` bleibt unberührt. Im Hauptmenü steht unter dem Titel «Probespiel · zum richtigen Spiel».
+Von vorn: `localhost:5173/?probe=neu` (löscht nur das Probespiel).
 Code: `src/systems/Probespiel.ts`, `src/ui/components/ProbespielHinweis.ts`.
 
 ## Spielstand
