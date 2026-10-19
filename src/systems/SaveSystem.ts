@@ -8,7 +8,7 @@ import { entferneGebaeude, vereinigeDoppelte } from './Ausbau';
 
 const SAVE_KEY = 'magic_city_save';
 const BACKUP_KEY = 'magic_city_save_backup';
-const CURRENT_VERSION = 21;
+const CURRENT_VERSION = 22;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 export class SaveSystem {
@@ -369,6 +369,16 @@ export class SaveSystem {
     // mit entsprechender Stufe verschmolzen (Arbeiter frei, Waren ins Lager).
     const verschmolzen = vereinigeDoppelte(state);
     if (verschmolzen > 0) console.log('Doppelte Gebäude zu Stufen verschmolzen:', verschmolzen);
+
+    // SaveVersion 22: Auftragsliste der Werkstätten. Ein erteilter, noch nicht
+    // gestarteter Auftrag (pendingCraft) wird zum ersten Eintrag der Liste.
+    for (const b of state.buildings ?? []) {
+      if (!Array.isArray(b.auftraege)) b.auftraege = [];
+      if (BUILDING_DEFS[b.typeId]?.manualCraft && b.pendingCraft && !b.producing && b.activeRecipeId
+          && b.auftraege.length === 0) {
+        b.auftraege.push(b.activeRecipeId);
+      }
+    }
 
     state.saveVersion = CURRENT_VERSION;
   }

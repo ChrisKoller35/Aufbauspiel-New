@@ -4,6 +4,36 @@
 
 import { GameState } from '../../models/GameState';
 import { ScreenId } from '../ScreenRouter';
+import { BUILDING_DEFS } from '../../data/buildings';
+import { beiAuftragFertig } from '../../systems/Auftraege';
+
+const HINWEIS_MS = 4000;
+let hinweisTimer: number | null = null;
+
+/** Kurzer Hinweis in jeder sichtbaren Kopfzeile, verschwindet von selbst (kein Popup). */
+export function zeigeKopfHinweis(text: string): void {
+  if (typeof document === 'undefined') return;
+  const hdrs = document.querySelectorAll('.hdr');
+  for (let i = 0; i < hdrs.length; i++) {
+    const hdr = hdrs[i] as HTMLElement;
+    let note = hdr.querySelector('.hdr-note') as HTMLElement | null;
+    if (!note) {
+      note = document.createElement('span');
+      note.className = 'hdr-note';
+      hdr.insertBefore(note, hdr.querySelector('.hdr-space'));
+    }
+    note.textContent = text;
+  }
+  if (hinweisTimer !== null) window.clearTimeout(hinweisTimer);
+  hinweisTimer = window.setTimeout(() => {
+    document.querySelectorAll('.hdr-note').forEach(n => n.remove());
+    hinweisTimer = null;
+  }, HINWEIS_MS);
+}
+
+beiAuftragFertig((b, recipe) => {
+  zeigeKopfHinweis(`✔ ${recipe.name} fertig (${BUILDING_DEFS[b.typeId]?.name ?? b.typeId})`);
+});
 
 /**
  * Renders the standard header bar with logo, optional back button, and resource display.

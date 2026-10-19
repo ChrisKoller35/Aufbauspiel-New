@@ -39,8 +39,21 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'leather_armor', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'wolf_fang_necklace', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'hunter_bow', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 6, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 5, max: 10 },
+  },
+  // Geisterwald: nur das Verfluchte Irrlicht nutzt diese Tabelle (Mondkraut).
+  loot_haunted_common: {
+    id: 'loot_haunted_common',
+    entries: [
+      { itemId: 'herb_moonwort', weight: 40, minQty: 1, maxQty: 2 },
+      { itemId: 'herb_green', weight: 20, minQty: 1, maxQty: 2 },
+      { itemId: 'healing_potion', weight: 15, minQty: 1, maxQty: 1 },
+      { itemId: 'wood', weight: 15, minQty: 1, maxQty: 3 },
+      { itemId: 'wolf_fang_necklace', weight: 10, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 2, max: 5 },
   },
   loot_cave_common: {
     id: 'loot_cave_common',
@@ -49,8 +62,10 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'iron_scrap', weight: 22, minQty: 1, maxQty: 2 },
       { itemId: 'healing_potion', weight: 13, minQty: 1, maxQty: 1 },
       { itemId: 'bread', weight: 13, minQty: 1, maxQty: 1 },
+      { itemId: 'herb_shimmer_shroom', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'iron_sword', weight: 8, minQty: 1, maxQty: 1 },
       { itemId: 'iron_shield', weight: 7, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 6, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 3, max: 7 },
   },
@@ -59,11 +74,20 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     entries: [
       { itemId: 'iron_scrap', weight: 25, minQty: 2, maxQty: 4 },
       { itemId: 'healing_potion', weight: 20, minQty: 1, maxQty: 2 },
+      { itemId: 'crystal_shard', weight: 15, minQty: 1, maxQty: 2 },
+      { itemId: 'herb_shimmer_shroom', weight: 12, minQty: 1, maxQty: 2 },
       { itemId: 'iron_sword', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'iron_shield', weight: 10, minQty: 1, maxQty: 1 },
-      { itemId: 'crystal_shard', weight: 5, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 8, max: 15 },
+  },
+  // Kristallkäfer (Tiefe Höhle, Spinnenhöhle, Kristallminen): jeder Käfer lässt sicher einen Splitter fallen.
+  loot_crystal_beetle: {
+    id: 'loot_crystal_beetle',
+    entries: [
+      { itemId: 'crystal_shard', weight: 100, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 3, max: 7 },
   },
   loot_boss_treant: {
     id: 'loot_boss_treant',
@@ -74,7 +98,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'healing_potion', weight: 15, minQty: 2, maxQty: 3 },
       { itemId: 'oak_staff', weight: 15, minQty: 1, maxQty: 1 },
       { itemId: 'talisman_fragment', weight: 10, minQty: 1, maxQty: 1 },
-      { itemId: 'crystal_shard', weight: 8, minQty: 1, maxQty: 2 },
+      { itemId: 'crystal_shard', weight: 12, minQty: 1, maxQty: 2 },
       { itemId: 'mystic_plate_armor', weight: 5, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 20, max: 35 },
@@ -85,7 +109,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     entries: [
       { itemId: 'iron_scrap', weight: 20, minQty: 5, maxQty: 10 },
       { itemId: 'stone', weight: 15, minQty: 5, maxQty: 8 },
-      { itemId: 'crystal_shard', weight: 15, minQty: 2, maxQty: 4 },
+      { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 4 },
       { itemId: 'iron_sword', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'iron_shield', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'talisman_fragment', weight: 8, minQty: 1, maxQty: 2 },
@@ -104,6 +128,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'gold', weight: 13, minQty: 2, maxQty: 5 },
       { itemId: 'iron_scrap', weight: 13, minQty: 1, maxQty: 2 },
       { itemId: 'grain', weight: 13, minQty: 1, maxQty: 3 },
+      { itemId: 'herb_swamp_blossom', weight: 15, minQty: 1, maxQty: 2 },
       { itemId: 'stone', weight: 8, minQty: 1, maxQty: 2 },
       { itemId: 'spider_silk_robe', weight: 8, minQty: 1, maxQty: 1 },
       { itemId: 'leather_armor', weight: 5, minQty: 1, maxQty: 1 },
@@ -113,6 +138,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_swamp_rare: {
     id: 'loot_swamp_rare',
     entries: [
+      { itemId: 'herb_swamp_blossom', weight: 15, minQty: 1, maxQty: 2 },
       { itemId: 'talisman_fragment', weight: 25, minQty: 1, maxQty: 2 },
       { itemId: 'crystal_shard', weight: 20, minQty: 1, maxQty: 2 },
       { itemId: 'healing_potion', weight: 20, minQty: 1, maxQty: 2 },
@@ -130,6 +156,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'gold', weight: 17, minQty: 3, maxQty: 7 },
       { itemId: 'crystal_shard', weight: 13, minQty: 1, maxQty: 2 },
       { itemId: 'talisman_fragment', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'herb_bone_dust', weight: 15, minQty: 1, maxQty: 2 },
       { itemId: 'herb_green', weight: 8, minQty: 1, maxQty: 2 },
       { itemId: 'steel_sword', weight: 9, minQty: 1, maxQty: 1 },
       { itemId: 'crystal_pendant', weight: 7, minQty: 1, maxQty: 1 },
@@ -139,6 +166,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_ruins_rare: {
     id: 'loot_ruins_rare',
     entries: [
+      { itemId: 'herb_bone_dust', weight: 12, minQty: 1, maxQty: 3 },
       { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 4 },
       { itemId: 'talisman_fragment', weight: 20, minQty: 1, maxQty: 3 },
       { itemId: 'steel_sword', weight: 15, minQty: 1, maxQty: 1 },
@@ -156,6 +184,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'gold', weight: 16, minQty: 4, maxQty: 8 },
       { itemId: 'crystal_shard', weight: 13, minQty: 1, maxQty: 2 },
       { itemId: 'talisman_fragment', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'herb_fire_root', weight: 15, minQty: 1, maxQty: 2 },
       { itemId: 'herb_green', weight: 8, minQty: 1, maxQty: 2 },
       { itemId: 'steel_armor', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'longbow', weight: 7, minQty: 1, maxQty: 1 },
@@ -166,6 +195,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_volcano_rare: {
     id: 'loot_volcano_rare',
     entries: [
+      { itemId: 'herb_fire_root', weight: 12, minQty: 1, maxQty: 3 },
       { itemId: 'crystal_shard', weight: 20, minQty: 2, maxQty: 5 },
       { itemId: 'talisman_fragment', weight: 18, minQty: 2, maxQty: 4 },
       { itemId: 'iron_scrap', weight: 15, minQty: 3, maxQty: 6 },
@@ -186,6 +216,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 4 },
       { itemId: 'talisman_fragment', weight: 20, minQty: 2, maxQty: 3 },
       { itemId: 'herb_green', weight: 15, minQty: 3, maxQty: 6 },
+      { itemId: 'herb_swamp_blossom', weight: 15, minQty: 2, maxQty: 4 },
       { itemId: 'iron_scrap', weight: 10, minQty: 4, maxQty: 8 },
       { itemId: 'hydra_venomfang', weight: 5, minQty: 1, maxQty: 1 },
     ],
@@ -224,6 +255,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'iron_scrap', weight: 20, minQty: 4, maxQty: 8 },
       { itemId: 'steel_sword', weight: 15, minQty: 1, maxQty: 1 },
       { itemId: 'steel_armor', weight: 15, minQty: 1, maxQty: 1 },
+      { itemId: 'herb_bone_dust', weight: 10, minQty: 2, maxQty: 3 },
       { itemId: 'fallen_hunters_bow', weight: 5, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 35, max: 55 },
@@ -250,6 +282,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'steel_armor', weight: 15, minQty: 1, maxQty: 1 },
       { itemId: 'steel_sword', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'longbow', weight: 10, minQty: 1, maxQty: 1 },
+      { itemId: 'herb_fire_root', weight: 10, minQty: 2, maxQty: 4 },
       { itemId: 'wyrm_scale_shield', weight: 5, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 45, max: 70 },

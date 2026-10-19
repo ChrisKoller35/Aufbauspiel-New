@@ -5,7 +5,7 @@
 import { navigateTo } from '../ScreenRouter';
 import { GameState } from '../../models/GameState';
 import { GuildFighter } from '../../models/GuildRoster';
-import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP } from '../../data/routes';
+import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons } from '../../data/routes';
 import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
@@ -90,27 +90,32 @@ export function renderExpeditionsScreen(container: HTMLElement): void {
 
 // ── Screen 1: Expedition List ──
 
-function renderExpeditionList(container: HTMLElement): void {
-  const el = document.createElement('div');
-  el.id = 's-expeditions';
-  el.className = 'screen';
+/** Same rule as the dungeon map: available, or already won once (replay). */
+function isRoutePlayable(route: RouteDef): boolean {
+  return isRouteAvailable(route, gameState) || isRouteCompleted(route.id, gameState);
+}
 
+function buildExpeditionListHTML(): string {
   const routes = Object.values(ROUTE_DEFS);
   const cards = routes.map(route => {
     const biome = getBiomeTag(route);
+    const locked = !isRoutePlayable(route);
+    const footer = locked
+      ? getRouteLockReasons(route, gameState).map(r => `<span class="exp-lock">🔒 ${r}</span>`).join('')
+      : `<span class="exp-rew">Belohnung: ${routeRewards(route)}</span>`;
     return `
-      <div class="exp-card" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
+      <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
         <div class="exp-card-info">
           <span class="exp-tag ${biome.cls}">${biome.label}</span>
           <span class="exp-name">${route.name}</span>
           <span class="exp-star">${difficultyStars(route.tier)}</span>
           <span class="exp-blurb">${routeDescription(route)}</span>
-          <span class="exp-rew">Belohnung: ${routeRewards(route)}</span>
+          ${footer}
         </div>
       </div>`;
   }).join('');
 
-  el.innerHTML = `
+  return `
     ${renderHeader(gameState, 'main', 'ROUTENÜBERSICHT')}
     <div style="display:flex;gap:8px;padding:0 16px;flex-wrap:wrap">
       <button class="btn-dungeon-map" data-nav="dungeon">\uD83D\uDDFA\uFE0F Dungeonkarte</button>
@@ -118,15 +123,22 @@ function renderExpeditionList(container: HTMLElement): void {
     </div>
     <div class="content"><div class="exp-grid">${cards}</div></div>
   `;
+}
 
-  // Click handler: card → team screen
+function renderExpeditionList(container: HTMLElement): void {
+  const el = document.createElement('div');
+  el.id = 's-expeditions';
+  el.className = 'screen';
+  el.innerHTML = buildExpeditionListHTML();
+
+  // Click handler: card → team screen (delegated, survives innerHTML rebuilds)
   el.addEventListener('click', (e: MouseEvent) => {
     const back = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
     if (back) {
       navigateTo(back.dataset.nav as any);
       return;
     }
-    const card = (e.target as HTMLElement).closest<HTMLElement>('.exp-card');
+    const card = (e.target as HTMLElement).closest<HTMLElement>('.exp-card:not(.locked)');
     if (card && card.dataset.route) {
       selectedRouteId = card.dataset.route;
       selectedHeroes = [];
@@ -150,6 +162,13 @@ function renderTeamScreen(container: HTMLElement): void {
   el.innerHTML = buildTeamHTML();
   bindTeamEvents(el);  // bind ONCE — listener stays through innerHTML rebuilds
   container.appendChild(el);
+}
+
+/** Rebuild both expedition screens with current state (delegated listeners persist). */
+export function refreshExpeditionsScreens(): void {
+  const list = document.getElementById('s-expeditions');
+  if (list) list.innerHTML = buildExpeditionListHTML();
+  refreshTeamScreen();
 }
 
 function refreshTeamScreen(): void {
@@ -307,6 +326,8 @@ function bindTeamEvents(el: HTMLElement): void {
     // Start expedition button
     if (target.closest('.btn-go')) {
       if (selectedHeroes.length === 0) return;
+      const route = selectedRouteId ? ROUTE_DEFS[selectedRouteId] : null;
+      if (!route || !isRoutePlayable(route)) return;
       // Dispatch custom event for game logic to handle
       window.dispatchEvent(new CustomEvent('mc:startExpedition', {
         detail: {

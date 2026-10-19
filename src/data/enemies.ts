@@ -131,7 +131,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     id: 'cursed_wisp', name: 'Verfluchtes Irrlicht', role: 'support',
     hp: 60, atk: 2, def: 0, spd: 1.3, critChance: 0.05, critMult: 1.5,
     skills: [{ id: 'heal_ally', name: 'Verbündete heilen', cooldown: 3, effectType: 'heal', power: 24, target: 'ally_lowest_hp' }],
-    lootTableId: 'loot_forest_common', xpReward: 4, goldReward: 3, spriteKey: 'ENEMY_CURSED_WISP',
+    lootTableId: 'loot_haunted_common', xpReward: 4, goldReward: 3, spriteKey: 'ENEMY_CURSED_WISP',
   },
   bandit_raider: {
     id: 'bandit_raider', name: 'Bandit', role: 'melee',
@@ -186,7 +186,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     id: 'crystal_beetle', name: 'Kristallkäfer', role: 'melee',
     hp: 90, atk: 5, def: 3, spd: 1.1, critChance: 0.08, critMult: 1.6,
     skills: [{ id: 'crystal_charge', name: 'Kristallstoß', cooldown: 3, effectType: 'damage', power: 1.5, target: 'player' }],
-    lootTableId: 'loot_cave_common', xpReward: 5, goldReward: 4, spriteKey: 'ENEMY_CRYSTAL_BEETLE',
+    lootTableId: 'loot_crystal_beetle', xpReward: 5, goldReward: 4, spriteKey: 'ENEMY_CRYSTAL_BEETLE',
   },
   deep_crawler: {
     id: 'deep_crawler', name: 'Tiefenkriecher', role: 'melee',

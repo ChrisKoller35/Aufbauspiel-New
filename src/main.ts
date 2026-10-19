@@ -4,13 +4,13 @@ import { SaveSystem } from './systems/SaveSystem';
 import { renderMainMenu } from './ui/screens/MainMenuScreen';
 import { renderHeroesScreen, initHeroesScreen } from './ui/screens/HeroesScreen';
 import { renderBuildingsScreen, initBuildingsScreen } from './ui/screens/BuildingsScreen';
-import { renderExpeditionsScreen, initExpeditionsScreen, setSelectedRoute } from './ui/screens/ExpeditionsScreen';
+import { renderExpeditionsScreen, initExpeditionsScreen, setSelectedRoute, refreshExpeditionsScreens } from './ui/screens/ExpeditionsScreen';
 import { renderRankingScreen, initRankingScreen } from './ui/screens/RankingScreen';
 import { renderBestiariumScreen, initBestiariumScreen } from './ui/screens/BestiariumScreen';
 import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/AchievementsScreen';
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
-import { navigateTo, initScreenStyles } from './ui/ScreenRouter';
+import { navigateTo, initScreenStyles, ScreenId } from './ui/ScreenRouter';
 import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from './systems/ExpeditionSystem';
 import { EncounterChoice } from './models/ExpeditionRun';
 import { ITEM_DEFS } from './data/items';
@@ -21,7 +21,7 @@ import { EconomySystem } from './systems/EconomySystem';
 import { PeopleSystem } from './systems/PeopleSystem';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
-import { ScoreboardEntry } from './models/ScoreboardEntry';
+import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { getRouteBauplan } from './data/routes';
@@ -86,6 +86,48 @@ document.addEventListener('DOMContentLoaded', () => {
   initBestiariumScreen(state);
   initAchievementsScreen(state);
   initDungeonMapScreen(state);
+
+  // Redraw the target screen on every navigation so numbers (XP, gold, rank, unlocks) are current.
+  // Registered before the screens render, so screen-own mc:navigate listeners
+  // (e.g. the building mind map) already see the new DOM.
+  const screenRerender: Partial<Record<ScreenId, () => void>> = {
+    main: () => replaceScreen('s-main', () => renderMainMenu(app, state)),
+    heroes: () => replaceScreen('s-heroes', () => renderHeroesScreen(app)),
+    buildings: () => replaceScreen('s-buildings', () => renderBuildingsScreen(app)),
+    ranking: () => replaceScreen('s-ranking', () => renderRankingScreen(app)),
+    bestiarium: () => replaceScreen('s-bestiarium', () => renderBestiariumScreen(app)),
+    achievements: () => replaceScreen('s-achievements', () => renderAchievementsScreen(app)),
+    dungeon: () => replaceScreen('s-dungeon', () => renderDungeonMapScreen(app)),
+    // List + team screen keep their delegated listeners and the current team selection
+    expeditions: refreshExpeditionsScreens,
+    team: refreshExpeditionsScreens,
+  };
+
+  /** Re-render a screen in place: same DOM position, keeps the visibility set by the router. */
+  function replaceScreen(id: string, render: () => void): void {
+    const old = document.getElementById(id);
+    if (!old) return;
+    const style = old.style.cssText;
+    const next = old.nextSibling;
+    old.remove();
+    try {
+      render();
+    } finally {
+      // On failure keep the old screen instead of leaving a blank page
+      const fresh = document.getElementById(id) ?? old;
+      app!.insertBefore(fresh, next);
+      fresh.style.cssText = style;
+    }
+  }
+
+  window.addEventListener('mc:navigate', ((e: CustomEvent) => {
+    const screen = e.detail?.screen as ScreenId;
+    try {
+      screenRerender[screen]?.();
+    } catch (err) {
+      console.error(`✗ ${screen} re-render failed:`, err);
+    }
+  }) as EventListener);
 
   // Render all screens into #app
   app.innerHTML = '';
@@ -331,35 +373,13 @@ document.addEventListener('DOMContentLoaded', () => {
     const goldEarned = run.goldEarned ?? 0;
     const hasLoot = goldEarned > 0 || Object.values(loot).some(q => q > 0);
 
-    // Create scoreboard entry
-    const entry: ScoreboardEntry = {
-      routeId: run.routeId,
-      score: run.score ?? 0,
-      difficulty: run.difficulty ?? 'normal',
-      modifier: run.activeModifier ?? null,
-      status: run.status === 'victory' ? 'victory' : run.status === 'defeat' ? 'defeat' : 'retreat',
-      partyClasses: run.party.map(u => u.classId ?? ''),
-      timestamp: Date.now(),
-      day: state.day,
-      enemiesKilled: run.enemiesKilled ?? 0,
-      bossesKilled: run.bossesKilled ?? 0,
-    };
-    if (!state.scoreboard) state.scoreboard = [];
-    state.scoreboard.push(entry);
+    // XP, score + scoreboard, statistics, guild rank, bestiarium, achievements
+    // (before returning provisions: leftover provisions count towards the score)
+    const progress = finalizeExpeditionProgress(state, run, expeditionSystem);
+    const { entry } = progress;
 
     // Return unused provisions to stock (gifted ones stay with the guild)
     expeditionSystem.returnProvisions(state, run);
-
-    // Track statistics
-    state.statistics['total_enemies_killed'] = (state.statistics['total_enemies_killed'] ?? 0) + (run.enemiesKilled ?? 0);
-    state.statistics['total_bosses_killed'] = (state.statistics['total_bosses_killed'] ?? 0) + (run.bossesKilled ?? 0);
-    if (run.status === 'victory') {
-      state.statistics['total_victories'] = (state.statistics['total_victories'] ?? 0) + 1;
-      const allAlive = run.party.every(u => u.hp > 0);
-      if (allAlive) {
-        state.statistics['total_flawless_victories'] = (state.statistics['total_flawless_victories'] ?? 0) + 1;
-      }
-    }
 
     // Release fighters from expedition (CombatUnit.id === GuildFighter.id)
     for (const unit of run.party) {
@@ -381,15 +401,16 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
       if (neuerBauplan) state.erhalteneBauplaene.push(neuerBauplan);
-      state.statistics['total_gold_earned'] = (state.statistics['total_gold_earned'] ?? 0) + goldEarned;
 
       // Save
       saveSystem.save(state);
-
-      // Reset expedition screen state and navigate back
-      initExpeditionsScreen(state);
-      navigateTo('expeditions');
       console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
+
+      showExpeditionSummary(progress, () => {
+        // Reset expedition screen state and navigate back
+        initExpeditionsScreen(state);
+        navigateTo('expeditions');
+      });
     };
 
     // Show chest reveal animation if there's loot
@@ -398,6 +419,29 @@ document.addEventListener('DOMContentLoaded', () => {
     } else {
       applyLootAndFinish();
     }
+  }
+
+  /** Result dialog after the chest: score, hero XP and everything newly unlocked. */
+  function showExpeditionSummary(progress: ExpeditionProgress, onClose: () => void): void {
+    const { entry, xp, rankUp, newClasses, newAchievements } = progress;
+    const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
+    const line = (text: string, color = '#e5e7eb'): string =>
+      `<div style="color:${color};font-size:.82rem;margin-bottom:6px;">${text}</div>`;
+
+    let body = line(`Punkte: ${entry.score.toLocaleString('de')}`, '#c8a227');
+    for (const h of xp) {
+      body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}`, h.levelUps > 0 ? '#4ade80' : '#9ca3af');
+    }
+    if (rankUp) {
+      body += line(`${rankUp.title}!`, '#c8a227');
+      for (const u of rankUp.unlocks) body += line(`Freigeschaltet: ${u}`, '#9ca3af');
+    }
+    for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
+    for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
+
+    showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>`, [
+      { label: 'WEITER', primary: true, onClick: onClose },
+    ]);
   }
 
   // ─── Keyboard Shortcuts ──────────────────────────────────────

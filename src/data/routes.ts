@@ -1,4 +1,5 @@
 import { EncounterType } from '../models/ExpeditionRun';
+import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
 import { LOOT_TABLE_DEFS } from './lootTables';
 
@@ -134,7 +135,8 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     rooms: 8,
     encounters: [
       { type: 'combat', enemies: ['cave_bat', 'cave_bat', 'cave_bat'] },
-      { type: 'combat', enemies: ['cave_goblin', 'cave_slime'] },
+      // Kristallkäfer: garantiert 1 Kristallsplitter schon in der ersten Höhle
+      { type: 'combat', enemies: ['cave_goblin', 'crystal_beetle'] },
       { type: 'checkpoint' },
       { type: 'rest', healPercent: 20 },
       { type: 'combat', enemies: ['cave_spider_queen', 'cave_goblin'] },
@@ -387,15 +389,16 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     tier: 2,
     rooms: 9,
     encounters: [
-      { type: 'combat', enemies: ['forest_wolf', 'forest_wisp'] },
+      // Verfluchte Irrlichter tragen Mondkraut (loot_haunted_common), nie zwei im selben Kampf
+      { type: 'combat', enemies: ['forest_wolf', 'cursed_wisp'] },
       { type: 'combat', enemies: ['forest_shaman', 'forest_spider'] },
       { type: 'checkpoint' },
       { type: 'hazard', damage: 8 },
-      { type: 'combat', enemies: ['forest_bear', 'forest_wisp', 'forest_wisp'] },
+      { type: 'combat', enemies: ['forest_bear', 'cursed_wisp', 'forest_wisp'] },
       { type: 'rest', healPercent: 20 },
       { type: 'combat', enemies: ['forest_shaman', 'forest_wolf', 'forest_wolf'] },
-      { type: 'find', findGold: 12, findItems: [{ itemId: 'herb_green', qty: 1 }] },
-      { type: 'combat', enemies: ['forest_bear', 'forest_shaman', 'forest_wisp'] },
+      { type: 'find', findGold: 12, findItems: [{ itemId: 'herb_moonwort', qty: 2 }] },
+      { type: 'combat', enemies: ['forest_bear', 'forest_shaman', 'cursed_wisp'] },
     ],
     bossId: null,
     recommendedLevel: 'Iron gear',
@@ -632,4 +635,30 @@ export function findBauplanRoute(bauplanId: string): RouteDef | null {
 export function getBauplanHinweis(bauplanId: string): string {
   const route = findBauplanRoute(bauplanId);
   return `Bauplan: ${route ? route.name : 'unbekannter Dungeon'}`;
+}
+
+// ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
+
+type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard'>;
+
+/** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt. */
+export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean {
+  return getRouteLockReasons(route, state).length === 0;
+}
+
+/** Mindestens ein Sieg auf dieser Route (abgeschlossene Routen bleiben wiederholbar). */
+export function isRouteCompleted(routeId: string, state: RouteProgress): boolean {
+  return (state.scoreboard ?? []).some(s => s.routeId === routeId && s.status === 'victory');
+}
+
+/** Gründe, warum die Route gesperrt ist; leer = verfügbar. */
+export function getRouteLockReasons(route: RouteDef, state: RouteProgress): string[] {
+  const reasons: string[] = [];
+  if ((state.guildStats?.rank ?? 1) < route.tier) reasons.push(`Gildenrang ${route.tier} benötigt`);
+  const defeated = state.guildStats?.bossesDefeatedIds ?? [];
+  const missing = (route.unlockCondition?.bossesDefeated ?? []).filter(b => !defeated.includes(b));
+  if (missing.length > 0) {
+    reasons.push(`Besiege: ${missing.map(b => ENEMY_DEFS[b]?.name ?? b).join(', ')}`);
+  }
+  return reasons;
 }

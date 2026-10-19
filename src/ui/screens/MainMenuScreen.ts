@@ -7,6 +7,9 @@ import { GameState } from '../../models/GameState';
 import { renderHeader } from './HeaderRenderer';
 import { stadtBannerHtml, bindeStadtBanner } from './StadtwegFenster';
 
+/** Chosen background; survives re-renders of the main menu on navigation. */
+let chosenBg = 1;
+
 /**
  * Renders the main menu screen into the given app container.
  * Expects a GameState reference so resource values are real.
@@ -74,6 +77,7 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
   const switcherEl = el.querySelector('#bg-switcher') as HTMLElement;
 
   function setBg(num: number): void {
+    chosenBg = num;
     const buttons = Array.from(switcherEl.querySelectorAll('.bg-btn'));
     for (const btn of buttons) {
       btn.classList.toggle('active', btn.getAttribute('data-bg') === String(num));
@@ -85,8 +89,8 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
     }
   }
 
-  // Default: BG 1
-  setBg(1);
+  // Default: BG 1, afterwards the last choice
+  setBg(chosenBg);
 
   switcherEl.addEventListener('click', (e: MouseEvent) => {
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.bg-btn');
