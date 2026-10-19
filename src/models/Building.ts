@@ -22,6 +22,7 @@ export interface BuildingInstance {
   upgradeId: string | null;      // which upgrade is in progress
   eventPaused: boolean;          // true = paused by storm event
   pendingCraft: boolean;         // true = player triggered manual craft, start next cycle
+  auftraege: string[];           // waiting orders (recipe IDs), see systems/Auftraege.ts
 }
 
 let nextBuildingId = 1;
@@ -56,6 +57,7 @@ export function createBuildingInstance(
     upgradeId: null,
     eventPaused: false,
     pendingCraft: false,
+    auftraege: [],
   };
 }
 

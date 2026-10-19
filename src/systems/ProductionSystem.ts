@@ -3,6 +3,7 @@ import { BUILDING_DEFS } from '../data/buildings';
 import { RECIPE_DEFS } from '../data/recipes';
 import { CityEventSystem } from './CityEventSystem';
 import { zyklusSekunden } from './Ausbau';
+import { auftragGestartet, hatAuftragsliste, meldeAuftragFertig, naechsterAuftrag } from './Auftraege';
 
 /**
  * Handles recipe-based production for all buildings.
@@ -49,6 +50,11 @@ export class ProductionSystem {
           }
           building.producing = false;
           building.productionTimer = 0;
+          // Auftragsliste: Rückmeldung und nächsten Auftrag einstellen (systems/Auftraege.ts)
+          if (hatAuftragsliste(building)) {
+            meldeAuftragFertig(building, recipe);
+            naechsterAuftrag(building);
+          }
         }
       } else {
         // Try to start a new production cycle
@@ -59,6 +65,7 @@ export class ProductionSystem {
           building.productionTimer = zyklusSekunden(building, recipe);
           building.producing = true;
           building.pendingCraft = false;
+          auftragGestartet(building);
         }
       }
     }

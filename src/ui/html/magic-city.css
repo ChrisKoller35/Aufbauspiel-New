@@ -753,6 +753,17 @@ text.pk-kl.an { fill: var(--gl); }
 .ws-rcp-hd .cico { font-size: 1.2rem; }
 .ws-rcp-nm { font-family: 'Cinzel', serif; font-size: 0.8rem; }
 .btn-craft:disabled { opacity: .5; cursor: not-allowed; }
+/* Auftragsliste (Werkstätten mit Aufträgen per Hand) */
+.ws-rest { font-family: inherit; font-size: 0.7rem; color: var(--mut); margin-left: 6px; }
+.ws-auf { background: var(--s3); border: 1px solid var(--bdr); border-radius: 6px; padding: 6px 10px; }
+.ws-auf.on { border-color: var(--gold); }
+.ws-cancel { margin-left: auto; background: transparent; border: 1px solid var(--bdr); color: #f87171; border-radius: 4px; padding: 0 7px; cursor: pointer; }
+.ws-cancel:hover { border-color: #f87171; }
+.ws-rcp.ws-rcp-auf { cursor: default; }
+.ws-rcp-auf .ws-add { width: auto; margin: 0 0 0 6px; padding: 3px 9px; font-size: 0.65rem; }
+.craft-lauf { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 9px; }
+.hdr-note { font-size: 0.75rem; color: #4ade80; margin-left: 12px; animation: hdr-note-in .3s ease-out; }
+@keyframes hdr-note-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 
 /* ── Ranking Table ── */
 .rtable { width: 100%; border-collapse: separate; border-spacing: 0 3px; }
