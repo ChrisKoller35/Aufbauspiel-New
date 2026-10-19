@@ -29,24 +29,21 @@ export function probespielNeu(search: string): boolean {
 
 /**
  * Macht aus einem neuen Spiel (Startgebäude und Bewohner schon gesetzt) das
- * Probespiel: Stadtstufe 7 mit allen Herzsteinen und gelesenen Kapiteln, vier
- * Bewohner werden die Helden des Musterteams «Gut», dazu Vorräte.
+ * Probespiel: Stadtstufe 7 mit allen Herzsteinen und gelesenen Kapiteln, die
+ * vier Helden des Musterteams «Gut», dazu Vorräte.
  */
 export function richteProbespielEin(state: GameState): void {
   state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };
 
-  const freie = state.citizens.filter(c => c.status === 'IDLE' && c.fighterId == null);
-  MUSTER_TEAMS.gut.helden.forEach((muster, i) => {
-    const citizen = freie[i];
-    if (!citizen) return;
-    const fighter = createGuildFighter(citizen.id, muster.classId, muster.name, musterWerte(muster));
+  // Wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire): Helden sind keine
+  // Bewohner (citizenId 0), alle Bewohner bleiben Arbeiter.
+  for (const muster of MUSTER_TEAMS.gut.helden) {
+    const fighter = createGuildFighter(0, muster.classId, muster.name, musterWerte(muster));
     fighter.level = muster.stufe;
     fighter.xp = totalXpForLevel(muster.stufe);
     fighter.gear = { ...muster.gear };
     state.fighters.push(fighter);
-    citizen.status = 'GUILD_FIGHTER';
-    citizen.fighterId = fighter.id;
-  });
+  }
 
   for (const [itemId, qty] of Object.entries(PROBE_VORRAT)) {
     state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;

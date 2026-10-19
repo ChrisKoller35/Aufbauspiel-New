@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createNewGameState, GameState } from '../models/GameState';
 import { placeStartingLayout, createStartingCitizens } from '../scenes/CityStartingLayout';
 import { istProbespiel, probespielNeu, richteProbespielEin } from './Probespiel';
@@ -32,6 +32,11 @@ function speicher(): Storage {
 }
 
 describe('Probespiel', () => {
+  afterEach(() => {
+    nutzeProbespiel(false);
+    vi.unstubAllGlobals();
+  });
+
   it('startet nur mit ?probe in der Adresse', () => {
     expect(istProbespiel('?probe')).toBe(true);
     expect(istProbespiel('?probe=1&x=2')).toBe(true);
@@ -46,14 +51,22 @@ describe('Probespiel', () => {
     expect(state.stadtweg?.stufe).toBe(7);
     expect(treppeOffen(state)).toBe(true);
     expect(state.fighters.map(f => f.classId)).toEqual(MUSTER_TEAMS.gut.helden.map(h => h.classId));
+    expect(new Set(state.fighters.map(f => f.id)).size).toBe(4);
     for (const f of state.fighters) {
       expect(f.level).toBe(12);
+      expect(f.citizenId).toBe(0);
       for (const itemId of Object.values(f.gear)) {
         if (itemId) expect(ITEM_DEFS[itemId], itemId).toBeTruthy();
       }
-      const citizen = state.citizens.find(c => c.fighterId === f.id);
-      expect(citizen?.status).toBe('GUILD_FIGHTER');
-      expect(citizen?.id).toBe(f.citizenId);
+    }
+  });
+
+  it('Helden sind wie im Heldenhaus keine Bewohner: alle sechs Bewohner bleiben frei für die Arbeit', () => {
+    const state = probespiel();
+    expect(state.citizens).toHaveLength(6);
+    for (const c of state.citizens) {
+      expect(c.status).toBe('IDLE');
+      expect(c.fighterId).toBeNull();
     }
   });
 
@@ -80,6 +93,5 @@ describe('Probespiel', () => {
     expect(localStorage.getItem('magic_city_save')).toBe('richtig');
     expect(localStorage.getItem('magic_city_save_backup')).toBeNull();
     expect(new SaveSystem().load()?.stadtweg?.stufe).toBe(7);
-    vi.unstubAllGlobals();
   });
 });

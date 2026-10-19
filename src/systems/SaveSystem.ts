@@ -15,11 +15,11 @@ const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 /**
  * Probespiel (localhost:5173/?probe): Ab jetzt laden und speichern alle
  * SaveSystem-Instanzen auf einem eigenen Platz, der richtige Spielstand bleibt
- * unberührt. Vor dem ersten Laden aufrufen (main.ts).
+ * unberührt. Vor dem ersten Laden aufrufen (main.ts). false schaltet zurück (Tests).
  */
-export function nutzeProbespiel(): void {
-  saveKey = 'magic_city_probe';
-  backupKey = 'magic_city_probe_backup';
+export function nutzeProbespiel(aktiv = true): void {
+  saveKey = aktiv ? 'magic_city_probe' : 'magic_city_save';
+  backupKey = aktiv ? 'magic_city_probe_backup' : 'magic_city_save_backup';
 }
 
 export class SaveSystem {
