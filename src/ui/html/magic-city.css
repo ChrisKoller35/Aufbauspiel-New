@@ -1257,6 +1257,30 @@ text.pk-kl.an { fill: var(--gl); }
 .mc-co-item-qty { font-family: 'Cinzel', serif; font-size: 0.7rem; color: #c8a227; }
 .mc-co-use-btn { font-size: 0.62rem; padding: 3px 8px; letter-spacing: 1px; }
 
+/* Am PC: Die Karten passen sich dem Platz an (Grösse aus CombatScreen.passeKartenAn),
+   Fähigkeiten und Vorräte stehen kompakt nebeneinander, damit das Kampffeld gross bleibt */
+@media (min-width: 701px) {
+  .mc-co-col { justify-content: safe center; align-content: safe center; }
+  /* Breite ohne Übergang, sonst misst passeKartenAn eine halb geänderte Karte */
+  .mc-co-col > .mc-co-unit {
+    width: calc(var(--mc-co-bild, 230px) + 30px);
+    transition-property: opacity, filter, border-color, box-shadow, transform, background-color;
+  }
+  .mc-co-col > .mc-co-unit .mc-co-sprite,
+  .mc-co-col > .mc-co-unit .mc-co-sprite-fallback { width: var(--mc-co-bild, 230px); height: var(--mc-co-bild, 230px); }
+  /* Gegnerfähigkeiten: eigene Zeile unter den Gegnern, auf dunklem Grund lesbar */
+  .mc-co-col > :not(.mc-co-unit) {
+    flex-basis: 100%; max-width: 560px; padding: 0 12px 6px;
+    background: rgba(12, 18, 32, 0.82); border: 1px solid #242040; border-radius: 6px;
+  }
+  .mc-co-col > :not(.mc-co-unit) > .mc-co-section-divider { border-top: none; margin-top: 0; }
+  .mc-co-preview-strip { display: flex; flex-wrap: wrap; align-items: flex-start; column-gap: 28px; }
+  .mc-co-preview-strip > .mc-co-abilities-area { flex: 1 1 400px; }
+  .mc-co-preview-strip > .mc-co-items-area { flex: 0 1 auto; }
+  .mc-co-ability-col { flex-direction: row; flex-wrap: wrap; align-items: center; }
+  .mc-co-ability-hero { flex-basis: 100%; }
+}
+
 /* Animations */
 @keyframes mc-co-slide-right {
   0%   { transform: translateX(0); }

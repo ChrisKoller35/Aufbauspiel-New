@@ -17,6 +17,12 @@ import { getLogLineColor } from '../../rendering/Colors';
 import { abschnittFuer } from '../../data/treppe';
 import { treppenEtage } from '../../systems/Treppe';
 
+/** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
+const PC_BREITE = '(min-width: 701px)';
+/** Bildgrösse der Einheiten am PC: so gross wie Platz ist, zwischen diesen Werten. */
+const BILD_MAX = 230;
+const BILD_MIN = 84;
+
 type CombatPhase = 'preview' | 'animating' | 'result';
 
 interface UnitEntry {
@@ -100,6 +106,12 @@ export class CombatScreen {
     this.el = root;
 
     this.buildDOM();
+    let geplant = false;
+    window.addEventListener('resize', () => {
+      if (geplant || !this.isVisible()) return;
+      geplant = true;
+      requestAnimationFrame(() => { geplant = false; this.passeKartenAn(); });
+    });
   }
 
   setExpeditionContext(system: ExpeditionSystem, state: GameState): void {
@@ -262,6 +274,7 @@ export class CombatScreen {
       this.el.style.backgroundImage = 'none';
       this.el.style.backgroundColor = '#060810';
     }
+    this.passeKartenAn();
   }
 
   hide(): void {
@@ -276,6 +289,48 @@ export class CombatScreen {
   isVisible(): boolean {
     const screenEl = document.getElementById('s-combat');
     return screenEl ? screenEl.style.display !== 'none' : false;
+  }
+
+  /**
+   * Am PC: Bilder der Einheiten so gross wie möglich (höchstens 230 px), aber so,
+   * dass alle Karten einer Spalte ganz sichtbar sind, auch in kleinen Fenstern und
+   * mit Fähigkeiten und Vorräten unter dem Kampffeld. Die Grösse kommt als
+   * `--mc-co-bild` an die Spalte (magic-city.css); sie bleibt während des Kampfes gleich.
+   */
+  private passeKartenAn(): void {
+    if (!window.matchMedia(PC_BREITE).matches) return;
+    for (const col of [this.partyColEl, this.enemyColEl]) {
+      const karten = Array.from(col.children).filter((k): k is HTMLElement => k.classList.contains('mc-co-unit'));
+      if (karten.length === 0 || col.clientHeight === 0) continue;
+      col.style.removeProperty('--mc-co-bild');
+      const stil = getComputedStyle(col);
+      const abstand = parseFloat(stil.rowGap) || 10;
+      const breite = col.clientWidth - parseFloat(stil.paddingLeft) - parseFloat(stil.paddingRight);
+      let hoehe = col.clientHeight - parseFloat(stil.paddingTop) - parseFloat(stil.paddingBottom);
+      // Andere Kästen (Gegnerfähigkeiten) stehen in einer eigenen Zeile darunter
+      for (const k of Array.from(col.children) as HTMLElement[]) {
+        if (!karten.includes(k)) hoehe -= k.offsetHeight + abstand;
+      }
+      // Was die Karte um das Bild herum braucht (Rand, Name, Werte, Leben)
+      const bild = karten[0].querySelector<HTMLElement>('.mc-co-sprite, .mc-co-sprite-fallback');
+      const randBreite = bild ? karten[0].offsetWidth - bild.offsetWidth : 30;
+      const randHoehe = bild ? karten[0].offsetHeight - bild.offsetHeight : 92;
+      // Beste Aufteilung in Spalten und Reihen suchen
+      let groesse = BILD_MIN;
+      for (let spalten = 1; spalten <= karten.length; spalten++) {
+        const reihen = Math.ceil(karten.length / spalten);
+        const proKarteBreit = Math.floor((breite - (spalten - 1) * abstand) / spalten) - randBreite;
+        const proKarteHoch = Math.floor((hoehe - (reihen - 1) * abstand) / reihen) - randHoehe;
+        groesse = Math.max(groesse, Math.min(proKarteBreit, proKarteHoch));
+      }
+      groesse = Math.min(BILD_MAX, groesse);
+      col.style.setProperty('--mc-co-bild', `${groesse}px`);
+      // Bricht Text bei kleinen Karten um, wird die Karte höher: nachmessen
+      for (let i = 0; i < 12 && groesse > BILD_MIN && col.scrollHeight > col.clientHeight + 1; i++) {
+        groesse = Math.max(BILD_MIN, groesse - 8);
+        col.style.setProperty('--mc-co-bild', `${groesse}px`);
+      }
+    }
   }
 
   /** No-op: HTML panels are always screen-space. */
