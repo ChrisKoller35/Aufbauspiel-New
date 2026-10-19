@@ -10,6 +10,9 @@ import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
 import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
+import { TREPPE_ROUTE_ID, BOSS_ALLE, RAST_ALLE } from '../../data/treppe';
+import { treppeOffen, treppeStand, treppenStarts } from '../../systems/Treppe';
+import { treppenKunst } from '../components/TreppenKunst';
 
 const buildingUpgradeSystem = new BuildingUpgradeSystem();
 
@@ -19,6 +22,8 @@ let gameState: GameState;
 let selectedRouteId: string | null = null;
 let selectedHeroes: GuildFighter[] = [];
 let provisions: Record<string, number> = {};
+/** Endlose Treppe: gewählter Startpunkt (1, 11, 21 …). */
+let treppenStart = 1;
 
 // ── Helpers ──
 
@@ -74,11 +79,17 @@ export function initExpeditionsScreen(state: GameState): void {
 
 /** Set route from external source (e.g. Dungeon Map) and refresh team screen. */
 export function setSelectedRoute(routeId: string): void {
+  selectRoute(routeId);
+  refreshTeamScreen();
+}
+
+function selectRoute(routeId: string): void {
   selectedRouteId = routeId;
   selectedHeroes = [];
   provisions = {};
   PROVISION_ITEMS.forEach(id => { provisions[id] = 0; });
-  refreshTeamScreen();
+  // Treppe: am höchsten freien Startpunkt weitermachen
+  treppenStart = routeId === TREPPE_ROUTE_ID ? Math.max(...treppenStarts(gameState)) : 1;
 }
 
 export function renderExpeditionsScreen(container: HTMLElement): void {
@@ -95,8 +106,31 @@ function isRoutePlayable(route: RouteDef): boolean {
   return isRouteAvailable(route, gameState) || isRouteCompleted(route.id, gameState);
 }
 
+/** Karte der endlosen Treppe: offen ganz oben, sonst als Ausblick am Ende der Liste. */
+function treppenKarte(offen: boolean): string {
+  const route = ROUTE_DEFS[TREPPE_ROUTE_ID];
+  const stand = treppeStand(gameState);
+  const footer = !offen
+    ? getRouteLockReasons(route, gameState).map(r => `<span class="exp-lock">🔒 ${r}</span>`).join('')
+    : stand && stand.besteEtage > 0
+      ? `<span class="exp-rew">Bestmarke: Stockwerk ${stand.besteEtage}</span>`
+      : '<span class="exp-rew">Noch kein Stockwerk geschafft</span>';
+  return `
+      <div class="exp-card tr-karte${offen ? '' : ' locked'}" data-route="${route.id}">
+        ${treppenKunst()}
+        <div class="exp-card-info">
+          <span class="exp-tag tag-treppe">Endgame</span>
+          <span class="exp-name">${route.name}</span>
+          <span class="exp-blurb">Endlos nach oben: jedes ${BOSS_ALLE}. Stockwerk ein Boss, nach jedem ${RAST_ALLE}. ein Rastplatz</span>
+          ${footer}
+        </div>
+      </div>`;
+}
+
 function buildExpeditionListHTML(): string {
-  const routes = Object.values(ROUTE_DEFS);
+  const routes = Object.values(ROUTE_DEFS).filter(route => !route.isEndless);
+  const treppeIstOffen = treppeOffen(gameState);
+  const treppe = treppenKarte(treppeIstOffen);
   const cards = routes.map(route => {
     const biome = getBiomeTag(route);
     const locked = !isRoutePlayable(route);
@@ -121,7 +155,7 @@ function buildExpeditionListHTML(): string {
       <button class="btn-dungeon-map" data-nav="dungeon">\uD83D\uDDFA\uFE0F Dungeonkarte</button>
       <button class="btn-dungeon-map" data-nav="bestiarium">\uD83D\uDCD6 Monsterbuch</button>
     </div>
-    <div class="content"><div class="exp-grid">${cards}</div></div>
+    <div class="content"><div class="exp-grid">${treppeIstOffen ? treppe : ''}${cards}${treppeIstOffen ? '' : treppe}</div></div>
   `;
 }
 
@@ -140,10 +174,7 @@ function renderExpeditionList(container: HTMLElement): void {
     }
     const card = (e.target as HTMLElement).closest<HTMLElement>('.exp-card:not(.locked)');
     if (card && card.dataset.route) {
-      selectedRouteId = card.dataset.route;
-      selectedHeroes = [];
-      provisions = {};
-      PROVISION_ITEMS.forEach(id => { provisions[id] = 0; });
+      selectRoute(card.dataset.route);
       refreshTeamScreen();
       navigateTo('team');
     }
@@ -238,6 +269,8 @@ function buildTeamHTML(): string {
       </div>`;
   }).join('') || '<div class="hsm-empty">Keine Helden verfügbar</div>';
 
+  const isTreppe = route?.isEndless === true;
+
   // Provision panel
   const provRows = PROVISION_ITEMS.map(itemId => {
     const def = ITEM_DEFS[itemId];
@@ -255,7 +288,7 @@ function buildTeamHTML(): string {
 
   return `
     ${renderHeader(gameState, 'expeditions', routeName)}
-    ${recLevel ? `<div class="exp-rec">Empfohlen: ${recLevel}</div>` : ''}
+    ${isTreppe ? treppenInfoHTML() : recLevel ? `<div class="exp-rec">Empfohlen: ${recLevel}</div>` : ''}
     <div class="team-wrap">
       <div class="team-left">
         <div class="lbl" style="margin-bottom:8px">Dein Team</div>
@@ -264,12 +297,38 @@ function buildTeamHTML(): string {
         <div class="exp-heroes">${heroListHTML}</div>
       </div>
       <div class="prov">
+        ${isTreppe ? treppenStartHTML() : ''}
         <div class="prov-hd">Proviant</div>
         ${provRows}
-        <button class="btn-go">EXPEDITION STARTEN</button>
+        <button class="btn-go">${isTreppe ? 'AUFSTIEG STARTEN' : 'EXPEDITION STARTEN'}</button>
       </div>
     </div>
   `;
+}
+
+/** Bestmarke und die Regeln der Treppe in einem Satz je Regel. */
+function treppenInfoHTML(): string {
+  const stand = treppeStand(gameState);
+  const beste = stand?.besteEtage ?? 0;
+  return `
+    <div class="tr-info">
+      <span class="tr-bestmarke">${beste > 0 ? `Bestmarke: Stockwerk ${beste}` : 'Noch kein Stockwerk geschafft'}${stand && stand.laeufe > 0 ? ` · ${stand.laeufe} ${stand.laeufe === 1 ? 'Aufstieg' : 'Aufstiege'}` : ''}</span>
+      <span class="tr-regel">Jedes Stockwerk ist ein Kampf und etwas schwerer als das letzte, jedes ${BOSS_ALLE}. hat einen Boss.</span>
+      <span class="tr-regel">Nach jedem ${RAST_ALLE}. Stockwerk kommt ein Rastplatz: Das Team erholt sich, Gefallene stehen wieder auf, und die Beute ist sicher.</span>
+      <span class="tr-regel">Wer fällt, flieht oder einen Kampf nicht in 20 Runden gewinnt, verliert die Beute seit dem letzten Rastplatz.</span>
+    </div>`;
+}
+
+/** Startpunkte: ganz unten oder über jedem schon besiegten Boss-Stockwerk. */
+function treppenStartHTML(): string {
+  const starts = treppenStarts(gameState);
+  if (!starts.includes(treppenStart)) treppenStart = Math.max(...starts);
+  const knoepfe = starts.map(etage => `
+        <button class="tr-start${etage === treppenStart ? ' on' : ''}" data-tr-start="${etage}">Stockwerk ${etage}</button>`).join('');
+  return `
+        <div class="prov-hd">Startpunkt</div>
+        <div class="tr-starts">${knoepfe}</div>
+        ${starts.length === 1 ? `<div class="tr-start-hinweis">Ab Stockwerk ${BOSS_ALLE + 1} kannst du später direkt einsteigen, wenn der Boss auf Stockwerk ${BOSS_ALLE} besiegt ist.</div>` : ''}`;
 }
 
 function bindTeamEvents(el: HTMLElement): void {
@@ -308,6 +367,14 @@ function bindTeamEvents(el: HTMLElement): void {
       return;
     }
 
+    // Treppe: Startpunkt wählen
+    const startBtn = target.closest<HTMLElement>('.tr-start[data-tr-start]');
+    if (startBtn) {
+      treppenStart = Number(startBtn.dataset.trStart);
+      refreshTeamScreen();
+      return;
+    }
+
     // Provision +/- buttons
     const provBtn = target.closest<HTMLElement>('.prbtn[data-prov-id]');
     if (provBtn) {
@@ -334,6 +401,7 @@ function bindTeamEvents(el: HTMLElement): void {
           routeId: selectedRouteId,
           heroes: selectedHeroes.map(h => h.id),
           provisions: { ...provisions },
+          startEtage: route.isEndless ? treppenStart : undefined,
         },
       }));
       return;

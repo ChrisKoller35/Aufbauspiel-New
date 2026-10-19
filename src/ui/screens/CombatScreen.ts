@@ -14,6 +14,8 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getLogLineColor } from '../../rendering/Colors';
+import { abschnittFuer } from '../../data/treppe';
+import { treppenEtage } from '../../systems/Treppe';
 
 type CombatPhase = 'preview' | 'animating' | 'result';
 
@@ -191,7 +193,11 @@ export class CombatScreen {
 
     this.titleEl.textContent = isBoss ? 'BOSS KAMPF!' : 'KAMPF';
     this.titleEl.style.color = isBoss ? 'var(--mc-damage)' : 'var(--mc-accent-expedition)';
-    this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
+    // Endlose Treppe: Stockwerk und Abschnitt statt «Raum x / y», Bild des Abschnitts
+    const abschnitt = run.treppe ? abschnittFuer(treppenEtage(run, roomIndex)) : null;
+    this.roomInfoEl.textContent = abschnitt
+      ? `Stockwerk ${treppenEtage(run, roomIndex)} · ${abschnitt.name}`
+      : `Raum ${roomIndex + 1} / ${run.rooms.length}`;
 
     // HP snapshot
     this.preHpMap.clear();
@@ -246,7 +252,7 @@ export class CombatScreen {
       screenEl.style.cssText = 'display:flex;flex-direction:column;width:100vw;height:100vh;overflow-y:auto;overflow-x:hidden;background:#060810;';
     }
     // Set route background image on overlay
-    const routeImg = ROUTE_IMAGE_MAP[run.routeId];
+    const routeImg = ROUTE_IMAGE_MAP[abschnitt ? abschnitt.bild : run.routeId];
     if (routeImg) {
       this.el.style.backgroundImage = `url('assets/tiles/${routeImg}.png')`;
       this.el.style.backgroundSize = 'cover';
@@ -509,11 +515,14 @@ export class CombatScreen {
     const area = document.createElement('div');
     area.className = 'mc-co-abilities-area';
     this.abilitiesAreaEl = area;
-    this.previewStripEl.appendChild(area);
+    // Always first in the strip, also when rebuilt after a click (provisions stay below)
+    this.previewStripEl.prepend(area);
 
     const divider = document.createElement('div');
     divider.className = 'mc-co-section-divider';
-    divider.textContent = 'Fähigkeiten — 1× pro Mission wählbar';
+    divider.textContent = run.treppe
+      ? 'Fähigkeiten — 1× bis zum nächsten Rastplatz'
+      : 'Fähigkeiten — 1× pro Mission wählbar';
     area.appendChild(divider);
 
     const cols = document.createElement('div');
@@ -605,8 +614,9 @@ export class CombatScreen {
   // ─── Preview: Items ───────────────────────────────────────
 
   private buildItemSection(run: ExpeditionRun, room?: EncounterRoom): void {
-    // Clear entire preview strip to avoid duplicates
-    this.previewStripEl.innerHTML = '';
+    // Rebuild only the provisions area: the abilities area in the same strip stays
+    // (clearing the whole strip here used to remove the hero abilities on every show)
+    this.itemsAreaEl?.remove();
     this.itemsAreaEl = null;
     this.enemySkillsAreaEl?.remove();
     this.enemySkillsAreaEl = null;
@@ -1074,6 +1084,7 @@ export class CombatScreen {
 
       const outcomeText = run.status === 'victory' ? 'SIEG!'
         : run.status === 'defeat' ? 'NIEDERLAGE...'
+        : run.treppe?.patt ? 'UNENTSCHIEDEN'
         : 'RÜCKZUG';
       const outcomeColor = run.status === 'victory' ? 'var(--mc-heal)'
         : run.status === 'defeat' ? 'var(--mc-damage)'
@@ -1087,7 +1098,9 @@ export class CombatScreen {
     } else {
       const cleared = document.createElement('div');
       cleared.className = 'mc-co-room-cleared';
-      cleared.textContent = 'Raum geschafft!';
+      cleared.textContent = run.treppe && this.previewRoom
+        ? `Stockwerk ${treppenEtage(run, this.previewRoom.index)} geschafft!`
+        : 'Raum geschafft!';
       this.actionsEl.appendChild(cleared);
     }
 
@@ -1112,6 +1125,7 @@ export class CombatScreen {
     this.enemyEntries = [];
     this.logLinesEl.innerHTML = '';
     this.actionsEl.innerHTML = '';
+    this.previewStripEl.innerHTML = '';
     this.abilitiesAreaEl = null;
     this.itemsAreaEl = null;
     this.el.querySelectorAll('.mc-co-floaty, .mc-co-action-banner, .mc-co-intro-flash, .mc-co-intro-title, .mc-co-round-counter').forEach(el => el.remove());

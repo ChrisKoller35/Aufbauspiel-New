@@ -2,6 +2,8 @@ import { EncounterType } from '../models/ExpeditionRun';
 import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
 import { LOOT_TABLE_DEFS } from './lootTables';
+import { stadtStufeVon } from './stadtstufen';
+import { TREPPE_AB_STADTSTUFE } from './treppe';
 
 export interface EncounterTemplate {
   type: EncounterType;
@@ -38,6 +40,8 @@ export interface RouteDef {
   extraPartySlots?: number;
   /** Ob eine Kriegsmaschine zwingend benötigt wird */
   requiresWarMachine?: boolean;
+  /** Endlose Treppe: Stockwerke entstehen beim Klettern (data/treppe.ts), nicht aus `encounters` */
+  isEndless?: boolean;
 }
 
 // ── Dungeon Graph — defines visual map layout & connections ──
@@ -582,6 +586,18 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     recommendedLevel: 'Full T2 gear + Level 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
   },
+  // Endgame ab Stadtstufe 7: eigene Karte in der Routenliste, Eingang oben auf der Dungeon-Karte,
+  // nie in den Wochen-Herausforderungen (systems/Treppe.ts, data/treppe.ts)
+  endlose_treppe: {
+    id: 'endlose_treppe',
+    name: 'Die endlose Treppe',
+    tier: 5,
+    rooms: 0,
+    encounters: [],
+    bossId: null,
+    recommendedLevel: 'Stadtstufe 7',
+    isEndless: true,
+  },
 };
 
 // ── Route Image Map — shared between ExpeditionsScreen & DungeonMapScreen ──
@@ -639,9 +655,9 @@ export function getBauplanHinweis(bauplanId: string): string {
 
 // ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
 
-type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard'>;
+type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard' | 'stadtweg'>;
 
-/** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt. */
+/** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt (die Treppe: Stadtstufe 7). */
 export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean {
   return getRouteLockReasons(route, state).length === 0;
 }
@@ -653,6 +669,10 @@ export function isRouteCompleted(routeId: string, state: RouteProgress): boolean
 
 /** Gründe, warum die Route gesperrt ist; leer = verfügbar. */
 export function getRouteLockReasons(route: RouteDef, state: RouteProgress): string[] {
+  // Die endlose Treppe hängt nur an der Stadtstufe, nicht am Gildenrang
+  if (route.isEndless) {
+    return stadtStufeVon(state) >= TREPPE_AB_STADTSTUFE ? [] : [`Stadtstufe ${TREPPE_AB_STADTSTUFE}: Magische Stadt`];
+  }
   const reasons: string[] = [];
   if ((state.guildStats?.rank ?? 1) < route.tier) reasons.push(`Gildenrang ${route.tier} benötigt`);
   const defeated = state.guildStats?.bossesDefeatedIds ?? [];

@@ -1,4 +1,5 @@
 import './ui/html/magic-city.css';
+import './ui/html/treppe.css';
 import { GameState, createNewGameState } from './models/GameState';
 import { SaveSystem } from './systems/SaveSystem';
 import { renderMainMenu } from './ui/screens/MainMenuScreen';
@@ -11,7 +12,7 @@ import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/A
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
 import { navigateTo, initScreenStyles, ScreenId } from './ui/ScreenRouter';
-import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from './systems/ExpeditionSystem';
+import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES, TreppenErgebnis } from './systems/ExpeditionSystem';
 import { EncounterChoice } from './models/ExpeditionRun';
 import { ITEM_DEFS } from './data/items';
 import { GearSystem } from './systems/GearSystem';
@@ -25,6 +26,7 @@ import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/Expedi
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { getRouteBauplan } from './data/routes';
+import { TREPPE_ROUTE_ID, RAST_ALLE, naechsteBossEtage } from './data/treppe';
 
 document.addEventListener('DOMContentLoaded', () => {
   const app = document.getElementById('app');
@@ -160,7 +162,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Expedition Flow ─────────────────────────────────────────
 
-  function startExpeditionFlow(routeId: string, heroIds: number[], provisionMap: Record<string, number>): void {
+  function startExpeditionFlow(
+    routeId: string, heroIds: number[], provisionMap: Record<string, number>, startEtage = 1,
+  ): void {
     if (state.activeExpedition) {
       console.warn('Expedition already active');
       return;
@@ -174,7 +178,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    const run = expeditionSystem.startExpedition(state, routeId, heroIds, 'normal', null, false, consumables);
+    const run = routeId === TREPPE_ROUTE_ID
+      ? expeditionSystem.startTreppe(state, heroIds, startEtage, consumables)
+      : expeditionSystem.startExpedition(state, routeId, heroIds, 'normal', null, false, consumables);
     if (!run) {
       console.error('Failed to start expedition');
       return;
@@ -257,7 +263,7 @@ document.addEventListener('DOMContentLoaded', () => {
    */
   function continueExpedition(run: ActiveRun): void {
     switch (expeditionSystem.nextStep(run)) {
-      case 'checkpoint': showCheckpointDialog(run); break;
+      case 'checkpoint': if (run.treppe) showRastDialog(run); else showCheckpointDialog(run); break;
       case 'merchant': showMerchantDialog(run); break;
       case 'choice': showChoiceDialog(run); break;
       // setTimeout prevents stack overflow with consecutive non-combat rooms
@@ -274,6 +280,27 @@ document.addEventListener('DOMContentLoaded', () => {
     `, [
       { label: 'RÜCKZUG', onClick: () => { expeditionSystem.resolveCheckpoint(run, true); finishExpedition(); } },
       { label: 'WEITER', primary: true, onClick: () => { expeditionSystem.resolveCheckpoint(run, false); continueExpedition(run); } },
+    ]);
+  }
+
+  /** Endlose Treppe: Rastplatz nach jedem 5. Stockwerk. Heimkehren behält die ganze Beute. */
+  function showRastDialog(run: ActiveRun): void {
+    const treppe = run.treppe!;
+    const teile = Object.values(run.loot).reduce((s, q) => s + q, 0);
+    const naechste = treppe.geschafft + 1;
+    const boss = naechsteBossEtage(naechste);
+    const vorschau = boss < naechste + RAST_ALLE
+      ? `Weiter oben: Stockwerk ${naechste} bis ${naechste + RAST_ALLE - 1}, auf ${boss} wartet ein Boss.`
+      : `Weiter oben: Stockwerk ${naechste} bis ${naechste + RAST_ALLE - 1}.`;
+    showExpeditionDialog('🔥', 'RASTPLATZ', `
+      <div style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;">Stockwerk ${treppe.geschafft} geschafft. Das Team ruht sich aus, Gefallene stehen wieder auf.</div>
+      ${partyHpHtml(run)}
+      <div style="color:#c8a227;font-size:.85rem;margin-bottom:8px;">Sicher im Gepäck: ${run.goldEarned} Gold${teile > 0 ? ` und ${teile} ${teile === 1 ? 'Gegenstand' : 'Gegenstände'}` : ''}</div>
+      <div style="color:#c4b5fd;font-size:.8rem;margin-bottom:8px;">${vorschau}</div>
+      <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">Wer weitergeht und fällt oder flieht, verliert alles, was nach diesem Rastplatz dazukommt.</div>
+    `, [
+      { label: 'HEIMKEHREN', onClick: () => { expeditionSystem.resolveCheckpoint(run, true); finishExpedition(); } },
+      { label: 'WEITER NACH OBEN', primary: true, onClick: () => { expeditionSystem.resolveCheckpoint(run, false); continueExpedition(run); } },
     ]);
   }
 
@@ -363,6 +390,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const run = state.activeExpedition;
     if (!run) return;
 
+    // Endlose Treppe: nur die Beute vom letzten Rastplatz bleibt (vor allem Verbuchen)
+    const treppe = expeditionSystem.treppeAbschliessen(run);
+
     // Capture loot data before clearing
     const loot = { ...run.loot };
 
@@ -410,7 +440,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // Reset expedition screen state and navigate back
         initExpeditionsScreen(state);
         navigateTo('expeditions');
-      });
+      }, treppe);
     };
 
     // Show chest reveal animation if there's loot
@@ -421,14 +451,36 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  const TREPPEN_TITEL: Record<TreppenErgebnis['ende'], string> = {
+    heimgekehrt: 'HEIMGEKEHRT', niederlage: 'NIEDERLAGE', flucht: 'GEFLOHEN', patt: 'UNENTSCHIEDEN',
+  };
+
   /** Result dialog after the chest: score, hero XP and everything newly unlocked. */
-  function showExpeditionSummary(progress: ExpeditionProgress, onClose: () => void): void {
+  function showExpeditionSummary(progress: ExpeditionProgress, onClose: () => void, treppe: TreppenErgebnis | null = null): void {
     const { entry, xp, rankUp, newClasses, newAchievements } = progress;
-    const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
+    let title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
+    let icon = entry.status === 'victory' ? '🏆' : '⚑';
     const line = (text: string, color = '#e5e7eb'): string =>
       `<div style="color:${color};font-size:.82rem;margin-bottom:6px;">${text}</div>`;
 
-    let body = line(`Punkte: ${entry.score.toLocaleString('de')}`, '#c8a227');
+    let body = '';
+    if (treppe) {
+      title = TREPPEN_TITEL[treppe.ende];
+      icon = treppe.neueBestmarke ? '🏆' : treppe.ende === 'heimgekehrt' ? '🔥' : '⚑';
+      body += line(treppe.stockwerke === 0 ? 'Kein Stockwerk geschafft'
+        : treppe.stockwerke === 1 ? `Stockwerk ${treppe.hoechstes} geschafft`
+        : `Stockwerk ${treppe.start} bis ${treppe.hoechstes} geschafft`);
+      body += treppe.neueBestmarke
+        ? line(`Neue Bestmarke: Stockwerk ${treppe.hoechstes}!`, '#c8a227')
+        : line(`Bestmarke: Stockwerk ${Math.max(treppe.besteVorher, treppe.hoechstes)}`, '#9ca3af');
+      if (treppe.ende === 'patt') body += line('Nach 20 Runden standen die Gegner noch, die Gruppe ist umgekehrt.', '#9ca3af');
+      if (treppe.verlorenGold > 0 || treppe.verlorenTeile > 0) {
+        const teile = treppe.verlorenTeile > 0
+          ? ` und ${treppe.verlorenTeile} ${treppe.verlorenTeile === 1 ? 'Gegenstand' : 'Gegenstände'}` : '';
+        body += line(`Verloren seit dem letzten Rastplatz: ${treppe.verlorenGold} Gold${teile}`, '#f87171');
+      }
+    }
+    body += line(`Punkte: ${entry.score.toLocaleString('de')}`, '#c8a227');
     for (const h of xp) {
       body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}`, h.levelUps > 0 ? '#4ade80' : '#9ca3af');
     }
@@ -439,7 +491,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
     for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
 
-    showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>`, [
+    showExpeditionDialog(icon, title, `<div style="margin-bottom:20px;">${body}</div>`, [
       { label: 'WEITER', primary: true, onClick: onClose },
     ]);
   }
@@ -542,8 +594,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Expedition start listener
   window.addEventListener('mc:startExpedition', ((e: CustomEvent) => {
-    const { routeId, heroes, provisions } = e.detail;
-    startExpeditionFlow(routeId, heroes, provisions);
+    const { routeId, heroes, provisions, startEtage } = e.detail;
+    startExpeditionFlow(routeId, heroes, provisions, startEtage);
   }) as EventListener);
 
   // Route selection from dungeon map

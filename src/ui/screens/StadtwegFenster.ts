@@ -15,6 +15,9 @@ import {
 import { kostenText } from '../../systems/GebaeudeStatus';
 import { stadtSilhouette } from './StadtSilhouette';
 import { SaveSystem } from '../../systems/SaveSystem';
+import { navigateTo } from '../ScreenRouter';
+import { TREPPE_ROUTE_ID } from '../../data/treppe';
+import { besteEtage } from '../../systems/Treppe';
 
 let spielstand: GameState | null = null;
 let takt: number | null = null;
@@ -39,7 +42,8 @@ function speichern(state: GameState): void {
 function bannerSignatur(state: GameState): string {
   const stand = aufstiegStand(state);
   const sw = stadtweg(state);
-  return [sw.stufe, sw.herzsteine.length, stand?.erledigt, stand?.gesamt, stand?.bereit, neuesKapitel(state)].join('|');
+  return [sw.stufe, sw.herzsteine.length, stand?.erledigt, stand?.gesamt, stand?.bereit, neuesKapitel(state),
+    stand ? 0 : besteEtage(state)].join('|');
 }
 
 function bannerInhalt(state: GameState): string {
@@ -48,7 +52,9 @@ function bannerInhalt(state: GameState): string {
   const stand = aufstiegStand(state);
   let ziel: string;
   if (!stand) {
-    ziel = `<span class="sw-klein">Endgame</span><span class="sw-banner-stand">Die endlose Treppe wartet</span>`;
+    const beste = besteEtage(state);
+    ziel = `<span class="sw-klein">Endgame: Die endlose Treppe</span>`
+      + `<span class="sw-banner-stand">${beste > 0 ? `Bestmarke: Stockwerk ${beste}` : 'Die Treppe wartet'}</span>`;
   } else {
     const prozent = Math.round((stand.erledigt / Math.max(1, stand.gesamt)) * 100);
     ziel = `<span class="sw-klein">Nächste Stufe: ${escape(stand.ziel.name)}</span>`
@@ -179,7 +185,8 @@ function zielHtml(state: GameState): string {
     return `<h3 class="sw-h">Die Magische Stadt</h3>
       <p class="sw-text">Das Herz ist erwacht, die Stadt hat ihr Ziel erreicht. Über dem Dungeon wartet die endlose Treppe:
       Dort klettern die Gilden aus aller Welt um die Wette, und die Rangliste zeigt, wer am höchsten kommt.</p>
-      <p class="sw-text sw-leise">Die Treppe wird gerade gebaut. Sie kommt als Nächstes.</p>`;
+      ${besteEtage(state) > 0 ? `<p class="sw-text">Eure Bestmarke: Stockwerk ${besteEtage(state)}.</p>` : ''}
+      <button type="button" class="sw-btn sw-zur-treppe">Zur Treppe</button>`;
   }
   const belohnung = belohnungsZeilen(stand.ziel).map(z => `<li>${escape(z)}</li>`).join('');
   return `<h3 class="sw-h">Nächste Stufe: ${escape(stand.ziel.name)}</h3>
@@ -325,6 +332,12 @@ export function oeffneStadtweg(state: GameState): void {
     }
     if (ziel.closest('.sw-weiter')) {
       zeichneFenster(ov, state);
+      return;
+    }
+    if (ziel.closest('.sw-zur-treppe')) {
+      schliesseStadtweg();
+      window.dispatchEvent(new CustomEvent('mc:selectRoute', { detail: { routeId: TREPPE_ROUTE_ID } }));
+      navigateTo('team');
       return;
     }
     const herz = ziel.closest<HTMLElement>('[data-herz]');

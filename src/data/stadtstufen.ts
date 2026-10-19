@@ -5,7 +5,7 @@
 // Clans gibt die Stadtstufe vor, wie weit Gebäude ausgebaut werden
 // dürfen. Ab Stufe 6 liegt das Arkane Herz frei: fünf Herzsteine von
 // Dungeon-Bossen wecken es. Das letzte Kapitel öffnet die endlose
-// Treppe über dem Dungeon (Endgame mit Rangliste, folgt).
+// Treppe über dem Dungeon (Endgame, docs/TREPPE.md).
 // Logik: systems/Stadtweg.ts. Regeln und Zahlen: docs/STADTWEG.md.
 // ────────────────────────────────────────────────────────────────
 
@@ -234,7 +234,7 @@ export function stufeDef(stufe: number): StadtStufeDef {
 }
 
 /** Stadtstufe eines Spielstands; ältere Spielstände ohne Stadtweg stehen auf 1. */
-export function stadtStufeVon(state: GameState): number {
+export function stadtStufeVon(state: Pick<GameState, 'stadtweg'>): number {
   const stufe = Number(state.stadtweg?.stufe);
   return Number.isFinite(stufe) ? Math.min(HOECHSTE_STADTSTUFE, Math.max(1, Math.floor(stufe))) : 1;
 }

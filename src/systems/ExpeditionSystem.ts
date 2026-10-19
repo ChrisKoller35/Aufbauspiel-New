@@ -10,6 +10,26 @@ import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
+import {
+  TREPPE_ROUTE_ID, RAST_HEILUNG, RAST_AUFSTEHEN,
+  istBossEtage, istRastEtage, stockwerkGegner, stockwerkGold, bossBeute,
+} from '../data/treppe';
+import { treppeStand, treppenStarts, treppenEtage, etageGeschafft, alsTreppenGegner } from './Treppe';
+
+/** Wie ein Lauf auf der endlosen Treppe endete und was er gebracht hat. */
+export interface TreppenErgebnis {
+  start: number;
+  /** Stockwerke, die dieser Lauf geschafft hat. */
+  stockwerke: number;
+  /** Höchstes geschaffte Stockwerk dieses Laufs (start − 1, wenn keins). */
+  hoechstes: number;
+  besteVorher: number;
+  neueBestmarke: boolean;
+  ende: 'heimgekehrt' | 'niederlage' | 'flucht' | 'patt';
+  /** Beute seit dem letzten Rastplatz, die verloren ging. */
+  verlorenGold: number;
+  verlorenTeile: number;
+}
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
 export const MERCHANT_PRICES: Record<string, number> = {
@@ -38,6 +58,7 @@ export class ExpeditionSystem {
 
   /**
    * Start an expedition. Marks fighters as ON_EXPEDITION.
+   * The endless stairs has its own start: startTreppe().
    */
   startExpedition(
     state: GameState,
@@ -46,6 +67,57 @@ export class ExpeditionSystem {
     difficulty: string = 'normal',
     modifierId: string | null = null,
     isGrandmasterTrial: boolean = false,
+    requestedConsumables?: string[],
+  ): ExpeditionRun | null {
+    if (ROUTE_DEFS[routeId]?.isEndless) return null;
+    return this.beginRun(state, routeId, fighterIds, difficulty, modifierId, isGrandmasterTrial, requestedConsumables);
+  }
+
+  /**
+   * Startet einen Lauf auf der endlosen Treppe: ganz unten oder über einem
+   * schon geschafften Boss-Stockwerk (treppenStarts). Stockwerke kommen
+   * während des Laufs dazu, eines nach dem anderen.
+   */
+  startTreppe(
+    state: GameState,
+    fighterIds: number[],
+    startEtage: number,
+    requestedConsumables?: string[],
+  ): ExpeditionRun | null {
+    const stand = treppeStand(state);
+    if (!stand || !treppenStarts(state).includes(startEtage)) return null;
+    const run = this.beginRun(state, TREPPE_ROUTE_ID, fighterIds, 'normal', null, false, requestedConsumables);
+    if (!run) return null;
+    stand.laeufe++;
+    run.treppe = {
+      startEtage,
+      besteVorher: stand.besteEtage,
+      geschafft: startEtage - 1,
+      sicher: { loot: {}, gold: 0 },
+    };
+    run.rooms.push(this.treppenRaum(startEtage, 0));
+    return run;
+  }
+
+  private treppenRaum(etage: number, index: number): EncounterRoom {
+    return {
+      index,
+      type: istBossEtage(etage) ? 'boss' : 'combat',
+      enemies: stockwerkGegner(etage).map((id, platz) =>
+        alsTreppenGegner(this.combatEngine.enemyToCombatUnit(id), etage, platz)),
+      healPercent: 0,
+      hazardDamage: 0,
+      completed: false,
+    };
+  }
+
+  private beginRun(
+    state: GameState,
+    routeId: string,
+    fighterIds: number[],
+    difficulty: string,
+    modifierId: string | null,
+    isGrandmasterTrial: boolean,
     requestedConsumables?: string[],
   ): ExpeditionRun | null {
     const route = ROUTE_DEFS[routeId];
@@ -287,6 +359,17 @@ export class ExpeditionSystem {
       return false;
     }
 
+    // Treppe: Wer bis zur Rundengrenze nicht gewonnen hat, muss umkehren
+    if (run.treppe) {
+      if (room.enemies.some(e => e.hp > 0)) {
+        run.treppe.patt = true;
+        run.status = 'retreat';
+        run.combatLog.push('>> Die Gegner halten stand: Die Gruppe muss umkehren.');
+        return false;
+      }
+      this.stockwerkGeschafft(state, run, room);
+    }
+
     // Auto-retreat check: if team HP < 20%
     const totalHp = run.party.reduce((s, u) => s + u.hp, 0);
     const totalMaxHp = run.party.reduce((s, u) => s + u.maxHp, 0);
@@ -294,20 +377,67 @@ export class ExpeditionSystem {
       run.combatLog.push('>> Team HP kritisch! Auto-Rückzug verfügbar.');
     }
 
-    // Feature #15: Nach jedem 3. Raum Checkpoint-Dialog setzen (außer bei Todesmarsch)
-    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
-      run.pendingCheckpoint = true;
-      return false;
-    }
+    this.raumGeschafft(run, room);
+    return run.status === 'exploring' && !run.pendingCheckpoint;
+  }
 
-    // Advance to next room
+  /**
+   * Nach einem geschafften Raum: Kontrollpunkt verlangen (Feature #15: nach
+   * jedem 3. Raum, ausser bei Todesmarsch; Treppe: Rastplatz nach jedem
+   * 5. Stockwerk) oder in den nächsten Raum gehen.
+   */
+  private raumGeschafft(run: ExpeditionRun, room: EncounterRoom): void {
+    if (run.treppe) {
+      if (istRastEtage(treppenEtage(run, room.index))) {
+        this.rasten(run);
+        run.pendingCheckpoint = true;
+        return;
+      }
+    } else if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
+      run.pendingCheckpoint = true;
+      return;
+    }
+    this.naechsterRaum(run);
+  }
+
+  /** In den nächsten Raum; auf der Treppe wird das nächste Stockwerk angelegt. */
+  private naechsterRaum(run: ExpeditionRun): void {
     run.currentRoom++;
+    if (run.treppe && run.currentRoom >= run.rooms.length) {
+      run.rooms.push(this.treppenRaum(treppenEtage(run), run.currentRoom));
+    }
     if (run.currentRoom >= run.rooms.length) {
       run.status = 'victory';
-      return false;
     }
+  }
 
-    return true;
+  /** Stockwerk geschafft: Bestmarke, Gold des Stockwerks, Boss-Beute. */
+  private stockwerkGeschafft(state: GameState, run: ExpeditionRun, room: EncounterRoom): void {
+    const treppe = run.treppe!;
+    const etage = treppenEtage(run, room.index);
+    treppe.geschafft = Math.max(treppe.geschafft, etage);
+    const neu = etageGeschafft(state, etage);
+    const gold = stockwerkGold(etage);
+    run.goldEarned += gold;
+    for (const [itemId, qty] of Object.entries(bossBeute(etage))) {
+      run.loot[itemId] = (run.loot[itemId] ?? 0) + qty;
+    }
+    run.combatLog.push(`>> Stockwerk ${etage} geschafft! +${gold} Gold${neu ? ' · Neue Bestmarke!' : ''}`);
+  }
+
+  /**
+   * Rastplatz: heilt, holt Gefallene zurück, Fähigkeiten sind wieder frei,
+   * und die Beute bis hier ist sicher.
+   */
+  private rasten(run: ExpeditionRun): void {
+    for (const unit of run.party) {
+      unit.hp = unit.hp <= 0
+        ? Math.max(1, Math.floor(unit.maxHp * RAST_AUFSTEHEN))
+        : Math.min(unit.maxHp, unit.hp + Math.floor(unit.maxHp * RAST_HEILUNG));
+    }
+    run.abilitiesUsed = {};
+    run.treppe!.sicher = { loot: { ...run.loot }, gold: run.goldEarned };
+    run.combatLog.push('>> Rastplatz: Wunden versorgt, die Beute ist sicher.');
   }
 
   // ─── Feature #11: Encounter-Auswahl ─────────────────────────────
@@ -328,19 +458,7 @@ export class ExpeditionSystem {
     this.applyEncounterChoice(run, choice);
 
     room.completed = true;
-
-    // Feature #15: Checkpoint nach 3. Raum prüfen
-    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
-      run.pendingCheckpoint = true;
-      return true;
-    }
-
-    // Nächsten Raum betreten
-    run.currentRoom++;
-    if (run.currentRoom >= run.rooms.length) {
-      run.status = 'victory';
-    }
-
+    this.raumGeschafft(run, room);
     return true;
   }
 
@@ -411,15 +529,13 @@ export class ExpeditionSystem {
     run.pendingCheckpoint = undefined;
 
     if (retreat) {
+      // Treppe: Heimkehr vom Rastplatz, die ganze Beute bleibt
+      if (run.treppe) run.treppe.heimgekehrt = true;
       this.retreat(run);
       return;
     }
 
-    // Weiter zur nächsten Kammer
-    run.currentRoom++;
-    if (run.currentRoom >= run.rooms.length) {
-      run.status = 'victory';
-    }
+    this.naechsterRaum(run);
   }
 
   // ─── Feature #16: Händler-Encounter ─────────────────────────────
@@ -474,17 +590,7 @@ export class ExpeditionSystem {
 
     const room = run.rooms[run.currentRoom];
     room.completed = true;
-
-    // Feature #15: Checkpoint nach 3. Raum
-    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
-      run.pendingCheckpoint = true;
-      return;
-    }
-
-    run.currentRoom++;
-    if (run.currentRoom >= run.rooms.length) {
-      run.status = 'victory';
-    }
+    this.raumGeschafft(run, room);
   }
 
   /**
@@ -498,17 +604,7 @@ export class ExpeditionSystem {
 
     const room = run.rooms[run.currentRoom];
     room.completed = true;
-
-    // Feature #15: Checkpoint nach 3. Raum
-    if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
-      run.pendingCheckpoint = true;
-      return;
-    }
-
-    run.currentRoom++;
-    if (run.currentRoom >= run.rooms.length) {
-      run.status = 'victory';
-    }
+    this.raumGeschafft(run, room);
   }
 
   /**
@@ -530,10 +626,40 @@ export class ExpeditionSystem {
   }
 
   /**
-   * Retreat from expedition (keep loot gained so far).
+   * Retreat from expedition (keep loot gained so far; on the stairs only
+   * what was safe at the last rest stop, see treppeAbschliessen).
+   * A finished run keeps its result: the combat screen's retreat button
+   * stays clickable while an already decided fight is still playing.
    */
   retreat(run: ExpeditionRun): void {
-    run.status = 'retreat';
+    if (run.status === 'exploring') run.status = 'retreat';
+  }
+
+  /**
+   * Ende eines Treppen-Laufs, vor dem Verbuchen aufrufen: Es bleibt nur die
+   * Beute vom letzten Rastplatz (wer dort heimkehrt, hat nichts danach).
+   * Gibt null zurück, wenn der Lauf nicht auf der Treppe war.
+   */
+  treppeAbschliessen(run: ExpeditionRun): TreppenErgebnis | null {
+    const treppe = run.treppe;
+    if (!treppe) return null;
+    const verlorenGold = Math.max(0, run.goldEarned - treppe.sicher.gold);
+    const verlorenTeile = Object.entries(run.loot)
+      .reduce((sum, [itemId, qty]) => sum + Math.max(0, qty - (treppe.sicher.loot[itemId] ?? 0)), 0);
+    run.loot = { ...treppe.sicher.loot };
+    run.goldEarned = treppe.sicher.gold;
+    return {
+      start: treppe.startEtage,
+      stockwerke: Math.max(0, treppe.geschafft - treppe.startEtage + 1),
+      hoechstes: treppe.geschafft,
+      besteVorher: treppe.besteVorher,
+      neueBestmarke: treppe.geschafft > treppe.besteVorher,
+      ende: treppe.heimgekehrt ? 'heimgekehrt'
+        : treppe.patt ? 'patt'
+        : run.status === 'defeat' ? 'niederlage' : 'flucht',
+      verlorenGold,
+      verlorenTeile,
+    };
   }
 
   /**
@@ -558,12 +684,19 @@ export class ExpeditionSystem {
 
   /**
    * Abort an expedition that can no longer be continued (e.g. after reloading the page).
-   * Returns provisions and war machine, releases the fighters. Loot is lost.
+   * Returns provisions and war machine, releases the fighters. Loot is lost,
+   * except on the stairs: what was safe at the last rest stop stays.
    */
   abortExpedition(state: GameState): boolean {
     const run = state.activeExpedition;
     if (!run) return false;
 
+    if (run.treppe) {
+      for (const [itemId, qty] of Object.entries(run.treppe.sicher.loot)) {
+        state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
+      }
+      state.globalStock.gold = (state.globalStock.gold ?? 0) + run.treppe.sicher.gold;
+    }
     this.returnProvisions(state, run);
     if (run.warMachineItemId) {
       state.globalStock[run.warMachineItemId] = (state.globalStock[run.warMachineItemId] ?? 0) + 1;

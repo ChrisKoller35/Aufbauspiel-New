@@ -19,7 +19,8 @@
     "composite-item": "npx tsx tools/compositeItem.ts",
     "crop-icons": "npx tsx tools/cropAndScaleIcons.ts",
     "cut-weapon-sheet": "npx tsx tools/cutWeaponSheet.ts",
-    "validate-refs": "npx tsx tools/validateRefs.ts"
+    "validate-refs": "npx tsx tools/validateRefs.ts",
+    "treppe-eichung": "npx tsx tools/treppeEichung.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

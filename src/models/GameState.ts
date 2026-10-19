@@ -36,6 +36,14 @@ export interface StadtwegStand {
   gelesen: number;        // höchstes gelesene Kapitel der Stadtchronik
 }
 
+/** Die endlose Treppe ab Stadtstufe 7 (systems/Treppe.ts, data/treppe.ts). */
+export interface TreppeStand {
+  geoeffnetAm: number;    // Zeitpunkt (ms), als die Treppe aufging; Start der Rivalen in der Rangliste
+  besteEtage: number;     // höchstes je geschaffte Stockwerk (0 = noch keins)
+  laeufe: number;         // begonnene Läufe
+  verlauf: { etage: number; zeit: number }[];  // ein Eintrag je neuer Bestmarke
+}
+
 /** Specialist assignment: maps specialistId → buildingId. */
 export interface SpecialistAssignment {
   specialistId: string;
@@ -139,6 +147,10 @@ export interface GameState {
   // ── Stadtweg ──
   // Fehlt in älteren Spielständen; Stadtweg.ts legt es bei Bedarf an.
   stadtweg?: StadtwegStand;
+
+  // ── Endlose Treppe ──
+  // Fehlt, bis die Stadt Stufe 7 erreicht; Treppe.ts legt es dann an.
+  treppe?: TreppeStand;
 
   // ── Baupläne ──
   // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).

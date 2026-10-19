@@ -303,7 +303,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_volcano_common', xpReward: 5, goldReward: 5, spriteKey: 'ENEMY_FIRE_BAT',
   },
   ash_golem: {
-    id: 'ash_golem', name: 'Aschegollem', role: 'melee',
+    id: 'ash_golem', name: 'Aschegolem', role: 'melee',
     hp: 204, atk: 4, def: 5, spd: 0.5, critChance: 0.02, critMult: 1.5,
     skills: [{ id: 'ash_slam', name: 'Ascheschlag', cooldown: 4, effectType: 'aoe', power: 1.1, target: 'all_players' }],
     lootTableId: 'loot_volcano_rare', xpReward: 14, goldReward: 7, spriteKey: 'ENEMY_ASH_GOLEM',
