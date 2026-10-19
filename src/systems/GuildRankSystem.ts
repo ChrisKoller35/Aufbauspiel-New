@@ -10,13 +10,15 @@ export class GuildRankSystem {
   /**
    * Update guildStats after a completed expedition.
    * Call BEFORE checkRankUp.
+   * `completed` = run won; retreats/defeats only record defeated bosses.
    */
-  updateStats(state: GameState, routeId: string, bossesKilled: number, bossIds: string[]): void {
+  updateStats(state: GameState, routeId: string, bossesKilled: number, bossIds: string[], completed = true): void {
     const stats = state.guildStats;
-    stats.totalExpeditionsCompleted++;
-
-    if (routeId === 'forest_short') {
-      stats.forestShortCompleted++;
+    if (completed) {
+      stats.totalExpeditionsCompleted++;
+      if (routeId === 'forest_short') {
+        stats.forestShortCompleted++;
+      }
     }
 
     if (bossesKilled > 0) {

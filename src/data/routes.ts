@@ -1,4 +1,5 @@
 import { EncounterType } from '../models/ExpeditionRun';
+import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
 import { LOOT_TABLE_DEFS } from './lootTables';
 
@@ -632,4 +633,30 @@ export function findBauplanRoute(bauplanId: string): RouteDef | null {
 export function getBauplanHinweis(bauplanId: string): string {
   const route = findBauplanRoute(bauplanId);
   return `Bauplan: ${route ? route.name : 'unbekannter Dungeon'}`;
+}
+
+// ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
+
+type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard'>;
+
+/** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt. */
+export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean {
+  return getRouteLockReasons(route, state).length === 0;
+}
+
+/** Mindestens ein Sieg auf dieser Route (abgeschlossene Routen bleiben wiederholbar). */
+export function isRouteCompleted(routeId: string, state: RouteProgress): boolean {
+  return (state.scoreboard ?? []).some(s => s.routeId === routeId && s.status === 'victory');
+}
+
+/** Gründe, warum die Route gesperrt ist; leer = verfügbar. */
+export function getRouteLockReasons(route: RouteDef, state: RouteProgress): string[] {
+  const reasons: string[] = [];
+  if ((state.guildStats?.rank ?? 1) < route.tier) reasons.push(`Gildenrang ${route.tier} benötigt`);
+  const defeated = state.guildStats?.bossesDefeatedIds ?? [];
+  const missing = (route.unlockCondition?.bossesDefeated ?? []).filter(b => !defeated.includes(b));
+  if (missing.length > 0) {
+    reasons.push(`Besiege: ${missing.map(b => ENEMY_DEFS[b]?.name ?? b).join(', ')}`);
+  }
+  return reasons;
 }
