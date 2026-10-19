@@ -727,6 +727,7 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
     let rechnung = `${r.bewohner} Bewohner × ${STEUER_PRO_BEWOHNER} Gold × ${prozent(r.zufriedenheit)} Zufriedenheit`;
     if (r.heldenBonus !== 1) rechnung += ` × ${r.heldenBonus.toFixed(2)} Helden-Bonus`;
     if (r.marktProzent) rechnung += ` + ${r.marktProzent} % Marktplatz`;
+    if (r.stadtProzent) rechnung += ` + ${r.stadtProzent} % Stadtrecht`;
     if (r.bank) rechnung += ` + ${r.bank} Gold von der Bank`;
     zeilen.push({ label: 'Bewohner', wert: `${bewohner} / ${plaetze}`, cls: bewohner > plaetze ? 'schlecht' : 'gut' });
     zeilen.push({ label: 'Arbeiten · frei', wert: `${arbeiten} · ${frei}` });

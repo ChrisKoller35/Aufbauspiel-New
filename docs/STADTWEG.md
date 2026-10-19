@@ -88,10 +88,9 @@ Wer schon weit ist, steigt schnell durch die ersten Stufen und bekommt dabei die
 
 ## Hängt an anderen Aufgaben
 
-- **Bosse und Gildenrang zählen erst nach Manager-Issue #21** (Expeditionen geben wieder Fortschritt). Bis dahin
-  ist Stufe 4 «Marktflecken» die höchste erreichbare Stufe.
-- Die Steuer-Rechnung im Wohnviertel-Fenster (`BuildingsScreen.ts`) nennt den Stadtrecht-Aufschlag noch nicht,
-  die Summe stimmt aber. Nachtragen, wenn Manager-Issue #27 gemergt ist (gleiche Datei).
+- Seit 19.10.2026 (Manager-Issue #21) geben Expeditionen wieder Fortschritt: besiegte Bosse und Gildenrang zählen
+  für die Stadtstufen 5 und 6 (Test: `tests/stadtwegBosse.test.ts`).
+- Die Steuer-Rechnung im Wohnviertel-Fenster nennt den Aufschlag als «+ N % Stadtrecht».
 - Zahlen sind erste Werte; Balancing läuft über Manager-Issue #23.
 
 ## Als Nächstes: die endlose Treppe
