@@ -1,5 +1,5 @@
 // ─── Magic City – Eichung der endlosen Treppe ───────────────────
-// Probe-Läufe mit drei Musterteams (frisch, gut, stark) über das echte
+// Probe-Läufe mit drei Musterteams (frisch, gut, stark; src/data/musterteams.ts) über das echte
 // ExpeditionSystem: Wie hoch kommt welches Team? Nach Änderungen an Kampf,
 // Klassen, Ausrüstung oder data/treppe.ts neu laufen lassen und die Tabelle
 // in docs/TREPPE.md anpassen. Fähigkeiten vor dem Kampf nutzt die Probe nicht
@@ -10,7 +10,7 @@
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { GuildFighter } from '../src/models/GuildRoster';
 import { ExpeditionRun } from '../src/models/ExpeditionRun';
-import { CLASS_DEFS } from '../src/data/classes';
+import { MUSTER_TEAMS, MusterHeld, musterWerte } from '../src/data/musterteams';
 import { HERZSTEINE } from '../src/data/stadtstufen';
 import { stockwerkGegner, gegnerWerte } from '../src/data/treppe';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
@@ -20,47 +20,16 @@ import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { alsTreppenGegner, etageGeschafft } from '../src/systems/Treppe';
 import { SeededRNG } from '../src/utils/RNG';
 
-/** Werte-Zuwachs je Stufe wie in HeroProgression (Klassen-Bonus) … */
-const STUFEN_BONUS: Record<string, { hp: number; atk: number; def: number }> = {
-  guardian: { hp: 4, atk: 0.3, def: 0.5 }, ranger: { hp: 2, atk: 0.6, def: 0.1 },
-  berserker: { hp: 3, atk: 0.5, def: 0.2 }, assassin: { hp: 2, atk: 0.6, def: 0.1 },
-};
-/** … und durch Training (+2 Leben, +1 Angriff, +1 Rüstung); die Probe nimmt je die Hälfte. */
-const TRAINING = { hp: 2, atk: 1, def: 1 };
-
-function held(id: number, classId: string, stufe: number, gear: GuildFighter['gear']): GuildFighter {
-  const base = { ...CLASS_DEFS[classId].baseStats };
-  const bonus = STUFEN_BONUS[classId];
-  const ups = stufe - 1;
-  base.maxHp = Math.round(base.maxHp + ups * (bonus.hp + TRAINING.hp) / 2);
-  base.atk = Math.round(base.atk + ups * (bonus.atk + TRAINING.atk) / 2);
-  base.def = Math.round(base.def + ups * (bonus.def + TRAINING.def) / 2);
-  base.hp = base.maxHp;
-  return { id, citizenId: 0, classId, name: classId, baseStats: base, gear, gearNeedsRepair: false, xp: 0, level: stufe };
+/** Musterheld als Held der Gilde (ohne Bewohner, feste ID im Team) */
+function held(id: number, muster: MusterHeld): GuildFighter {
+  return { id, citizenId: 0, classId: muster.classId, name: muster.name, baseStats: musterWerte(muster),
+    gear: { ...muster.gear }, gearNeedsRepair: false, xp: 0, level: muster.stufe };
 }
 
-const T3 = {
-  tank: { mainHand: 'crystal_golem_staff', offHand: 'wyrm_scale_shield', armor: 'mystic_plate_armor', trinket: 'abyss_amulet' },
-  dps: { mainHand: 'hydra_venomfang', offHand: null, armor: 'mystic_plate_armor', trinket: 'lich_phylactery' },
-  bow: { mainHand: 'fallen_hunters_bow', offHand: null, armor: 'spider_silk_robe', trinket: 'abyss_amulet' },
-};
-const T4 = {
-  tank: { mainHand: 'war_hammer', offHand: 'aether_guardian_shield', armor: 'dragonlord_plate', trinket: 'aether_heart' },
-  dps: { mainHand: 'soulbreaker', offHand: null, armor: 'dragonlord_plate', trinket: 'aether_heart' },
-  bow: { mainHand: 'eternal_hunter_bow', offHand: null, armor: 'shadowhunter_armor', trinket: 'arcane_amulet' },
-};
-
-const TEAMS: Record<string, () => GuildFighter[]> = {
-  'Frisch (Stufe 10, T3, 3 Helden)': () => [
-    held(1, 'guardian', 10, T3.tank), held(2, 'berserker', 10, T3.dps), held(3, 'ranger', 10, T3.bow),
-  ],
-  'Gut (Stufe 12, T3/T4, 4 Helden)': () => [
-    held(1, 'guardian', 12, T4.tank), held(2, 'berserker', 12, T3.dps), held(3, 'ranger', 12, T3.bow), held(4, 'assassin', 12, T3.dps),
-  ],
-  'Stark (Stufe 15, T4, 4 Helden)': () => [
-    held(1, 'guardian', 15, T4.tank), held(2, 'berserker', 15, T4.dps), held(3, 'ranger', 15, T4.bow), held(4, 'assassin', 15, T4.dps),
-  ],
-};
+const TEAMS = Object.values(MUSTER_TEAMS).map(team => ({
+  name: team.name,
+  machTeam: (): GuildFighter[] => team.helden.map((muster, i) => held(i + 1, muster)),
+}));
 
 const gear = new GearSystem();
 const engine = new CombatEngine(gear);
@@ -102,7 +71,7 @@ function einzelkampf(team: GuildFighter[], etage: number, startwert: number): st
   return enemies.some(e => e.hp > 0) ? 'patt' : 'sieg';
 }
 
-for (const [name, machTeam] of Object.entries(TEAMS)) {
+for (const { name, machTeam } of TEAMS) {
   const units = machTeam().map(f => engine.fighterToCombatUnit(f));
   console.log(`\n== ${name}: ${units.map(u => `${u.classId} ${u.maxHp}/${u.atk}/${u.def}`).join(' · ')}`);
   const zeile: string[] = [];

@@ -6,10 +6,21 @@ import { resetFighterIdCounter } from '../models/GuildRoster';
 import { BUILDING_DEFS } from '../data/buildings';
 import { entferneGebaeude, vereinigeDoppelte } from './Ausbau';
 
-const SAVE_KEY = 'magic_city_save';
-const BACKUP_KEY = 'magic_city_save_backup';
+/** Speicherplatz aller SaveSystem-Instanzen; das Probespiel hat einen eigenen (nutzeProbespiel) */
+let saveKey = 'magic_city_save';
+let backupKey = 'magic_city_save_backup';
 const CURRENT_VERSION = 22;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
+
+/**
+ * Probespiel (localhost:5173/?probe): Ab jetzt laden und speichern alle
+ * SaveSystem-Instanzen auf einem eigenen Platz, der richtige Spielstand bleibt
+ * unberührt. Vor dem ersten Laden aufrufen (main.ts). false schaltet zurück (Tests).
+ */
+export function nutzeProbespiel(aktiv = true): void {
+  saveKey = aktiv ? 'magic_city_probe' : 'magic_city_save';
+  backupKey = aktiv ? 'magic_city_probe_backup' : 'magic_city_save_backup';
+}
 
 export class SaveSystem {
   save(state: GameState): boolean {
@@ -25,9 +36,9 @@ export class SaveSystem {
 
       // --- Backup slot: copy previous save before overwriting ---
       try {
-        const previous = localStorage.getItem(SAVE_KEY);
+        const previous = localStorage.getItem(saveKey);
         if (previous) {
-          localStorage.setItem(BACKUP_KEY, previous);
+          localStorage.setItem(backupKey, previous);
         }
       } catch (backupErr) {
         // Backup failure is non-critical – continue with main save
@@ -36,16 +47,16 @@ export class SaveSystem {
 
       // --- Main save with QuotaExceeded fallback cascade ---
       try {
-        localStorage.setItem(SAVE_KEY, json);
+        localStorage.setItem(saveKey, json);
         return true;
       } catch (e: unknown) {
         if (!this.isQuotaExceeded(e)) throw e;
 
         // Step 1: Remove backup to free space, then retry
         console.warn('QuotaExceededError: removing backup to free space...');
-        try { localStorage.removeItem(BACKUP_KEY); } catch (_) { /* ignore */ }
+        try { localStorage.removeItem(backupKey); } catch (_) { /* ignore */ }
         try {
-          localStorage.setItem(SAVE_KEY, json);
+          localStorage.setItem(saveKey, json);
           return true;
         } catch (e2: unknown) {
           if (!this.isQuotaExceeded(e2)) throw e2;
@@ -57,7 +68,7 @@ export class SaveSystem {
           state.scoreboard = state.scoreboard.slice(-10);
           const trimmedJson = JSON.stringify(state);
           try {
-            localStorage.setItem(SAVE_KEY, trimmedJson);
+            localStorage.setItem(saveKey, trimmedJson);
             return true;
           } catch (e3: unknown) {
             if (!this.isQuotaExceeded(e3)) throw e3;
@@ -76,7 +87,7 @@ export class SaveSystem {
 
   /** Returns the size in bytes of the current main save slot, or 0 if none. */
   getSaveSize(): number {
-    const json = localStorage.getItem(SAVE_KEY);
+    const json = localStorage.getItem(saveKey);
     return json ? json.length : 0;
   }
 
@@ -98,7 +109,7 @@ export class SaveSystem {
 
   load(): GameState | null {
     try {
-      const json = localStorage.getItem(SAVE_KEY);
+      const json = localStorage.getItem(saveKey);
       if (!json) return null;
 
       const state = JSON.parse(json) as GameState;
@@ -129,17 +140,17 @@ export class SaveSystem {
   }
 
   hasSave(): boolean {
-    return localStorage.getItem(SAVE_KEY) !== null;
+    return localStorage.getItem(saveKey) !== null;
   }
 
   hasBackup(): boolean {
-    return localStorage.getItem(BACKUP_KEY) !== null;
+    return localStorage.getItem(backupKey) !== null;
   }
 
   /** Load the backup save slot. Returns null if no backup exists. */
   loadBackup(): GameState | null {
     try {
-      const json = localStorage.getItem(BACKUP_KEY);
+      const json = localStorage.getItem(backupKey);
       if (!json) return null;
 
       const state = JSON.parse(json) as GameState;
@@ -165,7 +176,7 @@ export class SaveSystem {
   }
 
   deleteSave(): void {
-    localStorage.removeItem(SAVE_KEY);
+    localStorage.removeItem(saveKey);
   }
 
   /** Check whether an error is a localStorage QuotaExceededError. */
@@ -180,7 +191,7 @@ export class SaveSystem {
 
   /** Download save as JSON file */
   exportSave(): void {
-    const json = localStorage.getItem(SAVE_KEY);
+    const json = localStorage.getItem(saveKey);
     if (!json) {
       console.warn('No save to export');
       return;
@@ -217,7 +228,7 @@ export class SaveSystem {
               resolve(false);
               return;
             }
-            localStorage.setItem(SAVE_KEY, json);
+            localStorage.setItem(saveKey, json);
             console.log('Save imported. Day:', parsed.day);
             resolve(true);
           } catch (e) {

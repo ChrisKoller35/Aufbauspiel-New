@@ -114,7 +114,8 @@ export class GearSystem {
         stats.maxHp += hpBonus;
         stats.hp += hpBonus;
       }
-      if (itemDef.statBonuses.spd) stats.spd += Math.floor(itemDef.statBonuses.spd * gearMult);
+      // Tempo-Boni sind Bruchteile (−0.1 bis +0.2): nicht abrunden, sonst wird +0.1 zu 0 und −0.05 zu −1
+      if (itemDef.statBonuses.spd) stats.spd = Math.round((stats.spd + itemDef.statBonuses.spd * gearMult) * 100) / 100;
       if (itemDef.statBonuses.critChance) stats.critChance += itemDef.statBonuses.critChance * gearMult;
     }
 

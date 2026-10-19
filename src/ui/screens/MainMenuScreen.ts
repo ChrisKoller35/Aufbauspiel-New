@@ -6,6 +6,7 @@ import { navigateTo, ScreenId } from '../ScreenRouter';
 import { GameState } from '../../models/GameState';
 import { renderHeader } from './HeaderRenderer';
 import { stadtBannerHtml, bindeStadtBanner } from './StadtwegFenster';
+import { probespielHinweisHtml } from '../components/ProbespielHinweis';
 
 /** Chosen background; survives re-renders of the main menu on navigation. */
 let chosenBg = 1;
@@ -27,6 +28,7 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
     <section class="main-hero">
       <h1 class="main-title glow">MAGIC CITY</h1>
       <p class="main-tagline">Baue deine Stadt. Forme deine Helden. Erobere das Unbekannte.</p>
+      ${probespielHinweisHtml()}
     </section>
 
     ${stadtBannerHtml()}
