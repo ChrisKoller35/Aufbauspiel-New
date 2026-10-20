@@ -3,6 +3,7 @@
 // Main path runs bottom→top, side branches lead to dead ends.
 // ──────────────────────────────────────────────────────────────
 
+import '../html/dungeonkarte.css';
 import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP, isRouteAvailable, getRouteLockReasons } from '../../data/routes';
 import { navigateTo } from '../ScreenRouter';
@@ -37,6 +38,7 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
       ${buildDungeonSVG(state)}
     </div>
     <div class="dmap-legend-float">
+      <button type="button" class="dmap-legend-knopf" data-legende-knopf aria-expanded="false">Legende</button>
       <div class="dmap-legend-title">LEGENDE</div>
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#4ade80"></span> Wald</div>
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#fcd34d"></span> Sumpf</div>
@@ -71,10 +73,12 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
   bindDungeonEvents(el);
   container.appendChild(el);
 
-  // Scroll to bottom (start node)
+  // Scroll to bottom (start node); on narrow screens also centre horizontally
   requestAnimationFrame(() => {
     const wrap = document.getElementById('dmap-wrap');
-    if (wrap) wrap.scrollTop = wrap.scrollHeight;
+    if (!wrap) return;
+    wrap.scrollTop = wrap.scrollHeight;
+    wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
   });
 
   // Fade scroll hint on first scroll
@@ -178,7 +182,7 @@ function buildTreppenEingang(state: GameState, width: number): string {
     <rect width="${width}" height="${TREPPE_PLATZ}" fill="url(#${id}-oben)"/>
     <rect y="${TREPPE_PLATZ - 30}" width="${width}" height="120" fill="url(#${id}-uebergang)"/>
     <g opacity=".7">${sterne}</g>
-    <text x="${cx}" y="34" text-anchor="middle" fill="#c4b5fd" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.45">ÜBER DEM DUNGEON — ENDGAME</text>
+    <text class="dmap-t-klein" x="${cx}" y="34" text-anchor="middle" fill="#c4b5fd" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.45">ÜBER DEM DUNGEON — ENDGAME</text>
     <path d="M${cx},${TREPPE_PLATZ + 100} C${cx},${TREPPE_PLATZ + 20} ${cx},${unten + 110} ${cx},${unten + 66}"
       fill="none" stroke="#c8a227" stroke-width="2.5" opacity="${offen ? 0.55 : 0.15}" stroke-dasharray="${offen ? 'none' : '8 5'}" stroke-linecap="round"/>
     <g class="dmap-treppe${offen ? '' : ' gesperrt'}" data-treppe="1">
@@ -191,7 +195,7 @@ function buildTreppenEingang(state: GameState, width: number): string {
       <path class="dmap-treppe-rahmen" d="${bogen}" fill="none" stroke="#c8a227" stroke-width="2.5"/>
       ${offen ? '' : `<text x="${cx}" y="${(bogenOben + unten) / 2 + 30}" text-anchor="middle" font-size="26" style="user-select:none">🔒</text>`}
       <text x="${cx}" y="${unten + 26}" text-anchor="middle" fill="#e6c060" font-size="15" font-family="Cinzel, serif" letter-spacing="2">DIE ENDLOSE TREPPE</text>
-      <text x="${cx}" y="${unten + 46}" text-anchor="middle" fill="${offen ? '#c4b5fd' : '#ef4444'}" font-size="10" font-family="Cinzel, serif" letter-spacing="1" opacity="${offen ? 0.95 : 0.8}">${status}</text>
+      <text class="dmap-treppe-status" x="${cx}" y="${unten + 46}" text-anchor="middle" fill="${offen ? '#c4b5fd' : '#ef4444'}" font-size="10" font-family="Cinzel, serif" letter-spacing="1" opacity="${offen ? 0.95 : 0.8}">${status}</text>
     </g>`;
 }
 
@@ -254,7 +258,7 @@ function buildDungeonSVG(state: GameState): string {
     { y: 650,  label: 'VULKANREGION — LEGENDÄR', color: '#fca5a5' },
   ];
   for (const r of regions) {
-    nodesHtml += `<text x="${WIDTH / 2}" y="${r.y + 80}" text-anchor="middle" fill="${r.color}" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.25">${r.label}</text>`;
+    nodesHtml += `<text class="dmap-t-region" x="${WIDTH / 2}" y="${r.y + 80}" text-anchor="middle" fill="${r.color}" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.25">${r.label}</text>`;
   }
 
   // ── Draw edges ──
@@ -373,12 +377,12 @@ function buildDungeonSVG(state: GameState): string {
     // Start node special marker
     const startMarker = isStart
       ? `<circle cx="${x}" cy="${y + r + 55}" r="5" fill="#c8a227" opacity="0.6"/>
-         <text x="${x}" y="${y + r + 72}" text-anchor="middle" fill="#c8a227" font-size="9" font-family="Cinzel, serif" letter-spacing="2" opacity="0.7">START</text>`
+         <text class="dmap-t-klein" x="${x}" y="${y + r + 72}" text-anchor="middle" fill="#c8a227" font-size="9" font-family="Cinzel, serif" letter-spacing="2" opacity="0.7">START</text>`
       : '';
 
     // Dead end marker
     const deadEndMarker = isDeadEnd && !isStart
-      ? `<text x="${x}" y="${y - r - 12}" text-anchor="middle" fill="${biome.stroke}" font-size="7" font-family="Cinzel, serif" opacity="0.4" letter-spacing="1">SACKGASSE</text>`
+      ? `<text class="dmap-t-klein" x="${x}" y="${y - r - 12}" text-anchor="middle" fill="${biome.stroke}" font-size="7" font-family="Cinzel, serif" opacity="0.4" letter-spacing="1">SACKGASSE</text>`
       : '';
 
     // Emoji icon (smaller / hidden when image is present)
@@ -390,14 +394,14 @@ function buildDungeonSVG(state: GameState): string {
     // Name label
     const shortName = route.name.length > 18 ? route.name.substring(0, 17) + '…' : route.name;
     const labelOpacity = isLocked ? 0.4 : 1;
-    const nameLabel = `<text x="${x}" y="${y + r + 16}" text-anchor="middle" fill="${biome.text}" font-size="${hasBoss ? 11 : 9}" font-family="Cinzel, serif" letter-spacing="0.5" opacity="${labelOpacity}">${shortName}</text>`;
+    const nameLabel = `<text class="dmap-t-name${hasBoss ? ' boss' : ''}" x="${x}" y="${y + r + 16}" text-anchor="middle" fill="${biome.text}" font-size="${hasBoss ? 11 : 9}" font-family="Cinzel, serif" letter-spacing="0.5" opacity="${labelOpacity}">${shortName}</text>`;
 
     // Difficulty stars
     const diff = route.tier;
-    const stars = `<text x="${x}" y="${y + r + 29}" text-anchor="middle" fill="${biome.stroke}" font-size="8" opacity="${isLocked ? 0.3 : 0.6}">${'★'.repeat(diff)}${'☆'.repeat(5 - diff)}</text>`;
+    const stars = `<text class="dmap-t-sterne" x="${x}" y="${y + r + 29}" text-anchor="middle" fill="${biome.stroke}" font-size="8" opacity="${isLocked ? 0.3 : 0.6}">${'★'.repeat(diff)}${'☆'.repeat(5 - diff)}</text>`;
 
     // Room count
-    const roomsBadge = `<text x="${x}" y="${y + r + 41}" text-anchor="middle" fill="#6b6050" font-size="7.5" font-family="Cinzel, serif" opacity="${labelOpacity}">${route.rooms} Räume</text>`;
+    const roomsBadge = `<text class="dmap-t-raeume" x="${x}" y="${y + r + 41}" text-anchor="middle" fill="#6b6050" font-size="7.5" font-family="Cinzel, serif" opacity="${labelOpacity}">${route.rooms} Räume</text>`;
 
     // Completed checkmark
     const checkMark = isCompleted
@@ -581,6 +585,14 @@ function bindDungeonEvents(el: HTMLElement): void {
     const nav = target.closest<HTMLElement>('[data-nav]');
     if (nav) {
       navigateTo(nav.dataset.nav as Parameters<typeof navigateTo>[0]);
+      return;
+    }
+
+    // Legende auf kleinen Bildschirmen auf- und zuklappen
+    const legendeKnopf = target.closest<HTMLElement>('[data-legende-knopf]');
+    if (legendeKnopf) {
+      const offen = legendeKnopf.parentElement?.classList.toggle('offen') ?? false;
+      legendeKnopf.setAttribute('aria-expanded', String(offen));
       return;
     }
 
