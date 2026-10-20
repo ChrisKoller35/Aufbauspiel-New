@@ -1,7 +1,7 @@
 // ─── Magic City – Kampfeffekte ──────────────────────────────────
 // Wirkung der Effekte, die über die Grundregeln von Gegenständen hinausgehen:
 // Set-Fähigkeiten (data/dungeonSets.ts) wie Gift, Einfrieren, Schild, Feueratem
-// und die Wege der Helden (data/spezialisierungen.ts) wie Bollwerk oder Zorn.
+// und die Wege der Helden (data/spezialisierungen.ts) wie Phalanx oder Zorn.
 // CombatEngine ruft die Funktionen an festen Stellen eines Kampfs auf.
 // Zeilen mit «✦ <Name> setzt <Fähigkeit> ein →» erscheinen im Kampf als grünes Banner,
 // Wege mit «★ <Name> setzt <Weg> ein →» als goldenes. Zeilen «  ★ …» sind Wege ohne Banner.
@@ -162,11 +162,11 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
       log(`✦ ${u.name} setzt ${anzeigeName(geheul)} ein → das ganze Team hat +${wert} Angriff`);
     }
   }
-  const bollwerk = staerksterTraeger(helden, 'bollwerk');
-  if (bollwerk) {
-    const schild = staerke(bollwerk, 'bollwerk');
+  const phalanx = staerksterTraeger(helden, 'phalanx');
+  if (phalanx) {
+    const schild = staerke(phalanx, 'phalanx');
     for (const h of helden) h.schild = (h.schild ?? 0) + schild;
-    log(`★ ${bollwerk.name} setzt Bollwerk ein → jeder im Team erhält einen Schild von ${schild}`);
+    log(`★ ${phalanx.name} setzt Phalanx ein → jeder im Team erhält einen Schild von ${schild}`);
   }
   const lied = staerksterTraeger(helden, 'heldenlied');
   if (lied) {
@@ -274,6 +274,16 @@ export function setztAus(unit: CombatUnit, log: Log): boolean {
   }
   unit.betaeubtSchutz = false;
   return false;
+}
+
+/**
+ * Ein Boss wird wütend: mehr Angriff und Tempo. Schwächungen durch Helden (Schmählied) wachsen nicht mit,
+ * sonst bliebe nach ihrem Ende ein Rest des Abzugs.
+ */
+export function wutAnfall(unit: CombatUnit, atkMult: number, spdMult: number): void {
+  const geschwaecht = unit.buffs.reduce((s, b) => s + (b.quelle && b.stat === 'atk' ? b.value : 0), 0);
+  unit.atk = Math.floor((unit.atk - geschwaecht) * atkMult) + geschwaecht;
+  unit.spd *= spdMult;
 }
 
 /** Schattenstoss: Gibt den Schadens-Faktor zurück, wenn der erste Angriff des Kampfs ansteht */

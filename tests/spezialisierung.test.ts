@@ -5,7 +5,7 @@ import { CombatEngine } from '../src/systems/CombatEngine';
 import { GearSystem } from '../src/systems/GearSystem';
 import { EncounterProcessor } from '../src/systems/EncounterProcessor';
 import {
-  deckung, kampfBeginn, kampfEnde, nachTreffer, rundenEnde, schattentanz, vergeltung, zustandAktualisieren,
+  deckung, kampfBeginn, kampfEnde, nachTreffer, rundenEnde, schattentanz, vergeltung, wutAnfall, zustandAktualisieren,
 } from '../src/systems/Kampfeffekte';
 import { istMeister, kannWegWaehlen, waehleWeg, wegEffekte, wegVon, wegWerte } from '../src/systems/Spezialisierung';
 import { musterStand } from '../src/systems/Musterlauf';
@@ -104,27 +104,27 @@ describe('Wege: Regeln', () => {
   test('ab Stufe 10 wählbar, nur Wege der eigenen Klasse, und die Wahl gilt für immer', () => {
     const f = held('Brom', 'guardian', null, WEG_AB_STUFE - 1);
     expect(kannWegWaehlen(f)).toBe(false);
-    expect(waehleWeg(f, 'guardian_bollwerk')).toBe(false);
+    expect(waehleWeg(f, 'guardian_phalanx')).toBe(false);
     f.level = WEG_AB_STUFE;
     expect(kannWegWaehlen(f)).toBe(true);
     expect(waehleWeg(f, 'ranger_scharfschuetzin')).toBe(false);
     expect(waehleWeg(f, 'gibt_es_nicht')).toBe(false);
-    expect(waehleWeg(f, 'guardian_bollwerk')).toBe(true);
-    expect(wegVon(f)?.id).toBe('guardian_bollwerk');
+    expect(waehleWeg(f, 'guardian_phalanx')).toBe(true);
+    expect(wegVon(f)?.id).toBe('guardian_phalanx');
     expect(kannWegWaehlen(f)).toBe(false);
     expect(waehleWeg(f, 'guardian_vergelter')).toBe(false);
-    expect(f.spezialisierung).toBe('guardian_bollwerk');
+    expect(f.spezialisierung).toBe('guardian_phalanx');
   });
 
   test('Meister ab Stufe 15: Werte und Effekte des Meisters ersetzen die alten', () => {
-    const f = held('Brom', 'guardian', 'guardian_bollwerk', MEISTER_AB_STUFE - 1);
+    const f = held('Brom', 'guardian', 'guardian_phalanx', MEISTER_AB_STUFE - 1);
     expect(istMeister(f)).toBe(false);
     expect(wegWerte(f)).toEqual({ hp: 10 });
-    expect(wegEffekte(f)).toEqual([{ id: 'bollwerk', power: 5, name: 'Bollwerk', weg: 'guardian_bollwerk', usesLeft: -1 }]);
+    expect(wegEffekte(f)).toEqual([{ id: 'phalanx', power: 5, name: 'Phalanx', weg: 'guardian_phalanx', usesLeft: -1 }]);
     f.level = MEISTER_AB_STUFE;
     expect(istMeister(f)).toBe(true);
     expect(wegWerte(f)).toEqual({ hp: 15 });
-    expect(wegEffekte(f)).toEqual([{ id: 'bollwerk', power: 6, name: 'Bollwerk', weg: 'guardian_bollwerk', usesLeft: -1 }]);
+    expect(wegEffekte(f)).toEqual([{ id: 'phalanx', power: 6, name: 'Phalanx', weg: 'guardian_phalanx', usesLeft: -1 }]);
   });
 
   test('ein Weg, der nicht zur Klasse passt (kaputter Spielstand), gilt als keiner', () => {
@@ -169,7 +169,7 @@ describe('Wege: Texte', () => {
   type Teile = (e: (id: string) => Record<string, number>, w: Record<string, number>) => Record<string, string>;
   // Was im Text stehen muss, aus den Zahlen des Wegs. Der Meistertext nennt nur, was sich ändert.
   const TEILE: Record<string, Teile> = {
-    guardian_bollwerk: (e, w) => ({ schild: `Schild von ${e('bollwerk').power}`, hp: `+${w.hp} Leben` }),
+    guardian_phalanx: (e, w) => ({ schild: `Schild von ${e('phalanx').power}`, hp: `+${w.hp} Leben` }),
     guardian_vergelter: (e, w) => ({ chance: `${pz(e('vergeltung').chance)} Chance`, atk: `+${w.atk} Angriff` }),
     ranger_scharfschuetzin: (e, w) => ({
       deckung: `${pz(e('deckung').chance)} Chance`, krit: `+${pz(w.critChance)} Krit-Chance`,
@@ -226,14 +226,14 @@ describe('Wege: Texte', () => {
 // ── Wirkung im Kampf ──
 
 describe('Wege im Kampf', () => {
-  test('Bollwerk: jeder im Team bekommt zu Kampfbeginn einen Schild, zwei Bollwerke zählen einmal', () => {
-    const brom = einheit(held('Brom', 'guardian', 'guardian_bollwerk'));
-    const bruno = einheit(held('Bruno', 'guardian', 'guardian_bollwerk', MEISTER_AB_STUFE));
+  test('Phalanx: jeder im Team bekommt zu Kampfbeginn einen Schild, zwei Phalanxen zählen einmal', () => {
+    const brom = einheit(held('Brom', 'guardian', 'guardian_phalanx'));
+    const bruno = einheit(held('Bruno', 'guardian', 'guardian_phalanx', MEISTER_AB_STUFE));
     const lia = einheit(held('Lia', 'ranger', null));
     const { run } = lauf([brom, bruno, lia]);
     const { log, liste } = zeilen();
     kampfBeginn([brom, bruno, lia], [], run, log);
-    expect(liste).toEqual(['★ Bruno setzt Bollwerk ein → jeder im Team erhält einen Schild von 6']);
+    expect(liste).toEqual(['★ Bruno setzt Phalanx ein → jeder im Team erhält einen Schild von 6']);
     expect([brom.schild, bruno.schild, lia.schild]).toEqual([6, 6, 6]);
   });
 
@@ -290,6 +290,15 @@ describe('Wege im Kampf', () => {
       `Grimm greift Puppe an für ${Math.floor(10 * (1 + anteil))}`,
     ]);
     expect(runde(run, 2)).toContain(`Lia greift Puppe an für ${Math.floor(10 * (1 + anteil))}`);
+  });
+
+  test('Fährtenleserin: die Kampfanzeige erkennt den Markierten an der ID, auch unter gleichnamigen Gegnern', () => {
+    const lia = einheit(held('Lia', 'ranger', 'ranger_faehrtenleserin'));
+    const erster = gegner('Wolf');
+    const zweiter = gegner('Wolf', { tauntRounds: 5 });
+    const run = kampf([lia], [erster, zweiter]);
+    expect(runde(run, 1)[1]).toMatch(/^★ Lia setzt Fährtenleserin ein → Wolf ist markiert/);
+    expect(run.combatRoundSnapshots![0].markiert).toEqual([zweiter.id]);
   });
 
   test('Fährtenleserin: Fallen machen halben Schaden, als Meisterin gar keinen', () => {
@@ -435,6 +444,24 @@ describe('Wege im Kampf', () => {
     expect(runde(run, 2)).toEqual(['Barde greift Ork an für 10', `Ork greift Barde an für ${50 - minus}`]);
   });
 
+  test('Schmählied: wird ein Boss wütend, bleibt nach dem Lied kein Rest', () => {
+    const barde = einheit(held('Barde', 'bard', 'bard_schmaehlied'));
+    const drache = gegner('Drache', { atk: 40, spd: 2 });
+    nachTreffer(barde, drache, 10, [drache], [barde], new SeededRNG(1), () => {});
+    const minus = 40 - drache.atk;
+    expect(minus).toBeGreaterThan(0);
+    wutAnfall(drache, 1.5, 1.3);
+    expect(drache.atk).toBe(Math.floor(40 * 1.5) - minus);
+    expect(drache.spd).toBeCloseTo(2.6);
+    // Das Lied ist aus: wie im Kampf am Rundenende
+    for (const b of drache.buffs) drache.atk -= b.value;
+    expect(drache.atk).toBe(Math.floor(40 * 1.5));
+    // Ohne Lied wie immer
+    const ork = gegner('Ork', { atk: 41 });
+    wutAnfall(ork, 1.5, 1);
+    expect(ork.atk).toBe(Math.floor(41 * 1.5));
+  });
+
   test('Sturmhexe: alle paar Runden trifft ein Blitz alle Gegner', () => {
     const blitz = wert('witch_sturmhexe', 'kettenblitz');
     const hexe = einheit(held('Hexe', 'witch', 'witch_sturmhexe'));
@@ -537,11 +564,11 @@ describe('Wege in der Anzeige', () => {
     f.level = WEG_AB_STUFE;
     expect(wegAbzeichen(f)).toContain('class="hc-weg neu"');
     expect(wegAbzeichen(f)).toContain('★ Weg wählen');
-    waehleWeg(f, 'guardian_bollwerk');
-    expect(wegAbzeichen(f)).toContain('🛡️ Bollwerk</span>');
+    waehleWeg(f, 'guardian_phalanx');
+    expect(wegAbzeichen(f)).toContain('🧱 Phalanx</span>');
     f.level = MEISTER_AB_STUFE;
     expect(wegAbzeichen(f)).toContain('class="hc-weg meister"');
-    expect(wegAbzeichen(f)).toContain('Bollwerk ★</span>');
+    expect(wegAbzeichen(f)).toContain('Phalanx ★</span>');
   });
 
   test('Bereich im Heldenfenster: Vorschau, Wahl mit Bestätigung, gewählter Weg', () => {
@@ -553,12 +580,12 @@ describe('Wege in der Anzeige', () => {
 
     f.level = WEG_AB_STUFE;
     html = wegBereichHtml(f, null);
-    expect(html).toContain('data-weg-waehlen="guardian_bollwerk"');
+    expect(html).toContain('data-weg-waehlen="guardian_phalanx"');
     expect(html).toContain('data-weg-waehlen="guardian_vergelter"');
     html = wegBereichHtml(f, 'guardian_vergelter');
     expect(html).toContain('Für immer Vergelter?');
     expect(html).toContain('data-weg-ja="guardian_vergelter"');
-    expect(html).toContain('data-weg-waehlen="guardian_bollwerk"');
+    expect(html).toContain('data-weg-waehlen="guardian_phalanx"');
 
     waehleWeg(f, 'guardian_vergelter');
     html = wegBereichHtml(f, null);
@@ -571,10 +598,10 @@ describe('Wege in der Anzeige', () => {
   test('Bilanz nach der Expedition erinnert an die Wahl und feiert den Meister', () => {
     const f = held('Brom', 'guardian', null, WEG_AB_STUFE);
     expect(wegBilanz(f, 1)).toBe(' · ★ Weg wählen!');
-    waehleWeg(f, 'guardian_bollwerk');
+    waehleWeg(f, 'guardian_phalanx');
     expect(wegBilanz(f, 1)).toBe('');
     f.level = MEISTER_AB_STUFE;
-    expect(wegBilanz(f, 1)).toBe(' · ★ Meister: Bollwerk!');
+    expect(wegBilanz(f, 1)).toBe(' · ★ Meister: Phalanx!');
     expect(wegBilanz(f, 0)).toBe('');
     f.level = MEISTER_AB_STUFE + 1;
     expect(wegBilanz(f, 1)).toBe('');

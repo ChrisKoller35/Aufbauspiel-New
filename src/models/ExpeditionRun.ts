@@ -109,7 +109,7 @@ export interface CombatUnit {
   zielschuss?: boolean;
   /** Fährtenleserin: markierter Gegner erleidet so viel mehr Schaden von Helden (Anteil) */
   markiert?: number;
-  /** Knochenherr: Skelette, die in diesem Kampf für den Helden kämpfen */
+  /** Knochenherr: Skelette, die bis zum Ende der Expedition für den Helden kämpfen */
   skelette?: number;
   /** Angriff und Verteidigung, die Kampfeffekte gerade dazugeben (Glutherz, Tiefenrausch, Drachengier, Bastion) */
   effektBoni?: Record<string, number>;
@@ -208,4 +208,6 @@ export interface CombatRoundSnapshot {
   hadDeath: boolean;
   /** Siege: HP der Befestigung nach dieser Runde */
   fortificationHp?: number;
+  /** Fährtenleserin: IDs der Gegner, die nach dieser Runde markiert sind */
+  markiert?: number[];
 }

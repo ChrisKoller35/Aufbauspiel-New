@@ -897,6 +897,7 @@ export class CombatScreen {
 
       this.updateLog(snapshot.logLines.slice(-6));
       this.showActionBanners(snapshot.logLines, run.party, room.enemies);
+      for (const id of snapshot.markiert ?? []) this.markieren(id);
 
       // Update fortification HP bar during siege rounds
       if (room.type === 'fortification' && room.fortification && snapshot.fortificationHp !== undefined) {
@@ -1067,9 +1068,8 @@ export class CombatScreen {
     const usesPattern = /^(.+?) uses (.+?) →/;
     // Set-Fähigkeiten und andere Kampfeffekte (systems/Kampfeffekte.ts): «✦ Brom setzt Rudelgeheul ein → …»
     const effektPattern = /^✦ (.+?) setzt (.+?) ein →/;
-    // Wege der Helden: «★ Brom setzt Bollwerk ein → …»
+    // Wege der Helden: «★ Brom setzt Phalanx ein → …»
     const wegPattern = /^★ (.+?) setzt (.+?) ein →/;
-    const markePattern = /→ (.+?) ist markiert/;
     const setztPattern = /^(.+?) setzt (.+?) ein →/;
     const enragePattern = /^!! (.+?) ENRAGE !!$/;
     // Verschiedene Banner über derselben Einheit in einer Runde stehen übereinander,
@@ -1095,8 +1095,6 @@ export class CombatScreen {
         unitName = wegMatch[1].trim();
         bannerText = `★ ${wegMatch[2].trim().toUpperCase()}`;
         bannerColor = '#fcd34d';
-        const marke = line.match(markePattern);
-        if (marke) this.markieren(marke[1].trim(), enemyUnits);
       } else if (usesMatch) {
         unitName = usesMatch[1].trim();
         bannerText = usesMatch[2].trim().toUpperCase();
@@ -1159,10 +1157,9 @@ export class CombatScreen {
     return { y: rect.top + 6 + stapel * 24, innen: true };
   }
 
-  /** Fährtenleserin: Der markierte Gegner bekommt ein 🐾 auf seine Karte */
-  private markieren(name: string, enemyUnits: CombatUnit[]): void {
-    const gegner = enemyUnits.find(u => u.name === name);
-    const entry = gegner ? this.enemyEntries.find(e => e.unitId === gegner.id) : undefined;
+  /** Fährtenleserin: Der markierte Gegner bekommt ein 🐾 auf seine Karte (nach ID, Gegner heissen oft gleich) */
+  private markieren(unitId: number): void {
+    const entry = this.enemyEntries.find(e => e.unitId === unitId);
     if (!entry || entry.el.querySelector('.mc-co-badge-marke')) return;
     const info = entry.el.querySelector('.mc-co-unit-info');
     if (!info) return;

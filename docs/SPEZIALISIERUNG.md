@@ -9,14 +9,14 @@ stark sie sind und wie ein neuer Weg dazukommt.
 
 - **Wählen.** Ein Held ab Stufe 10 ohne Weg trägt auf seiner Karte ein pulsierendes «★ Weg wählen».
   Im Heldenfenster stehen beide Wege seiner Klasse mit Wirkung und Meister-Stufe. Der Knopf fragt nach
-  («Für immer Bollwerk?»), erst «Ja, für immer» legt den Weg fest. Der Spielstand wird sofort gespeichert.
+  («Für immer Phalanx?»), erst «Ja, für immer» legt den Weg fest. Der Spielstand wird sofort gespeichert.
 - **Vorschau.** Helden unter Stufe 10 sehen beide Wege im Heldenfenster schon, ohne Knopf.
 - **Meister ab Stufe 15:** stärkere Zahlen (Tabelle unten), das Abzeichen auf der Karte wird golden.
 - **Im Kampf** trägt die Heldenkarte das Zeichen ihres Wegs. Löst der Weg aus, erscheint ein goldenes
-  ★-Banner an der Karte und eine goldene Zeile im Kampfprotokoll («★ Brom setzt Bollwerk ein → …»).
+  ★-Banner an der Karte und eine goldene Zeile im Kampfprotokoll («★ Brom setzt Phalanx ein → …»).
   Die Fährtenleserin markiert ihr Ziel zusätzlich mit 🐾 auf dessen Karte.
 - **Nach der Expedition** meldet die Bilanz «★ Weg wählen!», wenn ein Held Stufe 10 erreicht hat, und
-  «★ Meister: Bollwerk!» beim Aufstieg auf Stufe 15.
+  «★ Meister: Phalanx!» beim Aufstieg auf Stufe 15.
 - **Warum passiv:** Helden kämpfen von selbst und nur mit Grundangriffen. Die Wege wirken darum als
   Kampfeffekte und feste Werte, wie die Fähigkeiten der Dungeon-Sets.
 - **Probespiel:** `?probe=neu` startet mit Helden auf Stufe 12 ohne Weg, damit man die Wahl selbst sieht.
@@ -28,7 +28,7 @@ Team bringt (Messung unten, Ziel etwa +2,5 % und +4 %).
 
 | Klasse | Weg | Ab Stufe 10 | Meister (Stufe 15) | Stufe 12 | Stufe 15 |
 |---|---|---|---|---|---|
-| Wächter | 🛡️ Bollwerk | Zu Beginn jedes Kampfs erhält jeder im Team einen Schild von 5. Dazu +10 Leben. | Schild von 6, +15 Leben. | 2,3 % | 5,1 % |
+| Wächter | 🧱 Phalanx | Zu Beginn jedes Kampfs erhält jeder im Team einen Schild von 5. Dazu +10 Leben. | Schild von 6, +15 Leben. | 2,3 % | 5,1 % |
 | Wächter | ⚔️ Vergelter | Trifft ein Gegner jemanden aus dem Team, schlägt er mit 30 % Chance sofort zurück. Angriffe auf alle zählen nicht. Dazu +2 Angriff. | 45 % Chance, +3 Angriff. | 2,3 % | 4,7 % |
 | Waldläuferin | 🎯 Scharfschützin | Zielt auf den Gegner mit den wenigsten Leben, ihr erster Schuss in jedem Kampf trifft kritisch. Angriffe auf sie treffen mit 25 % Chance einen anderen Helden. Dazu +10 % Krit-Chance. | 40 % Chance, +15 % Krit-Chance und Krit-Schaden +0,3. | 2,0 % | 1,2 % |
 | Waldläuferin | 🐾 Fährtenleserin | Wen sie trifft, der ist markiert: Alle Helden treffen ihn 25 % härter. Fallen machen dem Team nur halben Schaden. | 35 % härter, Fallen machen gar keinen Schaden. | 0,0 % | 3,4 % |
@@ -41,7 +41,7 @@ Team bringt (Messung unten, Ziel etwa +2,5 % und +4 %).
 | Paladin | ⛑️ Schutzherr | Wird ein Verbündeter mit weniger als 40 % Leben angegriffen, fängt er den Angriff ab, sofern es ihm selbst besser geht. Dazu +1 Verteidigung. | Schon unter 60 % Leben, +5 Verteidigung. | 2,0 % | 3,9 % |
 | Paladin | ⚜️ Kreuzritter | Seine Treffer heilen den Verbündeten, dem es am schlechtesten geht, um 8 % des Schadens. | 12 % des Schadens. | 2,0 % | 4,6 % |
 | Bardin | 🎵 Heldenlied | Zu Beginn jedes Kampfs: Das ganze Team ist schneller (Tempo +0,1) und hat +1 Angriff bis Kampfende. | Tempo +0,2 und +2 Angriff. | 2,1 % | 4,4 % |
-| Bardin | 🎭 Schmählied | Wen sie trifft, der ist so gekränkt, dass er 2 Runden lang 8 % weniger Angriff hat. | 10 % weniger Angriff. | 2,1 % | 5,6 % |
+| Bardin | 🎭 Schmählied | Wen sie trifft, der ist so gekränkt, dass er 2 Runden lang 8 % weniger Angriff hat. | 10 % weniger Angriff. | 2,1 % | 4,8 % |
 | Hexe | ⚡ Sturmhexe | Alle 2 Runden trifft ein Blitz jeden Gegner mit 60 % eines normalen Treffers von ihr. | 90 % eines normalen Treffers. | 1,6 % | 3,6 % |
 | Hexe | 🕸️ Fluchweberin | Jeder Treffer verflucht das Ziel: −1 Verteidigung bis Kampfende, höchstens −5. | −2 je Treffer. | 1,4 % | 4,8 % |
 | Nekromant | 💀 Knochenherr | Gefallene Gegner stehen als Skelette wieder auf und kämpfen bis zum Ende der Expedition mit, höchstens 2. Am Ende jeder Runde trifft jedes Skelett einen Gegner mit 25 % des Angriffs des Nekromanten. | Höchstens 3 Skelette, dafür trifft jedes mit 20 %. | 1,6 % | 4,8 % |
@@ -65,7 +65,7 @@ treffen. Bosse greifen oft mit Fähigkeiten an; nur auf Grundangriffe wären bei
 | `src/ui/screens/HeroesScreen.ts` | Wahl mit Nachfrage im Heldenfenster |
 | `src/ui/screens/CombatScreen.ts` | Abzeichen, goldene Banner, 🐾-Marke |
 | `src/rendering/Colors.ts` | Goldene Farbe der ★-Zeilen im Kampfprotokoll |
-| `src/data/musterteams.ts` | Wege der Musterteams (Bollwerk, Zorn, Scharfschützin, Meuchlerin) |
+| `src/data/musterteams.ts` | Wege der Musterteams (Phalanx, Zorn, Scharfschützin, Meuchlerin) |
 | `tests/spezialisierung.test.ts` | Regeln, Texte, je Weg ein Test der Wirkung, Anzeige |
 | `tools/wegEichung.ts` | Misst, wie viel jeder Weg bringt (`npm run weg-eichung`) |
 
@@ -115,7 +115,6 @@ Endspiel. Zahlen dazu in `docs/NEUE-DUNGEONS.md` («Eichung», dritte Tabelle).
   Lia fällt im Prüfstand auf Stufe 12 in jedem Lauf, Helden mit wenig Leben fallen oft vor dem Boss, und
   Schaden auf alle Gegner hilft gegen einen einzelnen Boss wenig. Stärker machen erst, wenn ein zweiter
   Prüfstand (anderes Team, anderer Dungeon) dasselbe zeigt.
-- **Etwas über dem Ziel:** Schmählied auf Stufe 15 (5,6 %).
 - **Nach Manager #43 und #44 neu messen** (Mindestschaden und stärkere Startklassen ändern alle Werte, auch
   Brom und Lia der Musterteams): `npm run weg-eichung -- 200` und `npm run dungeon-eichung -- 200`, danach
   Gegner und Tabellen anpassen. Vorab-Messung in `docs/NEUE-DUNGEONS.md`.

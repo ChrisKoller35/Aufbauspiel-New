@@ -12,7 +12,7 @@ import {
   grundSchaden, staerke, chance, schadenNehmen, schildText,
   kampfBeginn, kampfEnde, zustandAktualisieren, setztAus, schattenstoss,
   beimGetroffenWerden, besiegt, nachTreffer, rundenEnde, goldFaktor, neueToteMelden,
-  zielschuss, wegSchaden, schattentanz, abfangen, schwaechstesZiel, deckung, vergeltung,
+  zielschuss, wegSchaden, schattentanz, abfangen, schwaechstesZiel, deckung, vergeltung, wutAnfall,
 } from './Kampfeffekte';
 
 /** Check if a unit has a specific active special effect */
@@ -69,8 +69,7 @@ export class CombatEngine {
           const enemyDef = e.defId ? ENEMY_DEFS[e.defId] : undefined;
           const enrage = enemyDef?.enrage ?? { afterRound: 8, atkMult: 1.5, spdMult: 1.3 };
           if (round === enrage.afterRound) {
-            e.atk = Math.floor(e.atk * enrage.atkMult);
-            e.spd *= enrage.spdMult;
+            wutAnfall(e, enrage.atkMult, enrage.spdMult);
             run.combatLog.push(`!! ${e.name} ENRAGE !!`);
           }
         }
@@ -310,6 +309,7 @@ export class CombatEngine {
       for (const u of run.party) partyHp[u.id] = u.hp;
       const enemyHp: Record<number, number> = {};
       for (const e of enemies) enemyHp[e.id] = e.hp;
+      const markiert = enemies.filter(e => e.markiert).map(e => e.id);
       run.combatRoundSnapshots!.push({
         round,
         partyHp,
@@ -317,6 +317,7 @@ export class CombatEngine {
         logLines: roundLogLines,
         hadCrit,
         hadDeath,
+        ...(markiert.length > 0 ? { markiert } : {}),
       });
     }
 
@@ -557,10 +558,12 @@ export class CombatEngine {
       if (warMachine) partyHp[warMachine.id] = warMachine.hp;
       const enemyHp: Record<number, number> = {};
       for (const e of enemies) enemyHp[e.id] = e.hp;
+      const markiert = enemies.filter(e => e.markiert).map(e => e.id);
       run.combatRoundSnapshots!.push({
         round, partyHp, enemyHp, logLines: roundLogLines,
         hadCrit, hadDeath,
         fortificationHp: fort.hp,
+        ...(markiert.length > 0 ? { markiert } : {}),
       });
     }
 

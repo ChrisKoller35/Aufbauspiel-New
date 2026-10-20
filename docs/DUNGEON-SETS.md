@@ -95,6 +95,12 @@ Sets aus einer tieferen Ebene sind für ein Team mit besserer Ausrüstung ein R�
 der Vergleich auf der Heldenseite. Wege und Sets verstärken sich gegenseitig, darum sind die Gegner der
 zwei obersten Dungeons seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
 
+**Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
+Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher
+endete er nach dem zweiten eigenen Zug des Trägers und hielt in Belagerungen den ganzen Kampf. Die Tabelle oben
+ist schon mit der neuen Regel gemessen; in den übrigen Dungeons ändern sich die Siege mit Sets kaum
+(Festung «frisch» mit Sets aus Ebene 4: 1 von 40 Läufen vorher, 0 von 40 jetzt).
+
 **Nach Manager #43 und #44 neu messen.** Mindestschaden und stärkere Startklassen verschieben alle Werte
 (Vorab-Messung in `docs/NEUE-DUNGEONS.md`, «Eichung»).
 

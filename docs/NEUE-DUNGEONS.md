@@ -62,7 +62,7 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 ## Eichung
 
 `npm run dungeon-eichung` lässt die drei Musterteams (`src/data/musterteams.ts`) je 200 Mal durch
-jeden Dungeon laufen (`src/systems/Musterlauf.ts`). Ihre Helden gehen Wege (Bollwerk, Zorn, Scharfschützin,
+jeden Dungeon laufen (`src/systems/Musterlauf.ts`). Ihre Helden gehen Wege (Phalanx, Zorn, Scharfschützin,
 Meuchlerin; `docs/SPEZIALISIERUNG.md`). An Rastplätzen rasten sie immer, bei den festen Wahl-Räumen spielen sie
 
 - **vorsichtig:** immer die sichere Option (Heilung),

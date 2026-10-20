@@ -60,7 +60,7 @@ export const MUSTER_TEAMS: Record<'frisch' | 'gut' | 'stark', MusterTeam> = {
   frisch: {
     name: 'Frisch (Stufe 10, T3, 3 Helden)',
     helden: [
-      { classId: 'guardian', name: 'Brom', stufe: 10, gear: T3.tank, weg: 'guardian_bollwerk' },
+      { classId: 'guardian', name: 'Brom', stufe: 10, gear: T3.tank, weg: 'guardian_phalanx' },
       { classId: 'berserker', name: 'Grimm', stufe: 10, gear: T3.dps, weg: 'berserker_zorn' },
       { classId: 'ranger', name: 'Lia', stufe: 10, gear: T3.bow, weg: 'ranger_scharfschuetzin' },
     ],
@@ -68,7 +68,7 @@ export const MUSTER_TEAMS: Record<'frisch' | 'gut' | 'stark', MusterTeam> = {
   gut: {
     name: 'Gut (Stufe 12, T3/T4, 4 Helden)',
     helden: [
-      { classId: 'guardian', name: 'Brom', stufe: 12, gear: T4.tank, weg: 'guardian_bollwerk' },
+      { classId: 'guardian', name: 'Brom', stufe: 12, gear: T4.tank, weg: 'guardian_phalanx' },
       { classId: 'berserker', name: 'Grimm', stufe: 12, gear: T3.dps, weg: 'berserker_zorn' },
       { classId: 'ranger', name: 'Lia', stufe: 12, gear: T3.bow, weg: 'ranger_scharfschuetzin' },
       { classId: 'assassin', name: 'Sina', stufe: 12, gear: T3.dps, weg: 'assassin_meuchlerin' },
@@ -77,7 +77,7 @@ export const MUSTER_TEAMS: Record<'frisch' | 'gut' | 'stark', MusterTeam> = {
   stark: {
     name: 'Stark (Stufe 15, T4, 4 Helden)',
     helden: [
-      { classId: 'guardian', name: 'Brom', stufe: 15, gear: T4.tank, weg: 'guardian_bollwerk' },
+      { classId: 'guardian', name: 'Brom', stufe: 15, gear: T4.tank, weg: 'guardian_phalanx' },
       { classId: 'berserker', name: 'Grimm', stufe: 15, gear: T4.dps, weg: 'berserker_zorn' },
       { classId: 'ranger', name: 'Lia', stufe: 15, gear: T4.bow, weg: 'ranger_scharfschuetzin' },
       { classId: 'assassin', name: 'Sina', stufe: 15, gear: T4.dps, weg: 'assassin_meuchlerin' },

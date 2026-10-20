@@ -14,7 +14,7 @@ export const MEISTER_AB_STUFE = 15;
 type WegEffekt = Omit<SpecialEffect, 'usesLeft'>;
 
 export interface SpezialisierungDef {
-  /** z. B. guardian_bollwerk */
+  /** z. B. guardian_phalanx */
   id: string;
   /** Klasse (CLASS_DEFS) */
   klasse: string;
@@ -37,12 +37,12 @@ export interface SpezialisierungDef {
 export const SPEZIALISIERUNGEN: SpezialisierungDef[] = [
   // ── Wächter ──
   {
-    id: 'guardian_bollwerk', klasse: 'guardian', name: 'Bollwerk', zeichen: '🛡️',
+    id: 'guardian_phalanx', klasse: 'guardian', name: 'Phalanx', zeichen: '🧱',
     kurz: 'Schützt das ganze Team',
     text: 'Zu Beginn jedes Kampfs erhält jeder im Team einen Schild von 5. Dazu +10 Leben.',
     meisterText: 'Schild von 6, +15 Leben.',
-    effekte: [{ id: 'bollwerk', power: 5 }],
-    meisterEffekte: [{ id: 'bollwerk', power: 6 }],
+    effekte: [{ id: 'phalanx', power: 5 }],
+    meisterEffekte: [{ id: 'phalanx', power: 6 }],
     werte: { hp: 10 },
     meisterWerte: { hp: 15 },
   },

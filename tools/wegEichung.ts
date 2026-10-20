@@ -11,7 +11,7 @@
 // Wegen sind (danach richten sich die Gegner der obersten Dungeons).
 // Tabelle in docs/SPEZIALISIERUNG.md nachführen.
 // Aufruf: npm run weg-eichung   (mehr Läufe: npm run weg-eichung -- 200,
-//         nur einzelne Wege: npm run weg-eichung -- 200 guardian_bollwerk,witch_fluchweberin)
+//         nur einzelne Wege: npm run weg-eichung -- 200 guardian_phalanx,witch_fluchweberin)
 // ────────────────────────────────────────────────────────────────
 
 import { DIFFICULTY_DEFS } from '../src/data/difficulty';
