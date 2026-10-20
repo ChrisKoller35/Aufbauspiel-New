@@ -10,6 +10,7 @@
 // 2. Edge-Antialiasing: Pixel an der Grenze zum Motiv bekommen
 //    reduziertes Alpha fuer saubere Kanten
 // 3. Originale werden in generated/ gesichert (falls vorhanden)
+// Schon freigestellte Sprites (kein Hintergrund mehr am Rand) bleiben unveraendert.
 //
 // Anleitung: npm run remove-bg
 // ============================================================
@@ -95,6 +96,17 @@ async function processSprite(filePath: string): Promise<boolean> {
     const i = (y * w + x) * 4;
     return [pixels[i], pixels[i + 1], pixels[i + 2], pixels[i + 3]];
   };
+
+  // Schon freigestellt (kein Magenta oder Schwarz mehr am Rand): nichts tun. Ein zweiter
+  // Lauf fände keinen Hintergrund mehr, würde aber die Kanten jedes Mal weiter ausdünnen.
+  const randHintergrund = (x: number, y: number) => {
+    const [r, g, b, a] = pixelAt(x, y);
+    return a > 0 && isBackground(r, g, b);
+  };
+  let hatHintergrund = false;
+  for (let x = 0; x < w && !hatHintergrund; x++) hatHintergrund = randHintergrund(x, 0) || randHintergrund(x, h - 1);
+  for (let y = 0; y < h && !hatHintergrund; y++) hatHintergrund = randHintergrund(0, y) || randHintergrund(w - 1, y);
+  if (!hatHintergrund) return false;
 
   // Seed-Pixel: alle Randpixel die Hintergrund (Magenta/Schwarz) oder transparent sind
   const queue: number[] = [];
@@ -317,7 +329,7 @@ async function main() {
       } else if (wasChanged) {
         console.log(`   OK ${key} - Hintergrund entfernt`);
       } else {
-        console.log(`   -- ${key} - kein Hintergrund erkannt`);
+        console.log(`   -- ${key} - kein Hintergrund (mehr) erkannt`);
         unchanged++;
         continue;
       }
