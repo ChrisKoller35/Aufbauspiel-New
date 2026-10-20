@@ -113,7 +113,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'forest_short',
     name: 'Waldpfad (kurz)',
     tier: 1,
-    rooms: 6,
+    rooms: 5,
     encounters: [
       { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
       { type: 'combat', enemies: ['forest_bandit'] },
@@ -128,7 +128,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'forest_medium',
     name: 'Tiefwald (mittel)',
     tier: 2,
-    rooms: 10,
+    rooms: 9,
     encounters: [
       { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
       { type: 'combat', enemies: ['forest_bandit', 'forest_bandit'] },
@@ -417,7 +417,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'ocean_shallows',
     name: 'Versunkene Küste',
     tier: 2,
-    rooms: 8,
+    rooms: 7,
     isUnderwater: true,
     airDecayPerRoom: 8,
     encounters: [
@@ -466,7 +466,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'forest_ruins',
     name: 'Verfallene Lichtung',
     tier: 1,
-    rooms: 7,
+    rooms: 6,
     encounters: [
       { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
       { type: 'combat', enemies: ['forest_bandit'] },
@@ -502,7 +502,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'cave_tunnels',
     name: 'Verschlungene Tunnel',
     tier: 2,
-    rooms: 8,
+    rooms: 7,
     encounters: [
       { type: 'combat', enemies: ['cave_bat', 'cave_goblin'] },
       { type: 'combat', enemies: ['cave_slime', 'cave_slime'] },
@@ -520,7 +520,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'crystal_mines',
     name: 'Kristallminen',
     tier: 3,
-    rooms: 10,
+    rooms: 9,
     encounters: [
       { type: 'combat', enemies: ['crystal_beetle', 'cave_goblin'] },
       { type: 'combat', enemies: ['deep_crawler', 'crystal_beetle'] },
@@ -563,7 +563,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'swamp_village',
     name: 'Sumpfdorf',
     tier: 2,
-    rooms: 7,
+    rooms: 6,
     encounters: [
       { type: 'combat', enemies: ['leech_swarm', 'toxic_toad'] },
       { type: 'merchant' },
@@ -599,7 +599,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'shadow_catacombs',
     name: 'Schattenkatakomben',
     tier: 4,
-    rooms: 11,
+    rooms: 10,
     encounters: [
       { type: 'combat', enemies: ['bone_knight', 'ghost_mage'] },
       { type: 'combat', enemies: ['tomb_horror', 'skeleton_warrior'] },
@@ -620,7 +620,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'obsidian_tunnels',
     name: 'Obsidiantunnel',
     tier: 3,
-    rooms: 9,
+    rooms: 8,
     encounters: [
       { type: 'combat', enemies: ['lava_elemental', 'fire_bat'] },
       { type: 'combat', enemies: ['obsidian_crab', 'fire_bat', 'fire_bat'] },
@@ -639,7 +639,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'ash_wastes',
     name: 'Aschewüste',
     tier: 4,
-    rooms: 10,
+    rooms: 9,
     encounters: [
       { type: 'combat', enemies: ['ash_golem', 'fire_bat'] },
       { type: 'hazard', damage: 12 },

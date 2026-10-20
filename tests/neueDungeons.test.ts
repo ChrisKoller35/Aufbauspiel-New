@@ -71,6 +71,10 @@ describe('Dungeons über dem Vulkankern', () => {
     for (const id of aufKarte) expect(ROUTE_DEFS[id], id).toBeTruthy();
   });
 
+  it('jede Route zeigt so viele Räume, wie sie hat (Karte und Expeditionsliste lesen `rooms`)', () => {
+    for (const route of Object.values(ROUTE_DEFS)) expect(route.rooms, route.id).toBe(route.encounters.length);
+  });
+
   it('Räume, Gegner, Beute und Wahl-Räume sind vollständig beschrieben', () => {
     for (const route of NEUE) {
       expect(route.rooms, route.id).toBe(route.encounters.length);
