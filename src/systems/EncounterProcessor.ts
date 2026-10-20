@@ -11,7 +11,21 @@ import { hasEffect } from './CombatEngine';
  */
 export class EncounterProcessor {
   processRest(run: ExpeditionRun, room: EncounterRoom, rng: SeededRNG): void {
-    // Feature #11: Begegnungs-Wahl für Rast-Räume generieren
+    const { optionA, optionB } = festeWahl(run, room) ?? this.zufallsWahlRast(room, rng);
+    room.encounterChoices = { optionA, optionB };
+    run.pendingChoice = { roomIndex: room.index, optionA, optionB };
+    run.combatLog.push('>> Rastplatz gefunden! Wähle eine Aktion.');
+
+    // Bei Unterwasser-Routen: Rest erholt zusätzlich +25 Luft
+    const restRoute = ROUTE_DEFS[run.routeId];
+    if (restRoute?.isUnderwater && run.airShield !== undefined) {
+      run.airShield = Math.min(run.airShieldMax ?? 100, run.airShield + 25);
+      run.combatLog.push('💨 Atemstille — Luftschild erholt sich um 25 Luft.');
+    }
+  }
+
+  /** Feature #11: Begegnungs-Wahl für Rast-Räume (Rasten oder eine zufällige zweite Option) */
+  private zufallsWahlRast(room: EncounterRoom, rng: SeededRNG): { optionA: EncounterChoice; optionB: EncounterChoice } {
     const optionA: EncounterChoice = {
       label: `Rasten (+${room.healPercent}% HP)`,
       flavorText: 'Das Team legt eine kurze Rast ein und erholt sich.',
@@ -45,17 +59,7 @@ export class EncounterProcessor {
         value: 30,
       };
     }
-
-    room.encounterChoices = { optionA, optionB };
-    run.pendingChoice = { roomIndex: room.index, optionA, optionB };
-    run.combatLog.push('>> Rastplatz gefunden! Wähle eine Aktion.');
-
-    // Bei Unterwasser-Routen: Rest erholt zusätzlich +25 Luft
-    const restRoute = ROUTE_DEFS[run.routeId];
-    if (restRoute?.isUnderwater && run.airShield !== undefined) {
-      run.airShield = Math.min(run.airShieldMax ?? 100, run.airShield + 25);
-      run.combatLog.push('💨 Atemstille — Luftschild erholt sich um 25 Luft.');
-    }
+    return { optionA, optionB };
   }
 
   processHazard(run: ExpeditionRun, room: EncounterRoom): void {
@@ -76,7 +80,23 @@ export class EncounterProcessor {
   processFind(run: ExpeditionRun, room: EncounterRoom, rng: SeededRNG): void {
     run.combatLog.push('>> Fundstätte entdeckt!');
 
-    // Feature #11: Begegnungs-Wahl für Fund-Räume generieren
+    const { optionA, optionB } = festeWahl(run, room) ?? this.zufallsWahlFund(room, rng);
+    room.encounterChoices = { optionA, optionB };
+    run.pendingChoice = { roomIndex: room.index, optionA, optionB };
+
+    // air_crystal als Fund: Luftschild auffüllen (+30)
+    const findRoute = ROUTE_DEFS[run.routeId];
+    if (findRoute?.isUnderwater && run.airShield !== undefined) {
+      const hasAirCrystal = room.findItems?.some(fi => fi.itemId === 'air_crystal');
+      if (hasAirCrystal) {
+        run.airShield = Math.min(run.airShieldMax ?? 100, run.airShield + 30);
+        run.combatLog.push('💎 Luftkristall! Luftschild +30 Luft.');
+      }
+    }
+  }
+
+  /** Feature #11: Begegnungs-Wahl für Fund-Räume (Truhe oder eine zufällige zweite Option) */
+  private zufallsWahlFund(room: EncounterRoom, rng: SeededRNG): { optionA: EncounterChoice; optionB: EncounterChoice } {
     const gold = room.findGold ?? 20;
 
     const optionA: EncounterChoice = {
@@ -125,19 +145,7 @@ export class EncounterProcessor {
         value: 8,
       };
     }
-
-    room.encounterChoices = { optionA, optionB };
-    run.pendingChoice = { roomIndex: room.index, optionA, optionB };
-
-    // air_crystal als Fund: Luftschild auffüllen (+30)
-    const findRoute = ROUTE_DEFS[run.routeId];
-    if (findRoute?.isUnderwater && run.airShield !== undefined) {
-      const hasAirCrystal = room.findItems?.some(fi => fi.itemId === 'air_crystal');
-      if (hasAirCrystal) {
-        run.airShield = Math.min(run.airShieldMax ?? 100, run.airShield + 30);
-        run.combatLog.push('💎 Luftkristall! Luftschild +30 Luft.');
-      }
-    }
+    return { optionA, optionB };
   }
 
   processMerchant(run: ExpeditionRun, _room: EncounterRoom): void {
@@ -170,4 +178,13 @@ export class EncounterProcessor {
       }
     }
   }
+}
+
+/**
+ * Fest vorgegebene Wahl dieses Raums aus der Route (EncounterTemplate.wahl), z. B. die
+ * Hort-Schätze im Drachenhort. Räume entsprechen den Route-Begegnungen der Reihe nach.
+ */
+function festeWahl(run: ExpeditionRun, room: EncounterRoom): { optionA: EncounterChoice; optionB: EncounterChoice } | null {
+  const wahl = run.treppe ? undefined : ROUTE_DEFS[run.routeId]?.encounters[room.index]?.wahl;
+  return wahl ? { optionA: { ...wahl.a }, optionB: { ...wahl.b } } : null;
 }

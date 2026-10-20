@@ -3,6 +3,7 @@ import { ExpeditionRun, CombatUnit, EncounterRoom, EncounterChoice } from '../mo
 import { GuildFighter } from '../models/GuildRoster';
 import { ROUTE_DEFS } from '../data/routes';
 import { ITEM_DEFS } from '../data/items';
+import { ENEMY_DEFS } from '../data/enemies';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { SeededRNG } from '../utils/RNG';
@@ -359,6 +360,8 @@ export class ExpeditionSystem {
       return false;
     }
 
+    if (room.type === 'boss') this.ersterSiegBeute(state, run, room);
+
     // Treppe: Wer bis zur Rundengrenze nicht gewonnen hat, muss umkehren
     if (run.treppe) {
       if (room.enemies.some(e => e.hp > 0)) {
@@ -383,8 +386,8 @@ export class ExpeditionSystem {
 
   /**
    * Nach einem geschafften Raum: Kontrollpunkt verlangen (Feature #15: nach
-   * jedem 3. Raum, ausser bei Todesmarsch; Treppe: Rastplatz nach jedem
-   * 5. Stockwerk) oder in den nächsten Raum gehen.
+   * jedem 3. Raum, ausser nach dem letzten und bei Todesmarsch; Treppe:
+   * Rastplatz nach jedem 5. Stockwerk) oder in den nächsten Raum gehen.
    */
   private raumGeschafft(run: ExpeditionRun, room: EncounterRoom): void {
     if (run.treppe) {
@@ -393,7 +396,7 @@ export class ExpeditionSystem {
         run.pendingCheckpoint = true;
         return;
       }
-    } else if (room.index % 3 === 2 && run.activeModifier !== 'death_march') {
+    } else if (room.index % 3 === 2 && room.index < run.rooms.length - 1 && run.activeModifier !== 'death_march') {
       run.pendingCheckpoint = true;
       return;
     }
@@ -516,6 +519,55 @@ export class ExpeditionSystem {
         break;
       }
     }
+
+    // Preis der Wahl (verbotene Bücher im Himmelsarchiv): kostet Leben, aber nie das letzte
+    if (choice.kostetLeben) {
+      for (const unit of aliveParty) {
+        unit.hp = Math.max(1, unit.hp - Math.floor(unit.maxHp * choice.kostetLeben / 100));
+      }
+      run.combatLog.push(`>> Das hat seinen Preis: Die Gruppe verliert ${choice.kostetLeben}% HP.`);
+    }
+
+    if (choice.gier) this.hortGierWaechst(run, choice.gier);
+  }
+
+  /**
+   * Hort-Gier (RouteDef.hortGier): Jeder Punkt macht den Boss um feste Anteile seiner
+   * Startwerte stärker. Wirkt sofort, damit die Kampf-Vorschau die echten Werte zeigt.
+   */
+  private hortGierWaechst(run: ExpeditionRun, punkte: number): void {
+    const route = ROUTE_DEFS[run.routeId];
+    const regel = route?.hortGier;
+    if (!regel) return;
+    const vorher = run.gier ?? 0;
+    const jetzt = vorher + punkte;
+    run.gier = jetzt;
+    // Verhältnis zum bisherigen Stand: so bleibt es bei Start × (1 + Punkte × Anteil)
+    const faktor = (anteil: number): number => (1 + jetzt * anteil) / (1 + vorher * anteil);
+    for (const room of run.rooms) {
+      if (room.type !== 'boss' || room.completed) continue;
+      for (const boss of room.enemies) {
+        boss.atk = Math.round(boss.atk * faktor(regel.angriffProPunkt));
+        const maxHp = Math.round(boss.maxHp * faktor(regel.lebenProPunkt));
+        boss.hp += maxHp - boss.maxHp;
+        boss.maxHp = maxHp;
+      }
+    }
+    const bossName = route.bossId ? ENEMY_DEFS[route.bossId]?.name ?? 'Der Boss' : 'Der Boss';
+    const prozent = (anteil: number): number => Math.round(jetzt * anteil * 100);
+    run.combatLog.push(`>> ${bossName} wittert den Diebstahl: +${prozent(regel.angriffProPunkt)}% Angriff, +${prozent(regel.lebenProPunkt)}% Leben.`);
+  }
+
+  /** Erster Sieg der Gilde über den Routen-Boss: garantierte Beute (RouteDef.ersterSiegBeute). */
+  private ersterSiegBeute(state: GameState, run: ExpeditionRun, room: EncounterRoom): void {
+    const route = ROUTE_DEFS[run.routeId];
+    const itemId = route?.ersterSiegBeute;
+    const bossId = route?.bossId;
+    if (!itemId || !bossId) return;
+    const besiegt = room.enemies.some(e => e.defId === bossId && e.hp <= 0);
+    if (!besiegt || state.guildStats.bossesDefeatedIds.includes(bossId)) return;
+    run.loot[itemId] = (run.loot[itemId] ?? 0) + 1;
+    run.combatLog.push(`>> Erster Sieg über ${ENEMY_DEFS[bossId]?.name ?? bossId}: ${ITEM_DEFS[itemId]?.name ?? itemId} gehört euch!`);
   }
 
   // ─── Feature #15: Checkpoint-Dialog ─────────────────────────────

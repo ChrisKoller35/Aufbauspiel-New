@@ -36,6 +36,8 @@ function getRouteImageStyle(routeId: string): string {
 
 function getBiomeTag(route: RouteDef): { label: string; cls: string } {
   const id = route.id;
+  if (route.gebiet === 'gipfel') return { label: 'Drachengipfel', cls: 'tag-gipfel' };
+  if (route.gebiet === 'himmel') return { label: 'Himmel', cls: 'tag-himmel' };
   if (route.isUnderwater) return { label: 'Unterwasser', cls: 'tag-unterwasser' };
   if (route.isSiegeRoute) return { label: 'Belagerung', cls: 'tag-belagerung' };
   if (id.includes('volcano') || id.includes('obsidian') || id.includes('ash') || id.includes('magma')) return { label: 'Vulkan', cls: 'tag-vulkan' };
@@ -46,10 +48,11 @@ function getBiomeTag(route: RouteDef): { label: string; cls: string } {
   return { label: 'Wald', cls: 'tag-wald' };
 }
 
+/** Wie auf der Dungeon-Karte: Ebenen über 5 bekommen je einen Funken dazu (★★★★★✦). */
 function difficultyStars(tier: number): string {
   const max = 5;
   const filled = Math.min(tier, max);
-  return '★'.repeat(filled) + '☆'.repeat(max - filled);
+  return '★'.repeat(filled) + '☆'.repeat(max - filled) + '✦'.repeat(Math.max(0, tier - max));
 }
 
 function routeDescription(route: RouteDef): string {
@@ -288,7 +291,7 @@ function buildTeamHTML(): string {
 
   return `
     ${renderHeader(gameState, 'expeditions', routeName)}
-    ${isTreppe ? treppenInfoHTML() : recLevel ? `<div class="exp-rec">Empfohlen: ${recLevel}</div>` : ''}
+    ${isTreppe ? treppenInfoHTML() : routeInfoHTML(recLevel, route?.besonderheit)}
     <div class="team-wrap">
       <div class="team-left">
         <div class="lbl" style="margin-bottom:8px">Dein Team</div>
@@ -304,6 +307,16 @@ function buildTeamHTML(): string {
       </div>
     </div>
   `;
+}
+
+/** Empfehlung und Besonderheit der Route über dem Team, im selben Band wie die Regeln der Treppe. */
+function routeInfoHTML(recLevel: string, besonderheit: string | undefined): string {
+  if (!recLevel && !besonderheit) return '';
+  return `
+    <div class="exp-info">
+      ${recLevel ? `<span class="exp-rec">Empfohlen: ${recLevel}</span>` : ''}
+      ${besonderheit ? `<span class="exp-besonderheit">✦ ${besonderheit}</span>` : ''}
+    </div>`;
 }
 
 /** Bestmarke und die Regeln der Treppe in einem Satz je Regel. */

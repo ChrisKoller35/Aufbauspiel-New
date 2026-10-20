@@ -308,25 +308,26 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     flavorText: 'Es schlägt. Leise. Rhythmisch. Wessen Herz es einst war, weiß niemand mehr.',
   },
 
-  // --- T5 Nemesis Gear (Platzhalter für spätere Super-Items) ---
+  // --- T5 Mythisch: Nemesis-Beute und Bosse über dem Vulkankern (Erstsieg: RouteDef.ersterSiegBeute),
+  //     je etwas stärker als das beste T4-Stück für denselben Platz ---
   blade_of_thousand_shadows: {
     id: 'blade_of_thousand_shadows', name: 'Klinge der tausend Schatten', type: 'gear',
     stackSize: 1, baseValue: 100, gearSlot: 'mainHand', weaponSlotType: '1h', tier: 5,
-    statBonuses: { atk: 9, def: -2, spd: 0.10, critChance: 0.10 },
+    statBonuses: { atk: 12, spd: 0.10, critChance: 0.12 },
     tags: ['gear', 'weapon', 'tier5', 'nemesis', 'special:double_strike'],
-    flavorText: 'Sie schlägt zweimal. Immer. Das erste Mal sieht man. Das zweite nicht.',
+    flavorText: 'Im Himmelsarchiv unter «Verschiedenes» abgelegt. Schlägt zweimal: einmal für den Text, einmal für die Fußnote.',
   },
   shield_of_the_ancient: {
     id: 'shield_of_the_ancient', name: 'Schild des Uralten', type: 'gear',
     stackSize: 1, baseValue: 105, gearSlot: 'armor', weaponSlotType: 'shield', tier: 5,
-    statBonuses: { def: 8, hp: 15, spd: -0.10 },
+    statBonuses: { def: 14, hp: 26, spd: -0.05 },
     tags: ['gear', 'armor', 'shield', 'tier5', 'nemesis', 'special:reflect'],
-    flavorText: 'Alt genug, um zu wissen: Wer trifft, bekommt zurück.',
+    flavorText: 'Eine Schuppe von Ignarax, so groß wie ein Scheunentor. Wer darauf schlägt, bekommt die Antwort sofort.',
   },
   amulet_of_rebirth: {
     id: 'amulet_of_rebirth', name: 'Amulett der Wiedergeburt', type: 'gear',
     stackSize: 1, baseValue: 110, gearSlot: 'trinket', tier: 5,
-    statBonuses: { atk: 2, def: 2, hp: 10, spd: 0.05, critChance: 0.05 },
+    statBonuses: { atk: 4, def: 3, hp: 16, spd: 0.08, critChance: 0.08 },
     tags: ['gear', 'trinket', 'tier5', 'nemesis', 'special:revive'],
     flavorText: 'Einmal. Nur einmal. Wer es trägt, steht nach dem ersten tödlichen Treffer mit 25% HP wieder auf.',
   },

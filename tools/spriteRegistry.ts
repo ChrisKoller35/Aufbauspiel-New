@@ -556,11 +556,11 @@ The character fills 80% of the frame.`),
     `${STYLES.BOSS}, the Magma Wyrm boss: massive serpentine dragon forged of cooling lava and volcanic obsidian, brilliant orange-white glowing cracks running through dark rocky body, massive open jaws pouring molten fire, coiled in a pool of lava, wings of hardened magma half-spread, volcanic devastation incarnate`),
 
   sprite("BOSS_ARCHIV_WATCHER", "boss", 96, 96, "post-mvp",
-    "Boss: Archivwächter (Verfluchte Bibliothek)",
+    "Boss: Der Oberarchivar (Himmelsarchiv)",
     `${STYLES.BOSS}, the Archive Watcher boss: enormous floating eldritch eye with a slit reptilian pupil, orbited by cursed ancient tomes and scrolls, writhing magical tentacles of energy extending outward, ancient runes burning gold and blue, mystical purple aura, the all-seeing immortal guardian of forbidden knowledge`),
 
   sprite("BOSS_ANCIENT_DRAGON", "boss", 96, 96, "post-mvp",
-    "Boss: Uralter Drache (Drachenhort, 3-Phasen)",
+    "Boss: Ignarax, der Uralte (Drachenhort)",
     `${STYLES.BOSS}, the Ancient Dragon boss: titanic scarred dragon with wings fully spread wide, deep red and gold battle-worn scales, fire breath charging in jaws with visible heat distortion, massive clawed feet planted on a golden treasure hoard, wise cruel ancient eyes, the ultimate final boss radiating unstoppable primordial power`),
 
   // ═══════════════════════════════════════════════════════════
@@ -774,6 +774,23 @@ The character fills 80% of the frame.`),
   sprite("ENEMY_MAGMA_BROODLING", "enemy", 96, 96, "post-mvp",
     "Gegner: Magmabrut (Vulkan)",
     `${STYLES.ENEMY}, a Magma Broodling: small fast lizard-like creature of hardening dark magma, bright glowing orange-red cracks across its body, skittering aggressive forward-leaning pose with claws digging in, smoke rising from its body, fast and deadly volcanic minion`),
+
+  // ═══════════════════════════════════════════════════════════
+  // GEGNER Post-MVP – DRACHENHORT (über dem Vulkankern, docs/NEUE-DUNGEONS.md)
+  // Bis diese Bilder erzeugt sind, tragen die Gegner Bilder anderer Gegner (data/enemies.ts)
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("ENEMY_GLUTWYRMLING", "enemy", 96, 96, "post-mvp",
+    "Gegner: Glutwyrmling (Drachenhort)",
+    `${STYLES.ENEMY}, a Glutwyrmling young ember drake: lean young dragon the size of a large dog, glowing orange-red scales with charred black edges, oversized wings half spread, sharp teeth bared in a cocky snarl, smoke curling from its nostrils, crouched pouncing stance on a few scattered gold coins, arrogant young dragon that thinks every hoard is its own`),
+
+  sprite("ENEMY_HORTKOBOLD", "enemy", 96, 96, "post-mvp",
+    "Gegner: Hortkobold (Drachenhort)",
+    `${STYLES.ENEMY}, a Hoard Kobold: small scrawny reptilian kobold with rust-red scales and huge greedy yellow eyes, overloaded with stolen gold chains and rings, a far too large jeweled crown slipping over one eye, a bulging sack of coins on its back, one clawed hand ready to hurl a fistful of gold coins, sneaky greedy pose`),
+
+  sprite("ENEMY_DRACHENPRIESTER", "enemy", 96, 96, "post-mvp",
+    "Gegner: Drachenpriester (Drachenhort)",
+    `${STYLES.ENEMY}, a Dragon Priest: tall cultist in deep crimson and gold vestments wearing a horned dragon skull mask, dragon scale pauldrons, staff topped with a glowing ember crystal, swirling fire runes around one raised hand, zealous preacher of the dragon flame in a support caster pose`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – VERFLUCHTE BIBLIOTHEK

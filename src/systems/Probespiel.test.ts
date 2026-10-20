@@ -9,6 +9,7 @@ import { ProvisionSystem } from './ProvisionSystem';
 import { treppeOffen } from './Treppe';
 import { ITEM_DEFS } from '../data/items';
 import { MUSTER_TEAMS } from '../data/musterteams';
+import { ROUTE_DEFS, isRouteAvailable, getRouteLockReasons } from '../data/routes';
 
 /** Neues Spiel wie in main.ts, dann zum Probespiel gemacht. */
 function probespiel(): GameState {
@@ -80,6 +81,16 @@ describe('Probespiel', () => {
       else system.processCurrentRoom(state);
     }
     expect(run.treppe!.geschafft).toBeGreaterThanOrEqual(15);
+  });
+
+  it('alle Dungeons bis zum Vulkankern sind offen, darüber wartet der Drachenhort', () => {
+    const state = probespiel();
+    expect(state.guildStats.rank).toBe(5);
+    for (const route of Object.values(ROUTE_DEFS).filter(r => r.tier <= 4)) {
+      expect(isRouteAvailable(route, state), route.id).toBe(true);
+    }
+    expect(isRouteAvailable(ROUTE_DEFS.drachenhort, state)).toBe(true);
+    expect(getRouteLockReasons(ROUTE_DEFS.himmelsarchiv, state)).toEqual(['Besiege: Ignarax, der Uralte']);
   });
 
   it('speichert auf einem eigenen Platz, der richtige Spielstand bleibt unberührt', () => {
