@@ -12,11 +12,12 @@ import { ROUTE_DEFS } from '../../data/routes';
 import { ENEMY_DEFS } from '../../data/enemies';
 import { RIVALEN } from '../../data/rivalen';
 import { setFuerRoute, setVonItem } from '../../data/dungeonSets';
+import { imDungeon } from '../../data/dungeonNamen';
 import { bezwungeneDungeons } from '../../systems/Bezwungen';
 import { setTeilHinweise } from '../../systems/DungeonSets';
 import {
-  GildenStand, RUHMESTRUHEN, WochenZeile, belohnungenAbholen, besterRuhmDungeon, gipfelRangliste, imDungeon,
-  naechsteBedrohung, neuigkeiten, ranglisteStand, ruhmJeSieg, truhenDungeon, wegVorbei, wochenRangliste,
+  GildenStand, RUHMESTRUHEN, WochenZeile, belohnungenAbholen, besterRuhmDungeon, gipfelRangliste, naechsteBedrohung,
+  neuigkeiten, ranglisteStand, ruhmJeSieg, truhenDungeon, wegVorbei, wochenRangliste,
 } from '../../systems/Rangliste';
 import { showChestReveal } from '../components/ChestRevealOverlay';
 import { navigateTo } from '../ScreenRouter';
@@ -175,7 +176,7 @@ function gipfelZeileHtml(g: GildenStand, platz: number): string {
       <span class="rl-platz">${platz}</span>
       <span class="rl-wappen"${g.farbe ? ` style="--rl-farbe:${g.farbe}"` : ''}>${g.wappen}</span>
       <span class="rl-name">${escapeHtml(g.name)}<small>${unter}</small></span>
-      <span class="rl-wert"><b>${g.hoechster ? meter(g.hoehe) : '–'}</b><small>${wo} · ${g.sterne} ★</small></span>
+      <span class="rl-wert"><b>${g.hoechster ? meter(g.hoehe) : '–'}</b><small>${wo} · ${g.sterne}&nbsp;★</small></span>
     </li>`;
 }
 

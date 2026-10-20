@@ -674,37 +674,6 @@ export function neuigkeiten(state: GameState, jetzt: number, anzahl = 6): Neuigk
   });
 }
 
-// ── Dungeon-Namen im Satz ──
-
-type Artikel = 'der' | 'die' | 'das' | 'mehrzahl' | null;
-
-/** «Der Drachenhort» → der + Drachenhort; «Die …» auf -en, -ern oder -eln ist Mehrzahl («Die Stadtmauern») */
-function artikelUndName(routeId: string): { artikel: Artikel; name: string } {
-  const voll = ROUTE_DEFS[routeId]?.name ?? routeId;
-  const m = /^(Der|Die|Das) (.+)$/.exec(voll);
-  if (!m) return { artikel: null, name: voll };
-  const artikel = m[1] === 'Die' && /(e|er|el)n$/.test(m[2]) ? 'mehrzahl' : (m[1].toLowerCase() as Artikel);
-  return { artikel, name: m[2] };
-}
-
-/** Wo? «im Drachenhort», «in der Festung», «in den Stadtmauern», «in Vulkankern» (Namen ohne Artikel bleiben) */
-export function imDungeon(routeId: string): string {
-  const { artikel, name } = artikelUndName(routeId);
-  if (artikel === 'der' || artikel === 'das') return `im ${name}`;
-  if (artikel === 'die') return `in der ${name}`;
-  if (artikel === 'mehrzahl') return `in den ${name}`;
-  return `in ${name}`;
-}
-
-/** Wen? «den Drachenhort», «das Himmelsarchiv», «die Stadtmauern», «Vulkankern» */
-export function dungeonWen(routeId: string): string {
-  const { artikel, name } = artikelUndName(routeId);
-  if (artikel === 'der') return `den ${name}`;
-  if (artikel === 'das') return `das ${name}`;
-  if (artikel) return `die ${name}`;
-  return name;
-}
-
 // ── Kurzfassung fürs Hauptmenü ──
 
 export function ranglisteKurz(state: GameState, jetzt: number): { platz: number; gilden: number; wochePlatz: number; offen: number } {

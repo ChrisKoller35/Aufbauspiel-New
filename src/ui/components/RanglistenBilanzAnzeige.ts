@@ -4,7 +4,8 @@
 // (systems/Rangliste.ts, ranglisteNachExpedition).
 // ────────────────────────────────────────────────────────────────
 
-import { RanglistenBilanz, dungeonWen } from '../../systems/Rangliste';
+import { dungeonWen } from '../../data/dungeonNamen';
+import { RanglistenBilanz } from '../../systems/Rangliste';
 
 /** So viele Siege der Rivalen stehen höchstens einzeln da, der Rest als «und n weitere» */
 const MAX_RIVALEN_ZEILEN = 3;

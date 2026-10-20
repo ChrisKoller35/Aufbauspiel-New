@@ -14,8 +14,9 @@ import { bezwungeneDungeons } from '../src/systems/Bezwungen';
 import {
   RUHMESTRUHEN, besterRuhmDungeon, belohnungenAbholen, dungeonSterne, expeditionsRuhm, gildenAufKarte, gipfelRangliste,
   naechsteBedrohung, neuigkeiten, ranglisteKurz, ranglisteNachExpedition, ranglisteStand, rivalenLauf, ruhmJeSieg,
-  dungeonWen, imDungeon, ruhmestruhe, spielerEbenen, truhenDungeon, wocheVon, wochenRangliste,
+  ruhmestruhe, spielerEbenen, truhenDungeon, wocheVon, wochenRangliste,
 } from '../src/systems/Rangliste';
+import { DUNGEON_IM_SATZ, dungeonWen, imDungeon } from '../src/data/dungeonNamen';
 
 /** Montag, 2. November 2026, 10:00 (Ortszeit) */
 const MONTAG = new Date(2026, 10, 2, 10, 0).getTime();
@@ -355,17 +356,30 @@ describe('Rangliste: Wochenwertung', () => {
 });
 
 describe('Rangliste: Dungeon-Namen im Satz', () => {
-  test('Artikel passen zu «ein Sieg im …» und «bezwingt den …»', () => {
-    expect(imDungeon('drachenhort')).toBe('im Drachenhort');
-    expect(imDungeon('himmelsarchiv')).toBe('im Himmelsarchiv');
-    expect(imDungeon('siege_fortress')).toBe('in der Festung');
-    expect(imDungeon('siege_walls')).toBe('in den Stadtmauern');
-    expect(imDungeon('volcano_core')).toBe('in Vulkankern');
+  test('jeder Dungeon der Karte hat seine Formen für «ein Sieg im …» und «bezwingt den …»', () => {
+    for (const n of DUNGEON_GRAPH) {
+      const satz = DUNGEON_IM_SATZ[n.routeId];
+      expect(satz, `${n.routeId}: Zeile in src/data/dungeonNamen.ts fehlt`).toBeDefined();
+      expect(satz.wo, n.routeId).toMatch(/^(im|am|in der|in den|an der|an den) \S/);
+      expect(satz.wen, n.routeId).toMatch(/^(den|die|das) \S/);
+    }
+    expect(imDungeon('volcano_core')).toBe('im Vulkankern');
     expect(dungeonWen('drachenhort')).toBe('den Drachenhort');
-    expect(dungeonWen('himmelsarchiv')).toBe('das Himmelsarchiv');
-    expect(dungeonWen('siege_walls')).toBe('die Stadtmauern');
-    expect(dungeonWen('volcano_core')).toBe('Vulkankern');
-    // Kein Dungeon der Karte behält einen grossen Artikel mitten im Satz
-    for (const n of DUNGEON_GRAPH) expect(imDungeon(n.routeId), n.routeId).not.toMatch(/ (Der|Die|Das) /);
+  });
+
+  test('ohne Zeile: Formen aus dem Namen', () => {
+    const name = (routeId: string, text: string): string => {
+      ROUTE_DEFS[routeId] = { ...ROUTE_DEFS.forest_short, id: routeId, name: text };
+      return `${imDungeon(routeId)} | ${dungeonWen(routeId)}`;
+    };
+    try {
+      expect(name('probe_der', 'Der Sternenturm')).toBe('im Sternenturm | den Sternenturm');
+      expect(name('probe_das', 'Das Wolkenschloss')).toBe('im Wolkenschloss | das Wolkenschloss');
+      expect(name('probe_die', 'Die Bastion')).toBe('in der Bastion | die Bastion');
+      expect(name('probe_mehr', 'Die Himmelsgärten')).toBe('in den Himmelsgärten | die Himmelsgärten');
+      expect(name('probe_ohne', 'Sternwarte (kurz)')).toBe('in Sternwarte | Sternwarte');
+    } finally {
+      for (const id of ['probe_der', 'probe_das', 'probe_die', 'probe_mehr', 'probe_ohne']) delete ROUTE_DEFS[id];
+    }
   });
 });

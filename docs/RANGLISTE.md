@@ -110,7 +110,8 @@ erst die ganze Karte bringt Platz 1 für immer.
 | Datei | Inhalt |
 |---|---|
 | `src/data/rivalen.ts` | Die neun Rivalen-Gilden und die eigene Gilde |
-| `src/systems/Rangliste.ts` | Rennen, Gipfel-Rangliste, Wochenwertung, Ruhm, Ruhmestruhe, Neuigkeiten, Dungeon-Namen im Satz |
+| `src/systems/Rangliste.ts` | Rennen, Gipfel-Rangliste, Wochenwertung, Ruhm, Ruhmestruhe, Neuigkeiten |
+| `src/data/dungeonNamen.ts` | Wie jeder Dungeon im Satz heisst («im Vulkankern», «den Vulkankern») |
 | `src/systems/Bezwungen.ts` | Merker der bezwungenen Dungeons (die Bestenliste behält nur die 100 besten Läufe) |
 | `src/models/RanglisteStand.ts` | Was der Spielstand von der Rangliste speichert |
 | `src/systems/ExpeditionFinalizer.ts` | Ruft nach jeder Expedition `ranglisteNachExpedition` auf |
@@ -122,10 +123,9 @@ erst die ganze Karte bringt Platz 1 für immer.
 
 ## Neue Dungeons und neue Gilden
 
-- **Neuer Dungeon** auf der Karte: nichts zu tun. Ruhm und Mühe ergeben sich aus Ebene und Räumen, die
-  Rivalen dürfen eine Runde später hinein, die Wappen wandern von selbst. Steht ein Artikel im Namen
-  («Der Drachenhort»), passt ihn die Rangliste im Satz an («im Drachenhort», «bezwingt den Drachenhort»);
-  «Die …» mit -en, -ern oder -eln am Ende gilt als Mehrzahl («in den Stadtmauern»).
+- **Neuer Dungeon** auf der Karte: nur eine Zeile in `src/data/dungeonNamen.ts`, wie er im Satz heisst
+  («Ein Sieg im Drachenhort», «bezwingen den Drachenhort»; der Test verlangt sie). Ruhm und Mühe ergeben
+  sich aus Ebene und Räumen, die Rivalen dürfen eine Runde später hinein, die Wappen wandern von selbst.
 - **Neue Gilde:** Eintrag in `RIVALEN` (`src/data/rivalen.ts`, Felder dort erklärt), dann
   `npm run rangliste-eichung` laufen lassen und diese Datei nachführen.
 
