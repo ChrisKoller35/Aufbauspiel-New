@@ -43,8 +43,8 @@
   #s-dungeon .dmap-legend-title { display: none; }
   #s-dungeon .dmap-legend-float:not(.offen) .dmap-legend-row { display: none; }
 
-  /* Hinweis über dem Legenden-Knopf statt daneben */
-  #s-dungeon .dmap-scroll-hint { bottom: 60px; font-size: 11px; letter-spacing: 1px; }
+  /* Hinweis oben unter der Kopfzeile: unten läge er beim Öffnen auf «START» und neben dem Legenden-Knopf */
+  #s-dungeon .dmap-scroll-hint { top: 96px; bottom: auto; font-size: 11px; letter-spacing: 1px; }
 
   /* Routen-Fenster ganz sichtbar, notfalls in sich scrollbar */
   #s-dungeon .dmap-modal {
