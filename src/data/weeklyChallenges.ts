@@ -68,9 +68,9 @@ function getISOWeek(date: Date): { year: number; week: number } {
 // Konstanten & Pools
 // ---------------------------------------------------------------------------
 
-// Nur Routen bis Ebene 4 (dafür gibt es Score- und Schwierigkeits-Tabellen unten); die Treppe
-// und die Dungeons über dem Vulkankern bleiben ausserhalb der Wochen-Herausforderungen
-const ROUTE_IDS = Object.keys(ROUTE_DEFS).filter(id => !ROUTE_DEFS[id].isEndless && ROUTE_DEFS[id].tier <= 4);
+// Nur Routen bis Ebene 4 (dafür gibt es Score- und Schwierigkeits-Tabellen unten); die Dungeons
+// über dem Vulkankern bleiben ausserhalb der Wochen-Herausforderungen
+const ROUTE_IDS = Object.keys(ROUTE_DEFS).filter(id => ROUTE_DEFS[id].tier <= 4);
 const DIFFICULTY_IDS = Object.keys(DIFFICULTY_DEFS);   // normal, hard, nightmare, infernal
 const MODIFIER_IDS = Object.keys(MODIFIER_DEFS);
 

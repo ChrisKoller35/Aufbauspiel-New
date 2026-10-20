@@ -63,10 +63,10 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(knoten('drachenhort').leadsTo).toContain('himmelsarchiv');
     expect(knoten('drachenhort').y).toBeLessThan(0);
     expect(knoten('himmelsarchiv').y).toBeLessThan(knoten('drachenhort').y);
-    // Jede Route ausser der Treppe steht auf der Karte und umgekehrt
+    // Jede Route steht auf der Karte und umgekehrt
     const aufKarte = new Set(DUNGEON_GRAPH.map(n => n.routeId));
     for (const route of Object.values(ROUTE_DEFS)) {
-      expect(aufKarte.has(route.id) !== !!route.isEndless, route.id).toBe(true);
+      expect(aufKarte.has(route.id), route.id).toBe(true);
     }
     for (const id of aufKarte) expect(ROUTE_DEFS[id], id).toBeTruthy();
   });

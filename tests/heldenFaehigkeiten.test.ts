@@ -4,21 +4,19 @@ import { createGuildFighter, GuildFighter } from '../src/models/GuildRoster';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
-import { HERZSTEINE } from '../src/data/stadtstufen';
 
 const STARK = { hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1 };
 
-/** Treppe ab Stockwerk 1 (mehrere Gegner pro Raum) mit den gewünschten Helden. */
+/** Krypta der Ruinen (zwei Skelettkrieger im ersten Raum) mit den gewünschten Helden. */
 function lauf(helden: { klasse: string; atk?: number }[]): {
   state: GameState; system: ExpeditionSystem; fighters: GuildFighter[];
 } {
   const state = createNewGameState();
-  state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };
   const fighters = helden.map((h, i) =>
     createGuildFighter(i + 1, h.klasse, `Held ${i + 1}`, { ...STARK, atk: h.atk ?? STARK.atk }));
   state.fighters.push(...fighters);
   const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
-  expect(system.startTreppe(state, fighters.map(f => f.id), 1)).toBeTruthy();
+  expect(system.startExpedition(state, 'ruins_crypts', fighters.map(f => f.id))).toBeTruthy();
   return { state, system, fighters };
 }
 

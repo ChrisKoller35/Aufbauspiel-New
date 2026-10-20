@@ -131,6 +131,14 @@ body {
 .bg-btn:hover { border-color: var(--gd); color: var(--gold); }
 .bg-btn.active { background: var(--gd); color: var(--gold); border-color: var(--gold); }
 
+/* ── Probespiel: Hinweis im Hauptmenü (ui/components/ProbespielHinweis.ts) ── */
+.mc-probe-hinweis {
+  display: inline-block; margin: 8px 0 0; padding: 3px 12px;
+  border: 1px solid #7c3aed; border-radius: 12px; background: rgba(76, 42, 133, .35);
+  color: #e9d5ff; font-size: 0.78rem; letter-spacing: .5px;
+}
+.mc-probe-hinweis a { color: var(--gold); }
+
 /* ── Main Menu Tiles ── */
 .main-hero { text-align: center; padding: 16px 0 10px; }
 .main-title {
@@ -224,7 +232,7 @@ body {
 /* ── Team Selection ── */
 .team-wrap { display: grid; grid-template-columns: 1fr 240px; gap: 18px; height: 100%; }
 .team-left { overflow-y: auto; padding-right: 4px; }
-/* Empfehlung und Besonderheit der Route über dem Team, im selben Band wie die Regeln der Treppe */
+/* Empfehlung und Besonderheit der Route als Band über dem Team */
 .exp-info {
   display: flex; flex-direction: column; gap: 4px;
   margin: 0 0 14px; padding: 10px 22px;
@@ -1021,7 +1029,7 @@ text.pk-kl.an { fill: var(--gl); }
   color: var(--mut); animation: dmap-hint-pulse 2.4s ease-in-out infinite;
   pointer-events: none; z-index: 30; white-space: nowrap;
 }
-.dmap-hint-gone { opacity: 0; transition: opacity .5s; pointer-events: none; }
+.dmap-hint-gone { animation: none; opacity: 0; transition: opacity .5s; pointer-events: none; }
 @keyframes dmap-hint-pulse { 0%,100% { opacity: .3; } 50% { opacity: .9; } }
 
 /* Route detail modal */

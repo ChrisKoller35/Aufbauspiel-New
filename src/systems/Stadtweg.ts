@@ -12,7 +12,6 @@ import { ENEMY_DEFS } from '../data/enemies';
 import { ROUTE_DEFS } from '../data/routes';
 import { GameState, StadtwegStand } from '../models/GameState';
 import { dasGebaeude, gebaeudeName, itemName, freischaltHinweise } from './GebaeudeStatus';
-import { treppeStand } from './Treppe';
 
 const ROEMISCH = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -159,8 +158,6 @@ export function steigeAuf(state: GameState): StadtStufeDef | null {
     state.globalStock[res] = (state.globalStock[res] ?? 0) + qty;
   }
   stadtweg(state).stufe = stand.ziel.stufe;
-  // Stufe 7 öffnet die endlose Treppe: Ab jetzt zählt die Zeit für die Rivalen der Rangliste
-  treppeStand(state);
   return stand.ziel;
 }
 

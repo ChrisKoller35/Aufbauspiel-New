@@ -3,10 +3,6 @@ import { createNewGameState, GameState } from '../models/GameState';
 import { placeStartingLayout, createStartingCitizens } from '../scenes/CityStartingLayout';
 import { istProbespiel, probespielNeu, richteProbespielEin } from './Probespiel';
 import { SaveSystem, nutzeProbespiel } from './SaveSystem';
-import { ExpeditionSystem } from './ExpeditionSystem';
-import { GearSystem } from './GearSystem';
-import { ProvisionSystem } from './ProvisionSystem';
-import { treppeOffen } from './Treppe';
 import { ITEM_DEFS } from '../data/items';
 import { MUSTER_TEAMS } from '../data/musterteams';
 import { ROUTE_DEFS, isRouteAvailable, getRouteLockReasons } from '../data/routes';
@@ -47,10 +43,9 @@ describe('Probespiel', () => {
     expect(probespielNeu('?probe')).toBe(false);
   });
 
-  it('Magische Stadt mit offener Treppe und vier ausgerüsteten Helden', () => {
+  it('Magische Stadt mit vier ausgerüsteten Helden', () => {
     const state = probespiel();
     expect(state.stadtweg?.stufe).toBe(7);
-    expect(treppeOffen(state)).toBe(true);
     expect(state.fighters.map(f => f.classId)).toEqual(MUSTER_TEAMS.gut.helden.map(h => h.classId));
     expect(new Set(state.fighters.map(f => f.id)).size).toBe(4);
     for (const f of state.fighters) {
@@ -69,18 +64,6 @@ describe('Probespiel', () => {
       expect(c.status).toBe('IDLE');
       expect(c.fighterId).toBeNull();
     }
-  });
-
-  it('das Team kommt wie in der Eichung weit über den ersten Boss hinaus', () => {
-    const state = probespiel();
-    const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
-    const run = system.startTreppe(state, state.fighters.map(f => f.id), 1)!;
-    expect(run).toBeTruthy();
-    for (let schritt = 0; schritt < 200 && system.nextStep(run) !== 'finish'; schritt++) {
-      if (system.nextStep(run) === 'checkpoint') system.resolveCheckpoint(run, false);
-      else system.processCurrentRoom(state);
-    }
-    expect(run.treppe!.geschafft).toBeGreaterThanOrEqual(15);
   });
 
   it('alle Dungeons bis zum Vulkankern sind offen, darüber wartet der Drachenhort', () => {

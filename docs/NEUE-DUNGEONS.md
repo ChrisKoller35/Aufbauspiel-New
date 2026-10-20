@@ -31,7 +31,8 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    `ersterSiegBeute`, `unlockCondition` mit dem Boss darunter. `rooms` = Anzahl `encounters`,
    der letzte Raum ist der Boss.
 4. **Karte:** Knoten in `DUNGEON_GRAPH` mit negativem `y` (je etwa 500 höher als der darunter) und
-   `leadsTo` vom Dungeon darunter. Die Karte wächst von selbst nach oben. Ein neues Gebiet braucht
+   `leadsTo` vom Dungeon darunter. Die Karte wächst von selbst nach oben, das Feld «Noch unerforscht»
+   und die Liste im Stadtweg-Fenster rücken mit. Ein neues Gebiet braucht
    einen Eintrag in `GEBIETE` (`src/ui/screens/DungeonMapScreen.ts`), in `getBiomeTag`
    (`src/ui/screens/ExpeditionsScreen.ts`) und eine Klasse `.tag-<gebiet>` in `src/ui/html/magic-city.css`.
 5. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
@@ -81,9 +82,12 @@ und T4-Ausrüstung machbar, Lesen nur mit vollen Lebenspunkten.
 Drachenhort «Gut» vorsichtig 33 %, Himmelsarchiv «Stark» vorsichtig 2 %. Die groben Erwartungen in
 `tests/neueDungeons.test.ts` halten beides aus, die Werte hier nicht.
 
+## Entschieden
+
+- **Endlose Treppe** (20.10.2026, Christoph: «Ganz weg»): entfernt. Die Karte wächst nur mit neuen Dungeons;
+  über dem obersten zeigt sie ein leeres Feld «Noch unerforscht».
+
 ## Offen
 
-- **Bilder** (warten auf Christophs Okay): drei Drachenhort-Gegner und zwei Routenbilder, 5 Bilder,
-  etwa 0.30 USD.
-- **Endlose Treppe:** steht vorerst weiter ganz oben auf der Karte; Christoph entscheidet, ob sie wegfällt,
-  als Extra bleibt oder etwas anderes wird.
+- **Bilder** (Christophs Okay vom 20.10.): drei Drachenhort-Gegner und zwei Routenbilder, 5 Bilder,
+  etwa 0.30 USD, bestellt; Einbau folgt.

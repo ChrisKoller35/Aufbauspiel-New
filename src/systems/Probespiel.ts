@@ -1,8 +1,8 @@
 // ─── Magic City – Probespiel ────────────────────────────────────
 // localhost:5173/?probe öffnet ein eigenes Spiel, um das Endgame auszuprobieren:
-// Magische Stadt (Stadtstufe 7, die Treppe ist offen) mit dem Musterteam «Gut»
-// der Treppen-Eichung (data/musterteams.ts), Gildenrang V und allen Bossen bis
-// zum Vulkankern besiegt, also offenem Drachenhort. Es hat einen eigenen Speicherplatz
+// Magische Stadt (Stadtstufe 7) mit dem Musterteam «Gut» der Dungeon-Eichung
+// (data/musterteams.ts), Gildenrang V und allen Bossen bis zum Vulkankern besiegt,
+// also offenem Drachenhort. Es hat einen eigenen Speicherplatz
 // (SaveSystem.nutzeProbespiel), der richtige Spielstand bleibt unberührt.
 // Hinweis im Hauptmenü: ui/components/ProbespielHinweis.ts.
 // ────────────────────────────────────────────────────────────────

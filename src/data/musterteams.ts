@@ -1,7 +1,7 @@
 // ─── Magic City – Musterteams ───────────────────────────────────
-// Drei Helden-Teams als Massstab für das Endgame: Die Treppen-Eichung
-// (tools/treppeEichung.ts) misst, wie hoch sie kommen (docs/TREPPE.md), das
-// Probespiel (systems/Probespiel.ts) startet mit dem Team «Gut».
+// Drei Helden-Teams als Massstab für das Endgame: Die Dungeon-Eichung
+// (tools/dungeonEichung.ts) misst, wie oft sie die Dungeons ganz oben schaffen
+// (docs/NEUE-DUNGEONS.md), das Probespiel (systems/Probespiel.ts) startet mit dem Team «Gut».
 // ────────────────────────────────────────────────────────────────
 
 import { FighterStats, GuildFighter } from '../models/GuildRoster';

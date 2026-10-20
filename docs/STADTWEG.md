@@ -3,7 +3,9 @@
 Christophs Wunsch vom 18.10.2026 (Thread «Magic City: Bestandsaufnahme und Bot-Aufgaben»): eine Geschichte
 einbauen, das Endgame bleibt aber der Dungeon, in dem man **endlos nach oben kämpft** und versucht, auf der
 Rangliste oben zu bleiben. Dieses Paket baut den Weg dorthin: Die Stadt steigt in **7 Stadtstufen** auf, jede
-Stufe erzählt ein Kapitel, die letzte öffnet die endlose Treppe (seit 19.10.2026 im Spiel, siehe `docs/TREPPE.md`).
+Stufe erzählt ein Kapitel. Seit 20.10.2026 heisst «endlos nach oben»: Auf der Dungeon-Karte kommen immer wieder
+neue Dungeons dazu (`docs/NEUE-DUNGEONS.md`). Die endlose Treppe, die Stufe 7 vom 19. bis 20.10. öffnete, ist
+wieder entfernt.
 
 Code: `src/data/stadtstufen.ts` (Stufen, Kapitel, Herzsteine), `src/systems/Stadtweg.ts` (Regeln),
 `src/ui/screens/StadtwegFenster.ts` (Banner, Fenster, Hinweis), `src/ui/screens/StadtSilhouette.ts` (die Stadt
@@ -20,7 +22,7 @@ als Bild aus Code), `src/ui/html/stadtweg.css`. Tests: `src/systems/Stadtweg.tes
   «Aufstieg bereit! … Ansehen». Nicht während einer Expedition.
 - **Aufstieg:** zieht die Abgabe ab, gibt das Geschenk, zeigt die Feier («Aus dem Weiler wird ein Dorf!») mit dem
   neuen Kapitel. Das Bild wächst mit: Zelte → Hütten → Mühle und Bäckerei → Markt und Kirche → Mauer →
-  Burg und Gerüst ums Herz → leuchtender Kristall und die Treppe auf dem Berg.
+  Burg und Gerüst ums Herz → leuchtender Kristall und ein glühender Pfad über den Berg hinauf.
 
 ## Die Stufen
 
@@ -76,9 +78,9 @@ Im Bild wird das Gerüst um den Kristall mit jedem Stein heller; mit allen fünf
 ## Die Geschichte
 
 Erzählt von **Ottokar, Stadtschreiber**, trocken und ein bisschen eitel. Kapitel: 1 Das Schild, 2 Die Steinplatte,
-3 Das Brummen, 4 Die Karte, 5 Mehr, 6 Das Herz, 7 Die Treppe. Roter Faden: Unter dem Dorfplatz schläft ein
-Herz, die Karte zeigt eine Treppe über dem Dungeon, die «nicht aufhört», und am Ende klettern Gilden aus aller Welt
-um die Wette. Ein Kapitel gilt als gelesen, sobald das Fenster offen war (`stadtweg.gelesen`).
+3 Das Brummen, 4 Die Karte, 5 Mehr, 6 Das Herz, 7 Die Karte wächst. Roter Faden: Unter dem Dorfplatz schläft
+ein Herz, die Karte vom Händler ist oben leer («Hier geht es weiter. Wohin, wissen wir noch nicht.»), und am Ende
+wird sie oben jedes Mal ein Stück länger, so wie die Dungeon-Karte mit jedem neuen Dungeon. Ein Kapitel gilt als gelesen, sobald das Fenster offen war (`stadtweg.gelesen`).
 
 ## Spielstand
 
@@ -93,8 +95,8 @@ Wer schon weit ist, steigt schnell durch die ersten Stufen und bekommt dabei die
 - Die Steuer-Rechnung im Wohnviertel-Fenster nennt den Aufschlag als «+ N % Stadtrecht».
 - Zahlen sind erste Werte; Balancing läuft über Manager-Issue #23.
 
-## Die endlose Treppe
+## Nach Stufe 7
 
-Seit 19.10.2026 im Spiel (Teil 1): Ab Stufe 7 führt auf der Dungeon-Karte ein Eingang über dem Vulkankern zur Treppe,
-in der Routenliste steht sie ganz oben, das Banner zeigt die Bestmarke und das Fenster hat den Knopf «Zur Treppe».
-Regeln, Zahlen, Eichung und der Plan für Rivalen und Rangliste: `docs/TREPPE.md`.
+Das Banner zeigt «Endgame: Immer weiter nach oben» und «Ganz oben: n von m Dungeons besiegt». Das Fenster listet
+die Dungeons über dem Vulkankern mit Häkchen (besiegt, offen oder was noch fehlt) und hat den Knopf «Zur
+Dungeon-Karte». Neue Dungeons dort zählen von selbst mit (`gipfelDungeons()` in `src/data/routes.ts`).

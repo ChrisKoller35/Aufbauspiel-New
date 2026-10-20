@@ -22,6 +22,35 @@ export function nutzeProbespiel(aktiv = true): void {
   backupKey = aktiv ? 'magic_city_probe_backup' : 'magic_city_save_backup';
 }
 
+/** Stand eines Laufs auf der endlosen Treppe, wie ihn alte Spielstände noch enthalten können. */
+interface AlterTreppenLauf {
+  sicher?: { loot?: Record<string, number>; gold?: number };
+}
+
+/**
+ * Die endlose Treppe gibt es seit dem 20.10.2026 nicht mehr (docs/NEUE-DUNGEONS.md).
+ * Alte Spielstände verlieren ihren Treppen-Stand und die Treppe in der Rangliste. Wer
+ * mitten in einem Aufstieg gespeichert hat, bekommt die Beute vom letzten Rastplatz;
+ * den Lauf selbst bricht main.ts wie jede unterbrochene Expedition ab.
+ */
+function entferneTreppe(state: GameState): void {
+  const alt = state as GameState & { treppe?: unknown };
+  const lauf = state.activeExpedition as (ExpeditionRun & { treppe?: AlterTreppenLauf }) | null;
+  const inRangliste = state.scoreboard?.some(e => e.routeId === 'endlose_treppe') ?? false;
+  if (alt.treppe === undefined && !lauf?.treppe && !inRangliste) return;
+
+  delete alt.treppe;
+  if (inRangliste) state.scoreboard = state.scoreboard.filter(e => e.routeId !== 'endlose_treppe');
+  if (lauf?.treppe) {
+    for (const [itemId, qty] of Object.entries(lauf.treppe.sicher?.loot ?? {})) {
+      state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
+    }
+    state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + (lauf.treppe.sicher?.gold ?? 0);
+    delete lauf.treppe;
+  }
+  console.log('Endlose Treppe aus dem Spielstand entfernt.');
+}
+
 export class SaveSystem {
   save(state: GameState): boolean {
     try {
@@ -248,6 +277,7 @@ export class SaveSystem {
    */
   private ensureNewFields(state: GameState): void {
     if (!Array.isArray(state.erhalteneBauplaene)) state.erhalteneBauplaene = [];
+    entferneTreppe(state);
   }
 
   private migrate(state: GameState): void {
