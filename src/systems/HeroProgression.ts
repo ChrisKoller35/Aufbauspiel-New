@@ -50,7 +50,8 @@ export function awardXP(fighter: GuildFighter, amount: number): number {
 
 // ─── Level-Up Stat-Boni (pro Klasse) ────────────────────────────
 // Jedes Level gibt kleine Stat-Boosts auf baseStats.
-// Bei Level 5, 10, 15 gibt es Skill-Upgrades (TODO: Batch 2).
+// Ab Stufe 10 wählt jeder Held einen Weg, ab Stufe 15 ist er Meister darin
+// (data/spezialisierungen.ts, systems/Spezialisierung.ts).
 
 interface LevelBonus {
   hp?: number;

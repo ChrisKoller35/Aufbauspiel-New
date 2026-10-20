@@ -21,7 +21,8 @@
     "crop-icons": "npx tsx tools/cropAndScaleIcons.ts",
     "cut-weapon-sheet": "npx tsx tools/cutWeaponSheet.ts",
     "validate-refs": "npx tsx tools/validateRefs.ts",
-    "dungeon-eichung": "npx tsx tools/dungeonEichung.ts"
+    "dungeon-eichung": "npx tsx tools/dungeonEichung.ts",
+    "weg-eichung": "npx tsx tools/wegEichung.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",

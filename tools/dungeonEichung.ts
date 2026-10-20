@@ -2,7 +2,8 @@
 // Probe-Läufe der drei Musterteams (src/data/musterteams.ts) durch die Dungeons
 // mit `gebiet` (Drachenhort, Himmelsarchiv …), je in drei Spielweisen
 // (src/systems/Musterlauf.ts). Den Vulkankern misst sie zum Vergleich mit.
-// Die zweite Tabelle misst dieselben Teams in vollen Dungeon-Sets (MUSTER_SETS).
+// Die zweite Tabelle misst dieselben Teams in vollen Dungeon-Sets (MUSTER_SETS),
+// die dritte ohne Wege (Spezialisierung), damit man sieht, was die Wege ausmachen.
 // Nach Änderungen an Kampf, Klassen, Ausrüstung oder den Gegnern neu laufen
 // lassen und die Tabellen in docs/NEUE-DUNGEONS.md und docs/DUNGEON-SETS.md anpassen.
 // Aufruf: npm run dungeon-eichung   (mehr Läufe: npm run dungeon-eichung -- 200)
@@ -20,8 +21,8 @@ const SPIELWEISEN: Spielweise[] = ['vorsichtig', 'klug', 'gierig'];
 console.log(`\nDungeon-Eichung: Siege von ${LAEUFE} Läufen je Team und Spielweise\n`);
 console.log(`| Dungeon | Team | ${SPIELWEISEN.join(' | ')} |`);
 console.log(`|---|---|${SPIELWEISEN.map(() => '---').join('|')}|`);
-const quote = (routeId: string, team: MusterTeamName, sw: Spielweise, sets?: MusterSetName) =>
-  `${Math.round(siegeVon(routeId, team, sw, LAEUFE, sets) / LAEUFE * 100)} %`;
+const quote = (routeId: string, team: MusterTeamName, sw: Spielweise, sets?: MusterSetName, wege = true) =>
+  `${Math.round(siegeVon(routeId, team, sw, LAEUFE, sets, wege) / LAEUFE * 100)} %`;
 for (const routeId of ROUTEN) {
   for (const team of TEAMS) {
     console.log(`| ${ROUTE_DEFS[routeId].name} | ${team} | ${SPIELWEISEN.map(sw => quote(routeId, team, sw)).join(' | ')} |`);
@@ -36,6 +37,15 @@ for (const routeId of ROUTEN.filter(id => ROUTE_DEFS[id].gebiet)) {
     for (const sets of Object.keys(MUSTER_SETS) as MusterSetName[]) {
       console.log(`| ${ROUTE_DEFS[routeId].name} | ${team} | ${MUSTER_SETS[sets].name} | ${SPIELWEISEN.map(sw => quote(routeId, team, sw, sets)).join(' | ')} |`);
     }
+  }
+}
+
+console.log(`\nOhne Wege (Vergleich zur ersten Tabelle), ${LAEUFE} Läufe\n`);
+console.log(`| Dungeon | Team | ${SPIELWEISEN.join(' | ')} |`);
+console.log(`|---|---|${SPIELWEISEN.map(() => '---').join('|')}|`);
+for (const routeId of ROUTEN.filter(id => ROUTE_DEFS[id].gebiet)) {
+  for (const team of TEAMS) {
+    console.log(`| ${ROUTE_DEFS[routeId].name} | ${team} | ${SPIELWEISEN.map(sw => quote(routeId, team, sw, undefined, false)).join(' | ')} |`);
   }
 }
 console.log('');

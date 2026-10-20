@@ -14,6 +14,7 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
+import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
@@ -457,12 +458,25 @@ export class CombatScreen {
     hpFill.style.width = `${unit.maxHp > 0 ? Math.min(100, Math.max(0, unit.hp) / unit.maxHp * 100) : 0}%`;
     barTrack.appendChild(hpFill);
 
-    // Effect badges: Gegenstands-Effekte mit Kürzel, Set-Fähigkeiten mit dem Zeichen des Sets
+    // Effect badges: Gegenstands-Effekte mit Kürzel, Set-Fähigkeiten mit dem Zeichen des Sets,
+    // der Weg des Helden golden mit seinem Zeichen
     if (unit.specialEffects && unit.specialEffects.length > 0) {
       const badges = document.createElement('div');
       badges.className = 'mc-co-badges';
       const gezeigteSets = new Set<string>();
+      const gezeigteWege = new Set<string>();
       for (const eff of unit.specialEffects) {
+        if (eff.weg) {
+          const weg = getSpezialisierung(eff.weg);
+          if (!weg || gezeigteWege.has(weg.id)) continue;
+          gezeigteWege.add(weg.id);
+          const badge = document.createElement('span');
+          badge.className = 'mc-co-badge mc-co-badge-weg';
+          badge.textContent = weg.zeichen;
+          badge.title = `★ ${weg.name}: ${weg.kurz}`;
+          badges.appendChild(badge);
+          continue;
+        }
         const def = SPECIAL_EFFECT_DEFS[eff.id];
         if (!def) continue;
         const set = eff.set ? getSet(eff.set) : undefined;
@@ -883,6 +897,7 @@ export class CombatScreen {
 
       this.updateLog(snapshot.logLines.slice(-6));
       this.showActionBanners(snapshot.logLines, run.party, room.enemies);
+      for (const id of snapshot.markiert ?? []) this.markieren(id);
 
       // Update fortification HP bar during siege rounds
       if (room.type === 'fortification' && room.fortification && snapshot.fortificationHp !== undefined) {
@@ -1053,8 +1068,13 @@ export class CombatScreen {
     const usesPattern = /^(.+?) uses (.+?) →/;
     // Set-Fähigkeiten und andere Kampfeffekte (systems/Kampfeffekte.ts): «✦ Brom setzt Rudelgeheul ein → …»
     const effektPattern = /^✦ (.+?) setzt (.+?) ein →/;
+    // Wege der Helden: «★ Brom setzt Phalanx ein → …»
+    const wegPattern = /^★ (.+?) setzt (.+?) ein →/;
     const setztPattern = /^(.+?) setzt (.+?) ein →/;
     const enragePattern = /^!! (.+?) ENRAGE !!$/;
+    // Verschiedene Banner über derselben Einheit in einer Runde stehen übereinander,
+    // ein gleiches (Münzhagel trifft drei Helden) nur einmal
+    const proEinheit = new Map<UnitEntry, Set<string>>();
 
     for (const line of lines) {
       let unitName: string | null = null;
@@ -1063,6 +1083,7 @@ export class CombatScreen {
 
       const usesMatch = line.match(usesPattern);
       const effektMatch = line.match(effektPattern);
+      const wegMatch = line.match(wegPattern);
       const setztMatch = line.match(setztPattern);
       const enrageMatch = line.match(enragePattern);
 
@@ -1070,6 +1091,10 @@ export class CombatScreen {
         unitName = effektMatch[1].trim();
         bannerText = `✦ ${effektMatch[2].trim().toUpperCase()}`;
         bannerColor = '#6ee7b7';
+      } else if (wegMatch) {
+        unitName = wegMatch[1].trim();
+        bannerText = `★ ${wegMatch[2].trim().toUpperCase()}`;
+        bannerColor = '#fcd34d';
       } else if (usesMatch) {
         unitName = usesMatch[1].trim();
         bannerText = usesMatch[2].trim().toUpperCase();
@@ -1095,6 +1120,12 @@ export class CombatScreen {
       }
       if (!targetEntry) continue;
 
+      const gezeigt = proEinheit.get(targetEntry) ?? new Set<string>();
+      if (gezeigt.has(bannerText)) continue;
+      const stapel = gezeigt.size;
+      gezeigt.add(bannerText);
+      proEinheit.set(targetEntry, gezeigt);
+
       const banner = document.createElement('div');
       banner.className = 'mc-co-action-banner';
       banner.textContent = bannerText;
@@ -1102,13 +1133,47 @@ export class CombatScreen {
 
       const rect = targetEntry.el.getBoundingClientRect();
       const panelRect = this.el.getBoundingClientRect();
+      const oben = this.bannerOben(targetEntry, rect, stapel);
+      if (oben.innen) banner.classList.add('innen');
       banner.style.left = `${rect.left - panelRect.left + rect.width / 2}px`;
-      banner.style.top = `${rect.top - panelRect.top - 28}px`;
+      banner.style.top = `${oben.y - panelRect.top}px`;
       banner.style.transform = 'translateX(-50%)';
 
       this.el.appendChild(banner);
       this.onAnimEnd(banner, () => banner.remove());
     }
+  }
+
+  /** Banner stehen über der Karte; liegt dort eine andere Karte (zweite Reihe) oder die Kopfzeile, oben in der Karte */
+  private bannerOben(entry: UnitEntry, rect: DOMRect, stapel: number): { y: number; innen: boolean } {
+    const y = rect.top - 28 - stapel * 24;
+    const feld = this.el.querySelector('.mc-co-body')?.getBoundingClientRect();
+    const verdeckt = [...this.partyEntries, ...this.enemyEntries].some(e => {
+      if (e === entry) return false;
+      const r = e.el.getBoundingClientRect();
+      return r.left < rect.right && r.right > rect.left && r.bottom > y && r.top < rect.top;
+    });
+    if (!verdeckt && (!feld || y >= feld.top)) return { y, innen: false };
+    return { y: rect.top + 6 + stapel * 24, innen: true };
+  }
+
+  /** Fährtenleserin: Der markierte Gegner bekommt ein 🐾 auf seine Karte (nach ID, Gegner heissen oft gleich) */
+  private markieren(unitId: number): void {
+    const entry = this.enemyEntries.find(e => e.unitId === unitId);
+    if (!entry || entry.el.querySelector('.mc-co-badge-marke')) return;
+    const info = entry.el.querySelector('.mc-co-unit-info');
+    if (!info) return;
+    let badges = info.querySelector('.mc-co-badges');
+    if (!badges) {
+      badges = document.createElement('div');
+      badges.className = 'mc-co-badges';
+      info.insertBefore(badges, info.firstChild);
+    }
+    const badge = document.createElement('span');
+    badge.className = 'mc-co-badge mc-co-badge-weg mc-co-badge-marke';
+    badge.textContent = '🐾';
+    badge.title = 'Markiert: Alle Helden machen gegen ihn mehr Schaden';
+    badges.appendChild(badge);
   }
 
   // ─── Round Continue Button ────────────────────────────────

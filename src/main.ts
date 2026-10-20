@@ -26,6 +26,7 @@ import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/Expedi
 import { setBeute, setTeilHinweis } from './systems/DungeonSets';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
+import { wegBilanz } from './ui/components/WegAnzeige';
 import { getRouteBauplan } from './data/routes';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -444,7 +445,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
     let body = line(`Punkte: ${entry.score.toLocaleString('de')}`, '#c8a227');
     for (const h of xp) {
-      body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}`, h.levelUps > 0 ? '#4ade80' : '#9ca3af');
+      const held = state.fighters.find(f => f.id === h.id);
+      const weg = held ? wegBilanz(held, h.levelUps) : '';
+      const farbe = weg ? '#fcd34d' : h.levelUps > 0 ? '#4ade80' : '#9ca3af';
+      body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}${weg}`, farbe);
     }
     if (rankUp) {
       body += line(`${rankUp.title}!`, '#c8a227');
@@ -553,6 +557,8 @@ document.addEventListener('DOMContentLoaded', () => {
   setInterval(() => {
     saveSystem.save(state);
   }, 60_000);
+  // Sofort speichern nach Entscheidungen, die für immer gelten (Weg eines Helden)
+  window.addEventListener('mc:speichern', () => saveSystem.save(state));
 
   // Expedition start listener
   window.addEventListener('mc:startExpedition', ((e: CustomEvent) => {

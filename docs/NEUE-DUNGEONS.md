@@ -62,8 +62,8 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 ## Eichung
 
 `npm run dungeon-eichung` lässt die drei Musterteams (`src/data/musterteams.ts`) je 200 Mal durch
-jeden Dungeon laufen (`src/systems/Musterlauf.ts`). An Rastplätzen rasten sie immer, bei den festen
-Wahl-Räumen spielen sie
+jeden Dungeon laufen (`src/systems/Musterlauf.ts`). Ihre Helden gehen Wege (Phalanx, Zorn, Scharfschützin,
+Meuchlerin; `docs/SPEZIALISIERUNG.md`). An Rastplätzen rasten sie immer, bei den festen Wahl-Räumen spielen sie
 
 - **vorsichtig:** immer die sichere Option (Heilung),
 - **klug:** das Risiko nur mit mindestens 85 % Leben,
@@ -71,25 +71,40 @@ Wahl-Räumen spielen sie
 
 Fähigkeiten vor dem Kampf nutzen sie nicht, echte Spieler gewinnen also etwas öfter.
 
-Stand 20.10.2026 (Schaden ohne Mindestschaden), Siege von 200 Läufen:
+Stand 20.10.2026, mit Wegen (Schaden ohne Mindestschaden), Siege von 200 Läufen:
 
 | Dungeon | Team | vorsichtig | klug | gierig |
 |---|---|---|---|---|
 | Vulkankern | frisch, gut, stark | 100 % | 100 % | 100 % |
 | Der Drachenhort | frisch | 0 % | 0 % | 0 % |
-| Der Drachenhort | gut | 77 % | 61 % | 0 % |
-| Der Drachenhort | stark | 100 % | 100 % | 79 % |
+| Der Drachenhort | gut | 80 % | 58 % | 3 % |
+| Der Drachenhort | stark | 100 % | 100 % | 97 % |
 | Das Himmelsarchiv | frisch | 0 % | 0 % | 0 % |
 | Das Himmelsarchiv | gut | 0 % | 0 % | 0 % |
-| Das Himmelsarchiv | stark | 73 % | 53 % | 1 % |
+| Das Himmelsarchiv | stark | 53 % | 32 % | 3 % |
+
+**Ohne Wege** (dritte Tabelle des Werkzeugs): Drachenhort «Gut» 16 / 11 / 0 %, «Stark» 100 / 95 / 2 %,
+Himmelsarchiv «Stark» 0 / 0 / 0 %. Seit den Wegen haben die Gegner beider Dungeons mehr Leben und Angriff
+(Drachenhort etwa ×1,11, Himmelsarchiv etwa ×1,15). Vorher, ohne Wege und mit den alten Gegnern:
+Drachenhort «Gut» 77 / 61 / 0 %, «Stark» 100 / 100 / 79 %, Himmelsarchiv «Stark» 73 / 53 / 1 %.
 
 **Ziele:** Der Drachenhort ist der nächste Schritt nach dem Vulkankern: «Gut» schafft ihn vorsichtig
-meistens, Gier lohnt sich nur für starke Teams. Das Himmelsarchiv ist das ferne Ziel: erst mit Stufe 15
-und T4-Ausrüstung machbar, Lesen nur mit vollen Lebenspunkten.
+meistens, Gier lohnt sich nur für starke Teams. Das Himmelsarchiv ist das ferne Ziel: erst mit Stufe 15,
+T4-Ausrüstung und Wegen machbar, Lesen nur mit vollen Lebenspunkten.
 
-**Nach Manager #43 neu eichen.** Der Bot-Auftrag bringt 20 % Mindestschaden. Damit gemessen (60 Läufe):
-Drachenhort «Gut» vorsichtig 33 %, Himmelsarchiv «Stark» vorsichtig 2 %. Die groben Erwartungen in
-`tests/neueDungeons.test.ts` halten beides aus, die Werte hier nicht.
+**Nach Manager #43 und #44 neu eichen.** #43 bringt 20 % Mindestschaden, #44 stärkere Startklassen
+(Wächter und Waldläufer, also auch Brom und Lia der Musterteams). Am 20.10. mit 60 Läufen vorab gemessen,
+vorsichtig, mit Wegen; alle Tests bleiben in jedem Fall grün:
+
+| Stand | Drachenhort «Gut» | Himmelsarchiv «Stark» | Drachenhort «Frisch» mit Sets aus Ebene 4 |
+|---|---|---|---|
+| heute | 80 % | 53 % | 50 % |
+| nur #43 | 77 % | 45 % | 12 % |
+| nur #44 | 90 % | 92 % | 93 % |
+| #43 und #44 | 87 % | 82 % | 88 % |
+
+Nach beiden Aufträgen werden die zwei obersten Dungeons also deutlich leichter; dann die Gegner neu eichen
+(`npm run dungeon-eichung -- 200`, Ziele oben) und die Wege nachmessen (`npm run weg-eichung -- 200`).
 
 ## Entschieden
 

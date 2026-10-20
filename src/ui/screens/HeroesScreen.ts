@@ -11,6 +11,8 @@ import { setVonItem } from '../../data/dungeonSets';
 import { GearSystem, EquipSlot } from '../../systems/GearSystem';
 import { getrageneSets } from '../../systems/DungeonSets';
 import { setAbzeichen, setBoniHtml, setSammlungHtml, setTooltip } from '../components/SetAnzeige';
+import { wegAbzeichen, wegBereichHtml } from '../components/WegAnzeige';
+import { waehleWeg } from '../../systems/Spezialisierung';
 import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
@@ -114,6 +116,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
         <div class="hcard-overlay">
           <div class="hc-nm">${className}</div>
           <span class="hc-lv">Lv ${fighter.level}</span>
+          ${wegAbzeichen(fighter)}
           ${actionBtn}
         </div>
       </div>`;
@@ -130,6 +133,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
       <div class="hc-nm">${fighter.name}</div>
       <div class="hc-cl">${className}</div>
       <span class="hc-lv">Lv ${fighter.level}</span>
+      ${wegAbzeichen(fighter)}
       <div class="lvbar"><div class="lvfill" style="width:${pct}%"></div></div>
       <div class="hc-xp">${xpLabel}</div>
       <div class="hc-st">
@@ -231,6 +235,8 @@ function gearSlotIconHtml(slot: { label: string; emoji: string; key: string | nu
 type Auswahl = { art: 'slot'; slot: EquipSlot } | { art: 'inventar'; itemId: string; platz?: EquipSlot };
 let auswahl: Auswahl | null = null;
 let inventarOffen = false;
+/** Weg, dessen Wahl im Heldenfenster gerade bestätigt werden soll */
+let wegFrage: string | null = null;
 
 const PLATZ_NAMEN: Record<EquipSlot, string> = {
   mainHand: 'Haupthand', offHand: 'Nebenhand', armor: 'Rüstung', trinket: 'Talisman',
@@ -432,7 +438,7 @@ function statsHtml(fighter: GuildFighter): string {
   const critBonus = Math.round((eff.critChance - base.critChance) * 100);
   const kritSchaden = Math.round(eff.critMult * 100) / 100;
   return `
-    <div class="hdm2-stats" title="Werte mit Ausrüstung und Set-Boni; die kleine Zahl kommt von der Ausrüstung">
+    <div class="hdm2-stats" title="Werte mit Ausrüstung, Set-Boni und Weg; die kleine Zahl kommt von dort">
       ${wertHtml('⚔', 'ATK', String(eff.atk), eff.atk - base.atk)}
       ${wertHtml('🛡', 'DEF', String(eff.def), eff.def - base.def)}
       ${wertHtml('❤', 'HP', String(eff.maxHp), eff.maxHp - base.maxHp)}
@@ -514,6 +520,7 @@ function renderDetailModal(fighter: GuildFighter): string {
           <div class="hdm2-xplabel">XP ${xpLabel}</div>
         </div>
         ${statsHtml(fighter)}
+        ${wegBereichHtml(fighter, wegFrage)}
         ${setsHtml(fighter)}
         <div class="hdm2-skills-area">
           <div class="lbl">Fähigkeiten</div>
@@ -774,6 +781,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
 
       auswahl = null;
       inventarOffen = false;
+      wegFrage = null;
       openDetailModal(fighter, container);
     });
   }
@@ -879,6 +887,30 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
         : { art: 'inventar', itemId, platz: passt };
       neuZeichnen();
     });
+  });
+
+  // Weg wählen: erst antippen, dann bestätigen, denn die Wahl gilt für immer
+  const zumWeg = (): void => {
+    openDetailModal(fighter, container);
+    container.querySelector('#hdm2-weg')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+  overlay.querySelectorAll<HTMLElement>('[data-weg-waehlen]').forEach(el => {
+    el.addEventListener('click', () => {
+      wegFrage = el.dataset.wegWaehlen ?? null;
+      zumWeg();
+    });
+  });
+  overlay.querySelector('[data-weg-nein]')?.addEventListener('click', () => {
+    wegFrage = null;
+    zumWeg();
+  });
+  overlay.querySelector<HTMLElement>('[data-weg-ja]')?.addEventListener('click', e => {
+    const wegId = (e.currentTarget as HTMLElement).dataset.wegJa ?? '';
+    wegFrage = null;
+    if (!waehleWeg(fighter, wegId)) return;
+    window.dispatchEvent(new CustomEvent('mc:speichern'));
+    renderHeroesScreen(container); // die Heldenkarte zeigt jetzt den Weg
+    zumWeg();
   });
 
   // Anlegen oder Ablegen

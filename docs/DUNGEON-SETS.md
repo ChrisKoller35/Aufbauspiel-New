@@ -77,24 +77,32 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 - **Sets aus Ebene 4:** Brom Festung (behält den Seelenbrecher), Grimm Magma-Wyrm, Lia Abyss, Sina Schatten.
 - **Hort:** dasselbe, Grimm trägt das Set aus dem Drachenhort.
 
-Stand 20.10.2026, Siege von 200 Läufen (vorsichtig / klug / gierig):
+Stand 20.10.2026, mit Wegen (`docs/SPEZIALISIERUNG.md`), Siege von 200 Läufen (vorsichtig / klug / gierig):
 
 | Dungeon | Team | eigene Ausrüstung | Sets aus Ebene 4 | dazu Grimm im Hort-Set |
 |---|---|---|---|---|
-| Der Drachenhort | frisch | 0 / 0 / 0 % | 50 / 7 / 0 % | 100 / 98 / 11 % |
-| Der Drachenhort | gut | 77 / 61 / 0 % | 100 / 94 / 57 % | 100 / 100 / 94 % |
-| Der Drachenhort | stark | 100 / 100 / 79 % | 100 / 100 / 99 % | 100 / 100 / 100 % |
-| Das Himmelsarchiv | frisch | 0 / 0 / 0 % | 0 / 0 / 0 % | 2 / 0 / 0 % |
-| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 4 / 1 / 0 % | 48 / 38 / 3 % |
-| Das Himmelsarchiv | stark | 73 / 53 / 1 % | 82 / 53 / 2 % | 99 / 95 / 64 % |
+| Der Drachenhort | frisch | 0 / 0 / 0 % | 50 / 3 / 0 % | 100 / 80 / 14 % |
+| Der Drachenhort | gut | 80 / 58 / 3 % | 100 / 100 / 95 % | 100 / 100 / 100 % |
+| Der Drachenhort | stark | 100 / 100 / 97 % | 100 / 100 / 100 % | 100 / 100 / 100 % |
+| Das Himmelsarchiv | frisch | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
+| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 26 / 4 / 0 % | 62 / 32 / 7 % |
+| Das Himmelsarchiv | stark | 53 / 32 / 3 % | 100 / 90 / 50 % | 100 / 100 / 89 % |
 
 **So ist es gedacht:** Die Sets einer Ebene machen den nächsten Dungeon machbar. Mit Sets aus Ebene 4
 wagt sich schon ein frisches Team in den Drachenhort, und mit dem Hort-Set rückt das Himmelsarchiv
-für ein gutes Team in Reichweite (vorsichtig etwa jeder zweite Lauf). Ohne Sets bleibt es das ferne Ziel.
+für ein gutes Team in Reichweite (vorsichtig gut jeder zweite Lauf). Ohne Sets bleibt es das ferne Ziel.
 Sets aus einer tieferen Ebene sind für ein Team mit besserer Ausrüstung ein Rückschritt; das zeigt
-der Vergleich auf der Heldenseite.
+der Vergleich auf der Heldenseite. Wege und Sets verstärken sich gegenseitig, darum sind die Gegner der
+zwei obersten Dungeons seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
 
-**Nach Manager #43 neu messen** (20 % Mindestschaden ändert alle Werte).
+**Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
+Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher
+endete er nach dem zweiten eigenen Zug des Trägers und hielt in Belagerungen den ganzen Kampf. Die Tabelle oben
+ist schon mit der neuen Regel gemessen; in den übrigen Dungeons ändern sich die Siege mit Sets kaum
+(Festung «frisch» mit Sets aus Ebene 4: 1 von 40 Läufen vorher, 0 von 40 jetzt).
+
+**Nach Manager #43 und #44 neu messen.** Mindestschaden und stärkere Startklassen verschieben alle Werte
+(Vorab-Messung in `docs/NEUE-DUNGEONS.md`, «Eichung»).
 
 ## Offen
 

@@ -24,7 +24,7 @@ const SCOREBOARD_LIMIT = 100;
 
 export interface ExpeditionProgress {
   entry: ScoreboardEntry;
-  xp: { name: string; xp: number; level: number; levelUps: number }[];
+  xp: { id: number; name: string; xp: number; level: number; levelUps: number }[];
   rankUp: { newRank: number; title: string; unlocks: string[] } | null;
   newClasses: string[];
   newAchievements: string[];
@@ -54,7 +54,7 @@ export function finalizeExpeditionProgress(
     if (!fighter) continue;
     const earned = (xpMap[unit.id] ?? 0) + (victory ? VICTORY_XP_BONUS : 0);
     const levelUps = awardXP(fighter, earned);
-    xp.push({ name: fighter.name, xp: earned, level: fighter.level, levelUps });
+    xp.push({ id: fighter.id, name: fighter.name, xp: earned, level: fighter.level, levelUps });
   }
 
   // ── Score + scoreboard ──

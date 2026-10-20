@@ -23,6 +23,8 @@ export interface GuildFighter {
   gearNeedsRepair: boolean;
   xp: number;
   level: number;
+  /** Gewählter Weg ab Stufe 10 (data/spezialisierungen.ts), fehlt bis zur Wahl */
+  spezialisierung?: string;
 }
 
 let nextFighterId = 1;

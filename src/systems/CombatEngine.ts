@@ -12,6 +12,7 @@ import {
   grundSchaden, staerke, chance, schadenNehmen, schildText,
   kampfBeginn, kampfEnde, zustandAktualisieren, setztAus, schattenstoss,
   beimGetroffenWerden, besiegt, nachTreffer, rundenEnde, goldFaktor, neueToteMelden,
+  zielschuss, wegSchaden, schattentanz, abfangen, schwaechstesZiel, deckung, vergeltung, wutAnfall,
 } from './Kampfeffekte';
 
 /** Check if a unit has a specific active special effect */
@@ -68,8 +69,7 @@ export class CombatEngine {
           const enemyDef = e.defId ? ENEMY_DEFS[e.defId] : undefined;
           const enrage = enemyDef?.enrage ?? { afterRound: 8, atkMult: 1.5, spdMult: 1.3 };
           if (round === enrage.afterRound) {
-            e.atk = Math.floor(e.atk * enrage.atkMult);
-            e.spd *= enrage.spdMult;
+            wutAnfall(e, enrage.atkMult, enrage.spdMult);
             run.combatLog.push(`!! ${e.name} ENRAGE !!`);
           }
         }
@@ -78,11 +78,8 @@ export class CombatEngine {
       for (const unit of allUnits) {
         if (unit.hp <= 0) continue;
 
-        zustandAktualisieren(party);
-        if (setztAus(unit, log)) {
-          if (unit.tauntRounds > 0) unit.tauntRounds--;
-          continue;
-        }
+        zustandAktualisieren(party, log);
+        if (setztAus(unit, log)) continue;
 
         const isPlayer = party.includes(unit);
 
@@ -143,12 +140,17 @@ export class CombatEngine {
                   run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
                 }
               } else {
-                const target = this.selectTarget(targets, rng);
-                const dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, target.def) * skill.power * spellMult));
-                const verlust = schadenNehmen(target, dmg);
-                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
-                // lifesteal on skill damage
-                this.applyOnDealDamage(unit, target, dmg, rng, run);
+                // Die Wege wirken auch gegen Fähigkeiten auf einen einzelnen Helden: Deckung,
+                // Schutzherr, Schattentänzerin (weicht aus) und Vergelter (schlägt zurück)
+                const target = abfangen(deckung(this.selectTarget(targets, rng), party, rng, log), party, log);
+                if (!schattentanz(target, unit, rng, log)) {
+                  const dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, target.def) * skill.power * spellMult));
+                  const verlust = schadenNehmen(target, dmg);
+                  run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
+                  // lifesteal on skill damage
+                  this.applyOnDealDamage(unit, target, dmg, rng, run);
+                  vergeltung(target, unit, party, rng, log);
+                }
               }
               skill.currentCooldown = skill.cooldown;
               usedSkill = true;
@@ -232,24 +234,22 @@ export class CombatEngine {
           const isDps = !unit.skills.some(s => s.effectType === 'heal' || s.effectType === 'taunt' || s.effectType === 'buff');
           if (isPlayer && isDps && run.focusTarget) {
             const focused = targets.find(t => t.id === run.focusTarget!.enemyId && t.hp > 0);
-            target = focused ?? this.selectTarget(targets, rng);
+            target = focused ?? schwaechstesZiel(unit, targets) ?? this.selectTarget(targets, rng);
           } else {
-            target = this.selectTarget(targets, rng);
+            target = (isPlayer && schwaechstesZiel(unit, targets)) || this.selectTarget(targets, rng);
           }
 
-          this.grundangriff(unit, target, isPlayer ? enemies : party, run, rng);
+          this.grundangriff(unit, target, isPlayer ? enemies : party, isPlayer ? party : enemies, run, rng);
         }
-
-        // Decay taunt
-        if (unit.tauntRounds > 0) unit.tauntRounds--;
 
         neueToteMelden(enemies, party, tote, log);
       }
 
       // ── End of round effects ──
 
-      // Decay buffs
+      // Decay buffs and taunt (Spott gilt für ganze Runden)
       for (const unit of [...party.filter(u => u.hp > 0), ...enemies.filter(u => u.hp > 0)]) {
+        if (unit.tauntRounds > 0) unit.tauntRounds--;
         for (let i = unit.buffs.length - 1; i >= 0; i--) {
           const buff = unit.buffs[i];
           buff.remainingRounds--;
@@ -309,6 +309,7 @@ export class CombatEngine {
       for (const u of run.party) partyHp[u.id] = u.hp;
       const enemyHp: Record<number, number> = {};
       for (const e of enemies) enemyHp[e.id] = e.hp;
+      const markiert = enemies.filter(e => e.markiert).map(e => e.id);
       run.combatRoundSnapshots!.push({
         round,
         partyHp,
@@ -316,6 +317,7 @@ export class CombatEngine {
         logLines: roundLogLines,
         hadCrit,
         hadDeath,
+        ...(markiert.length > 0 ? { markiert } : {}),
       });
     }
 
@@ -417,7 +419,7 @@ export class CombatEngine {
         if (unit.hp <= 0) continue;
         if (fort.hp <= 0) break; // Befestigung schon zerstört
 
-        zustandAktualisieren(run.party);
+        zustandAktualisieren(run.party, log);
         if (setztAus(unit, log)) continue;
 
         if (unit.isWarMachine) {
@@ -433,8 +435,8 @@ export class CombatEngine {
           // ── Held greift Gegner an (schützt Kriegsmaschine) ──
           const currentAliveEnemies = enemies.filter(u => u.hp > 0);
           if (currentAliveEnemies.length > 0) {
-            const target = this.selectTarget(currentAliveEnemies, rng);
-            this.grundangriff(unit, target, enemies, run, rng);
+            const target = schwaechstesZiel(unit, currentAliveEnemies) ?? this.selectTarget(currentAliveEnemies, rng);
+            this.grundangriff(unit, target, enemies, run.party, run, rng);
           } else {
             // Keine Gegner mehr: Helden greifen Befestigung an (10% Effektivität)
             if (fort.hp > 0) {
@@ -475,11 +477,14 @@ export class CombatEngine {
               }
             }
             if (skill.effectType === 'damage') {
-              const target = this.selectTarget(targets, rng);
-              const dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, target.def) * skill.power));
-              const verlust = schadenNehmen(target, dmg);
-              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
-              if (target.hp <= 0 && !target.isWarMachine) this.checkRevive(target, run);
+              const target = abfangen(deckung(this.selectTarget(targets, rng), run.party, rng, log), run.party, log);
+              if (!schattentanz(target, unit, rng, log)) {
+                const dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, target.def) * skill.power));
+                const verlust = schadenNehmen(target, dmg);
+                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
+                if (target.hp <= 0 && !target.isWarMachine) this.checkRevive(target, run);
+                vergeltung(target, unit, run.party, rng, log);
+              }
               skill.currentCooldown = skill.cooldown;
               usedSkill = true; break;
             }
@@ -505,17 +510,18 @@ export class CombatEngine {
 
           if (!usedSkill) {
             const target = this.selectTarget(targets, rng);
-            this.grundangriff(unit, target, run.party, run, rng);
+            this.grundangriff(unit, target, run.party, enemies, run, rng);
           }
         }
 
         neueToteMelden(enemies, run.party, tote, log);
       }
 
-      // End-of-Round: Buff Decay
+      // End-of-Round: Buff- und Spott-Decay
       const allLiving = [...run.party.filter(u => u.hp > 0), ...enemies.filter(u => u.hp > 0)];
       if (warMachine && warMachine.hp > 0) allLiving.push(warMachine);
       for (const unit of allLiving) {
+        if (unit.tauntRounds > 0) unit.tauntRounds--;
         for (let i = unit.buffs.length - 1; i >= 0; i--) {
           const buff = unit.buffs[i];
           buff.remainingRounds--;
@@ -552,10 +558,12 @@ export class CombatEngine {
       if (warMachine) partyHp[warMachine.id] = warMachine.hp;
       const enemyHp: Record<number, number> = {};
       for (const e of enemies) enemyHp[e.id] = e.hp;
+      const markiert = enemies.filter(e => e.markiert).map(e => e.id);
       run.combatRoundSnapshots!.push({
         round, partyHp, enemyHp, logLines: roundLogLines,
         hadCrit, hadDeath,
         fortificationHp: fort.hp,
+        ...(markiert.length > 0 ? { markiert } : {}),
       });
     }
 
@@ -722,21 +730,30 @@ export class CombatEngine {
 
   /**
    * Grundangriff einer Einheit (Held oder Gegner) auf ein Ziel, mit allen Effekten.
+   * gegner sind die Gegner des Angreifers, verbuendete seine eigene Seite.
    * Gewürfelt wird immer in derselben Reihenfolge: Ausweichen (nur wenn das Ziel es kann),
    * Krit, Doppelschlag (nur mit dem Effekt). Einheiten ohne Effekte würfeln darum wie früher.
    */
   private grundangriff(
-    unit: CombatUnit, target: CombatUnit, gegner: CombatUnit[], run: ExpeditionRun, rng: SeededRNG,
+    unit: CombatUnit, target: CombatUnit, gegner: CombatUnit[], verbuendete: CombatUnit[],
+    run: ExpeditionRun, rng: SeededRNG,
   ): void {
     const log = (zeile: string): void => { run.combatLog.push(zeile); };
+
+    // Scharfschützin in Deckung, Schutzherr fängt Angriffe auf schwer verletzte Helden ab
+    target = abfangen(deckung(target, gegner, rng, log), gegner, log);
 
     // dodge: target has a chance to evade
     if (hasEffect(target, 'dodge') && rng.chance(chance(target, 'dodge'))) {
       log(`${unit.name} greift ${target.name} an → AUSGEWICHEN!`);
       return;
     }
+    if (schattentanz(target, unit, rng, log)) {
+      if (unit.hp <= 0) this.checkRevive(unit, run);
+      return;
+    }
 
-    const isCrit = rng.chance(unit.critChance);
+    const isCrit = zielschuss(unit, log) || rng.chance(unit.critChance);
     let dmg = grundSchaden(unit.atk, target.def);
     if (isCrit) dmg = Math.floor(dmg * unit.critMult);
     const stoss = schattenstoss(unit);
@@ -744,7 +761,8 @@ export class CombatEngine {
       dmg = Math.floor(dmg * stoss);
       log(`✦ ${unit.name} setzt Schattenstoss ein → ${stoss}-facher Schaden aus dem Hinterhalt`);
     }
-    this.treffer(unit, target, dmg, gegner, run, rng,
+    dmg = wegSchaden(unit, target, dmg, log);
+    this.treffer(unit, target, dmg, gegner, verbuendete, run, rng,
       schild => `${unit.name} greift ${target.name} an für ${dmg}${isCrit ? ' KRIT!' : ''}${schild}`);
 
     // double_strike: chance for a second attack (no crit)
@@ -754,8 +772,9 @@ export class CombatEngine {
         if (hasEffect(target, 'dodge') && rng.chance(chance(target, 'dodge'))) {
           log(`  ${unit.name}: DOPPELSCHLAG → AUSGEWICHEN!`);
         } else {
-          const dmg2 = grundSchaden(unit.atk, target.def);
-          this.treffer(unit, target, dmg2, gegner, run, rng,
+          // Wege wie die Meuchlerin wirken auch hier, ihre Zeile steht schon beim ersten Treffer
+          const dmg2 = wegSchaden(unit, target, grundSchaden(unit.atk, target.def), () => {});
+          this.treffer(unit, target, dmg2, gegner, verbuendete, run, rng,
             schild => `  ${unit.name}: DOPPELSCHLAG! ${dmg2} extra Schaden!${schild}`);
         }
       }
@@ -770,10 +789,10 @@ export class CombatEngine {
 
   /**
    * Ein Treffer landet: Reflexion, Schaden (ein Schild schluckt zuerst), Lebensraub,
-   * Glutpanzer des Ziels, dann Gift, Einfrieren und Funkenflug des Angreifers.
+   * Glutpanzer und Vergeltung des Ziels, dann Gift, Einfrieren, Funkenflug und die Wege des Angreifers.
    */
   private treffer(
-    unit: CombatUnit, target: CombatUnit, dmg: number, gegner: CombatUnit[],
+    unit: CombatUnit, target: CombatUnit, dmg: number, gegner: CombatUnit[], verbuendete: CombatUnit[],
     run: ExpeditionRun, rng: SeededRNG, zeile: (schild: string) => string,
   ): void {
     const log = (text: string): void => { run.combatLog.push(text); };
@@ -793,9 +812,9 @@ export class CombatEngine {
     // on_deal_damage effects (lifesteal, anti_heal)
     this.applyOnDealDamage(unit, target, dmg, rng, run);
 
-    beimGetroffenWerden(target, unit, log);
+    beimGetroffenWerden(target, unit, gegner, rng, log);
     if (unit.hp <= 0) this.checkRevive(unit, run);
-    nachTreffer(unit, target, dmg, gegner, rng, log);
+    nachTreffer(unit, target, dmg, gegner, verbuendete, rng, log);
   }
 
   /** Regeneration am Rundenende (Gegenstände mit Regeneration, Set-Fähigkeit Wurzelkraft) */

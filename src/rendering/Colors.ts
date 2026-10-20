@@ -199,8 +199,9 @@ export const UI_TEXT_STYLES = {
 
 // ─── Kampfprotokoll Farbzuordnung (shared by CombatOverlay + HTMLExpeditionUI) ──
 export function getLogLineColor(line: string): string {
-  // Set-Fähigkeiten und Kampfeffekte (systems/Kampfeffekte.ts) leuchten grün
+  // Set-Fähigkeiten und Kampfeffekte (systems/Kampfeffekte.ts) leuchten grün, die Wege der Helden golden
   if (line.startsWith('✦')) return '#6ee7b7';
+  if (line.startsWith('★') || line.startsWith('  ★')) return '#fcd34d';
   // Special effects (highest priority)
   if (line.includes('WIEDERGEBURT')) return '#ffd700';
   if (line.includes('AUSGEWICHEN'))  return '#00e5ff';

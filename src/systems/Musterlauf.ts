@@ -32,8 +32,11 @@ export const KLUG_AB_LEBEN = 0.85;
 /**
  * Neuer Spielstand mit den Helden des Musterteams (startExpedition prüft keine Sperren).
  * Mit `sets` tragen die Helden statt ihrer Ausrüstung die Dungeon-Sets aus MUSTER_SETS.
+ * Ihren Weg (ab Stufe 10) gehen sie, ausser `wege` ist false.
  */
-export function musterStand(team: MusterTeamName, startwert: number, sets?: MusterSetName): { state: GameState; ids: number[] } {
+export function musterStand(
+  team: MusterTeamName, startwert: number, sets?: MusterSetName, wege = true,
+): { state: GameState; ids: number[] } {
   const state = createNewGameState();
   state.rngSeed = startwert;
   const ids = MUSTER_TEAMS[team].helden.map((muster, i) => {
@@ -42,6 +45,7 @@ export function musterStand(team: MusterTeamName, startwert: number, sets?: Must
     held.level = muster.stufe;
     held.xp = totalXpForLevel(muster.stufe);
     held.gear = { ...((sets && MUSTER_SETS[sets].gear[muster.name]) || muster.gear) };
+    if (wege && muster.weg) held.spezialisierung = muster.weg;
     state.fighters.push(held);
     return held.id;
   });
@@ -77,11 +81,13 @@ export function gewonnen(run: ExpeditionRun): boolean {
   return run.status === 'victory' && run.bossesKilled > 0;
 }
 
-/** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets. */
-export function siegeVon(routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName): number {
+/** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege. */
+export function siegeVon(
+  routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName, wege = true,
+): number {
   let siege = 0;
   for (let i = 1; i <= laeufe; i++) {
-    const { state, ids } = musterStand(team, i * 7919, sets);
+    const { state, ids } = musterStand(team, i * 7919, sets, wege);
     if (gewonnen(spieleRoute(state, ids, routeId, spielweise))) siege++;
   }
   return siege;
