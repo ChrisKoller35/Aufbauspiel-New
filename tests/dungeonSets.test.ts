@@ -224,12 +224,12 @@ describe('Set-Beute', () => {
   test('nur ein Sieg bringt ein Set-Teil, und nur einmal', () => {
     const state = createNewGameState();
     const { run } = lauf([], [], { routeId: 'cave_spider', status: 'defeat' });
-    expect(setBeute(state, run)).toBeNull();
+    expect(setBeute(state, run)).toEqual([]);
     expect(run.loot).toEqual({});
 
     const gewonnen = sieg(state, 'cave_spider', 3);
     const teil = gewonnen.setTeil!;
-    expect(setBeute(state, gewonnen)).toBe(teil);
+    expect(setBeute(state, gewonnen)).toEqual([teil]);
     expect(gewonnen.loot[teil]).toBe(1);
   });
 });

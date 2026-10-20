@@ -12,6 +12,7 @@ import { renderHeader } from './HeaderRenderer';
 import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
 import { setFuerRoute, DungeonSetDef } from '../../data/dungeonSets';
 import { setKurzinfo } from '../components/SetAnzeige';
+import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 
 const buildingUpgradeSystem = new BuildingUpgradeSystem();
 
@@ -263,7 +264,7 @@ function buildTeamHTML(): string {
 
   return `
     ${renderHeader(gameState, 'expeditions', routeName)}
-    ${routeInfoHTML(recLevel, route?.besonderheit, route ? setFuerRoute(route.id) : undefined)}
+    ${routeInfoHTML(recLevel, route?.besonderheit, route ? setFuerRoute(route.id) : undefined, route ? routenGeschichteHtml(gameState, route.id) : '')}
     <div class="team-wrap">
       <div class="team-left">
         <div class="lbl" style="margin-bottom:8px">Dein Team</div>
@@ -280,14 +281,15 @@ function buildTeamHTML(): string {
   `;
 }
 
-/** Empfehlung, Besonderheit und Set der Route als Band über dem Team. */
-function routeInfoHTML(recLevel: string, besonderheit: string | undefined, set: DungeonSetDef | undefined): string {
-  if (!recLevel && !besonderheit && !set) return '';
+/** Empfehlung, Besonderheit, Set und Geschichte der Route als Band über dem Team. */
+function routeInfoHTML(recLevel: string, besonderheit: string | undefined, set: DungeonSetDef | undefined, geschichte: string): string {
+  if (!recLevel && !besonderheit && !set && !geschichte) return '';
   return `
     <div class="exp-info">
       ${recLevel ? `<span class="exp-rec">Empfohlen: ${recLevel}</span>` : ''}
       ${besonderheit ? `<span class="exp-besonderheit">✦ ${besonderheit}</span>` : ''}
       ${set ? `<span class="exp-set-info">Set-Beute: ${setKurzinfo(gameState, set, true)}</span>` : ''}
+      ${geschichte}
     </div>`;
 }
 

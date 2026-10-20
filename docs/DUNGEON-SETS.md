@@ -9,6 +9,9 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 - **Beute.** Nach jedem Sieg kann ein Teil des Dungeon-Sets in der Truhe liegen. Das erste Teil
   eines Sets ist sicher, danach 50 % (Normal), 65 % (Schwer), 80 % (Albtraum) und 100 % (Infernal).
   Teile, die der Gilde fehlen, kommen zuerst. Sind alle drei da, kann jedes fallen, für einen zweiten Helden.
+  Eine mutige Entscheidung der Dungeon-Geschichte kann ein Teil mehr versprechen («+1 Set-Teil, wenn ihr
+  siegt»): Es kommt zum gewöhnlichen Wurf dazu, beim ersten Sieg sind es also zwei verschiedene
+  (`docs/GESCHICHTEN.md`).
 - **Zwei Teile** geben Werte (z. B. +5 Angriff und +15 Leben), **drei Teile** die Set-Fähigkeit.
   Sie löst im Kampf sichtbar aus: grünes ✦-Banner und eine grüne Zeile im Kampfprotokoll.
   Zwei gleiche Teile zählen als eines.

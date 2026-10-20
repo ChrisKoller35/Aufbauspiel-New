@@ -12,6 +12,7 @@ import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
+import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
 
 
 
@@ -598,6 +599,7 @@ function showRouteModal(routeId: string, state: GameState): void {
     detailHtml += `<p><span style="color:#34d399">Set-Beute:</span> ${setKurzinfo(state, set, true)}</p>`
       + `<div class="dmap-set-teile set-teile">${setTeileHtml(state, set)}</div>`;
   }
+  detailHtml += kartenGeschichteHtml(state, route.id);
   if (isDeadEnd) detailHtml += `<p><span style="color:#8a7a5a">⚑ Sackgasse</span> — Kein Durchgang</p>`;
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;
   if (route.isSiegeRoute) detailHtml += `<p><span style="color:#f9a8d4">🏰 Belagerung</span> — Kriegsmaschine empfohlen</p>`;

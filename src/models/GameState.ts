@@ -140,6 +140,10 @@ export interface GameState {
   // Fehlt in älteren Spielständen; Stadtweg.ts legt es bei Bedarf an.
   stadtweg?: StadtwegStand;
 
+  // ── Geschichten der Dungeons (systems/Geschichten.ts) ──
+  // Fehlt in älteren Spielständen. gelesen: Einleitung schon gezeigt; erlebt: Geschichte bis zum Sieg gespielt.
+  geschichten?: { gelesen: string[]; erlebt: string[] };
+
   // ── Baupläne ──
   // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).
   erhalteneBauplaene: string[];

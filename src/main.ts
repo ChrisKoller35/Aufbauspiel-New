@@ -23,10 +23,12 @@ import { PeopleSystem } from './systems/PeopleSystem';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
-import { setBeute, setTeilHinweis } from './systems/DungeonSets';
+import { setBeute, setTeilHinweise } from './systems/DungeonSets';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { wegBilanz } from './ui/components/WegAnzeige';
+import { chronikHtml, einleitungHtml, folgenHtml, geschichtsText, optionsKnopfHtml } from './ui/components/GeschichtsAnzeige';
+import { geschichtsBilanz, GeschichtsBilanz, istGeschichtsWahl, neueEinleitung, raumWahlText, wahlNachRaum } from './systems/Geschichten';
 import { getRouteBauplan } from './data/routes';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -194,6 +196,16 @@ document.addEventListener('DOMContentLoaded', () => {
     // Track statistics
     state.statistics['total_expeditions'] = (state.statistics['total_expeditions'] ?? 0) + 1;
 
+    // Geschichte: beim ersten Aufbruch in diesen Dungeon erst die Einleitung des Stadtschreibers
+    const geschichte = neueEinleitung(state, routeId);
+    if (geschichte) {
+      saveSystem.save(state);
+      showExpeditionDialog('📜', geschichte.titel, einleitungHtml(geschichte), [
+        { label: 'AUFBRECHEN', primary: true, onClick: showNextCombatRoom },
+      ]);
+      return;
+    }
+
     // Show combat for first combat room
     showNextCombatRoom();
   }
@@ -204,6 +216,8 @@ document.addEventListener('DOMContentLoaded', () => {
     label: string;
     primary?: boolean;
     disabled?: boolean;
+    /** Entscheidung der Geschichte: die Folgen unter der Beschriftung (HTML aus GeschichtsAnzeige) */
+    folgen?: string;
     onClick: () => void;
   }
 
@@ -220,7 +234,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;';
 
     const box = document.createElement('div');
-    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;text-align:center;font-family:'Cinzel',serif;";
+    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;max-height:90vh;overflow-y:auto;text-align:center;font-family:'Cinzel',serif;";
     box.innerHTML = `
       <div style="font-size:2rem;margin-bottom:8px;">${icon}</div>
       <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">${title}</div>
@@ -231,10 +245,15 @@ document.addEventListener('DOMContentLoaded', () => {
     row.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
     for (const b of buttons) {
       const btn = document.createElement('button');
-      btn.textContent = b.label;
       btn.disabled = !!b.disabled;
-      btn.style.cssText = DIALOG_BTN_BASE + (b.primary ? DIALOG_BTN_PRIMARY : DIALOG_BTN_SECONDARY)
-        + (b.disabled ? 'opacity:.4;cursor:not-allowed;' : 'cursor:pointer;');
+      if (b.folgen !== undefined) {
+        btn.className = 'gs-option';
+        btn.innerHTML = optionsKnopfHtml(b.label, b.folgen);
+      } else {
+        btn.textContent = b.label;
+        btn.style.cssText = DIALOG_BTN_BASE + (b.primary ? DIALOG_BTN_PRIMARY : DIALOG_BTN_SECONDARY)
+          + (b.disabled ? 'opacity:.4;cursor:not-allowed;' : 'cursor:pointer;');
+      }
       btn.addEventListener('click', () => {
         if (b.disabled) return;
         overlay.remove();
@@ -309,18 +328,34 @@ document.addEventListener('DOMContentLoaded', () => {
   function showChoiceDialog(run: ActiveRun): void {
     const choice = run.pendingChoice;
     if (!choice) { continueExpedition(run); return; }
+    const waehlen = (index: 0 | 1) => (): void => { expeditionSystem.resolveChoice(run, index); continueExpedition(run); };
+
+    // Entscheidung der Geschichte: die Lage, darunter zwei Knöpfe mit ihren Folgen
+    const wahl = istGeschichtsWahl(choice) ? wahlNachRaum(run.routeId, choice.roomIndex) : undefined;
+    if (wahl) {
+      const knopf = (c: EncounterChoice, index: 0 | 1): DialogButton =>
+        ({ label: c.label, folgen: folgenHtml(run.routeId, c.wirkung ?? []), onClick: waehlen(index) });
+      showExpeditionDialog('📜', wahl.titel, geschichtsText(wahl.text) + partyHpHtml(run), [
+        knopf(choice.optionA, 0), knopf(choice.optionB, 1),
+      ]);
+      return;
+    }
+
     const option = (c: EncounterChoice): string => `
       <div style="margin-bottom:10px;">
         <div style="color:#e5e7eb;font-size:.85rem;">${c.label}</div>
         <div style="color:#6b7280;font-size:.75rem;">${c.flavorText}</div>
       </div>`;
+    // Feste Wahl-Räume der obersten Dungeons erzählen ihre Geschichte mit
+    const raum = raumWahlText(run.routeId, choice.roomIndex);
 
-    showExpeditionDialog('✦', 'EURE WAHL', `
+    showExpeditionDialog(raum ? '📜' : '✦', raum?.titel ?? 'EURE WAHL', `
+      ${raum ? geschichtsText(raum.text) : ''}
       ${partyHpHtml(run)}
       <div style="margin-bottom:20px;">${option(choice.optionA)}${option(choice.optionB)}</div>
     `, [
-      { label: choice.optionA.label, primary: true, onClick: () => { expeditionSystem.resolveChoice(run, 0); continueExpedition(run); } },
-      { label: choice.optionB.label, primary: true, onClick: () => { expeditionSystem.resolveChoice(run, 1); continueExpedition(run); } },
+      { label: choice.optionA.label, primary: true, onClick: waehlen(0) },
+      { label: choice.optionB.label, primary: true, onClick: waehlen(1) },
     ]);
   }
 
@@ -374,9 +409,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const run = state.activeExpedition;
     if (!run) return;
 
-    // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe
-    const setTeil = setBeute(state, run);
-    const setHinweise = setTeil ? { [setTeil]: setTeilHinweis(state, setTeil) } : {};
+    // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe (eins mehr, wenn die Geschichte es versprochen hat)
+    const setHinweise = setTeilHinweise(state, setBeute(state, run));
 
     // Capture loot data before clearing
     const loot = { ...run.loot };
@@ -405,6 +439,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Geschichte: was der Stadtschreiber festhält (der erste Sieg zählt sie als erlebt)
+    const geschichte = geschichtsBilanz(state, run);
+
     // Clear active expedition
     state.activeExpedition = null;
 
@@ -421,7 +458,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveSystem.save(state);
       console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
 
-      showExpeditionSummary(progress, () => {
+      showExpeditionSummary(progress, geschichte, () => {
         // Reset expedition screen state and navigate back
         initExpeditionsScreen(state);
         navigateTo('expeditions');
@@ -436,8 +473,8 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  /** Result dialog after the chest: score, hero XP and everything newly unlocked. */
-  function showExpeditionSummary(progress: ExpeditionProgress, onClose: () => void): void {
+  /** Result dialog after the chest: score, hero XP, everything newly unlocked and the chronicle of the story. */
+  function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, onClose: () => void): void {
     const { entry, xp, rankUp, newClasses, newAchievements } = progress;
     const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
     const line = (text: string, color = '#e5e7eb'): string =>
@@ -457,7 +494,8 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
     for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
 
-    showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>`, [
+    const chronik = geschichte ? chronikHtml(geschichte) : '';
+    showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [
       { label: 'WEITER', primary: true, onClick: onClose },
     ]);
   }

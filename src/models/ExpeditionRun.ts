@@ -1,10 +1,13 @@
+import type { Wirkung } from '../data/dungeonGeschichten';
+
 export type EncounterType = 'combat' | 'rest' | 'hazard' | 'boss' | 'checkpoint' | 'find' | 'merchant' | 'survivor' | 'fortification';
 
 /** Eine wählbare Option in einem Begegnungs-Dialog */
 export interface EncounterChoice {
   label: string;
   flavorText: string;
-  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal';
+  /** 'geschichte': Entscheidung der Dungeon-Geschichte, sie wirkt über `wirkung` (systems/Geschichten.ts) */
+  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal' | 'geschichte';
   /** Stärke des Effekts (Prozent, Goldmenge oder XP-Betrag, je nach effect) */
   value: number;
   /** Optionaler Item-Key für effect='item' */
@@ -13,6 +16,10 @@ export interface EncounterChoice {
   gier?: number;
   /** Preis der Option: jeder lebende Held verliert so viel Prozent seiner max. HP (nie unter 1) */
   kostetLeben?: number;
+  /** Geschichte: was die Option bewirkt */
+  wirkung?: Wirkung[];
+  /** Geschichte: der Satz dazu im Bericht nach der Expedition */
+  nachklang?: string;
 }
 
 /** Zustand einer Befestigungsanlage (Mauer, Tor, Turm, Bergfried) */
@@ -162,6 +169,12 @@ export interface ExpeditionRun {
   gier?: number;
   /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
   setTeil?: string | null;
+  /** Geschichte: Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */
+  setTeilVersprochen?: boolean;
+  /** Das versprochene Set-Teil, gezogen mit setTeil; null = keins */
+  setTeilExtra?: string | null;
+  /** Geschichte: die Sätze zu den Entscheidungen dieses Laufs, für den Bericht (systems/Geschichten.ts) */
+  chronik?: string[];
   /** Feature #11: Ausstehende Begegnungs-Wahl (find/rest Raum) */
   pendingChoice?: { roomIndex: number; optionA: EncounterChoice; optionB: EncounterChoice };
   /** Feature #15: Checkpoint-Dialog ausstehend */

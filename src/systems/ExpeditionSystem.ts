@@ -12,6 +12,7 @@ import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
+import { chronikNachWahl, geschichteWirkt, geschichtsWahlStellen } from './Geschichten';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
 export const MERCHANT_PRICES: Record<string, number> = {
@@ -301,6 +302,9 @@ export class ExpeditionSystem {
       run.combatLog.push('>> Team HP kritisch! Auto-Rückzug verfügbar.');
     }
 
+    // Geschichte: Steht nach diesem Raum eine Entscheidung an, wartet der Lauf darauf
+    if (geschichtsWahlStellen(run, room)) return false;
+
     this.raumGeschafft(run, room);
     return run.status === 'exploring' && !run.pendingCheckpoint;
   }
@@ -342,6 +346,7 @@ export class ExpeditionSystem {
     run.pendingChoice = undefined;
 
     this.applyEncounterChoice(run, choice);
+    chronikNachWahl(run, room.index, choiceIndex, choice);
 
     room.completed = true;
     this.raumGeschafft(run, room);
@@ -401,6 +406,9 @@ export class ExpeditionSystem {
         run.combatLog.push(`>> ${choice.label}: +${choice.value} XP für alle.`);
         break;
       }
+      case 'geschichte':
+        geschichteWirkt(run, choice.wirkung ?? []);
+        break;
     }
 
     // Preis der Wahl (verbotene Bücher im Himmelsarchiv): kostet Leben, aber nie das letzte

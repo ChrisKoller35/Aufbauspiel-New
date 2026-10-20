@@ -3,6 +3,13 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 20.10.2026 (Nachmittag): Geschichten der Dungeons
+
+Jeder der 25 Dungeons erzählt eine kurze Geschichte des Stadtschreibers Ottokar: die Einleitung beim ersten Aufbruch,
+2 bis 3 Entscheidungen unterwegs, die Beute oder Gefahr verändern (die mutige Option bringt Gold, Gegenstände oder
+ein Set-Teil mehr, macht aber Gegner oder Boss stärker), eine Chronik im Bericht und nach dem ersten Sieg den Schluss.
+Drachenhort und Himmelsarchiv erzählen über ihre festen Wahl-Räume. Regeln und Eichung: `docs/GESCHICHTEN.md`.
+
 ## Nachtrag 20.10.2026 (Mittag): Dungeon-Sets und Wege der Helden
 
 Jeder Dungeon lässt ein eigenes Set aus drei Teilen fallen, zwei Teile geben Werte, drei eine Fähigkeit, die im Kampf

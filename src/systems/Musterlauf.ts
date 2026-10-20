@@ -14,15 +14,17 @@ import { ExpeditionSystem } from './ExpeditionSystem';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { totalXpForLevel } from './HeroProgression';
+import { dungeonBezwungen, istGeschichtsWahl } from './Geschichten';
 
 export type MusterTeamName = keyof typeof MUSTER_TEAMS;
 export type MusterSetName = keyof typeof MUSTER_SETS;
 
 /**
- * Spielweise bei Wahl-Räumen (Rastplätze: immer rasten):
- * - vorsichtig: feste Wahl immer Option B (Heilung statt Hort-Gold oder verbotenem Buch)
- * - gierig: feste Wahl immer Option A
- * - klug: Option A nur, solange die Gruppe mindestens 85 % ihrer Leben hat
+ * Spielweise bei Wahl-Räumen (Rastplätze: immer rasten) und bei den Entscheidungen
+ * der Geschichte (systems/Geschichten.ts, dort ist das Wagnis Option B):
+ * - vorsichtig: feste Wahl immer Option B (Heilung statt Hort-Gold oder verbotenem Buch), Geschichte sicher
+ * - gierig: feste Wahl immer Option A, Geschichte mutig
+ * - klug: das Wagnis nur, solange die Gruppe mindestens 85 % ihrer Leben hat
  */
 export type Spielweise = 'vorsichtig' | 'gierig' | 'klug';
 
@@ -70,15 +72,16 @@ export function spieleRoute(state: GameState, ids: number[], routeId: string, sp
     else if (step === 'choice') {
       const raum = run.rooms[run.pendingChoice!.roomIndex];
       const risiko = spielweise === 'gierig' || (spielweise === 'klug' && gruppenLeben(run) >= KLUG_AB_LEBEN);
-      system.resolveChoice(run, raum.type === 'rest' || risiko ? 0 : 1);
+      if (istGeschichtsWahl(run.pendingChoice)) system.resolveChoice(run, risiko ? 1 : 0);
+      else system.resolveChoice(run, raum.type === 'rest' || risiko ? 0 : 1);
     } else system.processCurrentRoom(state);
   }
   return run;
 }
 
-/** Gewonnen heisst: bis zum Ende und den Boss besiegt. */
+/** Gewonnen heisst: bis zum Ende und den Boss besiegt (Dungeons ohne Boss: bis zum Ende). */
 export function gewonnen(run: ExpeditionRun): boolean {
-  return run.status === 'victory' && run.bossesKilled > 0;
+  return dungeonBezwungen(run);
 }
 
 /** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege. */
