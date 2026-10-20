@@ -28,8 +28,8 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
     name: 'Guardian',
     role: 'tank',
     baseStats: {
-      hp: 25, maxHp: 25,
-      atk: 3, def: 2, spd: 0.8,
+      hp: 70, maxHp: 70,
+      atk: 4, def: 3, spd: 0.8,
       critChance: 0.05, critMult: 1.5,
     },
     skills: [
@@ -63,8 +63,8 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
     name: 'Ranger',
     role: 'dps',
     baseStats: {
-      hp: 21, maxHp: 21,
-      atk: 7, def: 1, spd: 1.2,
+      hp: 50, maxHp: 50,
+      atk: 8, def: 1, spd: 1.2,
       critChance: 0.15, critMult: 2.0,
     },
     skills: [
@@ -98,8 +98,8 @@ export const CLASS_DEFS: Record<string, ClassDef> = {
     name: 'Cleric',
     role: 'healer',
     baseStats: {
-      hp: 19, maxHp: 19,
-      atk: 2, def: 1.5, spd: 0.9,
+      hp: 55, maxHp: 55,
+      atk: 3, def: 1.5, spd: 0.9,
       critChance: 0.05, critMult: 1.5,
     },
     skills: [

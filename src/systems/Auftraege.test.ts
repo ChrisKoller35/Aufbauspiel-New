@@ -138,7 +138,7 @@ describe('Auftragsliste', () => {
 
     const loaded = new SaveSystem().load()!;
     const b = loaded.buildings.find(x => x.typeId === 'SMITHY')!;
-    expect(loaded.saveVersion).toBe(22);
+    expect(loaded.saveVersion).toBe(23);
     expect(b.auftraege).toEqual([SWORD]);
   });
 });

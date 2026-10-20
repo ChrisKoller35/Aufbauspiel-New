@@ -16,7 +16,7 @@ type Log = (zeile: string) => void;
 
 /** Schaden eines Treffers vor Krit und Effekten. Alle Kampfstellen benutzen diese Formel. */
 export function grundSchaden(atk: number, def: number): number {
-  return Math.max(1, atk - Math.floor(def * 0.7));
+  return Math.max(1, Math.round(atk * 0.2), atk - Math.floor(def * 0.7));
 }
 
 // ── Nachschlagen ──
