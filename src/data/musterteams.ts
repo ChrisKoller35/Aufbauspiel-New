@@ -79,3 +79,23 @@ export const MUSTER_TEAMS: Record<'frisch' | 'gut' | 'stark', MusterTeam> = {
     ],
   },
 };
+
+/**
+ * Dungeon-Sets der Musterhelden für die Set-Eichung (tools/dungeonEichung.ts, docs/DUNGEON-SETS.md):
+ * volle Sets, wie sie ein Team nach einigen Siegen in den Dungeons dieser Ebene trägt.
+ * Brom behält den Seelenbrecher, weil sein Schild-Set keine Waffe hat.
+ */
+const SETS_EBENE_4: Record<string, GuildFighter['gear']> = {
+  Brom: { mainHand: 'soulbreaker', offHand: 'set_festung_schild', armor: 'set_festung_platte', trinket: 'set_festung_talisman' },
+  Grimm: { mainHand: 'set_wyrm_klinge', offHand: null, armor: 'set_wyrm_platte', trinket: 'set_wyrm_amulett' },
+  Lia: { mainHand: 'set_abyss_bogen', offHand: null, armor: 'set_abyss_leder', trinket: 'set_abyss_ring' },
+  Sina: { mainHand: 'set_schatten_dolch', offHand: null, armor: 'set_schatten_leder', trinket: 'set_schatten_ring' },
+};
+
+export const MUSTER_SETS: Record<'ebene4' | 'hort', { name: string; gear: Record<string, GuildFighter['gear']> }> = {
+  ebene4: { name: 'Sets aus Ebene 4', gear: SETS_EBENE_4 },
+  hort: {
+    name: 'Ebene 4, Grimm mit dem Hort-Set',
+    gear: { ...SETS_EBENE_4, Grimm: { mainHand: 'set_hort_klinge', offHand: null, armor: 'set_hort_platte', trinket: 'set_hort_amulett' } },
+  },
+};

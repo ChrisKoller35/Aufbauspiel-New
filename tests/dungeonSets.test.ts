@@ -15,7 +15,7 @@ import { ITEM_DEFS } from '../src/data/items';
 import { ROUTE_DEFS } from '../src/data/routes';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { SPECIAL_EFFECT_DEFS, extractSpecialTags } from '../src/data/specialEffects';
-import { gewonnen, musterStand, spieleRoute } from '../src/systems/Musterlauf';
+import { musterStand, siegeVon } from '../src/systems/Musterlauf';
 import { SeededRNG } from '../src/utils/RNG';
 
 const gear = new GearSystem();
@@ -468,23 +468,10 @@ describe('Set-Teile gegenüber gewöhnlicher Ausrüstung', () => {
     }
   });
 
-  // Grob, mit wenigen Läufen; die genauen Werte stehen in docs/DUNGEON-SETS.md
-  test('volle Sets aus Ebene 4 machen ein Team mit legendärer Ausrüstung nicht schwächer', () => {
-    const SETS: Record<string, GuildFighter['gear']> = {
-      Brom: { mainHand: 'soulbreaker', offHand: 'set_festung_schild', armor: 'set_festung_platte', trinket: 'set_festung_talisman' },
-      Grimm: { mainHand: 'set_wyrm_klinge', offHand: null, armor: 'set_wyrm_platte', trinket: 'set_wyrm_amulett' },
-      Lia: { mainHand: 'set_abyss_bogen', offHand: null, armor: 'set_abyss_leder', trinket: 'set_abyss_ring' },
-      Sina: { mainHand: 'set_schatten_dolch', offHand: null, armor: 'set_schatten_leder', trinket: 'set_schatten_ring' },
-    };
-    const siege = (mitSets: boolean): number => {
-      let n = 0;
-      for (let i = 1; i <= 10; i++) {
-        const { state, ids } = musterStand('gut', i * 7919);
-        if (mitSets) for (const f of state.fighters) f.gear = { ...SETS[f.name] };
-        if (gewonnen(spieleRoute(state, ids, 'drachenhort', 'klug'))) n++;
-      }
-      return n;
-    };
-    expect(siege(true)).toBeGreaterThan(siege(false));
+  // Grob, mit wenigen Läufen; die genauen Werte misst npm run dungeon-eichung (docs/DUNGEON-SETS.md)
+  test('volle Sets aus Ebene 4 machen ein Team mit legendärer Ausrüstung stärker', () => {
+    const { state } = musterStand('gut', 7919, 'ebene4');
+    expect(state.fighters.find(f => f.name === 'Grimm')?.gear.mainHand).toBe('set_wyrm_klinge');
+    expect(siegeVon('drachenhort', 'gut', 'klug', 10, 'ebene4')).toBeGreaterThan(siegeVon('drachenhort', 'gut', 'klug', 10));
   });
 });
