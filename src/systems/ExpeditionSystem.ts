@@ -13,6 +13,7 @@ import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
 import { chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen } from './Geschichten';
+import { schmiedeStufen } from './Schmiede';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
 export const MERCHANT_PRICES: Record<string, number> = {
@@ -68,8 +69,9 @@ export class ExpeditionSystem {
       if (citizen) citizen.status = 'ON_EXPEDITION';
     }
 
-    // Build party combat units
-    const party: CombatUnit[] = fighters.map(f => this.combatEngine.fighterToCombatUnit(f));
+    // Build party combat units (mit den Stufen der Schmiede)
+    const stufen = schmiedeStufen(state);
+    const party: CombatUnit[] = fighters.map(f => this.combatEngine.fighterToCombatUnit(f, stufen));
 
     // Apply iron_trial modifier: halve party DEF
     if (modifierId === 'iron_trial') {

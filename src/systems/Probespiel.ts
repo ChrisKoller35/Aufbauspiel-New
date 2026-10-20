@@ -15,9 +15,13 @@ import { ROUTE_DEFS } from '../data/routes';
 import { MUSTER_TEAMS, musterWerte } from '../data/musterteams';
 import { totalXpForLevel } from './HeroProgression';
 
-/** Vorräte für ein paar Aufstiege und etwas zum Bauen */
+/**
+ * Vorräte für ein paar Aufstiege und etwas zum Bauen, dazu zum Ausprobieren der Schmiede
+ * das Set des Magma-Wyrms (eine Klinge doppelt, zum Einschmelzen) und Glutkern für drei Stufen.
+ */
 const PROBE_VORRAT: Record<string, number> = {
   gold: 3000, wood: 400, stone: 250, bread: 30, healing_potion: 10, power_bread: 5,
+  set_wyrm_klinge: 2, set_wyrm_platte: 1, set_wyrm_amulett: 1, mat_glutkern: 60, crystal_shard: 10,
 };
 
 /** Ist die Seite mit ?probe geöffnet? */
@@ -33,9 +37,9 @@ export function probespielNeu(search: string): boolean {
 /**
  * Macht aus einem neuen Spiel (Startgebäude und Bewohner schon gesetzt) das
  * Probespiel: Stadtstufe 7 mit allen Herzsteinen und gelesenen Kapiteln, die
- * vier Helden des Musterteams «Gut», dazu Vorräte. Die Gilde hat den höchsten
- * Rang und alle Bosse bis Ebene 4 besiegt: Als Nächstes warten die Dungeons über
- * dem Vulkankern (Drachenhort, dann Himmelsarchiv).
+ * vier Helden des Musterteams «Gut», dazu Vorräte und ein Set für die Schmiede.
+ * Die Gilde hat den höchsten Rang und alle Bosse bis Ebene 4 besiegt: Als Nächstes
+ * warten die Dungeons über dem Vulkankern (Drachenhort, dann Himmelsarchiv).
  */
 export function richteProbespielEin(state: GameState): void {
   state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };

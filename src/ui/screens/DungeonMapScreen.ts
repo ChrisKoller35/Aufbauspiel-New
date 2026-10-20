@@ -14,6 +14,7 @@ import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
+import { materialZeile } from '../components/SchmiedeAnzeige';
 import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
 
@@ -630,6 +631,8 @@ function showRouteModal(routeId: string, state: GameState): void {
     detailHtml += `<p><span style="color:#34d399">Set-Beute:</span> ${setKurzinfo(state, set, true)}</p>`
       + `<div class="dmap-set-teile set-teile">${setTeileHtml(state, set)}</div>`;
   }
+  const material = materialZeile(route.id);
+  if (material) detailHtml += `<p class="dmap-mat"><span style="color:#fbbf24">⚒️ Schmiede:</span> ${material}</p>`;
   detailHtml += kartenGeschichteHtml(state, route.id);
   if (isDeadEnd) detailHtml += `<p><span style="color:#8a7a5a">⚑ Sackgasse</span> — Kein Durchgang</p>`;
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;

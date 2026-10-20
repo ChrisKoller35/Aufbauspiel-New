@@ -38,6 +38,9 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    (`src/ui/screens/ExpeditionsScreen.ts`) und eine Klasse `.tag-<gebiet>` in `src/ui/html/magic-city.css`.
 5. **Set:** Jeder Dungeon lässt ein eigenes Set aus drei Teilen fallen. Anleitung in
    `docs/DUNGEON-SETS.md` («Ein Set für einen neuen Dungeon»); der Test verlangt für jede Route ein Set.
+   Dazu braucht jeder Dungeon ein **Material für die Schmiede**: im bekannten Gebiet die Route beim
+   passenden Material ergänzen, für ein neues Gebiet ein neues Material mit Bild aus Code
+   (`docs/SCHMIEDE.md`, «Ein neuer Dungeon»); der Test verlangt für jede Route genau eins.
 6. **Geschichte:** Jeder Dungeon erzählt eine kurze Geschichte des Stadtschreibers mit 2 bis 3 Entscheidungen
    (`src/data/dungeonGeschichten.ts`); feste Wahl-Räume erzählen mit (`raumWahlen`). Anleitung und
    Regeln in `docs/GESCHICHTEN.md`; der Test verlangt für jede Route eine Geschichte.

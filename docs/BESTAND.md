@@ -3,6 +3,15 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 20.10.2026 (spät): Schmiede für die Dungeon-Sets
+
+Neuer Tab «⚒️ Schmiede» auf der Heldenseite: Set-Teile werden mit Material aus den Dungeons bis +5 besser,
+jede Stufe um 10 % (der Hauptwert mindestens um 1). Jedes Gebiet hat sein eigenes Material (Waldharz bis
+Himmelstinte, Bilder aus Code gezeichnet), ein Sieg bringt am meisten. Doppelte Teile lassen sich einschmelzen,
+alle drei Teile eines Sets auf +5 sind ein Meisterset (Zwei-Teile-Bonus doppelt). Die Stufe steht als «+3» an
+jedem Bild, im Namen und in den Werten; Truhe, Routen, Karte und Ergebnis nennen das Material.
+Regeln, Kosten und Material je Gebiet: `docs/SCHMIEDE.md`.
+
 ## Nachtrag 20.10.2026 (abends): Rangliste mit Rivalen
 
 Neun Computer-Gilden klettern auf der Dungeon-Karte mit, eine Runde pro beendeter Expedition. Die Rangliste

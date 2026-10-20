@@ -20,6 +20,7 @@ import {
   neuigkeiten, ranglisteStand, ruhmJeSieg, truhenDungeon, wegVorbei, wochenRangliste,
 } from '../../systems/Rangliste';
 import { showChestReveal } from '../components/ChestRevealOverlay';
+import { schmiedeStufen } from '../../systems/Schmiede';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 
@@ -371,7 +372,7 @@ export function renderRankingScreen(container: HTMLElement): void {
           else beute[id] = (beute[id] ?? 0) + menge;
         }
       }
-      void showChestReveal(beute, gold, hinweise, truhenTitel(ergebnisse)).then(() => {
+      void showChestReveal(beute, gold, hinweise, truhenTitel(ergebnisse), schmiedeStufen(state)).then(() => {
         abgeholt = ergebnisse;
         neuZeichnen(el);
       });

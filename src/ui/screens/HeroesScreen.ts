@@ -9,8 +9,12 @@ import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { itemEigenschaften } from '../../data/specialEffects';
 import { setVonItem } from '../../data/dungeonSets';
 import { GearSystem, EquipSlot } from '../../systems/GearSystem';
-import { getrageneSets } from '../../systems/DungeonSets';
+import { getrageneSets, istMeisterset } from '../../systems/DungeonSets';
+import { SchmiedeStufen, schmiedeStufe, schmiedeStufen } from '../../systems/Schmiede';
+import { MAX_SCHMIEDE_STUFE } from '../../data/schmiede';
 import { setAbzeichen, setBoniHtml, setSammlungHtml, setTooltip } from '../components/SetAnzeige';
+import { nameMitStufe, stufeAbzeichen, werteKurz } from '../components/SchmiedeAnzeige';
+import { bindSchmiedeTab, schmiedeTabHtml, schmiedeTabVerlassen, schmiedeZeigeTeil } from './SchmiedeTab';
 import { wegAbzeichen, wegBereichHtml } from '../components/WegAnzeige';
 import { waehleWeg } from '../../systems/Spezialisierung';
 import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
@@ -48,25 +52,21 @@ function emojiForClass(classDef: ClassDef): string {
 
 function gearName(itemId: string | null): string {
   if (!itemId) return '—';
-  const def = ITEM_DEFS[itemId];
-  return def ? def.name : itemId;
+  return ITEM_DEFS[itemId] ? nameMitStufe(itemId, stufen()) : itemId;
+}
+
+/** Stufen der Schmiede: verbesserte Set-Teile zeigen ihre höheren Werte und ein «+3» */
+function stufen(): SchmiedeStufen | undefined {
+  return gameState ? schmiedeStufen(gameState) : undefined;
 }
 
 function vorzeichen(n: number): string {
   return n > 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
 }
 
+/** «+7 ATK, +5 % CRIT», mit der Stufe aus der Schmiede */
 function gearStatsSummary(itemId: string | null): string {
-  if (!itemId) return '';
-  const def = ITEM_DEFS[itemId];
-  if (!def?.statBonuses) return '';
-  const parts: string[] = [];
-  if (def.statBonuses.atk) parts.push(`${vorzeichen(def.statBonuses.atk)} ATK`);
-  if (def.statBonuses.def) parts.push(`${vorzeichen(def.statBonuses.def)} DEF`);
-  if (def.statBonuses.hp) parts.push(`${vorzeichen(def.statBonuses.hp)} HP`);
-  if (def.statBonuses.spd) parts.push(`${vorzeichen(def.statBonuses.spd)} SPD`);
-  if (def.statBonuses.critChance) parts.push(`${vorzeichen(Math.round(def.statBonuses.critChance * 100))} % CRIT`);
-  return parts.join(', ');
+  return itemId ? werteKurz(itemId, stufen()) : '';
 }
 
 /** Eigenschaften eines Gegenstands (Doppelschlag, Reflexion …) als Zeilen für title-Attribute */
@@ -87,7 +87,7 @@ function eigenschaftenVon(fighter: GuildFighter): Map<string, { name: string; de
 }
 
 // ─── Tab IDs ────────────────────────────────────────────────────
-type HeroTab = 'my' | 'hire' | 'train' | 'inventar' | 'sets';
+type HeroTab = 'my' | 'hire' | 'train' | 'inventar' | 'sets' | 'schmiede';
 
 let activeTab: HeroTab = 'my';
 
@@ -222,8 +222,8 @@ function gearSlotIconHtml(slot: { label: string; emoji: string; key: string | nu
   }
   const def = ITEM_DEFS[slot.key];
   const sprKey = getItemSpriteKey(slot.key);
-  const titel = [def?.name ?? slot.key, gearStatsSummary(slot.key), eigenschaftenText(slot.key), setTooltip(slot.key)].filter(Boolean).join('\n');
-  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" data-slot="${slot.slot}" title="${titel}"><img src="assets/sprites/final/${sprKey}.png" onerror="this.style.display='none'">${setAbzeichen(slot.key)}</button>`;
+  const titel = [gearName(slot.key), gearStatsSummary(slot.key), eigenschaftenText(slot.key), setTooltip(slot.key)].filter(Boolean).join('\n');
+  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" data-slot="${slot.slot}" title="${titel}"><img src="assets/sprites/final/${sprKey}.png" onerror="this.style.display='none'">${setAbzeichen(slot.key)}${stufeAbzeichen(stufen(), slot.key)}</button>`;
 }
 
 // ─── Auswahl, Vergleich und Set-Boni im Heldenfenster ───────────
@@ -285,8 +285,8 @@ const WERT_ZEILEN: [keyof FighterStats, string, (n: number) => string][] = [
 
 /** «ATK +3 · DEF −2» und was sich bei den Sets ändert, wenn aus vorher nachher wird */
 function vergleichHtml(vorher: GuildFighter, nachher: GuildFighter): string {
-  const a = gearSystem.getEffectiveStats(vorher);
-  const b = gearSystem.getEffectiveStats(nachher);
+  const a = gearSystem.getEffectiveStats(vorher, stufen());
+  const b = gearSystem.getEffectiveStats(nachher, stufen());
   const werte = WERT_ZEILEN
     .map(([k, name, fmt]) => {
       const d = Math.round((b[k] - a[k]) * 100) / 100;
@@ -306,6 +306,10 @@ function vergleichHtml(vorher: GuildFighter, nachher: GuildFighter): string {
     else if (n2 >= 2 && n1 < 2) setZeilen.push(`<div class="wert-plus">✦ Zwei-Teile-Bonus von ${set.zeichen} ${set.name} wird aktiv</div>`);
     if (n1 >= 3 && n2 < 3) setZeilen.push(`<div class="wert-minus">✗ ${set.dreiTeile.name} geht verloren</div>`);
     else if (n1 >= 2 && n2 < 2) setZeilen.push(`<div class="wert-minus">✗ Zwei-Teile-Bonus von ${set.zeichen} ${set.name} geht verloren</div>`);
+    const m1 = istMeisterset(set, vorher.gear, stufen());
+    const m2 = istMeisterset(set, nachher.gear, stufen());
+    if (m2 && !m1) setZeilen.push(`<div class="wert-plus">★ Meisterset ${set.zeichen} wird aktiv</div>`);
+    if (m1 && !m2) setZeilen.push(`<div class="wert-minus">✗ Meisterset ${set.zeichen} geht verloren</div>`);
   }
   // Eigenschaften der Gegenstände; was über ein Set oder ein anderes Teil bleibt, zählt nicht als Verlust
   const alle = (f: GuildFighter): Set<string> => new Set(gearSystem.getSpecialEffects(f).map(e => e.id));
@@ -357,12 +361,17 @@ function auswahlHtml(fighter: GuildFighter): string {
     }
   }
 
+  const schmiede = set && gameState
+    ? `<button class="hdm2-schmiede-link" data-schmiede-teil="${itemId}">⚒️ ${schmiedeStufe(gameState, itemId) >= MAX_SCHMIEDE_STUFE
+      ? 'In der Schmiede: höchste Stufe' : `In der Schmiede auf +${schmiedeStufe(gameState, itemId) + 1} verbessern`}</button>`
+    : '';
+
   return `
     <div class="hdm2-auswahl" id="hdm2-auswahl">
       <div class="hdm2-auswahl-kopf">
-        <div class="hdm-gear-icon ${rarityClass(def.tags)}"><img src="assets/sprites/final/${getItemSpriteKey(itemId)}.png" onerror="this.style.display='none'">${setAbzeichen(itemId)}</div>
+        <div class="hdm-gear-icon ${rarityClass(def.tags)}"><img src="assets/sprites/final/${getItemSpriteKey(itemId)}.png" onerror="this.style.display='none'">${setAbzeichen(itemId)}${stufeAbzeichen(stufen(), itemId)}</div>
         <div class="hdm2-auswahl-titel">
-          <div class="hdm2-auswahl-name ${rarityClass(def.tags)}">${def.name}</div>
+          <div class="hdm2-auswahl-name ${rarityClass(def.tags)}">${gearName(itemId)}</div>
           <div class="hdm2-auswahl-art">${artText(itemId)}</div>
           <div class="hdm2-auswahl-werte">${gearStatsSummary(itemId)}</div>
           ${itemEigenschaften(def.tags).map(e => `<div class="hdm2-eigenschaft">✦ <b>${e.name}:</b> ${e.description}</div>`).join('')}
@@ -370,6 +379,7 @@ function auswahlHtml(fighter: GuildFighter): string {
         ${knopf}
       </div>
       ${vergleich}
+      ${schmiede}
       ${set ? `<div class="hdm2-auswahl-set"><div class="hdm2-set-kopf">${set.zeichen} ${set.name} <span class="hdm2-set-zahl">${getragen}/3 getragen</span></div>${setBoniHtml(set, getragen)}</div>` : ''}
       ${def.flavorText ? `<div class="hdm2-auswahl-text">«${def.flavorText}»</div>` : ''}
     </div>`;
@@ -415,11 +425,11 @@ function buildInventoryHtml(fighter: GuildFighter): string {
     const gewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id ? ' gewaehlt' : '';
     const mit = mitGegenstand(fighter, item.id, platz);
     const passt = !mit ? ' passt-nicht' : platz && mit.gear[platz] !== item.id ? ' anderer-platz' : '';
-    const titel = [item.name, gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id)].filter(Boolean).join('\n');
+    const titel = [gearName(item.id), gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id)].filter(Boolean).join('\n');
     return `
     <div class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}">
       <img src="assets/sprites/final/${item.sprKey}.png" onerror="this.style.display='none'">
-      ${setAbzeichen(item.id)}
+      ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}
       ${item.qty > 1 ? `<span class="hdm2-inv-qty">${item.qty}</span>` : ''}
     </div>`;
   }).join('');
@@ -433,7 +443,7 @@ function wertHtml(symbol: string, name: string, wert: string, bonus: number, bon
 
 function statsHtml(fighter: GuildFighter): string {
   const base = fighter.baseStats;
-  const eff = gearSystem.getEffectiveStats(fighter);
+  const eff = gearSystem.getEffectiveStats(fighter, stufen());
   const spdBonus = Math.round((eff.spd - base.spd) * 100) / 100;
   const critBonus = Math.round((eff.critChance - base.critChance) * 100);
   const kritSchaden = Math.round(eff.critMult * 100) / 100;
@@ -458,6 +468,7 @@ function setsHtml(fighter: GuildFighter): string {
     <div class="hdm2-set${teile >= 2 ? ' aktiv' : ''}">
       <div class="hdm2-set-kopf">${set.zeichen} ${set.name} <span class="hdm2-set-zahl">${teile}/3</span></div>
       ${setBoniHtml(set, teile)}
+      ${istMeisterset(set, fighter.gear, stufen()) ? `<div class="set-bonus aktiv set-meister">★ <b>Meisterset:</b> alle drei Teile auf +${MAX_SCHMIEDE_STUFE}, der Zwei-Teile-Bonus zählt doppelt</div>` : ''}
     </div>`).join('');
   return `
     <div class="hdm2-sets-area">
@@ -663,7 +674,7 @@ function renderInventarTab(): string {
       const tierStr = item.def.tier ? `T${item.def.tier}` : '';
       const isStackable = (item.def.stackSize ?? 1) > 1;
       const tooltip = [
-        item.def.name,
+        gearName(item.id),
         rl,
         tierStr,
         statsStr,
@@ -681,8 +692,8 @@ function renderInventarTab(): string {
                onerror="this.style.display='none'">
           ${isStackable && item.qty > 1 ? `<span class="inv-cell-qty">\u00D7${item.qty}</span>` : ''}
           ${isEquipped ? '<span class="inv-cell-eqbadge">E</span>' : ''}
-          ${setAbzeichen(item.id)}
-          <span class="inv-cell-nm">${item.def.name}</span>
+          ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}
+          <span class="inv-cell-nm">${gearName(item.id)}</span>
         </div>`;
     }).join('');
 
@@ -725,6 +736,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
       case 'train': return renderTrainTab();
       case 'inventar': return renderInventarTab();
       case 'sets': return state ? setSammlungHtml(state) : '';
+      case 'schmiede': return state ? schmiedeTabHtml(state) : '';
     }
   }
 
@@ -739,6 +751,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
         <button class="${tabClass('train')}" data-tab="train">TRAINIEREN</button>
         <button class="${tabClass('inventar')}" data-tab="inventar">\uD83C\uDF92 INVENTAR</button>
         <button class="${tabClass('sets')}" data-tab="sets">\u2726 SETS</button>
+        <button class="${tabClass('schmiede')}" data-tab="schmiede">\u2692\uFE0F SCHMIEDE</button>
       </div>
       <div class="tab-content">
         ${tabContent()}
@@ -746,6 +759,8 @@ export function renderHeroesScreen(container: HTMLElement): void {
   container.appendChild(el);
 
   // ─── Event Binding ──────────────────────────────────────────
+
+  if (activeTab === 'schmiede' && state) bindSchmiedeTab(el, state, () => renderHeroesScreen(container));
 
   // Back button
   const backBtn = el.querySelector('.hdr-back') as HTMLElement | null;
@@ -762,6 +777,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
     tabs[i].addEventListener('click', () => {
       const tab = tabs[i].getAttribute('data-tab') as HeroTab;
       if (tab && tab !== activeTab) {
+        if (activeTab === 'schmiede') schmiedeTabVerlassen();
         activeTab = tab;
         renderHeroesScreen(container);
       }
@@ -911,6 +927,14 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
     window.dispatchEvent(new CustomEvent('mc:speichern'));
     renderHeroesScreen(container); // die Heldenkarte zeigt jetzt den Weg
     zumWeg();
+  });
+
+  // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil
+  overlay.querySelector<HTMLElement>('[data-schmiede-teil]')?.addEventListener('click', e => {
+    schmiedeZeigeTeil((e.currentTarget as HTMLElement).dataset.schmiedeTeil!);
+    overlay.remove();
+    activeTab = 'schmiede';
+    renderHeroesScreen(container);
   });
 
   // Anlegen oder Ablegen

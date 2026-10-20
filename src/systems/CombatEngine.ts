@@ -5,6 +5,7 @@ import { LOOT_TABLE_DEFS } from '../data/lootTables';
 import { CLASS_DEFS } from '../data/classes';
 import { ITEM_DEFS } from '../data/items';
 import { GearSystem } from './GearSystem';
+import type { SchmiedeStufen } from './Schmiede';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
@@ -647,8 +648,9 @@ export class CombatEngine {
     }
   }
 
-  fighterToCombatUnit(fighter: GuildFighter): CombatUnit {
-    const stats = this.gearSystem.getEffectiveStats(fighter);
+  /** stufen: Stufen der Schmiede (Schmiede.schmiedeStufen), damit verbesserte Set-Teile zählen */
+  fighterToCombatUnit(fighter: GuildFighter, stufen?: SchmiedeStufen): CombatUnit {
+    const stats = this.gearSystem.getEffectiveStats(fighter, stufen);
     const cls = CLASS_DEFS[fighter.classId];
     const specialEffects = this.gearSystem.getSpecialEffects(fighter);
 

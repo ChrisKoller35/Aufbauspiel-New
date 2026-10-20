@@ -18,6 +18,8 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
   Zwei gleiche Teile zählen als eines.
 - **Eigenschaften.** Ab Ebene 3 trägt jedes Teil eine Eigenschaft wie die übrigen Gegenstände
   dieser Ebenen (Doppelschlag, Reflexion …). Gleiche Eigenschaften zählen nicht doppelt, es gilt die stärkste.
+- **Schmiede.** Mit Material aus den Dungeons werden die Teile bis +5 besser, jede Stufe um 10 %.
+  Alle drei Teile auf +5 sind ein Meisterset: Der Zwei-Teile-Bonus zählt doppelt (`docs/SCHMIEDE.md`).
 - **Sichtbar** auf der Heldenseite (Platz oder Gegenstand antippen: Werte, Eigenschaft, Vergleich mit
   dem getragenen Teil, Set-Boni; Anlegen und Ablegen per Knopf), im Tab «Sets» (Sammlung je Dungeon),
   als Abzeichen im Inventar, auf den Routenkarten («🐺 Rudel des Waldpfads · 0 von 3»), bei der
@@ -34,6 +36,7 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 | `src/ui/components/SetAnzeige.ts` | Set-Abzeichen und Set-Zeilen für alle Ansichten |
 | `src/ui/screens/HeroesScreen.ts` | Heldenseite: Auswahl, Vergleich, Tab «Sets» |
 | `tests/dungeonSets.test.ts` | Regeln der Sets, Beute, Kampfeffekte, Stärke im Musterlauf |
+| `src/systems/Schmiede.ts` | Stufen +1 bis +5 der Teile (`docs/SCHMIEDE.md`) |
 
 ## Wie stark ein Teil ist
 

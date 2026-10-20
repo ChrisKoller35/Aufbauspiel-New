@@ -5,6 +5,8 @@
 import { itemEigenschaften } from '../../data/specialEffects';
 import { ITEM_DEFS, getItemSpriteKey, isBauplan } from '../../data/items';
 import { BUILDING_DEFS } from '../../data/buildings';
+import { SchmiedeStufen, werteMitStufe } from '../../systems/Schmiede';
+import { nameMitStufe, stufeAbzeichen } from './SchmiedeAnzeige';
 
 /** Inline-Styles für die Bauplan-Hervorhebung (pergamentfarben, volle Breite, Glow). */
 const BAUPLAN_CARD_STYLE = 'grid-column:1/-1;border:2px solid #f59e0b;'
@@ -21,12 +23,14 @@ interface LootEntry {
  * Returns a Promise that resolves when user clicks "Einsammeln".
  * hinweise: extra line per item, e.g. the set of a set piece («🐺 Rudel des Waldpfads · Teil 2 von 3»).
  * untertitel: line under «Schatztruhe» instead of the expedition default (e.g. the weekly Ruhmestruhe).
+ * stufen: Stufen der Schmiede, damit verbesserte Set-Teile mit Stufe und ihren echten Werten erscheinen.
  */
 export function showChestReveal(
   loot: Record<string, number>,
   goldEarned: number,
   hinweise: Record<string, string> = {},
   untertitel?: string,
+  stufen?: SchmiedeStufen,
 ): Promise<void> {
   return new Promise(resolve => {
     // Merge gold into loot entries for display
@@ -99,7 +103,7 @@ export function showChestReveal(
       const isGold = entry.itemId === 'gold';
       const def = isGold ? null : ITEM_DEFS[entry.itemId];
       const isGear = def?.type === 'gear';
-      const name = isGold ? 'Gold' : (def?.name ?? entry.itemId);
+      const name = isGold ? 'Gold' : def ? nameMitStufe(entry.itemId, stufen) : entry.itemId;
       const spriteKey = isGold ? 'ICON_GOLD' : getItemSpriteKey(entry.itemId);
 
       // Get rarity class
@@ -112,11 +116,11 @@ export function showChestReveal(
         else if (def.tags.includes('uncommon')) rarCls = 'rar-uncommon';
       }
 
-      // Stats line for gear
+      // Stats line for gear (mit der Stufe aus der Schmiede)
       let statsHtml = '';
-      if (isGear && def?.statBonuses) {
+      const sb = isGear ? werteMitStufe(entry.itemId, stufen) : undefined;
+      if (sb) {
         const parts: string[] = [];
-        const sb = def.statBonuses;
         if (sb.atk) parts.push(`+${sb.atk} ATK`);
         if (sb.def) parts.push(`+${sb.def} DEF`);
         if (sb.hp) parts.push(`+${sb.hp} HP`);
@@ -157,6 +161,7 @@ export function showChestReveal(
       card.innerHTML = `
         <img src="assets/sprites/final/${spriteKey}.png" class="${isGear ? 'chest-item-bg' : 'chest-item-ico'}"
              onerror="this.style.display='none'">
+        ${isGold ? '' : stufeAbzeichen(stufen, entry.itemId)}
         <div class="chest-item-info">
           ${rarCls === 'rar-set' ? '<span class="chest-item-setlabel">✦ SET-TEIL</span>' : ''}
           <span class="chest-item-name ${rarCls}">${name}</span>

@@ -550,6 +550,12 @@ export function setTeilIds(set: DungeonSetDef): string[] {
   return set.teile.map(t => setTeilId(set, t));
 }
 
+/** Die Bauart eines Set-Teils (set_rudel_klinge → klinge); undefined für andere Gegenstände */
+export function teilArtVonItem(itemId: string | null | undefined): SetTeilArt | undefined {
+  const set = setVonItem(itemId);
+  return set?.teile.find(t => setTeilId(set, t) === itemId)?.art;
+}
+
 const STAT_NAMEN: [keyof SetWerte, string, (v: number) => string][] = [
   ['atk', 'Angriff', v => `+${v}`],
   ['def', 'Verteidigung', v => `+${v}`],

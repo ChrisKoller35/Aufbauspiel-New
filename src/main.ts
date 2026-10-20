@@ -25,6 +25,8 @@ import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
 import { ranglistenZeilen } from './ui/components/RanglistenBilanzAnzeige';
 import { setBeute, setTeilHinweise } from './systems/DungeonSets';
+import { bereiteTeile, neuBereit, schmiedeBeute, schmiedeStufen } from './systems/Schmiede';
+import { truhenHinweise } from './ui/components/SchmiedeAnzeige';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { wegBilanz } from './ui/components/WegAnzeige';
@@ -421,6 +423,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe (eins mehr, wenn die Geschichte es versprochen hat)
     const setHinweise = setTeilHinweise(state, setBeute(state, run));
+    // Material für die Schmiede: ein Sieg bringt die volle Menge, sonst nach den geschafften Räumen
+    const material = schmiedeBeute(run);
+    const hinweise = truhenHinweise(state, setHinweise, material?.itemId ?? null);
 
     // Capture loot data before clearing
     const loot = { ...run.loot };
@@ -457,7 +462,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Apply loot and finish (with or without chest reveal)
     const applyLootAndFinish = (): void => {
-      // Add loot to global stock
+      // Add loot to global stock (und merken, was danach in der Schmiede neu möglich ist)
+      const schonBereit = bereiteTeile(state);
       for (const [itemId, qty] of Object.entries(loot)) {
         state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
       }
@@ -468,7 +474,7 @@ document.addEventListener('DOMContentLoaded', () => {
       saveSystem.save(state);
       console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
 
-      showExpeditionSummary(progress, geschichte, () => {
+      showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), () => {
         // Reset expedition screen state and navigate back
         initExpeditionsScreen(state);
         navigateTo('expeditions');
@@ -477,14 +483,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show chest reveal animation if there's loot
     if (hasLoot) {
-      showChestReveal(loot, goldEarned, setHinweise).then(applyLootAndFinish);
+      showChestReveal(loot, goldEarned, hinweise, undefined, schmiedeStufen(state)).then(applyLootAndFinish);
     } else {
       applyLootAndFinish();
     }
   }
 
-  /** Result dialog after the chest: score, hero XP, everything newly unlocked and the chronicle of the story. */
-  function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, onClose: () => void): void {
+  /**
+   * Result dialog after the chest: score, hero XP, everything newly unlocked, what the Schmiede can
+   * now do (schmiede: «Rudelreisser auf +2») and the chronicle of the story.
+   */
+  function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], onClose: () => void): void {
     const { entry, xp, rankUp, newClasses, newAchievements } = progress;
     const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
     const line = (text: string, color = '#e5e7eb'): string =>
@@ -504,6 +513,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
     for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
     for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
+    if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
 
     const chronik = geschichte ? chronikHtml(geschichte) : '';
     showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [

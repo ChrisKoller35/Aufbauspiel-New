@@ -1,4 +1,5 @@
 import { setItemDefs } from './dungeonSets';
+import { materialItemDefs } from './schmiede';
 
 export type ItemType = 'resource' | 'consumable' | 'gear' | 'material' | 'special';
 export type GearSlot = 'mainHand' | 'offHand' | 'armor' | 'trinket';
@@ -666,6 +667,9 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
 
   // --- Dungeon-Sets: drei Teile je Dungeon (data/dungeonSets.ts) ---
   ...setItemDefs(),
+
+  // --- Material für die Schmiede: eins je Gebiet (data/schmiede.ts) ---
+  ...materialItemDefs(),
 };
 
 /** Resolve sprite key for an item. Uses explicit spriteKey if set, otherwise derives from id. */

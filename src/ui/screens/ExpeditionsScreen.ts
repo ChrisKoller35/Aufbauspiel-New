@@ -12,6 +12,7 @@ import { renderHeader } from './HeaderRenderer';
 import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
 import { setFuerRoute, DungeonSetDef } from '../../data/dungeonSets';
 import { setKurzinfo } from '../components/SetAnzeige';
+import { materialZeile } from '../components/SchmiedeAnzeige';
 import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 
 const buildingUpgradeSystem = new BuildingUpgradeSystem();
@@ -114,7 +115,8 @@ function buildExpeditionListHTML(): string {
     const footer = locked
       ? getRouteLockReasons(route, gameState).map(r => `<span class="exp-lock">🔒 ${r}</span>`).join('')
       : `<span class="exp-rew">Belohnung: ${routeRewards(route)}</span>`
-        + (set ? `<span class="exp-set">${setKurzinfo(gameState, set)}</span>` : '');
+        + (set ? `<span class="exp-set">${setKurzinfo(gameState, set)}</span>` : '')
+        + `<span class="exp-mat">${materialZeile(route.id)}</span>`;
     return `
       <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
         <div class="exp-card-info">
@@ -289,6 +291,7 @@ function routeInfoHTML(recLevel: string, besonderheit: string | undefined, set: 
       ${recLevel ? `<span class="exp-rec">Empfohlen: ${recLevel}</span>` : ''}
       ${besonderheit ? `<span class="exp-besonderheit">✦ ${besonderheit}</span>` : ''}
       ${set ? `<span class="exp-set-info">Set-Beute: ${setKurzinfo(gameState, set, true)}</span>` : ''}
+      ${set ? `<span class="exp-mat-info">⚒️ Schmiede: ${materialZeile(set.routeId)}</span>` : ''}
       ${geschichte}
     </div>`;
 }

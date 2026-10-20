@@ -154,6 +154,11 @@ export interface GameState {
   // Fehlt in älteren Spielständen; Rangliste.ts legt es beim ersten Aufruf an.
   rangliste?: RanglisteStand;
 
+  // ── Schmiede (systems/Schmiede.ts) ──
+  // Set-Teil → Stufe 1 bis 5, gilt für alle Exemplare. Fehlt in älteren Spielständen;
+  // Schmiede.ts legt es beim ersten Verbessern an.
+  schmiede?: { stufen: Record<string, number> };
+
   // ── Baupläne ──
   // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).
   erhalteneBauplaene: string[];

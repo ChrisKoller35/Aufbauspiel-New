@@ -1,7 +1,7 @@
 // ─── Magic City – Dungeon-Sets im Spiel ─────────────────────────
-// Zählt die Set-Teile, die ein Held trägt, liefert Set-Boni und
-// Set-Fähigkeiten (GearSystem) und würfelt das Set-Teil, das ein Sieg
-// im Dungeon einbringt (main.ts, finishExpedition).
+// Zählt die Set-Teile, die ein Held trägt, liefert Set-Boni (mit Meisterset aus
+// der Schmiede) und Set-Fähigkeiten (GearSystem) und würfelt das Set-Teil, das ein
+// Sieg im Dungeon einbringt (main.ts, finishExpedition).
 // Daten der Sets: data/dungeonSets.ts. Wirkung im Kampf: systems/Kampfeffekte.ts.
 // ────────────────────────────────────────────────────────────────
 
@@ -10,6 +10,7 @@ import { GuildFighter } from '../models/GuildRoster';
 import { ExpeditionRun, SpecialEffect, dungeonBezwungen } from '../models/ExpeditionRun';
 import { DungeonSetDef, SetWerte, getSet, setFuerRoute, setTeilIds, setVonItem } from '../data/dungeonSets';
 import { ITEM_DEFS } from '../data/items';
+import { MAX_SCHMIEDE_STUFE } from '../data/schmiede';
 import { SeededRNG } from '../utils/RNG';
 
 type Ausruestung = GuildFighter['gear'];
@@ -47,14 +48,26 @@ export function getrageneSets(gear: Ausruestung): GetragenesSet[] {
   });
 }
 
-/** Werte aus Set-Boni: ab zwei Teilen der Zwei-Teile-Bonus, mit drei Teilen dazu die Werte der Fähigkeit */
-export function setBonusWerte(gear: Ausruestung): SetWerte {
+/**
+ * Werte aus Set-Boni: ab zwei Teilen der Zwei-Teile-Bonus, mit drei Teilen dazu die Werte der Fähigkeit.
+ * Ein Meisterset (alle drei Teile in der Schmiede auf der höchsten Stufe) zählt den Zwei-Teile-Bonus doppelt.
+ * `stufen`: Stufen der Schmiede (systems/Schmiede.ts); ohne sie gibt es kein Meisterset.
+ */
+export function setBonusWerte(gear: Ausruestung, stufen?: Record<string, number>): SetWerte {
   const summe: SetWerte = {};
   for (const { set, teile } of getrageneSets(gear)) {
     if (teile >= 2) addiere(summe, set.zweiTeile);
     if (teile >= 3 && set.dreiTeile.werte) addiere(summe, set.dreiTeile.werte);
+    if (istMeisterset(set, gear, stufen)) addiere(summe, set.zweiTeile);
   }
   return summe;
+}
+
+/** Trägt der Held alle drei Teile des Sets, jedes in der Schmiede auf der höchsten Stufe? */
+export function istMeisterset(set: DungeonSetDef, gear: Ausruestung, stufen?: Record<string, number>): boolean {
+  if (!stufen) return false;
+  const getragen = new Set(PLAETZE.map(platz => gear[platz]));
+  return setTeilIds(set).every(id => getragen.has(id) && (stufen[id] ?? 0) >= MAX_SCHMIEDE_STUFE);
 }
 
 /** Set-Fähigkeiten (ab drei Teilen) als Kampfeffekte des Trägers */

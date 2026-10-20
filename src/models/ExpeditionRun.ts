@@ -173,6 +173,8 @@ export interface ExpeditionRun {
   setTeilVersprochen?: boolean;
   /** Das versprochene Set-Teil, gezogen mit setTeil; null = keins */
   setTeilExtra?: string | null;
+  /** Material für die Schmiede, das der Lauf gebracht hat (systems/Schmiede.ts); fehlt = noch nicht vergeben */
+  schmiedeMaterial?: { itemId: string; menge: number } | null;
   /** Geschichte: die Sätze zu den Entscheidungen dieses Laufs, für den Bericht (systems/Geschichten.ts) */
   chronik?: string[];
   /** Geschichte: Beute einer mutigen Wahl, die erst kommt, wenn der Kampf in Raum `raum` gewonnen ist */

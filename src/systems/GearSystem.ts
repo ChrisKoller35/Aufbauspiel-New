@@ -5,6 +5,7 @@ import { ITEM_DEFS, ItemDef } from '../data/items';
 import { extractSpecialTags, SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
 import { setBonusWerte, setFaehigkeiten } from './DungeonSets';
 import { wegEffekte, wegWerte } from './Spezialisierung';
+import { SchmiedeStufen, werteMitStufe } from './Schmiede';
 
 export type EquipSlot = 'mainHand' | 'offHand' | 'armor' | 'trinket';
 
@@ -104,8 +105,10 @@ export class GearSystem {
   /**
    * Calculate effective stats = base + gear bonuses from all 4 slots + set bonuses (DungeonSets)
    * + Werte des Wegs (Spezialisierung, nicht von Reparaturen betroffen).
+   * stufen: Stufen der Schmiede (Schmiede.schmiedeStufen); verbesserte Set-Teile zählen mit ihren
+   * höheren Werten, ein Meisterset mit doppeltem Zwei-Teile-Bonus. Ohne sie: Grundwerte.
    */
-  getEffectiveStats(fighter: GuildFighter): FighterStats {
+  getEffectiveStats(fighter: GuildFighter, stufen?: SchmiedeStufen): FighterStats {
     const base = fighter.baseStats;
     const stats: FighterStats = { ...base, hp: base.maxHp, maxHp: base.maxHp };
 
@@ -127,10 +130,10 @@ export class GearSystem {
     for (const slot of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
       const itemId = fighter.gear[slot];
       if (!itemId) continue;
-      const itemDef = ITEM_DEFS[itemId];
-      if (itemDef?.statBonuses) add(itemDef.statBonuses);
+      const werte = werteMitStufe(itemId, stufen);
+      if (werte) add(werte);
     }
-    add(setBonusWerte(fighter.gear));
+    add(setBonusWerte(fighter.gear, stufen));
     add(wegWerte(fighter), 1);
 
     return stats;
