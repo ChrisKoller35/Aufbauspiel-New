@@ -4,6 +4,7 @@ import { GuildFighter } from './GuildRoster';
 import { ExpeditionRun } from './ExpeditionRun';
 import { ScoreboardEntry } from './ScoreboardEntry';
 import { WeeklyChallengeState } from './WeeklyChallengeState';
+import { RanglisteStand } from './RanglisteStand';
 
 export interface TileData {
   buildingId: number | null; // which building occupies this tile
@@ -143,6 +144,15 @@ export interface GameState {
   // ── Geschichten der Dungeons (systems/Geschichten.ts) ──
   // Fehlt in älteren Spielständen. gelesen: Einleitung schon gezeigt; erlebt: Geschichte bis zum Sieg gespielt.
   geschichten?: { gelesen: string[]; erlebt: string[] };
+
+  // ── Bezwungene Dungeons (systems/Bezwungen.ts) ──
+  // Dungeon → Runde der Rangliste beim ersten echten Sieg (0 = davor). Vergisst nichts, anders als
+  // die Bestenliste. Fehlt in älteren Spielständen; Bezwungen.ts legt es beim ersten Aufruf an.
+  bezwungen?: Record<string, number>;
+
+  // ── Rangliste mit Rivalen (systems/Rangliste.ts) ──
+  // Fehlt in älteren Spielständen; Rangliste.ts legt es beim ersten Aufruf an.
+  rangliste?: RanglisteStand;
 
   // ── Baupläne ──
   // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).

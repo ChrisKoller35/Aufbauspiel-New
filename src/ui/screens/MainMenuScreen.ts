@@ -7,6 +7,7 @@ import { GameState } from '../../models/GameState';
 import { renderHeader } from './HeaderRenderer';
 import { stadtBannerHtml, bindeStadtBanner } from './StadtwegFenster';
 import { probespielHinweisHtml } from '../components/ProbespielHinweis';
+import { ranglisteKurz } from '../../systems/Rangliste';
 
 /** Chosen background; survives re-renders of the main menu on navigation. */
 let chosenBg = 1;
@@ -16,6 +17,10 @@ let chosenBg = 1;
  * Expects a GameState reference so resource values are real.
  */
 export function renderMainMenu(app: HTMLElement, state: GameState): void {
+  // Rangliste mit Rivalen: Platz auf der Karte und in der Woche, Abzeichen für eine offene Belohnung
+  const rang = ranglisteKurz(state, Date.now());
+  const rangAbzeichen = rang.offen > 0 ? '<span class="tile-abzeichen">🏆 Truhe bereit</span>' : '';
+
   const el = document.createElement('div');
   el.id = 's-main';
   el.className = 'screen active';
@@ -47,8 +52,9 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
         <span class="tile-desc">Errichte Geb\u00e4ude und stelle m\u00e4chtige Items her</span>
       </div>
       <div class="tile" data-nav="ranking" style="background-image:url('assets/tiles/tile_ranking.png')">
-        <span class="tile-name">Ranking</span>
-        <span class="tile-desc">Vergleiche deine Erfolge und Bestzeiten</span>
+        ${rangAbzeichen}
+        <span class="tile-name">Rangliste</span>
+        <span class="tile-desc">Gipfel: Platz ${rang.platz} von ${rang.gilden} \u00b7 Woche: Platz ${rang.wochePlatz}</span>
       </div>
     </div>
 

@@ -1,7 +1,7 @@
 // ─── ExpeditionFinalizer ────────────────────────────────────────
 // Progress awarded when an expedition ends (victory/defeat/retreat):
-// hero XP, score + scoreboard, statistics, guild rank, defeated bosses,
-// class unlocks, bestiarium, achievements.
+// hero XP, score + scoreboard, rangliste (fame of the week, summit ranking),
+// statistics, guild rank, defeated bosses, class unlocks, bestiarium, achievements.
 // Loot, provisions and fighter release stay in main.ts (UI flow).
 // ──────────────────────────────────────────────────────────────────
 
@@ -17,6 +17,7 @@ import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { BestiariumSystem } from './BestiariumSystem';
 import { AchievementSystem } from './AchievementSystem';
 import { awardXP } from './HeroProgression';
+import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
 
 /** Bonus XP per hero for winning the run */
 export const VICTORY_XP_BONUS = 10;
@@ -28,6 +29,8 @@ export interface ExpeditionProgress {
   rankUp: { newRank: number; title: string; unlocks: string[] } | null;
   newClasses: string[];
   newAchievements: string[];
+  /** Ruhm der Woche und Platz in der Rangliste mit Rivalen */
+  rangliste: RanglistenBilanz;
 }
 
 const guildRankSystem = new GuildRankSystem();
@@ -71,6 +74,8 @@ export function finalizeExpeditionProgress(
     enemiesKilled: run.enemiesKilled ?? 0,
     bossesKilled: run.bossesKilled ?? 0,
   };
+  // Rangliste vor dem Eintrag in die Bestenliste: erkennt den ersten Sieg in diesem Dungeon
+  const rangliste = ranglisteNachExpedition(state, run, entry.timestamp);
   if (!state.scoreboard) state.scoreboard = [];
   state.scoreboard.push(entry);
   if (state.scoreboard.length > SCOREBOARD_LIMIT) {
@@ -110,5 +115,5 @@ export function finalizeExpeditionProgress(
   state.achievements.push(...newAchievementIds);
   const newAchievements = newAchievementIds.map(id => ACHIEVEMENT_DEFS.find(d => d.id === id)?.name ?? id);
 
-  return { entry, xp, rankUp, newClasses, newAchievements };
+  return { entry, xp, rankUp, newClasses, newAchievements, rangliste };
 }

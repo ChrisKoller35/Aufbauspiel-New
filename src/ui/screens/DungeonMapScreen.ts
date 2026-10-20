@@ -5,7 +5,9 @@
 
 import '../html/dungeonkarte.css';
 import { GameState } from '../../models/GameState';
-import { ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP, isRouteAvailable, getRouteLockReasons } from '../../data/routes';
+import {
+  ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons,
+} from '../../data/routes';
 import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS } from '../../data/items';
 import { navigateTo } from '../ScreenRouter';
@@ -13,6 +15,7 @@ import { renderHeader } from './HeaderRenderer';
 import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
 import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
+import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
 
 
 
@@ -53,6 +56,7 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:${GEBIETE.himmel.stil.stroke}"></span> ${GEBIETE.himmel.stil.label}</div>
       <div class="dmap-legend-row" style="margin-top:4px"><span class="dmap-ldot" style="background:#c8a227"></span> Hauptpfad</div>
       <div class="dmap-legend-row"><span class="dmap-lhex" style="background:#c8a227"></span> Boss</div>
+      <div class="dmap-legend-row"><span class="dmap-lwappen">🦅</span> Gilde, höchster Dungeon</div>
     </div>
     <div class="dmap-scroll-hint" id="dmap-scroll-hint">▲ SCROLL — HÖHER = GEFÄHRLICHER ▲</div>
   `;
@@ -288,6 +292,8 @@ function buildDungeonSVG(state: GameState): string {
   const HEIGHT = 2600;
 
   const { nodeMap, allEdges } = buildGraphIndex();
+  // Rangliste mit Rivalen: Wappen jeder Gilde auf ihrem höchsten bezwungenen Dungeon
+  const aufKarte = gildenAufKarte(state, Date.now());
   // Dungeons über dem Vulkankern haben negative y: so viel Platz kommt oben dazu
   const minY = Math.min(0, ...DUNGEON_GRAPH.map(n => n.y));
   const oben = minY < 0 ? GIPFEL_RAND - minY : 0;
@@ -363,8 +369,8 @@ function buildDungeonSVG(state: GameState): string {
 
     const isFromAvailable = isRouteAvailable(fromRoute, state);
     const isToAvailable = isRouteAvailable(toRoute, state);
-    const isFromDone = state.scoreboard.some(s => s.routeId === fromId && s.status === 'victory');
-    const isToDone = state.scoreboard.some(s => s.routeId === toId && s.status === 'victory');
+    const isFromDone = isRouteCompleted(fromId, state);
+    const isToDone = isRouteCompleted(toId, state);
 
     // Edge is "active" if both endpoints are available or completed
     const isActive = (isFromAvailable || isFromDone) && (isToAvailable || isToDone);
@@ -410,7 +416,7 @@ function buildDungeonSVG(state: GameState): string {
 
     const { x, y } = graphNode;
     const biome = getBiomeStyle(route);
-    const isCompleted = state.scoreboard.some(s => s.routeId === route.id && s.status === 'victory');
+    const isCompleted = isRouteCompleted(route.id, state);
     const isAvailable = isRouteAvailable(route, state);
     const isLocked = !isAvailable && !isCompleted;
     const hasBoss = !!route.bossId;
@@ -524,6 +530,7 @@ function buildDungeonSVG(state: GameState): string {
         ${pulseDot}
         ${startMarker}
         ${deadEndMarker}
+        ${wappenHtml(aufKarte.get(route.id) ?? [], x, y - r * 0.55)}
       </g>`;
   }
 
@@ -541,6 +548,30 @@ function buildDungeonSVG(state: GameState): string {
         <g class="dmap-nodes">${nodesHtml}</g>
       </g>
     </svg>`;
+}
+
+// ── Wappen der Gilden (Rangliste mit Rivalen) ──
+
+/** Bis zu drei Wappen nebeneinander, darüber hinaus «+n»; mit Namen beim Darüberfahren */
+function wappenHtml(gilden: GildenStand[], cx: number, cy: number): string {
+  if (gilden.length === 0) return '';
+  const sichtbar = gilden.slice(0, 3);
+  const rest = gilden.slice(3);
+  const anzahl = sichtbar.length + (rest.length > 0 ? 1 : 0);
+  const xVon = (i: number): number => cx + (i - (anzahl - 1) / 2) * 25;
+  const kreise = sichtbar.map((g, i) => `
+    <g class="dmap-wappen${g.spieler ? ' du' : ''}">
+      <title>${g.name}: höchster Dungeon${g.spieler ? '' : ` (${g.sterne} Sterne)`}</title>
+      <circle cx="${xVon(i)}" cy="${cy}" r="11.5" fill="rgba(10,8,5,0.88)" stroke="${g.spieler ? '#e6c060' : g.farbe ?? '#c8a227'}" stroke-width="2"/>
+      <text x="${xVon(i)}" y="${cy + 0.5}" text-anchor="middle" dominant-baseline="central" font-size="13" style="user-select:none">${g.wappen}</text>
+    </g>`).join('');
+  const mehr = rest.length > 0 ? `
+    <g class="dmap-wappen">
+      <title>${rest.map(g => g.name).join(', ')}</title>
+      <circle cx="${xVon(anzahl - 1)}" cy="${cy}" r="11.5" fill="rgba(10,8,5,0.88)" stroke="#8a7a5a" stroke-width="1.5"/>
+      <text x="${xVon(anzahl - 1)}" y="${cy + 0.5}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#e5e7eb" font-family="Cinzel, serif">+${rest.length}</text>
+    </g>` : '';
+  return `<g class="dmap-wappen-reihe">${kreise}${mehr}</g>`;
 }
 
 // ── Hex point generator ──
@@ -561,7 +592,7 @@ function showRouteModal(routeId: string, state: GameState): void {
   if (!route) return;
 
   const biome = getBiomeStyle(route);
-  const isCompleted = state.scoreboard.some(s => s.routeId === route.id && s.status === 'victory');
+  const isCompleted = isRouteCompleted(route.id, state);
   const isAvailable = isRouteAvailable(route, state);
   const graphNode = DUNGEON_GRAPH.find(n => n.routeId === routeId);
   const isDeadEnd = graphNode ? graphNode.leadsTo.length === 0 && !graphNode.isMainPath : false;
@@ -604,6 +635,7 @@ function showRouteModal(routeId: string, state: GameState): void {
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;
   if (route.isSiegeRoute) detailHtml += `<p><span style="color:#f9a8d4">🏰 Belagerung</span> — Kriegsmaschine empfohlen</p>`;
   if (isCompleted) detailHtml += `<p style="color:#4ade80">✓ Bereits abgeschlossen</p>`;
+  detailHtml += rivalenHtml(state, route.id);
 
   // Show unlock requirements if locked
   if (!isAvailable && !isCompleted) {
@@ -632,6 +664,19 @@ function showRouteModal(routeId: string, state: GameState): void {
   }
 
   overlay.classList.add('dmap-modal-on');
+}
+
+/** Welche Rivalen-Gilden hier schon gesiegt haben und wer hier gerade ganz oben steht */
+function rivalenHtml(state: GameState, routeId: string): string {
+  const rivalen = gipfelRangliste(state, Date.now()).filter(g => !g.spieler);
+  const hier = rivalen.filter(g => g.hoechster === routeId);
+  const schon = rivalen.filter(g => g.bezwungen.includes(routeId));
+  if (schon.length === 0) return '<p style="color:#8a7a5a;font-size:0.75rem">🏆 Noch keine Rivalen-Gilde hat diesen Dungeon bezwungen.</p>';
+  let html = `<p style="color:#8a7a5a;font-size:0.75rem">🏆 Bezwungen von ${schon.length} ${schon.length === 1 ? 'Rivalen-Gilde' : 'Rivalen-Gilden'}: ${schon.map(g => g.wappen).join(' ')}</p>`;
+  if (hier.length > 0) {
+    html += `<p style="color:#8a7a5a;font-size:0.75rem">Ihr höchster Dungeon bisher: ${hier.map(g => `${g.wappen} ${g.name}`).join(', ')}</p>`;
+  }
+  return html;
 }
 
 function hideRouteModal(): void {

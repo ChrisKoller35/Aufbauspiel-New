@@ -3,6 +3,14 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 20.10.2026 (abends): Rangliste mit Rivalen
+
+Neun Computer-Gilden klettern auf der Dungeon-Karte mit, eine Runde pro beendeter Expedition. Die Rangliste
+zeigt, wer am höchsten steht (Höhe, dann Sterne), wer bald vorbeizieht und welcher Sieg einen selbst
+vorbeibringt; ihre Wappen stehen auf der Karte. Dazu eine Wochenwertung um Ruhm mit Ruhmestruhe und Pokal für
+Platz 1 bis 3. Ein dauerhafter Merker hält fest, welche Dungeons wirklich bezwungen sind (Boss besiegt);
+Karte und Stadtweg lesen ihn. Regeln, Rivalen und Eichung: `docs/RANGLISTE.md`.
+
 ## Nachtrag 20.10.2026 (Nachmittag): Geschichten der Dungeons
 
 Jeder der 25 Dungeons erzählt eine kurze Geschichte des Stadtschreibers Ottokar: die Einleitung beim ersten Aufbruch,

@@ -20,11 +20,13 @@ interface LootEntry {
  * Opens a fullscreen chest reveal: video plays → loot items fade in → user collects.
  * Returns a Promise that resolves when user clicks "Einsammeln".
  * hinweise: extra line per item, e.g. the set of a set piece («🐺 Rudel des Waldpfads · Teil 2 von 3»).
+ * untertitel: line under «Schatztruhe» instead of the expedition default (e.g. the weekly Ruhmestruhe).
  */
 export function showChestReveal(
   loot: Record<string, number>,
   goldEarned: number,
   hinweise: Record<string, string> = {},
+  untertitel?: string,
 ): Promise<void> {
   return new Promise(resolve => {
     // Merge gold into loot entries for display
@@ -83,6 +85,7 @@ export function showChestReveal(
            onerror="this.style.display='none'">
       <div class="chest-title">Schatztruhe</div>
       <div class="chest-subtitle">${entries.length === 0 ? 'Die Truhe ist leer.'
+        : untertitel ? untertitel
         : entries.some(e => isBauplan(e.itemId)) ? '📜 Ein Bauplan ist in der Beute!'
         : entries.some(e => ITEM_DEFS[e.itemId]?.tags.includes('set')) ? '✦ Ein Set-Teil ist in der Beute!'
         : '✨ Beute dieser Expedition!'}</div>

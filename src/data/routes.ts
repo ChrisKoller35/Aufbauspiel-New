@@ -736,7 +736,7 @@ export function getBauplanHinweis(bauplanId: string): string {
 
 // ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
 
-type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard'>;
+type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
 
 /** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt. */
 export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean {
@@ -754,9 +754,14 @@ export function gipfelDungeons(): RouteDef[] {
     .map(n => ROUTE_DEFS[n.routeId]);
 }
 
-/** Mindestens ein Sieg auf dieser Route (abgeschlossene Routen bleiben wiederholbar). */
+/**
+ * Route bezwungen: Boss besiegt oder ohne Boss gewonnen (abgeschlossene Routen bleiben wiederholbar).
+ * Liest den Merker GameState.bezwungen (systems/Bezwungen.ts), solange es ihn nicht gibt die Bestenliste.
+ */
 export function isRouteCompleted(routeId: string, state: RouteProgress): boolean {
-  return (state.scoreboard ?? []).some(s => s.routeId === routeId && s.status === 'victory');
+  if (state.bezwungen && routeId in state.bezwungen) return true;
+  const mitBoss = !!ROUTE_DEFS[routeId]?.bossId;
+  return (state.scoreboard ?? []).some(s => s.routeId === routeId && s.status === 'victory' && (!mitBoss || s.bossesKilled > 0));
 }
 
 /** Gründe, warum die Route gesperrt ist; leer = verfügbar. */

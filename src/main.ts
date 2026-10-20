@@ -23,6 +23,7 @@ import { PeopleSystem } from './systems/PeopleSystem';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
+import { ranglistenZeilen } from './ui/components/RanglistenBilanzAnzeige';
 import { setBeute, setTeilHinweise } from './systems/DungeonSets';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
@@ -502,6 +503,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
     for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
+    for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
 
     const chronik = geschichte ? chronikHtml(geschichte) : '';
     showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [
