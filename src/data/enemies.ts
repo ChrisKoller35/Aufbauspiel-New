@@ -417,6 +417,104 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_boss_wyrm', xpReward: 120, goldReward: 50, spriteKey: 'BOSS_MAGMA_WYRM',
   },
 
+  // ── Drachenhort (Ebene 5, über dem Vulkankern) ──
+  // Glutwyrmling, Hortkobold und Drachenpriester tragen vorerst Bilder anderer Gegner,
+  // bis eigene erzeugt sind (tools/spriteRegistry.ts, docs/NEUE-DUNGEONS.md).
+  hortgolem: {
+    id: 'hortgolem', name: 'Hortgolem', role: 'melee',
+    hp: 320, atk: 17, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    skills: [
+      { id: 'glutfaust', name: 'Glutfaust', cooldown: 3, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_drachenhort_common', xpReward: 34, goldReward: 14, spriteKey: 'ENEMY_LAVA_GOLEM',
+  },
+  glutwyrmling: {
+    id: 'glutwyrmling', name: 'Glutwyrmling', role: 'melee',
+    hp: 180, atk: 19, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
+    skills: [
+      { id: 'feuerbiss', name: 'Feuerbiss', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_drachenhort_common', xpReward: 30, goldReward: 12, spriteKey: 'ENEMY_FLAME_SPIRIT',
+  },
+  hortkobold: {
+    id: 'hortkobold', name: 'Hortkobold', role: 'ranged',
+    hp: 130, atk: 15, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
+    skills: [
+      { id: 'muenzhagel', name: 'Münzhagel', cooldown: 3, effectType: 'aoe', power: 0.6, target: 'all_players', description: '0.6× Schaden auf alle' },
+      { id: 'glaenzende_augen', name: 'Glänzende Augen', cooldown: 4, effectType: 'buff', power: 4, target: 'self', description: '+4 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_drachenhort_common', xpReward: 26, goldReward: 22, spriteKey: 'ENEMY_GOBLIN_SCOUT',
+  },
+  drachenpriester: {
+    id: 'drachenpriester', name: 'Drachenpriester', role: 'support',
+    hp: 160, atk: 18, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
+    skills: [
+      { id: 'glutsegen', name: 'Glutsegen', cooldown: 3, effectType: 'heal', power: 60, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 60' },
+      { id: 'flammenwort', name: 'Flammenwort', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_drachenhort_rare', xpReward: 32, goldReward: 16, spriteKey: 'ENEMY_CURSED_PRIEST',
+  },
+  boss_ignarax: {
+    id: 'boss_ignarax', name: 'Ignarax, der Uralte', role: 'boss',
+    hp: 850, atk: 25, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'feuersturm', name: 'Feuersturm', cooldown: 3, effectType: 'aoe', power: 1.2, target: 'all_players', description: '1.2× Schaden auf alle' },
+      { id: 'schwanzhieb', name: 'Schwanzhieb', cooldown: 2, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
+      { id: 'hortzorn', name: 'Hortzorn', cooldown: 5, effectType: 'buff', power: 6, target: 'self', description: '+6 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_boss_ignarax', xpReward: 220, goldReward: 120, spriteKey: 'BOSS_ANCIENT_DRAGON',
+  },
+
+  // ── Himmelsarchiv (Ebene 6, über den Wolken) ──
+  folianten_waechter: {
+    id: 'folianten_waechter', name: 'Foliantenwächter', role: 'melee',
+    hp: 320, atk: 17, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    skills: [
+      { id: 'buchdeckel', name: 'Buchdeckel', cooldown: 3, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_himmelsarchiv_common', xpReward: 40, goldReward: 15, spriteKey: 'ENEMY_TOME_GUARDIAN',
+  },
+  archivritter: {
+    id: 'archivritter', name: 'Archivritter', role: 'melee',
+    hp: 210, atk: 21, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
+    skills: [
+      { id: 'klingenzitat', name: 'Klingenzitat', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_himmelsarchiv_common', xpReward: 38, goldReward: 15, spriteKey: 'ENEMY_CURSED_KNIGHT',
+  },
+  fluestergeist: {
+    id: 'fluestergeist', name: 'Flüstergeist', role: 'support',
+    hp: 160, atk: 16, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
+    skills: [
+      { id: 'psst', name: 'Psst!', cooldown: 3, effectType: 'aoe', power: 0.7, target: 'all_players', description: '0.7× Schaden auf alle' },
+      { id: 'stille_restaurierung', name: 'Stille Restaurierung', cooldown: 4, effectType: 'heal', power: 70, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 70' },
+    ],
+    lootTableId: 'loot_himmelsarchiv_rare', xpReward: 36, goldReward: 14, spriteKey: 'ENEMY_TOMB_WRAITH',
+  },
+  knochenschreiber: {
+    id: 'knochenschreiber', name: 'Knochenschreiber', role: 'ranged',
+    hp: 170, atk: 19, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
+    skills: [
+      { id: 'federkiel_salve', name: 'Federkiel-Salve', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
+      { id: 'mahngebuehr', name: 'Mahngebühr', cooldown: 4, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_himmelsarchiv_common', xpReward: 36, goldReward: 18, spriteKey: 'ENEMY_BONE_ARCHER',
+  },
+  boss_oberarchivar: {
+    id: 'boss_oberarchivar', name: 'Der Oberarchivar', role: 'boss',
+    hp: 1050, atk: 28, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'tausend_blicke', name: 'Tausend Blicke', cooldown: 3, effectType: 'aoe', power: 1.2, target: 'all_players', description: '1.2× Schaden auf alle' },
+      { id: 'fussnote', name: 'Fußnote', cooldown: 4, effectType: 'damage', power: 2.4, target: 'player', description: '2.4× Schaden auf 1 Ziel' },
+      { id: 'neuauflage', name: 'Neuauflage', cooldown: 6, effectType: 'heal', power: 150, target: 'self', description: 'Heilt sich um 150' },
+    ],
+    lootTableId: 'loot_boss_oberarchivar', xpReward: 280, goldReward: 150, spriteKey: 'BOSS_ARCHIV_WATCHER',
+  },
+
   // ── Ocean Enemies ──
   deep_sea_angler: {
     id: 'deep_sea_angler',
@@ -888,6 +986,60 @@ export const ENEMY_LORE: Record<string, { lore: string; route: string; skillDesc
     route: 'volcano',
     lore: 'Er lebt im Kern des Vulkans. Vielleicht war er schon immer dort. Die Hitze, die er ausstrahlt, ist spürbar lange bevor man ihn sieht.',
     skillDescriptions: { inferno_breath: 'Brennender Atemkegel (1.2x AOE)', molten_armor: 'Flüssiges Gestein als Rüstung (DEF +4)' },
+  },
+
+  // ── Drachenhort ──
+  hortgolem: {
+    route: 'drachenhort',
+    lore: 'Aus Schlacke und Gold gebacken, um den Hort zu bewachen. Er zählt nicht, er wiegt. Fehlt auch nur eine Münze, merkt er es am Gewicht.',
+    skillDescriptions: { glutfaust: 'Glühender Faustschlag (1.7x Schaden)' },
+  },
+  glutwyrmling: {
+    route: 'drachenhort',
+    lore: 'Junge Drachen, die noch keinen eigenen Hort haben und darum jeden fremden für ihren halten. Schnell, bissig und sehr von sich überzeugt.',
+    skillDescriptions: { feuerbiss: 'Biss mit glühenden Zähnen (1.5x Schaden)' },
+  },
+  hortkobold: {
+    route: 'drachenhort',
+    lore: 'Er zählt jede Münze zweimal und kommt trotzdem immer auf zu wenig. Wenn ihm die Steine ausgehen, wirft er mit Gold. Mit eurem Gold, wenn ihr nicht aufpasst.',
+    skillDescriptions: { muenzhagel: 'Wirft Münzen auf alle (0.6x AOE)', glaenzende_augen: 'Gier macht stark (+4 ATK)' },
+  },
+  drachenpriester: {
+    route: 'drachenhort',
+    lore: 'Er predigt, dass der Drache die Welt in Flammen erneuern wird. Bis dahin poliert er die Schuppen und flickt die Wächter.',
+    skillDescriptions: { glutsegen: 'Heilt einen Verbündeten um 60', flammenwort: 'Ein Wort aus Feuer (1.4x Schaden)' },
+  },
+  boss_ignarax: {
+    route: 'drachenhort',
+    lore: 'Älter als der Vulkan unter ihm und doppelt so heiß. Ignarax kennt jede Münze seines Horts beim Namen. Wer etwas einsteckt, macht ihn nicht reicher, sondern wütender.',
+    skillDescriptions: { feuersturm: 'Flammen über die ganze Gruppe (1.2x AOE)', schwanzhieb: 'Wuchtiger Schwanzhieb (2.0x Schaden)', hortzorn: 'Zorn über den Diebstahl (+6 ATK)' },
+  },
+
+  // ── Himmelsarchiv ──
+  folianten_waechter: {
+    route: 'himmelsarchiv',
+    lore: 'Ein Wächter aus gebundenem Wissen, schwer wie eine ganze Bibliothek. Er schlägt mit dem Buchdeckel zu und hat noch nie ein Buch zurückgegeben.',
+    skillDescriptions: { buchdeckel: 'Schlag mit dem Einband (1.6x Schaden)' },
+  },
+  archivritter: {
+    route: 'himmelsarchiv',
+    lore: 'Er hat geschworen, das Archiv zu schützen, und dann vergessen, wovor. Seitdem schützt er es vor allem. Auch vor Besuchern mit Leseausweis.',
+    skillDescriptions: { klingenzitat: 'Ein Hieb mit Quellenangabe (1.8x Schaden)' },
+  },
+  fluestergeist: {
+    route: 'himmelsarchiv',
+    lore: 'Früher Bibliothekarin, heute nur noch ein Zischen zwischen den Regalen. Wer laut ist, bekommt ein «Psst!», das in den Knochen nachhallt.',
+    skillDescriptions: { psst: 'Ein Zischen, das allen weh tut (0.7x AOE)', stille_restaurierung: 'Heilt einen Verbündeten um 70' },
+  },
+  knochenschreiber: {
+    route: 'himmelsarchiv',
+    lore: 'Er schreibt alles auf, was im Archiv geschieht, mit Federkielen aus seinen eigenen Rippen. Für verspätete Bücher verlangt er Mahngebühren. In Blut.',
+    skillDescriptions: { federkiel_salve: 'Federkiele auf alle (0.8x AOE)', mahngebuehr: 'Treibt die Schuld ein (1.7x Schaden)' },
+  },
+  boss_oberarchivar: {
+    route: 'himmelsarchiv',
+    lore: 'Das Archiv hat ein Auge auf alles. Eigentlich tausend. Der Oberarchivar hat jedes Buch gelesen, das je geschrieben wurde, auch eure Chronik, und er hat Anmerkungen.',
+    skillDescriptions: { tausend_blicke: 'Alle Augen auf euch (1.2x AOE)', fussnote: 'Eine vernichtende Fußnote (2.4x Schaden)', neuauflage: 'Überarbeitet sich selbst, heilt 150' },
   },
 
   // ── Ocean ──

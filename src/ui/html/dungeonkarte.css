@@ -22,6 +22,7 @@
   #s-dungeon .dmap-t-raeume { font-size: 11px; transform: translateY(7px); }
   #s-dungeon .dmap-t-klein { font-size: 11px; letter-spacing: 1px; }
   #s-dungeon .dmap-t-region { font-size: 12px; letter-spacing: 2px; opacity: .35; }
+  #s-dungeon .dmap-t-region-maske { font-size: 12px; letter-spacing: 2px; }
   #s-dungeon .dmap-treppe-status { font-size: 12.5px; }
   #s-dungeon .dmap-treppe-titel { font-size: 17px; }
   #s-dungeon .dmap-treppe { cursor: pointer; }

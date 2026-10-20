@@ -1,6 +1,7 @@
-import { EncounterType } from '../models/ExpeditionRun';
+import { EncounterChoice, EncounterType } from '../models/ExpeditionRun';
 import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
+import { GUILD_RANK_DEFS } from './guildRanks';
 import { LOOT_TABLE_DEFS } from './lootTables';
 import { stadtStufeVon } from './stadtstufen';
 import { TREPPE_AB_STADTSTUFE } from './treppe';
@@ -12,6 +13,8 @@ export interface EncounterTemplate {
   damage?: number;        // for hazard encounters
   findGold?: number;      // for find encounters
   findItems?: { itemId: string; qty: number }[];  // for find encounters
+  /** Fest vorgegebene Wahl für find/rest-Räume (statt der zufälligen zweiten Option) */
+  wahl?: { a: EncounterChoice; b: EncounterChoice };
   /** Fortification-Encounter: Befestigungsanlage die zerstört werden muss */
   fortification?: {
     name: string;
@@ -42,6 +45,14 @@ export interface RouteDef {
   requiresWarMachine?: boolean;
   /** Endlose Treppe: Stockwerke entstehen beim Klettern (data/treppe.ts), nicht aus `encounters` */
   isEndless?: boolean;
+  /** Gebiet über dem Vulkankern: bestimmt Farbe und Schild auf Karte und Routenliste */
+  gebiet?: 'gipfel' | 'himmel';
+  /** Eigene Regel dieses Dungeons in einem Satz (Karte, Routenliste) */
+  besonderheit?: string;
+  /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker */
+  hortGier?: { angriffProPunkt: number; lebenProPunkt: number };
+  /** Gegenstand, den der Boss beim ersten Sieg der Gilde über ihn garantiert dazugibt */
+  ersterSiegBeute?: string;
 }
 
 // ── Dungeon Graph — defines visual map layout & connections ──
@@ -49,7 +60,7 @@ export interface RouteDef {
 export interface DungeonGraphNode {
   routeId: string;
   x: number;       // 0-900 px
-  y: number;       // 0-2600 px (0 = top/endgame, 2600 = bottom/start)
+  y: number;       // 0-2600 px (0 = top/endgame, 2600 = bottom/start); negativ = über dem Vulkankern
   leadsTo: string[]; // route IDs reachable from this node (toward harder content)
   isMainPath?: boolean;
 }
@@ -94,7 +105,11 @@ export const DUNGEON_GRAPH: DungeonGraphNode[] = [
   { routeId: 'magma_caverns',      x: 680, y: 440,  leadsTo: [] },
 
   // ── TOP: Final boss ──
-  { routeId: 'volcano_core',       x: 450, y: 180,  leadsTo: [], isMainPath: true },
+  { routeId: 'volcano_core',       x: 450, y: 180,  leadsTo: ['drachenhort'], isMainPath: true },
+
+  // ── ÜBER DEM VULKANKERN: neue Dungeons, die Karte wächst nach oben (docs/NEUE-DUNGEONS.md) ──
+  { routeId: 'drachenhort',        x: 380, y: -300, leadsTo: ['himmelsarchiv'], isMainPath: true },
+  { routeId: 'himmelsarchiv',      x: 520, y: -800, leadsTo: [], isMainPath: true },
 ];
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -266,6 +281,86 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     bossId: 'boss_magma_wyrm',
     recommendedLevel: 'Full T2 gear + level 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
+  },
+
+  // ── Über dem Vulkankern: neue Dungeons, die Karte wächst nach oben (docs/NEUE-DUNGEONS.md) ──
+  drachenhort: {
+    id: 'drachenhort',
+    name: 'Der Drachenhort',
+    tier: 5,
+    rooms: 15,
+    gebiet: 'gipfel',
+    besonderheit: 'Hort-Gier: Wer Gold aus dem Hort einsteckt, macht Ignarax stärker.',
+    hortGier: { angriffProPunkt: 0.08, lebenProPunkt: 0.08 },
+    ersterSiegBeute: 'shield_of_the_ancient',
+    encounters: [
+      { type: 'combat', enemies: ['glutwyrmling', 'hortkobold'] },
+      { type: 'combat', enemies: ['hortgolem', 'glutwyrmling'] },
+      { type: 'find', wahl: {
+        a: { label: 'Goldhaufen einstecken (+80 Gold, Ignarax wird stärker)', flavorText: 'Münzen bis unter die Decke. Weiter oben schnaubt etwas sehr Großes.', effect: 'gold', value: 80, gier: 1 },
+        b: { label: 'Finger weg (+10% HP)', flavorText: 'Ihr lasst das Gold liegen und atmet kurz durch.', effect: 'heal', value: 10 },
+      } },
+      { type: 'combat', enemies: ['drachenpriester', 'hortgolem', 'hortkobold'] },
+      { type: 'hazard', damage: 14 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['glutwyrmling', 'glutwyrmling', 'drachenpriester'] },
+      { type: 'find', wahl: {
+        a: { label: 'Edelsteinschale leeren (+120 Gold, Ignarax wird stärker)', flavorText: 'Rubine, so groß wie Hühnereier. Der Hortgolem hätte das gemerkt.', effect: 'gold', value: 120, gier: 1 },
+        b: { label: 'Finger weg (+10% HP)', flavorText: 'Nur schauen, nicht anfassen.', effect: 'heal', value: 10 },
+      } },
+      { type: 'combat', enemies: ['hortgolem', 'hortkobold', 'hortkobold'] },
+      { type: 'hazard', damage: 16 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['hortgolem', 'drachenpriester', 'glutwyrmling', 'hortkobold'] },
+      { type: 'find', wahl: {
+        a: { label: 'Die Drachenkrone nehmen (+200 Gold, Ignarax wird stärker)', flavorText: 'Sie liegt direkt vor seiner Höhle. Natürlich ist das eine Falle. Aber was für eine Krone!', effect: 'gold', value: 200, gier: 1 },
+        b: { label: 'Durchatmen vor dem Kampf (+15% HP)', flavorText: 'Ihr lasst die Krone liegen. Drinnen brummt jemand zufrieden.', effect: 'heal', value: 15 },
+      } },
+      { type: 'boss', enemies: ['boss_ignarax'] },
+    ],
+    bossId: 'boss_ignarax',
+    recommendedLevel: 'Stufe 12+ und T4-Ausrüstung',
+    unlockCondition: { bossesDefeated: ['boss_magma_wyrm'] },
+  },
+  himmelsarchiv: {
+    id: 'himmelsarchiv',
+    name: 'Das Himmelsarchiv',
+    tier: 6,
+    rooms: 16,
+    gebiet: 'himmel',
+    besonderheit: 'Verbotene Bücher: Lesesäle bringen seltene Funde, kosten aber Leben.',
+    ersterSiegBeute: 'blade_of_thousand_shadows',
+    encounters: [
+      { type: 'combat', enemies: ['archivritter', 'knochenschreiber'] },
+      { type: 'combat', enemies: ['folianten_waechter', 'fluestergeist'] },
+      { type: 'find', wahl: {
+        a: { label: 'Verbotenes Buch lesen (+3 Kristallsplitter, −5% HP)', flavorText: 'Die Seiten flüstern. Zwischen ihnen liegen Kristalle als Lesezeichen.', effect: 'item', value: 3, itemId: 'crystal_shard', kostetLeben: 5 },
+        b: { label: 'Leise weitergehen (+5% HP)', flavorText: 'Pssst. Ihr schleicht am Regal vorbei.', effect: 'heal', value: 5 },
+      } },
+      { type: 'combat', enemies: ['archivritter', 'archivritter', 'fluestergeist'] },
+      { type: 'hazard', damage: 14 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['folianten_waechter', 'knochenschreiber', 'knochenschreiber'] },
+      { type: 'rest', healPercent: 15 },
+      { type: 'find', wahl: {
+        a: { label: 'Magitech-Folianten aufschlagen (+1 Magitech-Komponente, −10% HP)', flavorText: 'Die Baupläne sind so verboten, dass sie beim Lesen zurückbeißen.', effect: 'item', value: 1, itemId: 'magitech_component', kostetLeben: 10 },
+        b: { label: 'Leise weitergehen (+5% HP)', flavorText: 'Manche Bücher lässt man besser zu.', effect: 'heal', value: 5 },
+      } },
+      { type: 'combat', enemies: ['archivritter', 'fluestergeist', 'knochenschreiber'] },
+      { type: 'hazard', damage: 16 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['folianten_waechter', 'fluestergeist'] },
+      { type: 'combat', enemies: ['archivritter', 'knochenschreiber', 'fluestergeist'] },
+      { type: 'find', wahl: {
+        a: { label: 'Das Buch der Namen stehlen (+4 Talisman-Fragmente, −10% HP)', flavorText: 'Darin steht jeder Name, der je geschrieben wurde. Eurer ist rot unterstrichen.', effect: 'item', value: 4, itemId: 'talisman_fragment', kostetLeben: 10 },
+        b: { label: 'Lesepause vor dem Kampf (+10% HP)', flavorText: 'Ihr setzt euch kurz in einen Lesesessel. Der Oberarchivar wartet. Er hat Zeit.', effect: 'heal', value: 10 },
+      } },
+      { type: 'boss', enemies: ['boss_oberarchivar'] },
+    ],
+    bossId: 'boss_oberarchivar',
+    recommendedLevel: 'Stufe 15 und volle T4-Ausrüstung',
+    unlockCondition: { bossesDefeated: ['boss_ignarax'] },
   },
 
   // ── Siege Routes ──
@@ -674,7 +769,9 @@ export function getRouteLockReasons(route: RouteDef, state: RouteProgress): stri
     return stadtStufeVon(state) >= TREPPE_AB_STADTSTUFE ? [] : [`Stadtstufe ${TREPPE_AB_STADTSTUFE}: Magische Stadt`];
   }
   const reasons: string[] = [];
-  if ((state.guildStats?.rank ?? 1) < route.tier) reasons.push(`Gildenrang ${route.tier} benötigt`);
+  // Ebenen über dem höchsten Gildenrang (Drachenhort, Himmelsarchiv …) brauchen den höchsten Rang
+  const rang = Math.min(route.tier, GUILD_RANK_DEFS.length);
+  if ((state.guildStats?.rank ?? 1) < rang) reasons.push(`Gildenrang ${rang} benötigt`);
   const defeated = state.guildStats?.bossesDefeatedIds ?? [];
   const missing = (route.unlockCondition?.bossesDefeated ?? []).filter(b => !defeated.includes(b));
   if (missing.length > 0) {

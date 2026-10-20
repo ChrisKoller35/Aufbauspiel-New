@@ -288,6 +288,89 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     guaranteedGold: { min: 45, max: 70 },
   },
 
+  // --- Drachenhort (Ebene 5): viel Gold, Stufe-4-Ausrüstung, selten Stufe 5 ---
+  loot_drachenhort_common: {
+    id: 'loot_drachenhort_common',
+    entries: [
+      { itemId: 'gold', weight: 22, minQty: 8, maxQty: 16 },
+      { itemId: 'crystal_shard', weight: 16, minQty: 1, maxQty: 3 },
+      { itemId: 'talisman_fragment', weight: 14, minQty: 1, maxQty: 3 },
+      { itemId: 'herb_fire_root', weight: 12, minQty: 1, maxQty: 3 },
+      { itemId: 'iron_scrap', weight: 12, minQty: 3, maxQty: 6 },
+      { itemId: 'healing_potion', weight: 10, minQty: 1, maxQty: 2 },
+      { itemId: 'dragonlord_plate', weight: 3, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 3, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 12, max: 22 },
+  },
+  loot_drachenhort_rare: {
+    id: 'loot_drachenhort_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 2, maxQty: 5 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 2, maxQty: 4 },
+      { itemId: 'gold', weight: 18, minQty: 15, maxQty: 30 },
+      { itemId: 'dragonlord_plate', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_guardian_shield', weight: 6, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 2, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 20, max: 35 },
+  },
+  loot_boss_ignarax: {
+    id: 'loot_boss_ignarax',
+    entries: [
+      { itemId: 'shield_of_the_ancient', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 14, minQty: 1, maxQty: 1 },
+      { itemId: 'dragonlord_plate', weight: 16, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 6, maxQty: 12 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 5, maxQty: 8 },
+    ],
+    guaranteedGold: { min: 150, max: 220 },
+  },
+
+  // --- Himmelsarchiv (Ebene 6): Arkan-Ausrüstung, Kristalle, Stufe 5 ---
+  loot_himmelsarchiv_common: {
+    id: 'loot_himmelsarchiv_common',
+    entries: [
+      { itemId: 'crystal_shard', weight: 20, minQty: 2, maxQty: 4 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 2, maxQty: 3 },
+      { itemId: 'healing_potion', weight: 14, minQty: 1, maxQty: 2 },
+      { itemId: 'gold', weight: 12, minQty: 10, maxQty: 18 },
+      { itemId: 'magiarch_robe', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'worldend_staff', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'arcane_amulet', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 3, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 14, max: 24 },
+  },
+  loot_himmelsarchiv_rare: {
+    id: 'loot_himmelsarchiv_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 3, maxQty: 6 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 3, maxQty: 5 },
+      { itemId: 'magiarch_robe', weight: 9, minQty: 1, maxQty: 1 },
+      { itemId: 'worldend_staff', weight: 9, minQty: 1, maxQty: 1 },
+      { itemId: 'arcane_amulet', weight: 9, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 7, minQty: 1, maxQty: 1 },
+      { itemId: 'eternal_hunter_bow', weight: 6, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 3, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 22, max: 38 },
+  },
+  loot_boss_oberarchivar: {
+    id: 'loot_boss_oberarchivar',
+    entries: [
+      { itemId: 'blade_of_thousand_shadows', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 18, minQty: 1, maxQty: 1 },
+      { itemId: 'worldend_staff', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'magiarch_robe', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 8, maxQty: 15 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 6, maxQty: 10 },
+    ],
+    guaranteedGold: { min: 180, max: 260 },
+  },
+
   // --- T4 Legendary Loot (Nemesis-Modifier Bonus) ---
   loot_nemesis_legendary: {
     id: 'loot_nemesis_legendary',

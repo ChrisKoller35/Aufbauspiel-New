@@ -6,6 +6,8 @@
 import '../html/dungeonkarte.css';
 import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, RouteDef, DUNGEON_GRAPH, DungeonGraphNode, ROUTE_IMAGE_MAP, isRouteAvailable, getRouteLockReasons } from '../../data/routes';
+import { ENEMY_DEFS } from '../../data/enemies';
+import { ITEM_DEFS } from '../../data/items';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { TREPPE_ROUTE_ID, BOSS_ALLE, RAST_ALLE } from '../../data/treppe';
@@ -47,6 +49,8 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#fca5a5"></span> Vulkan</div>
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#7dd3fc"></span> Unterwasser</div>
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#f9a8d4"></span> Belagerung</div>
+      <div class="dmap-legend-row"><span class="dmap-ldot" style="background:${GEBIETE.gipfel.stil.stroke}"></span> ${GEBIETE.gipfel.stil.label}</div>
+      <div class="dmap-legend-row"><span class="dmap-ldot" style="background:${GEBIETE.himmel.stil.stroke}"></span> ${GEBIETE.himmel.stil.label}</div>
       <div class="dmap-legend-row" style="margin-top:4px"><span class="dmap-ldot" style="background:#c8a227"></span> Hauptpfad</div>
       <div class="dmap-legend-row"><span class="dmap-lhex" style="background:#c8a227"></span> Boss</div>
     </div>
@@ -106,7 +110,20 @@ interface BiomeStyle {
   label: string;
 }
 
+/** Gebiete über dem Vulkankern (RouteDef.gebiet): Farbe der Dungeons, Schriftzug und Schein auf der Karte. */
+const GEBIETE: Record<NonNullable<RouteDef['gebiet']>, { stil: BiomeStyle; region: string }> = {
+  gipfel: {
+    stil: { fill: '#3a1405', stroke: '#fdba74', text: '#fdba74', glow: '#f97316', icon: '🐉', label: 'Drachengipfel' },
+    region: 'DRACHENGIPFEL — MYTHISCH',
+  },
+  himmel: {
+    stil: { fill: '#141b3a', stroke: '#e0e7ff', text: '#e0e7ff', glow: '#a5b4fc', icon: '📚', label: 'Himmel' },
+    region: 'ÜBER DEN WOLKEN — JENSEITS',
+  },
+};
+
 function getBiomeStyle(route: RouteDef): BiomeStyle {
+  if (route.gebiet) return GEBIETE[route.gebiet].stil;
   if (route.isUnderwater) return { fill: '#0a2540', stroke: '#7dd3fc', text: '#7dd3fc', glow: '#38bdf8', icon: '🌊', label: 'Unterwasser' };
   if (route.isSiegeRoute) return { fill: '#2a1020', stroke: '#f9a8d4', text: '#f9a8d4', glow: '#ec4899', icon: '🏰', label: 'Belagerung' };
   const id = route.id;
@@ -116,6 +133,11 @@ function getBiomeStyle(route: RouteDef): BiomeStyle {
   if (id.includes('cave') || id.includes('crystal') || id.includes('spider')) return { fill: '#0f1e4a', stroke: '#93c5fd', text: '#93c5fd', glow: '#60a5fa', icon: '💎', label: 'Höhle' };
   if (id.includes('haunted')) return { fill: '#0d2e16', stroke: '#4ade80', text: '#86efac', glow: '#22c55e', icon: '👻', label: 'Wald' };
   return { fill: '#0d2e16', stroke: '#4ade80', text: '#4ade80', glow: '#22c55e', icon: '🌲', label: 'Wald' };
+}
+
+/** Schwierigkeit als Sterne; Ebenen über 5 bekommen je einen Funken dazu (★★★★★✦). */
+function sterne(tier: number): string {
+  return '★'.repeat(Math.min(tier, 5)) + '☆'.repeat(Math.max(0, 5 - tier)) + '✦'.repeat(Math.max(0, tier - 5));
 }
 
 // ── Build graph index ──
@@ -137,8 +159,11 @@ function buildGraphIndex(): { nodeMap: Map<string, DungeonGraphNode>; allEdges: 
 /** Platz über der Karte (über dem Vulkankern) für den Eingang zur endlosen Treppe. */
 const TREPPE_PLATZ = 420;
 
-/** Torbogen mit der Treppe darin, Name und Bestmarke; Klick öffnet das Fenster wie bei Routen. */
-function buildTreppenEingang(state: GameState, width: number): string {
+/**
+ * Torbogen mit der Treppe darin, Name und Bestmarke; Klick öffnet das Fenster wie bei Routen.
+ * `anschluss`: oberer Rand des obersten Dungeons, dorthin führt der Weg von der Treppe.
+ */
+function buildTreppenEingang(state: GameState, width: number, anschluss: { x: number; y: number }): string {
   const route = ROUTE_DEFS[TREPPE_ROUTE_ID];
   if (!route) return '';
   const offen = isRouteAvailable(route, state);
@@ -183,7 +208,7 @@ function buildTreppenEingang(state: GameState, width: number): string {
     <rect y="${TREPPE_PLATZ - 30}" width="${width}" height="120" fill="url(#${id}-uebergang)"/>
     <g opacity=".7">${sterne}</g>
     <text class="dmap-t-klein" x="${cx}" y="34" text-anchor="middle" fill="#c4b5fd" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.45">ÜBER DEM DUNGEON — ENDGAME</text>
-    <path d="M${cx},${TREPPE_PLATZ + 100} C${cx},${TREPPE_PLATZ + 20} ${cx},${unten + 110} ${cx},${unten + 66}"
+    <path d="M${anschluss.x},${anschluss.y} C${anschluss.x},${anschluss.y - 80} ${cx},${unten + 110} ${cx},${unten + 66}"
       fill="none" stroke="#c8a227" stroke-width="2.5" opacity="${offen ? 0.55 : 0.15}" stroke-dasharray="${offen ? 'none' : '8 5'}" stroke-linecap="round"/>
     <g class="dmap-treppe${offen ? '' : ' gesperrt'}" data-treppe="1">
       <path d="${bogen}" fill="none" stroke="#7c3aed" stroke-width="14" opacity=".18"/>
@@ -199,6 +224,105 @@ function buildTreppenEingang(state: GameState, width: number): string {
     </g>`;
 }
 
+// ── Über dem Vulkankern: Himmel für die neuen Dungeons ──
+
+/** Platz über dem obersten Dungeon (Schein, Weg zur Treppe). */
+const GIPFEL_RAND = 240;
+
+/**
+ * Hintergrund über der alten Karte (y < 0): Nachthimmel mit Sternen, ein Wolkenband
+ * unter dem Himmel-Gebiet, Glut und Schein um die Dungeons (Schriftzüge: gebietsSchriftzuege).
+ * Alles richtet sich nach DUNGEON_GRAPH, neue Dungeons weiter oben brauchen hier nichts.
+ */
+function buildGipfelHimmel(width: number, oben: number): string {
+  if (oben <= 0) return '';
+  const gebietsKnoten = DUNGEON_GRAPH
+    .map(n => ({ n, gebiet: ROUTE_DEFS[n.routeId]?.gebiet }))
+    .filter((k): k is { n: DungeonGraphNode; gebiet: NonNullable<RouteDef['gebiet']> } => !!k.gebiet);
+
+  let html = `
+    <defs>
+      <linearGradient id="dmap-himmel-g" gradientUnits="userSpaceOnUse" x1="0" y1="${-oben}" x2="0" y2="0">
+        <stop offset="0" stop-color="#060810"/>
+        <stop offset=".25" stop-color="#0c1233"/>
+        <stop offset=".6" stop-color="#11122e"/>
+        <stop offset=".85" stop-color="#140a10"/>
+        <stop offset="1" stop-color="#060810"/>
+      </linearGradient>
+      <linearGradient id="dmap-himmel-naht" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#060810" stop-opacity="0"/>
+        <stop offset="50%" stop-color="#060810" stop-opacity=".85"/>
+        <stop offset="100%" stop-color="#060810" stop-opacity="0"/>
+      </linearGradient>`;
+  for (const [id, g] of Object.entries(GEBIETE)) {
+    html += `
+      <radialGradient id="dmap-schein-${id}">
+        <stop offset="0%" stop-color="${g.stil.glow}" stop-opacity=".22"/>
+        <stop offset="100%" stop-color="${g.stil.glow}" stop-opacity="0"/>
+      </radialGradient>`;
+  }
+  html += `
+    </defs>
+    <rect y="${-oben}" width="${width}" height="${oben}" fill="url(#dmap-himmel-g)"/>
+    <rect y="-110" width="${width}" height="220" fill="url(#dmap-himmel-naht)"/>`;
+
+  let sternHtml = '';
+  for (let i = 0; i < 80; i++) {
+    const x = (i * 211 + 37) % width;
+    const y = -oben + 20 + ((i * 131) % Math.max(1, oben - 160));
+    sternHtml += `<circle cx="${x}" cy="${y}" r="${i % 4 === 0 ? 1.4 : 0.8}" fill="#f3e7c4" opacity="${i % 3 ? 0.3 : 0.6}"/>`;
+  }
+  html += `<g>${sternHtml}</g>`;
+
+  // Wolkenband unter dem Himmel-Gebiet
+  const himmelYs = gebietsKnoten.filter(k => k.gebiet === 'himmel').map(k => k.n.y);
+  if (himmelYs.length > 0) {
+    const wolkenY = Math.max(...himmelYs) + 250;
+    let wolken = '';
+    for (let i = 0; i < 9; i++) {
+      const x = 40 + i * 105 + (i % 2) * 30;
+      const y = wolkenY + ((i * 37) % 50) - 25;
+      const rx = 90 + ((i * 53) % 60);
+      wolken += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${22 + (i % 3) * 8}" fill="#c7d2fe" opacity="${0.05 + (i % 3) * 0.02}"/>`;
+    }
+    html += `<g class="dmap-wolken">${wolken}</g>`;
+  }
+
+  // Schein um jeden Dungeon
+  for (const { n, gebiet } of gebietsKnoten) {
+    html += `<circle cx="${n.x}" cy="${n.y}" r="260" fill="url(#dmap-schein-${gebiet})"/>`;
+  }
+  return html;
+}
+
+// ── Gebiets-Schriftzüge ──
+
+interface Schriftzug { x: number; y: number; farbe: string; deckkraft: number; text: string }
+
+const SCHRIFT_ART = 'text-anchor="middle" font-size="9" font-family="Cinzel, serif" letter-spacing="3"';
+
+/** Schriftzug unter dem untersten Dungeon jedes Gebiets über dem Vulkankern. */
+function gebietsSchriftzuege(width: number): Schriftzug[] {
+  const liste: Schriftzug[] = [];
+  for (const [id, g] of Object.entries(GEBIETE)) {
+    const ys = DUNGEON_GRAPH.filter(n => ROUTE_DEFS[n.routeId]?.gebiet === id).map(n => n.y);
+    if (ys.length > 0) liste.push({ x: width / 2, y: Math.max(...ys) + 175, farbe: g.stil.stroke, deckkraft: 0.3, text: g.region });
+  }
+  return liste;
+}
+
+/**
+ * Die Wege laufen oft mitten durch die Schriftzüge. Diese Maske spart sie unter den Buchstaben
+ * (mit etwas Rand) aus, so bleibt die Schrift lesbar. Am Handy setzt dungeonkarte.css die
+ * Maske gleich gross wie die Schrift.
+ */
+function wegeMaske(schriftzuege: Schriftzug[], width: number, von: number, bis: number): string {
+  const flaeche = `x="-50" y="${von}" width="${width + 100}" height="${bis - von}"`;
+  const buchstaben = schriftzuege.map(s =>
+    `<text class="dmap-t-region-maske" x="${s.x}" y="${s.y}" ${SCHRIFT_ART} fill="black" stroke="black" stroke-width="6" stroke-linejoin="round">${s.text}</text>`).join('');
+  return `<mask id="dmap-wege-maske" maskUnits="userSpaceOnUse" ${flaeche}><rect ${flaeche} fill="white"/>${buchstaben}</mask>`;
+}
+
 // ── SVG World Map ──
 
 function buildDungeonSVG(state: GameState): string {
@@ -206,6 +330,9 @@ function buildDungeonSVG(state: GameState): string {
   const HEIGHT = 2600;
 
   const { nodeMap, allEdges } = buildGraphIndex();
+  // Dungeons über dem Vulkankern haben negative y: so viel Platz kommt oben dazu
+  const minY = Math.min(0, ...DUNGEON_GRAPH.map(n => n.y));
+  const oben = minY < 0 ? GIPFEL_RAND - minY : 0;
 
   let bgHtml = '';
   let pathsHtml = '';
@@ -239,12 +366,13 @@ function buildDungeonSVG(state: GameState): string {
     <rect width="${WIDTH}" height="${Math.round(HEIGHT * 0.25)}" fill="url(#dmap-top-glow)"/>
     <rect y="${Math.round(HEIGHT * 0.35)}" width="${WIDTH}" height="${Math.round(HEIGHT * 0.3)}" fill="url(#dmap-mid-glow)"/>
     <rect y="${Math.round(HEIGHT * 0.75)}" width="${WIDTH}" height="${Math.round(HEIGHT * 0.25)}" fill="url(#dmap-bot-glow)"/>
+    ${buildGipfelHimmel(WIDTH, oben)}
   `;
 
   // ── Grid dots for atmosphere ──
   let gridDots = '';
   for (let gx = 40; gx < WIDTH; gx += 60) {
-    for (let gy = 40; gy < HEIGHT; gy += 60) {
+    for (let gy = 40 - oben; gy < HEIGHT; gy += 60) {
       gridDots += `<circle cx="${gx}" cy="${gy}" r="0.6" fill="#c8a227"/>`;
     }
   }
@@ -257,8 +385,12 @@ function buildDungeonSVG(state: GameState): string {
     { y: 1200, label: 'SUMPF & RUINEN — VETERANEN', color: '#fcd34d' },
     { y: 650,  label: 'VULKANREGION — LEGENDÄR', color: '#fca5a5' },
   ];
-  for (const r of regions) {
-    nodesHtml += `<text class="dmap-t-region" x="${WIDTH / 2}" y="${r.y + 80}" text-anchor="middle" fill="${r.color}" font-size="9" font-family="Cinzel, serif" letter-spacing="3" opacity="0.25">${r.label}</text>`;
+  const schriftzuege: Schriftzug[] = [
+    ...regions.map(r => ({ x: WIDTH / 2, y: r.y + 80, farbe: r.color, deckkraft: 0.25, text: r.label })),
+    ...gebietsSchriftzuege(WIDTH),
+  ];
+  for (const s of schriftzuege) {
+    nodesHtml += `<text class="dmap-t-region" x="${s.x}" y="${s.y}" ${SCHRIFT_ART} fill="${s.farbe}" opacity="${s.deckkraft}">${s.text}</text>`;
   }
 
   // ── Draw edges ──
@@ -385,11 +517,11 @@ function buildDungeonSVG(state: GameState): string {
       ? `<text class="dmap-t-klein" x="${x}" y="${y - r - 12}" text-anchor="middle" fill="${biome.stroke}" font-size="7" font-family="Cinzel, serif" opacity="0.4" letter-spacing="1">SACKGASSE</text>`
       : '';
 
-    // Emoji icon (smaller / hidden when image is present)
-    const emojiSize = hasBoss ? 20 : 15;
+    // Emoji icon (hidden when image is present; big and glowing while a new dungeon has no image yet)
+    const emojiSize = Math.round(r * 0.55);
     const emoji = hasImage
       ? '' // image replaces the emoji
-      : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${emojiSize}" style="user-select:none">${biome.icon}</text>`;
+      : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${emojiSize}" filter="url(#dmap-glow-f)" style="user-select:none">${biome.icon}</text>`;
 
     // Name label
     const shortName = route.name.length > 18 ? route.name.substring(0, 17) + '…' : route.name;
@@ -398,7 +530,7 @@ function buildDungeonSVG(state: GameState): string {
 
     // Difficulty stars
     const diff = route.tier;
-    const stars = `<text class="dmap-t-sterne" x="${x}" y="${y + r + 29}" text-anchor="middle" fill="${biome.stroke}" font-size="8" opacity="${isLocked ? 0.3 : 0.6}">${'★'.repeat(diff)}${'☆'.repeat(5 - diff)}</text>`;
+    const stars = `<text class="dmap-t-sterne" x="${x}" y="${y + r + 29}" text-anchor="middle" fill="${biome.stroke}" font-size="8" opacity="${isLocked ? 0.3 : 0.6}">${sterne(diff)}</text>`;
 
     // Room count
     const roomsBadge = `<text class="dmap-t-raeume" x="${x}" y="${y + r + 41}" text-anchor="middle" fill="#6b6050" font-size="7.5" font-family="Cinzel, serif" opacity="${labelOpacity}">${route.rooms} Räume</text>`;
@@ -438,18 +570,23 @@ function buildDungeonSVG(state: GameState): string {
   }
 
   // The stairs entrance sits above the map: the map itself moves down by TREPPE_PLATZ
-  const totalHeight = HEIGHT + TREPPE_PLATZ;
+  // (and by the room for the dungeons above the Vulkankern); its path starts at the topmost dungeon
+  const verschiebung = TREPPE_PLATZ + oben;
+  const totalHeight = HEIGHT + verschiebung;
+  const oberster = DUNGEON_GRAPH.reduce((a, b) => (b.y < a.y ? b : a));
+  const obersterRadius = ROUTE_DEFS[oberster.routeId]?.bossId ? 80 : 64;
+  const anschluss = { x: oberster.x, y: verschiebung + oberster.y - obersterRadius };
   return `
     <svg viewBox="0 0 ${WIDTH} ${totalHeight}" class="dmap-svg-scroll"
          xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
          style="width:${WIDTH}px;height:${totalHeight}px;">
-      <g transform="translate(0 ${TREPPE_PLATZ})">
+      <g transform="translate(0 ${verschiebung})">
         ${bgHtml}
-        <defs>${clipDefsHtml}</defs>
-        <g class="dmap-paths">${pathsHtml}</g>
+        <defs>${clipDefsHtml}${wegeMaske(schriftzuege, WIDTH, -oben, HEIGHT)}</defs>
+        <g class="dmap-paths" mask="url(#dmap-wege-maske)">${pathsHtml}</g>
         <g class="dmap-nodes">${nodesHtml}</g>
       </g>
-      ${buildTreppenEingang(state, WIDTH)}
+      ${buildTreppenEingang(state, WIDTH, anschluss)}
     </svg>`;
 }
 
@@ -535,7 +672,13 @@ function showRouteModal(routeId: string, state: GameState): void {
   subEl.textContent = `Ebene ${route.tier} · ${route.rooms} Räume · ${route.recommendedLevel}`;
 
   let detailHtml = '';
-  if (route.bossId) detailHtml += `<p><span style="color:${biome.stroke}">Boss:</span> ${route.bossId.replace('boss_', '').replace(/_/g, ' ')}</p>`;
+  if (route.bossId) detailHtml += `<p><span style="color:${biome.stroke}">Boss:</span> ${ENEMY_DEFS[route.bossId]?.name ?? route.bossId}</p>`;
+  if (route.besonderheit) detailHtml += `<p><span style="color:${biome.stroke}">✦</span> ${route.besonderheit}</p>`;
+  if (route.ersterSiegBeute && route.bossId) {
+    const beute = ITEM_DEFS[route.ersterSiegBeute]?.name ?? route.ersterSiegBeute;
+    const erhalten = state.guildStats.bossesDefeatedIds.includes(route.bossId);
+    detailHtml += `<p style="color:#8a7a5a;font-size:0.75rem">${erhalten ? '✓' : '🎁'} Erster Sieg: ${beute}</p>`;
+  }
   if (isDeadEnd) detailHtml += `<p><span style="color:#8a7a5a">⚑ Sackgasse</span> — Kein Durchgang</p>`;
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;
   if (route.isSiegeRoute) detailHtml += `<p><span style="color:#f9a8d4">🏰 Belagerung</span> — Kriegsmaschine empfohlen</p>`;

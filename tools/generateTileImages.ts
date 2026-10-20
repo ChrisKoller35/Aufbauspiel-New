@@ -141,6 +141,26 @@ Intense and deadly atmosphere with bright orange, deep red, and black tones.
 Style: painterly digital illustration, modern fantasy RPG, rich colors, dramatic fiery lighting.
 Dark moody lower third suitable for text overlay. No text, no UI elements, no borders.`,
   },
+  // ── Über dem Vulkankern (docs/NEUE-DUNGEONS.md) ──
+  {
+    key: "exp_drachenhort",
+    prompt: `A legendary dragon's lair on a mountain peak above a volcano, in 4:3 landscape format for a fantasy RPG expedition card.
+A vast cavern opening onto the night sky, mountains of gold coins, jeweled crowns and ancient armor piled high,
+glowing embers drifting in the air, the silhouette of a colossal sleeping dragon coiled around the hoard,
+volcanic glow far below the cliff edge.
+Greedy and dangerous atmosphere with warm gold, ember orange and deep night blue tones.
+Style: painterly digital illustration, modern fantasy RPG, rich colors, dramatic lighting.
+Dark moody lower third suitable for text overlay. No text, no UI elements, no borders.`,
+  },
+  {
+    key: "exp_himmelsarchiv",
+    prompt: `A vast floating library above the clouds, in 4:3 landscape format for a fantasy RPG expedition card.
+Towering bookshelves rising into a starry sky, stone walkways and spiral stairs floating on a sea of clouds,
+books drifting through the air with glowing pages, ghostly blue lanterns, a giant watchful eye faintly visible in the dark above.
+Mysterious and forbidding atmosphere with silver moonlight, pale blue and deep indigo tones with warm candle accents.
+Style: painterly digital illustration, modern fantasy RPG, rich colors, dramatic lighting.
+Dark moody lower third suitable for text overlay. No text, no UI elements, no borders.`,
+  },
   {
     key: "exp_siege_walls",
     prompt: `A medieval fantasy siege battle scene in 4:3 landscape format for a fantasy RPG expedition card.

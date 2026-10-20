@@ -9,6 +9,10 @@ export interface EncounterChoice {
   value: number;
   /** Optionaler Item-Key für effect='item' */
   itemId?: string;
+  /** Hort-Gier: so viele Punkte kommen dazu, wenn diese Option gewählt wird (RouteDef.hortGier) */
+  gier?: number;
+  /** Preis der Option: jeder lebende Held verliert so viel Prozent seiner max. HP (nie unter 1) */
+  kostetLeben?: number;
 }
 
 /** Zustand einer Befestigungsanlage (Mauer, Tor, Turm, Bergfried) */
@@ -112,6 +116,8 @@ export interface ExpeditionRun {
   totalCombatRounds: number;        // Summe aller Kampfrunden (für Score-Berechnung)
   enemiesKilled: number;            // Anzahl besiegter normaler Gegner
   bossesKilled: number;             // Anzahl besiegter Bosse
+  /** Hort-Gier: Punkte aus eingesteckten Schätzen, machen den Boss stärker (RouteDef.hortGier) */
+  gier?: number;
   /** Feature #11: Ausstehende Begegnungs-Wahl (find/rest Raum) */
   pendingChoice?: { roomIndex: number; optionA: EncounterChoice; optionB: EncounterChoice };
   /** Feature #15: Checkpoint-Dialog ausstehend */
