@@ -1,17 +1,20 @@
 // ─── Magic City – Bezwungene Dungeons ───────────────────────────
 // Ein Merker, der nichts vergisst: welche Dungeons die Gilde je wirklich
-// bezwungen hat (Boss besiegt oder ein Dungeon ohne Boss gewonnen). Die
+// bezwungen hat (gewonnen, und wo es einen Boss gibt, mit besiegtem Boss). Die
 // Bestenliste behält nur die 100 besten Läufe, frühe Siege fallen dort mit
 // der Zeit heraus. Karte, Routenliste und Stadtweg lesen den Merker über
 // isRouteCompleted (data/routes.ts), die Rangliste zählt damit Höhe und Sterne.
+// Neue Siege trägt nur die Rangliste nach jeder Expedition ein (merkeBezwungen).
 // ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from '../data/routes';
 
 /**
- * Was die Spielstände bisher hergeben: echte Siege in der Bestenliste, Dungeons mit besiegtem
+ * Was ein Spielstand ohne Merker hergibt: echte Siege in der Bestenliste, Dungeons mit besiegtem
  * Boss, der Waldpfad nach einem gezählten Sieg und Dungeons, deren Geschichte bis zum Sieg lief.
+ * Nur beim Anlegen: Die Liste der besiegten Bosse kennt auch Bosse, die in einer Niederlage fielen
+ * (GuildRankSystem), und die zählen ab jetzt nicht mehr als bezwungen.
  */
 function bisherBezwungen(state: GameState): string[] {
   const bosse = state.guildStats?.bossesDefeatedIds ?? [];
@@ -27,14 +30,14 @@ function bisherBezwungen(state: GameState): string[] {
 
 /**
  * Die bezwungenen Dungeons (Dungeon → Runde der Rangliste beim ersten Sieg, 0 = davor).
- * Legt den Merker beim ersten Aufruf an und nimmt Siege auf, die an ihm vorbei dazukamen.
+ * Legt den Merker beim ersten Aufruf an, aus allem, was der Spielstand bis dahin hergibt.
  */
 export function bezwungeneDungeons(state: GameState): Record<string, number> {
-  const merker = (state.bezwungen ??= {});
-  for (const id of bisherBezwungen(state)) {
-    if (!(id in merker)) merker[id] = state.rangliste?.runde ?? 0;
+  if (!state.bezwungen) {
+    const runde = state.rangliste?.runde ?? 0;
+    state.bezwungen = Object.fromEntries(bisherBezwungen(state).map(id => [id, runde]));
   }
-  return merker;
+  return state.bezwungen;
 }
 
 /** Merkt sich einen Sieg; true beim allerersten Sieg in diesem Dungeon */

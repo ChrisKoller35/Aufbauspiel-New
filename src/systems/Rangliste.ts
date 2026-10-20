@@ -123,8 +123,8 @@ export interface RivalenLauf {
 export type EbenenVerlauf = { runde: number; ebene: number }[];
 
 /** Wann die eigene Gilde welche Ebene erreicht hat (aus dem Merker der bezwungenen Dungeons) */
-export function spielerEbenen(state: GameState): EbenenVerlauf {
-  const siege = Object.entries(bezwungeneDungeons(state))
+export function spielerEbenen(state: GameState, merker = bezwungeneDungeons(state)): EbenenVerlauf {
+  const siege = Object.entries(merker)
     .filter(([id]) => KNOTEN.has(id))
     .sort((a, b) => a[1] - b[1]);
   const verlauf: EbenenVerlauf = [{ runde: 0, ebene: 0 }];
@@ -349,15 +349,24 @@ export function gildenAufKarte(state: GameState, jetzt: number): Map<string, Gil
 }
 
 /**
- * Der Dungeon, mit dem die eigene Gilde am leichtesten an `gilde` vorbeizieht: noch nicht bezwungen,
- * jetzt spielbar, die niedrigste Ebene, darin der niedrigste. null: Kein einzelner Sieg reicht.
+ * Der Dungeon, mit dem die eigene Gilde mit der nächsten Expedition an `gilde` vorbeizieht: noch nicht
+ * bezwungen, jetzt spielbar, die niedrigste Ebene, darin der niedrigste. Die Rivalen ziehen in derselben
+ * Runde weiter, und ein höherer Sieg hebt auch ihre Ebenen-Grenze: Es zählt ihr Stand nach dieser Runde.
+ * null: Kein einzelner Sieg reicht.
  */
-export function wegVorbei(state: GameState, gilde: GildenStand): string | null {
+export function wegVorbei(state: GameState, gilde: GildenStand, jetzt: number): string | null {
+  const stand = ranglisteStand(state, jetzt);
+  const rivale = RIVALEN.find(r => r.id === gilde.id);
   const merker = bezwungeneDungeons(state);
+  const runde = stand.runde + 1;
   const wege = DUNGEON_GRAPH
     .map(n => n.routeId)
     .filter(id => !(id in merker) && isRouteAvailable(ROUTE_DEFS[id], state))
-    .filter(id => stehtVor(spielerStand(state, Infinity, { ...merker, [id]: 0 }), gilde));
+    .filter(id => {
+      const mitSieg = { ...merker, [id]: runde };
+      const danach = rivale ? rivaleStand(rivalenLauf(rivale, stand, spielerEbenen(state, mitSieg), runde), runde) : gilde;
+      return stehtVor(spielerStand(state, Infinity, mitSieg), danach);
+    });
   if (wege.length === 0) return null;
   return wege.reduce((a, b) =>
     (dungeonSterne(b) < dungeonSterne(a) || (dungeonSterne(b) === dungeonSterne(a) && dungeonHoehe(b) < dungeonHoehe(a)) ? b : a));
@@ -454,7 +463,8 @@ function wochenPlatz(stand: RanglisteStand): number {
 /** Die laufende Wochenwertung: alle zehn Gilden, meister Ruhm zuerst, bei Gleichstand die eigene Gilde */
 export function wochenRangliste(state: GameState, jetzt: number): { woche: Woche; zeilen: WochenZeile[] } {
   const stand = ranglisteStand(state, jetzt);
-  return { woche: wocheVon(jetzt), zeilen: wochenZeilen(stand) };
+  // Die gespeicherte Woche, auch wenn die Uhr zurückgestellt wurde
+  return { woche: wocheVon(Math.max(jetzt, stand.woche.start)), zeilen: wochenZeilen(stand) };
 }
 
 /**
@@ -524,10 +534,13 @@ export function ruhmestruhe(state: GameState, platz: number, samen: string): Pic
   return { pokal: art.pokal, belohnung };
 }
 
-/** Ist die gespeicherte Woche vorbei, kommt ihr Ergebnis in den Verlauf (und die Ruhmestruhe zum Abholen) */
+/**
+ * Ist die gespeicherte Woche vorbei, kommt ihr Ergebnis in den Verlauf (und die Ruhmestruhe zum Abholen).
+ * Steht die Uhr vor der gespeicherten Woche (Zeitzone gewechselt, Uhr zurückgestellt), läuft diese weiter.
+ */
 function wocheAbschliessen(state: GameState, stand: RanglisteStand, jetzt: number): void {
   const aktuell = wocheVon(jetzt);
-  if (stand.woche.id === aktuell.id) return;
+  if (stand.woche.id === aktuell.id || aktuell.start < stand.woche.start) return;
   if (stand.woche.ruhm > 0) {
     const platz = wochenPlatz(stand);
     const ergebnis: WochenErgebnis = {

@@ -11,8 +11,9 @@ und was bei neuen Dungeons oder Gilden zu tun ist.
 - **Zehn Gilden.** Neun Rivalen-Gilden und die eigene klettern auf derselben Dungeon-Karte.
 - **Gipfel-Rangliste.** Zuerst zählt die Höhe des höchsten bezwungenen Dungeons (Meter auf der Karte),
   bei gleicher Höhe die Sterne (die Ebenen aller bezwungenen Dungeons zusammengezählt). Bei Gleichstand
-  steht die eigene Gilde vorn. Bezwungen heisst: Boss besiegt (oder ein Dungeon ohne Boss gewonnen).
-  Ein Sieg nach dem Rundenlimit zählt nicht.
+  steht die eigene Gilde vorn. Bezwungen heisst gewonnen, und wo es einen Boss gibt, mit besiegtem Boss.
+  Ein Sieg nach dem Rundenlimit zählt nicht, eine Niederlage, in der der Boss mitfällt, auch nicht
+  (der Boss schaltet trotzdem die nächsten Dungeons frei, wie bisher).
 - **Runden statt Uhr.** Jede beendete Expedition ist eine Runde, Sieg oder Niederlage. Nur dann kommen
   auch die Rivalen weiter. Wer eine Woche nicht spielt, verliert im Rennen nichts.
 - **Keine rennt davon.** Die Rivalen schaffen höchstens eine Ebene mehr als die eigene Gilde (die zwei
@@ -22,7 +23,8 @@ und was bei neuen Dungeons oder Gilden zu tun ist.
   Neuladen ändert nichts, und die Vorschau («zieht in 17 Expeditionen an dir vorbei») trifft ein.
 - **Zu sehen**
   - Seite «Rangliste»: Gipfel-Rangliste mit dem nächsten Ziel («Ein Sieg im Drachenhort bringt dich
-    vorbei») und einer Warnung, wer bald vorbeizieht; Wochenwertung; «Neues von der Karte» (die letzten
+    vorbei», gerechnet mit dem Zug der Rivalen in derselben Runde) und einer Warnung, wer bald
+  vorbeizieht; Wochenwertung; «Neues von der Karte» (die letzten
     sechs Siege); Pokale; unten zugeklappt die eigenen besten Expeditionen.
   - Dungeon-Karte: Das Wappen jeder Gilde steht an ihrem höchsten Dungeon (höchstens drei, dann «+n»).
     Das Fenster eines Dungeons sagt, wie viele Rivalen ihn bezwungen haben.
@@ -38,7 +40,8 @@ und was bei neuen Dungeons oder Gilden zu tun ist.
 - **Ruhm der Rivalen:** steht ab Montag fest. Jede Gilde hat eine Zahl «Siege pro Woche» und rechnet sie
   mit dem Ruhm je Sieg im besten eigenen Dungeon. Dazu kommt ihre Form der Woche (Laune): ±11 bis 19 %
   bei den meisten Gilden, ±34 % bei den Glückspilzen. In der ersten Woche zählt nur der Rest der Woche.
-- **Woche** Montag 00:00 bis Sonntag 24:00 (Kalenderwoche, Uhrzeit des Geräts).
+- **Woche** Montag 00:00 bis Sonntag 24:00 (Kalenderwoche, Uhrzeit des Geräts). Wird die Uhr zurückgestellt
+  (andere Zeitzone, Uhr von Hand verstellt), läuft die gespeicherte Woche weiter; keine Woche zählt doppelt.
 - **Ruhmestruhe** für Platz 1 bis 3. Sie würfelt aus der Beute des höchsten Bosses, den die Gilde
   besiegt hat (jeder Wurf: Gold und ein Gegenstand), und wartet in der Rangliste, bis man sie öffnet.
   Mehrere Wochen sammeln sich.
@@ -133,5 +136,10 @@ erst die ganze Karte bringt Platz 1 für immer.
 
 Zwei neue Felder, beide freiwillig: `rangliste` (Runde, Samen, Woche, Truhen, Pokale) und `bezwungen`
 (jeder bezwungene Dungeon mit der Runde des ersten Siegs). Fehlen sie, legt das Spiel sie beim ersten
-Aufruf an; ältere Spielstände übernehmen ihre Siege aus Bestenliste, Bossen und Geschichten. Keine neue
-SaveVersion. Das Rennen beginnt beim ersten Öffnen nach dem Update.
+Aufruf an; ältere Spielstände übernehmen ihre Siege einmal aus Bestenliste, Bossen und Geschichten. Danach
+trägt nur noch die Rangliste nach jeder Expedition neue Siege ein. Keine neue SaveVersion. Das Rennen
+beginnt beim ersten Öffnen nach dem Update.
+
+Grenze bei alten Spielständen: Siege in Dungeons ohne Boss (etwa Lichtung, Geisterwald oder Küste),
+die schon aus der Bestenliste gefallen sind (sie behält die 100 besten Läufe), kennt das Spiel nicht mehr.
+Dort fehlen beim Start ein paar Sterne, und der nächste Sieg zählt als erster (doppelter Ruhm).

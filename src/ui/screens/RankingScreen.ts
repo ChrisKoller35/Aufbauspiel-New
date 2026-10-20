@@ -134,7 +134,7 @@ function gipfelHtml(state: GameState, jetzt: number, gipfel: GildenStand[]): str
   } else {
     const vor = gipfel[platz - 2];
     const wo = vor.hoechster ? ` auf ${meter(vor.hoehe)} (${escapeHtml(routeName(vor.hoechster))})` : '';
-    const weg = wegVorbei(state, vor);
+    const weg = wegVorbei(state, vor, jetzt);
     let wie: string;
     if (weg) wie = `Ein Sieg <b>${escapeHtml(imDungeon(weg))}</b> bringt dich vorbei.`;
     else if (vor.hoehe > du.hoehe) wie = `Du musst höher hinauf als ${meter(vor.hoehe)}.`;

@@ -9,12 +9,13 @@ import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { richteProbespielEin } from '../src/systems/Probespiel';
 import { DUNGEON_GRAPH, ROUTE_DEFS, isRouteCompleted } from '../src/data/routes';
 import { RIVALEN } from '../src/data/rivalen';
+import { GuildRankSystem } from '../src/systems/GuildRankSystem';
 import { setFuerRoute, setTeilIds } from '../src/data/dungeonSets';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
 import {
   RUHMESTRUHEN, besterRuhmDungeon, belohnungenAbholen, dungeonSterne, expeditionsRuhm, gildenAufKarte, gipfelRangliste,
   naechsteBedrohung, neuigkeiten, ranglisteKurz, ranglisteNachExpedition, ranglisteStand, rivalenLauf, ruhmJeSieg,
-  ruhmestruhe, spielerEbenen, truhenDungeon, wocheVon, wochenRangliste,
+  ruhmestruhe, spielerEbenen, truhenDungeon, wegVorbei, wocheVon, wochenRangliste,
 } from '../src/systems/Rangliste';
 import { DUNGEON_IM_SATZ, dungeonWen, imDungeon } from '../src/data/dungeonNamen';
 
@@ -197,6 +198,46 @@ describe('Rangliste: Ruhm und eigene Siege', () => {
     expect(isRouteCompleted('forest_medium', state)).toBe(false);
   });
 
+  test('Niederlage, in der der Boss mitfällt: nicht bezwungen, erst der echte Sieg zählt als erster', () => {
+    const state = spielstand(['forest_short']);
+    ranglisteKurz(state, MONTAG);
+    const boss = ROUTE_DEFS.forest_medium.bossId!;
+    const niederlage = lauf('forest_medium', 'defeat', ROUTE_DEFS.forest_medium.rooms, 1);
+    expect(ranglisteNachExpedition(state, niederlage, MONTAG).erstbezwingung).toBe(false);
+    // Die Gilde merkt sich den Boss trotzdem (er schaltet weitere Dungeons frei)
+    new GuildRankSystem().updateStats(state, 'forest_medium', 1, [boss], false);
+    expect(state.guildStats.bossesDefeatedIds).toContain(boss);
+    expect(isRouteCompleted('forest_medium', state)).toBe(false);
+    expect(gipfelRangliste(state, MONTAG).find(g => g.spieler)!.sterne).toBe(1);
+    const sieg = ranglisteNachExpedition(state, lauf('forest_medium', 'victory'), MONTAG);
+    expect(sieg.erstbezwingung).toBe(true);
+    expect(isRouteCompleted('forest_medium', state)).toBe(true);
+  });
+
+  test('«Ein Sieg im … bringt dich vorbei» stimmt, auch wenn die Gilde in derselben Runde weiterzieht', () => {
+    let geprueft = 0;
+    for (let samen = 1; samen <= 40; samen++) {
+      for (const rueckzuege of [0, 3, 5, 9]) {
+        const state = createNewGameState();
+        state.rngSeed = samen * 7919;
+        state.guildStats.rank = 5;
+        runden(state, rueckzuege);
+        const gipfel = gipfelRangliste(state, MONTAG);
+        const platz = gipfel.findIndex(g => g.spieler);
+        if (platz === 0) continue;
+        const vor = gipfel[platz - 1];
+        const weg = wegVorbei(state, vor, MONTAG);
+        if (!weg) continue;
+        ranglisteNachExpedition(state, lauf(weg, 'victory'), MONTAG);
+        const nachher = gipfelRangliste(state, MONTAG);
+        expect(nachher.findIndex(g => g.spieler), `Samen ${samen}, ${rueckzuege} Rückzüge: ${weg} vorbei an ${vor.name}`)
+          .toBeLessThan(nachher.findIndex(g => g.id === vor.id));
+        geprueft++;
+      }
+    }
+    expect(geprueft).toBeGreaterThan(50);
+  });
+
   test('der Merker vergisst nichts, auch wenn frühe Siege aus der Bestenliste fallen', () => {
     const state = spielstand(['forest_short', 'forest_ruins']);
     bezwungeneDungeons(state);
@@ -330,6 +371,23 @@ describe('Rangliste: Wochenwertung', () => {
     expect(ruhmestruhe(state, 4, 'probe')).toEqual({ pokal: null, belohnung: {} });
     // Gleicher Samen, gleiche Truhe: Neuladen würfelt nicht neu
     expect(ruhmestruhe(state, 2, 'samen')).toEqual(ruhmestruhe(state, 2, 'samen'));
+  });
+
+  test('Uhr zurückgestellt: die gespeicherte Woche läuft weiter und zählt nur einmal', () => {
+    const state = spielstand(['forest_short', 'forest_medium']);
+    const montag = wocheVon(MONTAG).start;
+    ranglisteStand(state, montag + 30 * 60_000);
+    state.rangliste!.woche.ruhm = 1_000_000;
+    // Eine Stunde zurück: Sonntag 23:30, noch in der Vorwoche
+    ranglisteStand(state, montag - 30 * 60_000);
+    expect(state.rangliste!.woche.id).toBe('2026-W45');
+    expect(state.rangliste!.verlauf).toEqual([]);
+    expect(wochenRangliste(state, montag - 30 * 60_000).woche.id).toBe('2026-W45');
+    ranglisteStand(state, montag + 90 * 60_000);
+    expect(state.rangliste!.woche.ruhm).toBe(1_000_000);
+    ranglisteStand(state, montag + 7 * TAG + 60_000);
+    expect(state.rangliste!.verlauf.map(e => e.wocheId)).toEqual(['2026-W45']);
+    expect(state.rangliste!.offen).toHaveLength(1);
   });
 
   test('ohne Ruhm in der Woche: kein Ergebnis, keine Truhe', () => {
