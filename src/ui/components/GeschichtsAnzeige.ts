@@ -7,7 +7,7 @@
 import '../html/geschichten.css';
 import { GameState } from '../../models/GameState';
 import { DungeonGeschichte, Wirkung } from '../../data/dungeonGeschichten';
-import { GeschichtsBilanz, geschichteVon, istErlebt, istGefahr, wirkungZeile } from '../../systems/Geschichten';
+import { GeschichtsBilanz, folgenZeilen, geschichteVon, istErlebt } from '../../systems/Geschichten';
 
 const UNTERSCHRIFT = '<div class="gs-sig">Ottokar, Stadtschreiber</div>';
 
@@ -32,8 +32,8 @@ export function einleitungHtml(geschichte: DungeonGeschichte): string {
 
 /** Folgen einer Option, je eine Zeile: rot die Gefahr, grün der Gewinn */
 export function folgenHtml(routeId: string, wirkung: Wirkung[]): string {
-  return wirkung
-    .map(w => `<span class="gs-folge ${istGefahr(w) ? 'gefahr' : 'gewinn'}">${escape(wirkungZeile(routeId, w))}</span>`)
+  return folgenZeilen(routeId, wirkung)
+    .map(z => `<span class="gs-folge ${z.gefahr ? 'gefahr' : 'gewinn'}">${escape(z.text)}</span>`)
     .join('');
 }
 

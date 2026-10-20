@@ -12,7 +12,7 @@ import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
-import { chronikNachWahl, geschichteWirkt, geschichtsWahlStellen } from './Geschichten';
+import { chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen } from './Geschichten';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
 export const MERCHANT_PRICES: Record<string, number> = {
@@ -292,6 +292,9 @@ export class ExpeditionSystem {
       run.status = 'defeat';
       return false;
     }
+
+    // Geschichte: Beute einer mutigen Wahl, die auf diesen Kampf gewartet hat
+    geschichtsBeuteNachKampf(run, room);
 
     if (room.type === 'boss') this.ersterSiegBeute(state, run, room);
 

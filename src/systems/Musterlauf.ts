@@ -8,13 +8,13 @@
 
 import { createNewGameState, GameState } from '../models/GameState';
 import { createGuildFighter } from '../models/GuildRoster';
-import { ExpeditionRun } from '../models/ExpeditionRun';
+import { ExpeditionRun, dungeonBezwungen } from '../models/ExpeditionRun';
 import { MUSTER_SETS, MUSTER_TEAMS, musterWerte } from '../data/musterteams';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { totalXpForLevel } from './HeroProgression';
-import { dungeonBezwungen, istGeschichtsWahl } from './Geschichten';
+import { istGeschichtsWahl } from './Geschichten';
 
 export type MusterTeamName = keyof typeof MUSTER_TEAMS;
 export type MusterSetName = keyof typeof MUSTER_SETS;

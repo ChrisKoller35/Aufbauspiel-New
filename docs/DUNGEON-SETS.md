@@ -11,7 +11,8 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
   Teile, die der Gilde fehlen, kommen zuerst. Sind alle drei da, kann jedes fallen, für einen zweiten Helden.
   Eine mutige Entscheidung der Dungeon-Geschichte kann ein Teil mehr versprechen («+1 Set-Teil, wenn ihr
   siegt»): Es kommt zum gewöhnlichen Wurf dazu, beim ersten Sieg sind es also zwei verschiedene
-  (`docs/GESCHICHTEN.md`).
+  (`docs/GESCHICHTEN.md`). Das Versprechen gilt nur, wenn der Boss besiegt ist; endet sein Kampf nach
+  dem Rundenlimit, bleibt es beim gewöhnlichen Wurf (`dungeonBezwungen`).
 - **Zwei Teile** geben Werte (z. B. +5 Angriff und +15 Leben), **drei Teile** die Set-Fähigkeit.
   Sie löst im Kampf sichtbar aus: grünes ✦-Banner und eine grüne Zeile im Kampfprotokoll.
   Zwei gleiche Teile zählen als eines.

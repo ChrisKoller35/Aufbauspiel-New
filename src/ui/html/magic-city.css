@@ -1404,6 +1404,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .mc-co-room-cleared {
   font-family: 'Cinzel', serif; font-size: 0.9rem; color: #4ade80; letter-spacing: 2px;
 }
+.mc-co-geschichte-beute {
+  font-family: 'Cinzel', serif; font-size: 0.8rem; color: #e6c060; letter-spacing: 1px;
+}
 
 /* Abilities */
 .mc-co-section-divider {

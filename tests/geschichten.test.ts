@@ -13,8 +13,9 @@ import { setBeute, setTeilHinweise } from '../src/systems/DungeonSets';
 import { setTeilIds } from '../src/data/dungeonSets';
 import { musterStand, spieleRoute } from '../src/systems/Musterlauf';
 import {
-  RAEUME_MIT_ENTSCHEIDUNG, chronikNachWahl, geschichteVon, geschichteWirkt, geschichtsBilanz,
-  istErlebt, istGefahr, istGeschichtsWahl, neueEinleitung, wirkungZeile,
+  RAEUME_MIT_ENTSCHEIDUNG, chronikNachWahl, einleitungGelesen, folgenZeilen, geschichteVon, geschichteWirkt,
+  geschichtsBeuteNachKampf, geschichtsBilanz, istErlebt, istGefahr, istGeschichtsBeuteZeile, istGeschichtsWahl,
+  ungeleseneEinleitung, wirkungZeile,
 } from '../src/systems/Geschichten';
 
 /** Ein Held, der jeden Kampf gewinnt */
@@ -96,11 +97,23 @@ describe('Geschichten: Daten', () => {
     }
   });
 
-  test('jede Option bringt etwas; die mutige mehr Beute und mehr Gefahr', () => {
+  test('jede Option bringt etwas; die vorsichtige ohne Gefahr, die mutige mit', () => {
     for (const { routeId, option, art } of alleOptionen()) {
       const wo = `${routeId}: ${option.label}`;
       expect(option.wirkung.some(w => !istGefahr(w)), wo).toBe(true);
-      if (art === 'mutig') expect(option.wirkung.some(istGefahr), wo).toBe(true);
+      expect(option.wirkung.some(istGefahr), wo).toBe(art === 'mutig');
+    }
+  });
+
+  test('Schwächungen massvoll: Boss höchstens einmal je Geschichte und um 10 %, Gegner bis 20 % (zwei Kämpfe: 10 %)', () => {
+    for (const g of DUNGEON_GESCHICHTEN) {
+      const wirkungen = g.wahlen.flatMap(w => [...w.sicher.wirkung, ...w.mutig.wirkung]);
+      const bossSchwaecher = wirkungen.filter(w => w.art === 'boss' && w.prozent < 0);
+      expect(bossSchwaecher.length, g.routeId).toBeLessThanOrEqual(1);
+      for (const w of wirkungen) {
+        if (w.art === 'boss' && w.prozent < 0) expect(w.prozent, g.routeId).toBeGreaterThanOrEqual(-10);
+        if (w.art === 'gegner' && w.prozent < 0) expect(w.prozent, g.routeId).toBeGreaterThanOrEqual(w.kaempfe === 1 ? -20 : -10);
+      }
     }
   });
 
@@ -114,6 +127,21 @@ describe('Geschichten: Daten', () => {
           if (x.art === 'gegner') expect(danach.some(t => t === 'combat' || t === 'fortification'), wo).toBe(true);
           if (x.art === 'boss') expect(danach, wo).toContain('boss');
           if (x.art === 'leben') expect(danach.some(t => t === 'combat' || t === 'fortification' || t === 'boss'), wo).toBe(true);
+        }
+      }
+    }
+  });
+
+  test('Heilung und Lebenskosten zählen: bis zum nächsten Kampf kommt kein Rastplatz', () => {
+    // Vor einer Rast ist eine Heilung fast nichts wert und ein Preis an Leben fast gratis (Eichung)
+    for (const g of DUNGEON_GESCHICHTEN) {
+      const raeume = ROUTE_DEFS[g.routeId].encounters;
+      for (const w of g.wahlen) {
+        const naechster = raeume.slice(w.nachRaum + 1).find(e => ['rest', 'combat', 'boss', 'fortification'].includes(e.type));
+        for (const option of [w.sicher, w.mutig]) {
+          if (option.wirkung.some(x => x.art === 'heilen' || x.art === 'leben')) {
+            expect(naechster?.type, `${g.routeId} «${w.titel}»: ${option.label}`).not.toBe('rest');
+          }
         }
       }
     }
@@ -141,6 +169,15 @@ describe('Geschichten: Daten', () => {
     expect(wirkungZeile('forest_medium', { art: 'gegner', prozent: -20, kaempfe: 2 })).toBe('Gegner der nächsten 2 Kämpfe 20 % schwächer');
     expect(wirkungZeile('forest_medium', { art: 'boss', prozent: 15 })).toBe('Uralter Treant 15 % stärker');
     expect(wirkungZeile('forest_medium', { art: 'setTeil' })).toBe(`${setFuerRoute('forest_medium')!.zeichen} +1 Set-Teil, wenn ihr siegt`);
+    // Beute mit Kampf-Gefahr sagt, wann sie kommt
+    const texte = (wirkung: Wirkung[]) => folgenZeilen('forest_medium', wirkung).map(z => z.text);
+    expect(texte([{ art: 'gold', menge: 60 }, { art: 'gegner', prozent: 25, kaempfe: 1 }]))
+      .toEqual(['+60 Gold nach dem Kampf', 'Gegner im nächsten Kampf 25 % stärker']);
+    expect(texte([{ art: 'gold', menge: 120 }, { art: 'gegner', prozent: 30, kaempfe: 2 }])[0]).toBe('+120 Gold nach 2 Kämpfen');
+    expect(texte([{ art: 'gegenstand', itemId: 'healing_potion', menge: 2 }, { art: 'boss', prozent: 10 }])[0]).toBe('+2× Heiltrank, wenn ihr siegt');
+    expect(texte([{ art: 'gold', menge: 60 }, { art: 'leben', prozent: 10 }])[0]).toBe('+60 Gold');
+    expect(texte([{ art: 'gold', menge: 60 }, { art: 'gegner', prozent: -10, kaempfe: 1 }])[0]).toBe('+60 Gold');
+    expect(folgenZeilen('forest_medium', [{ art: 'heilen', prozent: 10 }, { art: 'boss', prozent: 15 }]).map(z => z.gefahr)).toEqual([false, true]);
   });
 });
 
@@ -166,8 +203,9 @@ describe('Geschichten: Regeln', () => {
     geschichteWirkt(run, alles);
 
     expect(run.rngSeed).toBe(seed);
-    expect(run.goldEarned).toBe(60);
-    expect(run.loot.healing_potion).toBe(2);
+    // Gold und Gegenstände warten auf den letzten Kampf, den die Gefahr trifft (Raum 6)
+    expect(run.goldEarned).toBe(0);
+    expect(run.geschichtsBeute).toEqual([{ raum: 6, gold: 60, dinge: { healing_potion: 2 } }]);
     expect(held.hp).toBe(5000 + 999 - 499);
     // Die nächsten 2 Kämpfe nach Raum 1 sind Raum 4 und 6; der geschaffte Raum 1 bleibt
     expect(kampf(1).atk).toBe(vorher.r1);
@@ -179,6 +217,66 @@ describe('Geschichten: Regeln', () => {
     expect(run.setTeilVersprochen).toBe(true);
     expect(run.xpEarned?.[heroId]).toBe(15);
     expect(run.combatLog.slice(log)).toHaveLength(alles.length);
+  });
+
+  test('Beute ohne Kampf-Gefahr kommt sofort; Heiltränke und Luftkristalle in den Proviant, Kräuter in die Beute', () => {
+    const { state, system, heroId } = setup();
+    const run = system.startExpedition(state, 'forest_medium', [heroId])!;
+    const proviant = (id: string) => run.provisions.filter(p => p.itemId === id && !p.gifted).reduce((s, p) => s + p.qty, 0);
+    const traenke = proviant('healing_potion');
+    geschichteWirkt(run, [
+      { art: 'gold', menge: 40 }, { art: 'gegenstand', itemId: 'healing_potion', menge: 2 },
+      { art: 'gegenstand', itemId: 'air_crystal', menge: 1 }, { art: 'gegenstand', itemId: 'crystal_shard', menge: 3 },
+      { art: 'gegenstand', itemId: 'herb_green', menge: 2 },
+      { art: 'leben', prozent: 10 }, { art: 'gegner', prozent: -10, kaempfe: 1 },
+    ]);
+    expect(run.goldEarned).toBe(40);
+    expect(proviant('healing_potion')).toBe(traenke + 2);
+    expect(proviant('air_crystal')).toBe(1);
+    expect(run.loot.healing_potion).toBeUndefined();
+    expect(run.loot.crystal_shard).toBe(3);
+    // Grüne Kräuter sind ein Rohstoff: im Proviant würden sie nichts bewirken
+    expect(proviant('herb_green')).toBe(0);
+    expect(run.loot.herb_green).toBe(2);
+    expect(run.geschichtsBeute).toBeUndefined();
+  });
+
+  test('Beute mit Kampf-Gefahr: nach dem gewonnenen Kampf, beim Boss nur, wenn er tot ist', () => {
+    const { state, system, heroId } = setup();
+    const run = system.startExpedition(state, 'forest_medium', [heroId])!;
+    run.currentRoom = 1;
+    run.rooms[1].completed = true;
+    geschichteWirkt(run, [{ art: 'gold', menge: 60 }, { art: 'gegner', prozent: 25, kaempfe: 1 }]);
+    geschichteWirkt(run, [{ art: 'gegenstand', itemId: 'healing_potion', menge: 2 }, { art: 'boss', prozent: 15 }]);
+    expect(run.geschichtsBeute).toEqual([{ raum: 4, gold: 60, dinge: {} }, { raum: 8, gold: 0, dinge: { healing_potion: 2 } }]);
+    expect(run.goldEarned).toBe(0);
+
+    // Ein anderer Raum zahlt nichts; stehen die Gegner nach dem Rundenlimit noch, bleibt die Beute liegen
+    geschichtsBeuteNachKampf(run, run.rooms[3]);
+    geschichtsBeuteNachKampf(run, run.rooms[4]);
+    expect(run.goldEarned).toBe(0);
+    expect(run.geschichtsBeute?.map(b => b.raum)).toEqual([8]);
+    expect(run.combatLog.at(-1)).toContain('bleibt liegen');
+    expect(istGeschichtsBeuteZeile(run.combatLog.at(-1)!)).toBe(true);
+
+    // Gegner besiegt: das Gold kommt
+    run.geschichtsBeute = [{ raum: 4, gold: 60, dinge: {} }, ...run.geschichtsBeute!];
+    for (const g of run.rooms[4].enemies) g.hp = 0;
+    geschichtsBeuteNachKampf(run, run.rooms[4]);
+    expect(run.goldEarned).toBe(60);
+    expect(run.combatLog.at(-1)).toBe('📜 Beute aus der Geschichte: +60 Gold');
+    expect(istGeschichtsBeuteZeile(run.combatLog.at(-1)!)).toBe(true);
+    expect(istGeschichtsBeuteZeile('📜 Die Spur: Eine Entscheidung steht an.')).toBe(false);
+
+    // Boss am Leben (Rundenlimit): nichts; besiegt: die Tränke kommen in den Proviant
+    geschichtsBeuteNachKampf(run, run.rooms[8]);
+    expect(run.geschichtsBeute).toEqual([]);
+    run.geschichtsBeute = [{ raum: 8, gold: 0, dinge: { healing_potion: 2 } }];
+    run.bossesKilled = 1;
+    const traenke = run.provisions.filter(p => p.itemId === 'healing_potion' && !p.gifted).reduce((s, p) => s + p.qty, 0);
+    geschichtsBeuteNachKampf(run, run.rooms[8]);
+    expect(run.provisions.filter(p => p.itemId === 'healing_potion' && !p.gifted).reduce((s, p) => s + p.qty, 0)).toBe(traenke + 2);
+    expect(run.geschichtsBeute).toEqual([]);
   });
 
   test('Leben kostet nie das letzte; Gefallene werden nicht geheilt', () => {
@@ -207,16 +305,22 @@ describe('Geschichten: Regeln', () => {
     expect(run.pendingChoice?.optionA.label).toBe(geschichte.wahlen[0].sicher.label);
     expect(run.pendingChoice?.optionB.label).toBe(geschichte.wahlen[0].mutig.label);
 
-    // Mutig: +30 Gold, der nächste Kampf (Raum 3, nach der Rast in Raum 2) 25 % stärker
+    // Mutig: Gold nach dem nächsten Kampf (Raum 3, nach der Rast in Raum 2), der Kampf stärker
+    const mutig = geschichte.wahlen[0].mutig.wirkung;
+    const beute = mutig.reduce((s, w) => s + (w.art === 'gold' ? w.menge : 0), 0);
+    const staerker = mutig.reduce((s, w) => s + (w.art === 'gegner' ? w.prozent : 0), 0);
     const gold = run.goldEarned;
     system.resolveChoice(run, 1);
     expect(run.currentRoom).toBe(2);
-    expect(run.goldEarned).toBe(gold + 30);
-    expect(run.rooms[3].enemies[0].atk).toBe(Math.round(raum3Atk * 1.25));
+    expect(run.goldEarned).toBe(gold);
+    expect(run.geschichtsBeute).toEqual([{ raum: 3, gold: beute, dinge: {} }]);
+    expect(run.rooms[3].enemies[0].atk).toBe(Math.round(raum3Atk * (1 + staerker / 100)));
     expect(run.chronik).toEqual([geschichte.wahlen[0].mutig.nachklang]);
 
     bisZurGeschichte(state, system, run);
     expect(run.pendingChoice?.roomIndex).toBe(3);
+    expect(run.geschichtsBeute).toEqual([]);
+    expect(run.combatLog).toContain(`📜 Beute aus der Geschichte: +${beute} Gold`);
     system.resolveChoice(run, 0);
     bisZurGeschichte(state, system, run);
     expect(run.status).toBe('victory');
@@ -244,13 +348,18 @@ describe('Geschichten: Regeln', () => {
     expect(istErlebt(state, 'forest_short')).toBe(false);
   });
 
-  test('die Einleitung kommt nur beim ersten Aufbruch, auch für alte Spielstände ohne Geschichten', () => {
+  test('die Einleitung kommt vor dem Aufbruch, bis die Gruppe aufbricht; auch für alte Spielstände', () => {
     const state = createNewGameState();
     delete state.geschichten;
-    expect(neueEinleitung(state, 'cave_deep')?.titel).toBe(geschichteVon('cave_deep')!.titel);
-    expect(neueEinleitung(state, 'cave_deep')).toBeUndefined();
+    expect(ungeleseneEinleitung(state, 'cave_deep')?.titel).toBe(geschichteVon('cave_deep')!.titel);
+    // «Zurück»: nichts gemerkt, beim nächsten Versuch kommt sie wieder
+    expect(ungeleseneEinleitung(state, 'cave_deep')).toBeDefined();
+    expect(state.geschichten).toBeUndefined();
+    einleitungGelesen(state, 'cave_deep');
+    einleitungGelesen(state, 'cave_deep');
+    expect(ungeleseneEinleitung(state, 'cave_deep')).toBeUndefined();
     expect(state.geschichten).toEqual({ gelesen: ['cave_deep'], erlebt: [] });
-    expect(neueEinleitung(state, 'gibt_es_nicht')).toBeUndefined();
+    expect(ungeleseneEinleitung(state, 'gibt_es_nicht')).toBeUndefined();
   });
 
   test('feste Wahl-Räume (Drachenhort): die Chronik nimmt den Satz zur gewählten Option', () => {
@@ -310,6 +419,17 @@ describe('Geschichten: Regeln', () => {
     const voll = setBeute(state, sieg(3, true));
     expect(voll.length).toBeGreaterThanOrEqual(1);
     expect(setTeilHinweise(state, voll)[voll[0]]).toContain('schon da');
+  });
+
+  test('versprochenes Set-Teil nur, wenn der Boss besiegt ist, nicht nach dem Rundenlimit', () => {
+    const { state, system, heroId } = setup();
+    for (const [bossesKilled, anzahl] of [[0, 1], [1, 2]] as const) {
+      const run = system.startExpedition(state, 'forest_medium', [heroId])!;
+      state.activeExpedition = null;
+      Object.assign(run, { rngSeed: 5, status: 'victory', setTeilVersprochen: true, bossesKilled });
+      // Das erste Teil eines Sets ist sicher, das versprochene kommt nur mit totem Boss dazu
+      expect(setBeute(state, run), `Bosse besiegt: ${bossesKilled}`).toHaveLength(anzahl);
+    }
   });
 
   test('Sumpfdorf: nach der Entscheidung in Raum 2 folgt der Kontrollpunkt', () => {

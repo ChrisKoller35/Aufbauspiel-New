@@ -16,6 +16,7 @@ import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
+import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -57,6 +58,9 @@ export class CombatScreen {
 
   // Pre-combat HP snapshot
   private preHpMap = new Map<number, number>();
+
+  // Länge des Kampfprotokolls vor diesem Raum: was danach dazukommt, gehört zu diesem Kampf
+  private logStart = 0;
 
   // Unit entries (DOM refs)
   private partyEntries: UnitEntry[] = [];
@@ -206,6 +210,8 @@ export class CombatScreen {
     this.titleEl.textContent = isBoss ? 'BOSS KAMPF!' : 'KAMPF';
     this.titleEl.style.color = isBoss ? 'var(--mc-damage)' : 'var(--mc-accent-expedition)';
     this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
+
+    this.logStart = run.combatLog.length;
 
     // HP snapshot
     this.preHpMap.clear();
@@ -1227,6 +1233,14 @@ export class CombatScreen {
       cleared.className = 'mc-co-room-cleared';
       cleared.textContent = 'Raum geschafft!';
       this.actionsEl.appendChild(cleared);
+    }
+
+    // Geschichte: Beute einer mutigen Wahl, die auf diesen Kampf gewartet hat (oder liegen bleibt)
+    for (const zeile of run.combatLog.slice(this.logStart).filter(istGeschichtsBeuteZeile)) {
+      const beute = document.createElement('div');
+      beute.className = 'mc-co-geschichte-beute';
+      beute.textContent = zeile;
+      this.actionsEl.appendChild(beute);
     }
 
     const label = isOver ? 'Einsammeln & Schließen' : 'Weiter';

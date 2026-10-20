@@ -175,6 +175,8 @@ export interface ExpeditionRun {
   setTeilExtra?: string | null;
   /** Geschichte: die Sätze zu den Entscheidungen dieses Laufs, für den Bericht (systems/Geschichten.ts) */
   chronik?: string[];
+  /** Geschichte: Beute einer mutigen Wahl, die erst kommt, wenn der Kampf in Raum `raum` gewonnen ist */
+  geschichtsBeute?: { raum: number; gold: number; dinge: Record<string, number> }[];
   /** Feature #11: Ausstehende Begegnungs-Wahl (find/rest Raum) */
   pendingChoice?: { roomIndex: number; optionA: EncounterChoice; optionB: EncounterChoice };
   /** Feature #15: Checkpoint-Dialog ausstehend */
@@ -204,6 +206,15 @@ export interface ExpeditionRun {
   warMachineUnit?: CombatUnit;
   /** ID des eingesetzten War Machine Items (z.B. 'war_cannon') */
   warMachineItemId?: string;
+}
+
+/**
+ * Bis zum Ende gekommen, und wo es einen Boss gibt, ist er besiegt. Ein Kampf endet nach dem
+ * Rundenlimit auch ohne Sieger (CombatEngine), dann zählt die Expedition als Sieg, der Boss lebt aber.
+ * Geschichte, versprochenes Set-Teil und Musterlauf zählen nur einen echten Sieg.
+ */
+export function dungeonBezwungen(run: ExpeditionRun): boolean {
+  return run.status === 'victory' && (run.bossesKilled > 0 || !run.rooms.some(r => r.type === 'boss'));
 }
 
 /** Snapshot of HP values after a combat round – used by CombatOverlay for round-by-round animation */

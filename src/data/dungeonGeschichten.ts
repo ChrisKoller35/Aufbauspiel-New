@@ -83,8 +83,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Hinter dem Wolfsrevier teilt sich die Spur. Links führt ein Pfad aus angeknabberten Büschen bergab. '
           + 'Rechts glänzt etwas im Unterholz, und dort riecht es sehr stark nach Wolf.',
         sicher: {
-          label: 'Den Büschen folgen', wirkung: [heilen(10)],
-          nachklang: 'Wir folgten den angeknabberten Büschen. Die Ziege hatte uns ein paar Beeren übrig gelassen, aus Versehen.',
+          label: 'Den Büschen folgen', wirkung: [ding('herb_green', 3)],
+          nachklang: 'Wir folgten den angeknabberten Büschen und sammelten unterwegs, was die Ziege übrig gelassen hatte: Kräuter, die ihr nicht geschmeckt hatten.',
         },
         mutig: {
           label: 'Zum Glänzen gehen', wirkung: [gold(30), gegner(25)],
@@ -93,15 +93,15 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       },
       {
         nachRaum: 3, titel: 'Die Lichtung',
-        text: 'Da steht sie, mitten auf der Lichtung, und kaut am Bogen eines schlafenden Banditen. '
-          + 'Neben ihm liegt ein Sack, aus dem es klimpert. Der Bandit schnarcht, seine Freunde vermutlich auch, irgendwo.',
+        text: 'Da steht sie, mitten auf der Lichtung, und frisst einem schlafenden Waldbären den Honig vom Bauch. '
+          + 'Neben dem Bären liegt ein Sack, aus dem es klimpert. Wem er vorher gehört hat, will man lieber nicht wissen.',
         sicher: {
           label: 'Nur die Ziege nehmen', wirkung: [xp(15)],
           nachklang: 'Wir nahmen nur die Ziege. Sie meckerte erst, als wir draussen waren. Das war höflich von ihr.',
         },
         mutig: {
           label: 'Auch den Sack nehmen', wirkung: [gold(40), gegner(25)],
-          nachklang: 'Wir nahmen auch den Sack. Der Bandit wachte auf und pfiff nach seinen Freunden. Die Ziege pfiff nicht, sie kaute.',
+          nachklang: 'Wir nahmen auch den Sack. Der Bär wachte auf und fand, der Sack gehöre jetzt ihm. Die Ziege frass in Ruhe weiter.',
         },
       },
     ],
@@ -119,11 +119,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Auf einem bemoosten Opferstein liegen alte, grün angelaufene Münzen und ein Kranz aus frischen Blumen. '
           + 'Jemand pflegt diesen Ort noch. Jemand, der nicht hier ist. Hoffentlich.',
         sicher: {
-          label: 'Eine Blume dazulegen', wirkung: [heilen(15)],
-          nachklang: 'Wir legten eine Blume auf den Opferstein, und der Wald fühlte sich danach freundlicher an. Einbildung, sagt Jorinde. Sie hat keine gelegt.',
+          label: 'Eine Blume dazulegen', wirkung: [gegner(-10)],
+          nachklang: 'Wir legten eine Blume auf den Opferstein, und der Wald war danach freundlicher, sogar seine Wölfe. Einbildung, sagt Jorinde. Sie hat keine gelegt.',
         },
         mutig: {
-          label: 'Die Münzen einstecken', wirkung: [gold(30), gegner(25)],
+          label: 'Die Münzen einstecken', wirkung: [gold(30), gegner(30)],
           nachklang: 'Wir steckten die Münzen vom Opferstein ein. Der Wald hat das gesehen, und der Wald hat Zähne.',
         },
       },
@@ -136,12 +136,12 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir pausten die Schrift ab, mit Kohle, Geduld und angehaltenem Atem. Der Bär schnarchte den Takt dazu.',
         },
         mutig: {
-          label: 'Die Platte ausgraben', wirkung: [setTeil, gegner(30)],
+          label: 'Die Platte ausgraben', wirkung: [setTeil, gegner(20)],
           nachklang: 'Wir gruben die Platte aus, samt dem Tempelschmuck darunter. Der Bär wachte auf und war gegen Archivarbeit.',
         },
       },
     ],
-    ende: 'Die zweite Platte steht jetzt neben der ersten. Ihre Schrift sagt: «Wer das Herz weckt, muss es auch füttern.» '
+    ende: 'Die Schrift der zweiten Platte hängt jetzt in meinem Archiv, gleich neben der ersten. Sie sagt: «Wer das Herz weckt, muss es auch füttern.» '
       + 'Jorinde hält das für eine Warnung. Ich halte es für ein Kochrezept. Wir reden gerade nicht miteinander.',
   },
 
@@ -174,7 +174,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir liessen den Schamanen gehen. Sein Trank schmeckte nach Moos und wirkte trotzdem.',
         },
         mutig: {
-          label: 'Ihm den Beutel abnehmen', wirkung: [ding('herb_green', 4), ding('healing_potion', 1), gegner(25)],
+          label: 'Ihm den Beutel abnehmen', wirkung: [ding('herb_green', 4), ding('healing_potion', 1), gegner(25, 2)],
           nachklang: 'Wir nahmen dem Schamanen den Kräuterbeutel ab. Seine Freunde kamen schneller, als uns lieb war.',
         },
       },
@@ -187,7 +187,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir warteten, bis der Uralte döste. Bei ihm dauert Einschlafen drei Stunden, dafür ist er dann langsam.',
         },
         mutig: {
-          label: 'Die Frucht pflücken', wirkung: [setTeil, boss(20)],
+          label: 'Die Frucht pflücken', wirkung: [setTeil, boss(10)],
           nachklang: 'Wir pflückten die goldene Frucht an seinen Wurzeln. Er wachte auf. Sehr.',
         },
       },
@@ -204,14 +204,14 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       {
         nachRaum: 1, titel: 'Der Goblin-Stollen',
         text: 'Höhlengoblins haben einen Stollen voller Kristallsplitter gegraben und dann vergessen, ihn abzustützen. '
-          + 'Die Decke knirscht bei jedem Schritt. Die Splitter funkeln, als wüssten sie das.',
+          + 'Die Splitter funkeln und summen leise, genau wie der Golem, der tiefer in der Höhle schläft. Vielleicht gehören sie zu ihm.',
         sicher: {
           label: 'Am Stollen vorbei', wirkung: [xp(25)],
           nachklang: 'Wir gingen am Goblin-Stollen vorbei. Hinter uns stürzte er ein. Ich nenne das Planung.',
         },
         mutig: {
-          label: 'Splitter herausbrechen', wirkung: [ding('crystal_shard', 3), leben(10)],
-          nachklang: 'Wir brachen Kristallsplitter aus dem Goblin-Stollen. Die Decke brach mit, ein bisschen auch auf uns.',
+          label: 'Splitter herausbrechen', wirkung: [ding('crystal_shard', 3), boss(5)],
+          nachklang: 'Wir brachen Kristallsplitter aus dem Goblin-Stollen. Sie gehörten tatsächlich zum Golem, und er spürte jeden einzelnen.',
         },
       },
       {
@@ -236,7 +236,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir schlichen an den Fledermäusen vorbei. Der Golem war so überrascht, wie ein Stein überrascht sein kann.',
         },
         mutig: {
-          label: 'Die Beute einsammeln', wirkung: [gold(60), boss(15)],
+          label: 'Die Beute einsammeln', wirkung: [gold(80), boss(10)],
           nachklang: 'Wir sammelten die Goblin-Beute ein. Tausend Fledermäuse wachten auf und meldeten uns beim Golem an.',
         },
       },
@@ -271,13 +271,13 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir liessen die Eier liegen. Dankbar war die Königin deshalb nicht, aber etwas weniger wütend.',
         },
         mutig: {
-          label: 'Ein Ei mitnehmen', wirkung: [setTeil, boss(15)],
+          label: 'Ein Ei mitnehmen', wirkung: [setTeil, boss(10)],
           nachklang: 'Wir nahmen ein Spinnenei mit. Die Königin zählt ihre Eier, wie sich herausstellte.',
         },
       },
       {
         nachRaum: 6, titel: 'Der Kokon',
-        text: 'Kurz vor dem Nest zappelt ein Kokon an der Wand und schimpft. Darin hängt ein Händler, kopfüber. '
+        text: 'Kurz vor dem Nest zappelt ein Kokon an der Wand und schimpft. Darin hängt ein Händler, kopfüber, und neben ihm sein Wagen, ebenso sorgfältig eingesponnen. '
           + 'Er verspricht euch seine Heiltränke, wenn ihr ihn herausschneidet, und schlägt vor, dabei nicht zu trödeln.',
         sicher: {
           label: 'Ihn herausschneiden', wirkung: [ding('healing_potion', 2)],
@@ -320,7 +320,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir banden die Glocke mit einem Fischernetz fest. Die Quallen verloren das Interesse, und die Fischer kletterten herunter.',
         },
         mutig: {
-          label: 'Den Schlegel abschlagen', wirkung: [setTeil, gegner(30)],
+          label: 'Den Schlegel abschlagen', wirkung: [setTeil, gegner(20)],
           nachklang: 'Wir schlugen den Kristallschlegel ab. Die Glocke läutete ein letztes Mal, sehr laut, und die ganze Bucht kam nachsehen.',
         },
       },
@@ -343,21 +343,21 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir banden den Postsack zu, damit nichts mehr herausflattert. Ein Irrlicht bedankte sich, glaube ich.',
         },
         mutig: {
-          label: 'Das Porto nehmen', wirkung: [gold(60), gegner(25)],
+          label: 'Das Porto nehmen', wirkung: [gold(60), gegner(15)],
           nachklang: 'Wir nahmen das alte Porto aus dem Postsack. Die Irrlichter fanden, das sei Diebstahl am Postgeheimnis.',
         },
       },
       {
         nachRaum: 4, titel: 'Das Postamt',
-        text: 'Mitten im Wald steht ein Postamt, Fenster ohne Glas, Tür ohne Angeln. Hinter dem Schalter wartet ein Geist mit Mütze. '
-          + 'Er kann euch den Weg zum Absender zeigen, sagt er, gegen eine Unterschrift. Mit Blut. Nur ein bisschen.',
+        text: 'Mitten im Wald steht ein Postamt, Fenster ohne Glas, Tür ohne Angeln. Hinter dem Schalter sortiert ein Geist mit Mütze Pakete, die nie abgeholt wurden. '
+          + 'Auf einigen steht «Gilde, Magic City». Er gibt sie heraus, sagt er, gegen eine Unterschrift. Mit Blut. Und dann kennt der ganze Wald euren Namen.',
         sicher: {
-          label: 'Höflich ablehnen', wirkung: [heilen(10)],
+          label: 'Höflich ablehnen', wirkung: [xp(30)],
           nachklang: 'Wir lehnten die Blutunterschrift höflich ab. Der Postgeist stempelte das als «Annahme verweigert».',
         },
         mutig: {
-          label: 'Unterschreiben', wirkung: [leben(10), gegner(-20, 2)],
-          nachklang: 'Wir unterschrieben beim Postgeist mit Blut. Er zeigte uns einen Weg, auf dem uns weniger Geister begegneten.',
+          label: 'Mit Blut unterschreiben', wirkung: [gold(40), ding('healing_potion', 2), gegner(15, 2)],
+          nachklang: 'Wir unterschrieben beim Postgeist mit Blut und bekamen die Pakete der Gilde, hundert Jahre zu spät, aber vollständig. Danach kannte der ganze Wald unseren Namen.',
         },
       },
       {
@@ -388,8 +388,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'An jeder Abzweigung stehen Wegweiser, und alle zeigen in andere Richtungen. Einer ist frisch gemalt und zeigt in einen Gang, aus dem es nach Goldstaub riecht. '
           + 'Ein anderer ist mit Kreide gekritzelt: «Hier lang, Vetter».',
         sicher: {
-          label: 'Der Kreide folgen', wirkung: [heilen(10)],
-          nachklang: 'Wir folgten der Kreide des Vetters. Der Weg war lang, aber leer, und wir kamen ausgeruht an.',
+          label: 'Der Kreide folgen', wirkung: [xp(25)],
+          nachklang: 'Wir folgten der Kreide des Vetters. Der Weg war lang und leer, und wir kennen die Tunnel seither besser als die Goblins.',
         },
         mutig: {
           label: 'Dem Goldstaub nach', wirkung: [gold(60), gegner(20)],
@@ -405,7 +405,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir befreiten nur den Vetter. Er wollte das Sandwich nicht teilen.',
         },
         mutig: {
-          label: 'Die Ware mitnehmen', wirkung: [setTeil, gegner(20, 2)],
+          label: 'Die Ware mitnehmen', wirkung: [setTeil, gegner(15, 2)],
           nachklang: 'Wir nahmen den Vetter und die Schmuggelware. Die Wache wachte auf, und mit ihr die halben Tunnel.',
         },
       },
@@ -421,15 +421,15 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     wahlen: [
       {
         nachRaum: 0, titel: 'Der Brautvater',
-        text: 'Der Sumpftroll versperrt den Steg und will wissen, ob ihr Freunde der Braut oder des Bräutigams seid. '
-          + 'Die Freunde der Braut müssen Wegzoll zahlen. Die Freunde des Bräutigams werden in den Sumpf geworfen.',
+        text: 'Ein Sumpftroll versperrt den Steg, der Brautvater, und will wissen, ob ihr Freunde der Braut oder des Bräutigams seid. '
+          + 'Die Freunde der Braut dürfen über den Steg. Die Freunde des Bräutigams wirft er in den Sumpf, und dort glänzt es: Was frühere Gäste beim Fallen verloren haben.',
         sicher: {
           label: '«Freunde der Braut»', wirkung: [xp(25)],
-          nachklang: 'Wir sagten, wir seien Freunde der Braut. Der Troll war gerührt und vergass den Wegzoll.',
+          nachklang: 'Wir sagten, wir seien Freunde der Braut. Der Troll war gerührt und liess uns über den Steg.',
         },
         mutig: {
-          label: '«Freunde des Bräutigams»', wirkung: [gold(60), gegner(25)],
-          nachklang: 'Wir sagten, wir seien Freunde des Bräutigams. Der Troll warf mit Gästen nach uns, wir mit Gold zurück, und am Ende hatten wir mehr davon.',
+          label: '«Freunde des Bräutigams»', wirkung: [gold(60), gegner(15)],
+          nachklang: 'Wir sagten, wir seien Freunde des Bräutigams, und der Troll warf uns in den Sumpf. Dort lag das Gold der Gäste vor uns. Die Blutegel lagen auch dort.',
         },
       },
       {
@@ -437,12 +437,12 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Auf dem Fest tanzen Kröten und Fäulniswandler im Kreis. Die Braut, eine Moorhexe, bietet euch vom Hochzeitstrunk an. '
           + 'Der Bräutigam flüstert, ihr solltet besser den Brautschmuck stehlen, solange alle tanzen. Er habe es sich anders überlegt.',
         sicher: {
-          label: 'Mit der Braut anstossen', wirkung: [heilen(20)],
-          nachklang: 'Wir stiessen mit der Braut an. Der Trunk war grün und warm, und er wirkte. Den Bräutigam haben wir nicht mehr gesehen.',
+          label: 'Mit der Braut anstossen', wirkung: [ding('healing_potion', 2)],
+          nachklang: 'Wir stiessen mit der Braut an. Der Trunk war grün und warm, und sie gab uns zwei Flaschen für unterwegs mit. Den Bräutigam haben wir nicht mehr gesehen.',
         },
         mutig: {
-          label: 'Den Brautschmuck stehlen', wirkung: [setTeil, ding('herb_swamp_blossom', 3), gegner(30)],
-          nachklang: 'Wir stahlen den Brautschmuck, weil der Bräutigam darum bat. Die Braut fand das gar nicht romantisch.',
+          label: 'Den Brautschmuck stehlen', wirkung: [setTeil, ding('herb_swamp_blossom', 3), gegner(40)],
+          nachklang: 'Wir stahlen den Brautschmuck, weil der Bräutigam darum bat. Die Braut fand das gar nicht romantisch und schickte uns ihren Vater hinterher.',
         },
       },
     ],
@@ -460,27 +460,27 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       {
         nachRaum: 1, titel: 'Die Kräuterfrau',
         text: 'Die Kräuterfrau ist euch heimlich gefolgt. Sie hat einen Korb dabei und will Sumpfblüten pflücken, '
-          + 'genau dort, wo die Blutegel am dicksten sind. Allein schafft sie das nicht, sagt sie, und schaut euch an.',
+          + 'die nur dort wachsen, wo das Gift der Hydra in den Sumpf sickert. Allein schafft sie das nicht, sagt sie, und schaut euch an.',
         sicher: {
           label: 'Sie zurückschicken', wirkung: [xp(40)],
           nachklang: 'Wir schickten die Kräuterfrau zurück ins Dorf. Sie schimpfte in Reimen, sie hatte das Fieber inzwischen auch.',
         },
         mutig: {
-          label: 'Ihr beim Pflücken helfen', wirkung: [ding('herb_swamp_blossom', 4), heilen(10), gegner(25)],
-          nachklang: 'Wir halfen der Kräuterfrau beim Pflücken, mitten im Revier der Blutegel. Sie bezahlte uns mit Tee und die Blutegel uns mit Bissen.',
+          label: 'Ihr beim Pflücken helfen', wirkung: [ding('herb_swamp_blossom', 4), boss(5)],
+          nachklang: 'Wir halfen der Kräuterfrau beim Pflücken, mitten im Giftgarten der Hydra. Sie bezahlte uns mit Blüten, und die Hydra roch uns von da an schon von Weitem.',
         },
       },
       {
         nachRaum: 7, titel: 'Die Moorhexe',
-        text: 'In einer Hütte auf Stelzen wohnt eine Moorhexe, die das Fieber kennt. Sie habe es erfunden, sagt sie stolz. '
-          + 'Für hundert Gold verrät sie euch, welcher Kopf der Hydra der echte ist. Oder ihr nehmt euch das Gegengift aus ihrem Regal, solange sie redet.',
+        text: 'In einer Hütte auf Stelzen wohnt eine Moorhexe, die das Fieber kennt. Sie habe es erfunden, sagt sie stolz, und wer ihr Werk lobt, '
+          + 'dem verrät sie, welcher Kopf der Hydra der echte ist. Hinter ihr steht ein Regal voller Gegengift und Gold, und sie redet gern und lange.',
         sicher: {
-          label: 'Die Hexe bezahlen', wirkung: [boss(-10)],
-          nachklang: 'Wir liessen uns von der Moorhexe den echten Kopf der Hydra zeigen. Das Gold dafür hat sie sich redlich erschwindelt.',
+          label: 'Ihr Fieber loben', wirkung: [boss(-10)],
+          nachklang: 'Wir lobten das Fieber der Moorhexe, bis sie rot wurde, und sie zeigte uns den echten Kopf der Hydra. Es war das unehrlichste Gespräch meines Lebens.',
         },
         mutig: {
           label: 'Das Regal ausräumen', wirkung: [gold(100), ding('healing_potion', 2), gegner(30)],
-          nachklang: 'Wir räumten das Regal der Moorhexe aus, während sie redete. Sie redete danach nicht mehr, sie zauberte.',
+          nachklang: 'Wir räumten das Regal der Moorhexe aus, während sie redete. Sie hörte auf zu reden und rief ihre Sumpfphantome.',
         },
       },
       {
@@ -492,7 +492,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir nahmen den Brief aus der Rüstung am Ufer mit. Er ging an eine Familie im Dorf, die seit zwanzig Jahren auf ihn wartete.',
         },
         mutig: {
-          label: 'Die Jungen wecken', wirkung: [setTeil, boss(20)],
+          label: 'Die Jungen wecken', wirkung: [setTeil, boss(15)],
           nachklang: 'Wir weckten die Jungen der Hydra, um an das Nest zu kommen. Die Mutter hat das nicht gut aufgenommen.',
         },
       },
@@ -515,7 +515,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir zeigten den Grabräubern den Ausgang und behielten den Rest der Krypta im Auge. Sie bedankten sich, ohne uns etwas abzugeben.',
         },
         mutig: {
-          label: 'Ihnen die Säcke abnehmen', wirkung: [gold(100), gegner(25)],
+          label: 'Ihnen die Säcke abnehmen', wirkung: [gold(100), gegner(30, 3)],
           nachklang: 'Wir nahmen den Grabräubern die Säcke ab. Die Skelette kamen und wollten ihre Grabbeigaben zurück.',
         },
       },
@@ -524,11 +524,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'In der Wand der Gruft steckt ein Gedenkstein mit einer leeren Stelle, wo ein Name stand. Jemand hat ihn sorgfältig weggekratzt. '
           + 'In den Kratzspuren steckt ein abgebrochener Dolch mit dem Wappen der Hauptstadt.',
         sicher: {
-          label: 'Den Stein reinigen', wirkung: [boss(-10)],
+          label: 'Den Stein reinigen', wirkung: [boss(-5)],
           nachklang: 'Wir reinigten den zerkratzten Gedenkstein. Einen Namen fanden wir nicht, aber irgendwo in der Krypta seufzte jemand erleichtert.',
         },
         mutig: {
-          label: 'Den Dolch mitnehmen', wirkung: [ding('talisman_fragment', 2), boss(15)],
+          label: 'Den Dolch mitnehmen', wirkung: [ding('talisman_fragment', 2), boss(5)],
           nachklang: 'Wir nahmen den Dolch mit dem Wappen der Hauptstadt mit. Der Ritter hat den Dolch wiedererkannt.',
         },
       },
@@ -541,7 +541,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir sagten den Steinwächtern, dass wir seinen Namen nicht kennen. Ehrlichkeit öffnet in Krypten erstaunlich viele Türen.',
         },
         mutig: {
-          label: 'Die Rüstung holen', wirkung: [setTeil, boss(20)],
+          label: 'Die Rüstung holen', wirkung: [setTeil, boss(15)],
           nachklang: 'Wir drängten uns an den Steinwächtern vorbei zur aufgebahrten Rüstung. Er hat zugesehen, wie wir sie anfassten.',
         },
       },
@@ -564,7 +564,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir schickten den Steuereintreiber nach Hause, mit Klapptisch. Er gab uns eine Quittung, für alle Fälle.',
         },
         mutig: {
-          label: 'Die Kisten zurückholen', wirkung: [gold(100), gegner(25)],
+          label: 'Die Kisten zurückholen', wirkung: [gold(100), gegner(30, 3)],
           nachklang: 'Wir holten uns die Kisten des Steuereintreibers. Er rief Leute, die kämpfen, genau wie vermutet.',
         },
       },
@@ -590,7 +590,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir studierten den Feldplan des Kommandanten. Er hatte einen Fehler, und zwar ihn selbst auf Seite drei.',
         },
         mutig: {
-          label: 'Das Banner einholen', wirkung: [setTeil, boss(20)],
+          label: 'Das Banner einholen', wirkung: [setTeil, boss(15)],
           nachklang: 'Wir holten das Banner des Eisernen Kommandanten ein. Er hat sehr dünne Haut für jemanden aus Eisen.',
         },
       },
@@ -607,14 +607,14 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       {
         nachRaum: 1, titel: 'Die Luftblasen',
         text: 'Aus einem Riss im Meeresboden steigen Luftblasen auf, gross genug, um darin Luft zu holen. '
-          + 'Daneben liegt ein Wrack mit offenen Truhen, und aus dem Wrack starrt etwas mit sehr vielen Augen.',
+          + 'Daneben liegt ein Wrack mit offenen Truhen, und in jede ist das Zeichen des Leviathans geritzt. Es sind Opfergaben.',
         sicher: {
           label: 'Luft holen', wirkung: [heilen(15)],
           nachklang: 'Wir holten Luft in den Blasen am Meeresboden. Einfach atmen ist unter Wasser ein Luxus.',
         },
         mutig: {
-          label: 'Das Wrack plündern', wirkung: [gold(100), ding('sea_crystal', 2), gegner(25)],
-          nachklang: 'Wir plünderten das Wrack. Das Ding mit den vielen Augen hatte auch viele Arme.',
+          label: 'Das Wrack plündern', wirkung: [gold(100), ding('sea_crystal', 2), boss(5)],
+          nachklang: 'Wir plünderten das Wrack mit den Opfergaben. Tief unten merkte der Leviathan, dass jemand an seinen Truhen war.',
         },
       },
       {
@@ -626,8 +626,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir begleiteten den ertrunkenen Ritter ein Stück. Er kannte jede Strömung und führte uns den Wächtern der Tiefe in den Rücken.',
         },
         mutig: {
-          label: 'Ihm die Perlen abnehmen', wirkung: [gold(120), gegner(30)],
-          nachklang: 'Wir nahmen dem ertrunkenen Ritter die Perlen ab. Er salutierte nicht mehr, er zog sein Schwert.',
+          label: 'Ihm die Perlen abnehmen', wirkung: [gold(120), boss(10)],
+          nachklang: 'Wir nahmen dem ertrunkenen Ritter die Perlen ab. Er salutierte nicht mehr. Er schwamm hinunter zum Leviathan und erzählte ihm alles.',
         },
       },
       {
@@ -635,11 +635,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Ihr findet es in einer Grotte: eine Schuppe, gross wie ein Schild, die leise singt. Sie gehört dem Leviathan. '
           + 'Bringt ihr sie zurück, ist er vielleicht milder. Behaltet ihr sie, wird er sie holen.',
         sicher: {
-          label: 'Zurücklegen', wirkung: [boss(-10), xp(50)],
+          label: 'Zurücklegen', wirkung: [boss(-5), xp(50)],
           nachklang: 'Wir legten die singende Schuppe zurück. Das Lied wurde leiser, dann wurde es wütend, aber nur noch ein bisschen.',
         },
         mutig: {
-          label: 'Behalten', wirkung: [setTeil, boss(20)],
+          label: 'Behalten', wirkung: [setTeil, boss(10)],
           nachklang: 'Wir behielten die singende Schuppe. Der Leviathan hörte sie und kam, um sie zu holen.',
         },
       },
@@ -656,40 +656,40 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       {
         nachRaum: 1, titel: 'Die Kristallader',
         text: 'Eine Ader aus reinem Kristall zieht sich durch die Wand, so hell, dass man ohne Fackel sieht. '
-          + 'Die Goblins hacken schon daran herum. Das Klopfen der Bergleute ist von hier nicht mehr zu hören.',
+          + 'Kristallkäfer knabbern daran, und davor schläft ein Höhlentroll, als hätte er die Ader gepachtet. Das Klopfen der Bergleute ist von hier nicht mehr zu hören.',
         sicher: {
           label: 'Weiter dem Klopfen nach', wirkung: [xp(40)],
-          nachklang: 'Wir liessen die Kristallader den Goblins und folgten dem Klopfen. Es wurde lauter, und das war gut.',
+          nachklang: 'Wir liessen die Kristallader den Käfern und ihrem Troll und folgten dem Klopfen. Es wurde lauter, und das war gut.',
         },
         mutig: {
-          label: 'Die Ader abbauen', wirkung: [ding('crystal_shard', 4), gegner(25)],
-          nachklang: 'Wir bauten Kristall aus der Ader ab, vor den Augen der Goblins. Die Goblins hatten auch Hacken.',
+          label: 'Die Ader abbauen', wirkung: [ding('crystal_shard', 4), gegner(15)],
+          nachklang: 'Wir bauten Kristall aus der Ader ab. Die Käfer fanden das unhöflich, und der Troll wachte davon auf.',
         },
       },
       {
         nachRaum: 4, titel: 'Der Stützbalken',
         text: 'Ein einziger Balken hält die Decke über dem Hauptgang. Er ächzt. Auf der anderen Seite liegt eine Werkzeugkiste der Bergleute, '
-          + 'und dahinter ein Seitengang, der schneller zu ihnen führt, aber unter dem Balken durch.',
+          + 'und dahinter ein Seitengang, der schneller zu ihnen führt, aber unter dem Balken durch. Fällt der Balken, hört man das in der ganzen Mine.',
         sicher: {
-          label: 'Den Balken stützen', wirkung: [heilen(10), xp(30)],
+          label: 'Den Balken stützen', wirkung: [xp(40)],
           nachklang: 'Wir stützten den ächzenden Balken mit dem, was wir hatten. Er hält bis heute, mit einem Schild darunter.',
         },
         mutig: {
-          label: 'Unter dem Balken durch', wirkung: [setTeil, leben(10)],
-          nachklang: 'Wir nahmen den schnellen Weg unter dem Balken durch, samt Werkzeugkiste. Der Balken hielt, die Decke nur zum Teil.',
+          label: 'Unter dem Balken durch', wirkung: [setTeil, gegner(20, 2)],
+          nachklang: 'Wir nahmen den schnellen Weg unter dem Balken durch, samt Werkzeugkiste. Hinter uns fiel der Balken, und die halbe Mine kam nachsehen.',
         },
       },
       {
         nachRaum: 7, titel: 'Die Bergleute',
         text: 'Hinter dem Schutt sitzen die drei Bergleute, staubig und erstaunlich gut gelaunt. Sie haben Kristall gefunden, sagen sie, einen ganzen Sack voll. '
-          + 'Der Sack ist schwer. Der Weg nach draussen ist voller Trolle.',
+          + 'Der Sack ist schwer, und auf dem Weg nach draussen wimmelt es von Käfern und Schlimmerem.',
         sicher: {
           label: 'Den Sack zurücklassen', wirkung: [gegner(-20)],
           nachklang: 'Wir liessen den Sack der Bergleute zurück und trugen dafür die Bergleute. Leicht beladen ist man schnell.',
         },
         mutig: {
-          label: 'Den Sack mitschleppen', wirkung: [gold(100), ding('crystal_shard', 2), gegner(30)],
-          nachklang: 'Wir schleppten den Kristallsack mit, und er klirrte bei jedem Schritt. Die Trolle hörten uns kommen.',
+          label: 'Den Sack mitschleppen', wirkung: [gold(100), ding('crystal_shard', 2), gegner(25)],
+          nachklang: 'Wir schleppten den Kristallsack mit, und er klirrte bei jedem Schritt. Die Käfer hörten uns kommen, und das Schlimmere hinter ihnen auch.',
         },
       },
     ],
@@ -704,14 +704,14 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     wahlen: [
       {
         nachRaum: 3, titel: 'Das Lagerfeuer',
-        text: 'An einem geschützten Lagerplatz brennt ein Feuer, das niemand angezündet hat. Daneben liegt ein erfrorener Bote mit einer versiegelten Rolle: der Befehl. '
+        text: 'An einem geschützten Lagerplatz brennt ein Feuer, das niemand angezündet hat. Daneben liegt ein erfrorener Bote mit seinem Proviant und einer versiegelten Rolle: der Befehl. '
           + 'Ihn zu öffnen könnte das Heer wecken. Oder beruhigen.',
         sicher: {
-          label: 'Am Feuer aufwärmen', wirkung: [heilen(20)],
-          nachklang: 'Wir wärmten uns am Feuer, das niemand angezündet hatte, und liessen die Befehlsrolle versiegelt. Manche Briefe sind besser ungeöffnet.',
+          label: 'Am Feuer aufwärmen', wirkung: [ding('healing_potion', 2)],
+          nachklang: 'Wir wärmten uns am Feuer, das niemand angezündet hatte, nahmen den Proviant des Boten und liessen die Befehlsrolle versiegelt. Manche Briefe sind besser ungeöffnet.',
         },
         mutig: {
-          label: 'Den Befehl öffnen', wirkung: [ding('talisman_fragment', 2), gegner(30, 2)],
+          label: 'Den Befehl öffnen', wirkung: [ding('talisman_fragment', 2), gegner(15, 2)],
           nachklang: 'Wir brachen das Siegel des eingefrorenen Befehls. Er lautete: «Angriff.» Das Heer hatte dreihundert Jahre darauf gewartet.',
         },
       },
@@ -724,8 +724,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir gingen aussen um die Schlucht herum. Es dauerte, aber Schnee ist geduldig, und wir waren es auch.',
         },
         mutig: {
-          label: 'Über die Brücke, mit Fahne', wirkung: [setTeil, leben(10)],
-          nachklang: 'Wir gingen über die Schneebrücke und nahmen die Frostfahne mit. Die Brücke brach erst hinter uns, und nur fast.',
+          label: 'Über die Brücke, mit Fahne', wirkung: [setTeil, gegner(25)],
+          nachklang: 'Wir gingen über die Schneebrücke und nahmen die Frostfahne mit. Die Brücke hielt, aber das Eisheer drüben erkannte seine Fahne.',
         },
       },
     ],
@@ -743,11 +743,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'In einer Höhle wachsen Obsidianplatten aus dem Boden wie Blätter aus einer Pflanze, dünn und glänzend. '
           + 'Flammengeister wärmen sich daran. Der Glaser würde für jede Platte ein Vermögen zahlen.',
         sicher: {
-          label: 'Nur Bruchstücke sammeln', wirkung: [ding('iron_scrap', 3), xp(30)],
+          label: 'Nur Bruchstücke sammeln', wirkung: [gold(30), xp(20)],
           nachklang: 'Wir sammelten nur Bruchstücke am Rand des Glasgartens. Der Glaser nannte das «Anfängerware» und kaufte trotzdem alles.',
         },
         mutig: {
-          label: 'Ganze Platten brechen', wirkung: [gold(100), gegner(25, 2)],
+          label: 'Ganze Platten brechen', wirkung: [gold(100), gegner(15, 2)],
           nachklang: 'Wir brachen ganze Obsidianplatten aus dem Glasgarten. Die Flammengeister waren gerade dabei, sich daran zu wärmen.',
         },
       },
@@ -785,8 +785,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir klappten die Chronik aus der Zukunft zu, ohne das letzte Kapitel zu lesen. Manche Dinge muss man selber schreiben.',
         },
         mutig: {
-          label: 'Das Siegel brechen', wirkung: [ding('talisman_fragment', 3), leben(10)],
-          nachklang: 'Wir brachen das Siegel des letzten Kapitels. Der Text sprang uns an, im wörtlichen Sinn.',
+          label: 'Das Siegel brechen', wirkung: [ding('talisman_fragment', 3), gegner(15, 3)],
+          nachklang: 'Wir brachen das Siegel des letzten Kapitels. Der Text sprang heraus, lief uns voraus und las allen Untoten vor, wer wir sind.',
         },
       },
       {
@@ -794,25 +794,25 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Aus einem Brunnen sprudelt schwarze Tinte, und mit ihr schreibt der Lich. Wer sie verschüttet, schwächt ihn. '
           + 'Wer sie abfüllt, könnte selbst damit schreiben. Am Brunnenrand liegen leere Fläschchen, ordentlich aufgereiht.',
         sicher: {
-          label: 'Die Tinte verschütten', wirkung: [boss(-15)],
+          label: 'Die Tinte verschütten', wirkung: [boss(-10)],
           nachklang: 'Wir verschütteten die Tinte des Lichs. Seine nächsten Zauber waren voller Kleckse.',
         },
         mutig: {
-          label: 'Tinte abfüllen', wirkung: [gold(160), boss(15)],
-          nachklang: 'Wir füllten Tinte des Lichs ab, sie ist ein Vermögen wert. Er schrieb uns dafür ein paar Gemeinheiten ins Schicksal.',
+          label: 'Tinte abfüllen', wirkung: [gold(160), gegner(10, 2)],
+          nachklang: 'Wir füllten Tinte des Lichs ab, sie ist ein Vermögen wert. Er schrieb uns dafür ein paar Gemeinheiten in die nächsten Kapitel.',
         },
       },
       {
-        nachRaum: 10, titel: 'Die Krone',
-        text: 'Vor dem Thronsaal liegt seine Krone auf einem Kissen, als wolle sie jemand stehlen. Ganz klar eine Falle. '
+        nachRaum: 9, titel: 'Die Krone',
+        text: 'Vor der Halle seiner Leibwache liegt seine Krone auf einem Kissen, als wolle sie jemand stehlen. Ganz klar eine Falle. '
           + 'Auf der Krone steht in kleiner Schrift: «Für den nächsten Lich.»',
         sicher: {
           label: 'Die Falle umgehen', wirkung: [heilen(15)],
           nachklang: 'Wir liessen die Krone auf ihrem Kissen liegen. Wir haben genug Ämter in Magic City, wir brauchen kein neues.',
         },
         mutig: {
-          label: 'Die Krone nehmen', wirkung: [setTeil, boss(20)],
-          nachklang: 'Wir nahmen die Krone des Lichs. Er wollte sie zurück, und zwar persönlich.',
+          label: 'Die Krone nehmen', wirkung: [setTeil, gegner(20)],
+          nachklang: 'Wir nahmen die Krone des Lichs. Seine Leibwache wollte sie zurück, und zwar sofort.',
         },
       },
     ],
@@ -827,15 +827,15 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     wahlen: [
       {
         nachRaum: 1, titel: 'Die Schmiede der Zwerge',
-        text: 'Eine verlassene Zwergenschmiede am Lavastrom, der Amboss noch warm. Auf ihm liegt eine halb fertige Klinge, daneben eine Kiste mit Glutwurzeln. '
+        text: 'Eine verlassene Zwergenschmiede am Lavastrom, der Amboss noch warm. Auf ihm liegt eine halb fertige Klinge, daneben eine Kiste mit Glutwurzeln, der Leibspeise des Wyrms. '
           + 'Der Lavastrom steigt. Langsam, aber er steigt.',
         sicher: {
           label: 'Weiterziehen', wirkung: [xp(60)],
           nachklang: 'Wir zogen an der Zwergenschmiede vorbei, bevor die Lava kam. Hinter uns floss sie über den Amboss, sehr ordentlich.',
         },
         mutig: {
-          label: 'Die Schmiede ausräumen', wirkung: [ding('herb_fire_root', 4), gold(120), leben(10)],
-          nachklang: 'Wir räumten die Zwergenschmiede aus, während die Lava stieg. Die Stiefel sind seither kürzer.',
+          label: 'Die Schmiede ausräumen', wirkung: [ding('herb_fire_root', 4), gold(120), boss(5)],
+          nachklang: 'Wir räumten die Zwergenschmiede aus, während die Lava stieg. Die Stiefel sind seither kürzer, und der Wyrm vermisst seine Glutwurzeln.',
         },
       },
       {
@@ -856,11 +856,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Vor dem Lager des Wyrms liegt ein Spalt im Fels, aus dem in gleichmässigen Stössen heisse Luft bläst. Er atmet. Er schläft noch. '
           + 'Neben dem Spalt glänzt sein Hort: geschmolzenes Gold in Pfützen.',
         sicher: {
-          label: 'Den Spalt verschliessen', wirkung: [boss(-10), heilen(10)],
+          label: 'Den Spalt verschliessen', wirkung: [boss(-5), heilen(10)],
           nachklang: 'Wir verschlossen den Atemspalt mit Steinen. Der Wyrm wachte hustend auf, und Husten ist kein guter Start in einen Kampf.',
         },
         mutig: {
-          label: 'Gold aus den Pfützen schöpfen', wirkung: [gold(200), boss(15)],
+          label: 'Gold aus den Pfützen schöpfen', wirkung: [gold(200), boss(10)],
           nachklang: 'Wir schöpften flüssiges Gold aus dem Hort des Wyrms. Er roch es im Schlaf und kam hellwach.',
         },
       },
@@ -883,8 +883,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir zündeten die Vorratswagen der Festung an. Ohne Pech und Pfeile wurden die Verteidiger sehr nachdenklich.',
         },
         mutig: {
-          label: 'Die Wagen plündern', wirkung: [gold(160), ding('healing_potion', 2), gegner(30)],
-          nachklang: 'Wir plünderten die Vorratswagen. Von den Mauern aus sah man uns dabei zu und schrieb sich alles auf.',
+          label: 'Die Wagen plündern', wirkung: [gold(160), ding('healing_potion', 2), boss(10)],
+          nachklang: 'Wir plünderten die Vorratswagen. Von den Mauern aus sah man uns dabei zu, und der Festungswächter bekam einen genauen Bericht.',
         },
       },
       {
@@ -914,7 +914,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         },
       },
     ],
-    ende: 'Die Festung gehört jetzt Magic City, mit Mauern, Türmen und einer Bibliothek, die der Kampfmagier bereits neu sortiert. '
+    ende: 'Die Festung gehört jetzt Magic City, mit Mauern, Türmen und einem Festungswächter weniger. '
       + 'Die Hauptstadt hat uns zum «befreundeten Nachbarn» ernannt. Ich habe das Schreiben neben den Steuerbrief gehängt. Sie passen gut zusammen.',
   },
   {
@@ -932,8 +932,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir schwammen am schlafenden Anglerfisch vorbei. Sein Licht blinkte unsere Namen, aber falsch geschrieben.',
         },
         mutig: {
-          label: 'In sein Maul greifen', wirkung: [gold(160), ding('air_crystal', 2), gegner(30)],
-          nachklang: 'Wir griffen dem schlafenden Anglerfisch ins Maul. Er wachte auf. Er hatte noch mehr Zähne als gedacht.',
+          label: 'In sein Maul greifen', wirkung: [gold(160), ding('air_crystal', 2), gegner(20)],
+          nachklang: 'Wir griffen dem schlafenden Anglerfisch ins Maul. Er wachte auf und spuckte uns aus, samt Beute, mitten in das Revier einer Meeresschlange.',
         },
       },
       {
@@ -941,12 +941,12 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'In einer Luftblase unter einem Felsvorsprung sitzen die zwei Fischer, verängstigt, aber lebendig. Ihre Luft reicht nicht mehr lange. '
           + 'Ihr könntet eure Luftkristalle mit ihnen teilen. Oder sie hierlassen und den Abgrund erst zu Ende plündern.',
         sicher: {
-          label: 'Luft teilen', wirkung: [xp(60), heilen(10)],
+          label: 'Luft teilen', wirkung: [xp(60)],
           nachklang: 'Wir teilten unsere Luft mit den beiden Fischern. Es war eng, aber zu viert atmet man mutiger.',
         },
         mutig: {
-          label: 'Später zurückkommen', wirkung: [setTeil, leben(15)],
-          nachklang: 'Wir liessen die Fischer zurück und plünderten zuerst den Abgrund. Wir kamen zurück, gerade noch rechtzeitig, und sie sprechen bis heute nicht mit uns.',
+          label: 'Später zurückkommen', wirkung: [setTeil, gegner(20, 2)],
+          nachklang: 'Wir liessen die Fischer zurück und plünderten zuerst den Abgrund, bis hinunter, wo die grossen Räuber jagen. Wir kamen zurück, gerade noch rechtzeitig, und die Fischer sprechen bis heute nicht mit uns.',
         },
       },
       {
@@ -954,11 +954,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Hier unten wird alles bunt. Die Fische singen, die Felsen lachen, und ein Teil von euch möchte einfach hierbleiben. '
           + 'Tiefenrausch, sagt euer Verstand. Klingt nett, sagt der Rest.',
         sicher: {
-          label: 'Langsam auftauchen', wirkung: [heilen(15), gegner(-15)],
+          label: 'Langsam auftauchen', wirkung: [heilen(15)],
           nachklang: 'Wir tauchten langsam ein Stück auf, bis der Tiefenrausch vorbei war. Die Felsen hörten auf zu lachen. Schade eigentlich.',
         },
         mutig: {
-          label: 'Weiter hinab', wirkung: [gold(180), gegner(30)],
+          label: 'Weiter hinab', wirkung: [gold(180), gegner(20)],
           nachklang: 'Wir tauchten im Tiefenrausch weiter hinab und fanden Schätze, an die sich keiner mehr genau erinnert. Kämpfen im Rausch war schwierig.',
         },
       },
@@ -994,8 +994,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir lehnten den Handel des Schattenhändlers ab. Er lächelte weiter, aber nicht mehr so breit.',
         },
         mutig: {
-          label: 'Den Schatten verleihen', wirkung: [gold(200), leben(15)],
-          nachklang: 'Wir liehen dem Schattenhändler unsere Schatten für einen Kampf. Wir bekamen sie zurück, mit ein paar Knicken.',
+          label: 'Den Schatten verleihen', wirkung: [gold(200), gegner(40)],
+          nachklang: 'Wir liehen dem Schattenhändler unsere Schatten für einen Kampf. Ohne Schatten kämpft es sich seltsam, man weiss nie, wo man aufhört. Wir bekamen sie zurück, mit ein paar Knicken.',
         },
       },
       {
@@ -1003,11 +1003,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Die Schattenklinge steckt in einem Sarg, und der Sarg steckt in einer Wand. Wer sie herauszieht, zieht den Schatten der ganzen Katakombe mit. '
           + 'Lässt man sie stecken, schneidet niemand mehr Schatten, aber sie liegt dann eben hier.',
         sicher: {
-          label: 'Den Sarg zumauern', wirkung: [gegner(-10, 2)],
+          label: 'Den Sarg zumauern', wirkung: [gegner(-5, 2)],
           nachklang: 'Wir mauerten den Sarg mit der Schattenklinge zu. Die Schatten der Katakombe wurden blass und müde.',
         },
         mutig: {
-          label: 'Die Klinge ziehen', wirkung: [setTeil, gegner(30, 2)],
+          label: 'Die Klinge ziehen', wirkung: [setTeil, gegner(10, 2)],
           nachklang: 'Wir zogen die Schattenklinge aus dem Sarg. Der ganze Schatten der Katakombe hing daran und kam mit.',
         },
       },
@@ -1023,15 +1023,15 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     wahlen: [
       {
         nachRaum: 0, titel: 'Die Spur',
-        text: 'Die Spur der Karawane führt in zwei Richtungen: gerade durch das Aschefeld, wo die Golems schlafen, '
-          + 'oder in einem weiten Bogen um die Glutspalten herum. Der Bogen kostet einen halben Tag.',
+        text: 'Die Spur der Karawane führt in zwei Richtungen: gerade durch das Aschefeld, wo Flammengeister über den Glutspalten tanzen, '
+          + 'oder in einem weiten Bogen um die Spalten herum. Der Bogen kostet einen halben Tag.',
         sicher: {
           label: 'Den Bogen nehmen', wirkung: [xp(60)],
           nachklang: 'Wir nahmen den weiten Bogen um die Glutspalten. Es dauerte, aber Asche lässt sich auch umgehen.',
         },
         mutig: {
           label: 'Gerade durch', wirkung: [gold(120), gegner(25)],
-          nachklang: 'Wir gingen gerade durch das Aschefeld und fanden unterwegs, was frühere Karawanen verloren hatten. Die Golems fanden uns.',
+          nachklang: 'Wir gingen gerade durch das Aschefeld und fanden unterwegs, was frühere Karawanen verloren hatten. Die Flammengeister fanden uns.',
         },
       },
       {
@@ -1039,12 +1039,12 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Die Karawane steckt in der Asche fest, die Wagen halb versunken. Die Händler leben, nur das Lampenöl ist ausgelaufen und brennt. '
           + 'Ihr könnt die Wagen freischaufeln oder zuerst das Feuer löschen, bevor es die Gewürze erreicht.',
         sicher: {
-          label: 'Das Feuer löschen', wirkung: [heilen(10), xp(40)],
+          label: 'Das Feuer löschen', wirkung: [xp(50)],
           nachklang: 'Wir löschten das brennende Lampenöl, bevor es die Gewürze erreichte. Die Karawane duftet seither nach Zimt und Rauch.',
         },
         mutig: {
-          label: 'Die Wagen freischaufeln', wirkung: [setTeil, gegner(25)],
-          nachklang: 'Wir schaufelten die Wagen frei, während daneben das Öl brannte. Die Händler gaben uns, was im Feuer übrig blieb, und der Rauch lockte Aschegeister an.',
+          label: 'Die Wagen freischaufeln', wirkung: [setTeil, gegner(15)],
+          nachklang: 'Wir schaufelten die Wagen frei, während daneben das Öl brannte. Die Händler gaben uns, was im Feuer übrig blieb, und der Rauch lockte alles an, was in der Wüste brennt.',
         },
       },
       {
@@ -1057,7 +1057,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         },
         mutig: {
           label: 'Durch den Sturm', wirkung: [gold(160), gegner(30)],
-          nachklang: 'Wir zogen durch den Aschesturm und kamen schneller voran, als den Golems lieb war. Gesehen haben wir sie erst, als sie da waren.',
+          nachklang: 'Wir zogen durch den Aschesturm und kamen schneller voran als gedacht. Den Magmabrüter sahen wir erst, als er vor uns stand.',
         },
       },
     ],
@@ -1072,15 +1072,15 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     wahlen: [
       {
         nachRaum: 1, titel: 'Der Zwergenweg',
-        text: 'Ein alter Zwergenweg führt über eine Brücke aus Ketten über einen Lavasee. Die Ketten glühen. '
-          + 'Der lange Weg führt um den See herum, durch die Nester der Magmabrüter.',
+        text: 'Ein alter Zwergenweg führt auf einer Brücke aus Ketten über einen Lavasee. Die Ketten glühen, und in der Mitte steht das Zollhaus der Zwerge, '
+          + 'mit Fledermäusen unter dem Dach. Der lange Weg führt um den See herum, durch Asche und Geröll.',
         sicher: {
-          label: 'Um den See herum', wirkung: [xp(60), gegner(15)],
-          nachklang: 'Wir gingen um den Lavasee herum, mitten durch die Nester der Magmabrüter. Sicher war das nicht, aber wenigstens nicht heiss.',
+          label: 'Um den See herum', wirkung: [xp(60)],
+          nachklang: 'Wir gingen um den Lavasee herum, durch Asche und Geröll. Es dauerte, aber Geröll beisst nicht.',
         },
         mutig: {
-          label: 'Über die Kettenbrücke', wirkung: [gold(140), leben(10)],
-          nachklang: 'Wir gingen über die glühende Kettenbrücke und fanden in der Mitte das Zollhaus der Zwerge, noch voller Münzen. Die Handschuhe sind hin.',
+          label: 'Über die Kettenbrücke', wirkung: [gold(140), leben(10), gegner(25)],
+          nachklang: 'Wir gingen über die glühende Kettenbrücke und leerten das Zollhaus der Zwerge, noch voller Münzen. Die Handschuhe sind hin, und die Fledermäuse unter dem Dach kamen mit.',
         },
       },
       {
@@ -1088,11 +1088,11 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         text: 'Vor der Esse steht ein Aschegolem mit einer Zwergenschürze. Er wacht hier seit tausend Jahren und will nur eines: '
           + 'dass jemand den Blasebalg tritt, damit das Feuer nicht ausgeht. Er bietet euch dafür seinen Hammer an.',
         sicher: {
-          label: 'Den Blasebalg treten', wirkung: [heilen(10), gegner(-15, 2)],
+          label: 'Den Blasebalg treten', wirkung: [gegner(-10, 2)],
           nachklang: 'Wir traten den Blasebalg für den alten Aschegolem, eine Stunde lang. Er war so dankbar, dass er uns den Weg zeigte.',
         },
         mutig: {
-          label: 'Den Hammer nehmen', wirkung: [setTeil, gegner(30, 2)],
+          label: 'Den Hammer nehmen', wirkung: [setTeil, gegner(10, 2)],
           nachklang: 'Wir nahmen dem Aschegolem den Hammer und liessen den Blasebalg stehen. Das Feuer der Esse wurde kleiner, und alles in den Höhlen wurde wütend.',
         },
       },
@@ -1105,8 +1105,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir sahen dem ewigen Feuer eine Weile zu, und der Schmied schmiedete an Ort und Stelle ein Hufeisen. Für immer.',
         },
         mutig: {
-          label: 'Eine Glut mitnehmen', wirkung: [ding('herb_fire_root', 4), gold(120), leben(10)],
-          nachklang: 'Wir nahmen eine Glut des ewigen Feuers mit. Sie brennt jetzt in der Schmiede von Magic City und hat uns dafür die Augenbrauen genommen.',
+          label: 'Eine Glut mitnehmen', wirkung: [ding('herb_fire_root', 4), gold(120), gegner(35)],
+          nachklang: 'Wir nahmen eine Glut des ewigen Feuers mit. Das Feuer schickte uns seine Hüter hinterher, und die Glut nahm uns die Augenbrauen. Sie brennt jetzt in der Schmiede von Magic City.',
         },
       },
     ],

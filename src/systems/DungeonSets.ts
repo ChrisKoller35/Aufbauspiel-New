@@ -7,7 +7,7 @@
 
 import { GameState } from '../models/GameState';
 import { GuildFighter } from '../models/GuildRoster';
-import { ExpeditionRun, SpecialEffect } from '../models/ExpeditionRun';
+import { ExpeditionRun, SpecialEffect, dungeonBezwungen } from '../models/ExpeditionRun';
 import { DungeonSetDef, SetWerte, getSet, setFuerRoute, setTeilIds, setVonItem } from '../data/dungeonSets';
 import { ITEM_DEFS } from '../data/items';
 import { SeededRNG } from '../utils/RNG';
@@ -139,7 +139,8 @@ export function setTeilHinweise(state: GameState, itemIds: string[]): Record<str
 
 /**
  * Nach einem Sieg: legt das Set-Teil des Dungeons in die Beute der Expedition, dazu ein Teil
- * mehr, wenn eine Entscheidung der Geschichte es versprochen hat (systems/Geschichten.ts).
+ * mehr, wenn eine Entscheidung der Geschichte es versprochen hat (systems/Geschichten.ts) und
+ * der Boss wirklich besiegt ist (nicht nur das Rundenlimit überstanden, dungeonBezwungen).
  * Einmal pro Expedition aufrufen, bevor die Beute gezeigt wird. Gibt die Gegenstands-IDs zurück.
  */
 export function setBeute(state: GameState, run: ExpeditionRun): string[] {
@@ -148,7 +149,9 @@ export function setBeute(state: GameState, run: ExpeditionRun): string[] {
     const rng = new SeededRNG((run.rngSeed ^ 0x5e75e7) >>> 0);
     run.setTeil = setTeilWuerfeln(state, run.routeId, run.difficulty ?? 'normal', rng);
     const set = setFuerRoute(run.routeId);
-    run.setTeilExtra = run.setTeilVersprochen && set ? teilZiehen(state, set, rng, run.setTeil ? [run.setTeil] : []) : null;
+    run.setTeilExtra = run.setTeilVersprochen && set && dungeonBezwungen(run)
+      ? teilZiehen(state, set, rng, run.setTeil ? [run.setTeil] : [])
+      : null;
     const davor: string[] = [];
     for (const [itemId, art] of [[run.setTeil, 'Set-Teil gefunden'], [run.setTeilExtra, 'Versprochenes Set-Teil']] as const) {
       if (!itemId) continue;

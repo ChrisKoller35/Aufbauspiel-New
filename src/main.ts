@@ -28,7 +28,7 @@ import { placeStartingLayout, createStartingCitizens } from './scenes/CityStarti
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { wegBilanz } from './ui/components/WegAnzeige';
 import { chronikHtml, einleitungHtml, folgenHtml, geschichtsText, optionsKnopfHtml } from './ui/components/GeschichtsAnzeige';
-import { geschichtsBilanz, GeschichtsBilanz, istGeschichtsWahl, neueEinleitung, raumWahlText, wahlNachRaum } from './systems/Geschichten';
+import { einleitungGelesen, geschichtsBilanz, GeschichtsBilanz, istGeschichtsWahl, raumWahlText, ungeleseneEinleitung, wahlNachRaum } from './systems/Geschichten';
 import { getRouteBauplan } from './data/routes';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -179,6 +179,24 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Geschichte: vor dem ersten Aufbruch in diesen Dungeon die Einleitung des Stadtschreibers
+    const geschichte = ungeleseneEinleitung(state, routeId);
+    if (geschichte) {
+      showExpeditionDialog('📜', geschichte.titel, einleitungHtml(geschichte), [
+        { label: 'ZURÜCK', onClick: () => {} },
+        {
+          label: 'AUFBRECHEN', primary: true, onClick: () => {
+            einleitungGelesen(state, routeId);
+            aufbrechen(routeId, heroIds, provisionMap);
+          },
+        },
+      ]);
+      return;
+    }
+    aufbrechen(routeId, heroIds, provisionMap);
+  }
+
+  function aufbrechen(routeId: string, heroIds: number[], provisionMap: Record<string, number>): void {
     // Convert provision map {itemId: qty} to requestedConsumables array
     const consumables: string[] = [];
     for (const [itemId, qty] of Object.entries(provisionMap)) {
@@ -195,16 +213,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Track statistics
     state.statistics['total_expeditions'] = (state.statistics['total_expeditions'] ?? 0) + 1;
-
-    // Geschichte: beim ersten Aufbruch in diesen Dungeon erst die Einleitung des Stadtschreibers
-    const geschichte = neueEinleitung(state, routeId);
-    if (geschichte) {
-      saveSystem.save(state);
-      showExpeditionDialog('📜', geschichte.titel, einleitungHtml(geschichte), [
-        { label: 'AUFBRECHEN', primary: true, onClick: showNextCombatRoom },
-      ]);
-      return;
-    }
+    saveSystem.save(state);
 
     // Show combat for first combat room
     showNextCombatRoom();
@@ -234,7 +243,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;';
 
     const box = document.createElement('div');
-    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;max-height:90vh;overflow-y:auto;text-align:center;font-family:'Cinzel',serif;";
+    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;max-height:90vh;max-height:90dvh;overflow-y:auto;text-align:center;font-family:'Cinzel',serif;";
     box.innerHTML = `
       <div style="font-size:2rem;margin-bottom:8px;">${icon}</div>
       <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">${title}</div>
