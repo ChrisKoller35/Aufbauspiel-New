@@ -43,6 +43,9 @@ docs/                           ← Referenz-Dokumente
 > `npm run remove-bg` ausführen! Sonst haben die neuen Sprites noch magenta/schwarze Hintergründe.
 > `resize-sprites` überspringt zwar bestehende Sprites, aber neue werden immer mit Hintergrund generiert.
 > **Reihenfolge:** `sprite-fix` → `resize-sprites` → `remove-bg`
+> `remove-bg` erwischt nur Magenta, das vom Bildrand aus erreichbar ist. Bleibt Magenta zwischen Beinen oder in
+> einem Feuerwirbel stehen: `npm run sprite-freistellen -- KEY` (stellt in voller Grösse frei, auch Schatten).
+> Schon freigestellte Sprites lässt `remove-bg` unverändert.
 
 > 🚫 **NIEMALS `remove-bg` auf handgezeichnete Icons anwenden!**
 > `public/assets/sprites/final/Neue Icons/` enthält vom User erstellte Icons mit **gewolltem farbigem Slot-Hintergrund** (grün/blau/violett/orange).
@@ -61,6 +64,7 @@ npm run generate-sprites          # Generiert nur MVP-Sprites
 npm run generate-sprites -- --all # Generiert ALLE Sprites (auch Post-MVP)
 npm run generate-sprites -- KEY   # Generiert nur einen bestimmten Sprite
 npm run resize-sprites            # Skaliert alle auf Zielgrößen
+npm run sprite-freistellen -- KEY # Freistellen in voller Grösse + skalieren (neue Gegner, siehe docs/NEUE-DUNGEONS.md)
 npm run generate-sounds           # Generiert alle SFX (jsfxr)
 npm run generate-all              # Sprites + Resize + Sounds
 ```

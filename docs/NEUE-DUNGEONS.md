@@ -14,7 +14,8 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
   Himmelsarchiv: Ignarax). Ebenen über 5 verlangen den höchsten Rang, den es gibt (V).
 - **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_drachenhort_*`, `loot_himmelsarchiv_*`).
-  Glutwyrmling, Hortkobold und Drachenpriester tragen vorerst Bilder anderer Gegner.
+  Glutwyrmling, Hortkobold und Drachenpriester haben eigene Bilder, die übrigen tragen Bilder anderer Gegner.
+- **Routenbilder:** `exp_drachenhort` und `exp_himmelsarchiv` (Karte, Routenliste, Kampf).
 - **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen T5-Gegenstand dazu.
   Die drei T5-Stücke wurden dafür so verstärkt, dass sie je etwas besser sind als das beste T4-Stück
   für denselben Platz.
@@ -37,6 +38,11 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    (`src/ui/screens/ExpeditionsScreen.ts`) und eine Klasse `.tag-<gebiet>` in `src/ui/html/magic-city.css`.
 5. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
    in `tools/generateTileImages.ts` und `ROUTE_IMAGE_MAP`. Bis dahin passen vorhandene Bilder.
+   Ein neues Gegnerbild (1024 px, Magenta-Hintergrund) als `public/assets/sprites/generated/KEY.png` ablegen
+   und mit `npm run sprite-freistellen -- KEY` freistellen und verkleinern. Das entfernt auch Magenta, das
+   ganz vom Motiv umschlossen ist (Feuerwirbel, zwischen den Beinen), und Schatten; `--boden 0.87` nimmt
+   gezeichnete Bodenrisse unter den Füssen weg. `resize-sprites` und `remove-bg` lassen solche Stellen stehen.
+   Routenbilder als PNG nach `public/assets/tiles/exp_<route>.png`.
 6. **Eichung:** `npm run dungeon-eichung`, Ziele unten, Tabelle hier nachführen.
 7. **Prüfen:** Liste in `tests/neueDungeons.test.ts` ergänzen, dann `npm test`, `npm run build`,
    `npm run validate-refs`.
@@ -86,8 +92,5 @@ Drachenhort «Gut» vorsichtig 33 %, Himmelsarchiv «Stark» vorsichtig 2 %. Die
 
 - **Endlose Treppe** (20.10.2026, Christoph: «Ganz weg»): entfernt. Die Karte wächst nur mit neuen Dungeons;
   über dem obersten zeigt sie ein leeres Feld «Noch unerforscht».
-
-## Offen
-
-- **Bilder** (Christophs Okay vom 20.10.): drei Drachenhort-Gegner und zwei Routenbilder, 5 Bilder,
-  etwa 0.30 USD, bestellt; Einbau folgt.
+- **Bilder** (20.10.2026, Christophs Okay für höchstens 8): drei Drachenhort-Gegner und zwei Routenbilder,
+  5 Bilder für etwa 0.30 USD, alle beim ersten Versuch brauchbar und eingebaut.

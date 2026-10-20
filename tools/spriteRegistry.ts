@@ -777,7 +777,7 @@ The character fills 80% of the frame.`),
 
   // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – DRACHENHORT (über dem Vulkankern, docs/NEUE-DUNGEONS.md)
-  // Bis diese Bilder erzeugt sind, tragen die Gegner Bilder anderer Gegner (data/enemies.ts)
+  // Freigestellt mit npm run sprite-freistellen (Drachenpriester mit --boden 0.87)
   // ═══════════════════════════════════════════════════════════
 
   sprite("ENEMY_GLUTWYRMLING", "enemy", 96, 96, "post-mvp",

@@ -418,8 +418,8 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
 
   // ── Drachenhort (Ebene 5, über dem Vulkankern) ──
-  // Glutwyrmling, Hortkobold und Drachenpriester tragen vorerst Bilder anderer Gegner,
-  // bis eigene erzeugt sind (tools/spriteRegistry.ts, docs/NEUE-DUNGEONS.md).
+  // Glutwyrmling, Hortkobold und Drachenpriester haben eigene Bilder (tools/spriteRegistry.ts),
+  // Hortgolem und Ignarax tragen Bilder anderer Gegner.
   hortgolem: {
     id: 'hortgolem', name: 'Hortgolem', role: 'melee',
     hp: 320, atk: 17, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
@@ -434,7 +434,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     skills: [
       { id: 'feuerbiss', name: 'Feuerbiss', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
     ],
-    lootTableId: 'loot_drachenhort_common', xpReward: 30, goldReward: 12, spriteKey: 'ENEMY_FLAME_SPIRIT',
+    lootTableId: 'loot_drachenhort_common', xpReward: 30, goldReward: 12, spriteKey: 'ENEMY_GLUTWYRMLING',
   },
   hortkobold: {
     id: 'hortkobold', name: 'Hortkobold', role: 'ranged',
@@ -443,7 +443,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
       { id: 'muenzhagel', name: 'Münzhagel', cooldown: 3, effectType: 'aoe', power: 0.6, target: 'all_players', description: '0.6× Schaden auf alle' },
       { id: 'glaenzende_augen', name: 'Glänzende Augen', cooldown: 4, effectType: 'buff', power: 4, target: 'self', description: '+4 ATK für 3 Runden' },
     ],
-    lootTableId: 'loot_drachenhort_common', xpReward: 26, goldReward: 22, spriteKey: 'ENEMY_GOBLIN_SCOUT',
+    lootTableId: 'loot_drachenhort_common', xpReward: 26, goldReward: 22, spriteKey: 'ENEMY_HORTKOBOLD',
   },
   drachenpriester: {
     id: 'drachenpriester', name: 'Drachenpriester', role: 'support',
@@ -452,7 +452,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
       { id: 'glutsegen', name: 'Glutsegen', cooldown: 3, effectType: 'heal', power: 60, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 60' },
       { id: 'flammenwort', name: 'Flammenwort', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
     ],
-    lootTableId: 'loot_drachenhort_rare', xpReward: 32, goldReward: 16, spriteKey: 'ENEMY_CURSED_PRIEST',
+    lootTableId: 'loot_drachenhort_rare', xpReward: 32, goldReward: 16, spriteKey: 'ENEMY_DRACHENPRIESTER',
   },
   boss_ignarax: {
     id: 'boss_ignarax', name: 'Ignarax, der Uralte', role: 'boss',

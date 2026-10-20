@@ -706,6 +706,8 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   obsidian_tunnels: 'exp_obsidian_tunnels',
   ash_wastes: 'exp_ash_wastes',
   magma_caverns: 'exp_magma_caverns',
+  drachenhort: 'exp_drachenhort',
+  himmelsarchiv: 'exp_himmelsarchiv',
 };
 
 // ── Baupläne (Gebäude-Freischaltung über Dungeon-Bosse) ──

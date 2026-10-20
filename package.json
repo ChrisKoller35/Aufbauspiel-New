@@ -11,6 +11,7 @@
     "generate-sprites": "npx tsx tools/generateSprites.ts",
     "resize-sprites": "npx tsx tools/resizeSprites.ts",
     "remove-bg": "npx tsx tools/removeBg.ts",
+    "sprite-freistellen": "npx tsx tools/spriteFreistellen.ts",
     "generate-sounds": "npx tsx tools/generateSounds.ts",
     "generate-all": "npx tsx tools/generateSprites.ts && npx tsx tools/resizeSprites.ts && npx tsx tools/removeBg.ts && npx tsx tools/generateSounds.ts",
     "sprite-check": "npx tsx tools/spriteCheck.ts",
