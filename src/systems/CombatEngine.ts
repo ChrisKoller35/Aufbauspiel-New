@@ -8,6 +8,11 @@ import { GearSystem } from './GearSystem';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
+import {
+  grundSchaden, staerke, chance, schadenNehmen, schildText,
+  kampfBeginn, kampfEnde, zustandAktualisieren, setztAus, schattenstoss,
+  beimGetroffenWerden, besiegt, nachTreffer, rundenEnde, goldFaktor, neueToteMelden,
+} from './Kampfeffekte';
 
 /** Check if a unit has a specific active special effect */
 export function hasEffect(unit: CombatUnit, effectId: string): boolean {
@@ -29,6 +34,10 @@ export class CombatEngine {
     // Initialize round snapshots for animated playback
     run.combatRoundSnapshots = [];
 
+    const log = (zeile: string): void => { run.combatLog.push(zeile); };
+    // Schon vor dem Kampf besiegte Gegner (Fähigkeiten in der Vorschau) lösen keine Seelenernte aus
+    const tote = new Set(enemies.filter(e => e.hp <= 0));
+
     let round = 0;
     // speed_march: maximal 10 Runden; Standard: 20 Runden
     const maxRounds = run.activeModifier === 'speed_march' ? 10 : 20;
@@ -42,6 +51,12 @@ export class CombatEngine {
 
       // Track log entries for this round
       const logStartIdx = run.combatLog.length;
+
+      // Set-Fähigkeiten zu Kampfbeginn (Rudelgeheul, Feueratem …) gehören zu Runde 1
+      if (round === 1) {
+        kampfBeginn(party, enemies, run, log);
+        neueToteMelden(enemies, party, tote, log);
+      }
 
       // Build turn order by SPD (descending)
       const allUnits = [...aliveParty, ...aliveEnemies];
@@ -62,6 +77,12 @@ export class CombatEngine {
 
       for (const unit of allUnits) {
         if (unit.hp <= 0) continue;
+
+        zustandAktualisieren(party);
+        if (setztAus(unit, log)) {
+          if (unit.tauntRounds > 0) unit.tauntRounds--;
+          continue;
+        }
 
         const isPlayer = party.includes(unit);
 
@@ -115,17 +136,17 @@ export class CombatEngine {
               const spellMult = hasEffect(unit, 'spell_power') ? 1.25 : 1.0;
               if (skill.target === 'all_enemies' || skill.target === 'all_players') {
                 for (const t of targets) {
-                  let dmg = Math.max(1, Math.floor(Math.max(1, unit.atk - Math.floor(t.def * 0.7)) * skill.power * spellMult));
+                  let dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, t.def) * skill.power * spellMult));
                   // aoe_resist: target takes 30% less AoE damage
                   if (hasEffect(t, 'aoe_resist')) dmg = Math.max(1, Math.floor(dmg * 0.7));
-                  t.hp -= dmg;
-                  run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}`);
+                  const verlust = schadenNehmen(t, dmg);
+                  run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
                 }
               } else {
                 const target = this.selectTarget(targets, rng);
-                const dmg = Math.max(1, Math.floor(Math.max(1, unit.atk - Math.floor(target.def * 0.7)) * skill.power * spellMult));
-                target.hp -= dmg;
-                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}`);
+                const dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, target.def) * skill.power * spellMult));
+                const verlust = schadenNehmen(target, dmg);
+                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
                 // lifesteal on skill damage
                 this.applyOnDealDamage(unit, target, dmg, rng, run);
               }
@@ -146,14 +167,14 @@ export class CombatEngine {
               // spell_power: +25% AoE skill damage
               const spellMult = hasEffect(unit, 'spell_power') ? 1.25 : 1.0;
               for (const t of targets) {
-                let dmg = Math.max(1, Math.floor(Math.max(1, unit.atk - Math.floor(t.def * 0.7)) * skill.power * spellMult));
+                let dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, t.def) * skill.power * spellMult));
                 // aoe_resist: target takes 30% less AoE damage
                 if (hasEffect(t, 'aoe_resist')) {
                   dmg = Math.max(1, Math.floor(dmg * 0.7));
                   run.combatLog.push(`  ${t.name}: AoE-Resistenz! (-30%)`);
                 }
-                t.hp -= dmg;
-                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}`);
+                const verlust = schadenNehmen(t, dmg);
+                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
                 // F4: lifesteal + anti_heal on AoE damage
                 this.applyOnDealDamage(unit, t, dmg, rng, run);
               }
@@ -216,62 +237,13 @@ export class CombatEngine {
             target = this.selectTarget(targets, rng);
           }
 
-          // dodge: target has 15% chance to evade
-          if (hasEffect(target, 'dodge') && rng.chance(SPECIAL_EFFECT_DEFS.dodge.procChance)) {
-            run.combatLog.push(`${unit.name} greift ${target.name} an → AUSGEWICHEN!`);
-          } else {
-            const isCrit = rng.chance(unit.critChance);
-            let dmg = Math.max(1, unit.atk - Math.floor(target.def * 0.7));
-            if (isCrit) dmg = Math.floor(dmg * unit.critMult);
-
-            // reflect: target reflects 20% damage back
-            if (hasEffect(target, 'reflect')) {
-              const reflectDmg = Math.max(1, Math.floor(dmg * SPECIAL_EFFECT_DEFS.reflect.power));
-              unit.hp -= reflectDmg;
-              run.combatLog.push(`  ${target.name}: Reflexion! ${reflectDmg} Schaden zurück!`);
-              // F1: revive check if reflect killed attacker
-              if (unit.hp <= 0) this.checkRevive(unit, run);
-            }
-
-            target.hp -= dmg;
-            run.combatLog.push(
-              `${unit.name} greift ${target.name} an für ${dmg}${isCrit ? ' KRIT!' : ''}`,
-            );
-
-            // on_deal_damage effects (lifesteal, anti_heal)
-            this.applyOnDealDamage(unit, target, dmg, rng, run);
-
-            // double_strike: 30% chance for a second attack
-            if (hasEffect(unit, 'double_strike') && rng.chance(SPECIAL_EFFECT_DEFS.double_strike.procChance)) {
-              if (target.hp > 0 && unit.hp > 0) {
-                // F3: dodge check for second hit
-                if (hasEffect(target, 'dodge') && rng.chance(SPECIAL_EFFECT_DEFS.dodge.procChance)) {
-                  run.combatLog.push(`  ${unit.name}: DOPPELSCHLAG → AUSGEWICHEN!`);
-                } else {
-                  const dmg2 = Math.max(1, unit.atk - Math.floor(target.def * 0.7));
-                  // F2: reflect check for second hit
-                  if (hasEffect(target, 'reflect')) {
-                    const reflectDmg2 = Math.max(1, Math.floor(dmg2 * SPECIAL_EFFECT_DEFS.reflect.power));
-                    unit.hp -= reflectDmg2;
-                    run.combatLog.push(`  ${target.name}: Reflexion! ${reflectDmg2} Schaden zurück!`);
-                    if (unit.hp <= 0) this.checkRevive(unit, run);
-                  }
-                  target.hp -= dmg2;
-                  run.combatLog.push(`  ${unit.name}: DOPPELSCHLAG! ${dmg2} extra Schaden!`);
-                  this.applyOnDealDamage(unit, target, dmg2, rng, run);
-                }
-              }
-            }
-          }
-
-          // revive check for target that just died
-          if (target.hp <= 0) {
-            this.checkRevive(target, run);
-          }
+          this.grundangriff(unit, target, isPlayer ? enemies : party, run, rng);
         }
 
         // Decay taunt
         if (unit.tauntRounds > 0) unit.tauntRounds--;
+
+        neueToteMelden(enemies, party, tote, log);
       }
 
       // ── End of round effects ──
@@ -290,17 +262,11 @@ export class CombatEngine {
         }
       }
 
-      // Regen: +3 HP per round for units with regen effect
-      for (const unit of [...party.filter(u => u.hp > 0), ...enemies.filter(u => u.hp > 0)]) {
-        if (hasEffect(unit, 'regen')) {
-          const regenAmt = SPECIAL_EFFECT_DEFS.regen.power;
-          const prevHp = unit.hp;
-          unit.hp = Math.min(unit.maxHp, unit.hp + regenAmt);
-          if (unit.hp > prevHp) {
-            run.combatLog.push(`  ${unit.name}: Regeneration +${unit.hp - prevHp} HP`);
-          }
-        }
-      }
+      this.regeneration([...party, ...enemies], run);
+
+      // Set-Fähigkeiten am Rundenende: Gift, Gezeitenwelle, Druckwelle, Verbotene Fussnote
+      rundenEnde(party, enemies, round, rng, log);
+      neueToteMelden(enemies, party, tote, log);
 
       // Sauerstoffmangel: Wenn Luft <= 0, alle lebenden Helden nehmen 5 HP Schaden
       if (run.airShield !== undefined && run.airShield <= 0) {
@@ -330,7 +296,7 @@ export class CombatEngine {
 
       // ── Record round snapshot for animated playback ──
       const roundLogLines = run.combatLog.slice(logStartIdx);
-      const hadCrit = roundLogLines.some(l => l.includes('CRIT'));
+      const hadCrit = roundLogLines.some(l => l.includes('KRIT'));
       const hadDeath = [...party, ...enemies].some(u => {
         const preHp = run.combatRoundSnapshots!.length > 0
           ? (run.combatRoundSnapshots![run.combatRoundSnapshots!.length - 1].partyHp[u.id]
@@ -356,6 +322,7 @@ export class CombatEngine {
     // Clear Spott after combat ends
     run.guardianTauntActive = false;
     run.tauntUnitId = undefined;
+    kampfEnde(party);
 
     // Award loot from defeated enemies
     for (const enemy of enemies) {
@@ -419,6 +386,9 @@ export class CombatEngine {
 
     run.combatRoundSnapshots = [];
 
+    const log = (zeile: string): void => { run.combatLog.push(zeile); };
+    const tote = new Set(enemies.filter(e => e.hp <= 0));
+
     let round = 0;
     const maxRounds = run.activeModifier === 'speed_march' ? 15 : 30;
 
@@ -432,6 +402,11 @@ export class CombatEngine {
 
       const logStartIdx = run.combatLog.length;
 
+      if (round === 1) {
+        kampfBeginn(run.party, enemies, run, log);
+        neueToteMelden(enemies, run.party, tote, log);
+      }
+
       // Turn-Order: Party + War Machine + Enemies, sortiert nach SPD
       const allCombatants: CombatUnit[] = [...aliveParty];
       if (warMachine && warMachine.hp > 0) allCombatants.push(warMachine);
@@ -441,6 +416,9 @@ export class CombatEngine {
       for (const unit of allCombatants) {
         if (unit.hp <= 0) continue;
         if (fort.hp <= 0) break; // Befestigung schon zerstört
+
+        zustandAktualisieren(run.party);
+        if (setztAus(unit, log)) continue;
 
         if (unit.isWarMachine) {
           // ── Kriegsmaschine beschießt Befestigung ──
@@ -456,24 +434,7 @@ export class CombatEngine {
           const currentAliveEnemies = enemies.filter(u => u.hp > 0);
           if (currentAliveEnemies.length > 0) {
             const target = this.selectTarget(currentAliveEnemies, rng);
-            if (hasEffect(target, 'dodge') && rng.chance(SPECIAL_EFFECT_DEFS.dodge.procChance)) {
-              run.combatLog.push(`${unit.name} greift ${target.name} an → AUSGEWICHEN!`);
-            } else {
-              const isCrit = rng.chance(unit.critChance);
-              let dmg = Math.max(1, unit.atk - Math.floor(target.def * 0.7));
-              if (isCrit) dmg = Math.floor(dmg * unit.critMult);
-              // reflect check
-              if (hasEffect(target, 'reflect')) {
-                const reflectDmg = Math.max(1, Math.floor(dmg * SPECIAL_EFFECT_DEFS.reflect.power));
-                unit.hp -= reflectDmg;
-                run.combatLog.push(`  ${target.name}: Reflexion! ${reflectDmg} Schaden zurück!`);
-                if (unit.hp <= 0) this.checkRevive(unit, run);
-              }
-              target.hp -= dmg;
-              run.combatLog.push(`${unit.name} greift ${target.name} an für ${dmg}${isCrit ? ' KRIT!' : ''}`);
-              this.applyOnDealDamage(unit, target, dmg, rng, run);
-              if (target.hp <= 0) this.checkRevive(target, run);
-            }
+            this.grundangriff(unit, target, enemies, run, rng);
           } else {
             // Keine Gegner mehr: Helden greifen Befestigung an (10% Effektivität)
             if (fort.hp > 0) {
@@ -515,19 +476,19 @@ export class CombatEngine {
             }
             if (skill.effectType === 'damage') {
               const target = this.selectTarget(targets, rng);
-              const dmg = Math.max(1, Math.floor(Math.max(1, unit.atk - Math.floor(target.def * 0.7)) * skill.power));
-              target.hp -= dmg;
-              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}`);
+              const dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, target.def) * skill.power));
+              const verlust = schadenNehmen(target, dmg);
+              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${target.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
               if (target.hp <= 0 && !target.isWarMachine) this.checkRevive(target, run);
               skill.currentCooldown = skill.cooldown;
               usedSkill = true; break;
             }
             if (skill.effectType === 'aoe') {
               for (const t of targets) {
-                let dmg = Math.max(1, Math.floor(Math.max(1, unit.atk - Math.floor(t.def * 0.7)) * skill.power));
+                let dmg = Math.max(1, Math.floor(grundSchaden(unit.atk, t.def) * skill.power));
                 if (hasEffect(t, 'aoe_resist')) dmg = Math.max(1, Math.floor(dmg * 0.7));
-                t.hp -= dmg;
-                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}`);
+                const verlust = schadenNehmen(t, dmg);
+                run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
                 if (t.hp <= 0 && !t.isWarMachine) this.checkRevive(t, run);
               }
               skill.currentCooldown = skill.cooldown;
@@ -544,18 +505,11 @@ export class CombatEngine {
 
           if (!usedSkill) {
             const target = this.selectTarget(targets, rng);
-            if (hasEffect(target, 'dodge') && rng.chance(SPECIAL_EFFECT_DEFS.dodge.procChance)) {
-              run.combatLog.push(`${unit.name} greift ${target.name} an → AUSGEWICHEN!`);
-            } else {
-              const isCrit = rng.chance(unit.critChance);
-              let dmg = Math.max(1, unit.atk - Math.floor(target.def * 0.7));
-              if (isCrit) dmg = Math.floor(dmg * unit.critMult);
-              target.hp -= dmg;
-              run.combatLog.push(`${unit.name} greift ${target.name} an für ${dmg}${isCrit ? ' KRIT!' : ''}`);
-              if (target.hp <= 0 && !target.isWarMachine) this.checkRevive(target, run);
-            }
+            this.grundangriff(unit, target, run.party, run, rng);
           }
         }
+
+        neueToteMelden(enemies, run.party, tote, log);
       }
 
       // End-of-Round: Buff Decay
@@ -573,6 +527,10 @@ export class CombatEngine {
           }
         }
       }
+
+      this.regeneration([...run.party, ...enemies], run);
+      rundenEnde(run.party, enemies, round, rng, log);
+      neueToteMelden(enemies, run.party, tote, log);
 
       // Guardian Taunt Decay (greift in Belagerung nicht, aber Safety)
       run.guardianTauntActive = false;
@@ -600,6 +558,8 @@ export class CombatEngine {
         fortificationHp: fort.hp,
       });
     }
+
+    kampfEnde(run.party);
 
     // Loot von besiegten Gegnern
     for (const enemy of enemies) {
@@ -665,8 +625,8 @@ export class CombatEngine {
     const table = LOOT_TABLE_DEFS[lootTableId];
     if (!table) return;
 
-    // Guaranteed gold
-    const gold = rng.nextInt(table.guaranteedGold.min, table.guaranteedGold.max);
+    // Guaranteed gold (Klebrige Finger: mehr Gold, höchstens das Doppelte)
+    const gold = Math.floor(rng.nextInt(table.guaranteedGold.min, table.guaranteedGold.max) * goldFaktor(run.party));
     run.goldEarned += gold;
 
     // Roll one item
@@ -760,14 +720,104 @@ export class CombatEngine {
 
   // ─── Private Helpers ─────────────────────────────────────────────
 
+  /**
+   * Grundangriff einer Einheit (Held oder Gegner) auf ein Ziel, mit allen Effekten.
+   * Gewürfelt wird immer in derselben Reihenfolge: Ausweichen (nur wenn das Ziel es kann),
+   * Krit, Doppelschlag (nur mit dem Effekt). Einheiten ohne Effekte würfeln darum wie früher.
+   */
+  private grundangriff(
+    unit: CombatUnit, target: CombatUnit, gegner: CombatUnit[], run: ExpeditionRun, rng: SeededRNG,
+  ): void {
+    const log = (zeile: string): void => { run.combatLog.push(zeile); };
+
+    // dodge: target has a chance to evade
+    if (hasEffect(target, 'dodge') && rng.chance(chance(target, 'dodge'))) {
+      log(`${unit.name} greift ${target.name} an → AUSGEWICHEN!`);
+      return;
+    }
+
+    const isCrit = rng.chance(unit.critChance);
+    let dmg = grundSchaden(unit.atk, target.def);
+    if (isCrit) dmg = Math.floor(dmg * unit.critMult);
+    const stoss = schattenstoss(unit);
+    if (stoss) {
+      dmg = Math.floor(dmg * stoss);
+      log(`✦ ${unit.name} setzt Schattenstoss ein → ${stoss}-facher Schaden aus dem Hinterhalt`);
+    }
+    this.treffer(unit, target, dmg, gegner, run, rng,
+      schild => `${unit.name} greift ${target.name} an für ${dmg}${isCrit ? ' KRIT!' : ''}${schild}`);
+
+    // double_strike: chance for a second attack (no crit)
+    if (hasEffect(unit, 'double_strike') && rng.chance(chance(unit, 'double_strike'))) {
+      if (target.hp > 0 && unit.hp > 0) {
+        // F3: dodge check for second hit
+        if (hasEffect(target, 'dodge') && rng.chance(chance(target, 'dodge'))) {
+          log(`  ${unit.name}: DOPPELSCHLAG → AUSGEWICHEN!`);
+        } else {
+          const dmg2 = grundSchaden(unit.atk, target.def);
+          this.treffer(unit, target, dmg2, gegner, run, rng,
+            schild => `  ${unit.name}: DOPPELSCHLAG! ${dmg2} extra Schaden!${schild}`);
+        }
+      }
+    }
+
+    // revive check for target that just died; a kill feeds Glutherz
+    if (target.hp <= 0) {
+      this.checkRevive(target, run);
+      if (target.hp <= 0) besiegt(unit, log);
+    }
+  }
+
+  /**
+   * Ein Treffer landet: Reflexion, Schaden (ein Schild schluckt zuerst), Lebensraub,
+   * Glutpanzer des Ziels, dann Gift, Einfrieren und Funkenflug des Angreifers.
+   */
+  private treffer(
+    unit: CombatUnit, target: CombatUnit, dmg: number, gegner: CombatUnit[],
+    run: ExpeditionRun, rng: SeededRNG, zeile: (schild: string) => string,
+  ): void {
+    const log = (text: string): void => { run.combatLog.push(text); };
+
+    // reflect: target reflects part of the damage back (F2: also on the second hit)
+    if (hasEffect(target, 'reflect')) {
+      const reflectDmg = Math.max(1, Math.floor(dmg * staerke(target, 'reflect')));
+      schadenNehmen(unit, reflectDmg);
+      log(`  ${target.name}: Reflexion! ${reflectDmg} Schaden zurück!`);
+      // F1: revive check if reflect killed attacker
+      if (unit.hp <= 0) this.checkRevive(unit, run);
+    }
+
+    const verlust = schadenNehmen(target, dmg);
+    log(zeile(schildText(dmg, verlust)));
+
+    // on_deal_damage effects (lifesteal, anti_heal)
+    this.applyOnDealDamage(unit, target, dmg, rng, run);
+
+    beimGetroffenWerden(target, unit, log);
+    if (unit.hp <= 0) this.checkRevive(unit, run);
+    nachTreffer(unit, target, dmg, gegner, rng, log);
+  }
+
+  /** Regeneration am Rundenende (Gegenstände mit Regeneration, Set-Fähigkeit Wurzelkraft) */
+  private regeneration(units: CombatUnit[], run: ExpeditionRun): void {
+    for (const unit of units) {
+      if (unit.hp <= 0 || !hasEffect(unit, 'regen')) continue;
+      const prevHp = unit.hp;
+      unit.hp = Math.min(unit.maxHp, unit.hp + staerke(unit, 'regen'));
+      if (unit.hp > prevHp) {
+        run.combatLog.push(`  ${unit.name}: Regeneration +${unit.hp - prevHp} HP`);
+      }
+    }
+  }
+
   /** Apply on_deal_damage effects: lifesteal, anti_heal */
   private applyOnDealDamage(
     attacker: CombatUnit, target: CombatUnit, dmg: number,
     _rng: SeededRNG, run: ExpeditionRun,
   ): void {
-    // lifesteal: heal 25% of damage dealt
+    // lifesteal: heal part of the damage dealt (25 % from gear, sets may differ)
     if (hasEffect(attacker, 'lifesteal') && dmg > 0) {
-      const healAmt = Math.max(1, Math.floor(dmg * SPECIAL_EFFECT_DEFS.lifesteal.power));
+      const healAmt = Math.max(1, Math.floor(dmg * staerke(attacker, 'lifesteal')));
       attacker.hp = Math.min(attacker.maxHp, attacker.hp + healAmt);
       run.combatLog.push(`  ${attacker.name}: Lebensraub +${healAmt} HP`);
     }
@@ -782,7 +832,8 @@ export class CombatEngine {
     const reviveEffect = unit.specialEffects?.find(e => e.id === 'revive' && e.usesLeft > 0);
     if (reviveEffect) {
       reviveEffect.usesLeft--;
-      const reviveHp = Math.max(1, Math.floor(unit.maxHp * SPECIAL_EFFECT_DEFS.revive.power));
+      const anteil = reviveEffect.power ?? SPECIAL_EFFECT_DEFS.revive.power;
+      const reviveHp = Math.max(1, Math.floor(unit.maxHp * anteil));
       unit.hp = reviveHp;
       run.combatLog.push(`>> ${unit.name}: WIEDERGEBURT! Steht mit ${reviveHp} HP wieder auf!`);
     }

@@ -1,8 +1,9 @@
 import { GameState } from '../models/GameState';
 import { GuildFighter, FighterStats } from '../models/GuildRoster';
 import { SpecialEffect } from '../models/ExpeditionRun';
-import { ITEM_DEFS } from '../data/items';
+import { ITEM_DEFS, ItemDef } from '../data/items';
 import { extractSpecialTags, SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
+import { setBonusWerte, setFaehigkeiten } from './DungeonSets';
 
 export type EquipSlot = 'mainHand' | 'offHand' | 'armor' | 'trinket';
 
@@ -93,7 +94,7 @@ export class GearSystem {
   }
 
   /**
-   * Calculate effective stats = base + gear bonuses from all 4 slots.
+   * Calculate effective stats = base + gear bonuses from all 4 slots + set bonuses (DungeonSets).
    */
   getEffectiveStats(fighter: GuildFighter): FighterStats {
     const base = fighter.baseStats;
@@ -101,29 +102,32 @@ export class GearSystem {
 
     // Apply gear bonuses (halved if gear needs repair)
     const gearMult = fighter.gearNeedsRepair ? 0.5 : 1.0;
-    for (const slot of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
-      const itemId = fighter.gear[slot];
-      if (!itemId) continue;
-      const itemDef = ITEM_DEFS[itemId];
-      if (!itemDef?.statBonuses) continue;
-
-      if (itemDef.statBonuses.atk) stats.atk += Math.floor(itemDef.statBonuses.atk * gearMult);
-      if (itemDef.statBonuses.def) stats.def += Math.floor(itemDef.statBonuses.def * gearMult);
-      if (itemDef.statBonuses.hp) {
-        const hpBonus = Math.floor(itemDef.statBonuses.hp * gearMult);
+    const add = (bonus: NonNullable<ItemDef['statBonuses']> & { critMult?: number }): void => {
+      if (bonus.atk) stats.atk += Math.floor(bonus.atk * gearMult);
+      if (bonus.def) stats.def += Math.floor(bonus.def * gearMult);
+      if (bonus.hp) {
+        const hpBonus = Math.floor(bonus.hp * gearMult);
         stats.maxHp += hpBonus;
         stats.hp += hpBonus;
       }
       // Tempo-Boni sind Bruchteile (−0.1 bis +0.2): nicht abrunden, sonst wird +0.1 zu 0 und −0.05 zu −1
-      if (itemDef.statBonuses.spd) stats.spd = Math.round((stats.spd + itemDef.statBonuses.spd * gearMult) * 100) / 100;
-      if (itemDef.statBonuses.critChance) stats.critChance += itemDef.statBonuses.critChance * gearMult;
+      if (bonus.spd) stats.spd = Math.round((stats.spd + bonus.spd * gearMult) * 100) / 100;
+      if (bonus.critChance) stats.critChance += bonus.critChance * gearMult;
+      if (bonus.critMult) stats.critMult = Math.round((stats.critMult + bonus.critMult * gearMult) * 100) / 100;
+    };
+    for (const slot of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
+      const itemId = fighter.gear[slot];
+      if (!itemId) continue;
+      const itemDef = ITEM_DEFS[itemId];
+      if (itemDef?.statBonuses) add(itemDef.statBonuses);
     }
+    add(setBonusWerte(fighter.gear));
 
     return stats;
   }
 
   /**
-   * Collect special effects from all equipped gear items.
+   * Collect special effects from all equipped gear items and complete sets.
    */
   getSpecialEffects(fighter: GuildFighter): SpecialEffect[] {
     const effects: SpecialEffect[] = [];
@@ -142,6 +146,7 @@ export class GearSystem {
         }
       }
     }
+    effects.push(...setFaehigkeiten(fighter.gear));
     return effects;
   }
 

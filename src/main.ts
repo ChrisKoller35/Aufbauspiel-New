@@ -23,6 +23,7 @@ import { PeopleSystem } from './systems/PeopleSystem';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
+import { setBeute } from './systems/DungeonSets';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { getRouteBauplan } from './data/routes';
@@ -371,6 +372,9 @@ document.addEventListener('DOMContentLoaded', () => {
   function finishExpedition(): void {
     const run = state.activeExpedition;
     if (!run) return;
+
+    // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe
+    setBeute(state, run);
 
     // Capture loot data before clearing
     const loot = { ...run.loot };

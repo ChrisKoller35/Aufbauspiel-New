@@ -1,3 +1,5 @@
+import { setItemDefs } from './dungeonSets';
+
 export type ItemType = 'resource' | 'consumable' | 'gear' | 'material' | 'special';
 export type GearSlot = 'mainHand' | 'offHand' | 'armor' | 'trinket';
 export type WeaponSlotType = '1h' | '2h' | 'shield';
@@ -661,6 +663,9 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['consumable', 'provision', 'air_restore', 'emergency_air'],
     flavorText: 'Letzte Reserve. Einmal verwenden. Danach ist Beten die einzige Option.',
   },
+
+  // --- Dungeon-Sets: drei Teile je Dungeon (data/dungeonSets.ts) ---
+  ...setItemDefs(),
 };
 
 /** Resolve sprite key for an item. Uses explicit spriteKey if set, otherwise derives from id. */
