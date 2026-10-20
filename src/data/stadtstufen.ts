@@ -4,8 +4,8 @@
 // (erzählt von Stadtschreiber Ottokar). Wie das Rathaus bei Clash of
 // Clans gibt die Stadtstufe vor, wie weit Gebäude ausgebaut werden
 // dürfen. Ab Stufe 6 liegt das Arkane Herz frei: fünf Herzsteine von
-// Dungeon-Bossen wecken es. Das letzte Kapitel öffnet die endlose
-// Treppe über dem Dungeon (Endgame, docs/TREPPE.md).
+// Dungeon-Bossen wecken es. Danach geht es auf der Dungeon-Karte immer
+// weiter nach oben (Endgame, docs/NEUE-DUNGEONS.md).
 // Logik: systems/Stadtweg.ts. Regeln und Zahlen: docs/STADTWEG.md.
 // ────────────────────────────────────────────────────────────────
 
@@ -113,8 +113,8 @@ export const STADTSTUFEN: StadtStufeDef[] = [
     zeile: 'Ein Marktflecken. Die Händler kommen freiwillig.',
     kapitelTitel: 'Die Karte',
     kapitel: 'Händler kommen jetzt freiwillig zu uns, und niemand weiss genau, warum. Einer verkaufte mir eine Karte vom '
-      + 'Berg über dem Dungeon. Ganz oben ist eine Treppe eingezeichnet, daneben steht in krakeliger Schrift: «Hört nicht '
-      + 'auf. Wirklich nicht. Wir haben nachgesehen.» Ich habe drei Gold dafür bezahlt. Der Händler wollte zwei.',
+      + 'Berg über dem Dungeon. Oben ist sie leer, nur ein Satz steht da, in krakeliger Schrift: «Hier geht es weiter. '
+      + 'Wohin, wissen wir noch nicht.» Ich habe drei Gold dafür bezahlt. Der Händler wollte zwei.',
     aufgaben: [
       { art: 'gebaeude', typeId: 'SMITHY' },
       { art: 'gebaeude', typeId: 'MARKETPLACE' },
@@ -170,17 +170,16 @@ export const STADTSTUFEN: StadtStufeDef[] = [
     name: 'Magische Stadt',
     geschlecht: 'f',
     zeile: 'Die Magische Stadt. Die Brunnen singen.',
-    kapitelTitel: 'Die Treppe',
+    kapitelTitel: 'Die Karte wächst',
     kapitel: 'Das Herz ist erwacht. Die Strassen leuchten nachts, die Brunnen singen, falsch, aber mit Begeisterung, und '
-      + 'die Steuerprüfer der Hauptstadt trauen sich nicht mehr her. Willkommen in Magic City. Dann öffnete das Herz die '
-      + 'Treppe über dem Dungeon, die von der Karte. Sie hört nicht auf. Gilden aus aller Welt steigen dort hinauf, und '
-      + 'wer am höchsten kommt, steht oben auf der Rangliste. Ich habe uns Platz eins schon reserviert. Gefragt habe ich niemanden.',
+      + 'die Steuerprüfer der Hauptstadt trauen sich nicht mehr her. Willkommen in Magic City. Nur die Karte vom Händler '
+      + 'macht mir Sorgen: Jedes Mal, wenn ich sie aufrolle, ist sie oben ein Stück länger. Neue Gipfel, neue Namen, und '
+      + 'ganz oben wieder der krakelige Satz. Der Händler sagt, das sei im Preis inbegriffen. Ich habe trotzdem ein Lineal gekauft.',
     aufgaben: [{ art: 'herz' }],
     abgabe: {},
     geschenk: { gold: 500 },
     steuerProzent: 20,
     grenzen: { wohnen: 6, werkstatt: 3, handel: 3 },
-    extra: ['Die endlose Treppe über dem Dungeon öffnet sich'],
   },
 ];
 

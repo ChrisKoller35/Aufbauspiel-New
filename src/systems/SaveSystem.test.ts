@@ -3,6 +3,10 @@ import { SaveSystem } from './SaveSystem';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
+import { createGuildFighter } from '../models/GuildRoster';
+import { ExpeditionSystem } from './ExpeditionSystem';
+import { GearSystem } from './GearSystem';
+import { ProvisionSystem } from './ProvisionSystem';
 import { BUILDING_DEFS } from '../data/buildings';
 
 const SAVE_KEY = 'magic_city_save';
@@ -154,5 +158,61 @@ describe('SaveSystem – Version 21: ein Gebäude je Art', () => {
     camp.tier = 2;
     saveSystem.save(state);
     expect(saveSystem.load()).toEqual(state);
+  });
+});
+
+describe('SaveSystem – die endlose Treppe ist weg', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+
+  /** Spielstand aus der Zeit mit Treppe, gespeichert mitten in einem Aufstieg. */
+  function alterTreppenStand(): GameState {
+    const state = createNewGameState();
+    const held = createGuildFighter(0, 'guardian', 'Brom', { hp: 50, maxHp: 50, atk: 8, def: 4, spd: 1, critChance: 0, critMult: 1.5 });
+    state.fighters.push(held);
+    state.globalStock['gold'] = 100;
+    state.globalStock['wood'] = 10;
+    state.globalStock['bread'] = 2;
+    const run = new ExpeditionSystem(new GearSystem(), new ProvisionSystem())
+      .startExpedition(state, 'forest_short', [held.id], 'normal', null, false, ['bread'])!;
+    run.routeId = 'endlose_treppe';
+    Object.assign(run, { treppe: { startEtage: 1, besteVorher: 0, geschafft: 7, sicher: { loot: { wood: 5 }, gold: 40 } } });
+    Object.assign(state, { treppe: { geoeffnetAm: 1, besteEtage: 7, laeufe: 2, verlauf: [{ etage: 7, zeit: 2 }] } });
+    const eintrag = { score: 10, difficulty: 'normal', modifier: null, status: 'retreat' as const, partyClasses: ['guardian'],
+      timestamp: 1, day: 1, enemiesKilled: 3, bossesKilled: 0 };
+    state.scoreboard = [{ ...eintrag, routeId: 'forest_short' }, { ...eintrag, routeId: 'endlose_treppe' }];
+    return state;
+  }
+
+  it('Treppen-Stand und Ranglisten-Einträge verschwinden, die Beute vom letzten Rastplatz kommt ins Lager', () => {
+    writeRawSave(alterTreppenStand());
+
+    const loaded = new SaveSystem().load()!;
+
+    expect('treppe' in loaded).toBe(false);
+    expect(loaded.activeExpedition && 'treppe' in loaded.activeExpedition).toBe(false);
+    expect(loaded.scoreboard.map(e => e.routeId)).toEqual(['forest_short']);
+    expect(loaded.globalStock['gold']).toBe(140);
+    expect(loaded.globalStock['wood']).toBe(15);
+
+    // Wie in main.ts: Die unterbrochene Expedition wird abgebrochen, Proviant zurück, Held frei
+    expect(new ExpeditionSystem(new GearSystem(), new ProvisionSystem()).abortExpedition(loaded)).toBe(true);
+    expect(loaded.activeExpedition).toBeNull();
+    expect(loaded.globalStock['bread']).toBe(2);
+    expect(loaded.globalStock['gold']).toBe(140);
+  });
+
+  it('nochmals laden bucht die Beute nicht doppelt', () => {
+    const saveSystem = new SaveSystem();
+    writeRawSave(alterTreppenStand());
+    const einmal = saveSystem.load()!;
+    saveSystem.save(einmal);
+
+    const zweimal = saveSystem.load()!;
+
+    expect(zweimal.globalStock['gold']).toBe(140);
+    expect(zweimal.globalStock['wood']).toBe(15);
   });
 });

@@ -112,17 +112,3 @@ export function finalizeExpeditionProgress(
 
   return { entry, xp, rankUp, newClasses, newAchievements };
 }
-
-/**
- * Seite neu geladen mitten auf der endlosen Treppe: zählt wie Fliehen.
- * Erfahrung, Punkte, Bosse und Statistik werden verbucht; die Beute vom
- * letzten Rastplatz bringt danach abortExpedition ins Lager.
- * Gibt null zurück, wenn kein Treppen-Lauf aktiv ist.
- */
-export function treppeNachNeuladen(state: GameState, expeditionSystem: ExpeditionSystem): ExpeditionProgress | null {
-  const run = state.activeExpedition;
-  if (!run?.treppe) return null;
-  expeditionSystem.retreat(run);
-  expeditionSystem.treppeAbschliessen(run);
-  return finalizeExpeditionProgress(state, run, expeditionSystem);
-}

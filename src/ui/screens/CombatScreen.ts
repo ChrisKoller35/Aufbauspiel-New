@@ -14,8 +14,6 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getLogLineColor } from '../../rendering/Colors';
-import { abschnittFuer } from '../../data/treppe';
-import { treppenEtage } from '../../systems/Treppe';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -205,11 +203,7 @@ export class CombatScreen {
 
     this.titleEl.textContent = isBoss ? 'BOSS KAMPF!' : 'KAMPF';
     this.titleEl.style.color = isBoss ? 'var(--mc-damage)' : 'var(--mc-accent-expedition)';
-    // Endlose Treppe: Stockwerk und Abschnitt statt «Raum x / y», Bild des Abschnitts
-    const abschnitt = run.treppe ? abschnittFuer(treppenEtage(run, roomIndex)) : null;
-    this.roomInfoEl.textContent = abschnitt
-      ? `Stockwerk ${treppenEtage(run, roomIndex)} · ${abschnitt.name}`
-      : `Raum ${roomIndex + 1} / ${run.rooms.length}`;
+    this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
 
     // HP snapshot
     this.preHpMap.clear();
@@ -264,7 +258,7 @@ export class CombatScreen {
       screenEl.style.cssText = 'display:flex;flex-direction:column;width:100vw;height:100vh;overflow-y:auto;overflow-x:hidden;background:#060810;';
     }
     // Set route background image on overlay
-    const routeImg = ROUTE_IMAGE_MAP[abschnitt ? abschnitt.bild : run.routeId];
+    const routeImg = ROUTE_IMAGE_MAP[run.routeId];
     if (routeImg) {
       this.el.style.backgroundImage = `url('assets/tiles/${routeImg}.png')`;
       this.el.style.backgroundSize = 'cover';
@@ -507,11 +501,6 @@ export class CombatScreen {
     const btn = document.createElement('button');
     btn.className = 'mc-btn mc-co-retreat-btn';
     btn.textContent = 'Rückzug';
-    if (this.expRun?.treppe) {
-      // Treppe: Wer flieht, behält nur die Beute vom letzten Rastplatz
-      btn.textContent = 'Fliehen';
-      btn.title = 'Verliert die Beute seit dem letzten Rastplatz';
-    }
     btn.addEventListener('click', () => {
       this.hide();
       this.onRetreat?.();
@@ -580,9 +569,7 @@ export class CombatScreen {
 
     const divider = document.createElement('div');
     divider.className = 'mc-co-section-divider';
-    divider.textContent = run.treppe
-      ? 'Fähigkeiten — 1× bis zum nächsten Rastplatz'
-      : 'Fähigkeiten — 1× pro Mission wählbar';
+    divider.textContent = 'Fähigkeiten — 1× pro Mission wählbar';
     area.appendChild(divider);
 
     const cols = document.createElement('div');
@@ -1122,9 +1109,7 @@ export class CombatScreen {
       onContinue();
     });
 
-    // Der Kampf ist schon entschieden: Auf der Treppe würde Fliehen hier nur
-    // die Beute seit dem letzten Rastplatz kosten, also kein Knopf dafür.
-    if (!this.expRun?.treppe) btnRow.appendChild(this.createRetreatButton());
+    btnRow.appendChild(this.createRetreatButton());
     btnRow.appendChild(btn);
     this.actionsEl.appendChild(btnRow);
   }
@@ -1144,7 +1129,6 @@ export class CombatScreen {
 
       const outcomeText = run.status === 'victory' ? 'SIEG!'
         : run.status === 'defeat' ? 'NIEDERLAGE...'
-        : run.treppe?.patt ? 'UNENTSCHIEDEN'
         : 'RÜCKZUG';
       const outcomeColor = run.status === 'victory' ? 'var(--mc-heal)'
         : run.status === 'defeat' ? 'var(--mc-damage)'
@@ -1158,9 +1142,7 @@ export class CombatScreen {
     } else {
       const cleared = document.createElement('div');
       cleared.className = 'mc-co-room-cleared';
-      cleared.textContent = run.treppe && this.previewRoom
-        ? `Stockwerk ${treppenEtage(run, this.previewRoom.index)} geschafft!`
-        : 'Raum geschafft!';
+      cleared.textContent = 'Raum geschafft!';
       this.actionsEl.appendChild(cleared);
     }
 

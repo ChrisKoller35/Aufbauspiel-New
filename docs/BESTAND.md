@@ -3,7 +3,17 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
-## Nachtrag 19.10.2026: Die endlose Treppe
+## Nachtrag 20.10.2026: Neue Dungeons statt Treppe
+
+Christoph: Endlos heisst, dass es auf der Dungeon-Karte mit immer neuen, verschiedenen Dungeons weiter nach oben
+geht, ab und zu ein oder zwei mehr. Über dem Vulkankern stehen jetzt der Drachenhort und das Himmelsarchiv
+(`docs/NEUE-DUNGEONS.md`). Die endlose Treppe ist wieder ganz weg (seine Wahl am 20.10.): keine Routenkarte, kein
+Eingang auf der Karte, kein Startpunkt im Team-Bildschirm. Über dem obersten Dungeon zeigt die Karte ein leeres Feld
+«Noch unerforscht», nach Stufe 7 zeigt das Stadtweg-Fenster die Dungeons ganz oben mit Häkchen. Alte Spielstände
+verlieren beim Laden den Treppen-Stand; wer mitten im Aufstieg gespeichert hat, bekommt die Beute vom letzten
+Rastplatz ins Lager (`SaveSystem.ts`, ohne neue SaveVersion).
+
+## Nachtrag 19.10.2026: Die endlose Treppe (am 20.10. wieder entfernt)
 
 Stadtstufe 7 öffnet jetzt das Endgame: eine Treppe über dem Dungeon, Stockwerk für Stockwerk ein Kampf, jedes 10. ein
 Boss, nach jedem 5. ein Rastplatz, an dem die Beute sicher ist. Die Bestmarke ist das höchste Stockwerk, gestartet

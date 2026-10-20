@@ -2,7 +2,7 @@
 // Nachtbild der Stadt als SVG: je Stadtstufe kommen Gebäude dazu
 // (Zelte und Lagerfeuer, Hütten, Windmühle, Markt, Stadtmauer, Burg),
 // ab der Grossstadt wächst das Arkane Herz, in der Magischen Stadt
-// leuchtet es und die endlose Treppe auf dem Berg glüht.
+// leuchtet es und ein Pfad glüht über den Berg hinauf zu den Dungeons ganz oben.
 // Wird im Hauptmenü (klein) und im Stadtweg-Fenster (gross) gezeigt.
 // ────────────────────────────────────────────────────────────────
 
@@ -172,10 +172,10 @@ function berg(s: Kontext): string {
   let out = `<polygon points="520,${G} 585,150 610,160 650,105 675,118 705,46 735,98 760,90 800,140 800,${G}" fill="#121733"/>`
     + `<polyline points="650,105 675,118 705,46 735,98 760,90" fill="none" stroke="#252c52" stroke-width="2"/>`;
   if (s.stufe >= 7) {
-    const treppe = '592,172 610,160 603,148 625,136 618,124 641,112 634,100 657,88 650,76 674,64 667,52 692,42 686,28 704,14 698,-4';
-    out += `<polyline points="${treppe}" fill="none" stroke="#f5d27a" stroke-width="5" opacity=".18"/>`
-      + `<polyline class="sw-treppe" points="${treppe}" fill="none" stroke="#f5d27a" stroke-width="1.8" stroke-dasharray="5 4"/>`;
-    // Funkelnde Lichter entlang der Treppe, damit sie auch als kleiner Ausschnitt magisch wirkt
+    const pfad = '592,172 610,160 603,148 625,136 618,124 641,112 634,100 657,88 650,76 674,64 667,52 692,42 686,28 704,14 698,-4';
+    out += `<polyline points="${pfad}" fill="none" stroke="#f5d27a" stroke-width="5" opacity=".18"/>`
+      + `<polyline class="sw-pfad" points="${pfad}" fill="none" stroke="#f5d27a" stroke-width="1.8" stroke-dasharray="5 4"/>`;
+    // Funkelnde Lichter entlang des Pfads, damit er auch als kleiner Ausschnitt magisch wirkt
     for (const [x, y, verzoegerung] of [[618, 124, 0], [650, 76, 1.1], [674, 64, 2.3], [692, 42, 0.6], [704, 14, 1.7]]) {
       out += `<circle class="sw-stern" style="animation-delay:${verzoegerung}s" cx="${x}" cy="${y}" r="2.2" fill="#fde68a"/>`;
     }

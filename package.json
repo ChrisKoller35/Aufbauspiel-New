@@ -20,7 +20,6 @@
     "crop-icons": "npx tsx tools/cropAndScaleIcons.ts",
     "cut-weapon-sheet": "npx tsx tools/cutWeaponSheet.ts",
     "validate-refs": "npx tsx tools/validateRefs.ts",
-    "treppe-eichung": "npx tsx tools/treppeEichung.ts",
     "dungeon-eichung": "npx tsx tools/dungeonEichung.ts"
   },
   "devDependencies": {

@@ -3,8 +3,6 @@ import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
 import { GUILD_RANK_DEFS } from './guildRanks';
 import { LOOT_TABLE_DEFS } from './lootTables';
-import { stadtStufeVon } from './stadtstufen';
-import { TREPPE_AB_STADTSTUFE } from './treppe';
 
 export interface EncounterTemplate {
   type: EncounterType;
@@ -43,8 +41,6 @@ export interface RouteDef {
   extraPartySlots?: number;
   /** Ob eine Kriegsmaschine zwingend benötigt wird */
   requiresWarMachine?: boolean;
-  /** Endlose Treppe: Stockwerke entstehen beim Klettern (data/treppe.ts), nicht aus `encounters` */
-  isEndless?: boolean;
   /** Gebiet über dem Vulkankern: bestimmt Farbe und Schild auf Karte und Routenliste */
   gebiet?: 'gipfel' | 'himmel';
   /** Eigene Regel dieses Dungeons in einem Satz (Karte, Routenliste) */
@@ -681,18 +677,6 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     recommendedLevel: 'Full T2 gear + Level 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
   },
-  // Endgame ab Stadtstufe 7: eigene Karte in der Routenliste, Eingang oben auf der Dungeon-Karte,
-  // nie in den Wochen-Herausforderungen (systems/Treppe.ts, data/treppe.ts)
-  endlose_treppe: {
-    id: 'endlose_treppe',
-    name: 'Die endlose Treppe',
-    tier: 5,
-    rooms: 0,
-    encounters: [],
-    bossId: null,
-    recommendedLevel: 'Stadtstufe 7',
-    isEndless: true,
-  },
 };
 
 // ── Route Image Map — shared between ExpeditionsScreen & DungeonMapScreen ──
@@ -750,11 +734,22 @@ export function getBauplanHinweis(bauplanId: string): string {
 
 // ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
 
-type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard' | 'stadtweg'>;
+type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard'>;
 
-/** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt (die Treppe: Stadtstufe 7). */
+/** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt. */
 export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean {
   return getRouteLockReasons(route, state).length === 0;
+}
+
+/**
+ * Das Endgame: die Dungeons über dem Vulkankern (RouteDef.gebiet), von unten nach oben
+ * wie auf der Dungeon-Karte. Neue Dungeons dort zählen von selbst mit.
+ */
+export function gipfelDungeons(): RouteDef[] {
+  return DUNGEON_GRAPH
+    .filter(n => ROUTE_DEFS[n.routeId]?.gebiet)
+    .sort((a, b) => b.y - a.y)
+    .map(n => ROUTE_DEFS[n.routeId]);
 }
 
 /** Mindestens ein Sieg auf dieser Route (abgeschlossene Routen bleiben wiederholbar). */
@@ -764,10 +759,6 @@ export function isRouteCompleted(routeId: string, state: RouteProgress): boolean
 
 /** Gründe, warum die Route gesperrt ist; leer = verfügbar. */
 export function getRouteLockReasons(route: RouteDef, state: RouteProgress): string[] {
-  // Die endlose Treppe hängt nur an der Stadtstufe, nicht am Gildenrang
-  if (route.isEndless) {
-    return stadtStufeVon(state) >= TREPPE_AB_STADTSTUFE ? [] : [`Stadtstufe ${TREPPE_AB_STADTSTUFE}: Magische Stadt`];
-  }
   const reasons: string[] = [];
   // Ebenen über dem höchsten Gildenrang (Drachenhort, Himmelsarchiv …) brauchen den höchsten Rang
   const rang = Math.min(route.tier, GUILD_RANK_DEFS.length);

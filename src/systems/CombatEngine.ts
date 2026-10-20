@@ -8,7 +8,6 @@ import { GearSystem } from './GearSystem';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
-import { treppenEtage } from './Treppe';
 
 /** Check if a unit has a specific active special effect */
 export function hasEffect(unit: CombatUnit, effectId: string): boolean {
@@ -25,9 +24,7 @@ export class CombatEngine {
     const enemies = room.enemies;
     const party = run.party.filter(u => u.hp > 0);
 
-    run.combatLog.push(run.treppe
-      ? `── Stockwerk ${treppenEtage(run, room.index)}: ${room.type === 'boss' ? 'BOSS' : 'Kampf'} ──`
-      : `── Room ${room.index + 1}: ${room.type === 'boss' ? 'BOSS' : 'Combat'} ──`);
+    run.combatLog.push(`── Room ${room.index + 1}: ${room.type === 'boss' ? 'BOSS' : 'Combat'} ──`);
 
     // Initialize round snapshots for animated playback
     run.combatRoundSnapshots = [];

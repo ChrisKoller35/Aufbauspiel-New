@@ -185,6 +185,6 @@ export class EncounterProcessor {
  * Hort-Schätze im Drachenhort. Räume entsprechen den Route-Begegnungen der Reihe nach.
  */
 function festeWahl(run: ExpeditionRun, room: EncounterRoom): { optionA: EncounterChoice; optionB: EncounterChoice } | null {
-  const wahl = run.treppe ? undefined : ROUTE_DEFS[run.routeId]?.encounters[room.index]?.wahl;
+  const wahl = ROUTE_DEFS[run.routeId]?.encounters[room.index]?.wahl;
   return wahl ? { optionA: { ...wahl.a }, optionB: { ...wahl.b } } : null;
 }
