@@ -57,6 +57,12 @@ export interface SpecialEffect {
   name?: string;
   /** Kommt aus diesem Dungeon-Set (data/dungeonSets.ts) */
   set?: string;
+  /** Tempo für das Team (Heldenlied) */
+  tempo?: number;
+  /** Angriff für das Team (Kriegspriester, dort ist power die Verteidigung) */
+  atk?: number;
+  /** Kommt aus dem Weg des Helden (data/spezialisierungen.ts) */
+  weg?: string;
 }
 
 export interface CombatUnit {
@@ -99,6 +105,12 @@ export interface CombatUnit {
   betaeubtSchutz?: boolean;
   /** Schattenstoss: der erste Angriff in diesem Kampf steht noch aus */
   ersterSchlag?: boolean;
+  /** Scharfschützin: der erste Angriff in diesem Kampf trifft sicher kritisch */
+  zielschuss?: boolean;
+  /** Fährtenleserin: markierter Gegner erleidet so viel mehr Schaden von Helden (Anteil) */
+  markiert?: number;
+  /** Knochenherr: Skelette, die in diesem Kampf für den Helden kämpfen */
+  skelette?: number;
   /** Angriff und Verteidigung, die Kampfeffekte gerade dazugeben (Glutherz, Tiefenrausch, Drachengier, Bastion) */
   effektBoni?: Record<string, number>;
 }

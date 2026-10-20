@@ -3,6 +3,13 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 20.10.2026 (Mittag): Dungeon-Sets und Wege der Helden
+
+Jeder Dungeon lässt ein eigenes Set aus drei Teilen fallen, zwei Teile geben Werte, drei eine Fähigkeit, die im Kampf
+sichtbar auslöst (`docs/DUNGEON-SETS.md`). Ab Stufe 10 wählt jeder Held einen von zwei Wegen seiner Klasse, für immer,
+ab Stufe 15 ist er Meister (20 Wege, `docs/SPEZIALISIERUNG.md`). Die Gegner von Drachenhort und Himmelsarchiv sind
+dafür stärker geworden; ohne Wege sind die zwei obersten Dungeons kaum zu schaffen.
+
 ## Nachtrag 20.10.2026: Neue Dungeons statt Treppe
 
 Christoph: Endlos heisst, dass es auf der Dungeon-Karte mit immer neuen, verschiedenen Dungeons weiter nach oben

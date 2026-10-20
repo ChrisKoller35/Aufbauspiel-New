@@ -420,9 +420,10 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // ── Drachenhort (Ebene 5, über dem Vulkankern) ──
   // Glutwyrmling, Hortkobold und Drachenpriester haben eigene Bilder (tools/spriteRegistry.ts),
   // Hortgolem und Ignarax tragen Bilder anderer Gegner.
+  // Leben und Angriff sind auf Helden mit Weg geeicht (docs/SPEZIALISIERUNG.md, «Eichung»).
   hortgolem: {
     id: 'hortgolem', name: 'Hortgolem', role: 'melee',
-    hp: 320, atk: 17, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    hp: 355, atk: 18, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'glutfaust', name: 'Glutfaust', cooldown: 3, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
     ],
@@ -430,7 +431,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   glutwyrmling: {
     id: 'glutwyrmling', name: 'Glutwyrmling', role: 'melee',
-    hp: 180, atk: 19, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
+    hp: 200, atk: 21, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
     skills: [
       { id: 'feuerbiss', name: 'Feuerbiss', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
     ],
@@ -438,7 +439,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   hortkobold: {
     id: 'hortkobold', name: 'Hortkobold', role: 'ranged',
-    hp: 130, atk: 15, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
+    hp: 145, atk: 16, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
     skills: [
       { id: 'muenzhagel', name: 'Münzhagel', cooldown: 3, effectType: 'aoe', power: 0.6, target: 'all_players', description: '0.6× Schaden auf alle' },
       { id: 'glaenzende_augen', name: 'Glänzende Augen', cooldown: 4, effectType: 'buff', power: 4, target: 'self', description: '+4 ATK für 3 Runden' },
@@ -447,7 +448,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   drachenpriester: {
     id: 'drachenpriester', name: 'Drachenpriester', role: 'support',
-    hp: 160, atk: 18, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
+    hp: 180, atk: 19, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'glutsegen', name: 'Glutsegen', cooldown: 3, effectType: 'heal', power: 60, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 60' },
       { id: 'flammenwort', name: 'Flammenwort', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
@@ -456,7 +457,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_ignarax: {
     id: 'boss_ignarax', name: 'Ignarax, der Uralte', role: 'boss',
-    hp: 850, atk: 25, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
+    hp: 945, atk: 27, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -468,9 +469,10 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
 
   // ── Himmelsarchiv (Ebene 6, über den Wolken) ──
+  // Wie der Drachenhort auf Helden mit Weg geeicht.
   folianten_waechter: {
     id: 'folianten_waechter', name: 'Foliantenwächter', role: 'melee',
-    hp: 320, atk: 17, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    hp: 370, atk: 19, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'buchdeckel', name: 'Buchdeckel', cooldown: 3, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
     ],
@@ -478,7 +480,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   archivritter: {
     id: 'archivritter', name: 'Archivritter', role: 'melee',
-    hp: 210, atk: 21, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
+    hp: 240, atk: 24, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
     skills: [
       { id: 'klingenzitat', name: 'Klingenzitat', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
     ],
@@ -486,7 +488,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   fluestergeist: {
     id: 'fluestergeist', name: 'Flüstergeist', role: 'support',
-    hp: 160, atk: 16, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
+    hp: 185, atk: 18, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'psst', name: 'Psst!', cooldown: 3, effectType: 'aoe', power: 0.7, target: 'all_players', description: '0.7× Schaden auf alle' },
       { id: 'stille_restaurierung', name: 'Stille Restaurierung', cooldown: 4, effectType: 'heal', power: 70, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 70' },
@@ -495,7 +497,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   knochenschreiber: {
     id: 'knochenschreiber', name: 'Knochenschreiber', role: 'ranged',
-    hp: 170, atk: 19, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
+    hp: 195, atk: 21, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
     skills: [
       { id: 'federkiel_salve', name: 'Federkiel-Salve', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
       { id: 'mahngebuehr', name: 'Mahngebühr', cooldown: 4, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
@@ -504,7 +506,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_oberarchivar: {
     id: 'boss_oberarchivar', name: 'Der Oberarchivar', role: 'boss',
-    hp: 1050, atk: 28, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    hp: 1210, atk: 32, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [

@@ -12,6 +12,8 @@ export interface MusterHeld {
   name: string;
   stufe: number;
   gear: GuildFighter['gear'];
+  /** Weg ab Stufe 10 (data/spezialisierungen.ts). Das Probespiel lässt ihn weg, damit man selbst wählt. */
+  weg?: string;
 }
 
 export interface MusterTeam {
@@ -23,6 +25,9 @@ export interface MusterTeam {
 const STUFEN_BONUS: Record<string, { hp: number; atk: number; def: number }> = {
   guardian: { hp: 4, atk: 0.3, def: 0.5 }, ranger: { hp: 2, atk: 0.6, def: 0.1 },
   berserker: { hp: 3, atk: 0.5, def: 0.2 }, assassin: { hp: 2, atk: 0.6, def: 0.1 },
+  cleric: { hp: 3, atk: 0.2, def: 0.3 }, paladin: { hp: 4, atk: 0.25, def: 0.4 },
+  bard: { hp: 2, atk: 0.2, def: 0.2 }, witch: { hp: 2, atk: 0.4, def: 0.1 },
+  necromancer: { hp: 2, atk: 0.35, def: 0.2 }, druid: { hp: 3, atk: 0.25, def: 0.25 },
 };
 /** … und durch Training (+2 Leben, +1 Angriff, +1 Rüstung); gerechnet wird je die Hälfte. */
 const TRAINING = { hp: 2, atk: 1, def: 1 };
@@ -55,27 +60,27 @@ export const MUSTER_TEAMS: Record<'frisch' | 'gut' | 'stark', MusterTeam> = {
   frisch: {
     name: 'Frisch (Stufe 10, T3, 3 Helden)',
     helden: [
-      { classId: 'guardian', name: 'Brom', stufe: 10, gear: T3.tank },
-      { classId: 'berserker', name: 'Grimm', stufe: 10, gear: T3.dps },
-      { classId: 'ranger', name: 'Lia', stufe: 10, gear: T3.bow },
+      { classId: 'guardian', name: 'Brom', stufe: 10, gear: T3.tank, weg: 'guardian_bollwerk' },
+      { classId: 'berserker', name: 'Grimm', stufe: 10, gear: T3.dps, weg: 'berserker_zorn' },
+      { classId: 'ranger', name: 'Lia', stufe: 10, gear: T3.bow, weg: 'ranger_scharfschuetzin' },
     ],
   },
   gut: {
     name: 'Gut (Stufe 12, T3/T4, 4 Helden)',
     helden: [
-      { classId: 'guardian', name: 'Brom', stufe: 12, gear: T4.tank },
-      { classId: 'berserker', name: 'Grimm', stufe: 12, gear: T3.dps },
-      { classId: 'ranger', name: 'Lia', stufe: 12, gear: T3.bow },
-      { classId: 'assassin', name: 'Sina', stufe: 12, gear: T3.dps },
+      { classId: 'guardian', name: 'Brom', stufe: 12, gear: T4.tank, weg: 'guardian_bollwerk' },
+      { classId: 'berserker', name: 'Grimm', stufe: 12, gear: T3.dps, weg: 'berserker_zorn' },
+      { classId: 'ranger', name: 'Lia', stufe: 12, gear: T3.bow, weg: 'ranger_scharfschuetzin' },
+      { classId: 'assassin', name: 'Sina', stufe: 12, gear: T3.dps, weg: 'assassin_meuchlerin' },
     ],
   },
   stark: {
     name: 'Stark (Stufe 15, T4, 4 Helden)',
     helden: [
-      { classId: 'guardian', name: 'Brom', stufe: 15, gear: T4.tank },
-      { classId: 'berserker', name: 'Grimm', stufe: 15, gear: T4.dps },
-      { classId: 'ranger', name: 'Lia', stufe: 15, gear: T4.bow },
-      { classId: 'assassin', name: 'Sina', stufe: 15, gear: T4.dps },
+      { classId: 'guardian', name: 'Brom', stufe: 15, gear: T4.tank, weg: 'guardian_bollwerk' },
+      { classId: 'berserker', name: 'Grimm', stufe: 15, gear: T4.dps, weg: 'berserker_zorn' },
+      { classId: 'ranger', name: 'Lia', stufe: 15, gear: T4.bow, weg: 'ranger_scharfschuetzin' },
+      { classId: 'assassin', name: 'Sina', stufe: 15, gear: T4.dps, weg: 'assassin_meuchlerin' },
     ],
   },
 };

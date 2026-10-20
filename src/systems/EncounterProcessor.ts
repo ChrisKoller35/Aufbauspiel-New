@@ -4,7 +4,7 @@ import { ROUTE_DEFS } from '../data/routes';
 import { SeededRNG } from '../utils/RNG';
 import { pickRandomSpecialist } from '../data/specialists';
 import { hasEffect } from './CombatEngine';
-import { staerke } from './Kampfeffekte';
+import { sichererWeg, staerke } from './Kampfeffekte';
 
 /**
  * Processes non-combat encounter rooms: rest, hazard, find, merchant, survivor.
@@ -63,9 +63,13 @@ export class EncounterProcessor {
   }
 
   processHazard(run: ExpeditionRun, room: EncounterRoom): void {
+    // Fährtenleserin: Ein Teil des Schadens fällt weg (Weg einer Heldin)
+    const wegZeilen: string[] = [];
+    const vermieden = sichererWeg(run.party, zeile => { wegZeilen.push(zeile); });
+    const schaden = Math.floor(room.hazardDamage * (1 - vermieden));
     for (const unit of run.party) {
       if (unit.hp > 0) {
-        let dmg = room.hazardDamage;
+        let dmg = schaden;
         // fire_resist: reduce hazard damage by 30% (Vulkan-Hazards; Sets können mehr)
         if (hasEffect(unit, 'fire_resist')) {
           dmg = Math.floor(dmg * (1 - staerke(unit, 'fire_resist')));
@@ -74,7 +78,9 @@ export class EncounterProcessor {
       }
     }
     const hasResist = run.party.some(u => hasEffect(u, 'fire_resist'));
-    run.combatLog.push(`>> Hazard! Team erleidet ${room.hazardDamage} Schaden.${hasResist ? ' (Feuerresistenz aktiv!)' : ''}`);
+    const text = schaden > 0 ? `${schaden} Schaden` : 'keinen Schaden';
+    run.combatLog.push(`>> Hazard! Team erleidet ${text}.${hasResist && schaden > 0 ? ' (Feuerresistenz aktiv!)' : ''}`);
+    run.combatLog.push(...wegZeilen);
   }
 
   processFind(run: ExpeditionRun, room: EncounterRoom, rng: SeededRNG): void {
