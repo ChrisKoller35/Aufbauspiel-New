@@ -24,7 +24,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   lifesteal: {
     id: 'lifesteal',
     name: 'Lebensraub',
-    description: 'Heilt 25% des verursachten Schadens',
+    description: 'Heilt 25 % des verursachten Schadens',
     trigger: 'on_deal_damage',
     procChance: 1.0,
     power: 0.25,
@@ -32,7 +32,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   dodge: {
     id: 'dodge',
     name: 'Ausweichen',
-    description: '15% Chance, einem Angriff auszuweichen',
+    description: '15 % Chance, einem Angriff auszuweichen',
     trigger: 'on_take_damage',
     procChance: 0.15,
     power: 1.0, // 100% damage reduction on proc
@@ -40,7 +40,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   reflect: {
     id: 'reflect',
     name: 'Reflexion',
-    description: 'Reflektiert 20% des erlittenen Schadens',
+    description: 'Wirft 20 % des erlittenen Schadens auf den Angreifer zurück',
     trigger: 'on_take_damage',
     procChance: 1.0,
     power: 0.20,
@@ -48,7 +48,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   revive: {
     id: 'revive',
     name: 'Wiedergeburt',
-    description: 'Steht einmalig mit 30% HP wieder auf',
+    description: 'Steht einmal pro Expedition mit 30 % Leben wieder auf',
     trigger: 'on_death',
     procChance: 1.0,
     power: 0.30, // 30% maxHp restored
@@ -56,7 +56,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   double_strike: {
     id: 'double_strike',
     name: 'Doppelschlag',
-    description: '30% Chance auf einen zweiten Angriff',
+    description: '30 % Chance auf einen zweiten Angriff',
     trigger: 'on_deal_damage',
     procChance: 0.30,
     power: 1.0, // full damage on second strike
@@ -64,7 +64,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   anti_heal: {
     id: 'anti_heal',
     name: 'Wundfluch',
-    description: 'Reduziert gegnerische Heilung um 50%',
+    description: 'Getroffene Gegner heilen sich nur halb so stark',
     trigger: 'on_deal_damage',
     procChance: 1.0,
     power: 0.50,
@@ -79,8 +79,8 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   },
   aoe_resist: {
     id: 'aoe_resist',
-    name: 'AoE-Resistenz',
-    description: 'Reduziert Flaechenschaden um 30%',
+    name: 'Flächenschutz',
+    description: 'Angriffe auf alle Helden machen 30 % weniger Schaden',
     trigger: 'on_take_damage',
     procChance: 1.0,
     power: 0.30,
@@ -88,7 +88,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   spell_power: {
     id: 'spell_power',
     name: 'Zaubermacht',
-    description: 'Erhoeht Skill-Schaden um 25%',
+    description: 'Fähigkeiten machen 25 % mehr Schaden',
     trigger: 'on_skill_use',
     procChance: 1.0,
     power: 0.25,
@@ -96,7 +96,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   fire_resist: {
     id: 'fire_resist',
     name: 'Feuerresistenz',
-    description: 'Reduziert Hazard-Schaden um 30%',
+    description: 'Fallen, Lava und Glut machen 30 % weniger Schaden',
     trigger: 'on_take_damage',
     procChance: 1.0,
     power: 0.30,
@@ -104,7 +104,7 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   stun_strike: {
     id: 'stun_strike',
     name: 'Erschütterungsschlag',
-    description: '25% Chance pro Treffer: Der Gegner setzt seinen nächsten Zug aus (Bosse: halbe Chance)',
+    description: '25 % Chance pro Treffer: Der Gegner setzt seinen nächsten Zug aus (Bosse: halbe Chance)',
     trigger: 'on_deal_damage',
     procChance: 0.25,
     power: 1.0,
@@ -178,10 +178,10 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   glutpanzer: {
     id: 'glutpanzer',
     name: 'Glutpanzer',
-    description: 'Wer den Träger mit einem Grundangriff trifft, erleidet 6 Feuerschaden',
+    description: 'Wer den Träger mit einem Grundangriff trifft, erleidet 8 Feuerschaden',
     trigger: 'on_take_damage',
     procChance: 1.0,
-    power: 6,
+    power: 8,
   },
   seelenernte: {
     id: 'seelenernte',
@@ -242,10 +242,10 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   drachengier: {
     id: 'drachengier',
     name: 'Drachengier',
-    description: '+1 Angriff je 40 Gold im Gepäck (höchstens +15) und mehr Gold aus Kämpfen',
+    description: '+1 Angriff je 50 Gold im Gepäck (höchstens +10) und mehr Gold aus Kämpfen',
     trigger: 'on_combat_start',
     procChance: 1.0,
-    power: 40,
+    power: 50,
   },
   fussnote: {
     id: 'fussnote',
@@ -262,4 +262,11 @@ export function extractSpecialTags(tags: string[]): string[] {
   return tags
     .filter(t => t.startsWith('special:'))
     .map(t => t.replace('special:', ''));
+}
+
+/** Die Eigenschaften eines Gegenstands, die im Kampf wirken (Tags ohne Definition zählen nicht) */
+export function itemEigenschaften(tags: string[]): SpecialEffectDef[] {
+  return extractSpecialTags(tags)
+    .map(id => SPECIAL_EFFECT_DEFS[id])
+    .filter((d): d is SpecialEffectDef => !!d);
 }

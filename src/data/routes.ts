@@ -122,7 +122,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['forest_bear'] },
     ],
     bossId: null,
-    recommendedLevel: 'Starter gear',
+    recommendedLevel: 'Startausrüstung',
   },
   forest_medium: {
     id: 'forest_medium',
@@ -141,7 +141,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_elder_treant'] },
     ],
     bossId: 'boss_elder_treant',
-    recommendedLevel: 'Iron gear',
+    recommendedLevel: 'Eisenausrüstung',
   },
   cave_deep: {
     id: 'cave_deep',
@@ -160,7 +160,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_crystal_golem'] },
     ],
     bossId: 'boss_crystal_golem',
-    recommendedLevel: 'Full iron gear',
+    recommendedLevel: 'Volle Eisenausrüstung',
   },
 
   // --- Tier 3+ Routes ---
@@ -186,7 +186,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_swamp_hydra'] },
     ],
     bossId: 'boss_swamp_hydra',
-    recommendedLevel: 'Full iron gear + T2 items',
+    recommendedLevel: 'Volle Eisenausrüstung und T2-Teile',
     unlockCondition: { bossesDefeated: ['boss_elder_treant'] },
   },
   cave_spider: {
@@ -205,7 +205,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_spider_queen'] },
     ],
     bossId: 'boss_spider_queen',
-    recommendedLevel: 'Full iron gear',
+    recommendedLevel: 'Volle Eisenausrüstung',
     unlockCondition: { bossesDefeated: ['boss_crystal_golem'] },
   },
   ruins_crypts: {
@@ -227,7 +227,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_fallen_knight'] },
     ],
     bossId: 'boss_fallen_knight',
-    recommendedLevel: 'T2 gear recommended',
+    recommendedLevel: 'T2-Ausrüstung',
     unlockCondition: { bossesDefeated: ['boss_elder_treant', 'boss_crystal_golem'] },
   },
   ruins_depths: {
@@ -250,7 +250,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_shadow_lich'] },
     ],
     bossId: 'boss_shadow_lich',
-    recommendedLevel: 'Full T2 gear',
+    recommendedLevel: 'Volle T2-Ausrüstung',
     unlockCondition: { bossesDefeated: ['boss_fallen_knight'] },
   },
   volcano_core: {
@@ -275,7 +275,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_magma_wyrm'] },
     ],
     bossId: 'boss_magma_wyrm',
-    recommendedLevel: 'Full T2 gear + level 8+',
+    recommendedLevel: 'Volle T2-Ausrüstung und Stufe 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
   },
 
@@ -381,7 +381,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_iron_commander'] },
     ],
     bossId: 'boss_iron_commander',
-    recommendedLevel: 'Vollständiges T2 Gear + Kriegsmaschine',
+    recommendedLevel: 'Volle T2-Ausrüstung und Kriegsmaschine',
     unlockCondition: { bossesDefeated: ['boss_fallen_knight'] },
   },
   siege_fortress: {
@@ -408,7 +408,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_fortress_warden'] },
     ],
     bossId: 'boss_fortress_warden',
-    recommendedLevel: 'Vollständiges T3 Gear + Kriegsmaschine + Level 10+',
+    recommendedLevel: 'Volle T3-Ausrüstung, Kriegsmaschine und Stufe 10+',
     unlockCondition: { bossesDefeated: ['boss_iron_commander'] },
   },
 
@@ -430,7 +430,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'rest', healPercent: 25 },
     ],
     bossId: null,
-    recommendedLevel: 'Vollständige T2 Ausrüstung',
+    recommendedLevel: 'Volle T2-Ausrüstung',
   },
   ocean_depths: {
     id: 'ocean_depths',
@@ -455,7 +455,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'boss', enemies: ['boss_leviathan'] },
     ],
     bossId: 'boss_leviathan',
-    recommendedLevel: 'T3 Ausrüstung empfohlen',
+    recommendedLevel: 'T3-Ausrüstung',
   },
 
   // ═══════════════════════════════════════════
@@ -476,7 +476,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['forest_bear', 'forest_bandit'] },
     ],
     bossId: null,
-    recommendedLevel: 'Starter gear',
+    recommendedLevel: 'Startausrüstung',
   },
   haunted_woods: {
     id: 'haunted_woods',
@@ -496,7 +496,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['forest_bear', 'forest_shaman', 'cursed_wisp'] },
     ],
     bossId: null,
-    recommendedLevel: 'Iron gear',
+    recommendedLevel: 'Eisenausrüstung',
   },
   cave_tunnels: {
     id: 'cave_tunnels',
@@ -513,7 +513,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['cave_troll'] },
     ],
     bossId: null,
-    recommendedLevel: 'Full iron gear',
+    recommendedLevel: 'Volle Eisenausrüstung',
     unlockCondition: { bossesDefeated: ['boss_crystal_golem'] },
   },
   crystal_mines: {
@@ -533,7 +533,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['crystal_beetle', 'crystal_beetle', 'deep_crawler'] },
     ],
     bossId: null,
-    recommendedLevel: 'T2 gear recommended',
+    recommendedLevel: 'T2-Ausrüstung',
     unlockCondition: { bossesDefeated: ['boss_crystal_golem', 'boss_spider_queen'] },
   },
   ocean_abyss: {
@@ -556,7 +556,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['drowned_knight', 'pressure_crab', 'deep_sea_angler'] },
     ],
     bossId: null,
-    recommendedLevel: 'T3 Ausrüstung + Luftkristalle',
+    recommendedLevel: 'T3-Ausrüstung und Luftkristalle',
     unlockCondition: { bossesDefeated: ['boss_leviathan'] },
   },
   swamp_village: {
@@ -573,7 +573,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'find', findGold: 15, findItems: [{ itemId: 'herb_green', qty: 2 }] },
     ],
     bossId: null,
-    recommendedLevel: 'Iron gear + T2 items',
+    recommendedLevel: 'Eisenausrüstung und T2-Teile',
     unlockCondition: { bossesDefeated: ['boss_elder_treant'] },
   },
   frozen_pass: {
@@ -592,7 +592,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['stone_guardian', 'skeleton_warrior', 'skeleton_warrior'] },
     ],
     bossId: null,
-    recommendedLevel: 'T2 gear + Frostschutz',
+    recommendedLevel: 'T2-Ausrüstung und Frostschutz',
     unlockCondition: { bossesDefeated: ['boss_fallen_knight'] },
   },
   shadow_catacombs: {
@@ -613,7 +613,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['stone_guardian', 'tomb_horror', 'bone_knight'] },
     ],
     bossId: null,
-    recommendedLevel: 'Full T2+ gear',
+    recommendedLevel: 'Volle T2-Ausrüstung oder besser',
     unlockCondition: { bossesDefeated: ['boss_shadow_lich'] },
   },
   obsidian_tunnels: {
@@ -632,7 +632,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['ash_golem', 'fire_bat', 'obsidian_crab'] },
     ],
     bossId: null,
-    recommendedLevel: 'T2 gear + Feuerschutz',
+    recommendedLevel: 'T2-Ausrüstung und Feuerschutz',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra'] },
   },
   ash_wastes: {
@@ -652,7 +652,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['magma_broodling', 'flame_spirit'] },
     ],
     bossId: null,
-    recommendedLevel: 'Full T2 gear + Level 8+',
+    recommendedLevel: 'Volle T2-Ausrüstung und Stufe 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
   },
   magma_caverns: {
@@ -674,7 +674,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['magma_broodling', 'flame_spirit', 'obsidian_crab'] },
     ],
     bossId: null,
-    recommendedLevel: 'Full T2 gear + Level 8+',
+    recommendedLevel: 'Volle T2-Ausrüstung und Stufe 8+',
     unlockCondition: { bossesDefeated: ['boss_swamp_hydra', 'boss_fallen_knight'] },
   },
 };

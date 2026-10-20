@@ -10,6 +10,8 @@ import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
 import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
+import { setFuerRoute, DungeonSetDef } from '../../data/dungeonSets';
+import { setKurzinfo } from '../components/SetAnzeige';
 
 const buildingUpgradeSystem = new BuildingUpgradeSystem();
 
@@ -107,9 +109,11 @@ function buildExpeditionListHTML(): string {
   const cards = routes.map(route => {
     const biome = getBiomeTag(route);
     const locked = !isRoutePlayable(route);
+    const set = setFuerRoute(route.id);
     const footer = locked
       ? getRouteLockReasons(route, gameState).map(r => `<span class="exp-lock">🔒 ${r}</span>`).join('')
-      : `<span class="exp-rew">Belohnung: ${routeRewards(route)}</span>`;
+      : `<span class="exp-rew">Belohnung: ${routeRewards(route)}</span>`
+        + (set ? `<span class="exp-set">${setKurzinfo(gameState, set)}</span>` : '');
     return `
       <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
         <div class="exp-card-info">
@@ -259,7 +263,7 @@ function buildTeamHTML(): string {
 
   return `
     ${renderHeader(gameState, 'expeditions', routeName)}
-    ${routeInfoHTML(recLevel, route?.besonderheit)}
+    ${routeInfoHTML(recLevel, route?.besonderheit, route ? setFuerRoute(route.id) : undefined)}
     <div class="team-wrap">
       <div class="team-left">
         <div class="lbl" style="margin-bottom:8px">Dein Team</div>
@@ -276,13 +280,14 @@ function buildTeamHTML(): string {
   `;
 }
 
-/** Empfehlung und Besonderheit der Route als Band über dem Team. */
-function routeInfoHTML(recLevel: string, besonderheit: string | undefined): string {
-  if (!recLevel && !besonderheit) return '';
+/** Empfehlung, Besonderheit und Set der Route als Band über dem Team. */
+function routeInfoHTML(recLevel: string, besonderheit: string | undefined, set: DungeonSetDef | undefined): string {
+  if (!recLevel && !besonderheit && !set) return '';
   return `
     <div class="exp-info">
       ${recLevel ? `<span class="exp-rec">Empfohlen: ${recLevel}</span>` : ''}
       ${besonderheit ? `<span class="exp-besonderheit">✦ ${besonderheit}</span>` : ''}
+      ${set ? `<span class="exp-set-info">Set-Beute: ${setKurzinfo(gameState, set, true)}</span>` : ''}
     </div>`;
 }
 

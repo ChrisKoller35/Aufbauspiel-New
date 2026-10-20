@@ -110,6 +110,16 @@ export function setTeilWuerfeln(state: GameState, routeId: string, difficulty: s
   return rng.pick(fehlend.length > 0 ? fehlend : ids);
 }
 
+/** «🐺 Rudel des Waldpfads · Teil 2 von 3» für ein gefundenes Teil, bevor es ins Lager kommt */
+export function setTeilHinweis(state: GameState, itemId: string): string {
+  const set = setVonItem(itemId);
+  if (!set) return '';
+  const n = gesammelteTeile(state, set).length + (besitz(state, itemId) === 0 ? 1 : 0);
+  return besitz(state, itemId) > 0
+    ? `${set.zeichen} ${set.name} · schon da, passt für einen zweiten Helden`
+    : `${set.zeichen} ${set.name} · Teil ${n} von 3${n === 3 ? ' – komplett!' : ''}`;
+}
+
 /**
  * Nach einem Sieg: legt das Set-Teil des Dungeons in die Beute der Expedition.
  * Einmal pro Expedition aufrufen, bevor die Beute gezeigt wird. Gibt die Gegenstands-ID zurück.
@@ -121,9 +131,6 @@ export function setBeute(state: GameState, run: ExpeditionRun): string | null {
   run.setTeil = itemId;
   if (!itemId) return null;
   run.loot[itemId] = (run.loot[itemId] ?? 0) + 1;
-  const set = setVonItem(itemId)!;
-  const vorher = gesammelteTeile(state, set).length;
-  const neu = besitz(state, itemId) === 0;
-  run.combatLog.push(`✦ Set-Teil gefunden: ${ITEM_DEFS[itemId]?.name ?? itemId} (${set.name}, ${neu ? vorher + 1 : vorher} von 3)`);
+  run.combatLog.push(`✦ Set-Teil gefunden: ${ITEM_DEFS[itemId]?.name ?? itemId} (${setTeilHinweis(state, itemId)})`);
   return itemId;
 }

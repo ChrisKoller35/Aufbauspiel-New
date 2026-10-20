@@ -21,14 +21,14 @@ export class GearSystem {
    * Slot placement follows 2-slot weapon rules (see above).
    * Returns true on success.
    */
-  equip(state: GameState, fighter: GuildFighter, itemId: string): boolean {
+  equip(state: GameState, fighter: GuildFighter, itemId: string, wunsch?: EquipSlot): boolean {
     const itemDef = ITEM_DEFS[itemId];
     if (!itemDef || !itemDef.gearSlot) return false;
 
     // Check stock
     if ((state.globalStock[itemId] ?? 0) < 1) return false;
 
-    const slot = this.resolveEquipSlot(fighter, itemId);
+    const slot = this.resolveEquipSlot(fighter, itemId, wunsch);
     if (!slot) return false;
 
     // If placing a 2H weapon, clear offHand first
@@ -49,8 +49,10 @@ export class GearSystem {
   /**
    * Determine which physical gear slot an item should go into.
    * Returns null if the item cannot be equipped (e.g. shield without 1H mainHand).
+   * wunsch: der Platz, den der Spieler auf der Heldenseite angetippt hat. Eine Einhandwaffe
+   * kommt dann in genau diese Hand (die Nebenhand nur neben einer Einhandwaffe).
    */
-  resolveEquipSlot(fighter: GuildFighter, itemId: string): EquipSlot | null {
+  resolveEquipSlot(fighter: GuildFighter, itemId: string, wunsch?: EquipSlot): EquipSlot | null {
     const itemDef = ITEM_DEFS[itemId];
     if (!itemDef || !itemDef.gearSlot) return null;
 
@@ -71,10 +73,15 @@ export class GearSystem {
       return null;
     }
 
-    // 1H weapon: mainHand preferred; if mainHand already has a 1H → offHand (dual-wield)
+    // 1H weapon: mainHand preferred; if mainHand already has a 1H → offHand (dual-wield),
+    // ausser dort liegt ein Schild: dann wird die Hauptwaffe getauscht und der Schild bleibt
     if (wst === '1h') {
       const mhDef = fighter.gear.mainHand ? ITEM_DEFS[fighter.gear.mainHand] : null;
-      if (mhDef && mhDef.weaponSlotType === '1h') return 'offHand';
+      const ohDef = fighter.gear.offHand ? ITEM_DEFS[fighter.gear.offHand] : null;
+      const zweiteWaffeMoeglich = mhDef?.weaponSlotType === '1h';
+      if (wunsch === 'mainHand') return 'mainHand';
+      if (wunsch === 'offHand') return zweiteWaffeMoeglich ? 'offHand' : 'mainHand';
+      if (zweiteWaffeMoeglich && ohDef?.weaponSlotType !== 'shield') return 'offHand';
       return 'mainHand';
     }
 

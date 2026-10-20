@@ -10,11 +10,12 @@ import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import {
   besitz, gesammelteTeile, getrageneSets, setBeute, setChance, setTeilWuerfeln, SET_CHANCE,
 } from '../src/systems/DungeonSets';
-import { DUNGEON_SETS, getSet, setFuerRoute, setTeilIds, setVonItem } from '../src/data/dungeonSets';
+import { DUNGEON_SETS, EIGENSCHAFT_AB_EBENE, getSet, setFuerRoute, setTeilIds, setVonItem } from '../src/data/dungeonSets';
 import { ITEM_DEFS } from '../src/data/items';
 import { ROUTE_DEFS } from '../src/data/routes';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
-import { SPECIAL_EFFECT_DEFS } from '../src/data/specialEffects';
+import { SPECIAL_EFFECT_DEFS, extractSpecialTags } from '../src/data/specialEffects';
+import { gewonnen, musterStand, spieleRoute } from '../src/systems/Musterlauf';
 import { SeededRNG } from '../src/utils/RNG';
 
 const gear = new GearSystem();
@@ -316,7 +317,7 @@ describe('Set-Fähigkeiten im Kampf', () => {
     const traeger = einheit(heldMitSet('obsidian'), { atk: 1 });
     const angreifer = gegner('Ork', { spd: 5, def: 99 });
     const run = kampf([traeger], [angreifer]);
-    expect(runde(run, 1)).toContain(`  ${traeger.name}: Glutpanzer! Ork erleidet 6 Feuerschaden.`);
+    expect(runde(run, 1)).toContain(`  ${traeger.name}: Glutpanzer! Ork erleidet 8 Feuerschaden.`);
   });
 
   test('Seelenernte: stirbt ein Gegner, heilt das Team', () => {
@@ -387,16 +388,16 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(runde(run, 1).some(l => l.startsWith(`  ${traeger.name}: Funkenflug! Ziel`) && l.endsWith(`erleidet ${spritzer}`))).toBe(true);
   });
 
-  test('Drachengier: mehr Angriff je 40 Gold im Gepäck, höchstens +15', () => {
+  test('Drachengier: mehr Angriff je 50 Gold im Gepäck, höchstens +10', () => {
     const traeger = einheit(heldMitSet('hort'));
     const atk = traeger.atk;
     const run = kampf([traeger], [gegner('Dieb')], { goldEarned: 400 });
-    expect(runde(run, 1)[0]).toBe(`✦ ${traeger.name} setzt Drachengier ein → 400 Gold im Gepäck: +10 Angriff`);
-    expect(runde(run, 1)).toContain(`${traeger.name} greift Dieb an für ${atk + 10}`);
+    expect(runde(run, 1)[0]).toBe(`✦ ${traeger.name} setzt Drachengier ein → 400 Gold im Gepäck: +8 Angriff`);
+    expect(runde(run, 1)).toContain(`${traeger.name} greift Dieb an für ${atk + 8}`);
 
     const reich = einheit(heldMitSet('hort'));
     kampf([reich], [gegner('Dieb')], { goldEarned: 5000 });
-    expect(reich.effektBoni?.['drachengier:atk']).toBe(15);
+    expect(reich.effektBoni?.['drachengier:atk']).toBe(10);
   });
 
   test('Verbotene Fussnote: alle 3 Runden eine von drei Seiten', () => {
@@ -444,5 +445,46 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(traeger.schild).toBe(0);
     expect(traeger.betaeubt).toBeUndefined();
     expect(traeger.buffs.filter(b => b.quelle)).toEqual([]);
+  });
+});
+
+// ── Eigenschaften und Stärke ──
+
+describe('Set-Teile gegenüber gewöhnlicher Ausrüstung', () => {
+  test('ab Ebene 3 trägt jedes Teil eine wirksame Eigenschaft, die sich im Set nicht doppelt', () => {
+    for (const set of DUNGEON_SETS) {
+      const eigenschaften = setTeilIds(set).map(id => extractSpecialTags(ITEM_DEFS[id].tags));
+      if (set.tier < EIGENSCHAFT_AB_EBENE) {
+        expect(eigenschaften.flat(), set.id).toEqual([]);
+        continue;
+      }
+      for (const e of eigenschaften) {
+        expect(e, set.id).toHaveLength(1);
+        expect(SPECIAL_EFFECT_DEFS[e[0]], `${set.id}: ${e[0]}`).toBeTruthy();
+      }
+      const ids = eigenschaften.flat();
+      expect(new Set(ids).size, `${set.id}: ${ids.join(', ')}`).toBe(3);
+      for (const f of set.dreiTeile.effekte) expect(ids, `${set.id}: ${f.id}`).not.toContain(f.id);
+    }
+  });
+
+  // Grob, mit wenigen Läufen; die genauen Werte stehen in docs/DUNGEON-SETS.md
+  test('volle Sets aus Ebene 4 machen ein Team mit legendärer Ausrüstung nicht schwächer', () => {
+    const SETS: Record<string, GuildFighter['gear']> = {
+      Brom: { mainHand: 'soulbreaker', offHand: 'set_festung_schild', armor: 'set_festung_platte', trinket: 'set_festung_talisman' },
+      Grimm: { mainHand: 'set_wyrm_klinge', offHand: null, armor: 'set_wyrm_platte', trinket: 'set_wyrm_amulett' },
+      Lia: { mainHand: 'set_abyss_bogen', offHand: null, armor: 'set_abyss_leder', trinket: 'set_abyss_ring' },
+      Sina: { mainHand: 'set_schatten_dolch', offHand: null, armor: 'set_schatten_leder', trinket: 'set_schatten_ring' },
+    };
+    const siege = (mitSets: boolean): number => {
+      let n = 0;
+      for (let i = 1; i <= 10; i++) {
+        const { state, ids } = musterStand('gut', i * 7919);
+        if (mitSets) for (const f of state.fighters) f.gear = { ...SETS[f.name] };
+        if (gewonnen(spieleRoute(state, ids, 'drachenhort', 'klug'))) n++;
+      }
+      return n;
+    };
+    expect(siege(true)).toBeGreaterThan(siege(false));
   });
 });

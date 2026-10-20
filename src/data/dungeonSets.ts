@@ -23,6 +23,8 @@ export interface SetTeilDef {
   /** Vorhandenes Bild (Sprite-Key), bis es eigene Set-Bilder gibt */
   bild: string;
   text: string;
+  /** Eigenschaft ab Ebene 3, wenn nicht die der Bauart (ART_EIGENSCHAFT), z. B. damit sie sich im Set nicht doppelt */
+  eigenschaft?: string;
 }
 
 export type SetWerte = NonNullable<ItemDef['statBonuses']> & { critMult?: number };
@@ -52,24 +54,43 @@ export interface DungeonSetDef {
 }
 
 // ── Werte je Bauart und Ebene (Index 0 = Ebene 1) ──
-// Etwa 85 bis 100 % der besten Gegenstände derselben Ebene; der Set-Bonus macht den Unterschied.
+// So gut wie die besten gewöhnlichen Gegenstände derselben Ebene und Bauart (Ebene 4:
+// Seelenbrecher, Drachenfürstplatte, Aetherkristall-Herz …), damit ein Set-Teil nie ein
+// Rückschritt ist. Die Set-Boni kommen obendrauf und machen den Unterschied.
 
 type Reihe = [number, number, number, number, number, number];
 
 const ART_WERTE: Record<SetTeilArt, Partial<Record<'atk' | 'def' | 'hp' | 'spd' | 'critChance', Reihe>>> = {
-  klinge: { atk: [3, 5, 7, 9, 11, 13], critChance: [0, 0, 0.03, 0.05, 0.06, 0.08] },
-  dolch: { atk: [2, 4, 5, 7, 9, 11], spd: [0.05, 0.05, 0.05, 0.1, 0.1, 0.1], critChance: [0.05, 0.06, 0.08, 0.1, 0.12, 0.14] },
-  hammer: { atk: [4, 6, 9, 12, 15, 17], hp: [3, 5, 8, 12, 16, 20], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  bogen: { atk: [2, 3, 5, 8, 10, 12], spd: [0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0.05, 0.08, 0.1, 0.12, 0.15, 0.18] },
-  stab: { atk: [1, 2, 4, 6, 8, 10], hp: [5, 8, 12, 16, 22, 28], def: [0, 0, 2, 3, 3, 4] },
-  schild: { def: [3, 5, 6, 9, 12, 14], hp: [2, 4, 8, 12, 18, 24], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  platte: { def: [3, 5, 7, 10, 13, 15], hp: [4, 8, 13, 18, 24, 30], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  leder: { def: [2, 3, 4, 6, 8, 10], hp: [5, 7, 10, 14, 18, 22], atk: [0, 1, 1, 2, 3, 4], critChance: [0, 0, 0.03, 0.05, 0.06, 0.08] },
-  robe: { hp: [8, 12, 14, 20, 26, 32], atk: [1, 2, 3, 4, 5, 6], spd: [0, 0, 0.05, 0.1, 0.1, 0.1], critChance: [0, 0.03, 0.05, 0.08, 0.1, 0.12] },
-  amulett: { atk: [1, 2, 3, 4, 5, 6], def: [0, 1, 2, 2, 3, 4], hp: [3, 3, 5, 10, 14, 18], critChance: [0.03, 0.05, 0.05, 0.08, 0.08, 0.1] },
-  ring: { atk: [1, 2, 3, 4, 5, 6], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15], critChance: [0.05, 0.06, 0.08, 0.1, 0.12, 0.15] },
-  talisman: { def: [1, 2, 3, 4, 5, 6], hp: [4, 6, 8, 12, 16, 20] },
+  klinge: { atk: [3, 5, 7, 10, 12, 14], def: [0, 0, 0, 2, 2, 3], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12] },
+  dolch: { atk: [2, 4, 6, 8, 11, 13], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16] },
+  hammer: { atk: [4, 7, 10, 13, 16, 19], hp: [4, 6, 10, 15, 20, 25], def: [0, 1, 2, 3, 3, 4] },
+  bogen: { atk: [2, 3, 6, 9, 11, 13], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22] },
+  stab: { atk: [1, 2, 5, 7, 9, 11], hp: [5, 8, 12, 18, 24, 30], def: [0, 0, 2, 3, 4, 5], critChance: [0, 0, 0, 0.08, 0.08, 0.1] },
+  schild: { def: [4, 6, 7, 10, 14, 16], hp: [2, 4, 10, 15, 26, 30], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
+  platte: { def: [4, 5, 8, 12, 14, 16], hp: [4, 8, 15, 20, 26, 32], spd: [-0.05, 0, 0, 0, 0, 0] },
+  leder: { def: [2, 3, 4, 7, 9, 11], hp: [5, 7, 12, 14, 18, 22], atk: [0, 1, 1, 2, 3, 4], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16] },
+  robe: { hp: [8, 12, 14, 22, 26, 32], atk: [1, 2, 4, 5, 6, 7], spd: [0, 0, 0.1, 0.1, 0.1, 0.15], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14] },
+  amulett: { atk: [1, 2, 3, 4, 4, 5], def: [0, 1, 2, 2, 3, 4], hp: [3, 4, 5, 12, 16, 20], spd: [0, 0, 0, 0.05, 0.08, 0.1], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1] },
+  ring: { atk: [1, 2, 4, 4, 5, 6], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15] },
+  talisman: { def: [1, 2, 3, 5, 6, 7], hp: [4, 6, 8, 15, 18, 22] },
 };
+
+/**
+ * Eigenschaft je Bauart ab Ebene 3, wie bei den übrigen Gegenständen dieser Ebenen
+ * (Seelenbrecher: Doppelschlag, Aetherschild: Reflexion …). Gleiche Eigenschaften zählen
+ * nicht doppelt, darum weicht ein Teil davon ab, wenn sein Set sie schon hat (SetTeilDef.eigenschaft).
+ */
+export const EIGENSCHAFT_AB_EBENE = 3;
+const ART_EIGENSCHAFT: Record<SetTeilArt, string> = {
+  klinge: 'double_strike', dolch: 'double_strike', hammer: 'stun_strike', bogen: 'anti_heal',
+  stab: 'spell_power', schild: 'reflect', platte: 'fire_resist', leder: 'dodge',
+  robe: 'aoe_resist', amulett: 'spell_power', ring: 'spell_power', talisman: 'aoe_resist',
+};
+
+/** Die Eigenschaft eines Set-Teils (null unter Ebene 3) */
+export function teilEigenschaft(set: DungeonSetDef, teil: SetTeilDef): string | null {
+  return set.tier >= EIGENSCHAFT_AB_EBENE ? teil.eigenschaft ?? ART_EIGENSCHAFT[teil.art] : null;
+}
 
 const ART_PLATZ: Record<SetTeilArt, { slot: NonNullable<ItemDef['gearSlot']>; hand?: ItemDef['weaponSlotType']; tags: string[] }> = {
   klinge: { slot: 'mainHand', hand: '1h', tags: ['weapon'] },
@@ -270,7 +291,7 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     teile: [
       { art: 'stab', name: 'Strudelstab', bild: 'ITEM_CRYSTAL_STAFF', text: 'Dreht man ihn, dreht sich das Wasser mit. Und der Magen.' },
       { art: 'platte', name: 'Leviathanschuppe', bild: 'ITEM_MYSTIC_PLATE_ARMOR', text: 'Eine einzige Schuppe. Der Leviathan vermisst sie, aber nicht lange.' },
-      { art: 'amulett', name: 'Perle aus dem Magen', bild: 'ITEM_CRYSTAL_PENDANT', text: 'Wo genau sie gefunden wurde, verschweigen wir besser.' },
+      { art: 'amulett', name: 'Perle aus dem Magen', bild: 'ITEM_CRYSTAL_PENDANT', text: 'Wo genau sie gefunden wurde, verschweigen wir besser.', eigenschaft: 'aoe_resist' },
     ],
     zweiTeile: { atk: 3, hp: 10 },
     dreiTeile: {
@@ -318,8 +339,8 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     zweiTeile: { def: 3, hp: 8 },
     dreiTeile: {
       name: 'Glutpanzer',
-      text: 'Wer den Träger angreift, erleidet 6 Feuerschaden. Lava, Glut und Fallen machen ihm 30 % weniger aus.',
-      effekte: [{ id: 'glutpanzer', power: 6 }, { id: 'fire_resist', power: 0.3 }],
+      text: 'Wer den Träger mit einem normalen Angriff trifft, erleidet 8 Feuerschaden.',
+      effekte: [{ id: 'glutpanzer', power: 8 }],
     },
   },
 
@@ -329,7 +350,7 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     teile: [
       { art: 'stab', name: 'Seelenstab', bild: 'ITEM_CRYSTAL_GOLEM_STAFF', text: 'Jede Kerbe ist eine Seele. Es sind sehr viele Kerben.' },
       { art: 'robe', name: 'Gewand des Lichs', bild: 'ITEM_SPIDER_SILK_ROBE', text: 'Riecht nach Staub und Ewigkeit. Hauptsächlich nach Staub.' },
-      { art: 'amulett', name: 'Leeres Phylakterium', bild: 'ITEM_LICH_PHYLACTERY', text: 'Der Lich ist ausgezogen. Die Kaution hat er nicht zurückverlangt.' },
+      { art: 'amulett', name: 'Leeres Phylakterium', bild: 'ITEM_LICH_PHYLACTERY', text: 'Der Lich ist ausgezogen. Die Kaution hat er nicht zurückverlangt.', eigenschaft: 'revive' },
     ],
     zweiTeile: { atk: 4, hp: 12 },
     dreiTeile: {
@@ -399,7 +420,7 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     teile: [
       { art: 'hammer', name: 'Aschehammer', bild: 'ITEM_WAR_HAMMER', text: 'Jeder Schlag wirbelt Asche auf. Danach sieht keiner mehr etwas, am wenigsten der Gegner.' },
       { art: 'robe', name: 'Aschemantel', bild: 'ITEM_MAGIARCH_ROBE', text: 'War einmal weiss. War einmal sauber. War einmal.' },
-      { art: 'talisman', name: 'Glühende Kohle', bild: 'ITEM_AETHER_HEART', text: 'Glüht seit drei Wochen. Womit man sie füttert, weiss niemand.' },
+      { art: 'talisman', name: 'Glühende Kohle', bild: 'ITEM_AETHER_HEART', text: 'Glüht seit drei Wochen. Womit man sie füttert, weiss niemand.', eigenschaft: 'fire_resist' },
     ],
     zweiTeile: { atk: 4, hp: 12 },
     dreiTeile: {
@@ -434,8 +455,8 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     zweiTeile: { atk: 5, hp: 15 },
     dreiTeile: {
       name: 'Drachengier',
-      text: 'Gold macht stark: +1 Angriff je 40 Gold, das das Team auf dieser Expedition erbeutet hat, höchstens +15. Dazu 20 % mehr Gold.',
-      effekte: [{ id: 'drachengier', power: 40, max: 15 }, { id: 'klebrige_finger', power: 0.2, name: 'Drachengier' }],
+      text: 'Gold macht stark: +1 Angriff je 50 Gold, das das Team auf dieser Expedition erbeutet hat, höchstens +10. Dazu 20 % mehr Gold.',
+      effekte: [{ id: 'drachengier', power: 50, max: 10 }, { id: 'klebrige_finger', power: 0.2, name: 'Drachengier' }],
     },
   },
   {
@@ -443,7 +464,7 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     teile: [
       { art: 'stab', name: 'Lesezeichen des Oberarchivars', bild: 'ITEM_WORLDEND_STAFF', text: 'Eigentlich ein Stab. Er benutzt ihn als Lesezeichen. Für sehr dicke Bücher.' },
       { art: 'robe', name: 'Talar der Fussnoten', bild: 'ITEM_MAGIARCH_ROBE', text: 'Über und über mit Fussnoten bestickt. Die Fussnoten haben Fussnoten.' },
-      { art: 'amulett', name: 'Siegel der Leihfrist', bild: 'ITEM_ARCANE_AMULET', text: 'Die Leihfrist ist seit vierhundert Jahren abgelaufen. Die Mahngebühr auch.' },
+      { art: 'amulett', name: 'Siegel der Leihfrist', bild: 'ITEM_ARCANE_AMULET', text: 'Die Leihfrist ist seit vierhundert Jahren abgelaufen. Die Mahngebühr auch.', eigenschaft: 'regen' },
     ],
     zweiTeile: { atk: 6, hp: 20 },
     dreiTeile: {
@@ -482,6 +503,7 @@ export function setItemDefs(): Record<string, ItemDef> {
     for (const teil of set.teile) {
       const id = setTeilId(set, teil);
       const platz = ART_PLATZ[teil.art];
+      const eigenschaft = teilEigenschaft(set, teil);
       defs[id] = {
         id,
         name: teil.name,
@@ -492,7 +514,7 @@ export function setItemDefs(): Record<string, ItemDef> {
         gearSlot: platz.slot,
         ...(platz.hand ? { weaponSlotType: platz.hand } : {}),
         statBonuses: teilWerte(teil.art, set.tier),
-        tags: ['gear', ...platz.tags, 'set', `set:${set.id}`, `tier${set.tier}`],
+        tags: ['gear', ...platz.tags, 'set', `set:${set.id}`, `tier${set.tier}`, ...(eigenschaft ? [`special:${eigenschaft}`] : [])],
         productionSource: 'expedition_only',
         tier: set.tier,
         flavorText: teil.text,

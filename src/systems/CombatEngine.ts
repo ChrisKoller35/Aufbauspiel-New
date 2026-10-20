@@ -171,7 +171,7 @@ export class CombatEngine {
                 // aoe_resist: target takes 30% less AoE damage
                 if (hasEffect(t, 'aoe_resist')) {
                   dmg = Math.max(1, Math.floor(dmg * 0.7));
-                  run.combatLog.push(`  ${t.name}: AoE-Resistenz! (-30%)`);
+                  run.combatLog.push(`  ${t.name}: Flächenschutz! (−30 %)`);
                 }
                 const verlust = schadenNehmen(t, dmg);
                 run.combatLog.push(`${unit.name} setzt ${skill.name} ein → ${t.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
