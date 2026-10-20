@@ -4,12 +4,13 @@ import { resetBuildingIdCounter } from '../models/Building';
 import { resetCitizenIdCounter } from '../models/Citizen';
 import { resetFighterIdCounter } from '../models/GuildRoster';
 import { BUILDING_DEFS } from '../data/buildings';
+import { CLASS_DEFS } from '../data/classes';
 import { entferneGebaeude, vereinigeDoppelte } from './Ausbau';
 
 /** Speicherplatz aller SaveSystem-Instanzen; das Probespiel hat einen eigenen (nutzeProbespiel) */
 let saveKey = 'magic_city_save';
 let backupKey = 'magic_city_save_backup';
-const CURRENT_VERSION = 22;
+const CURRENT_VERSION = 23;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
 /**
@@ -419,6 +420,25 @@ export class SaveSystem {
           && b.auftraege.length === 0) {
         b.auftraege.push(b.activeRecipeId);
       }
+    }
+
+    // SaveVersion 23: Startklassen gestärkt. Vorhandene Helden bekommen den Unterschied
+    // zwischen neuen und alten Grundwerten dazu (nur nach oben). Eine laufende
+    // Expedition rechnet mit eigenen Kampfwerten und bleibt unverändert.
+    const alteStartwerte: Record<string, { maxHp: number; atk: number; def: number }> = {
+      guardian: { maxHp: 25, atk: 3, def: 2 },
+      ranger:   { maxHp: 21, atk: 7, def: 1 },
+      cleric:   { maxHp: 19, atk: 2, def: 1.5 },
+    };
+    for (const fighter of state.fighters ?? []) {
+      const alt = alteStartwerte[fighter.classId];
+      const neu = CLASS_DEFS[fighter.classId]?.baseStats;
+      if (!alt || !neu || !fighter.baseStats) continue;
+      const plusHp = Math.max(0, neu.maxHp - alt.maxHp);
+      fighter.baseStats.maxHp += plusHp;
+      fighter.baseStats.hp += plusHp;
+      fighter.baseStats.atk += Math.max(0, neu.atk - alt.atk);
+      fighter.baseStats.def += Math.max(0, neu.def - alt.def);
     }
 
     state.saveVersion = CURRENT_VERSION;

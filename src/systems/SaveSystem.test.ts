@@ -96,7 +96,7 @@ describe('SaveSystem', () => {
     expect(loaded.citizens[0].status).toBe('IDLE');
     expect(loaded.citizens[0].assignedBuildingId).toBeNull();
     expect(loaded.specialists[0].assignedBuildingId).toBeNull();
-    expect(loaded.saveVersion).toBe(22);
+    expect(loaded.saveVersion).toBe(23);
   });
 
   it('legt bei der Migration kein BANK_V2 an und verschenkt keine Test-Gegenstände', () => {
@@ -148,7 +148,7 @@ describe('SaveSystem – Version 21: ein Gebäude je Art', () => {
     // Kartenfelder zeigen nur noch auf Gebäude, die es gibt
     const ids = new Set(loaded.buildings.map(b => b.id));
     expect(loaded.grid.flat().every(t => !t || t.buildingId == null || ids.has(t.buildingId))).toBe(true);
-    expect(loaded.saveVersion).toBe(22);
+    expect(loaded.saveVersion).toBe(23);
   });
 
   it('ein aktueller Spielstand bleibt beim Laden unverändert', () => {
