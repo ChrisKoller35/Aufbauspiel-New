@@ -36,15 +36,18 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    und die Liste im Stadtweg-Fenster rücken mit. Ein neues Gebiet braucht
    einen Eintrag in `GEBIETE` (`src/ui/screens/DungeonMapScreen.ts`), in `getBiomeTag`
    (`src/ui/screens/ExpeditionsScreen.ts`) und eine Klasse `.tag-<gebiet>` in `src/ui/html/magic-city.css`.
-5. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
+5. **Set:** Jeder Dungeon lässt ein eigenes Set aus drei Teilen fallen. Anleitung in
+   `docs/DUNGEON-SETS.md` («Ein Set für einen neuen Dungeon»); der Test verlangt für jede Route ein Set.
+6. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
    in `tools/generateTileImages.ts` und `ROUTE_IMAGE_MAP`. Bis dahin passen vorhandene Bilder.
    Ein neues Gegnerbild (1024 px, Magenta-Hintergrund) als `public/assets/sprites/generated/KEY.png` ablegen
    und mit `npm run sprite-freistellen -- KEY` freistellen und verkleinern. Das entfernt auch Magenta, das
    ganz vom Motiv umschlossen ist (Feuerwirbel, zwischen den Beinen), und Schatten; `--boden 0.87` nimmt
    gezeichnete Bodenrisse unter den Füssen weg. `resize-sprites` und `remove-bg` lassen solche Stellen stehen.
    Routenbilder als PNG nach `public/assets/tiles/exp_<route>.png`.
-6. **Eichung:** `npm run dungeon-eichung`, Ziele unten, Tabelle hier nachführen.
-7. **Prüfen:** Liste in `tests/neueDungeons.test.ts` ergänzen, dann `npm test`, `npm run build`,
+7. **Eichung:** `npm run dungeon-eichung`, Ziele unten, Tabelle hier nachführen (die zweite Tabelle
+   mit Sets gehört in `docs/DUNGEON-SETS.md`).
+8. **Prüfen:** Liste in `tests/neueDungeons.test.ts` ergänzen, dann `npm test`, `npm run build`,
    `npm run validate-refs`.
 
 ### Bausteine für eigene Regeln

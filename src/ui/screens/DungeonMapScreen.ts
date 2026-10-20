@@ -10,6 +10,8 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS } from '../../data/items';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
+import { setFuerRoute } from '../../data/dungeonSets';
+import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
 
 
 
@@ -590,6 +592,11 @@ function showRouteModal(routeId: string, state: GameState): void {
     const beute = ITEM_DEFS[route.ersterSiegBeute]?.name ?? route.ersterSiegBeute;
     const erhalten = state.guildStats.bossesDefeatedIds.includes(route.bossId);
     detailHtml += `<p style="color:#8a7a5a;font-size:0.75rem">${erhalten ? '✓' : '🎁'} Erster Sieg: ${beute}</p>`;
+  }
+  const set = setFuerRoute(route.id);
+  if (set) {
+    detailHtml += `<p><span style="color:#34d399">Set-Beute:</span> ${setKurzinfo(state, set, true)}</p>`
+      + `<div class="dmap-set-teile set-teile">${setTeileHtml(state, set)}</div>`;
   }
   if (isDeadEnd) detailHtml += `<p><span style="color:#8a7a5a">⚑ Sackgasse</span> — Kein Durchgang</p>`;
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;

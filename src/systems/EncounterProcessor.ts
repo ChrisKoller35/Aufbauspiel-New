@@ -3,8 +3,8 @@ import { ITEM_DEFS } from '../data/items';
 import { ROUTE_DEFS } from '../data/routes';
 import { SeededRNG } from '../utils/RNG';
 import { pickRandomSpecialist } from '../data/specialists';
-import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
 import { hasEffect } from './CombatEngine';
+import { staerke } from './Kampfeffekte';
 
 /**
  * Processes non-combat encounter rooms: rest, hazard, find, merchant, survivor.
@@ -66,9 +66,9 @@ export class EncounterProcessor {
     for (const unit of run.party) {
       if (unit.hp > 0) {
         let dmg = room.hazardDamage;
-        // fire_resist: reduce hazard damage by 30% (Vulkan-Hazards)
+        // fire_resist: reduce hazard damage by 30% (Vulkan-Hazards; Sets können mehr)
         if (hasEffect(unit, 'fire_resist')) {
-          dmg = Math.floor(dmg * (1 - SPECIAL_EFFECT_DEFS.fire_resist.power));
+          dmg = Math.floor(dmg * (1 - staerke(unit, 'fire_resist')));
         }
         unit.hp -= dmg;
       }

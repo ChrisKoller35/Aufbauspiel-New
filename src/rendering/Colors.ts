@@ -199,6 +199,8 @@ export const UI_TEXT_STYLES = {
 
 // ─── Kampfprotokoll Farbzuordnung (shared by CombatOverlay + HTMLExpeditionUI) ──
 export function getLogLineColor(line: string): string {
+  // Set-Fähigkeiten und Kampfeffekte (systems/Kampfeffekte.ts) leuchten grün
+  if (line.startsWith('✦')) return '#6ee7b7';
   // Special effects (highest priority)
   if (line.includes('WIEDERGEBURT')) return '#ffd700';
   if (line.includes('AUSGEWICHEN'))  return '#00e5ff';
@@ -206,9 +208,12 @@ export function getLogLineColor(line: string): string {
   if (line.includes('Reflexion'))    return '#ce93d8';
   if (line.includes('Lebensraub'))   return UI_STR_COLORS.HEAL;
   if (line.includes('Regeneration')) return UI_STR_COLORS.HEAL;
-  if (line.includes('AoE-Resistenz')) return '#64b5f6';
+  if (line.includes('Flächenschutz!')) return '#64b5f6';
+  if (line.includes(': Gift −'))     return '#a3e635';
+  if (line.includes('Funkenflug!') || line.includes('Glutpanzer!')) return '#fb923c';
+  if (line.includes('setzt aus ('))  return '#7dd3fc';
   // Critical hits
-  if (line.includes('CRIT'))    return UI_STR_COLORS.GOLD_BRIGHT;
+  if (line.includes('KRIT'))    return UI_STR_COLORS.GOLD_BRIGHT;
   // Boss enrage
   if (line.includes('ENRAGE'))  return UI_STR_COLORS.DAMAGE;
   // Heals

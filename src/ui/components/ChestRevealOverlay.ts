@@ -2,6 +2,7 @@
 // Shows treasure chest video + animated loot reveal after expedition.
 // ────────────────────────────────────────────────────────────────
 
+import { itemEigenschaften } from '../../data/specialEffects';
 import { ITEM_DEFS, getItemSpriteKey, isBauplan } from '../../data/items';
 import { BUILDING_DEFS } from '../../data/buildings';
 
@@ -18,10 +19,12 @@ interface LootEntry {
 /**
  * Opens a fullscreen chest reveal: video plays → loot items fade in → user collects.
  * Returns a Promise that resolves when user clicks "Einsammeln".
+ * hinweise: extra line per item, e.g. the set of a set piece («🐺 Rudel des Waldpfads · Teil 2 von 3»).
  */
 export function showChestReveal(
   loot: Record<string, number>,
   goldEarned: number,
+  hinweise: Record<string, string> = {},
 ): Promise<void> {
   return new Promise(resolve => {
     // Merge gold into loot entries for display
@@ -31,10 +34,11 @@ export function showChestReveal(
       if (qty > 0) entries.push({ itemId: id, qty });
     }
 
-    // Sort: bauplan → gold → gear → consumable → rest
+    // Sort: bauplan → set piece → gold → gear → consumable → rest
     entries.sort((a, b) => {
       const order = (e: LootEntry) => {
-        if (isBauplan(e.itemId)) return -1;
+        if (isBauplan(e.itemId)) return -2;
+        if (ITEM_DEFS[e.itemId]?.tags.includes('set')) return -1;
         if (e.itemId === 'gold') return 0;
         const def = ITEM_DEFS[e.itemId];
         if (!def) return 4;
@@ -80,6 +84,7 @@ export function showChestReveal(
       <div class="chest-title">Schatztruhe</div>
       <div class="chest-subtitle">${entries.length === 0 ? 'Die Truhe ist leer.'
         : entries.some(e => isBauplan(e.itemId)) ? '📜 Ein Bauplan ist in der Beute!'
+        : entries.some(e => ITEM_DEFS[e.itemId]?.tags.includes('set')) ? '✦ Ein Set-Teil ist in der Beute!'
         : '✨ Beute dieser Expedition!'}</div>
     `;
 
@@ -97,7 +102,8 @@ export function showChestReveal(
       // Get rarity class
       let rarCls = '';
       if (def?.tags) {
-        if (def.tags.includes('legendary')) rarCls = 'rar-legendary';
+        if (def.tags.includes('set')) rarCls = 'rar-set';
+        else if (def.tags.includes('legendary')) rarCls = 'rar-legendary';
         else if (def.tags.includes('epic')) rarCls = 'rar-epic';
         else if (def.tags.includes('rare')) rarCls = 'rar-rare';
         else if (def.tags.includes('uncommon')) rarCls = 'rar-uncommon';
@@ -111,8 +117,15 @@ export function showChestReveal(
         if (sb.atk) parts.push(`+${sb.atk} ATK`);
         if (sb.def) parts.push(`+${sb.def} DEF`);
         if (sb.hp) parts.push(`+${sb.hp} HP`);
-        if (sb.spd) parts.push(`+${sb.spd} SPD`);
+        if (sb.spd) parts.push(`${sb.spd > 0 ? '+' : '−'}${Math.abs(sb.spd)} SPD`);
+        if (sb.critChance) parts.push(`+${Math.round(sb.critChance * 100)} % CRIT`);
         if (parts.length) statsHtml = `<div class="chest-item-stats">${parts.join(' ')}</div>`;
+      }
+      // Eigenschaften (Doppelschlag, Reflexion …) mit Erklärung beim Darüberfahren
+      const eigenschaften = isGear && def ? itemEigenschaften(def.tags) : [];
+      if (eigenschaften.length) {
+        statsHtml += eigenschaften
+          .map(e => `<div class="chest-item-eigenschaft" title="${e.description}">✦ ${e.name}</div>`).join('');
       }
 
       const card = document.createElement('div');
@@ -136,11 +149,15 @@ export function showChestReveal(
         return;
       }
 
+      const hinweis = hinweise[entry.itemId];
+      if (rarCls === 'rar-set') card.classList.add('chest-item-set');
       card.innerHTML = `
         <img src="assets/sprites/final/${spriteKey}.png" class="${isGear ? 'chest-item-bg' : 'chest-item-ico'}"
              onerror="this.style.display='none'">
         <div class="chest-item-info">
+          ${rarCls === 'rar-set' ? '<span class="chest-item-setlabel">✦ SET-TEIL</span>' : ''}
           <span class="chest-item-name ${rarCls}">${name}</span>
+          ${hinweis ? `<span class="chest-item-hinweis">${hinweis}</span>` : ''}
           ${statsHtml}
           <span class="chest-item-qty">${isGold ? '💰' : '×'}${entry.qty}</span>
         </div>

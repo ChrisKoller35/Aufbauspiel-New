@@ -3,10 +3,14 @@
 // ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../../models/GameState';
-import { GuildFighter } from '../../models/GuildRoster';
+import { GuildFighter, FighterStats } from '../../models/GuildRoster';
 import { CLASS_DEFS, ClassDef, HERO_IMAGE_MAP } from '../../data/classes';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
-import { GearSystem } from '../../systems/GearSystem';
+import { itemEigenschaften } from '../../data/specialEffects';
+import { setVonItem } from '../../data/dungeonSets';
+import { GearSystem, EquipSlot } from '../../systems/GearSystem';
+import { getrageneSets } from '../../systems/DungeonSets';
+import { setAbzeichen, setBoniHtml, setSammlungHtml, setTooltip } from '../components/SetAnzeige';
 import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
@@ -46,20 +50,42 @@ function gearName(itemId: string | null): string {
   return def ? def.name : itemId;
 }
 
+function vorzeichen(n: number): string {
+  return n > 0 ? `+${n}` : `\u2212${Math.abs(n)}`;
+}
+
 function gearStatsSummary(itemId: string | null): string {
   if (!itemId) return '';
   const def = ITEM_DEFS[itemId];
   if (!def?.statBonuses) return '';
   const parts: string[] = [];
-  if (def.statBonuses.atk) parts.push(`+${def.statBonuses.atk} ATK`);
-  if (def.statBonuses.def) parts.push(`+${def.statBonuses.def} DEF`);
-  if (def.statBonuses.hp) parts.push(`+${def.statBonuses.hp} HP`);
-  if (def.statBonuses.spd) parts.push(`+${def.statBonuses.spd} SPD`);
+  if (def.statBonuses.atk) parts.push(`${vorzeichen(def.statBonuses.atk)} ATK`);
+  if (def.statBonuses.def) parts.push(`${vorzeichen(def.statBonuses.def)} DEF`);
+  if (def.statBonuses.hp) parts.push(`${vorzeichen(def.statBonuses.hp)} HP`);
+  if (def.statBonuses.spd) parts.push(`${vorzeichen(def.statBonuses.spd)} SPD`);
+  if (def.statBonuses.critChance) parts.push(`${vorzeichen(Math.round(def.statBonuses.critChance * 100))} % CRIT`);
   return parts.join(', ');
 }
 
+/** Eigenschaften eines Gegenstands (Doppelschlag, Reflexion …) als Zeilen für title-Attribute */
+function eigenschaftenText(itemId: string | null): string {
+  if (!itemId) return '';
+  return itemEigenschaften(ITEM_DEFS[itemId]?.tags ?? []).map(e => `${e.name}: ${e.description}`).join('\n');
+}
+
+/** Eigenschaften, die ein Held durch seine Gegenstände hat (ohne Set-Fähigkeiten) */
+function eigenschaftenVon(fighter: GuildFighter): Map<string, { name: string; description: string }> {
+  const liste = new Map<string, { name: string; description: string }>();
+  for (const platz of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
+    const itemId = fighter.gear[platz];
+    if (!itemId) continue;
+    for (const e of itemEigenschaften(ITEM_DEFS[itemId]?.tags ?? [])) liste.set(e.id, e);
+  }
+  return liste;
+}
+
 // ─── Tab IDs ────────────────────────────────────────────────────
-type HeroTab = 'my' | 'hire' | 'train' | 'inventar';
+type HeroTab = 'my' | 'hire' | 'train' | 'inventar' | 'sets';
 
 let activeTab: HeroTab = 'my';
 
@@ -185,15 +211,163 @@ function buildModalData(fighter: GuildFighter) {
   return { classDef, className, portraitUrl, pct, xpLabel, gearSlots };
 }
 
-function gearSlotIconHtml(slot: { label: string; emoji: string; key: string | null }): string {
+function gearSlotIconHtml(slot: { label: string; emoji: string; key: string | null; slot: string }): string {
+  const gewaehlt = auswahl?.art === 'slot' && auswahl.slot === slot.slot ? ' gewaehlt' : '';
   if (!slot.key) {
-    return `<div class="hdm-gear-icon hdm-gear-empty"><span class="hdm-gear-emoji">${slot.emoji}</span></div>`;
+    return `<button class="hdm-gear-icon hdm-gear-empty${gewaehlt}" data-slot="${slot.slot}" title="${slot.label}: leer"><span class="hdm-gear-emoji">${slot.emoji}</span></button>`;
   }
+  const def = ITEM_DEFS[slot.key];
   const sprKey = getItemSpriteKey(slot.key);
-  return `<div class="hdm-gear-icon"><img src="assets/sprites/final/${sprKey}.png" onerror="this.parentElement.innerHTML='<span class=hdm-gear-emoji>${slot.emoji}</span>'"></div>`;
+  const titel = [def?.name ?? slot.key, gearStatsSummary(slot.key), eigenschaftenText(slot.key), setTooltip(slot.key)].filter(Boolean).join('\n');
+  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" data-slot="${slot.slot}" title="${titel}"><img src="assets/sprites/final/${sprKey}.png" onerror="this.style.display='none'">${setAbzeichen(slot.key)}</button>`;
 }
 
-// ─── Hero Detail Modal ──────────────────────────────────────────
+// ─── Auswahl, Vergleich und Set-Boni im Heldenfenster ───────────
+
+/**
+ * Was im Heldenfenster ausgewählt ist: ein Platz am Helden oder ein Gegenstand aus dem Inventar.
+ * platz: der zuvor angetippte Platz; der Gegenstand kommt dann dorthin (z. B. die Haupthand).
+ */
+type Auswahl = { art: 'slot'; slot: EquipSlot } | { art: 'inventar'; itemId: string; platz?: EquipSlot };
+let auswahl: Auswahl | null = null;
+let inventarOffen = false;
+
+const PLATZ_NAMEN: Record<EquipSlot, string> = {
+  mainHand: 'Haupthand', offHand: 'Nebenhand', armor: 'Rüstung', trinket: 'Talisman',
+};
+
+function artText(itemId: string): string {
+  const def = ITEM_DEFS[itemId];
+  if (!def) return '';
+  const art = def.weaponSlotType === '2h' ? 'Zweihandwaffe'
+    : def.weaponSlotType === '1h' ? 'Einhandwaffe'
+    : def.weaponSlotType === 'shield' ? 'Schild'
+    : def.gearSlot === 'armor' ? 'Rüstung'
+    : def.gearSlot === 'trinket' ? 'Schmuck' : 'Ausrüstung';
+  return [art, def.tier ? `Ebene ${def.tier}` : '', setVonItem(itemId) ? 'Set-Teil' : rarityLabel(def.tags)]
+    .filter(Boolean).join(' · ');
+}
+
+const PLATZ_IN: Record<EquipSlot, string> = {
+  mainHand: 'in die Haupthand', offHand: 'in die Nebenhand', armor: 'als Rüstung', trinket: 'als Talisman',
+};
+
+/** Der angetippte Platz, in den ein Gegenstand aus dem Inventar kommen soll */
+function wunschPlatz(): EquipSlot | undefined {
+  return auswahl?.art === 'slot' ? auswahl.slot : auswahl?.platz;
+}
+
+/** Der Held, wie er mit diesem Gegenstand aussähe (null: passt gerade nicht) */
+function mitGegenstand(fighter: GuildFighter, itemId: string, wunsch?: EquipSlot): GuildFighter | null {
+  const slot = gearSystem.resolveEquipSlot(fighter, itemId, wunsch);
+  if (!slot) return null;
+  const def = ITEM_DEFS[itemId];
+  const gear = { ...fighter.gear };
+  if (def?.gearSlot === 'mainHand' && def.weaponSlotType === '2h') gear.offHand = null;
+  gear[slot] = itemId;
+  return { ...fighter, gear };
+}
+
+const WERT_ZEILEN: [keyof FighterStats, string, (n: number) => string][] = [
+  ['atk', 'ATK', n => vorzeichen(n)],
+  ['def', 'DEF', n => vorzeichen(n)],
+  ['maxHp', 'HP', n => vorzeichen(n)],
+  ['spd', 'SPD', n => vorzeichen(Math.round(n * 100) / 100)],
+  ['critChance', 'CRIT', n => `${vorzeichen(Math.round(n * 100))} %`],
+  ['critMult', 'Krit-Schaden', n => `${vorzeichen(Math.round(n * 100))} %`],
+];
+
+/** «ATK +3 · DEF −2» und was sich bei den Sets ändert, wenn aus vorher nachher wird */
+function vergleichHtml(vorher: GuildFighter, nachher: GuildFighter): string {
+  const a = gearSystem.getEffectiveStats(vorher);
+  const b = gearSystem.getEffectiveStats(nachher);
+  const werte = WERT_ZEILEN
+    .map(([k, name, fmt]) => {
+      const d = Math.round((b[k] - a[k]) * 100) / 100;
+      return d === 0 ? '' : `<span class="${d > 0 ? 'wert-plus' : 'wert-minus'}">${name} ${fmt(d)}</span>`;
+    })
+    .filter(Boolean);
+
+  const zaehle = (f: GuildFighter): Map<string, number> => new Map(getrageneSets(f.gear).map(g => [g.set.id, g.teile]));
+  const vor = zaehle(vorher);
+  const nach = zaehle(nachher);
+  const setZeilen: string[] = [];
+  for (const id of new Set([...vor.keys(), ...nach.keys()])) {
+    const set = getrageneSets(nach.has(id) ? nachher.gear : vorher.gear).find(g => g.set.id === id)!.set;
+    const n1 = vor.get(id) ?? 0;
+    const n2 = nach.get(id) ?? 0;
+    if (n2 >= 3 && n1 < 3) setZeilen.push(`<div class="wert-plus">✦ ${set.dreiTeile.name} wird aktiv (${set.zeichen} 3/3)</div>`);
+    else if (n2 >= 2 && n1 < 2) setZeilen.push(`<div class="wert-plus">✦ Zwei-Teile-Bonus von ${set.zeichen} ${set.name} wird aktiv</div>`);
+    if (n1 >= 3 && n2 < 3) setZeilen.push(`<div class="wert-minus">✗ ${set.dreiTeile.name} geht verloren</div>`);
+    else if (n1 >= 2 && n2 < 2) setZeilen.push(`<div class="wert-minus">✗ Zwei-Teile-Bonus von ${set.zeichen} ${set.name} geht verloren</div>`);
+  }
+  // Eigenschaften der Gegenstände; was über ein Set oder ein anderes Teil bleibt, zählt nicht als Verlust
+  const alle = (f: GuildFighter): Set<string> => new Set(gearSystem.getSpecialEffects(f).map(e => e.id));
+  const vorherAlle = alle(vorher);
+  const nachherAlle = alle(nachher);
+  for (const [id, e] of eigenschaftenVon(nachher)) {
+    if (!vorherAlle.has(id)) setZeilen.push(`<div class="wert-plus">✦ ${e.name} kommt dazu</div>`);
+  }
+  for (const [id, e] of eigenschaftenVon(vorher)) {
+    if (!nachherAlle.has(id)) setZeilen.push(`<div class="wert-minus">✗ ${e.name} geht verloren</div>`);
+  }
+  if (werte.length === 0 && setZeilen.length === 0) return '<div class="hdm2-vergleich">Keine Veränderung.</div>';
+  return `<div class="hdm2-vergleich">${werte.join(' ')}${setZeilen.join('')}</div>`;
+}
+
+/** Kasten unter dem Bild: der gewählte Gegenstand mit Werten, Vergleich und Knopf */
+function auswahlHtml(fighter: GuildFighter): string {
+  if (!auswahl) return '';
+  const itemId = auswahl.art === 'slot' ? fighter.gear[auswahl.slot] : auswahl.itemId;
+  if (!itemId) {
+    const platz = auswahl.art === 'slot' ? PLATZ_NAMEN[auswahl.slot] : '';
+    return `<div class="hdm2-auswahl" id="hdm2-auswahl"><div class="hdm2-auswahl-leer">${platz}: leer. Wähle im Inventar einen Gegenstand, passende leuchten hell.</div></div>`;
+  }
+  const def = ITEM_DEFS[itemId];
+  if (!def) return '';
+  const set = setVonItem(itemId);
+  const getragen = set ? getrageneSets(fighter.gear).find(g => g.set.id === set.id)?.teile ?? 0 : 0;
+
+  let vergleich: string;
+  let knopf: string;
+  if (auswahl.art === 'slot') {
+    const ohne = { ...fighter, gear: { ...fighter.gear, [auswahl.slot]: null } };
+    vergleich = `<div class="hdm2-vergleich-titel">${PLATZ_NAMEN[auswahl.slot]} · ohne dieses Teil:</div>${vergleichHtml(fighter, ohne)}`;
+    knopf = `<button class="hdm2-aktion" data-aktion="ablegen">ABLEGEN</button>`;
+  } else {
+    const mit = mitGegenstand(fighter, itemId, auswahl.platz);
+    if (mit) {
+      const plaetze = Object.keys(PLATZ_NAMEN) as EquipSlot[];
+      const ziel = plaetze.find(p => mit.gear[p] === itemId && fighter.gear[p] !== itemId) ?? plaetze.find(p => mit.gear[p] === itemId);
+      const ersetzt = plaetze
+        .filter(p => fighter.gear[p] && fighter.gear[p] !== mit.gear[p])
+        .map(p => ITEM_DEFS[fighter.gear[p]!]?.name ?? fighter.gear[p]);
+      const wohin = ersetzt.length ? `ersetzt ${ersetzt.join(' und ')}` : 'Platz ist frei';
+      vergleich = `<div class="hdm2-vergleich-titel">${ziel ? `${PLATZ_NAMEN[ziel]}: ` : ''}${wohin}</div>${vergleichHtml(fighter, mit)}`;
+      knopf = `<button class="hdm2-aktion" data-aktion="anlegen">ANLEGEN</button>`;
+    } else {
+      vergleich = '<div class="hdm2-vergleich wert-minus">Passt gerade nicht: Ein Schild braucht eine Einhandwaffe in der Haupthand.</div>';
+      knopf = '';
+    }
+  }
+
+  return `
+    <div class="hdm2-auswahl" id="hdm2-auswahl">
+      <div class="hdm2-auswahl-kopf">
+        <div class="hdm-gear-icon ${rarityClass(def.tags)}"><img src="assets/sprites/final/${getItemSpriteKey(itemId)}.png" onerror="this.style.display='none'">${setAbzeichen(itemId)}</div>
+        <div class="hdm2-auswahl-titel">
+          <div class="hdm2-auswahl-name ${rarityClass(def.tags)}">${def.name}</div>
+          <div class="hdm2-auswahl-art">${artText(itemId)}</div>
+          <div class="hdm2-auswahl-werte">${gearStatsSummary(itemId)}</div>
+          ${itemEigenschaften(def.tags).map(e => `<div class="hdm2-eigenschaft">✦ <b>${e.name}:</b> ${e.description}</div>`).join('')}
+        </div>
+        ${knopf}
+      </div>
+      ${vergleich}
+      ${set ? `<div class="hdm2-auswahl-set"><div class="hdm2-set-kopf">${set.zeichen} ${set.name} <span class="hdm2-set-zahl">${getragen}/3 getragen</span></div>${setBoniHtml(set, getragen)}</div>` : ''}
+      ${def.flavorText ? `<div class="hdm2-auswahl-text">«${def.flavorText}»</div>` : ''}
+    </div>`;
+}
 
 function buildInventoryHtml(fighter: GuildFighter): string {
   if (!gameState) return '';
@@ -226,14 +400,64 @@ function buildInventoryHtml(fighter: GuildFighter): string {
   });
 
   if (items.length === 0) {
-    return '<div class="hdm2-inv-empty">Keine Ausr\u00FCstung im Inventar</div>';
+    return '<div class="hdm2-inv-empty">Keine Ausrüstung im Inventar</div>';
   }
 
-  return items.map(item => `
-    <div class="hdm2-inv-slot ${item.rarCls}" data-equip-id="${item.id}" title="${item.name}${gearStatsSummary(item.id) ? '\n' + gearStatsSummary(item.id) : ''}">
+  // Ist ein Platz angetippt, treten Gegenstände für andere Plätze zurück
+  const platz = wunschPlatz();
+  return items.map(item => {
+    const gewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id ? ' gewaehlt' : '';
+    const mit = mitGegenstand(fighter, item.id, platz);
+    const passt = !mit ? ' passt-nicht' : platz && mit.gear[platz] !== item.id ? ' anderer-platz' : '';
+    const titel = [item.name, gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id)].filter(Boolean).join('\n');
+    return `
+    <div class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}">
       <img src="assets/sprites/final/${item.sprKey}.png" onerror="this.style.display='none'">
+      ${setAbzeichen(item.id)}
       ${item.qty > 1 ? `<span class="hdm2-inv-qty">${item.qty}</span>` : ''}
+    </div>`;
+  }).join('');
+}
+
+/** Wert mit dem Anteil aus Ausrüstung und Sets: «ATK 22 +12» */
+function wertHtml(symbol: string, name: string, wert: string, bonus: number, bonusText?: string): string {
+  const plus = bonus !== 0 ? ` <small class="${bonus > 0 ? 'wert-plus' : 'wert-minus'}">${bonusText ?? vorzeichen(bonus)}</small>` : '';
+  return `<span>${symbol} ${name} ${wert}${plus}</span>`;
+}
+
+function statsHtml(fighter: GuildFighter): string {
+  const base = fighter.baseStats;
+  const eff = gearSystem.getEffectiveStats(fighter);
+  const spdBonus = Math.round((eff.spd - base.spd) * 100) / 100;
+  const critBonus = Math.round((eff.critChance - base.critChance) * 100);
+  const kritSchaden = Math.round(eff.critMult * 100) / 100;
+  return `
+    <div class="hdm2-stats" title="Werte mit Ausrüstung und Set-Boni; die kleine Zahl kommt von der Ausrüstung">
+      ${wertHtml('⚔', 'ATK', String(eff.atk), eff.atk - base.atk)}
+      ${wertHtml('🛡', 'DEF', String(eff.def), eff.def - base.def)}
+      ${wertHtml('❤', 'HP', String(eff.maxHp), eff.maxHp - base.maxHp)}
+      ${wertHtml('⚡', 'SPD', String(Math.round(eff.spd * 100) / 100), spdBonus)}
+      ${wertHtml('🎯', 'CRIT', `${Math.round(eff.critChance * 100)}%`, critBonus, `${vorzeichen(critBonus)} %`)}
+      <span>💥 KRIT ×${kritSchaden}</span>
+    </div>`;
+}
+
+/** Eigenschaften der Gegenstände und getragene Sets mit ihren Boni (leer, wenn der Held keins von beidem hat) */
+function setsHtml(fighter: GuildFighter): string {
+  const eigenschaften = [...eigenschaftenVon(fighter).values()];
+  const sets = getrageneSets(fighter.gear);
+  if (sets.length === 0 && eigenschaften.length === 0) return '';
+  const zeilen = eigenschaften.map(e => `<div class="hdm2-eigenschaft">✦ <b>${e.name}:</b> ${e.description}</div>`).join('');
+  const karten = sets.map(({ set, teile }) => `
+    <div class="hdm2-set${teile >= 2 ? ' aktiv' : ''}">
+      <div class="hdm2-set-kopf">${set.zeichen} ${set.name} <span class="hdm2-set-zahl">${teile}/3</span></div>
+      ${setBoniHtml(set, teile)}
     </div>`).join('');
+  return `
+    <div class="hdm2-sets-area">
+      ${zeilen ? `<div class="lbl">Eigenschaften der Ausrüstung</div><div class="hdm2-eigenschaften">${zeilen}</div>` : ''}
+      ${karten ? `<div class="lbl">Set-Boni</div><div class="hdm2-sets">${karten}</div>` : ''}
+    </div>`;
 }
 
 function renderDetailModal(fighter: GuildFighter): string {
@@ -253,20 +477,21 @@ function renderDetailModal(fighter: GuildFighter): string {
   return `
     <div class="ov" id="hero-detail-ov">
     <div class="hdm2-outer">
-      <div class="hdm2-inv-panel" id="hdm2-inv-panel" style="display:none">
+      <div class="hdm2-inv-panel" id="hdm2-inv-panel" style="display:${inventarOffen ? 'flex' : 'none'}">
         <div class="hdm2-inv-header">
-          <span class="lbl">\uD83C\uDF92 Inventar</span>
+          <span class="lbl">🎒 Inventar</span>
+          <span class="hdm2-inv-hint">${wunschPlatz() ? `Hell: passt ${PLATZ_IN[wunschPlatz()!]}` : 'Antippen zeigt Werte und Vergleich'}</span>
         </div>
         <div class="hdm2-inv-grid">
           ${buildInventoryHtml(fighter)}
         </div>
       </div>
       <div class="hdm2">
-        <button class="mcl" id="hero-detail-close">\u2715</button>
-        <button class="hdm2-inv-btn" id="hdm2-inv-toggle">\uD83C\uDF92 Inventar</button>
+        <button class="mcl" id="hero-detail-close">✕</button>
+        <button class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle">🎒 Inventar</button>
         <div class="hdm2-header">
           <div class="hdm2-name">${fighter.name}</div>
-          <div class="hdm2-sub">${className} \u00B7 Lv ${fighter.level}</div>
+          <div class="hdm2-sub">${className} · Lv ${fighter.level}</div>
         </div>
         <div class="hdm2-portrait-area">
           <div class="hdm2-gear-col hdm2-gear-left">
@@ -283,19 +508,15 @@ function renderDetailModal(fighter: GuildFighter): string {
             <span class="hdm2-slot-label">${gearSlots[3].label}</span>
           </div>
         </div>
+        ${auswahlHtml(fighter)}
         <div class="hdm2-xp-row">
           <div class="hdm2-xpbar"><div class="hdm2-xpfill" style="width:${pct}%"></div></div>
           <div class="hdm2-xplabel">XP ${xpLabel}</div>
         </div>
-        <div class="hdm2-stats">
-          <span>\u2694 ATK ${fighter.baseStats.atk}</span>
-          <span>\uD83D\uDEE1 DEF ${fighter.baseStats.def}</span>
-          <span>\u2764 HP ${fighter.baseStats.hp}/${fighter.baseStats.maxHp}</span>
-          <span>\u26A1 SPD ${fighter.baseStats.spd}</span>
-          <span>\uD83C\uDFAF CRIT ${Math.round(fighter.baseStats.critChance * 100)}%</span>
-        </div>
+        ${statsHtml(fighter)}
+        ${setsHtml(fighter)}
         <div class="hdm2-skills-area">
-          <div class="lbl">F\u00E4higkeiten</div>
+          <div class="lbl">Fähigkeiten</div>
           <div class="hdm2-skills">${skillsHtml}</div>
         </div>
       </div>
@@ -372,6 +593,7 @@ const ITEM_CATEGORIES: ItemCategory[] = [
 ];
 
 function rarityClass(tags: string[]): string {
+  if (tags.includes('set')) return 'rar-set';
   if (tags.includes('legendary')) return 'rar-legendary';
   if (tags.includes('epic')) return 'rar-epic';
   if (tags.includes('rare')) return 'rar-rare';
@@ -380,6 +602,7 @@ function rarityClass(tags: string[]): string {
 }
 
 function rarityLabel(tags: string[]): string {
+  if (tags.includes('set')) return 'Set-Teil';
   if (tags.includes('legendary')) return 'Legendär';
   if (tags.includes('epic')) return 'Episch';
   if (tags.includes('rare')) return 'Selten';
@@ -437,6 +660,8 @@ function renderInventarTab(): string {
         rl,
         tierStr,
         statsStr,
+        eigenschaftenText(item.id),
+        setTooltip(item.id),
         item.def.flavorText,
         isEquipped ? 'Ausger\u00FCstet' : '',
       ].filter(Boolean).join('\n');
@@ -449,6 +674,7 @@ function renderInventarTab(): string {
                onerror="this.style.display='none'">
           ${isStackable && item.qty > 1 ? `<span class="inv-cell-qty">\u00D7${item.qty}</span>` : ''}
           ${isEquipped ? '<span class="inv-cell-eqbadge">E</span>' : ''}
+          ${setAbzeichen(item.id)}
           <span class="inv-cell-nm">${item.def.name}</span>
         </div>`;
     }).join('');
@@ -491,6 +717,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
       case 'hire': return renderHireTab();
       case 'train': return renderTrainTab();
       case 'inventar': return renderInventarTab();
+      case 'sets': return state ? setSammlungHtml(state) : '';
     }
   }
 
@@ -504,6 +731,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
         <button class="${tabClass('hire')}" data-tab="hire">ANHEUERN</button>
         <button class="${tabClass('train')}" data-tab="train">TRAINIEREN</button>
         <button class="${tabClass('inventar')}" data-tab="inventar">\uD83C\uDF92 INVENTAR</button>
+        <button class="${tabClass('sets')}" data-tab="sets">\u2726 SETS</button>
       </div>
       <div class="tab-content">
         ${tabContent()}
@@ -544,6 +772,8 @@ export function renderHeroesScreen(container: HTMLElement): void {
       const fighter = gameState?.fighters.find(f => f.id === fid);
       if (!fighter) return;
 
+      auswahl = null;
+      inventarOffen = false;
       openDetailModal(fighter, container);
     });
   }
@@ -613,30 +843,60 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
   const invPanel = overlay.querySelector('#hdm2-inv-panel') as HTMLElement | null;
   if (invToggle && invPanel) {
     invToggle.addEventListener('click', () => {
-      const isOpen = invPanel.style.display !== 'none';
-      invPanel.style.display = isOpen ? 'none' : 'flex';
-      invToggle.classList.toggle('active', !isOpen);
+      inventarOffen = invPanel.style.display === 'none';
+      invPanel.style.display = inventarOffen ? 'flex' : 'none';
+      invToggle.classList.toggle('active', inventarOffen);
+      if (inventarOffen) invPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   }
 
-  // Equip item on click
-  const equipSlots = overlay.querySelectorAll('.hdm2-inv-slot');
-  for (let i = 0; i < equipSlots.length; i++) {
-    equipSlots[i].addEventListener('click', () => {
-      const itemId = equipSlots[i].getAttribute('data-equip-id');
-      if (!itemId || !gameState) return;
-      const ok = gearSystem.equip(gameState, fighter, itemId);
-      if (ok) {
-        // Re-render the modal to reflect gear change
-        openDetailModal(fighter, container);
-        // Re-open the inventory panel
-        const newPanel = container.querySelector('#hdm2-inv-panel') as HTMLElement | null;
-        const newToggle = container.querySelector('#hdm2-inv-toggle') as HTMLElement | null;
-        if (newPanel) newPanel.style.display = 'flex';
-        if (newToggle) newToggle.classList.add('active');
-      }
+  // Neu zeichnen und die Auswahl ins Bild holen (am Handy liegt das Inventar unter dem Helden)
+  const neuZeichnen = (): void => {
+    openDetailModal(fighter, container);
+    const box = container.querySelector('#hdm2-auswahl') as HTMLElement | null;
+    box?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+  };
+
+  // Platz am Helden antippen: Gegenstand zeigen (nochmal antippen schliesst); ein leerer Platz öffnet das Inventar
+  overlay.querySelectorAll<HTMLElement>('.hdm-gear-icon[data-slot]').forEach(el => {
+    el.addEventListener('click', () => {
+      const slot = el.dataset.slot as EquipSlot;
+      auswahl = auswahl?.art === 'slot' && auswahl.slot === slot ? null : { art: 'slot', slot };
+      if (auswahl && !fighter.gear[slot]) inventarOffen = true;
+      neuZeichnen();
     });
-  }
+  });
+
+  // Gegenstand im Inventar antippen: Werte und Vergleich zeigen (für den zuvor angetippten Platz)
+  overlay.querySelectorAll<HTMLElement>('.hdm2-inv-slot[data-item-id]').forEach(el => {
+    el.addEventListener('click', () => {
+      const itemId = el.dataset.itemId!;
+      const platz = wunschPlatz();
+      // Der angetippte Platz gilt nur für Gegenstände, die dort hineinpassen
+      const passt = platz && mitGegenstand(fighter, itemId, platz)?.gear[platz] === itemId ? platz : undefined;
+      auswahl = auswahl?.art === 'inventar' && auswahl.itemId === itemId
+        ? (platz ? { art: 'slot', slot: platz } : null)
+        : { art: 'inventar', itemId, platz: passt };
+      neuZeichnen();
+    });
+  });
+
+  // Anlegen oder Ablegen
+  const aktion = overlay.querySelector('.hdm2-aktion') as HTMLElement | null;
+  aktion?.addEventListener('click', () => {
+    if (!gameState || !auswahl) return;
+    if (auswahl.art === 'slot') {
+      gearSystem.unequip(gameState, fighter, auswahl.slot);
+      auswahl = null;
+      inventarOffen = true;
+    } else {
+      const itemId = auswahl.itemId;
+      if (!gearSystem.equip(gameState, fighter, itemId, auswahl.platz)) return;
+      const slot = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
+      auswahl = slot ? { art: 'slot', slot } : null;
+    }
+    neuZeichnen();
+  });
 }
 
 // ─── Actions ────────────────────────────────────────────────────

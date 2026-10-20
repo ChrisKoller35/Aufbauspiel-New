@@ -1,8 +1,9 @@
 import { GameState } from '../models/GameState';
 import { GuildFighter, FighterStats } from '../models/GuildRoster';
 import { SpecialEffect } from '../models/ExpeditionRun';
-import { ITEM_DEFS } from '../data/items';
+import { ITEM_DEFS, ItemDef } from '../data/items';
 import { extractSpecialTags, SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
+import { setBonusWerte, setFaehigkeiten } from './DungeonSets';
 
 export type EquipSlot = 'mainHand' | 'offHand' | 'armor' | 'trinket';
 
@@ -20,14 +21,14 @@ export class GearSystem {
    * Slot placement follows 2-slot weapon rules (see above).
    * Returns true on success.
    */
-  equip(state: GameState, fighter: GuildFighter, itemId: string): boolean {
+  equip(state: GameState, fighter: GuildFighter, itemId: string, wunsch?: EquipSlot): boolean {
     const itemDef = ITEM_DEFS[itemId];
     if (!itemDef || !itemDef.gearSlot) return false;
 
     // Check stock
     if ((state.globalStock[itemId] ?? 0) < 1) return false;
 
-    const slot = this.resolveEquipSlot(fighter, itemId);
+    const slot = this.resolveEquipSlot(fighter, itemId, wunsch);
     if (!slot) return false;
 
     // If placing a 2H weapon, clear offHand first
@@ -48,8 +49,10 @@ export class GearSystem {
   /**
    * Determine which physical gear slot an item should go into.
    * Returns null if the item cannot be equipped (e.g. shield without 1H mainHand).
+   * wunsch: der Platz, den der Spieler auf der Heldenseite angetippt hat. Eine Einhandwaffe
+   * kommt dann in genau diese Hand (die Nebenhand nur neben einer Einhandwaffe).
    */
-  resolveEquipSlot(fighter: GuildFighter, itemId: string): EquipSlot | null {
+  resolveEquipSlot(fighter: GuildFighter, itemId: string, wunsch?: EquipSlot): EquipSlot | null {
     const itemDef = ITEM_DEFS[itemId];
     if (!itemDef || !itemDef.gearSlot) return null;
 
@@ -70,10 +73,15 @@ export class GearSystem {
       return null;
     }
 
-    // 1H weapon: mainHand preferred; if mainHand already has a 1H → offHand (dual-wield)
+    // 1H weapon: mainHand preferred; if mainHand already has a 1H → offHand (dual-wield),
+    // ausser dort liegt ein Schild: dann wird die Hauptwaffe getauscht und der Schild bleibt
     if (wst === '1h') {
       const mhDef = fighter.gear.mainHand ? ITEM_DEFS[fighter.gear.mainHand] : null;
-      if (mhDef && mhDef.weaponSlotType === '1h') return 'offHand';
+      const ohDef = fighter.gear.offHand ? ITEM_DEFS[fighter.gear.offHand] : null;
+      const zweiteWaffeMoeglich = mhDef?.weaponSlotType === '1h';
+      if (wunsch === 'mainHand') return 'mainHand';
+      if (wunsch === 'offHand') return zweiteWaffeMoeglich ? 'offHand' : 'mainHand';
+      if (zweiteWaffeMoeglich && ohDef?.weaponSlotType !== 'shield') return 'offHand';
       return 'mainHand';
     }
 
@@ -93,7 +101,7 @@ export class GearSystem {
   }
 
   /**
-   * Calculate effective stats = base + gear bonuses from all 4 slots.
+   * Calculate effective stats = base + gear bonuses from all 4 slots + set bonuses (DungeonSets).
    */
   getEffectiveStats(fighter: GuildFighter): FighterStats {
     const base = fighter.baseStats;
@@ -101,29 +109,32 @@ export class GearSystem {
 
     // Apply gear bonuses (halved if gear needs repair)
     const gearMult = fighter.gearNeedsRepair ? 0.5 : 1.0;
-    for (const slot of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
-      const itemId = fighter.gear[slot];
-      if (!itemId) continue;
-      const itemDef = ITEM_DEFS[itemId];
-      if (!itemDef?.statBonuses) continue;
-
-      if (itemDef.statBonuses.atk) stats.atk += Math.floor(itemDef.statBonuses.atk * gearMult);
-      if (itemDef.statBonuses.def) stats.def += Math.floor(itemDef.statBonuses.def * gearMult);
-      if (itemDef.statBonuses.hp) {
-        const hpBonus = Math.floor(itemDef.statBonuses.hp * gearMult);
+    const add = (bonus: NonNullable<ItemDef['statBonuses']> & { critMult?: number }): void => {
+      if (bonus.atk) stats.atk += Math.floor(bonus.atk * gearMult);
+      if (bonus.def) stats.def += Math.floor(bonus.def * gearMult);
+      if (bonus.hp) {
+        const hpBonus = Math.floor(bonus.hp * gearMult);
         stats.maxHp += hpBonus;
         stats.hp += hpBonus;
       }
       // Tempo-Boni sind Bruchteile (−0.1 bis +0.2): nicht abrunden, sonst wird +0.1 zu 0 und −0.05 zu −1
-      if (itemDef.statBonuses.spd) stats.spd = Math.round((stats.spd + itemDef.statBonuses.spd * gearMult) * 100) / 100;
-      if (itemDef.statBonuses.critChance) stats.critChance += itemDef.statBonuses.critChance * gearMult;
+      if (bonus.spd) stats.spd = Math.round((stats.spd + bonus.spd * gearMult) * 100) / 100;
+      if (bonus.critChance) stats.critChance += bonus.critChance * gearMult;
+      if (bonus.critMult) stats.critMult = Math.round((stats.critMult + bonus.critMult * gearMult) * 100) / 100;
+    };
+    for (const slot of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
+      const itemId = fighter.gear[slot];
+      if (!itemId) continue;
+      const itemDef = ITEM_DEFS[itemId];
+      if (itemDef?.statBonuses) add(itemDef.statBonuses);
     }
+    add(setBonusWerte(fighter.gear));
 
     return stats;
   }
 
   /**
-   * Collect special effects from all equipped gear items.
+   * Collect special effects from all equipped gear items and complete sets.
    */
   getSpecialEffects(fighter: GuildFighter): SpecialEffect[] {
     const effects: SpecialEffect[] = [];
@@ -142,6 +153,7 @@ export class GearSystem {
         }
       }
     }
+    effects.push(...setFaehigkeiten(fighter.gear));
     return effects;
   }
 

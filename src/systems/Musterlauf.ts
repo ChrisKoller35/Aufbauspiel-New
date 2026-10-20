@@ -9,13 +9,14 @@
 import { createNewGameState, GameState } from '../models/GameState';
 import { createGuildFighter } from '../models/GuildRoster';
 import { ExpeditionRun } from '../models/ExpeditionRun';
-import { MUSTER_TEAMS, musterWerte } from '../data/musterteams';
+import { MUSTER_SETS, MUSTER_TEAMS, musterWerte } from '../data/musterteams';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { totalXpForLevel } from './HeroProgression';
 
 export type MusterTeamName = keyof typeof MUSTER_TEAMS;
+export type MusterSetName = keyof typeof MUSTER_SETS;
 
 /**
  * Spielweise bei Wahl-Räumen (Rastplätze: immer rasten):
@@ -28,8 +29,11 @@ export type Spielweise = 'vorsichtig' | 'gierig' | 'klug';
 /** Ab so viel Leben (Anteil der ganzen Gruppe) nimmt «klug» das Risiko. */
 export const KLUG_AB_LEBEN = 0.85;
 
-/** Neuer Spielstand mit den Helden des Musterteams (startExpedition prüft keine Sperren). */
-export function musterStand(team: MusterTeamName, startwert: number): { state: GameState; ids: number[] } {
+/**
+ * Neuer Spielstand mit den Helden des Musterteams (startExpedition prüft keine Sperren).
+ * Mit `sets` tragen die Helden statt ihrer Ausrüstung die Dungeon-Sets aus MUSTER_SETS.
+ */
+export function musterStand(team: MusterTeamName, startwert: number, sets?: MusterSetName): { state: GameState; ids: number[] } {
   const state = createNewGameState();
   state.rngSeed = startwert;
   const ids = MUSTER_TEAMS[team].helden.map((muster, i) => {
@@ -37,7 +41,7 @@ export function musterStand(team: MusterTeamName, startwert: number): { state: G
     held.id = 100 + i;
     held.level = muster.stufe;
     held.xp = totalXpForLevel(muster.stufe);
-    held.gear = { ...muster.gear };
+    held.gear = { ...((sets && MUSTER_SETS[sets].gear[muster.name]) || muster.gear) };
     state.fighters.push(held);
     return held.id;
   });
@@ -73,11 +77,11 @@ export function gewonnen(run: ExpeditionRun): boolean {
   return run.status === 'victory' && run.bossesKilled > 0;
 }
 
-/** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …). */
-export function siegeVon(routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number): number {
+/** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets. */
+export function siegeVon(routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName): number {
   let siege = 0;
   for (let i = 1; i <= laeufe; i++) {
-    const { state, ids } = musterStand(team, i * 7919);
+    const { state, ids } = musterStand(team, i * 7919, sets);
     if (gewonnen(spieleRoute(state, ids, routeId, spielweise))) siege++;
   }
   return siege;

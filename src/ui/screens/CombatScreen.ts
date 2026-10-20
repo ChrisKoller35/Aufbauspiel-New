@@ -13,6 +13,7 @@ import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
+import { getSet } from '../../data/dungeonSets';
 import { getLogLineColor } from '../../rendering/Colors';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
@@ -456,16 +457,26 @@ export class CombatScreen {
     hpFill.style.width = `${unit.maxHp > 0 ? Math.min(100, Math.max(0, unit.hp) / unit.maxHp * 100) : 0}%`;
     barTrack.appendChild(hpFill);
 
-    // Effect badges
+    // Effect badges: Gegenstands-Effekte mit Kürzel, Set-Fähigkeiten mit dem Zeichen des Sets
     if (unit.specialEffects && unit.specialEffects.length > 0) {
       const badges = document.createElement('div');
       badges.className = 'mc-co-badges';
+      const gezeigteSets = new Set<string>();
       for (const eff of unit.specialEffects) {
         const def = SPECIAL_EFFECT_DEFS[eff.id];
         if (!def) continue;
+        const set = eff.set ? getSet(eff.set) : undefined;
+        if (set && gezeigteSets.has(set.id)) continue;
         const badge = document.createElement('span');
-        badge.className = 'mc-co-badge';
-        badge.textContent = def.name.substring(0, 3).toUpperCase();
+        badge.className = set ? 'mc-co-badge mc-co-badge-set' : 'mc-co-badge';
+        if (set) {
+          gezeigteSets.add(set.id);
+          badge.textContent = set.zeichen;
+          badge.title = `${set.name}: ${set.dreiTeile.name} – ${set.dreiTeile.text}`;
+        } else {
+          badge.textContent = def.name.substring(0, 3).toUpperCase();
+          badge.title = `${def.name}: ${def.description}`;
+        }
         badges.appendChild(badge);
       }
       info.appendChild(badges);
@@ -1040,6 +1051,8 @@ export class CombatScreen {
 
   private showActionBanners(lines: string[], partyUnits: CombatUnit[], enemyUnits: CombatUnit[]): void {
     const usesPattern = /^(.+?) uses (.+?) →/;
+    // Set-Fähigkeiten und andere Kampfeffekte (systems/Kampfeffekte.ts): «✦ Brom setzt Rudelgeheul ein → …»
+    const effektPattern = /^✦ (.+?) setzt (.+?) ein →/;
     const setztPattern = /^(.+?) setzt (.+?) ein →/;
     const enragePattern = /^!! (.+?) ENRAGE !!$/;
 
@@ -1049,10 +1062,15 @@ export class CombatScreen {
       let bannerColor = 'var(--mc-info)';
 
       const usesMatch = line.match(usesPattern);
+      const effektMatch = line.match(effektPattern);
       const setztMatch = line.match(setztPattern);
       const enrageMatch = line.match(enragePattern);
 
-      if (usesMatch) {
+      if (effektMatch) {
+        unitName = effektMatch[1].trim();
+        bannerText = `✦ ${effektMatch[2].trim().toUpperCase()}`;
+        bannerColor = '#6ee7b7';
+      } else if (usesMatch) {
         unitName = usesMatch[1].trim();
         bannerText = usesMatch[2].trim().toUpperCase();
         bannerColor = '#ef9a9a';

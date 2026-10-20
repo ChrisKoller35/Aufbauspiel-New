@@ -42,6 +42,21 @@ export interface EncounterRoom {
 export interface SpecialEffect {
   id: string;           // z.B. 'lifesteal', 'dodge', 'reflect'
   usesLeft: number;     // -1 = unbegrenzt, 0 = verbraucht
+  // Werte für diesen Träger; fehlen sie, gelten power/procChance aus SPECIAL_EFFECT_DEFS
+  power?: number;
+  chance?: number;
+  /** Dauer oder Abstand in Runden (Gift, Gezeitenwelle, Spott …) */
+  runden?: number;
+  /** Höchstwert (Glutherz, Drachengier) */
+  max?: number;
+  /** Anteil an Schaden oder Leben (Druckwelle, Gezeitenwelle …) */
+  anteil?: number;
+  /** Schild je Teammitglied (Verbotene Fussnote) */
+  schild?: number;
+  /** Anzeigename im Kampf, z. B. der Name der Set-Fähigkeit */
+  name?: string;
+  /** Kommt aus diesem Dungeon-Set (data/dungeonSets.ts) */
+  set?: string;
 }
 
 export interface CombatUnit {
@@ -73,12 +88,27 @@ export interface CombatUnit {
   isWarMachine?: boolean;
   /** Siege: dieser Gegner bevorzugt die Kriegsmaschine als Angriffsziel */
   prefersWarMachineTarget?: boolean;
+  // ── Zustand aus Kampfeffekten (systems/Kampfeffekte.ts), gilt für einen Kampf ──
+  /** Schild: schluckt Schaden, bevor Leben verloren geht */
+  schild?: number;
+  /** Gift: Schaden am Rundenende, noch so viele Runden */
+  gift?: { schaden: number; runden: number };
+  /** Setzt den nächsten Zug aus; der Text nennt den Grund (z. B. «Einfrieren») */
+  betaeubt?: string;
+  /** Hat gerade ausgesetzt und kann bis zum nächsten eigenen Zug nicht erneut aussetzen */
+  betaeubtSchutz?: boolean;
+  /** Schattenstoss: der erste Angriff in diesem Kampf steht noch aus */
+  ersterSchlag?: boolean;
+  /** Angriff und Verteidigung, die Kampfeffekte gerade dazugeben (Glutherz, Tiefenrausch, Drachengier, Bastion) */
+  effektBoni?: Record<string, number>;
 }
 
 export interface CombatBuff {
   stat: string;
   value: number;
   remainingRounds: number;
+  /** Woher der Buff kommt (z. B. 'rudelgeheul'); solche Buffs enden mit dem Kampf */
+  quelle?: string;
 }
 
 export interface CombatSkill {
@@ -118,6 +148,8 @@ export interface ExpeditionRun {
   bossesKilled: number;             // Anzahl besiegter Bosse
   /** Hort-Gier: Punkte aus eingesteckten Schätzen, machen den Boss stärker (RouteDef.hortGier) */
   gier?: number;
+  /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
+  setTeil?: string | null;
   /** Feature #11: Ausstehende Begegnungs-Wahl (find/rest Raum) */
   pendingChoice?: { roomIndex: number; optionA: EncounterChoice; optionB: EncounterChoice };
   /** Feature #15: Checkpoint-Dialog ausstehend */

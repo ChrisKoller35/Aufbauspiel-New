@@ -11,6 +11,7 @@ import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
+import { expeditionsBeginn } from './Kampfeffekte';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
 export const MERCHANT_PRICES: Record<string, number> = {
@@ -166,6 +167,9 @@ export class ExpeditionSystem {
       isGrandmasterTrial: isGrandmasterTrial || undefined,
       abilitiesUsed: {},
     };
+
+    // Set-Fähigkeiten, die die ganze Expedition wirken (Schildwall)
+    expeditionsBeginn(run.party, zeile => run.combatLog.push(zeile));
 
     // Belagerungs-System initialisieren (nur für Siege-Routen)
     if (route.isSiegeRoute) {
