@@ -93,7 +93,7 @@ Stand 20.10.2026, 200 Läufe. Drachenhort und Himmelsarchiv fehlen, sie haben ke
 | Verfallene Lichtung | 5.74 | +2.0 % ✓ | −15.5 % ✓ |
 | Tiefwald (mittel) | 3.22 | +9.4 % ✓ | −18.3 % ✓ |
 | Tiefe Höhle | 2.73 | +8.4 % ✓ | −21.8 % ✓ |
-| Spinnenhoehle | 3.25 | +4.1 % ✓ | −16.1 % ✓ |
+| Spinnenhöhle | 3.25 | +4.1 % ✓ | −16.1 % ✓ |
 | Versunkene Küste | 3.86 | +1.9 % ✓ | −15.9 % ✓ |
 | Geisterwald | 4.35 | +0.0 % ✓ | −23.2 % ✓ |
 | Verschlungene Tunnel | 4.34 | +0.0 % ✓ | −20.9 % ✓ |
@@ -129,7 +129,7 @@ nach einer Änderung also den ganzen Dungeon nachmessen. Messrauschen etwa ±1,5
 | Tiefe Höhle | 1 «Der Goblin-Stollen» | −3.3 % | ✓ |
 |  | 2 «Der singende Kristall» | −12.7 % | ✓ |
 |  | 3 «Die Fledermäuse» | −12.7 % | ✓ |
-| Spinnenhoehle | 1 «Die Seidenfäden» | −5.5 % | ✓ |
+| Spinnenhöhle | 1 «Die Seidenfäden» | −5.5 % | ✓ |
 |  | 2 «Die Brut» | −11.2 % | ✓ |
 |  | 3 «Der Kokon» | −3.4 % | ✓ |
 | Versunkene Küste | 1 «Das Wrack» | −9.7 % | ✓ |

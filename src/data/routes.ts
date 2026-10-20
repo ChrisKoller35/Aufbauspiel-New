@@ -191,7 +191,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
   },
   cave_spider: {
     id: 'cave_spider',
-    name: 'Spinnenhoehle',
+    name: 'Spinnenhöhle',
     tier: 2,
     rooms: 8,
     encounters: [
