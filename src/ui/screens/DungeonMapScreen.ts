@@ -16,6 +16,7 @@ import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
 import { materialZeile } from '../components/SchmiedeAnzeige';
 import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
+import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
 
 
@@ -661,6 +662,10 @@ function showRouteModal(routeId: string, state: GameState): void {
   }
   const material = materialZeile(route.id);
   if (material) detailHtml += `<p class="dmap-mat"><span style="color:#fbbf24">⚒️ Schmiede:</span> ${material}</p>`;
+  // Auftragsbrett im Gildenhaus: Zettel und Kapitel der Kette, die in diesem Dungeon zählen
+  for (const titel of auftraegeFuerDungeon(state, route.id, Date.now())) {
+    detailHtml += `<p class="dmap-auftrag">📜 Auftragsbrett: ${titel}</p>`;
+  }
   detailHtml += kartenGeschichteHtml(state, route.id);
   if (isDeadEnd) detailHtml += `<p><span style="color:#8a7a5a">⚑ Sackgasse</span> — Kein Durchgang</p>`;
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;

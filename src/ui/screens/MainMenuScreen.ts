@@ -1,5 +1,5 @@
 // ─── Magic City – Main Menu Screen ──────────────────────────────
-// Default landing screen with hero section and 4 navigation tiles.
+// Default landing screen with hero section, 4 navigation tiles and the wide Gildenhaus tile.
 // ────────────────────────────────────────────────────────────────
 
 import { navigateTo, ScreenId } from '../ScreenRouter';
@@ -8,6 +8,8 @@ import { renderHeader } from './HeaderRenderer';
 import { stadtBannerHtml, bindeStadtBanner } from './StadtwegFenster';
 import { probespielHinweisHtml } from '../components/ProbespielHinweis';
 import { ranglisteKurz } from '../../systems/Rangliste';
+import { brettKurz } from '../../systems/Auftragsbrett';
+import { zeigeGildenhaus } from './GildenhausScreen';
 
 /** Chosen background; survives re-renders of the main menu on navigation. */
 let chosenBg = 1;
@@ -20,6 +22,11 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
   // Rangliste mit Rivalen: Platz auf der Karte und in der Woche, Abzeichen für eine offene Belohnung
   const rang = ranglisteKurz(state, Date.now());
   const rangAbzeichen = rang.offen > 0 ? '<span class="tile-abzeichen">🏆 Truhe bereit</span>' : '';
+  // Gildenhaus: Zettel am Auftragsbrett; Abzeichen, wenn etwas abgegeben werden kann oder die Zettel von heute neu sind
+  const brett = brettKurz(state, Date.now());
+  const brettAbzeichen = brett.abgeben ? '<span class="tile-abzeichen">📜 Abgeben möglich</span>'
+    : brett.neu && brett.offen > 0 ? '<span class="tile-abzeichen">📜 Neue Zettel</span>' : '';
+  const brettText = brett.offen > 0 ? `${brett.offen} Zettel offen` : 'alle Zettel erledigt';
 
   const el = document.createElement('div');
   el.id = 's-main';
@@ -56,6 +63,11 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
         <span class="tile-name">Rangliste</span>
         <span class="tile-desc">Gipfel: Platz ${rang.platz} von ${rang.gilden} \u00b7 Woche: Platz ${rang.wochePlatz}</span>
       </div>
+      <div class="tile tile-gildenhaus" data-gildenhaus="brett" style="background-image:url('assets/buildings/bld_guild_hall.png')">
+        ${brettAbzeichen}
+        <span class="tile-name">Gildenhaus</span>
+        <span class="tile-desc">Auftragsbrett: ${brettText} \u00b7 ${brett.siegel} Siegel \u00b7 Troph\u00e4ensaal</span>
+      </div>
     </div>
 
     <div class="bg-switcher" id="bg-switcher">
@@ -69,6 +81,11 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
 
   // Delegate click events for all [data-nav] elements
   el.addEventListener('click', (e: MouseEvent) => {
+    // Gildenhaus: immer mit dem Auftragsbrett öffnen
+    if ((e.target as HTMLElement).closest('[data-gildenhaus]')) {
+      zeigeGildenhaus('brett');
+      return;
+    }
     const target = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
     if (!target) return;
     const screen = target.dataset.nav as ScreenId;

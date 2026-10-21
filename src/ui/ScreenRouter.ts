@@ -12,7 +12,8 @@ export type ScreenId =
   | 'bestiarium'
   | 'achievements'
   | 'combat'
-  | 'dungeon';
+  | 'dungeon'
+  | 'gildenhaus';
 
 const SCREEN_STYLE_ACTIVE = 'display:flex;flex-direction:column;width:100vw;height:100vh;overflow-y:auto;overflow-x:hidden;background:#060810;';
 const SCREEN_STYLE_HIDDEN = 'display:none;';
@@ -76,4 +77,9 @@ export function goBack(): void {
 
 export function getCurrentScreen(): ScreenId {
   return navHistory[navHistory.length - 1];
+}
+
+/** Der Bildschirm davor, für «Zurück» in Bildschirmen, die von mehreren Orten aus erreichbar sind */
+export function getPreviousScreen(): ScreenId | undefined {
+  return navHistory[navHistory.length - 2];
 }

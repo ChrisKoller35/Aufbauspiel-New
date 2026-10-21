@@ -59,7 +59,9 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    Regeln in `docs/GESCHICHTEN.md`; der Test verlangt für jede Route eine Geschichte.
 7. **Rangliste:** eine Zeile in `src/data/dungeonNamen.ts`, wie der Dungeon im Satz heisst («im Vulkankern»,
    «den Vulkankern»); der Test verlangt sie für jede Route. Rivalen, Ruhm und Wappen rechnen von selbst
-   mit (`docs/RANGLISTE.md`).
+   mit (`docs/RANGLISTE.md`). **Gildenhaus:** Ein Dungeon mit Boss braucht ein Kapitel der Kette
+   «Der Saal der Gilde» in `SAAL_KAPITEL` (`src/data/auftragsbrett.ts`: Prunkstück, Messingschild, Text);
+   der Test verlangt es. Zettel am Auftragsbrett entstehen von selbst (`docs/AUFTRAGSBRETT.md`).
 8. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
    in `tools/generateTileImages.ts` und `ROUTE_IMAGE_MAP`. Bis dahin passen vorhandene Bilder.
    Ein neues Gegnerbild (1024 px, Magenta-Hintergrund) als `public/assets/sprites/generated/KEY.png` ablegen

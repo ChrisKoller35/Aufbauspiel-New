@@ -5,6 +5,7 @@ import { ExpeditionRun } from './ExpeditionRun';
 import { ScoreboardEntry } from './ScoreboardEntry';
 import { WeeklyChallengeState } from './WeeklyChallengeState';
 import { RanglisteStand } from './RanglisteStand';
+import { AuftragsbrettStand, TrophaeenStand } from './AuftragsbrettStand';
 
 export interface TileData {
   buildingId: number | null; // which building occupies this tile
@@ -158,6 +159,11 @@ export interface GameState {
   // Set-Teil → Stufe 1 bis 5, gilt für alle Exemplare. Fehlt in älteren Spielständen;
   // Schmiede.ts legt es beim ersten Verbessern an.
   schmiede?: { stufen: Record<string, number> };
+
+  // ── Gildenhaus: Auftragsbrett und Trophäensaal (systems/Auftragsbrett.ts, systems/Trophaeensaal.ts) ──
+  // Fehlen in älteren Spielständen; die Systeme legen sie beim ersten Aufruf an.
+  auftragsbrett?: AuftragsbrettStand;
+  trophaeen?: TrophaeenStand;
 
   // ── Baupläne ──
   // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).

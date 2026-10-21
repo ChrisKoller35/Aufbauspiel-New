@@ -1,7 +1,8 @@
 // ─── ExpeditionFinalizer ────────────────────────────────────────
 // Progress awarded when an expedition ends (victory/defeat/retreat):
 // hero XP, score + scoreboard, rangliste (fame of the week, summit ranking),
-// statistics, guild rank, defeated bosses, class unlocks, bestiarium, achievements.
+// statistics, guild rank, defeated bosses, class unlocks, bestiarium, achievements,
+// Auftragsbrett (Zettel und Kette) and the trophy count of the Trophäensaal.
 // Loot, provisions and fighter release stay in main.ts (UI flow).
 // ──────────────────────────────────────────────────────────────────
 
@@ -19,6 +20,8 @@ import { AchievementSystem } from './AchievementSystem';
 import { awardXP } from './HeroProgression';
 import { wegBilanzDazu } from './Spezialisierung';
 import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
+import { AuftragsBilanz, auftraegeNachExpedition } from './Auftragsbrett';
+import { trophaeeNachExpedition } from './Trophaeensaal';
 
 /** Bonus XP per hero for winning the run */
 export const VICTORY_XP_BONUS = 10;
@@ -33,6 +36,10 @@ export interface ExpeditionProgress {
   newAchievements: string[];
   /** Ruhm der Woche und Platz in der Rangliste mit Rivalen */
   rangliste: RanglistenBilanz;
+  /** Zettel und Kette am Auftragsbrett: Fortschritt und Belohnungen */
+  auftraege: AuftragsBilanz;
+  /** Erster Sieg über diesen Boss: ein neuer Sockel im Trophäensaal */
+  neueTrophaee: boolean;
 }
 
 const guildRankSystem = new GuildRankSystem();
@@ -50,6 +57,9 @@ export function finalizeExpeditionProgress(
   expeditionSystem: ExpeditionSystem,
 ): ExpeditionProgress {
   const victory = run.status === 'victory';
+
+  // Trophäensaal vor der Rangliste: ein älterer Spielstand legt den Zähler so ohne diesen Sieg an
+  const neueTrophaee = trophaeeNachExpedition(state, run);
 
   // ── XP to heroes (CombatUnit.id === GuildFighter.id) ──
   const xpMap = run.xpEarned ?? {};
@@ -121,5 +131,8 @@ export function finalizeExpeditionProgress(
   state.achievements.push(...newAchievementIds);
   const newAchievements = newAchievementIds.map(id => ACHIEVEMENT_DEFS.find(d => d.id === id)?.name ?? id);
 
-  return { entry, xp, rankUp, newClasses, newAchievements, rangliste };
+  // ── Auftragsbrett: zählt Siege, Jagd und Set-Teile (der Set-Wurf ist schon gefallen) ──
+  const auftraege = auftraegeNachExpedition(state, run, entry.timestamp);
+
+  return { entry, xp, rankUp, newClasses, newAchievements, rangliste, auftraege, neueTrophaee };
 }

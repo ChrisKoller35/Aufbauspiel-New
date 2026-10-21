@@ -12,8 +12,10 @@ import { renderHeader } from './HeaderRenderer';
 import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
 import { setFuerRoute, DungeonSetDef } from '../../data/dungeonSets';
 import { setKurzinfo } from '../components/SetAnzeige';
-import { materialZeile } from '../components/SchmiedeAnzeige';
+import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
 import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
+import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
+import { zeigeGildenhaus } from './GildenhausScreen';
 
 const buildingUpgradeSystem = new BuildingUpgradeSystem();
 
@@ -109,15 +111,19 @@ function isRoutePlayable(route: RouteDef): boolean {
 
 function buildExpeditionListHTML(): string {
   const routes = Object.values(ROUTE_DEFS);
+  const jetzt = Date.now();
   const cards = routes.map(route => {
     const biome = getBiomeTag(route);
     const locked = !isRoutePlayable(route);
     const set = setFuerRoute(route.id);
+    // Auftragsbrett: Zettel und Kapitel der Kette, die hier zählen
+    const auftraege = locked ? [] : auftraegeFuerDungeon(gameState, route.id, jetzt);
     const footer = locked
       ? getRouteLockReasons(route, gameState).map(r => `<span class="exp-lock">🔒 ${r}</span>`).join('')
       : `<span class="exp-rew">Belohnung: ${routeRewards(route)}</span>`
         + (set ? `<span class="exp-set">${setKurzinfo(gameState, set)}</span>` : '')
-        + `<span class="exp-mat">${materialZeile(route.id)}</span>`;
+        + `<span class="exp-mat">${materialZeile(route.id)}</span>`
+        + (auftraege.length > 0 ? `<span class="exp-auftrag" title="${escapeAttr(auftraege.join(' · '))}">📜 ${auftraege.join(' · ')}</span>` : '');
     return `
       <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
         <div class="exp-card-info">
@@ -135,6 +141,8 @@ function buildExpeditionListHTML(): string {
     <div style="display:flex;gap:8px;padding:0 16px;flex-wrap:wrap">
       <button class="btn-dungeon-map" data-nav="dungeon">\uD83D\uDDFA\uFE0F Dungeonkarte</button>
       <button class="btn-dungeon-map" data-nav="bestiarium">\uD83D\uDCD6 Monsterbuch</button>
+      <button class="btn-dungeon-map" data-gildenhaus="brett">\uD83D\uDCDC Auftragsbrett</button>
+      <button class="btn-dungeon-map" data-gildenhaus="saal">\uD83C\uDFC6 Troph\u00e4ensaal</button>
     </div>
     <div class="content"><div class="exp-grid">${cards}</div></div>
   `;
@@ -148,6 +156,11 @@ function renderExpeditionList(container: HTMLElement): void {
 
   // Click handler: card → team screen (delegated, survives innerHTML rebuilds)
   el.addEventListener('click', (e: MouseEvent) => {
+    const gilde = (e.target as HTMLElement).closest<HTMLElement>('[data-gildenhaus]');
+    if (gilde) {
+      zeigeGildenhaus(gilde.dataset.gildenhaus === 'saal' ? 'saal' : 'brett');
+      return;
+    }
     const back = (e.target as HTMLElement).closest<HTMLElement>('[data-nav]');
     if (back) {
       navigateTo(back.dataset.nav as any);

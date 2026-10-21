@@ -10,6 +10,7 @@ import { renderRankingScreen, initRankingScreen } from './ui/screens/RankingScre
 import { renderBestiariumScreen, initBestiariumScreen } from './ui/screens/BestiariumScreen';
 import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/AchievementsScreen';
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
+import { renderGildenhausScreen, initGildenhausScreen } from './ui/screens/GildenhausScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
 import { navigateTo, initScreenStyles, ScreenId } from './ui/ScreenRouter';
 import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from './systems/ExpeditionSystem';
@@ -25,6 +26,7 @@ import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
 import { ranglistenZeilen } from './ui/components/RanglistenBilanzAnzeige';
+import { auftragsZeilen } from './ui/components/AuftragsBilanzAnzeige';
 import { setBeute, setTeilHinweise } from './systems/DungeonSets';
 import { bereiteTeile, neuBereit, schmiedeBeute, schmiedeStufen } from './systems/Schmiede';
 import { truhenHinweise } from './ui/components/SchmiedeAnzeige';
@@ -105,6 +107,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBestiariumScreen(state);
   initAchievementsScreen(state);
   initDungeonMapScreen(state);
+  initGildenhausScreen(state);
 
   // Redraw the target screen on every navigation so numbers (XP, gold, rank, unlocks) are current.
   // Registered before the screens render, so screen-own mc:navigate listeners
@@ -117,6 +120,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bestiarium: () => replaceScreen('s-bestiarium', () => renderBestiariumScreen(app)),
     achievements: () => replaceScreen('s-achievements', () => renderAchievementsScreen(app)),
     dungeon: () => replaceScreen('s-dungeon', () => renderDungeonMapScreen(app)),
+    gildenhaus: () => replaceScreen('s-gildenhaus', () => renderGildenhausScreen(app)),
     // List + team screen keep their delegated listeners and the current team selection
     expeditions: refreshExpeditionsScreens,
     team: refreshExpeditionsScreens,
@@ -139,6 +143,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Neue Zettel am Auftragsbrett gleich speichern: Sie entstehen aus dem Lager von jetzt,
+  // und Neuladen soll sie nicht anders würfeln (systems/Auftragsbrett.ts)
+  let gespeicherterBrettTag = state.auftragsbrett?.tag.id;
+  const neueZettelSpeichern = (): void => {
+    const tag = state.auftragsbrett?.tag.id;
+    if (!tag || tag === gespeicherterBrettTag) return;
+    gespeicherterBrettTag = tag;
+    saveSystem.save(state);
+  };
+
   window.addEventListener('mc:navigate', ((e: CustomEvent) => {
     const screen = e.detail?.screen as ScreenId;
     try {
@@ -146,6 +160,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error(`✗ ${screen} re-render failed:`, err);
     }
+    neueZettelSpeichern();
   }) as EventListener);
 
   // Render all screens into #app
@@ -159,6 +174,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['Bestiarium', () => renderBestiariumScreen(app)],
     ['Achievements', () => renderAchievementsScreen(app)],
     ['DungeonMap', () => renderDungeonMapScreen(app)],
+    ['Gildenhaus', () => renderGildenhausScreen(app)],
   ] as const;
 
   for (const [name, render] of screens) {
@@ -169,6 +185,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(`✗ ${name} failed:`, e);
     }
   }
+  neueZettelSpeichern();
 
   // Combat screen (class-based, manages its own DOM)
   const combatScreen = new CombatScreen(app);
@@ -440,6 +457,9 @@ document.addEventListener('DOMContentLoaded', () => {
     const goldEarned = run.goldEarned ?? 0;
     const hasLoot = goldEarned > 0 || Object.values(loot).some(q => q > 0);
 
+    // Was in der Schmiede schon vorher ging (danach kommen Material der Zettel und die Beute dazu)
+    const schonBereit = bereiteTeile(state);
+
     // XP, score + scoreboard, statistics, guild rank, bestiarium, achievements
     // (before returning provisions: leftover provisions count towards the score)
     const progress = finalizeExpeditionProgress(state, run, expeditionSystem);
@@ -465,8 +485,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Apply loot and finish (with or without chest reveal)
     const applyLootAndFinish = (): void => {
-      // Add loot to global stock (und merken, was danach in der Schmiede neu möglich ist)
-      const schonBereit = bereiteTeile(state);
+      // Add loot to global stock
       for (const [itemId, qty] of Object.entries(loot)) {
         state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
       }
@@ -518,6 +537,7 @@ document.addEventListener('DOMContentLoaded', () => {
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
     for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
     for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
+    for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
     if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
 
     const chronik = geschichte ? chronikHtml(geschichte) : '';
@@ -529,11 +549,12 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Keyboard Shortcuts ──────────────────────────────────────
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
     switch (e.key.toUpperCase()) {
       case 'K': navigateTo('bestiarium'); break;
       case 'A': navigateTo('achievements'); break;
+      case 'G': if (!state.activeExpedition) navigateTo('gildenhaus'); break;
       case 'ESCAPE':
         // If combat is active, don't allow ESC to navigate away
         if (state.activeExpedition) return;
