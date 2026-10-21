@@ -2,7 +2,9 @@ import { GameState } from '../models/GameState';
 
 /**
  * Fighter-Stadt-Synergien.
- * Counts active GUILD_FIGHTER citizens (not on expedition, not training, not injured).
+ * Zählt die Helden aus state.fighters, die gerade zu Hause sind
+ * (nicht in der Gruppe der laufenden Expedition). Helden kommen aus dem
+ * Heldenhaus und sind an keinen Bewohner gebunden.
  *
  * Bonuses:
  * - ≥1 fighter: +3 satisfaction per house (applied in SatisfactionSystem)
@@ -11,12 +13,11 @@ import { GameState } from '../models/GameState';
  */
 export class FighterSynergySystem {
   /**
-   * Count active fighters in city (not on expedition, training, or injured).
+   * Count heroes at home (not in the active expedition's party).
    */
   getActiveFighterCount(state: GameState): number {
-    return state.citizens.filter(
-      c => c.status === 'GUILD_FIGHTER'
-    ).length;
+    const unterwegs = new Set((state.activeExpedition?.party ?? []).map(u => u.id));
+    return state.fighters.filter(f => !unterwegs.has(f.id)).length;
   }
 
   /**
