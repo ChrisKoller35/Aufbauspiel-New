@@ -170,7 +170,7 @@ export function createNewGameState(): GameState {
       grain: 0,
       flour: 0,
       bread: 10, // 6 Bewohner essen 1 Brot pro Tag: reicht 10 Tage (5 Minuten) bis zur Brotkette
-      gold: 75,
+      gold: 100, // ohne Expeditionen: 2. Held nach ~2,5 Min, danach Marktplatz nach ~6 Min (tests/startwirtschaft)
       iron_scrap: 0,
       herb_green: 0,
       healing_potion: 0,
