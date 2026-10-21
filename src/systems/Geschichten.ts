@@ -207,6 +207,24 @@ export function geschichteWirkt(run: ExpeditionRun, wirkung: Wirkung[]): void {
   else run.geschichtsBeute = [...(run.geschichtsBeute ?? []), { raum: bisRaum, ...beute }];
 }
 
+/**
+ * Beute, die erst mit dem Boss kommt (EncounterChoice.nachSieg): wartet wie die Beute einer mutigen Wahl,
+ * aber auf den Bosskampf, und kommt dort zusammen in einer Zeile. Ohne Boss sofort.
+ */
+export function beuteNachBoss(run: ExpeditionRun, dinge: Record<string, number>): void {
+  const boss = run.rooms.find(r => r.type === 'boss' && !r.completed);
+  if (!boss) {
+    beuteGeben(run, 0, dinge);
+    return;
+  }
+  const wartet = run.geschichtsBeute?.find(b => b.raum === boss.index);
+  if (!wartet) {
+    run.geschichtsBeute = [...(run.geschichtsBeute ?? []), { raum: boss.index, gold: 0, dinge: { ...dinge } }];
+    return;
+  }
+  for (const [itemId, menge] of Object.entries(dinge)) wartet.dinge[itemId] = (wartet.dinge[itemId] ?? 0) + menge;
+}
+
 function beuteGeben(run: ExpeditionRun, gold: number, dinge: Record<string, number>): void {
   run.goldEarned += gold;
   for (const [itemId, menge] of Object.entries(dinge)) dingGeben(run, itemId, menge);

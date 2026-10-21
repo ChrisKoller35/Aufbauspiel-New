@@ -10,7 +10,7 @@ Korrund, der Sternenschmied) und der Sternenschlund (Ebene 8, Nyxar, der Sternen
 Boss mit eigenen Bildern (6 Gegner, 2 Routenbilder), eigene Sets (Korrunds Meisterstücke mit Schmiedetakt, Was Nyxar
 nicht frass mit Sternenfall), Material Sternenstahl, Erstsieg-Beute und die Geschichte des Stadtschreibers über die
 Wahl-Räume: Sternenfeuer gibt der Gruppe Angriff bis zum Ende und kostet Leben, befreite Sterne schwächen Nyxar.
-Ohne Schmiede kein Durchkommen: Die Sternenschmiede verlangt Sets auf etwa +3, der Sternenschlund +5. Dazu Drachenhort
+Ohne Schmiede kein Durchkommen: Die Sternenschmiede verlangt Sets auf etwa +3, der Sternenschlund +4 bis +5. Dazu Drachenhort
 und Himmelsarchiv nach den Bot-Aufträgen (Mindestschaden, stärkere Startklassen) neu geeicht, das Probespiel
 `?probe=sterne`, ein ausgebautes Gildenhaus im Probespiel (vorher gingen nur drei der vier Helden mit) und dort
 schon freie Klassen (vorher meldete der erste Bericht sechsmal «Neue Klasse»).

@@ -1228,7 +1228,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         },
       },
     },
-    ende: 'Korrund hat verloren und es genommen wie ein Handwerker: Seinen Hammer durften wir behalten, er habe einen zweiten, und gute Arbeit erkenne er, auch wenn sie ihm auf den Kopf falle. '
+    ende: 'Korrund hat verloren und es genommen wie ein Handwerker: Seinen Hammer durften wir behalten, er habe einen zweiten, und gute Arbeit erkenne er auch dann, wenn sie sich gegen ihn richte. '
       + 'Dann hat er uns gezeigt, wofür er schmiedet: Hinter der Schmiede liegt der Sternenschlund, wo Nyxar die Sterne frisst, schneller, als ein Schmied allein sie nachschmieden kann. '
       + 'Allein ist er jetzt nicht mehr.',
   },
@@ -1267,7 +1267,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         },
       },
     },
-    ende: 'Nyxar ist besiegt, und der Schlund ist leer bis auf einen Stern, den er nicht mehr geschafft hat; den haben wir mitgenommen. '
+    ende: 'Nyxar ist besiegt. Wir haben jeden Käfig und jedes Netz im Schlund geöffnet, und einen Stern, den er nicht mehr geschafft hat, haben wir mitgenommen. '
       + 'In der Nacht darauf kamen die Sterne über Magic City zurück, einer nach dem anderen, und die Bäckerin hat bis zum Morgen gezählt und zum ersten Mal in zwanzig Jahren das Brot verschlafen. '
       + 'Niemand hat sich beschwert.',
   },

@@ -11,7 +11,7 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 5 | Der Drachenhort | Drachengipfel | 15 | Ignarax, der Uralte | Hort-Gier: Gold aus dem Hort macht Ignarax stärker (+8 % Angriff und Leben je Schatz) | Schild des Uralten |
 | 6 | Das Himmelsarchiv | Himmel | 16 | Der Oberarchivar | Verbotene Bücher: seltene Funde, kosten aber Leben | Klinge der tausend Schatten |
 | 7 | Die Sternenschmiede | Sterne | 16 | Korrund, der Sternenschmied | Sternenfeuer: Wer die Waffen in die Essen hält, hat bis zum Ende +10 % Angriff (die ganze Gruppe), verliert aber 5 bis 10 % Leben | Korrunds Hammer |
-| 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt Sternenstahl | Der letzte Stern |
+| 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt 3 bis 5 Sternenstahl, aber erst mit dem Sieg über Nyxar | Der letzte Stern |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
   Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund). Ebenen über 5
@@ -85,6 +85,10 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   wachsen nicht mit. Mit `kostetLeben` hat es einen Preis (Sternenschmiede).
 - **Befreien** (`effect: 'kein'` mit negativem `gier`): Die Option wirkt nur über Preis und Gier; jeder Punkt
   unter null macht den Boss um die Anteile aus `hortGier` schwächer (Sternenschlund).
+- **Beute erst mit dem Sieg** (`EncounterChoice.nachSieg` bei `effect: 'item'`): Die Beute wartet auf den
+  Bosskampf und kommt nur, wenn der Boss fällt, wie «wenn ihr siegt» in den Geschichten. Wer vorher umkehrt
+  oder fällt, lässt sie liegen; so lässt sie sich nicht mitnehmen und die Gefahr auslassen (Sternenschlund:
+  nach dem letzten Stern kommt noch ein Kontrollpunkt mit Rückzug).
 - **Erstsieg-Beute** (`RouteDef.ersterSiegBeute`).
 
 ## Eichung
@@ -135,9 +139,11 @@ Angriff, die Tabelle oben ist der Stand danach. Die Wege blieben, wie sie waren 
 ### Zwischen den Sternen (Ebene 7 und 8)
 
 **Ziele:** Die Schmiede ist der Schlüssel. Ohne Stufen schafft auch «Stark» die Sternenschmiede nie, mit allen
-Set-Teilen auf +3 meistens; das ist der Eintritt. Der Sternenschlund ist das neue ferne Ziel: erst mit allen
-Teilen auf +5 und Korrunds Meisterstücken (Grimm), dann vorsichtig etwa zwei von drei Läufen. Beim Sternenfeuer
-gewinnt, wer klug wählt (nur mit vollem Leben ins Feuer); im Sternenschlund lohnt es sich, die Sterne zu befreien.
+Set-Teilen auf +3 meistens; das ist der Eintritt. Der Sternenschlund ist das neue ferne Ziel: mit Korrunds
+Meisterstücken (Grimm) und allen Teilen auf +4 klappt es ab und zu (vorsichtig etwa jeder sechste Lauf), auf +5
+fast immer. Beim Sternenfeuer gewinnt, wer klug wählt (nur mit vollem Leben ins Feuer); im Sternenschlund lohnt
+es sich beim ersten Mal, die Sterne zu befreien. Ihr Sternenstahl kommt erst mit dem Sieg, Gier lohnt sich also
+erst für ein Team, das Nyxar sicher schlägt.
 
 Team «Stark» mit Wegen, Brom Festung, Grimm Hort-Set (oder Korrunds Meisterstücke), Lia Abyss, Sina Schatten,
 alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gierig):
@@ -148,16 +154,23 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
 | +1 | 4 / 12 / 0 % | – | – |
 | +2 | 25 / 47 / 3 % | – | – |
 | +3 | 76 / 88 / 16 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
-| +4 | 97 / 98 / 68 % | 1 / 0 / 0 % | 3 / 0 / 0 % |
-| +5 | 100 / 100 / 100 % | 27 / 6 / 0 % | 64 / 30 / 3 % |
+| +4 | 97 / 98 / 68 % | 5 / 0 / 0 % | 16 / 2 / 0 % |
+| +5 | 100 / 100 / 100 % | 67 / 26 / 4 % | 89 / 65 / 8 % |
 
 - **Team «Gut»** (Stufe 12): Sternenschmiede auf +3 1 / 5 / 0 %, mit Korrunds Set auf +5 96 / 99 / 84 %;
-  Sternenschlund auch so 0 %.
-- **Ohne Wege** geht zwischen den Sternen fast nichts: Sternenschmiede auf +3 0 %, auf +5 14 % (klug, 100 Läufe).
+  Sternenschlund auch dann nur 2 / 0 / 0 %.
+- **Ohne Wege** geht zwischen den Sternen fast nichts: Sternenschmiede auf +3 0 %, auf +5 14 %, Sternenschlund
+  auf +5 0 % (klug, 100 Läufe; mit Wegen 85, 100 und 62 %).
 - **Das Schlund-Set** macht den Schlund leicht: Trägt Lia es (die übrigen auf +5), sind es ohne Stufen schon
-  99 / 86 / 64 %, auf +2 100 / 99 / 95 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
+  100 / 99 / 75 %, auf +2 100 / 100 / 97 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
   und der Schlüssel für die Dungeons, die einmal darüber kommen.
 - **Nyxar** wird durch befreite Sterne bis zu 30 % schwächer (`hortGier` 0,1 je Stern, drei Sterne).
+- **Nach der Gegenprüfung (21.10.2026):** Vorher hatte der Sternenschlund eine harte Kante an der
+  Meisterset-Schwelle (Korrunds Set auf +4 3 / 0 / 0 %, auf +5 64 / 30 / 3 %), weil drei von vier Läufen auf
+  +4 am Viererkampf direkt vor Nyxar scheiterten. Raum 14 hat darum drei Gegner statt vier (ohne
+  Kometenkäfer), und Nyxar hat 5 % mehr Leben und Angriff (2176 und 47). Ausgeschlachteter Sternenstahl kam
+  vorher sofort, und mit Rückzug am letzten Kontrollpunkt brachte er mehr als ein Sieg in der Sternenschmiede;
+  jetzt kommt er erst mit dem Sieg (`nachSieg`).
 
 ## Entschieden
 

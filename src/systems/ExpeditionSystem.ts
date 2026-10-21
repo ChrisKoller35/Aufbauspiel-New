@@ -12,7 +12,7 @@ import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
-import { chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen } from './Geschichten';
+import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen } from './Geschichten';
 import { schmiedeStufen } from './Schmiede';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
@@ -397,9 +397,14 @@ export class ExpeditionSystem {
       }
       case 'item': {
         if (choice.itemId) {
-          run.loot[choice.itemId] = (run.loot[choice.itemId] ?? 0) + choice.value;
           const itemName = ITEM_DEFS[choice.itemId]?.name ?? choice.itemId;
-          run.combatLog.push(`>> ${choice.label}: +${choice.value}× ${itemName} erhalten.`);
+          if (choice.nachSieg) {
+            beuteNachBoss(run, { [choice.itemId]: choice.value });
+            run.combatLog.push(`>> ${choice.label}: ${choice.value}× ${itemName} kommen mit, wenn ${this.bossKurzname(run.routeId, 'der Boss')} fällt.`);
+          } else {
+            run.loot[choice.itemId] = (run.loot[choice.itemId] ?? 0) + choice.value;
+            run.combatLog.push(`>> ${choice.label}: +${choice.value}× ${itemName} erhalten.`);
+          }
         }
         break;
       }
@@ -473,13 +478,20 @@ export class ExpeditionSystem {
         boss.maxHp = maxHp;
       }
     }
-    const bossName = route.bossId ? ENEMY_DEFS[route.bossId]?.name ?? 'Der Boss' : 'Der Boss';
+    const bossName = this.bossKurzname(run.routeId, 'Der Boss');
     const prozent = (anteil: number): string => {
       const p = Math.round(jetzt * anteil * 100);
       return p < 0 ? `−${-p}` : `+${p}`;
     };
     const was = punkte > 0 ? 'wittert den Diebstahl' : 'wird schwächer';
     run.combatLog.push(`>> ${bossName} ${was}: ${prozent(regel.angriffProPunkt)}% Angriff, ${prozent(regel.lebenProPunkt)}% Leben.`);
+  }
+
+  /** Name des Routen-Bosses ohne Beinamen, für Sätze: «Nyxar wird schwächer», nicht «Nyxar, der Sternenfresser wird schwächer» */
+  private bossKurzname(routeId: string, ohneBoss: string): string {
+    const bossId = ROUTE_DEFS[routeId]?.bossId;
+    const name = bossId ? ENEMY_DEFS[bossId]?.name : undefined;
+    return name ? name.split(',')[0] : ohneBoss;
   }
 
   /** Erster Sieg der Gilde über den Routen-Boss: garantierte Beute (RouteDef.ersterSiegBeute). */

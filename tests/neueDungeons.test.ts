@@ -152,7 +152,7 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(boss(run).atk).toBe(Math.round(start.atk * 1.08));
     expect(boss(run).maxHp).toBe(Math.round(start.maxHp * 1.08));
     expect(boss(run).hp).toBe(boss(run).maxHp);
-    expect(run.combatLog.at(-1)).toContain('Ignarax, der Uralte wittert den Diebstahl: +8% Angriff');
+    expect(run.combatLog.at(-1)).toContain('>> Ignarax wittert den Diebstahl: +8% Angriff');
 
     bisZurWahl(state, run);
     system.resolveChoice(run, 0);
@@ -242,7 +242,7 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(boss(run).maxHp).toBe(Math.round(start.maxHp * 0.9));
     expect(boss(run).hp).toBe(boss(run).maxHp);
     run.party.forEach((u, i) => expect(u.hp, u.name).toBe(Math.max(1, leben[i] - Math.floor(u.maxHp * 0.05))));
-    expect(run.combatLog).toContain('>> Nyxar, der Sternenfresser wird schwächer: −10% Angriff, −10% Leben.');
+    expect(run.combatLog).toContain('>> Nyxar wird schwächer: −10% Angriff, −10% Leben.');
 
     bisZurWahl(state, run);
     system.resolveChoice(run, 1);
@@ -251,14 +251,46 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(Math.abs(boss(run).maxHp - start.maxHp * 0.8)).toBeLessThanOrEqual(1);
   });
 
-  it('wer den Stern ausschlachtet, bekommt Sternenstahl, und Nyxar bleibt, wie er ist', () => {
-    const { state, ids } = musterStand('stark', 7919, 'sterne5');
-    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschlund', ids)!);
+  it('wer die Sterne ausschlachtet, bekommt den Sternenstahl erst mit dem Sieg über Nyxar, und Nyxar bleibt, wie er ist', () => {
+    const { state, held } = uebermacht();
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschlund', [held])!);
     const vorher = { atk: boss(run).atk, maxHp: boss(run).maxHp };
+    const stahl = (): number => run.loot.mat_sternenstahl ?? 0;
+    const ohneWahl = stahl();
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_sternenstahl', value: 3, nachSieg: true });
     system.resolveChoice(run, 0);
-    expect(run.loot.mat_sternenstahl).toBe(3);
+    expect(stahl()).toBe(ohneWahl);
+    expect(run.combatLog).toContain('>> Sternenstahl herausschlagen (+3 Sternenstahl, wenn ihr siegt): 3× Sternenstahl kommen mit, wenn Nyxar fällt.');
     expect(run.gier ?? 0).toBe(0);
     expect(boss(run)).toMatchObject(vorher);
+
+    // Zweiter und dritter Stern ebenfalls ausschlachten: alles wartet zusammen auf Nyxar
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    expect(run.geschichtsBeute).toEqual([{ raum: run.rooms.length - 1, gold: 0, dinge: { mat_sternenstahl: 12 } }]);
+    const vorDemBoss = stahl();
+
+    zuEnde(state, run);
+    expect(run.bossesKilled).toBe(1);
+    expect(stahl()).toBe(vorDemBoss + 12);
+    expect(run.combatLog).toContain('📜 Beute aus der Geschichte: +12× Sternenstahl');
+    expect(run.geschichtsBeute ?? []).toEqual([]);
+  });
+
+  it('wer nach dem Ausschlachten umkehrt, lässt den Sternenstahl liegen', () => {
+    const { state, held } = uebermacht();
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschlund', [held])!);
+    const ohneWahl = run.loot.mat_sternenstahl ?? 0;
+    system.resolveChoice(run, 0);
+    for (let schritt = 0; schritt < 50 && run.status === 'exploring'; schritt++) {
+      const step = system.nextStep(run);
+      if (step === 'checkpoint') system.resolveCheckpoint(run, true);
+      else if (step !== 'finish') system.processCurrentRoom(state);
+    }
+    expect(run.status).toBe('retreat');
+    expect(run.loot.mat_sternenstahl ?? 0).toBe(ohneWahl);
   });
 
   it('andere Fund-Räume wählen weiter zufällig zwischen Truhe und zweiter Option', () => {
@@ -331,12 +363,16 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(siegeVon('drachenhort', 'gut', 'gierig', 10)).toBeLessThan(siegeVon('drachenhort', 'gut', 'vorsichtig', 10));
   });
 
-  it('Eichung grob zwischen den Sternen: erst die Schmiede macht sie machbar, der Sternenschlund verlangt +5', () => {
+  it('Eichung grob zwischen den Sternen: erst die Schmiede macht sie machbar, der Sternenschlund gibt auf +4 erste Chancen', () => {
     expect(siegeVon('sternenschmiede', 'stark', 'vorsichtig', 10, 'sterne3')).toBeGreaterThanOrEqual(5);
     expect(siegeVon('sternenschmiede', 'stark', 'vorsichtig', 10, 'hort')).toBeLessThanOrEqual(2);
     const schlund = siegeVon('sternenschlund', 'stark', 'vorsichtig', 10, 'sterne5');
     expect(schlund).toBeGreaterThanOrEqual(3);
     expect(siegeVon('sternenschlund', 'stark', 'vorsichtig', 10, 'sterne3')).toBeLessThanOrEqual(1);
     expect(siegeVon('sternenschlund', 'stark', 'gierig', 10, 'sterne5')).toBeLessThan(schlund);
+    // Kein harter Sprung an der Meisterset-Schwelle: Auf +4 klappt es schon ab und zu
+    const vier = siegeVon('sternenschlund', 'stark', 'vorsichtig', 30, 'sterne5', true, 4);
+    expect(vier).toBeGreaterThan(0);
+    expect(vier).toBeLessThan(siegeVon('sternenschlund', 'stark', 'vorsichtig', 30, 'sterne5'));
   });
 });

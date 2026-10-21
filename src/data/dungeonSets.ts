@@ -485,7 +485,7 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     teile: [
       { art: 'klinge', name: 'Sternenstahlklinge', bild: 'ITEM_FALLEN_KNIGHTS_BLADE', text: 'Aus einem Stück Stern, das vom Himmel fiel. Der Rest des Sterns sucht es noch.' },
       { art: 'platte', name: 'Harnisch des Sternenschmieds', bild: 'ITEM_STEEL_ARMOR', text: 'Korrund hat ihn viermal neu geschmiedet. Beim vierten Mal war er zufrieden, beim fünften stolz.' },
-      { art: 'talisman', name: 'Glut im Glas', bild: 'ITEM_AETHER_HEART', text: 'Ein Funke aus Korrunds Esse, in Glas gesperrt. Er brennt seit hundert Jahren und ist immer noch beleidigt.' },
+      { art: 'talisman', name: 'Glut im Glas', bild: 'ITEM_AETHER_HEART', text: 'Ein Funke aus Korrunds Esse, in Glas gesperrt. Er brennt seit hundert Jahren und will immer noch raus.' },
     ],
     zweiTeile: { atk: 7, hp: 24 },
     dreiTeile: {

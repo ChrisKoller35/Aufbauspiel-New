@@ -605,7 +605,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_nyxar: {
     id: 'boss_nyxar', name: 'Nyxar, der Sternenfresser', role: 'boss',
-    hp: 2072, atk: 45, def: 13, spd: 0.95, critChance: 0.13, critMult: 2.0,
+    hp: 2176, atk: 47, def: 13, spd: 0.95, critChance: 0.13, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [

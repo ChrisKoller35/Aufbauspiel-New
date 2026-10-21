@@ -16,6 +16,11 @@ export interface EncounterChoice {
   value: number;
   /** Optionaler Item-Key für effect='item' */
   itemId?: string;
+  /**
+   * Die Beute (effect 'item') kommt erst, wenn der Boss fällt (Sternenschlund: ausgeschlachtete Sterne).
+   * Bis dahin wartet sie in `geschichtsBeute`; wer vorher umkehrt oder fällt, lässt sie liegen.
+   */
+  nachSieg?: boolean;
   /** Hort-Gier: so viele Punkte kommen dazu, wenn diese Option gewählt wird (RouteDef.hortGier); weniger als 0 schwächt den Boss */
   gier?: number;
   /** Preis der Option: jeder lebende Held verliert so viel Prozent seiner max. HP (nie unter 1) */

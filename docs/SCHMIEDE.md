@@ -14,9 +14,9 @@ neuer Dungeon für sie braucht.
 - **Material:** Jedes Gebiet hat sein eigenes (Tabelle unten). Ein Set-Teil braucht das Material aus dem
   Gebiet seines Dungeons. Ein Sieg bringt die **Grundmenge** der Ebene (2 + Ebene: Ebene 1 bringt 3,
   Ebene 4 bringt 6, Ebene 8 bringt 10). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
-  Sternenstahl dazu, dafür bleibt Nyxar stark. Niederlage oder Rückzug bringen die Hälfte, anteilig zu den
-  geschafften Räumen. Das Material liegt in der Truhe mit dem Hinweis, wofür es ist
-  («⚒️ Für die Schmiede: Set-Teile aus dem Feuer»).
+  Sternenstahl dazu, aber erst mit dem Sieg, und Nyxar bleibt stark. Niederlage oder Rückzug bringen die
+  Hälfte der Grundmenge, anteilig zu den geschafften Räumen. Das Material liegt in der Truhe mit dem
+  Hinweis, wofür es ist («⚒️ Für die Schmiede: Set-Teile aus dem Feuer»).
 - **Stufen +1 bis +5:** Jede Stufe macht alle Werte eines Teils um 10 % stärker, gerundet. Der Hauptwert
   der Bauart steigt jede Stufe mindestens um 1 (Waffen Angriff, Schild und Rüstung Verteidigung,
   Robe und Schmuck Leben, Ring Krit-Chance um 1 %). Ein Malus wie −0.05 Tempo am Schild bleibt, wie er ist.
@@ -72,7 +72,7 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
   Einschmelzen 60 bis 120 Siege in vier verschiedenen Dungeons.
 - **Zwischen den Sternen ist die Schmiede Pflicht:** Ohne Stufen schafft das Musterteam «Stark» die
   Sternenschmiede nie, mit allen Teilen auf +3 in drei von vier Läufen, auf +5 immer. Den Sternenschlund
-  schafft es erst mit allen Teilen auf +5 und Korrunds Meisterstücken (200 Läufe, Tabelle in
+  schafft es mit Korrunds Meisterstücken auf +4 ab und zu (16 % vorsichtig), auf +5 fast immer (89 %; 200 Läufe, Tabelle in
   `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Ein Set aus den Sternen auf +5 kostet 810 bis 900
   Sternenstahl, 13'000 bis 15'000 Gold (ohne Rabatt der Schmiede in der Stadt) und 63 Kristallsplitter:
   das lange Ziel ganz oben.

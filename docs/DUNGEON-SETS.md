@@ -108,8 +108,8 @@ Zwischen den Sternen (Team «Frisch» schafft dort nichts):
 |---|---|---|---|---|
 | Die Sternenschmiede | gut | 0 / 0 / 0 % | 1 / 5 / 0 % | 96 / 99 / 84 % |
 | Die Sternenschmiede | stark | 1 / 1 / 0 % | 76 / 88 / 16 % | 100 / 100 / 100 % |
-| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
-| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 64 / 30 / 3 % |
+| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 2 / 0 / 0 % |
+| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 89 / 65 / 8 % |
 
 **So ist es gedacht:** Die Sets einer Ebene machen den nächsten Dungeon machbar. Mit Sets aus Ebene 4
 wagt sich schon ein frisches Team in den Drachenhort, und mit dem Hort-Set rückt das Himmelsarchiv
@@ -118,14 +118,14 @@ Sets aus einer tieferen Ebene sind für ein Team mit besserer Ausrüstung ein R�
 der Vergleich auf der Heldenseite. Wege und Sets verstärken sich gegenseitig, darum sind die Gegner der
 Dungeons über dem Vulkankern seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
 Zwischen den Sternen reichen Sets allein nicht mehr: Erst die Schmiede macht die Sternenschmiede machbar
-(+3), für den Sternenschlund braucht es +5 und Korrunds Meisterstücke (Stufe für Stufe in
+(+3), für den Sternenschlund braucht es +4 bis +5 und Korrunds Meisterstücke (Stufe für Stufe in
 `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»).
 
 **Korrunds Meisterstücke** sind ein Set für einen Kämpfer (Klinge, Platte, Talisman). Als Schild-Set für
 Brom war die erste Fassung deutlich schwächer als die Festung mit der Letzten Bastion; mit dem Schmiedetakt
 hilft das Set jetzt dem ganzen Team, und Grimm in Korrunds Set auf +5 ist stärker als im Hort-Set auf +5.
 **Was Nyxar nicht frass** (Bogen, Leder, Ring) macht den Sternenschlund leicht, wer es hat (Lia ohne
-Stufen: 99 / 86 / 64 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
+Stufen: 100 / 99 / 75 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher

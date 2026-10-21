@@ -517,7 +517,7 @@ function buildDungeonSVG(state: GameState): string {
       : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${emojiSize}" filter="url(#dmap-glow-f)" style="user-select:none">${biome.icon}</text>`;
 
     // Name label
-    const shortName = route.name.length > 18 ? route.name.substring(0, 17) + '…' : route.name;
+    const shortName = route.name.length > 20 ? route.name.substring(0, 19) + '…' : route.name;
     const labelOpacity = isLocked ? 0.4 : 1;
     const nameLabel = `<text class="dmap-t-name${hasBoss ? ' boss' : ''}" x="${x}" y="${y + r + 16}" text-anchor="middle" fill="${biome.text}" font-size="${hasBoss ? 11 : 9}" font-family="Cinzel, serif" letter-spacing="0.5" opacity="${labelOpacity}">${shortName}</text>`;
 
