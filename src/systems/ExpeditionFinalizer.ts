@@ -6,7 +6,7 @@
 // ──────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
-import { ExpeditionRun } from '../models/ExpeditionRun';
+import { ExpeditionRun, WegWirkung } from '../models/ExpeditionRun';
 import { ScoreboardEntry } from '../models/ScoreboardEntry';
 import { ENEMY_DEFS } from '../data/enemies';
 import { CLASS_DEFS } from '../data/classes';
@@ -17,6 +17,7 @@ import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { BestiariumSystem } from './BestiariumSystem';
 import { AchievementSystem } from './AchievementSystem';
 import { awardXP } from './HeroProgression';
+import { wegBilanzDazu } from './Spezialisierung';
 import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
 
 /** Bonus XP per hero for winning the run */
@@ -25,7 +26,8 @@ const SCOREBOARD_LIMIT = 100;
 
 export interface ExpeditionProgress {
   entry: ScoreboardEntry;
-  xp: { id: number; name: string; xp: number; level: number; levelUps: number }[];
+  /** wegWirkung: was der Weg des Helden in dieser Expedition bewirkt hat */
+  xp: { id: number; name: string; xp: number; level: number; levelUps: number; wegWirkung?: WegWirkung }[];
   rankUp: { newRank: number; title: string; unlocks: string[] } | null;
   newClasses: string[];
   newAchievements: string[];
@@ -57,7 +59,11 @@ export function finalizeExpeditionProgress(
     if (!fighter) continue;
     const earned = (xpMap[unit.id] ?? 0) + (victory ? VICTORY_XP_BONUS : 0);
     const levelUps = awardXP(fighter, earned);
-    xp.push({ id: fighter.id, name: fighter.name, xp: earned, level: fighter.level, levelUps });
+    wegBilanzDazu(fighter, unit.wegWirkung);
+    xp.push({
+      id: fighter.id, name: fighter.name, xp: earned, level: fighter.level, levelUps,
+      ...(unit.wegWirkung ? { wegWirkung: unit.wegWirkung } : {}),
+    });
   }
 
   // ── Score + scoreboard ──

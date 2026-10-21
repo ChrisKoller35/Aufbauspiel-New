@@ -86,34 +86,35 @@ Teil der Läufe trifft.
 
 **Ganze Spielweisen:** ohne Entscheidungen, immer vorsichtig, immer mutig (Spielweise «gierig»).
 Ziel: **vorsichtig 0 bis +12 %** (etwas leichter), **gierig −12 bis −25 %** (spürbar schwerer).
-Stand 21.10.2026, 200 Läufe, nach Manager #43 und #44 (20 % Mindestschaden, stärkere Startklassen). Die vier
-Dungeons über dem Vulkankern fehlen, sie haben keine eigenen Entscheidungen.
+Stand 21.10.2026, 200 Läufe, nach Manager #43 und #44 (20 % Mindestschaden, stärkere Startklassen) und nach der
+Eichung der Wege (`docs/SPEZIALISIERUNG.md`). Die vier Dungeons über dem Vulkankern fehlen, sie haben keine
+eigenen Entscheidungen.
 
 | Dungeon | Schwelle ohne Entscheidungen | vorsichtig | gierig |
 |---|---|---|---|
-| Waldpfad (kurz) | 7.83 | +0.0 % ✓ | −16.1 % ✓ |
-| Verfallene Lichtung | 6.41 | +1.3 % ✓ | −15.6 % ✓ |
-| Tiefwald (mittel) | 3.49 | +10.2 % ✓ | −18.2 % ✓ |
-| Tiefe Höhle | 2.98 | +8.0 % ✓ | −22.6 % ✓ |
-| Spinnenhöhle | 3.31 | +3.5 % ✓ | −17.2 % ✓ |
-| Versunkene Küste | 4.20 | +2.5 % ✓ | −15.0 % ✓ |
-| Geisterwald | 4.78 | +0.0 % ✓ | −23.4 % ✓ |
-| Verschlungene Tunnel | 4.47 | +0.0 % ✓ | −18.0 % ✓ |
-| Sumpfdorf | 5.09 | +0.0 % ✓ | −12.9 % ✓ |
-| Giftsumpf | 2.37 | +8.5 % ✓ | −12.5 % ✓ |
-| Alte Krypta | 2.43 | +4.5 % ✓ | −18.4 % ✓ |
-| Die Stadtmauern | 2.54 | +9.5 % ✓ | −17.8 % ✓ |
-| Abgrundtiefen | 1.62 | +3.9 % ✓ | −19.9 % ✓ |
-| Kristallminen | 3.39 | +0.6 % ✓ | −19.8 % ✓ |
-| Gefrorener Pass | 3.84 | +0.0 % ✓ | −18.2 % ✓ |
-| Obsidiantunnel | 3.55 | +0.7 % ✓ | −15.4 % ✓ |
-| Tiefe Ruinen | 3.01 | +1.0 % ✓ | −19.9 % ✓ |
-| Vulkankern | 1.95 | +5.2 % ✓ | −18.0 % ✓ |
-| Die Festung | 2.42 | +9.5 % ✓ | −20.4 % ✓ |
-| Abyssale Tiefe | 2.74 | +1.4 % ✓ | −24.2 % ✓ |
-| Schattenkatakomben | 3.26 | +4.3 % ✓ | −24.1 % ✓ |
-| Aschewüste | 3.12 | +1.0 % ✓ | −16.0 % ✓ |
-| Magmahöhlen | 3.00 | +8.5 % ✓ | −22.4 % ✓ |
+| Waldpfad (kurz) | 7.68 | +0.0 % ✓ | −15.2 % ✓ |
+| Verfallene Lichtung | 6.35 | +1.3 % ✓ | −15.3 % ✓ |
+| Tiefwald (mittel) | 3.43 | +8.8 % ✓ | −18.5 % ✓ |
+| Tiefe Höhle | 2.90 | +8.8 % ✓ | −23.1 % ✓ |
+| Spinnenhöhle | 3.19 | +5.4 % ✓ | −16.2 % ✓ |
+| Versunkene Küste | 4.13 | +2.3 % ✓ | −15.3 % ✓ |
+| Geisterwald | 4.72 | +0.0 % ✓ | −22.9 % ✓ |
+| Verschlungene Tunnel | 4.42 | +0.0 % ✓ | −17.8 % ✓ |
+| Sumpfdorf | 5.06 | +0.0 % ✓ | −13.0 % ✓ |
+| Giftsumpf | 2.31 | +7.7 % ✓ | −12.3 % ✓ |
+| Alte Krypta | 2.35 | +4.1 % ✓ | −18.0 % ✓ |
+| Die Stadtmauern | 2.47 | +9.3 % ✓ | −17.8 % ✓ |
+| Abgrundtiefen | 1.56 | +4.5 % ✓ | −19.6 % ✓ |
+| Kristallminen | 3.37 | +0.5 % ✓ | −20.6 % ✓ |
+| Gefrorener Pass | 3.78 | +0.0 % ✓ | −17.1 % ✓ |
+| Obsidiantunnel | 3.51 | +0.7 % ✓ | −15.7 % ✓ |
+| Tiefe Ruinen | 2.94 | +1.5 % ✓ | −19.5 % ✓ |
+| Vulkankern | 1.87 | +5.4 % ✓ | −17.0 % ✓ |
+| Die Festung | 2.37 | +9.0 % ✓ | −20.9 % ✓ |
+| Abyssale Tiefe | 2.68 | +2.0 % ✓ | −24.1 % ✓ |
+| Schattenkatakomben | 3.21 | +3.8 % ✓ | −23.9 % ✓ |
+| Aschewüste | 3.06 | +1.3 % ✓ | −15.7 % ✓ |
+| Magmahöhlen | 2.96 | +8.1 % ✓ | −22.7 % ✓ |
 
 **Jede Entscheidung einzeln** (`npm run geschichten-eichung -- einzeln`): immer vorsichtig, nur bei dieser
 Entscheidung mutig. Ziel: **3 bis 15 % schwerer**. Die vorsichtige Option der anderen Entscheidungen zählt mit,
@@ -121,68 +122,68 @@ nach einer Änderung also den ganzen Dungeon nachmessen. Messrauschen etwa ±1,5
 
 | Dungeon | Entscheidung | nur hier mutig | |
 |---|---|---|---|
-| Waldpfad (kurz) | 1 «Die Spur» | −7.2 % | ✓ |
-|  | 2 «Die Lichtung» | −11.2 % | ✓ |
-| Verfallene Lichtung | 1 «Der Opferstein» | −6.1 % | ✓ |
-|  | 2 «Die Platte» | −13.2 % | ✓ |
-| Tiefwald (mittel) | 1 «Die Axt» | −9.8 % | ✓ |
-|  | 2 «Der Schamane» | −7.0 % | ✓ |
-|  | 3 «Die goldene Frucht» | −13.5 % | ✓ |
-| Tiefe Höhle | 1 «Der Goblin-Stollen» | −3.8 % | ✓ |
-|  | 2 «Der singende Kristall» | −12.4 % | ✓ |
-|  | 3 «Die Fledermäuse» | −11.7 % | ✓ |
-| Spinnenhöhle | 1 «Die Seidenfäden» | −4.6 % | ✓ |
-|  | 2 «Die Brut» | −10.3 % | ✓ |
-|  | 3 «Der Kokon» | −4.0 % | ✓ |
-| Versunkene Küste | 1 «Das Wrack» | −8.9 % | ✓ |
-|  | 2 «Die Glocke» | −11.3 % | ✓ |
-| Geisterwald | 1 «Der Postsack» | −9.5 % | ✓ |
-|  | 2 «Das Postamt» | −6.5 % | ✓ |
-|  | 3 «Der Absender» | −13.2 % | ✓ |
-| Verschlungene Tunnel | 1 «Die Wegweiser» | −8.2 % | ✓ |
-|  | 2 «Der Vetter» | −9.4 % | ✓ |
-| Sumpfdorf | 1 «Der Brautvater» | −9.0 % | ✓ |
-|  | 2 «Das Fest» | −7.4 % | ✓ |
-| Giftsumpf | 1 «Die Kräuterfrau» | −3.9 % | ✓ |
-|  | 2 «Die Moorhexe» | −8.6 % | ✓ |
-|  | 3 «Der Giftteich» | −9.8 % | ✓ |
-| Alte Krypta | 1 «Die Grabräuber» | −5.9 % | ✓ |
-|  | 2 «Der zerkratzte Stein» | −8.0 % | ✓ |
-|  | 3 «Die Ehrenwache» | −10.8 % | ✓ |
-| Die Stadtmauern | 1 «Der Steuereintreiber» | −5.8 % | ✓ |
+| Waldpfad (kurz) | 1 «Die Spur» | −5.4 % | ✓ |
+|  | 2 «Die Lichtung» | −10.5 % | ✓ |
+| Verfallene Lichtung | 1 «Der Opferstein» | −5.9 % | ✓ |
+|  | 2 «Die Platte» | −13.0 % | ✓ |
+| Tiefwald (mittel) | 1 «Die Axt» | −8.4 % | ✓ |
+|  | 2 «Der Schamane» | −6.9 % | ✓ |
+|  | 3 «Die goldene Frucht» | −13.0 % | ✓ |
+| Tiefe Höhle | 1 «Der Goblin-Stollen» | −4.0 % | ✓ |
+|  | 2 «Der singende Kristall» | −12.7 % | ✓ |
+|  | 3 «Die Fledermäuse» | −11.9 % | ✓ |
+| Spinnenhöhle | 1 «Die Seidenfäden» | −4.7 % | ✓ |
+|  | 2 «Die Brut» | −12.3 % | ✓ |
+|  | 3 «Der Kokon» | −5.7 % | ✓ |
+| Versunkene Küste | 1 «Das Wrack» | −9.2 % | ✓ |
+|  | 2 «Die Glocke» | −11.6 % | ✓ |
+| Geisterwald | 1 «Der Postsack» | −9.3 % | ✓ |
+|  | 2 «Das Postamt» | −6.4 % | ✓ |
+|  | 3 «Der Absender» | −12.3 % | ✓ |
+| Verschlungene Tunnel | 1 «Die Wegweiser» | −8.3 % | ✓ |
+|  | 2 «Der Vetter» | −9.3 % | ✓ |
+| Sumpfdorf | 1 «Der Brautvater» | −8.0 % | ✓ |
+|  | 2 «Das Fest» | −7.5 % | ✓ |
+| Giftsumpf | 1 «Die Kräuterfrau» | −4.6 % | ✓ |
+|  | 2 «Die Moorhexe» | −7.7 % | ✓ |
+|  | 3 «Der Giftteich» | −8.6 % | ✓ |
+| Alte Krypta | 1 «Die Grabräuber» | −4.9 % | ✓ |
+|  | 2 «Der zerkratzte Stein» | −6.8 % | ✓ |
+|  | 3 «Die Ehrenwache» | −9.3 % | ✓ |
+| Die Stadtmauern | 1 «Der Steuereintreiber» | −5.2 % | ✓ |
 |  | 2 «Die Kaserne» | −9.1 % | ✓ |
-|  | 3 «Der Kommandant» | −13.8 % | ✓ |
-| Abgrundtiefen | 1 «Die Luftblasen» | −3.5 % | ✓ |
-|  | 2 «Der ertrunkene Ritter» | −7.4 % | ✓ |
-|  | 3 «Das Gestohlene» | −10.8 % | ✓ |
-| Kristallminen | 1 «Die Kristallader» | −8.7 % | ✓ |
-|  | 2 «Der Stützbalken» | −8.9 % | ✓ |
-|  | 3 «Die Bergleute» | −5.3 % | ✓ |
-| Gefrorener Pass | 1 «Das Lagerfeuer» | −10.8 % | ✓ |
-|  | 2 «Die Schneebrücke» | −7.8 % | ✓ |
-| Obsidiantunnel | 1 «Der Glasgarten» | −10.9 % | ✓ |
-|  | 2 «Die Glutkammer» | −7.3 % | ✓ |
-| Tiefe Ruinen | 1 «Die Bibliothek» | −10.3 % | ✓ |
-|  | 2 «Die Tintenquelle» | −7.7 % | ✓ |
-|  | 3 «Die Krone» | −6.4 % | ✓ |
-| Vulkankern | 1 «Die Schmiede der Zwerge» | −4.4 % | ✓ |
-|  | 2 «Die Brüter» | −12.3 % | ✓ |
-|  | 3 «Der Atem des Wyrms» | −12.5 % | ✓ |
-| Die Festung | 1 «Die Vorräte» | −7.8 % | ✓ |
-|  | 2 «Der Überläufer» | −9.5 % | ✓ |
-|  | 3 «Der Herzstein» | −13.2 % | ✓ |
-| Abyssale Tiefe | 1 «Der Anglerfisch» | −7.7 % | ✓ |
-|  | 2 «Die Taucher» | −12.4 % | ✓ |
-|  | 3 «Der Rausch» | −10.9 % | ✓ |
+|  | 3 «Der Kommandant» | −12.8 % | ✓ |
+| Abgrundtiefen | 1 «Die Luftblasen» | −3.9 % | ✓ |
+|  | 2 «Der ertrunkene Ritter» | −8.0 % | ✓ |
+|  | 3 «Das Gestohlene» | −10.9 % | ✓ |
+| Kristallminen | 1 «Die Kristallader» | −8.1 % | ✓ |
+|  | 2 «Der Stützbalken» | −8.5 % | ✓ |
+|  | 3 «Die Bergleute» | −5.8 % | ✓ |
+| Gefrorener Pass | 1 «Das Lagerfeuer» | −9.8 % | ✓ |
+|  | 2 «Die Schneebrücke» | −7.2 % | ✓ |
+| Obsidiantunnel | 1 «Der Glasgarten» | −11.4 % | ✓ |
+|  | 2 «Die Glutkammer» | −8.4 % | ✓ |
+| Tiefe Ruinen | 1 «Die Bibliothek» | −11.2 % | ✓ |
+|  | 2 «Die Tintenquelle» | −8.5 % | ✓ |
+|  | 3 «Die Krone» | −7.1 % | ✓ |
+| Vulkankern | 1 «Die Schmiede der Zwerge» | −4.8 % | ✓ |
+|  | 2 «Die Brüter» | −12.5 % | ✓ |
+|  | 3 «Der Atem des Wyrms» | −12.2 % | ✓ |
+| Die Festung | 1 «Die Vorräte» | −7.4 % | ✓ |
+|  | 2 «Der Überläufer» | −9.3 % | ✓ |
+|  | 3 «Der Herzstein» | −13.6 % | ✓ |
+| Abyssale Tiefe | 1 «Der Anglerfisch» | −8.2 % | ✓ |
+|  | 2 «Die Taucher» | −12.3 % | ✓ |
+|  | 3 «Der Rausch» | −10.6 % | ✓ |
 | Schattenkatakomben | 1 «Die Gläser» | −11.5 % | ✓ |
-|  | 2 «Der Händler» | −11.3 % | ✓ |
-|  | 3 «Die Klinge» | −11.9 % | ✓ |
-| Aschewüste | 1 «Die Spur» | −3.9 % | ✓ |
+|  | 2 «Der Händler» | −10.9 % | ✓ |
+|  | 3 «Die Klinge» | −11.4 % | ✓ |
+| Aschewüste | 1 «Die Spur» | −3.3 % | ✓ |
 |  | 2 «Die Wagen» | −10.0 % | ✓ |
-|  | 3 «Der Heimweg» | −8.2 % | ✓ |
-| Magmahöhlen | 1 «Der Zwergenweg» | −8.2 % | ✓ |
-|  | 2 «Der Wächter der Esse» | −13.5 % | ✓ |
-|  | 3 «Das ewige Feuer» | −13.8 % | ✓ |
+|  | 3 «Der Heimweg» | −9.0 % | ✓ |
+| Magmahöhlen | 1 «Der Zwergenweg» | −8.4 % | ✓ |
+|  | 2 «Der Wächter der Esse» | −13.8 % | ✓ |
+|  | 3 «Das ewige Feuer» | −13.7 % | ✓ |
 
 Verlauf:
 - 20.10., erste Fassung: zwei Schwächungen des Bosses in einer Geschichte oder eine um 15 % waren zu stark
@@ -196,6 +197,10 @@ Verlauf:
   Schwellen stiegen (Stadtmauern und Festung mit den neuen Belagerungsgegnern von 0.95 und 0.62 auf über 2.4). Drei
   Entscheidungen lagen danach ausserhalb: Goblin-Stollen (−2.5 %) und Kokon (−2.9 %) kosteten zu wenig, der
   Kommandant (−15.6 %) zu viel. Jetzt macht der Boss dort 7 % statt 5 %, 12 % statt 10 % und 12 % statt 15 % stärker.
+- 21.10., nach der Eichung der Wege: Die Wege von «frisch» (Phalanx, Zorn, Scharfschützin) sind unter Stufe 15
+  schwächer geworden, die Schwellen sanken leicht (meist um 1 bis 3 %). Der Giftsumpf gierig lag danach bei
+  −11.4 % (1000 Läufe), knapp zu wenig. Jetzt macht die Kräuterfrau die Hydra 8 % statt 5 % stärker: gierig
+  −12.3 %, einzeln −4.6 / −7.7 / −8.6 %. Alles andere blieb im Ziel.
 
 Ändern sich Gegner eines Dungeons (z. B. die Belagerung), seine Zeilen nachmessen.
 

@@ -5,9 +5,12 @@ import { CombatEngine } from '../src/systems/CombatEngine';
 import { GearSystem } from '../src/systems/GearSystem';
 import { EncounterProcessor } from '../src/systems/EncounterProcessor';
 import {
-  deckung, kampfBeginn, kampfEnde, nachTreffer, rundenEnde, schattentanz, vergeltung, wutAnfall, zustandAktualisieren,
+  deckung, grundSchaden, kampfBeginn, kampfEnde, nachTreffer, rundenEnde, schattentanz, vergeltung, wegAnteileZaehlen,
+  wegSchaden, wegZustandDerRunde, wutAnfall, zustandAktualisieren,
 } from '../src/systems/Kampfeffekte';
-import { istMeister, kannWegWaehlen, waehleWeg, wegEffekte, wegVon, wegWerte } from '../src/systems/Spezialisierung';
+import {
+  istMeister, kannWegWaehlen, waehleWeg, wegBilanzDazu, wegEffekte, wegVon, wegWerte,
+} from '../src/systems/Spezialisierung';
 import { musterStand } from '../src/systems/Musterlauf';
 import { richteProbespielEin } from '../src/systems/Probespiel';
 import { createNewGameState } from '../src/models/GameState';
@@ -16,7 +19,7 @@ import {
 } from '../src/data/spezialisierungen';
 import { CLASS_DEFS } from '../src/data/classes';
 import { MUSTER_TEAMS } from '../src/data/musterteams';
-import { wegAbzeichen, wegBereichHtml, wegBilanz } from '../src/ui/components/WegAnzeige';
+import { wegAbzeichen, wegBereichHtml, wegBilanz, wegWirkungZeile, wirkungText } from '../src/ui/components/WegAnzeige';
 import { SeededRNG } from '../src/utils/RNG';
 
 const gear = new GearSystem();
@@ -119,12 +122,14 @@ describe('Wege: Regeln', () => {
   test('Meister ab Stufe 15: Werte und Effekte des Meisters ersetzen die alten', () => {
     const f = held('Brom', 'guardian', 'guardian_phalanx', MEISTER_AB_STUFE - 1);
     expect(istMeister(f)).toBe(false);
-    expect(wegWerte(f)).toEqual({ hp: 10 });
-    expect(wegEffekte(f)).toEqual([{ id: 'phalanx', power: 5, name: 'Phalanx', weg: 'guardian_phalanx', usesLeft: -1 }]);
+    const weg = getSpezialisierung('guardian_phalanx')!;
+    expect(wegWerte(f)).toEqual(weg.werte);
+    expect(wegEffekte(f)).toEqual([{ ...weg.effekte[0], name: 'Phalanx', weg: 'guardian_phalanx', usesLeft: -1 }]);
     f.level = MEISTER_AB_STUFE;
     expect(istMeister(f)).toBe(true);
-    expect(wegWerte(f)).toEqual({ hp: 15 });
-    expect(wegEffekte(f)).toEqual([{ id: 'phalanx', power: 6, name: 'Phalanx', weg: 'guardian_phalanx', usesLeft: -1 }]);
+    expect(wegWerte(f)).toEqual(weg.meisterWerte);
+    expect(wegEffekte(f)).toEqual([{ ...weg.meisterEffekte[0], name: 'Phalanx', weg: 'guardian_phalanx', usesLeft: -1 }]);
+    expect(weg.meisterEffekte[0].power).toBeGreaterThan(weg.effekte[0].power!);
   });
 
   test('ein Weg, der nicht zur Klasse passt (kaputter Spielstand), gilt als keiner', () => {
@@ -139,16 +144,18 @@ describe('Wege: Regeln', () => {
   test('Werte und Effekte kommen über die Ausrüstung in den Kampf, Reparaturen ziehen nichts ab', () => {
     const mit = held('Bärbel', 'druid', 'druid_baerengestalt');
     const ohne = held('Ohne', 'druid', null);
-    expect(gear.getEffectiveStats(mit).maxHp).toBe(gear.getEffectiveStats(ohne).maxHp + 10);
-    expect(gear.getEffectiveStats(mit).def).toBe(gear.getEffectiveStats(ohne).def + 2);
+    const { hp, def } = getSpezialisierung('druid_baerengestalt')!.werte!;
+    expect(gear.getEffectiveStats(mit).maxHp).toBe(gear.getEffectiveStats(ohne).maxHp + hp!);
+    expect(gear.getEffectiveStats(mit).def).toBe(gear.getEffectiveStats(ohne).def + def!);
     mit.gearNeedsRepair = true;
-    expect(gear.getEffectiveStats(mit).maxHp).toBe(gear.getEffectiveStats(ohne).maxHp + 10);
+    expect(gear.getEffectiveStats(mit).maxHp).toBe(gear.getEffectiveStats(ohne).maxHp + hp!);
     expect(gear.getSpecialEffects(mit).map(e => e.id)).toEqual(['baerengestalt']);
     expect(engine.fighterToCombatUnit(mit).specialEffects?.[0].weg).toBe('druid_baerengestalt');
 
     const meisterin = held('Lia', 'ranger', 'ranger_scharfschuetzin', MEISTER_AB_STUFE);
-    expect(gear.getEffectiveStats(meisterin).critChance).toBeCloseTo(0.15);
-    expect(gear.getEffectiveStats(meisterin).critMult).toBeCloseTo(GRUND.critMult + 0.3);
+    const krit = getSpezialisierung('ranger_scharfschuetzin')!.meisterWerte!;
+    expect(gear.getEffectiveStats(meisterin).critChance).toBeCloseTo(krit.critChance!);
+    expect(gear.getEffectiveStats(meisterin).critMult).toBeCloseTo(GRUND.critMult + (krit.critMult ?? 0));
   });
 
   test('Musterteams gehen ihren Weg, im Probespiel wählt man selbst', () => {
@@ -189,8 +196,9 @@ describe('Wege: Texte', () => {
     berserker_zorn: e => ({ je: `+${e('zorn').power} Angriff`, max: `+${e('zorn').max}` }),
     berserker_schlaechter: e => ({ anteil: `${pz(e('rundumschlag').anteil)} des Schadens` }),
     assassin_meuchlerin: e => ({
-      schwelle: `weniger als ${pz(e('meucheln').anteil)} Leben`,
-      mehr: e('meucheln').power >= 2 ? 'doppelter schaden' : `${pz(e('meucheln').power - 1)} mehr Schaden`,
+      schwelle: `${pz(e('meucheln').anteil)} Leben`,
+      mehr: e('meucheln').power === 2 ? 'doppelter schaden'
+        : e('meucheln').power > 2 ? `${komma(e('meucheln').power)}-facher schaden` : `${pz(e('meucheln').power - 1)} mehr Schaden`,
     }),
     assassin_schattentaenzerin: e => ({ chance: `${pz(e('schattentanz').chance)} Chance` }),
     paladin_schutzherr: (e, w) => ({ schwelle: `${pz(e('abfangen').anteil)} Leben`, def: `+${w.def} Verteidigung` }),
@@ -233,8 +241,10 @@ describe('Wege im Kampf', () => {
     const { run } = lauf([brom, bruno, lia]);
     const { log, liste } = zeilen();
     kampfBeginn([brom, bruno, lia], [], run, log);
-    expect(liste).toEqual(['★ Bruno setzt Phalanx ein → jeder im Team erhält einen Schild von 6']);
-    expect([brom.schild, bruno.schild, lia.schild]).toEqual([6, 6, 6]);
+    const schild = wert('guardian_phalanx', 'phalanx', true).power!;
+    expect(schild).toBeGreaterThan(wert('guardian_phalanx', 'phalanx').power!);
+    expect(liste).toEqual([`★ Bruno setzt Phalanx ein → jeder im Team erhält einen Schild von ${schild}`]);
+    expect([brom.schild, bruno.schild, lia.schild]).toEqual([schild, schild, schild]);
   });
 
   test('Vergelter: rächt Treffer am Team, auch durch Fähigkeiten, aber nicht Angriffe auf alle', () => {
@@ -301,19 +311,21 @@ describe('Wege im Kampf', () => {
     expect(run.combatRoundSnapshots![0].markiert).toEqual([zweiter.id]);
   });
 
-  test('Fährtenleserin: Fallen machen halben Schaden, als Meisterin gar keinen', () => {
-    const fallen = (stufe: number): { hp: number[]; log: string[] } => {
-      const lia = einheit(held('Lia', 'ranger', 'ranger_faehrtenleserin', stufe));
+  test('Fährtenleserin: Fallen machen halben Schaden, ganz vermiedene Fallen sagen es', () => {
+    const fallen = (pfad: number): { hp: number[]; log: string[] } => {
+      const lia = einheit(held('Lia', 'ranger', 'ranger_faehrtenleserin'));
+      lia.specialEffects = lia.specialEffects!.map(e => (e.id === 'pfadfinder' ? { ...e, anteil: pfad } : e));
       const grimm = einheit(held('Grimm', 'berserker', null));
       const { run } = lauf([lia, grimm]);
       new EncounterProcessor().processHazard(run, { index: 0, type: 'hazard', enemies: [], healPercent: 0, hazardDamage: 20, completed: false });
       return { hp: [lia.hp, grimm.hp], log: run.combatLog };
     };
-    expect(fallen(WEG_AB_STUFE)).toEqual({
+    expect(wert('ranger_faehrtenleserin', 'pfadfinder').anteil).toBe(0.5);
+    expect(fallen(0.5)).toEqual({
       hp: [90, 90],
       log: ['>> Hazard! Team erleidet 10 Schaden.', '★ Lia setzt Fährtenleserin ein → findet einen sicheren Weg: nur halber Schaden'],
     });
-    expect(fallen(MEISTER_AB_STUFE)).toEqual({
+    expect(fallen(1)).toEqual({
       hp: [100, 100],
       log: ['>> Hazard! Team erleidet keinen Schaden.', '★ Lia setzt Fährtenleserin ein → findet einen sicheren Weg: kein Schaden'],
     });
@@ -343,12 +355,13 @@ describe('Wege im Kampf', () => {
     expect(liste.at(-1)).toBe('  ★ Der Segen des Kriegspriesters erlischt.');
     expect(grimm.def).toBe(0);
 
+    const segen = wert('cleric_kriegspriester', 'kriegssegen', true);
     const meister = einheit(held('Ilse', 'cleric', 'cleric_kriegspriester', MEISTER_AB_STUFE));
     const grimm2 = einheit(held('Grimm', 'berserker', null));
     const { log: log2, liste: liste2 } = zeilen();
     kampfBeginn([meister, grimm2], [], lauf([meister, grimm2]).run, log2);
-    expect(liste2).toEqual(['★ Ilse setzt Kriegspriester ein → das ganze Team hat +1 Angriff und +1 Verteidigung']);
-    expect([grimm2.atk, grimm2.def]).toEqual([11, 1]);
+    expect(liste2).toEqual([`★ Ilse setzt Kriegspriester ein → das ganze Team hat ${segen.atk ? `+${segen.atk} Angriff und ` : ''}+${segen.power} Verteidigung`]);
+    expect([grimm2.atk, grimm2.def]).toEqual([10 + (segen.atk ?? 0), segen.power]);
     kampfEnde([meister, grimm2]);
     expect([grimm2.atk, grimm2.def]).toEqual([10, 0]);
   });
@@ -372,13 +385,24 @@ describe('Wege im Kampf', () => {
     expect(runde(run, 1)).toContain(`  ★ Grimm: Schlächter trifft alle → Ork B −${Math.floor(10 * anteil)}`);
   });
 
-  test('Meuchlerin: angeschlagene Gegner erleiden mehr Schaden, als Meisterin doppelten', () => {
-    const run = kampf([einheit(held('Sina', 'assassin', 'assassin_meuchlerin'))], [gegner('Puppe', { hp: 40, maxHp: 100 })]);
-    expect(runde(run, 1).slice(0, 2)).toEqual(['  ★ Sina: Meuchlerin! Puppe ist angeschlagen: 50 % mehr Schaden', 'Sina greift Puppe an für 15']);
-    const voll = kampf([einheit(held('Sina', 'assassin', 'assassin_meuchlerin'))], [gegner('Puppe', { hp: 60, maxHp: 100 })]);
+  test('Meuchlerin: angeschlagene Gegner erleiden mehr Schaden, als Meisterin noch mehr und schon früher', () => {
+    const { anteil, power } = wert('assassin_meuchlerin', 'meucheln');
+    const meister = wert('assassin_meuchlerin', 'meucheln', true);
+    expect(meister.anteil!).toBeGreaterThan(anteil!);
+    const angeschlagen = Math.floor(100 * anteil!) - 1;
+    const run = kampf([einheit(held('Sina', 'assassin', 'assassin_meuchlerin'))], [gegner('Puppe', { hp: angeschlagen, maxHp: 100 })]);
+    expect(runde(run, 1).slice(0, 2)).toEqual([
+      `  ★ Sina: Meuchlerin! Puppe ist angeschlagen: ${Math.round((power! - 1) * 100)} % mehr Schaden`,
+      `Sina greift Puppe an für ${Math.floor(10 * power!)}`,
+    ]);
+    const voll = kampf([einheit(held('Sina', 'assassin', 'assassin_meuchlerin'))], [gegner('Puppe', { hp: 100 * anteil! + 1, maxHp: 100 })]);
     expect(runde(voll, 1)[0]).toBe('Sina greift Puppe an für 10');
-    const meisterin = kampf([einheit(held('Sina', 'assassin', 'assassin_meuchlerin', MEISTER_AB_STUFE))], [gegner('Puppe', { hp: 40, maxHp: 100 })]);
-    expect(runde(meisterin, 1).slice(0, 2)).toEqual(['  ★ Sina: Meuchlerin! Puppe ist angeschlagen: doppelter Schaden', 'Sina greift Puppe an für 20']);
+    // als Meisterin zählt schon, wer unter ihrer höheren Schwelle liegt
+    const meisterin = kampf([einheit(held('Sina', 'assassin', 'assassin_meuchlerin', MEISTER_AB_STUFE))], [gegner('Puppe', { hp: 100 * anteil! + 1, maxHp: 100 })]);
+    expect(runde(meisterin, 1).slice(0, 2)).toEqual([
+      `  ★ Sina: Meuchlerin! Puppe ist angeschlagen: ${String(meister.power).replace('.', ',')}-facher Schaden`,
+      `Sina greift Puppe an für ${Math.floor(10 * meister.power!)}`,
+    ]);
   });
 
   test('Schattentänzerin: weicht Angriffen und Fähigkeiten aus und kontert, Angriffen auf alle nicht', () => {
@@ -605,5 +629,123 @@ describe('Wege in der Anzeige', () => {
     expect(wegBilanz(f, 0)).toBe('');
     f.level = MEISTER_AB_STUFE + 1;
     expect(wegBilanz(f, 1)).toBe('');
+  });
+});
+
+// ── Bilanz und Zustände ──
+
+describe('Wege: Bilanz und Zustände im Kampf', () => {
+  test('Bärengestalt: unter der Hälfte ihrer Leben wird sie wieder Druidin', () => {
+    const baer = einheit(held('Bärbel', 'druid', 'druid_baerengestalt'));
+    const lia = einheit(held('Lia', 'ranger', null, WEG_AB_STUFE, { hp: 1000, maxHp: 1000 }), { threat: 10 });
+    // ein Treffer bringt sie unter die Hälfte, aber nicht um
+    const ork = gegner('Ork', { atk: Math.ceil(baer.maxHp * 0.6) + Math.floor(baer.def * 0.7), spd: 5 });
+    const run = kampf([baer, lia], [ork]);
+    const zurueck = run.combatLog.indexOf('  ★ Bärbel fällt unter die Hälfte ihrer Leben und wird wieder Druidin');
+    expect(zurueck).toBeGreaterThan(0);
+    expect(run.combatLog.slice(zurueck).find(z => z.startsWith('Ork greift'))).toMatch(/^Ork greift Lia an/);
+    expect(baer.wegWirkung?.angezogen).toBe(1);
+
+    // schon schwer verletzt: keine Bärin, die Angriffe gehen wie sonst
+    const wund = einheit(held('Bärbel', 'druid', 'druid_baerengestalt'));
+    wund.hp = Math.floor(wund.maxHp / 2) - 1;
+    const { log, liste } = zeilen();
+    kampfBeginn([wund], [], lauf([wund]).run, log);
+    expect(liste).toEqual([]);
+    expect(wund.tauntRounds).toBe(0);
+  });
+
+  test('Schild, Heilung und Rache zählen für den Helden mit dem Weg', () => {
+    const brom = einheit(held('Brom', 'guardian', 'guardian_phalanx'));
+    const hain = einheit(held('Hain', 'druid', 'druid_hain'), { hp: 50 });
+    const lia = einheit(held('Lia', 'ranger', null), { hp: 90 });
+    kampfBeginn([brom, hain, lia], [], lauf([brom, hain, lia]).run, () => {});
+    const anteil = wert('druid_hain', 'hain').anteil!;
+    expect(brom.wegWirkung).toEqual({ schild: 3 * wert('guardian_phalanx', 'phalanx').power! });
+    expect(hain.wegWirkung).toEqual({ heilung: Math.floor(hain.maxHp * anteil) + Math.min(10, Math.floor(lia.maxHp * anteil)) });
+    expect(lia.wegWirkung).toBeUndefined();
+
+    const raecher = einheit(held('Brom', 'guardian', 'guardian_vergelter'), {}, true);
+    const opfer = einheit(held('Lia', 'ranger', null), { threat: 10 });
+    const run = kampf([raecher, opfer], [gegner('Ork', { atk: 20, spd: 5 })]);
+    const rachen = run.combatLog.filter(z => z.startsWith('★ Brom setzt Vergelter ein')).length;
+    expect(rachen).toBeGreaterThan(0);
+    expect(raecher.wegWirkung?.schaden).toBe(rachen * raecher.atk);
+  });
+
+  test('Heldenlied: der Mehrschaden aller Helden zählt für die Bardin', () => {
+    const bardin = einheit(held('Bardin', 'bard', 'bard_heldenlied'));
+    const lia = einheit(held('Lia', 'ranger', null));
+    const run = kampf([bardin, lia], [gegner('Puppe', { hp: 300, maxHp: 300 })]);
+    const treffer = run.combatLog.filter(z => /^(Bardin|Lia) greift Puppe an für/.test(z)).length;
+    expect(treffer).toBeGreaterThan(0);
+    expect(bardin.wegWirkung?.schaden).toBeCloseTo(treffer * wert('bard_heldenlied', 'heldenlied').power!);
+    expect(lia.wegWirkung).toBeUndefined();
+  });
+
+  test('Kriegssegen und Schmählied zählen den Schaden, den sie den Helden ersparen', () => {
+    const pater = einheit(held('Pater', 'cleric', 'cleric_kriegspriester'));
+    const lia = einheit(held('Lia', 'ranger', null), { def: 2 });
+    kampfBeginn([pater, lia], [], lauf([pater, lia]).run, () => {});
+    const segen = wert('cleric_kriegspriester', 'kriegssegen').power!;
+    const ork = gegner('Ork', { atk: 20 });
+    const dmg = grundSchaden(ork.atk, lia.def);
+    wegAnteileZaehlen(ork, lia, dmg, [pater, lia], [ork]);
+    expect(pater.wegWirkung).toEqual({ verhindert: grundSchaden(ork.atk, lia.def - segen) - dmg });
+
+    const bardin = einheit(held('Bardin', 'bard', 'bard_schmaehlied'));
+    const riese = gegner('Riese', { atk: 50 });
+    nachTreffer(bardin, riese, 10, [riese], [bardin, lia], new SeededRNG(1), () => {});
+    const minus = 50 - riese.atk;
+    expect(minus).toBeGreaterThan(0);
+    wegAnteileZaehlen(riese, lia, grundSchaden(riese.atk, lia.def), [bardin, lia], [riese]);
+    expect(bardin.wegWirkung?.verhindert).toBeCloseTo(grundSchaden(50, lia.def) - grundSchaden(riese.atk, lia.def));
+  });
+
+  test('Fährte und Meucheln: den Mehrschaden teilen sich Fährtenleserin und Meuchlerin', () => {
+    const lia = einheit(held('Lia', 'ranger', 'ranger_faehrtenleserin'));
+    const sina = einheit(held('Sina', 'assassin', 'assassin_meuchlerin'));
+    const mal = wert('ranger_faehrtenleserin', 'faehrte').anteil!;
+    const mehr = wert('assassin_meuchlerin', 'meucheln').power!;
+    const puppe = gegner('Puppe', { hp: 100, maxHp: 1000, markiert: mal });
+    expect(wegSchaden(sina, puppe, 100, () => {}, [lia, sina])).toBe(Math.floor(100 * (1 + mal) * mehr));
+    expect(lia.wegWirkung?.schaden).toBeCloseTo(100 * mal * mehr);
+    expect(sina.wegWirkung?.schaden).toBeCloseTo(100 * (1 + mal) * (mehr - 1));
+  });
+
+  test('nach jeder Runde: Zorn auf der Karte des Helden, Fluch und Kränkung auf der des Gegners', () => {
+    const grimm = einheit(held('Grimm', 'berserker', 'berserker_zorn'));
+    const puppe = gegner('Puppe', { hp: 5000, maxHp: 5000, def: 10 });
+    const run = kampf([grimm], [puppe]);
+    const zorn = wert('berserker_zorn', 'zorn');
+    expect(run.combatRoundSnapshots![0].wegZustand?.helden[grimm.id]).toEqual([
+      { zeichen: `🔥+${zorn.power}`, titel: `Zorn: +${zorn.power} Angriff bis Kampfende` },
+    ]);
+    expect(run.combatRoundSnapshots![0].wegZustand?.gegner[puppe.id]).toBeUndefined();
+
+    const hexe = einheit(held('Hexe', 'witch', 'witch_fluchweberin'));
+    const bardin = einheit(held('Bardin', 'bard', 'bard_schmaehlied'));
+    const wache = gegner('Wache', { def: 10, atk: 50 });
+    nachTreffer(hexe, wache, 5, [wache], [hexe], new SeededRNG(1), () => {});
+    nachTreffer(bardin, wache, 5, [wache], [bardin], new SeededRNG(1), () => {});
+    const fluch = wert('witch_fluchweberin', 'fluch').power!;
+    expect(wache.def).toBe(10 - fluch);
+    const zustand = wegZustandDerRunde([hexe, bardin], [wache]);
+    expect(zustand?.gegner[wache.id].map(z => z.zeichen)).toEqual([`🕸️−${fluch}`, `🎭−${50 - wache.atk}`]);
+    expect(zustand?.helden).toEqual({});
+  });
+
+  test('Bilanz in Worten: nach der Expedition und im Heldenfenster', () => {
+    expect(wirkungText({ heilung: 380.4, schaden: 1240.6, krit: 0.2 })).toBe('1.241 Schaden, 380 Leben geheilt');
+    expect(wirkungText(undefined)).toBe('');
+    const f = held('Brom', 'guardian', 'guardian_phalanx');
+    expect(wegWirkungZeile(f, { schild: 240, abgefangen: 2 })).toBe('🧱 Phalanx: 240 Schild verteilt, 2 Angriffe abgefangen');
+    expect(wegWirkungZeile(held('Lia', 'ranger', null), { schaden: 5 })).toBe('');
+    expect(wegBereichHtml(f, null)).toContain('steht hier nach der nächsten Expedition');
+    wegBilanzDazu(f, { schild: 120.4 });
+    wegBilanzDazu(f, { schild: 120.6, schaden: 3 });
+    expect(f.wegBilanz).toEqual({ schild: 241, schaden: 3 });
+    expect(wegBereichHtml(f, null)).toContain('Bisher bewirkt: 3 Schaden, 241 Schild verteilt');
+    expect(wegAbzeichen(f)).toContain(`title="Phalanx: ${getSpezialisierung('guardian_phalanx')!.text}"`);
   });
 });

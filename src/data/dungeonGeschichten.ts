@@ -466,7 +466,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir schickten die Kräuterfrau zurück ins Dorf. Sie schimpfte in Reimen, sie hatte das Fieber inzwischen auch.',
         },
         mutig: {
-          label: 'Ihr beim Pflücken helfen', wirkung: [ding('herb_swamp_blossom', 4), boss(5)],
+          label: 'Ihr beim Pflücken helfen', wirkung: [ding('herb_swamp_blossom', 4), boss(8)],
           nachklang: 'Wir halfen der Kräuterfrau beim Pflücken, mitten im Giftgarten der Hydra. Sie bezahlte uns mit Blüten, und die Hydra roch uns von da an schon von Weitem.',
         },
       },

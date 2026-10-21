@@ -6,7 +6,7 @@
 // ────────────────────────────────────────────────────────────────
 
 import { GuildFighter } from '../models/GuildRoster';
-import { SpecialEffect } from '../models/ExpeditionRun';
+import { SpecialEffect, WegWirkung, WegWirkungArt } from '../models/ExpeditionRun';
 import { SetWerte } from '../data/dungeonSets';
 import {
   MEISTER_AB_STUFE, SpezialisierungDef, WEG_AB_STUFE, getSpezialisierung, wegeDerKlasse,
@@ -49,4 +49,13 @@ export function wegEffekte(fighter: GuildFighter): SpecialEffect[] {
   if (!weg) return [];
   const effekte = istMeister(fighter) ? weg.meisterEffekte : weg.effekte;
   return effekte.map(e => ({ ...e, name: e.name ?? weg.name, weg: weg.id, usesLeft: -1 }));
+}
+
+/** Zählt die Bilanz einer Expedition zur Bilanz aller Expeditionen des Helden dazu */
+export function wegBilanzDazu(fighter: GuildFighter, wirkung: WegWirkung | undefined): void {
+  if (!wirkung) return;
+  const bilanz = fighter.wegBilanz ?? (fighter.wegBilanz = {});
+  for (const [art, menge] of Object.entries(wirkung) as [WegWirkungArt, number][]) {
+    bilanz[art] = Math.round((bilanz[art] ?? 0) + menge);
+  }
 }

@@ -1064,6 +1064,10 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .hdm2-weg-text { font-size: 0.72rem; color: var(--txt); line-height: 1.4; }
 .hdm2-weg-meister { font-size: 0.7rem; color: var(--mut); line-height: 1.4; }
 .hdm2-weg-meister.aktiv { color: #fcd34d; }
+.hdm2-weg-bilanz { font-size: 0.7rem; color: #fcd34d; line-height: 1.4; margin-top: 4px; }
+.hdm2-weg-bilanz.leer { color: var(--mut); font-style: italic; }
+/* Bilanz der Wege nach einer Expedition, unter der Zeile des Helden */
+.weg-wirkung-zeile { color: #fcd34d; font-size: .74rem; margin: -3px 0 7px 12px; }
 .hdm2-weg-frage { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; font-size: 0.74rem; color: #fcd34d; }
 .weg-knopf {
   align-self: flex-start; cursor: pointer; border-radius: 4px; transition: .2s; padding: 6px 12px; margin-top: 2px;
@@ -1338,6 +1342,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .mc-co-badge-set { font-family: inherit; font-size: 0.7rem; padding: 0 4px; border-color: #34d399; color: #6ee7b7; background: rgba(52,211,153,.12); }
 .mc-co-badge-weg { font-family: inherit; font-size: 0.7rem; padding: 0 4px; border-color: #fcd34d; color: #fcd34d; background: rgba(252,211,77,.12); }
 .mc-co-badge-marke { border-color: #f59e0b; background: rgba(245,158,11,.15); }
+/* Zustände aus den Wegen nach jeder Runde: 🔥+4, 🐻, 💀2 im Weg-Abzeichen, 🕸️−2 und 🎭−2 bei Gegnern */
+.mc-co-badge-zustand, .mc-co-badge-weg.aktiv { white-space: nowrap; }
+.mc-co-badge-weg.aktiv { background: rgba(252,211,77,.28); box-shadow: 0 0 6px rgba(252,211,77,.7); }
 /* HP bar */
 .mc-bar-track {
   height: 6px; background: #0c1220; border-radius: 3px; overflow: hidden; margin-top: 2px;

@@ -127,6 +127,10 @@ export interface CombatUnit {
   zielschuss?: boolean;
   /** Fährtenleserin: markierter Gegner erleidet so viel mehr Schaden von Helden (Anteil) */
   markiert?: number;
+  /** Bärengestalt: ist gerade Bärin und zieht die Angriffe auf sich, bis sie unter die Hälfte ihrer Leben fällt */
+  baerin?: boolean;
+  /** Was der Weg des Helden in dieser Expedition bewirkt hat, für die Bilanz danach (Kampfeffekte.wegZaehlen) */
+  wegWirkung?: WegWirkung;
   /** Knochenherr: Skelette, die bis zum Ende der Expedition für den Helden kämpfen */
   skelette?: number;
   /** Sternenfall: Treffer in diesem Kampf seit dem letzten Stern */
@@ -134,6 +138,14 @@ export interface CombatUnit {
   /** Angriff und Verteidigung, die Kampfeffekte gerade dazugeben (Glutherz, Tiefenrausch, Drachengier, Bastion) */
   effektBoni?: Record<string, number>;
 }
+
+/**
+ * Bilanz eines Wegs: Extraschaden, verhinderter Schaden, Heilung, verteilter Schild und wie oft
+ * er Angriffe umgelenkt, abgefangen oder auf sich gezogen, ausgewichen oder sicher kritisch getroffen hat
+ */
+export type WegWirkungArt =
+  'schaden' | 'verhindert' | 'heilung' | 'schild' | 'umgelenkt' | 'abgefangen' | 'angezogen' | 'ausgewichen' | 'krit';
+export type WegWirkung = Partial<Record<WegWirkungArt, number>>;
 
 export interface CombatBuff {
   stat: string;
@@ -251,4 +263,12 @@ export interface CombatRoundSnapshot {
   fortificationHp?: number;
   /** Fährtenleserin: IDs der Gegner, die nach dieser Runde markiert sind */
   markiert?: number[];
+  /** Zustände aus den Wegen nach dieser Runde (Zorn, Bärin, Fluch, Kränkung …) je Held und je Gegner, nach ID */
+  wegZustand?: { helden: Record<number, WegZustand[]>; gegner: Record<number, WegZustand[]> };
+}
+
+/** Ein Zustand aus einem Weg auf der Kampfkarte: Zeichen mit Zahl und Erklärung, z. B. «🔥+4» */
+export interface WegZustand {
+  zeichen: string;
+  titel: string;
 }

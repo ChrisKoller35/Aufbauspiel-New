@@ -66,13 +66,14 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
 - Material aus einem tiefen Gebiet hilft oben nicht: Hohe Sets brauchen Material aus hohen Gebieten.
   Innerhalb eines Gebiets zählt jeder Dungeon: Glutkern fällt in allen vier Feuer-Dungeons, die leichteren
   bringen je Sieg etwas weniger und sind kürzer. Nur im Dungeon des Sets fallen aber Teile zum Einschmelzen.
-- **Spürbar:** Die Stufen machen viel aus. Gemessen in der Gegenprüfung (20.10.2026, 40 Läufe): Das
-  Musterteam «Gut» in den Sets aus Ebene 4 schafft das Himmelsarchiv ohne Stufen nie, mit allen Teilen auf
-  +1 in 25 %, auf +2 in 48 % und auf +3 in 93 % der Läufe. Dafür braucht es aber 120 Grundmengen, je nach
-  Einschmelzen 60 bis 120 Siege in vier verschiedenen Dungeons.
+- **Spürbar:** Die Stufen machen viel aus. Das Musterteam «Gut» in den Sets aus Ebene 4 schafft das
+  Himmelsarchiv ohne Stufen in 32 % der Läufe, mit allen Teilen auf +1 in 62 % und auf +2 in 99 %
+  (vorsichtig, 200 Läufe, 21.10.2026 nach der Eichung der Wege; in der Gegenprüfung am 20.10., vor Manager
+  #43 und #44 und mit stärkeren Gegnern: nie, 25, 48 und auf +3 93 %). Dafür braucht es aber 120 Grundmengen,
+  je nach Einschmelzen 60 bis 120 Siege in vier verschiedenen Dungeons.
 - **Zwischen den Sternen ist die Schmiede Pflicht:** Ohne Stufen schafft das Musterteam «Stark» die
-  Sternenschmiede nie, mit allen Teilen auf +3 in drei von vier Läufen, auf +5 immer. Den Sternenschlund
-  schafft es mit Korrunds Meisterstücken auf +4 ab und zu (16 % vorsichtig), auf +5 fast immer (89 %; 200 Läufe, Tabelle in
+  Sternenschmiede nie, mit allen Teilen auf +3 in vier von fünf Läufen, auf +5 immer. Den Sternenschlund
+  schafft es mit Korrunds Meisterstücken auf +4 ab und zu (16 % vorsichtig), auf +5 fast immer (92 %; 200 Läufe, Tabelle in
   `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Ein Set aus den Sternen auf +5 kostet 810 bis 900
   Sternenstahl, 13'000 bis 15'000 Gold (ohne Rabatt der Schmiede in der Stadt) und 63 Kristallsplitter:
   das lange Ziel ganz oben.

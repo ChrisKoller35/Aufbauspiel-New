@@ -7,7 +7,7 @@
 // Wege mit «★ <Name> setzt <Weg> ein →» als goldenes. Zeilen «  ★ …» sind Wege ohne Banner.
 // ────────────────────────────────────────────────────────────────
 
-import { CombatUnit, ExpeditionRun, SpecialEffect } from '../models/ExpeditionRun';
+import { CombatRoundSnapshot, CombatUnit, ExpeditionRun, SpecialEffect, WegWirkungArt, WegZustand } from '../models/ExpeditionRun';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
 import { ENEMY_DEFS } from '../data/enemies';
 import { SeededRNG } from '../utils/RNG';
@@ -83,10 +83,85 @@ function staerksterTraeger(party: CombatUnit[], id: string): CombatUnit | undefi
   return bester;
 }
 
+/** Wie staerksterTraeger, aber auch Gefallene: Ihr Lied wirkt bis Kampfende weiter (für die Bilanz) */
+function quelle(seite: CombatUnit[], id: string): CombatUnit | undefined {
+  let bester: CombatUnit | undefined;
+  for (const u of seite) {
+    if (effekt(u, id) && (!bester || staerke(u, id) > staerke(bester, id))) bester = u;
+  }
+  return bester;
+}
+
 /** Der Verbündete mit dem kleinsten Anteil Leben, der Heilung braucht */
 function verletztester(party: CombatUnit[]): CombatUnit | undefined {
   const verletzt = lebendig(party).filter(h => h.hp < h.maxHp);
   return verletzt.length > 0 ? verletzt.reduce((a, b) => (a.hp / a.maxHp <= b.hp / b.maxHp ? a : b)) : undefined;
+}
+
+// ── Bilanz der Wege (wird nur gezählt, ändert nichts am Kampf) ──
+
+/** Zählt für die Bilanz nach der Expedition, was der Weg eines Helden bewirkt hat */
+export function wegZaehlen(held: CombatUnit | undefined, art: WegWirkungArt, menge: number): void {
+  if (!held?.isPlayer || !(menge > 0)) return;
+  const wirkung = held.wegWirkung ?? (held.wegWirkung = {});
+  wirkung[art] = (wirkung[art] ?? 0) + menge;
+}
+
+/**
+ * Wege, die Angriff oder Verteidigung verschieben (Zorn, Heldenlied, Kriegssegen, Fluch, Schmählied):
+ * Wie viel mehr Schaden macht dieser Treffer wegen ihnen, oder wie viel weniger muss ein Held
+ * einstecken? Zählt für den Helden mit dem Weg. Vor dem Schaden aufrufen.
+ */
+export function wegAnteileZaehlen(
+  unit: CombatUnit, target: CombatUnit, dmg: number, gegner: CombatUnit[], verbuendete: CombatUnit[],
+): void {
+  const basis = grundSchaden(unit.atk, target.def);
+  const mehr = (atk: number, def: number): number => (basis - grundSchaden(atk, def)) * dmg / basis;
+  if (unit.isPlayer) {
+    const zorn = bonus(unit, 'zorn', 'atk');
+    if (zorn > 0) wegZaehlen(unit, 'schaden', mehr(unit.atk - zorn, target.def));
+    const lied = bonus(unit, 'heldenlied', 'atk');
+    if (lied > 0) wegZaehlen(quelle(verbuendete, 'heldenlied'), 'schaden', mehr(unit.atk - lied, target.def));
+    const segen = bonus(unit, 'kriegssegen', 'atk');
+    if (segen > 0) wegZaehlen(quelle(verbuendete, 'kriegssegen'), 'schaden', mehr(unit.atk - segen, target.def));
+    const fluch = bonus(target, 'fluch', 'def');
+    if (fluch < 0) wegZaehlen(quelle(verbuendete, 'fluch'), 'schaden', mehr(unit.atk, target.def - fluch));
+  } else if (target.isPlayer) {
+    const segen = bonus(target, 'kriegssegen', 'def');
+    if (segen > 0) wegZaehlen(quelle(gegner, 'kriegssegen'), 'verhindert', -mehr(unit.atk, target.def - segen));
+    const kraenkung = gekraenkt(unit);
+    if (kraenkung < 0) wegZaehlen(quelle(gegner, 'schmaehlied'), 'verhindert', -mehr(unit.atk - kraenkung, target.def));
+  }
+}
+
+/** Schmählied: so viel Angriff fehlt dem Gegner gerade (negativ) */
+function gekraenkt(unit: CombatUnit): number {
+  return unit.buffs.reduce((summe, b) => summe + (b.quelle === 'schmaehlied' ? b.value : 0), 0);
+}
+
+/** Zustände aus den Wegen für die Karten im Kampf nach einer Runde (undefined, wenn keiner gilt) */
+export function wegZustandDerRunde(helden: CombatUnit[], gegner: CombatUnit[]): CombatRoundSnapshot['wegZustand'] {
+  const zustand = { helden: wegZustaende(helden), gegner: wegZustaende(gegner) };
+  return Object.keys(zustand.helden).length + Object.keys(zustand.gegner).length > 0 ? zustand : undefined;
+}
+
+/** Zorn, Bärin, Skelette, Fluch und Kränkung je Einheit (nach ID) */
+function wegZustaende(units: CombatUnit[]): Record<number, WegZustand[]> {
+  const alle: Record<number, WegZustand[]> = {};
+  for (const u of units) {
+    if (u.hp <= 0) continue;
+    const liste: WegZustand[] = [];
+    const zorn = bonus(u, 'zorn', 'atk');
+    if (zorn > 0) liste.push({ zeichen: `🔥+${zorn}`, titel: `Zorn: +${zorn} Angriff bis Kampfende` });
+    if (u.baerin && u.tauntRounds > 0) liste.push({ zeichen: '🐻', titel: 'Bärengestalt: zieht alle Angriffe auf sich' });
+    if (u.skelette) liste.push({ zeichen: `💀${u.skelette}`, titel: `${u.skelette === 1 ? 'Ein Skelett kämpft' : `${u.skelette} Skelette kämpfen`} mit` });
+    const fluch = bonus(u, 'fluch', 'def');
+    if (fluch < 0) liste.push({ zeichen: `🕸️−${-fluch}`, titel: `Verflucht: −${-fluch} Verteidigung bis Kampfende` });
+    const kraenkung = gekraenkt(u);
+    if (kraenkung < 0) liste.push({ zeichen: `🎭−${-kraenkung}`, titel: `Gekränkt: −${-kraenkung} Angriff` });
+    if (liste.length > 0) alle[u.id] = liste;
+  }
+  return alle;
 }
 
 // ── Schaden und Heilung ──
@@ -134,8 +209,9 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     u.zielschuss = !!effekt(u, 'zielschuss');
     if (u.skelette) log(`  ★ ${u.name}: ${u.skelette === 1 ? 'Ein Skelett zieht' : `${u.skelette} Skelette ziehen`} mit in den Kampf`);
     const baer = effekt(u, 'baerengestalt');
-    if (baer) {
+    if (baer && u.hp >= u.maxHp / 2) {
       u.tauntRounds = Math.max(u.tauntRounds, baer.runden ?? 2);
+      u.baerin = true;
       log(`★ ${u.name} setzt Bärengestalt ein → zieht ${baer.runden ?? 2} Runden lang alle Angriffe auf sich`);
     }
     const moos = effekt(u, 'moospolster');
@@ -166,6 +242,7 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
   if (phalanx) {
     const schild = staerke(phalanx, 'phalanx');
     for (const h of helden) h.schild = (h.schild ?? 0) + schild;
+    wegZaehlen(phalanx, 'schild', schild * helden.length);
     log(`★ ${phalanx.name} setzt Phalanx ein → jeder im Team erhält einen Schild von ${schild}`);
   }
   const lied = staerksterTraeger(helden, 'heldenlied');
@@ -188,6 +265,7 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     const anteil = effekt(hain, 'hain')!.anteil ?? 0.05;
     let summe = 0;
     for (const h of helden) summe += heilen(h, Math.max(1, Math.floor(h.maxHp * anteil)));
+    wegZaehlen(hain, 'heilung', summe);
     if (summe > 0) log(`★ ${hain.name} setzt ${anzeigeName(effekt(hain, 'hain')!)} ein → das ganze Team heilt ${Math.round(anteil * 100)} % Leben`);
   }
   const segen = kriegssegenAktualisieren(party);
@@ -224,6 +302,7 @@ export function kampfEnde(party: CombatUnit[]): void {
     u.ersterSchlag = false;
     u.zielschuss = false;
     u.tauntRounds = 0;
+    u.baerin = false;
     u.gift = undefined;
     u.sternenTreffer = 0;
   }
@@ -251,13 +330,23 @@ function segenText(traeger: CombatUnit): string {
   return atk > 0 ? `+${atk} Angriff und +${def} Verteidigung` : `+${def} Verteidigung`;
 }
 
-/** Vor jedem Zug: Werte, die von den Leben abhängen (Tiefenrausch, Letzte Bastion, Segen des Kriegspriesters) */
+/**
+ * Vor jedem Zug: Werte, die von den Leben abhängen (Tiefenrausch, Letzte Bastion, Segen des Kriegspriesters).
+ * Die Bärin wird unter der Hälfte ihrer Leben wieder Druidin, sonst stirbt sie für das Team.
+ */
 export function zustandAktualisieren(units: CombatUnit[], log?: Log): void {
   for (const u of units) {
     if (!u.specialEffects) continue;
     const angeschlagen = u.hp > 0 && u.hp < u.maxHp / 2;
     if (effekt(u, 'tiefenrausch')) setzeBonus(u, 'tiefenrausch', 'atk', angeschlagen ? staerke(u, 'tiefenrausch') : 0);
     if (effekt(u, 'letzte_bastion')) setzeBonus(u, 'letzte_bastion', 'def', angeschlagen ? staerke(u, 'letzte_bastion') : 0);
+    if (u.baerin && (u.tauntRounds <= 0 || angeschlagen)) {
+      u.baerin = false;
+      if (angeschlagen && u.tauntRounds > 0 && !effekt(u, 'letzte_bastion')) {
+        u.tauntRounds = 0;
+        log?.(`  ★ ${u.name} fällt unter die Hälfte ihrer Leben und wird wieder Druidin`);
+      }
+    }
   }
   if (!units.some(u => u.effektBoni?.['kriegssegen:def'] || effekt(u, 'kriegssegen'))) return;
   const vorher = Math.max(0, ...units.map(u => bonus(u, 'kriegssegen', 'def')));
@@ -310,24 +399,29 @@ export function zielschuss(angreifer: CombatUnit, log: Log): boolean {
   if (!angreifer.zielschuss) return false;
   angreifer.zielschuss = false;
   const e = effekt(angreifer, 'zielschuss');
+  wegZaehlen(angreifer, 'krit', 1);
   log(`★ ${angreifer.name} setzt ${e ? anzeigeName(e) : 'Scharfschützin'} ein → der erste Schuss sitzt: kritischer Treffer`);
   return true;
 }
 
 /**
  * Schaden eines Grundangriffs nach den Wegen: Fährtenleserin (markiertes Ziel erleidet von
- * Helden mehr) und Meuchlerin (angeschlagene Gegner erleiden mehr).
+ * Helden mehr) und Meuchlerin (angeschlagene Gegner erleiden mehr). verbuendete: das Team des
+ * Angreifers, damit die Bilanz den Mehrschaden der Fährtenleserin gutschreibt.
  */
-export function wegSchaden(angreifer: CombatUnit, ziel: CombatUnit, dmg: number, log: Log): number {
-  let faktor = 1;
-  if (angreifer.isPlayer && ziel.markiert) faktor += ziel.markiert;
+export function wegSchaden(angreifer: CombatUnit, ziel: CombatUnit, dmg: number, log: Log, verbuendete: CombatUnit[] = []): number {
+  const mal = angreifer.isPlayer ? ziel.markiert ?? 0 : 0;
+  let mehr = 1;
   const meucheln = effekt(angreifer, 'meucheln');
   if (meucheln && ziel.hp > 0 && ziel.hp < ziel.maxHp * (meucheln.anteil ?? 0.5)) {
-    const mehr = meucheln.power ?? 1.5;
-    faktor *= mehr;
-    log(`  ★ ${angreifer.name}: ${anzeigeName(meucheln)}! ${ziel.name} ist angeschlagen: ${mehr >= 2 ? 'doppelter' : `${Math.round((mehr - 1) * 100)} % mehr`} Schaden`);
+    mehr = meucheln.power ?? 1.5;
+    log(`  ★ ${angreifer.name}: ${anzeigeName(meucheln)}! ${ziel.name} ist angeschlagen: ${mehr === 2 ? 'doppelter' : mehr > 2 ? `${String(mehr).replace('.', ',')}-facher` : `${Math.round((mehr - 1) * 100)} % mehr`} Schaden`);
   }
-  return faktor === 1 ? dmg : Math.max(1, Math.floor(dmg * faktor));
+  if (mal === 0 && mehr === 1) return dmg;
+  if (mal > 0) wegZaehlen(quelle(verbuendete, 'faehrte'), 'schaden', dmg * mal * mehr);
+  if (mehr > 1) wegZaehlen(angreifer, 'schaden', dmg * (1 + mal) * (mehr - 1));
+  const faktor = (1 + mal) * mehr;
+  return Math.max(1, Math.floor(dmg * faktor));
 }
 
 /**
@@ -339,6 +433,8 @@ export function schattentanz(ziel: CombatUnit, angreifer: CombatUnit, rng: Seede
   if (!tanz || ziel.hp <= 0 || !rng.chance(chance(ziel, 'schattentanz'))) return false;
   const dmg = grundSchaden(ziel.atk, angreifer.def);
   const verlust = schadenNehmen(angreifer, dmg);
+  wegZaehlen(ziel, 'ausgewichen', 1);
+  wegZaehlen(ziel, 'schaden', dmg);
   log(`★ ${ziel.name} setzt ${anzeigeName(tanz)} ein → weicht ${angreifer.name} aus und kontert: ${dmg} Schaden${schildText(dmg, verlust)}`);
   if (angreifer.hp <= 0) besiegt(ziel, log);
   return true;
@@ -354,6 +450,7 @@ export function deckung(ziel: CombatUnit, helden: CombatUnit[], rng: SeededRNG, 
   const andere = lebendig(helden).filter(h => h !== ziel && !h.isWarMachine);
   if (andere.length === 0 || !rng.chance(e.chance ?? 0.25)) return ziel;
   const neu = andere.reduce((a, b) => (b.hp > a.hp ? b : a));
+  wegZaehlen(ziel, 'umgelenkt', 1);
   log(`  ★ ${ziel.name} bleibt in Deckung → der Angriff gilt ${neu.name}`);
   return neu;
 }
@@ -368,6 +465,7 @@ export function abfangen(ziel: CombatUnit, helden: CombatUnit[], log: Log): Comb
     const schutz = effekt(u, 'abfangen');
     if (!schutz || u === ziel) continue;
     if (ziel.hp >= ziel.maxHp * (schutz.anteil ?? 0.3) || u.hp / u.maxHp <= ziel.hp / ziel.maxHp) continue;
+    wegZaehlen(u, 'abgefangen', 1);
     log(`★ ${u.name} setzt ${anzeigeName(schutz)} ein → fängt den Angriff auf ${ziel.name} ab`);
     return u;
   }
@@ -403,6 +501,7 @@ export function vergeltung(
   if (raecher && angreifer.hp > 0 && rng.chance(chance(raecher, 'vergeltung'))) {
     const dmg = grundSchaden(raecher.atk, angreifer.def);
     const verlust = schadenNehmen(angreifer, dmg);
+    wegZaehlen(raecher, 'schaden', dmg);
     const was = raecher === ziel ? 'schlägt zurück' : `rächt ${ziel.name}`;
     log(`★ ${raecher.name} setzt ${anzeigeName(effekt(raecher, 'vergeltung')!)} ein → ${was}: ${angreifer.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
     if (angreifer.hp <= 0) besiegt(raecher, log);
@@ -483,6 +582,7 @@ function wegNachTreffer(
     for (const g of andere) {
       const wucht = Math.max(1, Math.floor(dmg * anteil));
       schadenNehmen(g, wucht);
+      wegZaehlen(angreifer, 'schaden', wucht);
       treffer.push(`${g.name} −${wucht}`);
       if (g.hp <= 0) besiegt(angreifer, log);
     }
@@ -537,6 +637,7 @@ function heilenMitSchwert(angreifer: CombatUnit, dmg: number, verbuendete: Comba
   const ziel = verletztester(verbuendete);
   if (!ziel) return;
   const geheilt = heilen(ziel, Math.max(1, Math.floor(dmg * (kreuz.anteil ?? 0.4))));
+  wegZaehlen(angreifer, 'heilung', geheilt);
   if (geheilt > 0) log(`  ★ ${angreifer.name}: ${anzeigeName(kreuz)} heilt ${ziel.name} +${geheilt}`);
 }
 
@@ -597,6 +698,7 @@ export function rundenEnde(
       const ziel = verletztester(party);
       if (ziel) {
         const geheilt = heilen(ziel, Math.max(1, Math.floor(ziel.maxHp * (gebet.anteil ?? 0.12))));
+        wegZaehlen(u, 'heilung', geheilt);
         log(`★ ${u.name} setzt ${anzeigeName(gebet)} ein → ${ziel.name} +${geheilt} Leben`);
       }
     }
@@ -607,6 +709,7 @@ export function rundenEnde(
       for (const g of lebendig(gegner)) {
         const dmg = Math.max(1, Math.floor(grundSchaden(u.atk, g.def) * (blitz.anteil ?? 0.7)));
         const verlust = schadenNehmen(g, dmg);
+        wegZaehlen(u, 'schaden', dmg);
         log(`  ${g.name} erleidet ${dmg}${schildText(dmg, verlust)}`);
       }
     }
@@ -620,6 +723,7 @@ export function rundenEnde(
         if (ziele.length === 0) break;
         const ziel = rng.pick(ziele);
         schadenNehmen(ziel, wucht);
+        wegZaehlen(u, 'schaden', wucht);
         treffer.push(`${ziel.name} −${wucht}`);
       }
       log(`  ★ ${u.name}: ${u.skelette === 1 ? 'Sein Skelett schlägt' : `${u.skelette} Skelette schlagen`} zu → ${treffer.join(', ')}`);
@@ -654,7 +758,9 @@ function teamRundenEnde(party: CombatUnit[], gegner: CombatUnit[], runde: number
   const seuche = staerksterTraeger(party, 'seuche');
   if (seuche && lebendig(gegner).length > 0) {
     const menge = staerke(seuche, 'seuche');
-    for (const g of lebendig(gegner)) g.hp -= menge;
+    const ziele = lebendig(gegner);
+    for (const g of ziele) g.hp -= menge;
+    wegZaehlen(seuche, 'schaden', menge * ziele.length);
     log(`  ★ ${seuche.name}: ${anzeigeName(effekt(seuche, 'seuche')!)} → alle Gegner −${menge} Leben`);
   }
 

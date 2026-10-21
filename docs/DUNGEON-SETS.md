@@ -90,30 +90,35 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 - **Sterne +3** (nur zwischen den Sternen gemessen): die Hort-Sets, alle Teile in der Schmiede auf +3.
 - **Sterne +5:** dazu Grimm in Korrunds Meisterstücken, alle Teile auf +5.
 
-Stand 21.10.2026, mit Wegen (`docs/SPEZIALISIERUNG.md`), nach Manager #43 und #44, Siege von 200 Läufen
-(vorsichtig / klug / gierig):
+Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
+eingerechnet, Siege von 200 Läufen (vorsichtig / klug / gierig):
 
 | Dungeon | Team | eigene Ausrüstung | Sets aus Ebene 4 | dazu Grimm im Hort-Set |
 |---|---|---|---|---|
-| Der Drachenhort | frisch | 0 / 0 / 0 % | 69 / 47 / 0 % | 95 / 81 / 4 % |
-| Der Drachenhort | gut | 77 / 49 / 2 % | 100 / 100 / 99 % | 100 / 100 / 100 % |
+| Der Drachenhort | frisch | 0 / 0 / 0 % | 75 / 44 / 0 % | 93 / 79 / 4 % |
+| Der Drachenhort | gut | 86 / 53 / 0 % | 100 / 100 / 99 % | 100 / 100 / 100 % |
 | Der Drachenhort | stark | 100 / 100 / 99 % | 100 / 100 / 100 % | 100 / 100 / 100 % |
 | Das Himmelsarchiv | frisch | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
-| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 52 / 36 / 0 % | 73 / 54 / 1 % |
-| Das Himmelsarchiv | stark | 47 / 38 / 0 % | 100 / 100 / 72 % | 100 / 100 / 89 % |
+| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 32 / 19 / 0 % | 48 / 33 / 0 % |
+| Das Himmelsarchiv | stark | 48 / 30 / 1 % | 100 / 99 / 54 % | 100 / 100 / 78 % |
 
 Zwischen den Sternen (Team «Frisch» schafft dort nichts):
 
 | Dungeon | Team | Hort-Set, ohne Stufen | Sterne +3 | Sterne +5 |
 |---|---|---|---|---|
-| Die Sternenschmiede | gut | 0 / 0 / 0 % | 1 / 5 / 0 % | 96 / 99 / 84 % |
-| Die Sternenschmiede | stark | 1 / 1 / 0 % | 76 / 88 / 16 % | 100 / 100 / 100 % |
-| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 2 / 0 / 0 % |
-| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 89 / 65 / 8 % |
+| Die Sternenschmiede | gut | 0 / 0 / 0 % | 1 / 1 / 0 % | 98 / 99 / 78 % |
+| Die Sternenschmiede | stark | 1 / 2 / 0 % | 83 / 82 / 10 % | 100 / 100 / 100 % |
+| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 4 / 1 / 0 % |
+| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 92 / 57 / 3 % |
+
+Vor der Eichung der Wege (21.10.2026) hatte das Team «Gut» im Himmelsarchiv mit Sets aus Ebene 4 53 / 36 / 0 %
+und mit dem Hort-Set 72 / 51 / 0 % (1000 Läufe; jetzt 32 / 18 / 0 % und 47 / 30 / 0 %). Seine Wege auf Stufe 12
+waren deutlich stärker als ihr Ziel; die Gegner sind auf die Teams in eigener Ausrüstung nachgezogen
+(`docs/NEUE-DUNGEONS.md`, «Eichung»), nicht auf diese Mischung.
 
 **So ist es gedacht:** Die Sets einer Ebene machen den nächsten Dungeon machbar. Mit Sets aus Ebene 4
 wagt sich schon ein frisches Team in den Drachenhort, und mit dem Hort-Set rückt das Himmelsarchiv
-für ein gutes Team in Reichweite (vorsichtig gut jeder zweite Lauf). Ohne Sets bleibt es das ferne Ziel.
+für ein gutes Team in Reichweite (vorsichtig etwa jeder zweite Lauf). Ohne Sets bleibt es das ferne Ziel.
 Sets aus einer tieferen Ebene sind für ein Team mit besserer Ausrüstung ein Rückschritt; das zeigt
 der Vergleich auf der Heldenseite. Wege und Sets verstärken sich gegenseitig, darum sind die Gegner der
 Dungeons über dem Vulkankern seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
@@ -125,7 +130,7 @@ Zwischen den Sternen reichen Sets allein nicht mehr: Erst die Schmiede macht die
 Brom war die erste Fassung deutlich schwächer als die Festung mit der Letzten Bastion; mit dem Schmiedetakt
 hilft das Set jetzt dem ganzen Team, und Grimm in Korrunds Set auf +5 ist stärker als im Hort-Set auf +5.
 **Was Nyxar nicht frass** (Bogen, Leder, Ring) macht den Sternenschlund leicht, wer es hat (Lia ohne
-Stufen: 100 / 99 / 75 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
+Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher

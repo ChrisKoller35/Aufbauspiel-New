@@ -30,7 +30,7 @@ import { bereiteTeile, neuBereit, schmiedeBeute, schmiedeStufen } from './system
 import { truhenHinweise } from './ui/components/SchmiedeAnzeige';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
-import { wegBilanz } from './ui/components/WegAnzeige';
+import { wegBilanz, wegWirkungZeile } from './ui/components/WegAnzeige';
 import { chronikHtml, einleitungHtml, folgenHtml, geschichtsText, optionsKnopfHtml } from './ui/components/GeschichtsAnzeige';
 import { einleitungGelesen, geschichtsBilanz, GeschichtsBilanz, istGeschichtsWahl, raumWahlText, ungeleseneEinleitung, wahlNachRaum } from './systems/Geschichten';
 import { getRouteBauplan } from './data/routes';
@@ -508,6 +508,8 @@ document.addEventListener('DOMContentLoaded', () => {
       const weg = held ? wegBilanz(held, h.levelUps) : '';
       const farbe = weg ? '#fcd34d' : h.levelUps > 0 ? '#4ade80' : '#9ca3af';
       body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}${weg}`, farbe);
+      const wirkung = held ? wegWirkungZeile(held, h.wegWirkung) : '';
+      if (wirkung) body += `<div class="weg-wirkung-zeile">${wirkung}</div>`;
     }
     if (rankUp) {
       body += line(`${rankUp.title}!`, '#c8a227');

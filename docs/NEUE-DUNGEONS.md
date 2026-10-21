@@ -105,24 +105,28 @@ Fähigkeiten vor dem Kampf nutzen sie nicht, echte Spieler gewinnen also etwas �
 tragen sie zusätzlich Sets mit Stufen aus der Schmiede (`MUSTER_SETS.sterne3` und `sterne5`; `abEbene` misst
 diese Ausrüstung erst ab Ebene 7).
 
-Stand 21.10.2026, mit Wegen, nach Manager #43 und #44 (20 % Mindestschaden, stärkere Startklassen),
-Siege von 200 Läufen:
+Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
+eingerechnet (20 % Mindestschaden, stärkere Startklassen), Siege von 200 Läufen:
 
 | Dungeon | Team | vorsichtig | klug | gierig |
 |---|---|---|---|---|
 | Vulkankern | frisch, gut, stark | 100 % | 100 % | 100 % |
 | Der Drachenhort | frisch | 0 % | 0 % | 0 % |
-| Der Drachenhort | gut | 77 % | 49 % | 2 % |
+| Der Drachenhort | gut | 86 % | 53 % | 0 % |
 | Der Drachenhort | stark | 100 % | 100 % | 99 % |
 | Das Himmelsarchiv | frisch | 0 % | 0 % | 0 % |
 | Das Himmelsarchiv | gut | 0 % | 0 % | 0 % |
-| Das Himmelsarchiv | stark | 47 % | 38 % | 0 % |
+| Das Himmelsarchiv | stark | 48 % | 30 % | 1 % |
+
+Die ersten 200 Läufe schmeicheln dem Drachenhort: Mit 1000 Läufen sind es für «Gut» 81 / 49 / 1 % (vor der
+Eichung der Wege 79 / 48 / 1 %), im Himmelsarchiv für «Stark» 47 / 31 / 1 % (vorher 48 / 32 / 0 %).
 
 Die Sternen-Dungeons schafft in eigener Ausrüstung (T4) kein Musterteam, sie haben ihre eigene Tabelle unten.
 
-**Ohne Wege** (dritte Tabelle des Werkzeugs): Drachenhort «Gut» 3 / 1 / 0 %, «Stark» 99 / 83 / 0 %,
+**Ohne Wege** (dritte Tabelle des Werkzeugs): Drachenhort «Gut» 10 / 7 / 0 %, «Stark» 100 / 94 / 0 %,
 Himmelsarchiv «Stark» 0 / 0 / 0 %. Seit den Wegen haben die Gegner beider Dungeons mehr Leben und Angriff
-(Drachenhort etwa ×1,11, Himmelsarchiv etwa ×1,15), seit #43 und #44 noch einmal (×1,04 und ×1,05).
+(Drachenhort etwa ×1,11, Himmelsarchiv etwa ×1,15), seit #43 und #44 noch einmal (×1,04 und ×1,05), seit der
+Eichung der Wege wieder etwas weniger (Drachenhort ×0,976, Himmelsarchiv Angriff ×0,981 und Leben ×0,966).
 Vorher, ohne Wege und mit den alten Gegnern: Drachenhort «Gut» 77 / 61 / 0 %, «Stark» 100 / 100 / 79 %,
 Himmelsarchiv «Stark» 73 / 53 / 1 %.
 
@@ -134,7 +138,16 @@ T4-Ausrüstung und Wegen machbar, Lesen nur mit vollen Lebenspunkten.
 Startklassen (Wächter und Waldläufer, also auch Brom und Lia der Musterteams). Damit wurden beide Dungeons
 leichter, wie die Vorab-Messung vom 20.10. sagte (200 Läufe: Drachenhort «Gut» 89 / 65 / 7 %, Himmelsarchiv
 «Stark» 84 / 74 / 8 %). Die Gegner haben darum 4 % (Drachenhort) und 5 % (Himmelsarchiv) mehr Leben und
-Angriff, die Tabelle oben ist der Stand danach. Die Wege blieben, wie sie waren (`docs/SPEZIALISIERUNG.md`).
+Angriff. Die Wege blieben dabei, wie sie waren.
+
+**Nach der Eichung der Wege nachgezogen (21.10.2026).** Die Wege der Musterteams (Phalanx, Zorn,
+Scharfschützin, Meuchlerin) sind jetzt alle auf ihrem Ziel; damit sind die Teams in den obersten Dungeons
+1,4 bis 3,2 % schwächer als vorher (gemessen als Gegner-Faktor für 50 % Siege, alte gegen neue Wege). Die
+Gegner haben darum weniger Leben und Angriff, bis die Siege mit 1000 Läufen wieder dieselben waren wie vorher
+(Zahlen oben und unten). Folge für die Wege einer tieferen Stufe: Das Team «Gut» (Stufe 12) hatte vorher
+viel stärkere Wege als das Ziel und verliert darum mehr, im Himmelsarchiv mit Sets aus Ebene 4 von 54 auf
+32 % und mit dem Hort-Set von 72 auf 47 % (vorsichtig, 1000 Läufe; `docs/DUNGEON-SETS.md`). «Gut» kommt dort
+also mit dem Hort-Set etwa jeden zweiten Lauf durch, wie es gedacht war, nicht mehr fast drei von vier.
 
 ### Zwischen den Sternen (Ebene 7 und 8)
 
@@ -150,19 +163,19 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
 
 | Stufe der Teile | Sternenschmiede | Sternenschlund | Sternenschlund, Grimm in Korrunds Set |
 |---|---|---|---|
-| +0 | 1 / 1 / 0 % | 0 / 0 / 0 % | – |
-| +1 | 4 / 12 / 0 % | – | – |
-| +2 | 25 / 47 / 3 % | – | – |
-| +3 | 76 / 88 / 16 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
-| +4 | 97 / 98 / 68 % | 5 / 0 / 0 % | 16 / 2 / 0 % |
-| +5 | 100 / 100 / 100 % | 67 / 26 / 4 % | 89 / 65 / 8 % |
+| +0 | 1 / 2 / 0 % | 0 / 0 / 0 % | – |
+| +1 | 2 / 19 / 0 % | – | – |
+| +2 | 31 / 40 / 1 % | – | – |
+| +3 | 83 / 82 / 10 % | 0 / 0 / 0 % | 1 / 0 / 0 % |
+| +4 | 98 / 99 / 48 % | 4 / 1 / 0 % | 16 / 1 / 0 % |
+| +5 | 100 / 100 / 100 % | 67 / 19 / 3 % | 92 / 58 / 3 % |
 
-- **Team «Gut»** (Stufe 12): Sternenschmiede auf +3 1 / 5 / 0 %, mit Korrunds Set auf +5 96 / 99 / 84 %;
-  Sternenschlund auch dann nur 2 / 0 / 0 %.
-- **Ohne Wege** geht zwischen den Sternen fast nichts: Sternenschmiede auf +3 0 %, auf +5 14 %, Sternenschlund
-  auf +5 0 % (klug, 100 Läufe; mit Wegen 85, 100 und 62 %).
+- **Team «Gut»** (Stufe 12): Sternenschmiede auf +3 1 / 1 / 0 %, mit Korrunds Set auf +5 98 / 99 / 78 %;
+  Sternenschlund auch dann nur 4 / 1 / 0 %.
+- **Ohne Wege** geht zwischen den Sternen fast nichts: Sternenschmiede auf +3 0 %, auf +5 42 %, Sternenschlund
+  auf +5 0 % (klug, 100 Läufe; mit Wegen 81, 100 und 58 %).
 - **Das Schlund-Set** macht den Schlund leicht: Trägt Lia es (die übrigen auf +5), sind es ohne Stufen schon
-  100 / 99 / 75 %, auf +2 100 / 100 / 97 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
+  100 / 96 / 56 %, auf +2 100 / 100 / 85 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
   und der Schlüssel für die Dungeons, die einmal darüber kommen.
 - **Nyxar** wird durch befreite Sterne bis zu 30 % schwächer (`hortGier` 0,1 je Stern, drei Sterne).
 - **Nach der Gegenprüfung (21.10.2026):** Vorher hatte der Sternenschlund eine harte Kante an der
@@ -171,6 +184,15 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
   Kometenkäfer), und Nyxar hat 5 % mehr Leben und Angriff (2176 und 47). Ausgeschlachteter Sternenstahl kam
   vorher sofort, und mit Rückzug am letzten Kontrollpunkt brachte er mehr als ein Sieg in der Sternenschmiede;
   jetzt kommt er erst mit dem Sieg (`nachSieg`).
+- **Nach der Eichung der Wege (21.10.2026):** Die Gegner der Sternenschmiede haben 2,8 % weniger Leben und
+  Angriff, die des Sternenschlunds 3,2 %. Die neuen Wege sind gegen Bosse stärker (die Meuchlerin trifft als
+  Meisterin schon unter 60 % Leben 2,5-fach) und in langen Folgen von Kämpfen schwächer (kleinerer Schild der
+  Phalanx). Gleichmässig angepasst wäre der Sternenschlund mit Korrunds Set auf +5 geblieben, wie er war, auf
+  +4 aber von 13 auf 6 % gefallen (1000 Läufe): wieder die harte Kante. Darum haben die Wachen des Schlunds
+  dazu 6 % weniger Leben und Nyxar 9 % mehr (jetzt 2318 Leben, 45 Angriff). Mit 1000 Läufen: auf +4 16 / 2 / 0 %
+  (vorher 13 / 1 / 0 %), auf +5 91 / 62 / 4 % (vorher 86 / 66 / 10 %). Gier gegen Nyxar kostet damit
+  etwas mehr als vorher; in der Sternenschmiede auch, weil die Risiken dort Leben kosten (gierig auf +4 48
+  statt 68 %), vorsichtig und klug sind dort gleich geblieben.
 
 ## Entschieden
 

@@ -423,7 +423,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // Leben und Angriff sind auf Helden mit Weg geeicht (docs/SPEZIALISIERUNG.md, «Eichung»).
   hortgolem: {
     id: 'hortgolem', name: 'Hortgolem', role: 'melee',
-    hp: 369, atk: 18, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    hp: 360, atk: 18, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'glutfaust', name: 'Glutfaust', cooldown: 3, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
     ],
@@ -431,7 +431,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   glutwyrmling: {
     id: 'glutwyrmling', name: 'Glutwyrmling', role: 'melee',
-    hp: 208, atk: 22, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
+    hp: 203, atk: 21, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
     skills: [
       { id: 'feuerbiss', name: 'Feuerbiss', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
     ],
@@ -439,7 +439,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   hortkobold: {
     id: 'hortkobold', name: 'Hortkobold', role: 'ranged',
-    hp: 151, atk: 16, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
+    hp: 147, atk: 16, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
     skills: [
       { id: 'muenzhagel', name: 'Münzhagel', cooldown: 3, effectType: 'aoe', power: 0.6, target: 'all_players', description: '0.6× Schaden auf alle' },
       { id: 'glaenzende_augen', name: 'Glänzende Augen', cooldown: 4, effectType: 'buff', power: 4, target: 'self', description: '+4 ATK für 3 Runden' },
@@ -448,7 +448,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   drachenpriester: {
     id: 'drachenpriester', name: 'Drachenpriester', role: 'support',
-    hp: 187, atk: 19, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
+    hp: 183, atk: 19, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'glutsegen', name: 'Glutsegen', cooldown: 3, effectType: 'heal', power: 60, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 60' },
       { id: 'flammenwort', name: 'Flammenwort', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
@@ -457,7 +457,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_ignarax: {
     id: 'boss_ignarax', name: 'Ignarax, der Uralte', role: 'boss',
-    hp: 983, atk: 28, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
+    hp: 959, atk: 27, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -472,7 +472,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // Wie der Drachenhort auf Helden mit Weg geeicht.
   folianten_waechter: {
     id: 'folianten_waechter', name: 'Foliantenwächter', role: 'melee',
-    hp: 389, atk: 20, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    hp: 376, atk: 20, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'buchdeckel', name: 'Buchdeckel', cooldown: 3, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
     ],
@@ -480,7 +480,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   archivritter: {
     id: 'archivritter', name: 'Archivritter', role: 'melee',
-    hp: 252, atk: 25, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
+    hp: 243, atk: 25, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
     skills: [
       { id: 'klingenzitat', name: 'Klingenzitat', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
     ],
@@ -488,7 +488,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   fluestergeist: {
     id: 'fluestergeist', name: 'Flüstergeist', role: 'support',
-    hp: 194, atk: 19, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
+    hp: 187, atk: 19, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'psst', name: 'Psst!', cooldown: 3, effectType: 'aoe', power: 0.7, target: 'all_players', description: '0.7× Schaden auf alle' },
       { id: 'stille_restaurierung', name: 'Stille Restaurierung', cooldown: 4, effectType: 'heal', power: 70, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 70' },
@@ -497,7 +497,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   knochenschreiber: {
     id: 'knochenschreiber', name: 'Knochenschreiber', role: 'ranged',
-    hp: 205, atk: 22, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
+    hp: 198, atk: 22, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
     skills: [
       { id: 'federkiel_salve', name: 'Federkiel-Salve', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
       { id: 'mahngebuehr', name: 'Mahngebühr', cooldown: 4, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
@@ -506,7 +506,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_oberarchivar: {
     id: 'boss_oberarchivar', name: 'Der Oberarchivar', role: 'boss',
-    hp: 1271, atk: 33, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    hp: 1228, atk: 32, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -523,7 +523,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // (docs/NEUE-DUNGEONS.md, «Eichung»).
   funkenwichtel: {
     id: 'funkenwichtel', name: 'Funkenwichtel', role: 'ranged',
-    hp: 247, atk: 29, def: 4, spd: 1.5, critChance: 0.15, critMult: 1.7,
+    hp: 240, atk: 28, def: 4, spd: 1.5, critChance: 0.15, critMult: 1.7,
     skills: [
       { id: 'funkenregen', name: 'Funkenregen', cooldown: 3, effectType: 'aoe', power: 0.7, target: 'all_players', description: '0.7× Schaden auf alle' },
     ],
@@ -531,7 +531,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   ambossgolem: {
     id: 'ambossgolem', name: 'Ambossgolem', role: 'melee',
-    hp: 540, atk: 26, def: 15, spd: 0.55, critChance: 0.04, critMult: 1.5,
+    hp: 525, atk: 25, def: 15, spd: 0.55, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'hammerschlag', name: 'Hammerschlag', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
     ],
@@ -539,7 +539,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   essengeist: {
     id: 'essengeist', name: 'Essengeist', role: 'support',
-    hp: 241, atk: 24, def: 3, spd: 1.3, critChance: 0.08, critMult: 1.6,
+    hp: 234, atk: 23, def: 3, spd: 1.3, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'blasebalg', name: 'Blasebalg', cooldown: 4, effectType: 'heal', power: 80, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 80' },
       { id: 'stichflamme', name: 'Stichflamme', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
@@ -548,7 +548,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   lichtguss: {
     id: 'lichtguss', name: 'Lichtguss', role: 'melee',
-    hp: 322, atk: 32, def: 9, spd: 0.9, critChance: 0.1, critMult: 1.8,
+    hp: 313, atk: 31, def: 9, spd: 0.9, critChance: 0.1, critMult: 1.8,
     skills: [
       { id: 'weissglut', name: 'Weissglut', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
     ],
@@ -556,7 +556,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_korrund: {
     id: 'boss_korrund', name: 'Korrund, der Sternenschmied', role: 'boss',
-    hp: 1725, atk: 43, def: 12, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    hp: 1677, atk: 42, def: 12, spd: 0.9, critChance: 0.12, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -572,7 +572,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // tragen Bilder aus den Höhlen.
   lichtmotte: {
     id: 'lichtmotte', name: 'Lichtmotte', role: 'support',
-    hp: 274, atk: 24, def: 4, spd: 1.4, critChance: 0.1, critMult: 1.6,
+    hp: 252, atk: 23, def: 4, spd: 1.4, critChance: 0.1, critMult: 1.6,
     skills: [
       { id: 'lichtstaub', name: 'Lichtstaub', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
       { id: 'mondschimmer', name: 'Mondschimmer', cooldown: 4, effectType: 'heal', power: 90, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 90' },
@@ -581,7 +581,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   leerenkriecher: {
     id: 'leerenkriecher', name: 'Leerenkriecher', role: 'melee',
-    hp: 381, atk: 34, def: 8, spd: 1.1, critChance: 0.2, critMult: 1.9,
+    hp: 351, atk: 33, def: 8, spd: 1.1, critChance: 0.2, critMult: 1.9,
     skills: [
       { id: 'griff_ins_leere', name: 'Griff ins Leere', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
     ],
@@ -589,7 +589,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   kometenkaefer: {
     id: 'kometenkaefer', name: 'Kometenkäfer', role: 'melee',
-    hp: 582, atk: 27, def: 17, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    hp: 535, atk: 26, def: 17, spd: 0.6, critChance: 0.05, critMult: 1.5,
     skills: [
       { id: 'einschlag', name: 'Einschlag', cooldown: 4, effectType: 'aoe', power: 0.9, target: 'all_players', description: '0.9× Schaden auf alle' },
     ],
@@ -597,7 +597,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   nyxarbrut: {
     id: 'nyxarbrut', name: 'Nyxars Brut', role: 'melee',
-    hp: 258, atk: 29, def: 5, spd: 1.6, critChance: 0.18, critMult: 1.8,
+    hp: 237, atk: 28, def: 5, spd: 1.6, critChance: 0.18, critMult: 1.8,
     skills: [
       { id: 'gieriger_biss', name: 'Gieriger Biss', cooldown: 2, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
     ],
@@ -605,7 +605,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_nyxar: {
     id: 'boss_nyxar', name: 'Nyxar, der Sternenfresser', role: 'boss',
-    hp: 2176, atk: 47, def: 13, spd: 0.95, critChance: 0.13, critMult: 2.0,
+    hp: 2318, atk: 45, def: 13, spd: 0.95, critChance: 0.13, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
