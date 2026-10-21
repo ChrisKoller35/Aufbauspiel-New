@@ -53,8 +53,7 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#fca5a5"></span> Vulkan</div>
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#7dd3fc"></span> Unterwasser</div>
       <div class="dmap-legend-row"><span class="dmap-ldot" style="background:#f9a8d4"></span> Belagerung</div>
-      <div class="dmap-legend-row"><span class="dmap-ldot" style="background:${GEBIETE.gipfel.stil.stroke}"></span> ${GEBIETE.gipfel.stil.label}</div>
-      <div class="dmap-legend-row"><span class="dmap-ldot" style="background:${GEBIETE.himmel.stil.stroke}"></span> ${GEBIETE.himmel.stil.label}</div>
+      ${Object.values(GEBIETE).map(g => `<div class="dmap-legend-row"><span class="dmap-ldot" style="background:${g.stil.stroke};box-shadow:0 0 5px ${g.stil.glow}"></span> ${g.stil.label}</div>`).join('')}
       <div class="dmap-legend-row" style="margin-top:4px"><span class="dmap-ldot" style="background:#c8a227"></span> Hauptpfad</div>
       <div class="dmap-legend-row"><span class="dmap-lhex" style="background:#c8a227"></span> Boss</div>
       <div class="dmap-legend-row"><span class="dmap-lwappen">🦅</span> Gilde, höchster Dungeon</div>
@@ -124,6 +123,10 @@ const GEBIETE: Record<NonNullable<RouteDef['gebiet']>, { stil: BiomeStyle; regio
   himmel: {
     stil: { fill: '#141b3a', stroke: '#e0e7ff', text: '#e0e7ff', glow: '#a5b4fc', icon: '📚', label: 'Himmel' },
     region: 'ÜBER DEN WOLKEN — JENSEITS',
+  },
+  sterne: {
+    stil: { fill: '#1a0b33', stroke: '#fde68a', text: '#fef3c7', glow: '#a855f7', icon: '🌠', label: 'Sterne' },
+    region: 'ZWISCHEN DEN STERNEN — UNENDLICH',
   },
 };
 
@@ -208,6 +211,31 @@ function buildGipfelHimmel(width: number, oben: number): string {
     sternHtml += `<circle cx="${x}" cy="${y}" r="${i % 4 === 0 ? 1.4 : 0.8}" fill="#f3e7c4" opacity="${i % 3 ? 0.3 : 0.6}"/>`;
   }
   html += `<g>${sternHtml}</g>`;
+
+  // Zwischen den Sternen: violetter Nebel und ein dichteres Sternenfeld, einige Sterne funkeln
+  const sterneYs = gebietsKnoten.filter(k => k.gebiet === 'sterne').map(k => k.n.y);
+  if (sterneYs.length > 0) {
+    const bis = Math.max(...sterneYs) + 320;
+    const hoehe = bis + oben;
+    html += `
+    <defs>
+      <radialGradient id="dmap-nebel">
+        <stop offset="0%" stop-color="#7c3aed" stop-opacity=".2"/>
+        <stop offset="55%" stop-color="#4c1d95" stop-opacity=".1"/>
+        <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="${width / 2}" cy="${-oben + hoehe / 2}" rx="${width * 0.8}" ry="${hoehe / 2}" fill="url(#dmap-nebel)"/>`;
+    let feld = '';
+    for (let i = 0; i < 90; i++) {
+      const x = (i * 157 + 61) % width;
+      const y = -oben + 24 + ((i * 97) % Math.max(1, hoehe - 48));
+      const gross = i % 6 === 0;
+      const farbe = i % 4 === 0 ? '#fde68a' : '#f8fafc';
+      feld += `<circle${gross ? ' class="dmap-funkeln"' : ''} cx="${x}" cy="${y}" r="${gross ? 1.9 : 1}" fill="${farbe}" opacity="${gross ? 0.85 : 0.45}"${gross ? ` style="animation-delay:-${(i % 5) * 0.7}s"` : ''}/>`;
+    }
+    html += `<g class="dmap-sternenfeld">${feld}</g>`;
+  }
 
   // Wolkenband unter dem Himmel-Gebiet
   const himmelYs = gebietsKnoten.filter(k => k.gebiet === 'himmel').map(k => k.n.y);

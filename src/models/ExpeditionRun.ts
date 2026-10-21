@@ -6,13 +6,17 @@ export type EncounterType = 'combat' | 'rest' | 'hazard' | 'boss' | 'checkpoint'
 export interface EncounterChoice {
   label: string;
   flavorText: string;
-  /** 'geschichte': Entscheidung der Dungeon-Geschichte, sie wirkt über `wirkung` (systems/Geschichten.ts) */
-  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal' | 'geschichte';
+  /**
+   * 'geschichte': Entscheidung der Dungeon-Geschichte, sie wirkt über `wirkung` (systems/Geschichten.ts).
+   * 'angriff': Die Gruppe hat bis zum Ende des Dungeons `value` Prozent mehr Angriff (Sternenfeuer).
+   * 'kein': Die Option wirkt nur über Preis und Gier (gefangene Sterne).
+   */
+  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal' | 'geschichte' | 'angriff' | 'kein';
   /** Stärke des Effekts (Prozent, Goldmenge oder XP-Betrag, je nach effect) */
   value: number;
   /** Optionaler Item-Key für effect='item' */
   itemId?: string;
-  /** Hort-Gier: so viele Punkte kommen dazu, wenn diese Option gewählt wird (RouteDef.hortGier) */
+  /** Hort-Gier: so viele Punkte kommen dazu, wenn diese Option gewählt wird (RouteDef.hortGier); weniger als 0 schwächt den Boss */
   gier?: number;
   /** Preis der Option: jeder lebende Held verliert so viel Prozent seiner max. HP (nie unter 1) */
   kostetLeben?: number;
@@ -54,8 +58,10 @@ export interface SpecialEffect {
   chance?: number;
   /** Dauer oder Abstand in Runden (Gift, Gezeitenwelle, Spott …) */
   runden?: number;
-  /** Höchstwert (Glutherz, Drachengier) */
+  /** Höchstwert (Glutherz, Drachengier, Schmiedetakt) */
   max?: number;
+  /** Jeder wievielte Treffer des Trägers (Sternenfall) */
+  treffer?: number;
   /** Anteil an Schaden oder Leben (Druckwelle, Gezeitenwelle …) */
   anteil?: number;
   /** Schild je Teammitglied (Verbotene Fussnote) */
@@ -118,6 +124,8 @@ export interface CombatUnit {
   markiert?: number;
   /** Knochenherr: Skelette, die bis zum Ende der Expedition für den Helden kämpfen */
   skelette?: number;
+  /** Sternenfall: Treffer in diesem Kampf seit dem letzten Stern */
+  sternenTreffer?: number;
   /** Angriff und Verteidigung, die Kampfeffekte gerade dazugeben (Glutherz, Tiefenrausch, Drachengier, Bastion) */
   effektBoni?: Record<string, number>;
 }
@@ -167,6 +175,8 @@ export interface ExpeditionRun {
   bossesKilled: number;             // Anzahl besiegter Bosse
   /** Hort-Gier: Punkte aus eingesteckten Schätzen, machen den Boss stärker (RouteDef.hortGier) */
   gier?: number;
+  /** Sternenfeuer: so viel Prozent mehr Angriff hat die Gruppe bis zum Ende des Dungeons (EncounterChoice 'angriff') */
+  gruppenAngriff?: number;
   /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
   setTeil?: string | null;
   /** Geschichte: Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */

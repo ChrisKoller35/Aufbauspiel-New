@@ -4,24 +4,37 @@ Christoph (19.10.2026): «Endlos» heisst, dass es auf der Dungeon-Karte immer w
 mit immer neuen, verschiedenen Dungeons. Ab und zu kommen ein oder zwei dazu. Diese Datei hält fest,
 was es schon gibt und wie der nächste Dungeon dazukommt.
 
-## Was es gibt (Stand 20.10.2026)
+## Was es gibt (Stand 21.10.2026)
 
 | Ebene | Dungeon | Gebiet | Räume | Boss | Besonderheit | Erster Sieg bringt |
 |---|---|---|---|---|---|---|
 | 5 | Der Drachenhort | Drachengipfel | 15 | Ignarax, der Uralte | Hort-Gier: Gold aus dem Hort macht Ignarax stärker (+8 % Angriff und Leben je Schatz) | Schild des Uralten |
 | 6 | Das Himmelsarchiv | Himmel | 16 | Der Oberarchivar | Verbotene Bücher: seltene Funde, kosten aber Leben | Klinge der tausend Schatten |
+| 7 | Die Sternenschmiede | Sterne | 16 | Korrund, der Sternenschmied | Sternenfeuer: Wer die Waffen in die Essen hält, hat bis zum Ende +10 % Angriff (die ganze Gruppe), verliert aber 5 bis 10 % Leben | Korrunds Hammer |
+| 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt Sternenstahl | Der letzte Stern |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
-  Himmelsarchiv: Ignarax). Ebenen über 5 verlangen den höchsten Rang, den es gibt (V).
-- **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_drachenhort_*`, `loot_himmelsarchiv_*`).
-  Glutwyrmling, Hortkobold und Drachenpriester haben eigene Bilder, die übrigen tragen Bilder anderer Gegner.
-- **Routenbilder:** `exp_drachenhort` und `exp_himmelsarchiv` (Karte, Routenliste, Kampf).
-- **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen T5-Gegenstand dazu.
-  Die drei T5-Stücke wurden dafür so verstärkt, dass sie je etwas besser sind als das beste T4-Stück
-  für denselben Platz.
+  Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund). Ebenen über 5
+  verlangen den höchsten Rang, den es gibt (V).
+- **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_<route>_*`). Eigene Bilder haben
+  Glutwyrmling, Hortkobold und Drachenpriester, Funkenwichtel, Ambossgolem und Korrund, Lichtmotte,
+  Leerenkriecher und Nyxar; die übrigen tragen Bilder anderer Gegner.
+- **Routenbilder:** `exp_drachenhort`, `exp_himmelsarchiv`, `exp_sternenschmiede` und `exp_sternenschlund`
+  (Karte, Routenliste, Kampf).
+- **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen besonderen Gegenstand dazu.
+  Drachenhort und Himmelsarchiv geben je ein T5-Stück; die drei T5-Stücke wurden dafür so verstärkt, dass
+  sie je etwas besser sind als das beste T4-Stück für denselben Platz. Korrund gibt seinen Hammer (T7,
+  zweihändig, Funkenflug: jeder Treffer springt mit 40 % auf einen zweiten Gegner über), Nyxar den letzten
+  Stern (T8, Schmuck: wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf).
+- **Gebiet «Sterne»** (Ebene 7 und 8): violetter Nebel und ein funkelndes Sternenfeld auf der Karte,
+  Material für die Schmiede ist Sternenstahl (`docs/SCHMIEDE.md`).
 - **Nicht dabei:** Wochen-Herausforderungen (nur bis Ebene 4).
 - **Probespiel:** `?probe=neu` startet mit Gildenrang V und allen Bossen bis zum Vulkankern, der
-  Drachenhort ist offen.
+  Drachenhort ist offen. `?probe=sterne` startet zwischen den Sternen: Team «Stark» (Stufe 15, mit
+  seinen Wegen) in den Sets aus Ebene 4 und dem Hort-Set, alle Teile auf +3, alle Bosse bis zum
+  Oberarchivar besiegt, die Sternenschmiede offen. Im Lager liegt alles, um die Sets und Korrunds
+  Meisterstücke auf +5 zu schmieden. In beiden hat das Gildenhaus Stufe 2, es gehen also vier Helden mit,
+  und die Klassen, die diese Bosse freischalten, sind schon frei (der erste Bericht meldet keine «Neue Klasse»).
 
 ## Einen Dungeon dazubauen
 
@@ -67,6 +80,11 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 - **Hort-Gier** (`RouteDef.hortGier`, `EncounterChoice.gier`): Jeder Punkt macht den Boss um feste
   Anteile seiner Startwerte stärker, sofort sichtbar in der Kampf-Vorschau.
 - **Preis** (`EncounterChoice.kostetLeben`): Die Option kostet Prozent der Lebenspunkte, aber nie das letzte.
+- **Angriff bis zum Ende** (`effect: 'angriff'`, `value` in Prozent): Die ganze Gruppe schlägt bis zum Ende
+  des Dungeons härter zu, zweimal gewählt um 20 %. Boni aus Kämpfen, die bleiben (Drachengier, Tiefenrausch),
+  wachsen nicht mit. Mit `kostetLeben` hat es einen Preis (Sternenschmiede).
+- **Befreien** (`effect: 'kein'` mit negativem `gier`): Die Option wirkt nur über Preis und Gier; jeder Punkt
+  unter null macht den Boss um die Anteile aus `hortGier` schwächer (Sternenschlund).
 - **Erstsieg-Beute** (`RouteDef.ersterSiegBeute`).
 
 ## Eichung
@@ -75,46 +93,71 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 jeden Dungeon laufen (`src/systems/Musterlauf.ts`). Ihre Helden gehen Wege (Phalanx, Zorn, Scharfschützin,
 Meuchlerin; `docs/SPEZIALISIERUNG.md`). An Rastplätzen rasten sie immer, bei den festen Wahl-Räumen spielen sie
 
-- **vorsichtig:** immer die sichere Option (Heilung),
+- **vorsichtig:** immer die sichere Option (Heilung; im Sternenschlund die Sterne befreien),
 - **klug:** das Risiko nur mit mindestens 85 % Leben,
-- **gierig:** immer das Risiko (Hort-Gold, verbotene Bücher).
+- **gierig:** immer das Risiko (Hort-Gold, verbotene Bücher, Sternenfeuer, Sternenstahl).
 
-Fähigkeiten vor dem Kampf nutzen sie nicht, echte Spieler gewinnen also etwas öfter.
+Fähigkeiten vor dem Kampf nutzen sie nicht, echte Spieler gewinnen also etwas öfter. Zwischen den Sternen
+tragen sie zusätzlich Sets mit Stufen aus der Schmiede (`MUSTER_SETS.sterne3` und `sterne5`; `abEbene` misst
+diese Ausrüstung erst ab Ebene 7).
 
-Stand 20.10.2026, mit Wegen (Schaden ohne Mindestschaden), Siege von 200 Läufen:
+Stand 21.10.2026, mit Wegen, nach Manager #43 und #44 (20 % Mindestschaden, stärkere Startklassen),
+Siege von 200 Läufen:
 
 | Dungeon | Team | vorsichtig | klug | gierig |
 |---|---|---|---|---|
 | Vulkankern | frisch, gut, stark | 100 % | 100 % | 100 % |
 | Der Drachenhort | frisch | 0 % | 0 % | 0 % |
-| Der Drachenhort | gut | 80 % | 58 % | 3 % |
-| Der Drachenhort | stark | 100 % | 100 % | 97 % |
+| Der Drachenhort | gut | 77 % | 49 % | 2 % |
+| Der Drachenhort | stark | 100 % | 100 % | 99 % |
 | Das Himmelsarchiv | frisch | 0 % | 0 % | 0 % |
 | Das Himmelsarchiv | gut | 0 % | 0 % | 0 % |
-| Das Himmelsarchiv | stark | 53 % | 32 % | 3 % |
+| Das Himmelsarchiv | stark | 47 % | 38 % | 0 % |
 
-**Ohne Wege** (dritte Tabelle des Werkzeugs): Drachenhort «Gut» 16 / 11 / 0 %, «Stark» 100 / 95 / 2 %,
+Die Sternen-Dungeons schafft in eigener Ausrüstung (T4) kein Musterteam, sie haben ihre eigene Tabelle unten.
+
+**Ohne Wege** (dritte Tabelle des Werkzeugs): Drachenhort «Gut» 3 / 1 / 0 %, «Stark» 99 / 83 / 0 %,
 Himmelsarchiv «Stark» 0 / 0 / 0 %. Seit den Wegen haben die Gegner beider Dungeons mehr Leben und Angriff
-(Drachenhort etwa ×1,11, Himmelsarchiv etwa ×1,15). Vorher, ohne Wege und mit den alten Gegnern:
-Drachenhort «Gut» 77 / 61 / 0 %, «Stark» 100 / 100 / 79 %, Himmelsarchiv «Stark» 73 / 53 / 1 %.
+(Drachenhort etwa ×1,11, Himmelsarchiv etwa ×1,15), seit #43 und #44 noch einmal (×1,04 und ×1,05).
+Vorher, ohne Wege und mit den alten Gegnern: Drachenhort «Gut» 77 / 61 / 0 %, «Stark» 100 / 100 / 79 %,
+Himmelsarchiv «Stark» 73 / 53 / 1 %.
 
 **Ziele:** Der Drachenhort ist der nächste Schritt nach dem Vulkankern: «Gut» schafft ihn vorsichtig
 meistens, Gier lohnt sich nur für starke Teams. Das Himmelsarchiv ist das ferne Ziel: erst mit Stufe 15,
 T4-Ausrüstung und Wegen machbar, Lesen nur mit vollen Lebenspunkten.
 
-**Nach Manager #43 und #44 neu eichen.** #43 bringt 20 % Mindestschaden, #44 stärkere Startklassen
-(Wächter und Waldläufer, also auch Brom und Lia der Musterteams). Am 20.10. mit 60 Läufen vorab gemessen,
-vorsichtig, mit Wegen; alle Tests bleiben in jedem Fall grün:
+**Nach Manager #43 und #44 neu geeicht (21.10.2026).** #43 bringt 20 % Mindestschaden, #44 stärkere
+Startklassen (Wächter und Waldläufer, also auch Brom und Lia der Musterteams). Damit wurden beide Dungeons
+leichter, wie die Vorab-Messung vom 20.10. sagte (200 Läufe: Drachenhort «Gut» 89 / 65 / 7 %, Himmelsarchiv
+«Stark» 84 / 74 / 8 %). Die Gegner haben darum 4 % (Drachenhort) und 5 % (Himmelsarchiv) mehr Leben und
+Angriff, die Tabelle oben ist der Stand danach. Die Wege blieben, wie sie waren (`docs/SPEZIALISIERUNG.md`).
 
-| Stand | Drachenhort «Gut» | Himmelsarchiv «Stark» | Drachenhort «Frisch» mit Sets aus Ebene 4 |
+### Zwischen den Sternen (Ebene 7 und 8)
+
+**Ziele:** Die Schmiede ist der Schlüssel. Ohne Stufen schafft auch «Stark» die Sternenschmiede nie, mit allen
+Set-Teilen auf +3 meistens; das ist der Eintritt. Der Sternenschlund ist das neue ferne Ziel: erst mit allen
+Teilen auf +5 und Korrunds Meisterstücken (Grimm), dann vorsichtig etwa zwei von drei Läufen. Beim Sternenfeuer
+gewinnt, wer klug wählt (nur mit vollem Leben ins Feuer); im Sternenschlund lohnt es sich, die Sterne zu befreien.
+
+Team «Stark» mit Wegen, Brom Festung, Grimm Hort-Set (oder Korrunds Meisterstücke), Lia Abyss, Sina Schatten,
+alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gierig):
+
+| Stufe der Teile | Sternenschmiede | Sternenschlund | Sternenschlund, Grimm in Korrunds Set |
 |---|---|---|---|
-| heute | 80 % | 53 % | 50 % |
-| nur #43 | 77 % | 45 % | 12 % |
-| nur #44 | 90 % | 92 % | 93 % |
-| #43 und #44 | 87 % | 82 % | 88 % |
+| +0 | 1 / 1 / 0 % | 0 / 0 / 0 % | – |
+| +1 | 4 / 12 / 0 % | – | – |
+| +2 | 25 / 47 / 3 % | – | – |
+| +3 | 76 / 88 / 16 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
+| +4 | 97 / 98 / 68 % | 1 / 0 / 0 % | 3 / 0 / 0 % |
+| +5 | 100 / 100 / 100 % | 27 / 6 / 0 % | 64 / 30 / 3 % |
 
-Nach beiden Aufträgen werden die zwei obersten Dungeons also deutlich leichter; dann die Gegner neu eichen
-(`npm run dungeon-eichung -- 200`, Ziele oben) und die Wege nachmessen (`npm run weg-eichung -- 200`).
+- **Team «Gut»** (Stufe 12): Sternenschmiede auf +3 1 / 5 / 0 %, mit Korrunds Set auf +5 96 / 99 / 84 %;
+  Sternenschlund auch so 0 %.
+- **Ohne Wege** geht zwischen den Sternen fast nichts: Sternenschmiede auf +3 0 %, auf +5 14 % (klug, 100 Läufe).
+- **Das Schlund-Set** macht den Schlund leicht: Trägt Lia es (die übrigen auf +5), sind es ohne Stufen schon
+  99 / 86 / 64 %, auf +2 100 / 99 / 95 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
+  und der Schlüssel für die Dungeons, die einmal darüber kommen.
+- **Nyxar** wird durch befreite Sterne bis zu 30 % schwächer (`hortGier` 0,1 je Stern, drei Sterne).
 
 ## Entschieden
 
@@ -122,3 +165,8 @@ Nach beiden Aufträgen werden die zwei obersten Dungeons also deutlich leichter;
   über dem obersten zeigt sie ein leeres Feld «Noch unerforscht».
 - **Bilder** (20.10.2026, Christophs Okay für höchstens 8): drei Drachenhort-Gegner und zwei Routenbilder,
   5 Bilder für etwa 0.30 USD, alle beim ersten Versuch brauchbar und eingebaut.
+- **Bilder Sterne** (20.10.2026, Christophs Okay für etwa 4 je Dungeon): Funkenwichtel, Ambossgolem, Korrund,
+  Lichtmotte, Leerenkriecher, Nyxar und zwei Routenbilder, 8 Bilder für etwa 0.50 USD, alle beim ersten
+  Versuch brauchbar und eingebaut (Befund: `/mnt/project-files/magic-city/bilder-sterne/BEFUND.md`).
+- **Zwei Dungeons zwischen den Sternen** (20.10.2026, Christoph: Punkt 3 «gleich auch noch anhängen»):
+  Sternenschmiede und Sternenschlund mit Gegnern, Bossen, Sets und Geschichte.

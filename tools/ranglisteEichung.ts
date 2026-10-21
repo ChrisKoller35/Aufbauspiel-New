@@ -6,8 +6,9 @@
 // Gezeigt wird, wann sie an welcher Gilde vorbeizieht, wann die Rivalen die
 // obersten Dungeons erreichen und welcher Wochenplatz mit wie vielen
 // Expeditionen pro Woche drinliegt. Ziele in docs/RANGLISTE.md.
-// Drei Spielstände beim Start: «frisch» (noch kein Dungeon), «mitte»
-// (Waldgebiet, Höhle und Sumpfpfad) und «probe» (wie das Probespiel).
+// Vier Spielstände beim Start: «frisch» (noch kein Dungeon), «mitte»
+// (Waldgebiet, Höhle und Sumpfpfad), «probe» (wie das Probespiel) und «sterne»
+// (wie das Probespiel ?probe=sterne).
 // Das Rennen läuft mit einem festen Samen (gleiche Ausgabe bei jedem Aufruf),
 // die Wochenwertung mit 50 Samen: Die Form der Rivalen schwankt von Woche zu Woche.
 // Aufruf: npm run rangliste-eichung   (nur einer: npm run rangliste-eichung -- probe)
@@ -23,10 +24,10 @@ import {
 
 /** Montag, 2. November 2026, 08:00: Das Rennen beginnt an einem Wochenanfang */
 const START = new Date(2026, 10, 2, 8, 0).getTime();
-const MEILENSTEINE = ['volcano_core', 'drachenhort', 'himmelsarchiv'];
+const MEILENSTEINE = ['volcano_core', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund'];
 
 /** Expeditionen bis zum ersten Sieg in einem neuen Dungeon dieser Ebene (normales Tempo, Üben eingerechnet) */
-const MUSTER_EXPEDITIONEN: Record<number, number> = { 1: 2, 2: 4, 3: 6, 4: 9, 5: 14, 6: 20 };
+const MUSTER_EXPEDITIONEN: Record<number, number> = { 1: 2, 2: 4, 3: 6, 4: 9, 5: 14, 6: 20, 7: 28, 8: 38 };
 const TEMPI = { schnell: 0.6, normal: 1, gemuetlich: 1.6 };
 /** Expeditionen pro Woche je Tempo */
 const PRO_WOCHE = { schnell: 80, normal: 40, gemuetlich: 15 };
@@ -40,6 +41,7 @@ const SPIELSTAENDE: Record<string, string[]> = {
   frisch: [],
   mitte: ['forest_short', 'forest_ruins', 'forest_medium', 'cave_deep', 'haunted_woods', 'ocean_shallows', 'swamp_long'],
   probe: DUNGEON_GRAPH.map(n => n.routeId).filter(id => ROUTE_DEFS[id].tier <= 4 && !!ROUTE_DEFS[id].bossId),
+  sterne: DUNGEON_GRAPH.map(n => n.routeId).filter(id => ROUTE_DEFS[id].tier <= 6 && !!ROUTE_DEFS[id].bossId),
 };
 
 function neuerStand(bezwungen: string[], samen = SAMEN[0]): GameState {
@@ -124,8 +126,9 @@ for (const [name, start] of Object.entries(SPIELSTAENDE)) {
         platz = neu;
       }
     }
-    const himmel = plan.find(s => s.routeId === 'himmelsarchiv')?.runde ?? '-';
-    console.log(`\n${tempo} (Himmelsarchiv bei Expedition ${himmel}, ganze Karte bei ${ende}):`);
+    const gipfel = MEILENSTEINE[MEILENSTEINE.length - 1];
+    const oben = plan.find(s => s.routeId === gipfel)?.runde ?? '-';
+    console.log(`\n${tempo} (${kurz(gipfel)} bei Expedition ${oben}, ganze Karte bei ${ende}):`);
     console.log('  Platz: ' + (ereignisse.join(' · ') || 'keine Änderung'));
 
     // Wann die Gilden die obersten Dungeons erreichen (die Rivalen nach der Ebene der Muster-Gilde)

@@ -56,13 +56,18 @@ function boss(run: ExpeditionRun) {
 }
 
 describe('Dungeons über dem Vulkankern', () => {
-  it('der Weg führt vom Vulkankern zum Drachenhort und weiter hinauf zum Himmelsarchiv', () => {
-    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv']);
+  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv bis in den Sternenschlund', () => {
+    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund']);
     const knoten = (id: string) => DUNGEON_GRAPH.find(n => n.routeId === id)!;
     expect(knoten('volcano_core').leadsTo).toContain('drachenhort');
-    expect(knoten('drachenhort').leadsTo).toContain('himmelsarchiv');
     expect(knoten('drachenhort').y).toBeLessThan(0);
-    expect(knoten('himmelsarchiv').y).toBeLessThan(knoten('drachenhort').y);
+    // Jeder führt zum nächsten, eine Ebene höher und weiter oben auf der Karte
+    for (let i = 1; i < NEUE.length; i++) {
+      const [unten, oben] = [NEUE[i - 1], NEUE[i]];
+      expect(knoten(unten.id).leadsTo, unten.id).toContain(oben.id);
+      expect(knoten(oben.id).y, oben.id).toBeLessThan(knoten(unten.id).y);
+      expect(oben.tier, oben.id).toBe(unten.tier + 1);
+    }
     // Jede Route steht auf der Karte und umgekehrt
     const aufKarte = new Set(DUNGEON_GRAPH.map(n => n.routeId));
     for (const route of Object.values(ROUTE_DEFS)) {
@@ -121,6 +126,20 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(isRouteAvailable(archiv, state)).toBe(true);
   });
 
+  it('die Sternenschmiede braucht den Oberarchivar, der Sternenschlund Korrund', () => {
+    const state = createNewGameState();
+    state.guildStats.rank = 5;
+    state.guildStats.bossesDefeatedIds.push('boss_magma_wyrm', 'boss_ignarax');
+    expect(getRouteLockReasons(ROUTE_DEFS.sternenschmiede, state)).toEqual(['Besiege: Der Oberarchivar']);
+
+    state.guildStats.bossesDefeatedIds.push('boss_oberarchivar');
+    expect(isRouteAvailable(ROUTE_DEFS.sternenschmiede, state)).toBe(true);
+    expect(getRouteLockReasons(ROUTE_DEFS.sternenschlund, state)).toEqual(['Besiege: Korrund, der Sternenschmied']);
+
+    state.guildStats.bossesDefeatedIds.push('boss_korrund');
+    expect(isRouteAvailable(ROUTE_DEFS.sternenschlund, state)).toBe(true);
+  });
+
   it('Hort-Gier: Gold aus dem Hort macht Ignarax um 8 % je Schatz stärker', () => {
     const { state, ids } = musterStand('stark', 7919);
     const run = bisZurWahl(state, system.startExpedition(state, 'drachenhort', ids)!);
@@ -168,6 +187,80 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(run.party[0].hp).toBe(1);
   });
 
+  it('Sternenfeuer: die ganze Gruppe schlägt bis zum Ende härter zu, die Hitze kostet 5 % Leben', () => {
+    const { state, ids } = musterStand('stark', 7919, 'sterne5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschmiede', ids)!);
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'angriff', value: 10, kostetLeben: 5 });
+    const start = run.party.map(u => ({ atk: u.atk, hp: u.hp }));
+
+    system.resolveChoice(run, 0);
+    expect(run.gruppenAngriff).toBe(10);
+    run.party.forEach((u, i) => {
+      expect(u.atk, u.name).toBe(Math.round(start[i].atk * 110 / 100));
+      expect(u.hp, u.name).toBe(Math.max(1, start[i].hp - Math.floor(u.maxHp * 0.05)));
+    });
+    expect(run.combatLog).toContain('>> Waffen ins Sternenfeuer halten (+10% Angriff bis zum Ende, −5% HP): Die Gruppe hat jetzt 10% mehr Angriff bis zum Ende des Dungeons.');
+
+    // Das zweite Mal zählt dazu, gerechnet auf den Angriff vor dem ersten Mal
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    expect(run.gruppenAngriff).toBe(20);
+    run.party.forEach((u, i) => expect(Math.abs(u.atk - start[i].atk * 1.2), u.name).toBeLessThanOrEqual(1));
+  });
+
+  it('Sternenfeuer macht nur den eigenen Angriff stärker, nicht bleibende Boni aus Kämpfen', () => {
+    const { state, ids } = musterStand('stark', 7919, 'sterne3');
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschmiede', ids)!);
+    const grimm = run.party.find(u => u.name === 'Grimm')!;
+    const eigener = grimm.atk;
+    // Drachengier: +10 Angriff für das Gold im Gepäck, bleibt bis zum Ende der Expedition
+    grimm.effektBoni = { 'drachengier:atk': 10 };
+    grimm.atk += 10;
+    system.resolveChoice(run, 0);
+    expect(grimm.atk).toBe(Math.round(eigener * 110 / 100) + 10);
+  });
+
+  it('wer am Kühltrog verschnauft, heilt, und der Angriff bleibt, wie er ist', () => {
+    const { state, ids } = musterStand('stark', 7919, 'sterne3');
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschmiede', ids)!);
+    const atk = run.party.map(u => u.atk);
+    system.resolveChoice(run, 1);
+    expect(run.gruppenAngriff ?? 0).toBe(0);
+    expect(run.party.map(u => u.atk)).toEqual(atk);
+  });
+
+  it('befreite Sterne schwächen Nyxar um 10 % je Stern und kosten 5 % Leben', () => {
+    const { state, ids } = musterStand('stark', 7919, 'sterne5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschlund', ids)!);
+    expect(run.pendingChoice!.optionB).toMatchObject({ effect: 'kein', gier: -1, kostetLeben: 5 });
+    const start = { atk: boss(run).atk, maxHp: boss(run).maxHp };
+    const leben = run.party.map(u => u.hp);
+
+    system.resolveChoice(run, 1);
+    expect(run.gier).toBe(-1);
+    expect(boss(run).atk).toBe(Math.round(start.atk * 0.9));
+    expect(boss(run).maxHp).toBe(Math.round(start.maxHp * 0.9));
+    expect(boss(run).hp).toBe(boss(run).maxHp);
+    run.party.forEach((u, i) => expect(u.hp, u.name).toBe(Math.max(1, leben[i] - Math.floor(u.maxHp * 0.05))));
+    expect(run.combatLog).toContain('>> Nyxar, der Sternenfresser wird schwächer: −10% Angriff, −10% Leben.');
+
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 1);
+    expect(run.gier).toBe(-2);
+    expect(Math.abs(boss(run).atk - start.atk * 0.8)).toBeLessThanOrEqual(1);
+    expect(Math.abs(boss(run).maxHp - start.maxHp * 0.8)).toBeLessThanOrEqual(1);
+  });
+
+  it('wer den Stern ausschlachtet, bekommt Sternenstahl, und Nyxar bleibt, wie er ist', () => {
+    const { state, ids } = musterStand('stark', 7919, 'sterne5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'sternenschlund', ids)!);
+    const vorher = { atk: boss(run).atk, maxHp: boss(run).maxHp };
+    system.resolveChoice(run, 0);
+    expect(run.loot.mat_sternenstahl).toBe(3);
+    expect(run.gier ?? 0).toBe(0);
+    expect(boss(run)).toMatchObject(vorher);
+  });
+
   it('andere Fund-Räume wählen weiter zufällig zwischen Truhe und zweiter Option', () => {
     const { state, held } = uebermacht();
     const run = system.startExpedition(state, 'swamp_long', [held])!;
@@ -190,6 +283,16 @@ describe('Dungeons über dem Vulkankern', () => {
     const zweiter = zuEnde(state, system.startExpedition(state, 'drachenhort', [held])!);
     expect(zweiter.status).toBe('victory');
     expect(zweiter.combatLog.some(z => z.includes('Erster Sieg'))).toBe(false);
+  });
+
+  it('jeder Boss über dem Vulkankern gibt beim ersten Sieg ein besonderes Stück dazu', () => {
+    for (const route of NEUE) {
+      const { state, held } = uebermacht();
+      const run = zuEnde(state, system.startExpedition(state, route.id, [held])!);
+      expect(run.status, route.id).toBe('victory');
+      expect(run.loot[route.ersterSiegBeute!], route.id).toBeGreaterThanOrEqual(1);
+      expect(ITEM_DEFS[route.ersterSiegBeute!].tier, route.id).toBeGreaterThanOrEqual(5);
+    }
   });
 
   it('nach dem Boss im letzten Raum kommt kein Kontrollpunkt mehr, der Sieg zählt sofort', () => {
@@ -226,5 +329,14 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(siegeVon('drachenhort', 'frisch', 'vorsichtig', 10)).toBeLessThanOrEqual(2);
     expect(siegeVon('himmelsarchiv', 'stark', 'vorsichtig', 10)).toBeLessThan(drachenhortStark);
     expect(siegeVon('drachenhort', 'gut', 'gierig', 10)).toBeLessThan(siegeVon('drachenhort', 'gut', 'vorsichtig', 10));
+  });
+
+  it('Eichung grob zwischen den Sternen: erst die Schmiede macht sie machbar, der Sternenschlund verlangt +5', () => {
+    expect(siegeVon('sternenschmiede', 'stark', 'vorsichtig', 10, 'sterne3')).toBeGreaterThanOrEqual(5);
+    expect(siegeVon('sternenschmiede', 'stark', 'vorsichtig', 10, 'hort')).toBeLessThanOrEqual(2);
+    const schlund = siegeVon('sternenschlund', 'stark', 'vorsichtig', 10, 'sterne5');
+    expect(schlund).toBeGreaterThanOrEqual(3);
+    expect(siegeVon('sternenschlund', 'stark', 'vorsichtig', 10, 'sterne3')).toBeLessThanOrEqual(1);
+    expect(siegeVon('sternenschlund', 'stark', 'gierig', 10, 'sterne5')).toBeLessThan(schlund);
   });
 });

@@ -213,7 +213,7 @@ export function kampfEnde(party: CombatUnit[]): void {
       u.buffs.splice(i, 1);
     }
     setzeBonus(u, 'glutherz', 'atk', 0);
-    for (const quelle of ['zorn', 'heldenlied', 'kriegssegen']) {
+    for (const quelle of ['zorn', 'heldenlied', 'kriegssegen', 'schmiedetakt']) {
       setzeBonus(u, quelle, 'atk', 0);
       setzeBonus(u, quelle, 'def', 0);
       setzeBonus(u, quelle, 'spd', 0);
@@ -225,6 +225,7 @@ export function kampfEnde(party: CombatUnit[]): void {
     u.zielschuss = false;
     u.tauntRounds = 0;
     u.gift = undefined;
+    u.sternenTreffer = 0;
   }
 }
 
@@ -452,6 +453,8 @@ export function nachTreffer(
       if (zweiter.hp <= 0) besiegt(angreifer, log);
     }
   }
+  const fall = effekt(angreifer, 'sternenfall');
+  if (fall && angreifer.hp > 0) sternenfall(angreifer, fall, dmg, gegnerDesAngreifers, log);
   if (angreifer.specialEffects?.some(e => e.weg)) wegNachTreffer(angreifer, ziel, dmg, gegnerDesAngreifers, verbuendete, log);
 }
 
@@ -640,17 +643,48 @@ export function rundenEnde(
       }
     }
   }
-  teamRundenEnde(party, gegner, log);
+  teamRundenEnde(party, gegner, runde, log);
 }
 
-/** Am Rundenende, nach den Effekten der einzelnen Helden: Die Seuche wirkt fürs ganze Team einmal */
-function teamRundenEnde(party: CombatUnit[], gegner: CombatUnit[], log: Log): void {
+/**
+ * Am Rundenende, nach den Effekten der einzelnen Helden, fürs ganze Team einmal (bei mehreren
+ * Trägern zählt der stärkste): die Seuche und der Schmiedetakt.
+ */
+function teamRundenEnde(party: CombatUnit[], gegner: CombatUnit[], runde: number, log: Log): void {
   const seuche = staerksterTraeger(party, 'seuche');
   if (seuche && lebendig(gegner).length > 0) {
     const menge = staerke(seuche, 'seuche');
     for (const g of lebendig(gegner)) g.hp -= menge;
     log(`  ★ ${seuche.name}: ${anzeigeName(effekt(seuche, 'seuche')!)} → alle Gegner −${menge} Leben`);
   }
+
+  const takt = staerksterTraeger(party, 'schmiedetakt');
+  const e = takt && effekt(takt, 'schmiedetakt');
+  if (takt && e && runde % (e.runden ?? 3) === 0 && lebendig(gegner).length > 0) {
+    const helden = lebendig(party);
+    const alt = Math.max(...helden.map(h => bonus(h, 'schmiedetakt', 'atk')));
+    const neu = Math.min(e.max ?? 9, alt + staerke(takt, 'schmiedetakt'));
+    if (neu > alt) {
+      for (const h of helden) setzeBonus(h, 'schmiedetakt', 'atk', neu);
+      log(`✦ ${takt.name} setzt ${anzeigeName(e)} ein → das ganze Team hat +${neu} Angriff bis Kampfende`);
+    }
+  }
+}
+
+/**
+ * Sternenfall: Jeder dritte Treffer des Trägers in einem Kampf holt einen Stern vom Himmel, der
+ * alle Gegner mit einem Anteil des Schadens trifft, auch das Ziel des Treffers. Ohne Zufall.
+ */
+function sternenfall(angreifer: CombatUnit, fall: SpecialEffect, dmg: number, gegner: CombatUnit[], log: Log): void {
+  angreifer.sternenTreffer = (angreifer.sternenTreffer ?? 0) + 1;
+  if (angreifer.sternenTreffer < (fall.treffer ?? 3)) return;
+  angreifer.sternenTreffer = 0;
+  const ziele = lebendig(gegner);
+  if (ziele.length === 0) return;
+  const wucht = Math.max(1, Math.floor(dmg * (fall.anteil ?? 0.5)));
+  const treffer = ziele.map(g => `${g.name} −${wucht}${schildText(wucht, schadenNehmen(g, wucht))}`);
+  log(`✦ ${angreifer.name} setzt ${anzeigeName(fall)} ein → ein Stern trifft alle Gegner: ${treffer.join(', ')}`);
+  for (const g of ziele) if (g.hp <= 0) besiegt(angreifer, log);
 }
 
 /**

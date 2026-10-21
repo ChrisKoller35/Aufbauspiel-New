@@ -3,6 +3,19 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 21.10.2026: Zwei Dungeons zwischen den Sternen
+
+Über dem Himmelsarchiv geht die Karte in einem violetten Sternenfeld weiter: die Sternenschmiede (Ebene 7,
+Korrund, der Sternenschmied) und der Sternenschlund (Ebene 8, Nyxar, der Sternenfresser). Je vier Gegner und ein
+Boss mit eigenen Bildern (6 Gegner, 2 Routenbilder), eigene Sets (Korrunds Meisterstücke mit Schmiedetakt, Was Nyxar
+nicht frass mit Sternenfall), Material Sternenstahl, Erstsieg-Beute und die Geschichte des Stadtschreibers über die
+Wahl-Räume: Sternenfeuer gibt der Gruppe Angriff bis zum Ende und kostet Leben, befreite Sterne schwächen Nyxar.
+Ohne Schmiede kein Durchkommen: Die Sternenschmiede verlangt Sets auf etwa +3, der Sternenschlund +5. Dazu Drachenhort
+und Himmelsarchiv nach den Bot-Aufträgen (Mindestschaden, stärkere Startklassen) neu geeicht, das Probespiel
+`?probe=sterne`, ein ausgebautes Gildenhaus im Probespiel (vorher gingen nur drei der vier Helden mit) und dort
+schon freie Klassen (vorher meldete der erste Bericht sechsmal «Neue Klasse»).
+Regeln und Eichung: `docs/NEUE-DUNGEONS.md`.
+
 ## Nachtrag 20.10.2026 (spät): Schmiede für die Dungeon-Sets
 
 Neuer Tab «⚒️ Schmiede» auf der Heldenseite: Set-Teile werden mit Material aus den Dungeons bis +5 besser,

@@ -210,7 +210,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir gingen am Goblin-Stollen vorbei. Hinter uns stürzte er ein. Ich nenne das Planung.',
         },
         mutig: {
-          label: 'Splitter herausbrechen', wirkung: [ding('crystal_shard', 3), boss(5)],
+          label: 'Splitter herausbrechen', wirkung: [ding('crystal_shard', 3), boss(7)],
           nachklang: 'Wir brachen Kristallsplitter aus dem Goblin-Stollen. Sie gehörten tatsächlich zum Golem, und er spürte jeden einzelnen.',
         },
       },
@@ -284,7 +284,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir schnitten einen Händler aus einem Kokon. Er zahlte mit Heiltränken und mit Dankbarkeit, vor allem mit Heiltränken.',
         },
         mutig: {
-          label: 'Erst den Wagen ausräumen', wirkung: [gold(80), ding('healing_potion', 2), boss(10)],
+          label: 'Erst den Wagen ausräumen', wirkung: [gold(80), ding('healing_potion', 2), boss(12)],
           nachklang: 'Wir räumten zuerst den eingesponnenen Wagen des Händlers aus und dann den Händler. Die Königin hatte inzwischen Zeit, sich vorzubereiten.',
         },
       },
@@ -590,7 +590,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           nachklang: 'Wir studierten den Feldplan des Kommandanten. Er hatte einen Fehler, und zwar ihn selbst auf Seite drei.',
         },
         mutig: {
-          label: 'Das Banner einholen', wirkung: [setTeil, boss(15)],
+          label: 'Das Banner einholen', wirkung: [setTeil, boss(12)],
           nachklang: 'Wir holten das Banner des Eisernen Kommandanten ein. Er hat sehr dünne Haut für jemanden aus Eisen.',
         },
       },
@@ -1190,5 +1190,85 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     },
     ende: 'Der Oberarchivar ist besiegt, und das Himmelsarchiv steht offen. Ich habe darin meinen eigenen Eintrag gefunden: «Stadtschreiber, Magic City. Schreibt alles auf.» '
       + 'Das stimmt. Ich habe einen Satz dazugeschrieben, ganz klein, am Rand: «Und es lohnt sich.»',
+  },
+
+  // ── Zwischen den Sternen: auch hier sind die Entscheidungen die festen Wahl-Räume der Route ──
+  {
+    routeId: 'sternenschmiede', titel: 'Der Sternenschmied',
+    einleitung: 'Über dem Himmelsarchiv geht die Karte weiter, mit Silbertinte zwischen die Sterne gezeichnet: ein Amboss und daneben «Korrund, der Sternenschmied. Nimmt keine Aufträge an.» '
+      + 'Seit ein paar Nächten fehlen über Magic City Sterne, jede Nacht einer mehr; die Bäckerin zählt sie, weil sie als Erste wach ist, und gestern hat sie beim Zählen geweint. '
+      + 'Wer Sterne schmiedet, weiss, wohin sie verschwinden, und Korrund wird es uns sagen, Aufträge hin oder her.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Die Lehrlingsesse',
+        text: 'In der ersten Halle glüht die Lehrlingsesse, an der Korrunds Funkenwichtel das Schmieden üben. '
+          + 'Wer seine Waffe hineinhält, schlägt bis ganz nach oben härter zu; das Feuer nimmt sich dafür ein Stück von dem, der sie hält.',
+        nachklang: {
+          a: 'Wir hielten die Waffen in die Lehrlingsesse, bis die Klingen weiss glühten und die Finger rot.',
+          b: 'Wir verschnauften am Kühltrog, während die Funkenwichtel uns nass spritzten und sich sehr lustig fanden.',
+        },
+      },
+      8: {
+        titel: 'Die grosse Esse',
+        text: 'In der grossen Esse schmiedet Korrund die Sterne, und ein Ambossgolem tritt dazu den Blasebalg, Tag und Nacht, ohne hinzusehen. '
+          + 'Die Glut hier macht jede Klinge besser und jede Hand schlechter.',
+        nachklang: {
+          a: 'Wir hielten die Waffen in die grosse Esse, und seither riechen sie nach Sternenstaub.',
+          b: 'Wir kühlten uns lieber am Trog ab, und der Ambossgolem trat weiter den Blasebalg, als wären wir Luft.',
+        },
+      },
+      14: {
+        titel: 'Korrunds Amboss',
+        text: 'Vor der letzten Tür steht Korrunds Amboss, und unter einem Tuch daneben glimmt ein halb fertiger Stern. '
+          + 'Drinnen hämmert jemand, langsam und genau, wie einer, der keine Fehler macht.',
+        nachklang: {
+          a: 'Wir schärften unsere Waffen auf Korrunds Amboss nach, und drinnen hörte das Hämmern auf.',
+          b: 'Wir liessen den Amboss in Ruhe und atmeten durch, während Korrund drinnen weiterhämmerte.',
+        },
+      },
+    },
+    ende: 'Korrund hat verloren und es genommen wie ein Handwerker: Seinen Hammer durften wir behalten, er habe einen zweiten, und gute Arbeit erkenne er, auch wenn sie ihm auf den Kopf falle. '
+      + 'Dann hat er uns gezeigt, wofür er schmiedet: Hinter der Schmiede liegt der Sternenschlund, wo Nyxar die Sterne frisst, schneller, als ein Schmied allein sie nachschmieden kann. '
+      + 'Allein ist er jetzt nicht mehr.',
+  },
+  {
+    routeId: 'sternenschlund', titel: 'Der Sternenfresser',
+    einleitung: 'Hinter Korrunds Schmiede wird die Karte schwarz, und mitten im Schwarz steht nur ein Wort: «Nyxar». '
+      + 'Dort hält der Sternenfresser die Sterne, die er noch nicht gefressen hat, in Käfigen und Netzen, sagt Korrund, wie andere Leute Würste in der Speisekammer. '
+      + 'Die Bäckerin zählt noch dreihundertzwölf Sterne über Magic City; wir gehen die übrigen holen, bevor Nyxar wieder Hunger hat.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Der erste Stern',
+        text: 'In einem Käfig aus schwarzem Glas zappelt ein Stern, kaum grösser als eine Laterne. '
+          + 'Aus seinem Rand liesse sich Sternenstahl schlagen, genug für ein gutes Stück aus Korrunds Esse, und der Stern schaut uns an, als wüsste er das.',
+        nachklang: {
+          a: 'Wir schlugen Sternenstahl aus dem ersten Stern, und er leuchtet seither etwas schwächer und sehr vorwurfsvoll.',
+          b: 'Wir bogen den Käfig auf, verbrannten uns die Finger und sahen den ersten Stern zurück an den Himmel sausen.',
+        },
+      },
+      8: {
+        titel: 'Das Sternennetz',
+        text: 'Quer durch eine Höhle hängt ein Netz aus Licht, und darin kleben Sterne wie Fliegen. '
+          + 'Lichtmotten flattern davor und passen auf, dass keiner entwischt, und ein Kometenkäfer passt auf die Lichtmotten auf.',
+        nachklang: {
+          a: 'Wir zerlegten einen der Sterne im Netz zu Sternenstahl, und die Lichtmotten flogen los, es Nyxar zu erzählen.',
+          b: 'Wir zerrissen das Sternennetz, das wie Nesseln brannte, und die Sterne flogen davon, alle auf einmal.',
+        },
+      },
+      14: {
+        titel: 'Vor Nyxars Lager',
+        text: 'Vor Nyxars Lager liegt der grösste Stern, den wir je gesehen haben, angekettet wie ein Hofhund. '
+          + 'Er ist für später, für die Nacht, in der Nyxar richtig Hunger hat. Drinnen schmatzt es schon.',
+        nachklang: {
+          a: 'Wir schlugen Sternenstahl aus dem grössten Stern, und Nyxar hörte das Klopfen.',
+          b: 'Wir lösten die Ketten des grössten Sterns, und als er aufstieg, wurde es im ganzen Schlund hell, auch dort, wo Nyxar lag.',
+        },
+      },
+    },
+    ende: 'Nyxar ist besiegt, und der Schlund ist leer bis auf einen Stern, den er nicht mehr geschafft hat; den haben wir mitgenommen. '
+      + 'In der Nacht darauf kamen die Sterne über Magic City zurück, einer nach dem anderen, und die Bäckerin hat bis zum Morgen gezählt und zum ersten Mal in zwanzig Jahren das Brot verschlafen. '
+      + 'Niemand hat sich beschwert.',
   },
 ];

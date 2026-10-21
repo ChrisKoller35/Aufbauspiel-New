@@ -371,6 +371,92 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     guaranteedGold: { min: 180, max: 260 },
   },
 
+  // --- Sternenschmiede (Ebene 7): Schmiede-Ausrüstung, Magitech, Korrunds Hammer ---
+  loot_sternenschmiede_common: {
+    id: 'loot_sternenschmiede_common',
+    entries: [
+      { itemId: 'gold', weight: 20, minQty: 12, maxQty: 20 },
+      { itemId: 'crystal_shard', weight: 20, minQty: 2, maxQty: 4 },
+      { itemId: 'talisman_fragment', weight: 16, minQty: 2, maxQty: 4 },
+      { itemId: 'healing_potion', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'iron_scrap', weight: 10, minQty: 4, maxQty: 8 },
+      { itemId: 'magitech_component', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_guardian_shield', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'dragonlord_plate', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 16, max: 26 },
+  },
+  loot_sternenschmiede_rare: {
+    id: 'loot_sternenschmiede_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 3, maxQty: 6 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 3, maxQty: 5 },
+      { itemId: 'magitech_component', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'soulbreaker', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_guardian_shield', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'dragonlord_plate', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 3, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 24, max: 40 },
+  },
+  loot_boss_korrund: {
+    id: 'loot_boss_korrund',
+    entries: [
+      { itemId: 'korrunds_hammer', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 14, minQty: 1, maxQty: 1 },
+      { itemId: 'blade_of_thousand_shadows', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 10, maxQty: 16 },
+      { itemId: 'magitech_component', weight: 12, minQty: 2, maxQty: 4 },
+    ],
+    guaranteedGold: { min: 220, max: 300 },
+  },
+
+  // --- Sternenschlund (Ebene 8): Fernkampf-Ausrüstung, Kristalle, Der letzte Stern ---
+  loot_sternenschlund_common: {
+    id: 'loot_sternenschlund_common',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 3, maxQty: 5 },
+      { itemId: 'gold', weight: 18, minQty: 14, maxQty: 22 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 2, maxQty: 4 },
+      { itemId: 'healing_potion', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'eternal_hunter_bow', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'arcane_amulet', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 18, max: 28 },
+  },
+  loot_sternenschlund_rare: {
+    id: 'loot_sternenschlund_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 4, maxQty: 7 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 3, maxQty: 6 },
+      { itemId: 'magitech_component', weight: 10, minQty: 1, maxQty: 2 },
+      { itemId: 'eternal_hunter_bow', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'blade_of_thousand_shadows', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 26, max: 44 },
+  },
+  loot_boss_nyxar: {
+    id: 'loot_boss_nyxar',
+    entries: [
+      { itemId: 'der_letzte_stern', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'korrunds_hammer', weight: 10, minQty: 1, maxQty: 1 },
+      { itemId: 'blade_of_thousand_shadows', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 12, maxQty: 20 },
+      { itemId: 'talisman_fragment', weight: 14, minQty: 8, maxQty: 12 },
+    ],
+    guaranteedGold: { min: 260, max: 360 },
+  },
+
   // --- T4 Legendary Loot (Nemesis-Modifier Bonus) ---
   loot_nemesis_legendary: {
     id: 'loot_nemesis_legendary',

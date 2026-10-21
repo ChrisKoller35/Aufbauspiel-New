@@ -57,22 +57,27 @@ export interface DungeonSetDef {
 // So gut wie die besten gewöhnlichen Gegenstände derselben Ebene und Bauart (Ebene 4:
 // Seelenbrecher, Drachenfürstplatte, Aetherkristall-Herz …), damit ein Set-Teil nie ein
 // Rückschritt ist. Die Set-Boni kommen obendrauf und machen den Unterschied.
+// Ebene 7 und 8 (Sternenschmiede, Sternenschlund) setzen die Reihen im selben Schritt fort.
+// Ein Dungeon auf Ebene 9 braucht je eine Zahl mehr in jeder Reihe.
 
-type Reihe = [number, number, number, number, number, number];
+/** Die höchste Ebene, für die es Werte gibt */
+export const HOECHSTE_EBENE = 8;
+
+type Reihe = [number, number, number, number, number, number, number, number];
 
 const ART_WERTE: Record<SetTeilArt, Partial<Record<'atk' | 'def' | 'hp' | 'spd' | 'critChance', Reihe>>> = {
-  klinge: { atk: [3, 5, 7, 10, 12, 14], def: [0, 0, 0, 2, 2, 3], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12] },
-  dolch: { atk: [2, 4, 6, 8, 11, 13], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16] },
-  hammer: { atk: [4, 7, 10, 13, 16, 19], hp: [4, 6, 10, 15, 20, 25], def: [0, 1, 2, 3, 3, 4] },
-  bogen: { atk: [2, 3, 6, 9, 11, 13], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22] },
-  stab: { atk: [1, 2, 5, 7, 9, 11], hp: [5, 8, 12, 18, 24, 30], def: [0, 0, 2, 3, 4, 5], critChance: [0, 0, 0, 0.08, 0.08, 0.1] },
-  schild: { def: [4, 6, 7, 10, 14, 16], hp: [2, 4, 10, 15, 26, 30], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  platte: { def: [4, 5, 8, 12, 14, 16], hp: [4, 8, 15, 20, 26, 32], spd: [-0.05, 0, 0, 0, 0, 0] },
-  leder: { def: [2, 3, 4, 7, 9, 11], hp: [5, 7, 12, 14, 18, 22], atk: [0, 1, 1, 2, 3, 4], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16] },
-  robe: { hp: [8, 12, 14, 22, 26, 32], atk: [1, 2, 4, 5, 6, 7], spd: [0, 0, 0.1, 0.1, 0.1, 0.15], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14] },
-  amulett: { atk: [1, 2, 3, 4, 4, 5], def: [0, 1, 2, 2, 3, 4], hp: [3, 4, 5, 12, 16, 20], spd: [0, 0, 0, 0.05, 0.08, 0.1], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1] },
-  ring: { atk: [1, 2, 4, 4, 5, 6], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15] },
-  talisman: { def: [1, 2, 3, 5, 6, 7], hp: [4, 6, 8, 15, 18, 22] },
+  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18], def: [0, 0, 0, 2, 2, 3, 3, 4], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14] },
+  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2] },
+  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25], hp: [4, 6, 10, 15, 20, 25, 30, 35], def: [0, 1, 2, 3, 3, 4, 5, 6] },
+  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26] },
+  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15], hp: [5, 8, 12, 18, 24, 30, 36, 42], def: [0, 0, 2, 3, 4, 5, 6, 7], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12] },
+  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20], hp: [2, 4, 10, 15, 26, 30, 35, 40], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
+  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20], hp: [4, 8, 15, 20, 26, 32, 38, 44], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0] },
+  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15], hp: [5, 7, 12, 14, 18, 22, 26, 30], atk: [0, 1, 1, 2, 3, 4, 5, 6], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2] },
+  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44], atk: [1, 2, 4, 5, 6, 7, 8, 9], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18] },
+  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7], def: [0, 1, 2, 2, 3, 4, 5, 5], hp: [3, 4, 5, 12, 16, 20, 24, 28], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12] },
+  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18] },
+  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9], hp: [4, 6, 8, 15, 18, 22, 26, 30] },
 };
 
 /**
@@ -108,7 +113,7 @@ const ART_PLATZ: Record<SetTeilArt, { slot: NonNullable<ItemDef['gearSlot']>; ha
 };
 
 /** Grundpreis je Ebene (wie die übrigen Gegenstände derselben Ebene) */
-const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120];
+const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160];
 
 // ── Die Sets, in der Reihenfolge der Dungeon-Karte von unten nach oben ──
 
@@ -473,6 +478,36 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
       effekte: [{ id: 'fussnote', runden: 3, power: 30, anteil: 0.12, schild: 20 }],
     },
   },
+
+  // ── Zwischen den Sternen ──
+  {
+    id: 'stern', routeId: 'sternenschmiede', name: 'Korrunds Meisterstücke', zeichen: '🌟', tier: 7,
+    teile: [
+      { art: 'klinge', name: 'Sternenstahlklinge', bild: 'ITEM_FALLEN_KNIGHTS_BLADE', text: 'Aus einem Stück Stern, das vom Himmel fiel. Der Rest des Sterns sucht es noch.' },
+      { art: 'platte', name: 'Harnisch des Sternenschmieds', bild: 'ITEM_STEEL_ARMOR', text: 'Korrund hat ihn viermal neu geschmiedet. Beim vierten Mal war er zufrieden, beim fünften stolz.' },
+      { art: 'talisman', name: 'Glut im Glas', bild: 'ITEM_AETHER_HEART', text: 'Ein Funke aus Korrunds Esse, in Glas gesperrt. Er brennt seit hundert Jahren und ist immer noch beleidigt.' },
+    ],
+    zweiTeile: { atk: 7, hp: 24 },
+    dreiTeile: {
+      name: 'Schmiedetakt',
+      text: 'Alle 3 Runden schlägt der Träger den Takt wie auf dem Amboss: Das ganze Team hat jedes Mal 3 Angriff mehr, bis Kampfende höchstens +9.',
+      effekte: [{ id: 'schmiedetakt', power: 3, runden: 3, max: 9 }],
+    },
+  },
+  {
+    id: 'schlund', routeId: 'sternenschlund', name: 'Was Nyxar nicht frass', zeichen: '🌌', tier: 8,
+    teile: [
+      { art: 'bogen', name: 'Sternschnuppenbogen', bild: 'ITEM_FALLEN_HUNTERS_BOW', text: 'Jeder Pfeil zieht einen Schweif hinter sich her. Wer ihn sieht, darf sich etwas wünschen, meistens, dass er nicht gemeint ist.' },
+      { art: 'leder', name: 'Mantel der Leere', bild: 'ITEM_SPIDER_SILK_ROBE', text: 'Innen ist er grösser als aussen. Was man hineinsteckt, findet man nie wieder, ein Gegner aber auch nicht.' },
+      { art: 'ring', name: 'Ereignisring', bild: 'ITEM_LICH_PHYLACTERY', text: 'Ein Ring aus gebogenem Licht. Was hineinfällt, kommt nicht zurück, nicht einmal die Bemerkung, die man dazu machen wollte.' },
+    ],
+    zweiTeile: { atk: 8, critChance: 0.08 },
+    dreiTeile: {
+      name: 'Sternenfall',
+      text: 'Jeder dritte Treffer des Trägers holt einen Stern vom Himmel: Er trifft alle Gegner mit der Hälfte des Schadens.',
+      effekte: [{ id: 'sternenfall', treffer: 3, anteil: 0.5 }],
+    },
+  },
 ];
 
 // ── Abgeleitete Daten ──
@@ -488,7 +523,7 @@ export function setTeilId(set: DungeonSetDef, teil: SetTeilDef): string {
 }
 
 function teilWerte(art: SetTeilArt, tier: number): NonNullable<ItemDef['statBonuses']> {
-  const i = Math.min(Math.max(tier, 1), 6) - 1;
+  const i = Math.min(Math.max(tier, 1), HOECHSTE_EBENE) - 1;
   const werte: NonNullable<ItemDef['statBonuses']> = {};
   for (const [stat, reihe] of Object.entries(ART_WERTE[art]) as [keyof typeof werte, Reihe][]) {
     if (reihe[i] !== 0) werte[stat] = reihe[i];
@@ -509,7 +544,7 @@ export function setItemDefs(): Record<string, ItemDef> {
         name: teil.name,
         type: 'gear',
         stackSize: 1,
-        baseValue: WERT_JE_EBENE[Math.min(set.tier, 6) - 1],
+        baseValue: WERT_JE_EBENE[Math.min(set.tier, HOECHSTE_EBENE) - 1],
         spriteKey: teil.bild,
         gearSlot: platz.slot,
         ...(platz.hand ? { weaponSlotType: platz.hand } : {}),

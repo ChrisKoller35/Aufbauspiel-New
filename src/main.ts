@@ -1,7 +1,7 @@
 import './ui/html/magic-city.css';
 import { GameState, createNewGameState } from './models/GameState';
 import { SaveSystem, nutzeProbespiel } from './systems/SaveSystem';
-import { istProbespiel, probespielNeu, richteProbespielEin } from './systems/Probespiel';
+import { istProbespiel, probespielNeu, probespielSterne, richteProbespielEin } from './systems/Probespiel';
 import { renderMainMenu } from './ui/screens/MainMenuScreen';
 import { renderHeroesScreen, initHeroesScreen } from './ui/screens/HeroesScreen';
 import { renderBuildingsScreen, initBuildingsScreen } from './ui/screens/BuildingsScreen';
@@ -40,6 +40,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // localhost:5173/?probe: eigenes Spiel zum Ausprobieren der obersten Dungeons, eigener Speicherplatz
   const probe = istProbespiel(location.search);
+  const probeSterne = probespielSterne(location.search);
   if (probe) nutzeProbespiel();
   const saveSystem = new SaveSystem();
   if (probe && probespielNeu(location.search)) {
@@ -68,7 +69,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isNewGame) {
     placeStartingLayout(state);
     createStartingCitizens(state);
-    if (probe) richteProbespielEin(state);
+    if (probe) richteProbespielEin(state, probeSterne);
   }
 
   // Initialize game systems

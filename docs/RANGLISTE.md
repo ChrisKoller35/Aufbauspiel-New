@@ -56,7 +56,7 @@ und was bei neuen Dungeons oder Gilden zu tun ist.
 
 Stil: **Stürmer** nehmen immer den höchsten Dungeon, den sie betreten dürfen, **Gründliche** den
 niedrigsten, **Ausgewogene** die niedrigste Ebene und darin den höchsten. Tempo: so viel schafft die Gilde
-pro Runde; ein Dungeon kostet Ebene hoch 1,5 (Ebene 1: 1, Ebene 4: 8, Ebene 6: 15).
+pro Runde; ein Dungeon kostet Ebene hoch 1,5 (Ebene 1: 1, Ebene 4: 8, Ebene 6: 15, Ebene 8: 23).
 
 | Gilde | Stil | Tempo | Ebene über dir | Vorsprung (Sterne) | Siege pro Woche |
 |---|---|---|---|---|---|
@@ -71,22 +71,27 @@ pro Runde; ein Dungeon kostet Ebene hoch 1,5 (Ebene 1: 1, Ebene 4: 8, Ebene 6: 1
 | 🐌 Die Schnecken von Granitburg | gründlich | 0,2 | 0 | −10 | 2 |
 
 Beim Start bekommt jede Gilde so viele Sterne wie die eigene Gilde plus ihren Vorsprung (nie über die
-erlaubte Ebene). Ein frisches Spiel beginnt darum auf Platz 5, das Probespiel auf Platz 3.
+erlaubte Ebene). Ein frisches Spiel beginnt darum auf Platz 5, das Probespiel auf Platz 3, das Probespiel
+zwischen den Sternen (`?probe=sterne`) auf Platz 2 hinter den Sturmadlern.
 
 ## Eichung
 
 `npm run rangliste-eichung` (nur ein Spielstand: `npm run rangliste-eichung -- probe`) spielt das Rennen
 mit einer Muster-Gilde durch: Sie braucht je neuen Dungeon 2 (Ebene 1) bis 20 Expeditionen (Ebene 6),
-schnell 0,6-mal so viele, gemütlich 1,6-mal. Stand 20.10.2026:
+zwischen den Sternen 28 (Ebene 7) und 38 (Ebene 8), weil dort erst die Schmiede den Weg frei macht;
+schnell 0,6-mal so viele, gemütlich 1,6-mal. Stand 21.10.2026, mit Sternenschmiede und Sternenschlund:
 
 **Gipfel** (frisches Spiel, Platz nach Expeditionen)
 
 | Spielweise | Verlauf | Ganze Karte |
 |---|---|---|
-| normal, räumt jede Ebene ab | bis Expedition 28 Platz 3 bis 6, dann lange Platz 4 oder 3, ab 151 kurz Platz 1 | 171, dann Platz 1 |
-| normal, klettert zuerst | ab 45 Platz 2, mit dem Himmelsarchiv (97) kurz Platz 1; die Rivalen haben mehr Sterne und ziehen wieder vorbei | 171, dann Platz 1 |
-| schnell | mit dem Vulkankern (49) Platz 1, danach Kopf an Kopf mit Sturmadlern und Rudel, ab 87 vorn | 99 |
-| gemütlich | lange Platz 4 bis 7, mit 238 kurz vorn | 270, dann Platz 1 |
+| normal, räumt jede Ebene ab | bis Expedition 28 Platz 3 bis 6, dann lange Platz 4 oder 3, ab 151 mit jedem neuen Dungeon kurz Platz 1, dazwischen ziehen Sturmadler und Glutschwinge wieder vorbei | 237, dann Platz 1 |
+| normal, klettert zuerst | ab 45 Platz 2, mit dem Himmelsarchiv (97) kurz Platz 1, danach meist Platz 2 oder 3; den Sternenschlund bezwingt sie bei 163, die Rivalen haben aber mehr Sterne | 237, dann Platz 1 |
+| schnell | mit dem Vulkankern (49) Platz 1, danach Kopf an Kopf mit Sturmadlern und Rudel, ab 87 vorn | 139 |
+| gemütlich | lange Platz 4 bis 7, ab 238 mit jedem neuen Dungeon kurz vorn | 376, dann Platz 1 |
+
+Vorher, mit dem Himmelsarchiv als oberstem Dungeon, war die ganze Karte bei 171 (normal), 99 (schnell) und
+270 (gemütlich). Im Probespiel zwischen den Sternen steht die Muster-Gilde bei 140 (normal) auf der ganzen Karte.
 
 Die Spitzengilden bleiben bis zum Schluss knapp vorn oder gleichauf. Endgültig Platz 1 wird man erst mit
 der ganzen Karte: Das ist das ferne Ziel. Kommen neue Dungeons dazu, geht das Rennen weiter.
@@ -94,11 +99,11 @@ der ganzen Karte: Das ist das ferne Ziel. Kommen neue Dungeons dazu, geht das Re
 **Woche** (Platz in der Mitte von 50 Spielständen, in Klammern die Spanne und wie oft es eine Truhe gibt;
 85 % Siege im besten Dungeon)
 
-| Expeditionen pro Woche | Frisches Spiel | Mitte (Ebene 3) | Probespiel (Ebene 4) |
-|---|---|---|---|
-| 80 (schnell) | 1 (immer) | 1 (immer) | 1 (immer) |
-| 40 (normal) | 1 (immer) | 1 (immer) | 1 (1–2, immer) |
-| 15 (gemütlich) | 2 bis 3 (Truhe fast immer, in Woche 8 in 58 %) | 4 (3–5, Truhe in 4 bis 36 %) | 4 bis 5 (3–6, Truhe in 0 bis 12 %) |
+| Expeditionen pro Woche | Frisches Spiel | Mitte (Ebene 3) | Probespiel (Ebene 4) | Sterne (Ebene 6) |
+|---|---|---|---|---|
+| 80 (schnell) | 1 (immer) | 1 (immer) | 1 (immer) | 1 (immer) |
+| 40 (normal) | 1 (immer) | 1 (immer) | 1 (1–2, immer) | 1 (1–2, immer) |
+| 15 (gemütlich) | 2 bis 3 (Truhe fast immer, in Woche 8 in 58 %) | 4 (3–5, Truhe in 4 bis 36 %) | 4 bis 5 (3–6, Truhe in 0 bis 12 %) | 4 bis 5 (4–6, keine Truhe) |
 
 Als Faustregel reichen im Mittel etwa 17 Expeditionen pro Woche für Bronze, 27 für Silber und 34 für Gold
 (mit 85 % Siegen im besten Dungeon). Wer gerade neue Dungeons bezwingt, kommt mit weniger aus, weil der

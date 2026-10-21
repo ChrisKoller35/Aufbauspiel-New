@@ -15,6 +15,7 @@ import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { totalXpForLevel } from './HeroProgression';
 import { istGeschichtsWahl } from './Geschichten';
+import { istSchmiedbar } from './Schmiede';
 
 export type MusterTeamName = keyof typeof MUSTER_TEAMS;
 export type MusterSetName = keyof typeof MUSTER_SETS;
@@ -35,9 +36,11 @@ export const KLUG_AB_LEBEN = 0.85;
  * Neuer Spielstand mit den Helden des Musterteams (startExpedition prüft keine Sperren).
  * Mit `sets` tragen die Helden statt ihrer Ausrüstung die Dungeon-Sets aus MUSTER_SETS.
  * Ihren Weg (ab Stufe 10) gehen sie, ausser `wege` ist false.
+ * `schmiede` hebt jedes getragene Set-Teil in der Schmiede auf diese Stufe (docs/SCHMIEDE.md);
+ * ohne die Angabe gilt die Stufe der Sets (MusterSet.schmiede).
  */
 export function musterStand(
-  team: MusterTeamName, startwert: number, sets?: MusterSetName, wege = true,
+  team: MusterTeamName, startwert: number, sets?: MusterSetName, wege = true, schmiede?: number,
 ): { state: GameState; ids: number[] } {
   const state = createNewGameState();
   state.rngSeed = startwert;
@@ -51,6 +54,14 @@ export function musterStand(
     state.fighters.push(held);
     return held.id;
   });
+  const stufe = schmiede ?? (sets ? MUSTER_SETS[sets].schmiede ?? 0 : 0);
+  if (stufe > 0) {
+    const stufen: Record<string, number> = {};
+    for (const held of state.fighters) {
+      for (const itemId of Object.values(held.gear)) if (itemId && istSchmiedbar(itemId)) stufen[itemId] = stufe;
+    }
+    state.schmiede = { stufen };
+  }
   return { state, ids };
 }
 
@@ -84,13 +95,17 @@ export function gewonnen(run: ExpeditionRun): boolean {
   return dungeonBezwungen(run);
 }
 
-/** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege. */
+/**
+ * Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege,
+ * mit `schmiede` die Set-Teile auf dieser Stufe (sonst auf der Stufe der Sets).
+ */
 export function siegeVon(
   routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName, wege = true,
+  schmiede?: number,
 ): number {
   let siege = 0;
   for (let i = 1; i <= laeufe; i++) {
-    const { state, ids } = musterStand(team, i * 7919, sets, wege);
+    const { state, ids } = musterStand(team, i * 7919, sets, wege, schmiede);
     if (gewonnen(spieleRoute(state, ids, routeId, spielweise))) siege++;
   }
   return siege;

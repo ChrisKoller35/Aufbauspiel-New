@@ -41,6 +41,8 @@ export const DUNGEON_IM_SATZ: Record<string, DungeonImSatz> = {
   volcano_core: { wo: 'im Vulkankern', wen: 'den Vulkankern' },
   drachenhort: { wo: 'im Drachenhort', wen: 'den Drachenhort' },
   himmelsarchiv: { wo: 'im Himmelsarchiv', wen: 'das Himmelsarchiv' },
+  sternenschmiede: { wo: 'in der Sternenschmiede', wen: 'die Sternenschmiede' },
+  sternenschlund: { wo: 'im Sternenschlund', wen: 'den Sternenschlund' },
 };
 
 /**

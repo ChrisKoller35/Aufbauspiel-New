@@ -42,10 +42,10 @@ export interface RouteDef {
   /** Ob eine Kriegsmaschine zwingend benötigt wird */
   requiresWarMachine?: boolean;
   /** Gebiet über dem Vulkankern: bestimmt Farbe und Schild auf Karte und Routenliste */
-  gebiet?: 'gipfel' | 'himmel';
+  gebiet?: 'gipfel' | 'himmel' | 'sterne';
   /** Eigene Regel dieses Dungeons in einem Satz (Karte, Routenliste) */
   besonderheit?: string;
-  /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker */
+  /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker, Punkte unter 0 schwächer */
   hortGier?: { angriffProPunkt: number; lebenProPunkt: number };
   /** Gegenstand, den der Boss beim ersten Sieg der Gilde über ihn garantiert dazugibt */
   ersterSiegBeute?: string;
@@ -105,7 +105,9 @@ export const DUNGEON_GRAPH: DungeonGraphNode[] = [
 
   // ── ÜBER DEM VULKANKERN: neue Dungeons, die Karte wächst nach oben (docs/NEUE-DUNGEONS.md) ──
   { routeId: 'drachenhort',        x: 380, y: -300, leadsTo: ['himmelsarchiv'], isMainPath: true },
-  { routeId: 'himmelsarchiv',      x: 520, y: -800, leadsTo: [], isMainPath: true },
+  { routeId: 'himmelsarchiv',      x: 520, y: -800, leadsTo: ['sternenschmiede'], isMainPath: true },
+  { routeId: 'sternenschmiede',    x: 390, y: -1300, leadsTo: ['sternenschlund'], isMainPath: true },
+  { routeId: 'sternenschlund',     x: 510, y: -1800, leadsTo: [], isMainPath: true },
 ];
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -357,6 +359,85 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     bossId: 'boss_oberarchivar',
     recommendedLevel: 'Stufe 15 und volle T4-Ausrüstung',
     unlockCondition: { bossesDefeated: ['boss_ignarax'] },
+  },
+  sternenschmiede: {
+    id: 'sternenschmiede',
+    name: 'Die Sternenschmiede',
+    tier: 7,
+    rooms: 16,
+    gebiet: 'sterne',
+    besonderheit: 'Sternenfeuer: Wer die Waffen in die Essen hält, schlägt bis zum Ende härter zu, aber die Hitze kostet Leben.',
+    ersterSiegBeute: 'korrunds_hammer',
+    encounters: [
+      { type: 'combat', enemies: ['funkenwichtel', 'ambossgolem'] },
+      { type: 'combat', enemies: ['essengeist', 'funkenwichtel'] },
+      { type: 'find', wahl: {
+        a: { label: 'Waffen ins Sternenfeuer halten (+10% Angriff bis zum Ende, −5% HP)', flavorText: 'Die Klingen glühen weiss. Die Hände leider auch.', effect: 'angriff', value: 10, kostetLeben: 5 },
+        b: { label: 'Am Kühltrog verschnaufen (+10% HP)', flavorText: 'Das Wasser zischt, und ihr atmet durch.', effect: 'heal', value: 10 },
+      } },
+      { type: 'combat', enemies: ['ambossgolem', 'lichtguss', 'funkenwichtel'] },
+      { type: 'hazard', damage: 16 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['funkenwichtel', 'funkenwichtel', 'essengeist'] },
+      { type: 'find', wahl: {
+        a: { label: 'Waffen in die grosse Esse halten (+10% Angriff bis zum Ende, −5% HP)', flavorText: 'Hier schmiedet Korrund die grossen Sterne. Die Hitze geht durch jede Rüstung.', effect: 'angriff', value: 10, kostetLeben: 5 },
+        b: { label: 'Am Kühltrog verschnaufen (+10% HP)', flavorText: 'Ihr kühlt die Hände und lasst die Esse Esse sein.', effect: 'heal', value: 10 },
+      } },
+      { type: 'combat', enemies: ['ambossgolem', 'lichtguss', 'essengeist'] },
+      { type: 'hazard', damage: 18 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['lichtguss', 'ambossgolem', 'funkenwichtel'] },
+      { type: 'combat', enemies: ['ambossgolem', 'essengeist', 'lichtguss', 'funkenwichtel'] },
+      { type: 'find', wahl: {
+        a: { label: 'Auf Korrunds Amboss nachschärfen (+10% Angriff bis zum Ende, −10% HP)', flavorText: '«Für den letzten Stern. Nicht anfassen.» steht darauf. Ihr fasst ihn an.', effect: 'angriff', value: 10, kostetLeben: 10 },
+        b: { label: 'Durchatmen vor dem Kampf (+15% HP)', flavorText: 'Drinnen hämmert jemand. Er hat keine Eile, ihr auch nicht.', effect: 'heal', value: 15 },
+      } },
+      { type: 'boss', enemies: ['boss_korrund'] },
+    ],
+    bossId: 'boss_korrund',
+    recommendedLevel: 'Stufe 15 und Dungeon-Sets aus der Schmiede',
+    unlockCondition: { bossesDefeated: ['boss_oberarchivar'] },
+  },
+  sternenschlund: {
+    id: 'sternenschlund',
+    name: 'Der Sternenschlund',
+    tier: 8,
+    rooms: 16,
+    gebiet: 'sterne',
+    besonderheit: 'Gefangene Sterne: Wer sie befreit, schwächt Nyxar und verbrennt sich dabei; wer sie ausschlachtet, bekommt Sternenstahl.',
+    hortGier: { angriffProPunkt: 0.1, lebenProPunkt: 0.1 },
+    ersterSiegBeute: 'der_letzte_stern',
+    encounters: [
+      { type: 'combat', enemies: ['leerenkriecher', 'lichtmotte'] },
+      { type: 'combat', enemies: ['kometenkaefer', 'nyxarbrut'] },
+      { type: 'find', wahl: {
+        a: { label: 'Sternenstahl herausschlagen (+3 Sternenstahl)', flavorText: 'Der Stern im Käfig wimmert leise. Die Splitter glänzen trotzdem schön.', effect: 'item', value: 3, itemId: 'mat_sternenstahl' },
+        b: { label: 'Den Stern befreien (Nyxar wird schwächer, −5% HP)', flavorText: 'Der Käfig glüht, als ihr ihn aufbiegt. Der Stern saust davon, zurück an den Himmel.', effect: 'kein', value: 0, gier: -1, kostetLeben: 5 },
+      } },
+      { type: 'combat', enemies: ['lichtmotte', 'leerenkriecher', 'kometenkaefer'] },
+      { type: 'hazard', damage: 18 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['nyxarbrut', 'leerenkriecher', 'lichtmotte'] },
+      { type: 'find', wahl: {
+        a: { label: 'Sternenstahl herausschlagen (+4 Sternenstahl)', flavorText: 'Im Netz hängen Sterne wie Fliegen. Einer davon lässt sich gut zerlegen.', effect: 'item', value: 4, itemId: 'mat_sternenstahl' },
+        b: { label: 'Die Sterne befreien (Nyxar wird schwächer, −5% HP)', flavorText: 'Ihr zerreisst das Netz. Es ist aus Licht und brennt wie Nesseln.', effect: 'kein', value: 0, gier: -1, kostetLeben: 5 },
+      } },
+      { type: 'combat', enemies: ['lichtmotte', 'lichtmotte', 'kometenkaefer'] },
+      { type: 'hazard', damage: 20 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['kometenkaefer', 'nyxarbrut', 'leerenkriecher'] },
+      { type: 'combat', enemies: ['leerenkriecher', 'lichtmotte', 'kometenkaefer', 'nyxarbrut'] },
+      { type: 'find', wahl: {
+        a: { label: 'Sternenstahl herausschlagen (+5 Sternenstahl)', flavorText: 'Der grösste Stern liegt direkt vor Nyxars Lager. Er ist für später gedacht.', effect: 'item', value: 5, itemId: 'mat_sternenstahl' },
+        b: { label: 'Den grössten Stern befreien (Nyxar wird schwächer, −5% HP)', flavorText: 'Er steigt auf, und im Schlund wird es heller. Drinnen faucht jemand.', effect: 'kein', value: 0, gier: -1, kostetLeben: 5 },
+      } },
+      { type: 'boss', enemies: ['boss_nyxar'] },
+    ],
+    bossId: 'boss_nyxar',
+    recommendedLevel: 'Stufe 15 und Sets auf +5',
+    unlockCondition: { bossesDefeated: ['boss_korrund'] },
   },
 
   // ── Siege Routes ──
@@ -708,6 +789,8 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   magma_caverns: 'exp_magma_caverns',
   drachenhort: 'exp_drachenhort',
   himmelsarchiv: 'exp_himmelsarchiv',
+  sternenschmiede: 'exp_sternenschmiede',
+  sternenschlund: 'exp_sternenschlund',
 };
 
 // ── Baupläne (Gebäude-Freischaltung über Dungeon-Bosse) ──

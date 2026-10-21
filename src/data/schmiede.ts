@@ -73,6 +73,11 @@ export const SCHMIEDE_MATERIALIEN: SchmiedeMaterialDef[] = [
     routen: ['himmelsarchiv'],
     text: 'Damit schreibt man Sterne an den Himmel. Oder Runen in eine Rüstung.',
   },
+  {
+    id: 'mat_sternenstahl', name: 'Sternenstahl', ausGebiet: 'aus den Sternen', bild: 'MAT_STERNENSTAHL',
+    routen: ['sternenschmiede', 'sternenschlund'],
+    text: 'Fällt manchmal vom Himmel, meistens jemandem auf den Kopf. Der wird dann Schmied.',
+  },
 ];
 
 // ── Stufen und Werte ──

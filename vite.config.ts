@@ -7,9 +7,14 @@ export default defineConfig({
     assetsInlineLimit: 0,
     rollupOptions: {
       output: {
-        // Die Texte der Dungeon-Geschichten als eigene Datei (lädt beim Start mit),
-        // so zeigt die Warnung ab 500 kB weiter das Wachstum des Spielcodes an
-        manualChunks: (id: string) => (id.includes('/src/data/dungeonGeschichten') ? 'geschichten' : undefined),
+        // Die Texte der Dungeon-Geschichten und die übrigen Spieldaten (Gegner, Gegenstände, Routen …)
+        // als eigene Dateien (laden beim Start mit), so zeigt die Warnung ab 500 kB weiter das Wachstum
+        // des Spielcodes an, nicht das der neuen Dungeons
+        manualChunks: (id: string) => {
+          if (id.includes('/src/data/dungeonGeschichten')) return 'geschichten';
+          if (id.includes('/src/data/')) return 'daten';
+          return undefined;
+        },
       },
     },
   },

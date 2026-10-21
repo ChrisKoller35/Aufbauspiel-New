@@ -414,9 +414,14 @@ export class ExpeditionSystem {
       case 'geschichte':
         geschichteWirkt(run, choice.wirkung ?? []);
         break;
+      case 'angriff':
+        this.gruppenAngriffWaechst(run, choice);
+        break;
+      case 'kein':
+        break;
     }
 
-    // Preis der Wahl (verbotene Bücher im Himmelsarchiv): kostet Leben, aber nie das letzte
+    // Preis der Wahl (verbotene Bücher, Sternenfeuer, befreite Sterne): kostet Leben, aber nie das letzte
     if (choice.kostetLeben) {
       for (const unit of aliveParty) {
         unit.hp = Math.max(1, unit.hp - Math.floor(unit.maxHp * choice.kostetLeben / 100));
@@ -428,8 +433,27 @@ export class ExpeditionSystem {
   }
 
   /**
+   * Sternenfeuer (EncounterChoice 'angriff'): Die ganze Gruppe hat bis zum Ende des Dungeons
+   * `value` Prozent mehr Angriff, auch wer gerade am Boden liegt. Mehrmals gewählt zählen die
+   * Prozente zusammen, gerechnet auf den Angriff vor dem ersten Mal. Boni aus Kämpfen, die
+   * bleiben (Drachengier, Tiefenrausch), wachsen nicht mit: Sie kommen später wieder genau weg.
+   */
+  private gruppenAngriffWaechst(run: ExpeditionRun, choice: EncounterChoice): void {
+    const vorher = run.gruppenAngriff ?? 0;
+    const jetzt = vorher + choice.value;
+    run.gruppenAngriff = jetzt;
+    for (const unit of run.party) {
+      if (unit.isWarMachine) continue;
+      const boni = Object.entries(unit.effektBoni ?? {}).reduce((summe, [k, v]) => summe + (k.endsWith(':atk') ? v : 0), 0);
+      unit.atk = Math.round((unit.atk - boni) * (100 + jetzt) / (100 + vorher)) + boni;
+    }
+    run.combatLog.push(`>> ${choice.label}: Die Gruppe hat jetzt ${jetzt}% mehr Angriff bis zum Ende des Dungeons.`);
+  }
+
+  /**
    * Hort-Gier (RouteDef.hortGier): Jeder Punkt macht den Boss um feste Anteile seiner
-   * Startwerte stärker. Wirkt sofort, damit die Kampf-Vorschau die echten Werte zeigt.
+   * Startwerte stärker, Punkte unter 0 schwächer (Sternenschlund). Wirkt sofort, damit
+   * die Kampf-Vorschau die echten Werte zeigt.
    */
   private hortGierWaechst(run: ExpeditionRun, punkte: number): void {
     const route = ROUTE_DEFS[run.routeId];
@@ -450,8 +474,12 @@ export class ExpeditionSystem {
       }
     }
     const bossName = route.bossId ? ENEMY_DEFS[route.bossId]?.name ?? 'Der Boss' : 'Der Boss';
-    const prozent = (anteil: number): number => Math.round(jetzt * anteil * 100);
-    run.combatLog.push(`>> ${bossName} wittert den Diebstahl: +${prozent(regel.angriffProPunkt)}% Angriff, +${prozent(regel.lebenProPunkt)}% Leben.`);
+    const prozent = (anteil: number): string => {
+      const p = Math.round(jetzt * anteil * 100);
+      return p < 0 ? `−${-p}` : `+${p}`;
+    };
+    const was = punkte > 0 ? 'wittert den Diebstahl' : 'wird schwächer';
+    run.combatLog.push(`>> ${bossName} ${was}: ${prozent(regel.angriffProPunkt)}% Angriff, ${prozent(regel.lebenProPunkt)}% Leben.`);
   }
 
   /** Erster Sieg der Gilde über den Routen-Boss: garantierte Beute (RouteDef.ersterSiegBeute). */

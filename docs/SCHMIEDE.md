@@ -13,7 +13,8 @@ neuer Dungeon für sie braucht.
   («Es fehlen 48 Glutkern.»), und der Knopf ist aus.
 - **Material:** Jedes Gebiet hat sein eigenes (Tabelle unten). Ein Set-Teil braucht das Material aus dem
   Gebiet seines Dungeons. Ein Sieg bringt die **Grundmenge** der Ebene (2 + Ebene: Ebene 1 bringt 3,
-  Ebene 4 bringt 6, Ebene 6 bringt 8). Niederlage oder Rückzug bringen die Hälfte, anteilig zu den
+  Ebene 4 bringt 6, Ebene 8 bringt 10). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
+  Sternenstahl dazu, dafür bleibt Nyxar stark. Niederlage oder Rückzug bringen die Hälfte, anteilig zu den
   geschafften Räumen. Das Material liegt in der Truhe mit dem Hinweis, wofür es ist
   («⚒️ Für die Schmiede: Set-Teile aus dem Feuer»).
 - **Stufen +1 bis +5:** Jede Stufe macht alle Werte eines Teils um 10 % stärker, gerundet. Der Hauptwert
@@ -69,6 +70,12 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
   Musterteam «Gut» in den Sets aus Ebene 4 schafft das Himmelsarchiv ohne Stufen nie, mit allen Teilen auf
   +1 in 25 %, auf +2 in 48 % und auf +3 in 93 % der Läufe. Dafür braucht es aber 120 Grundmengen, je nach
   Einschmelzen 60 bis 120 Siege in vier verschiedenen Dungeons.
+- **Zwischen den Sternen ist die Schmiede Pflicht:** Ohne Stufen schafft das Musterteam «Stark» die
+  Sternenschmiede nie, mit allen Teilen auf +3 in drei von vier Läufen, auf +5 immer. Den Sternenschlund
+  schafft es erst mit allen Teilen auf +5 und Korrunds Meisterstücken (200 Läufe, Tabelle in
+  `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Ein Set aus den Sternen auf +5 kostet 810 bis 900
+  Sternenstahl, 13'000 bis 15'000 Gold (ohne Rabatt der Schmiede in der Stadt) und 63 Kristallsplitter:
+  das lange Ziel ganz oben.
 
 ## Material je Gebiet
 
@@ -84,6 +91,7 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
 | Glutkern | Feuer | Obsidiantunnel, Aschewüste, Magmahöhlen, Vulkankern |
 | Drachenschuppe | Drachenhort | Der Drachenhort |
 | Himmelstinte | Himmelsarchiv | Das Himmelsarchiv |
+| Sternenstahl | Sterne | Die Sternenschmiede, Der Sternenschlund |
 
 Die Dungeon-IDs stehen in `SCHMIEDE_MATERIALIEN` (`src/data/schmiede.ts`).
 
@@ -120,5 +128,5 @@ dazu, bringt ein Sieg schon mehr Material, wie bei den Punkten: Schwer ×1,5, Al
 
 - **Ruhmestruhe** der Rangliste mit Material: wäre ein schöner Preis, noch nicht eingebaut.
 - **Gewöhnliche Ausrüstung einschmelzen:** Bisher nur Set-Teile. Alte T1- bis T3-Stücke stapeln sich.
-- **Eichung mit Stufen:** Die Musterteams der Dungeon-Eichung tragen ihre Sets ohne Stufen. Für die
-  nächsten Dungeons über dem Himmelsarchiv lohnt eine Messung mit Sets auf +3 und +5.
+- **Eichung mit Stufen:** erledigt für die Dungeons zwischen den Sternen (Musterteams mit Sets auf +3 und +5,
+  `MUSTER_SETS.sterne3` und `sterne5`). Die Dungeons darunter misst die Eichung weiter ohne Stufen.

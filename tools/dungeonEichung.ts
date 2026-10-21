@@ -2,8 +2,9 @@
 // Probe-Läufe der drei Musterteams (src/data/musterteams.ts) durch die Dungeons
 // mit `gebiet` (Drachenhort, Himmelsarchiv …), je in drei Spielweisen
 // (src/systems/Musterlauf.ts). Den Vulkankern misst sie zum Vergleich mit.
-// Die zweite Tabelle misst dieselben Teams in vollen Dungeon-Sets (MUSTER_SETS),
-// die dritte ohne Wege (Spezialisierung), damit man sieht, was die Wege ausmachen.
+// Die zweite Tabelle misst dieselben Teams in vollen Dungeon-Sets (MUSTER_SETS, die
+// Sets mit Schmiede-Stufen erst ab ihrer Ebene `abEbene`), die dritte ohne Wege
+// (Spezialisierung), damit man sieht, was die Wege ausmachen.
 // Nach Änderungen an Kampf, Klassen, Ausrüstung oder den Gegnern neu laufen
 // lassen und die Tabellen in docs/NEUE-DUNGEONS.md und docs/DUNGEON-SETS.md anpassen.
 // Aufruf: npm run dungeon-eichung   (mehr Läufe: npm run dungeon-eichung -- 200)
@@ -34,7 +35,7 @@ console.log(`| Dungeon | Team | Ausrüstung | ${SPIELWEISEN.join(' | ')} |`);
 console.log(`|---|---|---|${SPIELWEISEN.map(() => '---').join('|')}|`);
 for (const routeId of ROUTEN.filter(id => ROUTE_DEFS[id].gebiet)) {
   for (const team of TEAMS) {
-    for (const sets of Object.keys(MUSTER_SETS) as MusterSetName[]) {
+    for (const sets of (Object.keys(MUSTER_SETS) as MusterSetName[]).filter(s => ROUTE_DEFS[routeId].tier >= (MUSTER_SETS[s].abEbene ?? 0))) {
       console.log(`| ${ROUTE_DEFS[routeId].name} | ${team} | ${MUSTER_SETS[sets].name} | ${SPIELWEISEN.map(sw => quote(routeId, team, sw, sets)).join(' | ')} |`);
     }
   }
