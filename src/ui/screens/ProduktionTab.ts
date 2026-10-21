@@ -292,10 +292,11 @@ function kantenPfad(von: Rect, nach: Rect, vonBreit: boolean, nachBreit: boolean
       lx: (sx + ex) / 2, ly: my - 4, anchor: 'middle',
     };
   }
-  // Nebeneinander in derselben Reihe
-  if (nach.x >= von.x + von.w - 2) {
-    const sx = von.x + von.w;
-    const ex = nach.x - 1;
+  // Nebeneinander in derselben Reihe, nach rechts oder nach links (Brunnen → Kräutergarten, Mühle → Bäckerei)
+  const nachRechts = nach.x >= von.x + von.w - 2;
+  if (nachRechts || von.x >= nach.x + nach.w - 2) {
+    const sx = nachRechts ? von.x + von.w : von.x;
+    const ex = nachRechts ? nach.x - 1 : nach.x + nach.w + 1;
     const sy = von.y + Math.min(von.h, nach.h) / 2;
     const ey = nach.y + Math.min(von.h, nach.h) / 2;
     const mx = (sx + ex) / 2;

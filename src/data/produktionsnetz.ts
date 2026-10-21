@@ -4,6 +4,10 @@
 // ganze Breite); darunter hängen die Werkstätten, zuunterst die Stadt
 // (Wohnviertel, Gilde, Handel) und die Ziele. Jedes Gebäude kommt genau
 // einmal vor (ein Gebäude je Art, Ausbau statt Mehrfachbau).
+// Der Brunnen steht in der Werkstatt-Reihe zwischen Kräutergarten und
+// Bäckerei, die Mühle rechts daneben: Wasser und Mehl gehen als kurze
+// Linien zur Seite, ohne Kreuzung (Christoph 21.10.2026: «der brunnen
+// ist so weit rechts … und dann sind sie so verbunden»).
 // Darstellung: ui/screens/ProduktionTab.ts, Engpässe: systems/EngpassSystem.ts.
 // Wunsch Christoph 18.10.2026: «alle Gebäude, die Ressourcen erzeugen,
 // zum Lagerhaus, dann die Crafting-Gebäude, wie eine Mindmap in Reihen».
@@ -56,7 +60,6 @@ export const NETZ_REIHEN: NetzReihe[] = [
     knoten: [
       { art: 'gebaeude', id: 'WAREHOUSE', typeId: 'WAREHOUSE', breit: true },
       { art: 'ziel', id: 'z:bauen', titel: 'Bauen & Ausbauen', wert: 'bauen' },
-      { art: 'gebaeude', id: 'WELL', typeId: 'WELL' },
     ],
   },
   {
@@ -68,8 +71,9 @@ export const NETZ_REIHEN: NetzReihe[] = [
       { art: 'gebaeude', id: 'ARCANE_SMITHY', typeId: 'ARCANE_SMITHY' },
       { art: 'gebaeude', id: 'WAR_MACHINE_WORKSHOP', typeId: 'WAR_MACHINE_WORKSHOP' },
       { art: 'gebaeude', id: 'HERB_GARDEN', typeId: 'HERB_GARDEN' },
-      { art: 'gebaeude', id: 'MILL_WIND', typeId: 'MILL_WIND' },
+      { art: 'gebaeude', id: 'WELL', typeId: 'WELL' },
       { art: 'gebaeude', id: 'BAKERY', typeId: 'BAKERY' },
+      { art: 'gebaeude', id: 'MILL_WIND', typeId: 'MILL_WIND' },
     ],
   },
   {
@@ -101,7 +105,7 @@ export const NETZ_KANTEN: NetzKante[] = [
   { von: 'WAREHOUSE', nach: 'WAR_MACHINE_WORKSHOP', ware: 'Holz · Stein · Eisen' },
   { von: 'WAREHOUSE', nach: 'HERB_GARDEN', ware: 'seltene Kräuter' },
   { von: 'WAREHOUSE', nach: 'MILL_WIND', ware: 'Getreide' },
-  // Versorgung
+  // Versorgung (Nachbarn in der Werkstatt-Reihe)
   { von: 'WELL', nach: 'HERB_GARDEN', ware: 'Wasser', art: 'versorgung' },
   { von: 'WELL', nach: 'BAKERY', ware: 'Wasser', art: 'versorgung' },
   // Zwischenschritte

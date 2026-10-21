@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { getGebaeudeStatus, freischaltHinweise } from './GebaeudeStatus';
 import { engpassFuerGebaeude, engpaesseDerStadt } from './EngpassSystem';
+import { auftragGeben } from './Auftraege';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
@@ -122,6 +123,8 @@ describe('EngpassSystem', () => {
     const schmiede = bauen(state, 'SMITHY', 'RCP_IRON_SWORD');
     arbeiter(state, schmiede);
     state.globalStock['iron_scrap'] = 0;
+    expect(engpassFuerGebaeude(state, 'SMITHY')).toBeNull(); // ohne Auftrag fehlt nichts
+    auftragGeben(schmiede, 'RCP_IRON_SWORD');
     const satz = engpassFuerGebaeude(state, 'SMITHY');
     expect(satz).toContain('0 im Lager, 2 pro Auftrag');
     expect(satz).toContain('Baue Eisenmine');
@@ -131,8 +134,12 @@ describe('EngpassSystem', () => {
     const state = createNewGameState();
     const schmiede = bauen(state, 'SMITHY', 'RCP_IRON_SWORD');
     arbeiter(state, schmiede);
-    bauen(state, 'IRON_MINE', 'RCP_IRON_1');
+    auftragGeben(schmiede, 'RCP_IRON_SWORD');
+    const mine = bauen(state, 'IRON_MINE', 'RCP_IRON_SCRAP_1');
     state.globalStock['iron_scrap'] = 0;
+    // Ohne Arbeiter liefert die Mine nicht: das steht da statt des Ausbau-Rats
+    expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('Eisenmine kann gerade nicht liefern: kein Arbeiter.');
+    arbeiter(state, mine);
     // Am Lagerfeuer erlaubt die Stadt noch keinen Ausbau: der Satz nennt die nötige Stadtstufe
     expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('erst die Stadtstufe «Dorf»');
     state.stadtweg!.stufe = 3;

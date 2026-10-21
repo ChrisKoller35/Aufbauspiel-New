@@ -47,7 +47,8 @@ die halbe Produktionskette wertlos.
   1 Brot, das nach dem Essen übrig sein muss). Ohne Brot gibt es −20 statt +10 Zufriedenheit, niemand zieht aus.
   Das Startbrot (10) reicht ohne Brotkette 10 Tage. Die Brotkette backt auf Stufe 1 knapp 2, auf Stufe 2 knapp 3,7
   und auf Stufe 3 etwa 5 Brot pro Tag; der Verbrauch ist so gewählt, dass sie auf der Stufe, die eine Stadtstufe
-  erlaubt, das volle Wohnviertel satt macht (`tests/startwirtschaft.test.ts`). Mit 1 Brot je angefangene
+  erlaubt, das volle Wohnviertel satt macht (`tests/startwirtschaft.test.ts`). Seit 21.10.2026 backt die Bäckerei
+  nicht mehr ohne Pause, sondern hält von selbst Brot für 3 Tage bereit, vor ihren Aufträgen (`docs/WERKSTAETTEN.md`). Mit 1 Brot je angefangene
   6 Bewohner fehlte im Weiler, im Marktflecken und in der Grossstadt jeden Tag Brot, ohne dass man etwas
   ausbauen konnte.
 - Überbelegung kostet 5 Zufriedenheit je Bewohner zu viel, höchstens 30 (vorher ohne Deckel).
@@ -60,8 +61,10 @@ Vier Reihen von oben nach unten, Linien aus den echten Kartenpositionen (SVG, go
 stehen, gestrichelt = Wasser-Versorgung):
 
 1. **Gewinnen:** Holzfällerhütte, Steinbruch, Getreidefarm, Eisenmine, Kristalle und Kräuter aus den Dungeons.
-2. **Lager:** Lagerhaus als Balken über die ganze Breite mit den wichtigsten Vorräten, daneben «Bauen & Ausbauen» und der Brunnen.
-3. **Werkstätten:** Schmiede, Arkanschmiede, Kriegsmaschinen-Werkstatt, Kräutergarten, Windmühle, Bäckerei.
+2. **Lager:** Lagerhaus als Balken über die ganze Breite mit den wichtigsten Vorräten, daneben «Bauen & Ausbauen».
+3. **Werkstätten:** Schmiede, Arkanschmiede, Kriegsmaschinen-Werkstatt, Kräutergarten, Brunnen, Bäckerei, Windmühle.
+   Seit 21.10.2026 steht der Brunnen zwischen den beiden Gebäuden, die er mit Wasser versorgt, und die Mühle liefert
+   von rechts in die Bäckerei: nur kurze Linien, keine kreuzt eine andere (`docs/WERKSTAETTEN.md`).
 4. **Stadt:** Gildenhaus, «Expeditionen», Wohnviertel, Marktplatz, Bank.
 
 Über der Karte stehen bis zu drei **Engpässe** der Stadt als Knöpfe (klick öffnet das Gebäude). Jedes

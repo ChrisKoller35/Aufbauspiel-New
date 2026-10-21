@@ -10,6 +10,7 @@ import { EconomySystem } from '../src/systems/EconomySystem';
 import { ProductionSystem } from '../src/systems/ProductionSystem';
 import { TAG_SEKUNDEN, wachstum } from '../src/systems/GebaeudeStatus';
 import { STADTSTUFEN } from '../src/data/stadtstufen';
+import { vorratZiel } from '../src/systems/Werkstattplan';
 
 const BROTKETTE = ['FARM_GRAIN', 'WELL', 'MILL_WIND', 'BAKERY'];
 
@@ -177,23 +178,34 @@ describe('Startwirtschaft: Brot als täglicher Verbrauch', () => {
     expect(state.citizens).toHaveLength(6);
   });
 
-  it('die Brotkette ist mit dem Startlager baubar und hält den Vorrat über 10 Tage', () => {
+  // Seit 21.10.2026 arbeiten Mühle und Bäckerei nur auf Bedarf (systems/Werkstattplan.ts):
+  // Brot für die Bewohner backt die Bäckerei nach, bis es für 3 Tage reicht.
+  it('die Brotkette ist mit dem Startlager baubar und hält 3 Tage Brot vorrätig', () => {
     const state = neuesSpiel();
     state.globalStock.gold -= heldenPreis(0);
     for (const typeId of BROTKETTE) expect(kaufe(state, typeId)).toBe(true);
     const spiel = new Spiel(state);
+    const ziel = vorratZiel(state, 'BAKERY');
+    expect(ziel).toBe(3); // 6 Bewohner essen 1 Brot am Tag, das Wohnviertel ist voll
     let ersteBrotSekunde = 0;
     let minBrot = Infinity;
-    const anfang = state.globalStock.bread;
-    while (spiel.sekunde < 10 * TAG_SEKUNDEN) {
+    let maxMehl = 0;
+    let vorher = state.globalStock.bread;
+    while (spiel.sekunde < 12 * TAG_SEKUNDEN) {
       spiel.takt();
       minBrot = Math.min(minBrot, state.globalStock.bread);
-      if (!ersteBrotSekunde && state.globalStock.bread > anfang) ersteBrotSekunde = spiel.sekunde;
+      maxMehl = Math.max(maxMehl, state.globalStock.flour ?? 0);
+      if (!ersteBrotSekunde && state.globalStock.bread > vorher) ersteBrotSekunde = spiel.sekunde;
+      vorher = state.globalStock.bread;
     }
-    expect(ersteBrotSekunde).toBeGreaterThan(0);
-    expect(ersteBrotSekunde).toBeLessThan(TAG_SEKUNDEN * 2);
+    // Das Startbrot (10) reicht 7 Tage, erst darunter backt die Bäckerei nach
+    expect(ersteBrotSekunde).toBeGreaterThan(7 * TAG_SEKUNDEN);
+    expect(ersteBrotSekunde).toBeLessThan(10 * TAG_SEKUNDEN);
     expect(minBrot).toBeGreaterThanOrEqual(1);
-    expect(state.globalStock.bread).toBeGreaterThan(anfang); // ~2 Brot gebacken, 1 gegessen pro Tag
+    expect(state.globalStock.bread).toBeGreaterThanOrEqual(2);
+    expect(state.globalStock.bread).toBeLessThanOrEqual(ziel);
+    expect(maxMehl).toBeLessThanOrEqual(2); // die Mühle mahlt nur, was die Bäckerei gerade braucht
+    expect(state.globalStock.grain).toBeGreaterThan(0); // Getreide kommt weiter von selbst
   });
 
   // Die Brotkette backt auf Stufe 1 knapp 2 Brot pro Tag, auf Stufe 2 knapp 4 und auf Stufe 3 etwa 5.

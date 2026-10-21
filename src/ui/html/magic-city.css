@@ -788,8 +788,17 @@ text.pk-kl.an { fill: var(--gl); }
 .ws-cancel { margin-left: auto; background: transparent; border: 1px solid var(--bdr); color: #f87171; border-radius: 4px; padding: 0 7px; cursor: pointer; }
 .ws-cancel:hover { border-color: #f87171; }
 .ws-rcp.ws-rcp-auf { cursor: default; }
-.ws-rcp-auf .ws-add { width: auto; margin: 0 0 0 6px; padding: 3px 9px; font-size: 0.65rem; }
+.ws-rcp-auf .ws-add { width: auto; margin: 0 0 0 6px; padding: 3px 9px; font-size: 0.65rem; white-space: nowrap; flex: none; }
 .craft-lauf { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 9px; }
+/* Von selbst (systems/Werkstattplan.ts): fehlende Zutat, die eine Werkstatt der Stadt macht, und der Zyklus dafür */
+.cost-auto { color: #f0c674; }
+.craft-selbst { color: #f0c674; }
+.ingr.craft-selbst { border-color: rgba(240,198,116,.45); }
+.ccard-st { min-width: 0; }
+.ws-auf.ws-selbst { border-style: dashed; }
+.ws-auf.ws-selbst.on { border-color: rgba(240,198,116,.6); }
+.ws-von-selbst { margin-left: auto; font-size: 0.62rem; color: #f0c674; border: 1px solid rgba(240,198,116,.45); border-radius: 3px; padding: 0 6px; white-space: nowrap; }
+.ws-selbst-satz { margin-top: 8px; font-size: 0.7rem; line-height: 1.45; }
 .hdr-note { font-size: 0.75rem; color: #4ade80; margin-left: 12px; animation: hdr-note-in .3s ease-out; }
 @keyframes hdr-note-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 

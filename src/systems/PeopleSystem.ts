@@ -18,6 +18,12 @@ export function brotProTag(bewohner: number): number {
   return bewohner <= 0 ? 0 : Math.max(1, Math.floor(bewohner / BEWOHNER_JE_BROT));
 }
 
+/** Brot, das die Stadt pro Tag braucht: was die Bewohner essen und, solange Platz ist, 1 für den nächsten Bewohner. */
+export function brotBedarfProTag(state: GameState): number {
+  const bewohner = state.citizens.length;
+  return brotProTag(bewohner) + (bewohner < wohnKapazitaet(state) ? 1 : 0);
+}
+
 /** Brot, das nach dem Essen beim nächsten Tageswechsel noch im Lager liegt (nie unter 0). */
 export function brotNachEssen(state: GameState): number {
   return Math.max(0, (state.globalStock.bread ?? 0) - brotProTag(state.citizens.length));
