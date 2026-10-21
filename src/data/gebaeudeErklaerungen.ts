@@ -20,10 +20,10 @@ export const ERKLAERUNG: Record<string, string> = {
   WAR_MACHINE_WORKSHOP: 'Baut Kriegsmaschinen, die deinen Helden auf Expeditionen helfen.',
   HERB_GARDEN: 'Braut Heiltränke und Tränke aus Kräutern, mit Wasser vom Brunnen.',
   MILL_WIND: 'Mahlt Getreide zu Mehl für die Bäckerei.',
-  BAKERY: 'Backt Brot aus Mehl und Wasser. Ohne Brot kommen keine neuen Bewohner.',
+  BAKERY: 'Backt Brot aus Mehl und Wasser. Deine Bewohner essen jeden Tag Brot, ohne Brot sinkt die Zufriedenheit und es kommen keine neuen Bewohner.',
   GUILD_HALL: 'Hier wohnen und trainieren deine Helden. Von hier starten die Expeditionen.',
   'z:expeditionen': 'Helden, Ausrüstung und Tränke ziehen in die Dungeons und bringen Gold und Beute zurück.',
-  HOUSE_T1: 'Hier wohnen deine Bewohner. Sie arbeiten in den Werkstätten und zahlen jeden Tag Steuern.',
+  HOUSE_T1: 'Hier wohnen deine Bewohner. Sie arbeiten in den Werkstätten, zahlen jeden Tag Steuern und essen 1 Brot je 6 Bewohner.',
   MARKETPLACE: 'Mit Arbeitern bringt der Marktplatz mehr Steuern ein.',
   BANK: 'Mit Arbeitern bringt die Bank jeden Tag zusätzlich Gold.',
 };

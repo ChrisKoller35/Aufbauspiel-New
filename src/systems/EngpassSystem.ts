@@ -12,6 +12,7 @@ import {
   getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, dasGebaeude, einzelStatus, WarteGrund,
 } from './GebaeudeStatus';
 import { maxStufe, stufeVon, arbeitsplaetze, besetzt, fehlendeStadtstufe } from './Ausbau';
+import { brotNachEssen } from './PeopleSystem';
 import { naechsterBau } from './Empfehlung';
 
 /** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept). */
@@ -40,7 +41,7 @@ function wohnAusbauSatz(state: GameState): string {
 
 function wohnHinweis(state: GameState): string {
   if (state.citizens.length >= wohnKapazitaet(state)) return wohnAusbauSatz(state);
-  if ((state.globalStock.bread ?? 0) < 1) return 'Neue Bewohner kommen nur mit Brot im Lager.';
+  if (brotNachEssen(state) < 1) return 'Neue Bewohner kommen nur, wenn nach dem Essen noch Brot übrig ist.';
   return 'Der nächste Bewohner kommt bald.';
 }
 
@@ -68,7 +69,7 @@ export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): 
       return freieBewohner(state) > 0
         ? `${name} bekommt gleich einen Arbeiter.`
         : `${name} hat keinen Arbeiter, alle Bewohner arbeiten schon. ${wohnHinweis(state)}`;
-    case 'kein-brot': return 'Neue Bewohner kommen nur mit Brot im Lager: baue die Brot-Kette auf.';
+    case 'kein-brot': return 'Bewohner essen jeden Tag Brot, neue kommen nur mit Brot übrig: baue die Brot-Kette auf.';
     case 'voll': return `Das Wohnviertel ist voll (${state.citizens.length}/${wohnKapazitaet(state)}). ${wohnAusbauSatz(state)}`;
     case 'zutaten': {
       const ware = itemName(grund.item);

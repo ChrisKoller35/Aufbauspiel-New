@@ -26,6 +26,7 @@ import {
   erstatteLaufendenZyklus, entferneGebaeude, investiert, wirkungsStufe, marktBonusProzent, bankGoldProTag,
 } from '../../systems/Ausbau';
 import { EconomySystem, STEUER_PRO_BEWOHNER } from '../../systems/EconomySystem';
+import { brotProTag, BEWOHNER_JE_BROT } from '../../systems/PeopleSystem';
 import {
   MAX_AUFTRAEGE, auftragsListe, auftragGeben, auftragAbbrechen, hatAuftragsliste, kannAuftragGeben, restzeitSekunden,
 } from '../../systems/Auftraege';
@@ -733,6 +734,10 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
     zeilen.push({ label: 'Arbeiten · frei', wert: `${arbeiten} · ${frei}` });
     zeilen.push({ label: 'Zufriedenheit', wert: `${zufrieden} %`, cls: zufrieden >= 50 ? 'gut' : 'schlecht' });
     zeilen.push({ label: 'Brot im Lager', wert: `${Math.floor(state.globalStock.bread ?? 0)}`, cls: (state.globalStock.bread ?? 0) >= 1 ? 'gut' : 'schlecht' });
+    const brot = brotProTag(bewohner);
+    const reicht = Math.floor((state.globalStock.bread ?? 0) / Math.max(1, brot));
+    zeilen.push({ label: 'Brot pro Tag', wert: `−${brot}`, cls: reicht >= 1 ? undefined : 'schlecht',
+      klein: `1 Brot je angefangene ${BEWOHNER_JE_BROT} Bewohner, der Vorrat reicht ${reicht === 1 ? '1 Tag' : `${reicht} Tage`}.` });
     zeilen.push({ label: 'Steuern pro Tag', wert: `${r.gesamt} Gold`, cls: 'gut', klein: rechnung });
     return zeilen;
   }
@@ -766,7 +771,7 @@ function renderWachstum(state: GameState): string {
   const w = wachstum(state);
   const text = w.waechst ? 'Der nächste Bewohner kommt beim Tageswechsel.'
     : w.grund?.art === 'voll' ? 'Das Wohnviertel ist voll: baue es aus, damit neue Bewohner kommen.'
-    : 'Neue Bewohner kommen nur mit Brot im Lager.';
+    : 'Bewohner essen jeden Tag Brot. Neue kommen nur, wenn danach noch Brot übrig ist.';
   const pct = Math.round(tagFortschritt(state) * 100);
   return `
     <div class="bm-wachs ${w.waechst ? 'gut' : 'schlecht'}">
