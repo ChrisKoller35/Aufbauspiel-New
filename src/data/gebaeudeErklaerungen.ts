@@ -23,7 +23,7 @@ export const ERKLAERUNG: Record<string, string> = {
   BAKERY: 'Backt Brot aus Mehl und Wasser. Deine Bewohner essen jeden Tag Brot, ohne Brot sinkt die Zufriedenheit und es kommen keine neuen Bewohner.',
   GUILD_HALL: 'Hier wohnen und trainieren deine Helden. Von hier starten die Expeditionen.',
   'z:expeditionen': 'Helden, Ausrüstung und Tränke ziehen in die Dungeons und bringen Gold und Beute zurück.',
-  HOUSE_T1: 'Hier wohnen deine Bewohner. Sie arbeiten in den Werkstätten, zahlen jeden Tag Steuern und essen 1 Brot je 6 Bewohner.',
+  HOUSE_T1: 'Hier wohnen deine Bewohner. Sie arbeiten in den Werkstätten, zahlen jeden Tag Steuern und essen 1 Brot je 8 Bewohner (mindestens 1).',
   MARKETPLACE: 'Mit Arbeitern bringt der Marktplatz mehr Steuern ein.',
   BANK: 'Mit Arbeitern bringt die Bank jeden Tag zusätzlich Gold.',
 };

@@ -155,6 +155,7 @@ NPC-Rettung, Talismane, Stadt-Ereignisse, Synergien, Wochen-Herausforderungen: C
   Steuer nur 2 Gold pro Tag. Gold ist am Anfang viel zu knapp, Holz praktisch unendlich (Holzfäller kostet 10 Holz).
 - Stein ist der Engpass: Die Eisenmine braucht den ganzen Startstein.
 - Brot wird kaum gebraucht (nur für Wachstum), die Brot-Kette (Farm, Mühle, Bäckerei, Brunnen) lohnt sich kaum.
+  → Behoben 21.10.2026 (PR #32): Die Bewohner essen jeden Tag Brot, siehe `docs/AUSBAU.md`.
 - Nie erhältlich: Wasser, Glutwurzel, Schimmerpilz, Sumpfblüte, Knochenstaub, Mondkraut. Dadurch sind 5 von 7
   Trank-Rezepten unmöglich. Kristallsplitter fallen nur selten (ca. 5 % in seltener Beute), werden aber für fast
   alle besseren Rezepte und die Arkanschmiede gebraucht. → Behoben 18.10.2026, siehe `docs/BALANCING.md`.

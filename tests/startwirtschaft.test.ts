@@ -9,6 +9,7 @@ import { SatisfactionSystem } from '../src/systems/SatisfactionSystem';
 import { EconomySystem } from '../src/systems/EconomySystem';
 import { ProductionSystem } from '../src/systems/ProductionSystem';
 import { TAG_SEKUNDEN, wachstum } from '../src/systems/GebaeudeStatus';
+import { STADTSTUFEN } from '../src/data/stadtstufen';
 
 const BROTKETTE = ['FARM_GRAIN', 'WELL', 'MILL_WIND', 'BAKERY'];
 
@@ -98,15 +99,15 @@ function goldTempo(festeZufriedenheit?: number): Messung {
 }
 
 describe('Startwirtschaft: Brot als täglicher Verbrauch', () => {
-  it('1 Brot je angefangene 6 Bewohner pro Tag', () => {
+  it('1 Brot je volle 8 Bewohner pro Tag, mindestens 1', () => {
     expect(brotProTag(0)).toBe(0);
     expect(brotProTag(1)).toBe(1);
     expect(brotProTag(6)).toBe(1);
-    expect(brotProTag(7)).toBe(2);
-    expect(brotProTag(12)).toBe(2);
-    expect(brotProTag(13)).toBe(3);
-    expect(brotProTag(18)).toBe(3);
-    expect(brotProTag(36)).toBe(6);
+    expect(brotProTag(8)).toBe(1);
+    expect(brotProTag(15)).toBe(1);
+    expect(brotProTag(16)).toBe(2);
+    expect(brotProTag(24)).toBe(3);
+    expect(brotProTag(36)).toBe(4);
   });
 
   it('erst essen, dann wachsen: ein neuer Bewohner nur, wenn nach dem Essen Brot übrig ist', () => {
@@ -126,16 +127,18 @@ describe('Startwirtschaft: Brot als täglicher Verbrauch', () => {
     expect(state.globalStock.bread).toBe(0);
     expect(state.citizens).toHaveLength(7);
 
-    state.globalStock.bread = 5; // 7 Bewohner essen 2
+    state.buildings.find(b => b.typeId === 'HOUSE_T1')!.tier = 3; // 18 Plätze
+    while (state.citizens.length < 16) state.citizens.push(createCitizen('IDLE'));
+    state.globalStock.bread = 5; // 16 Bewohner essen 2
     expect(brotNachEssen(state)).toBe(3);
     people.dayTick(state);
     expect(state.globalStock.bread).toBe(2);
-    expect(state.citizens).toHaveLength(8);
+    expect(state.citizens).toHaveLength(17);
   });
 
   it('das Brot im Lager geht nie unter 0', () => {
     const state = neuesSpiel();
-    for (let i = 0; i < 12; i++) state.citizens.push(createCitizen('IDLE')); // 18 Bewohner essen 3
+    for (let i = 0; i < 18; i++) state.citizens.push(createCitizen('IDLE')); // 24 Bewohner essen 3
     const people = new PeopleSystem();
     for (const vorrat of [0, 1, 2, 2.5]) {
       state.globalStock.bread = vorrat;
@@ -191,6 +194,34 @@ describe('Startwirtschaft: Brot als täglicher Verbrauch', () => {
     expect(ersteBrotSekunde).toBeLessThan(TAG_SEKUNDEN * 2);
     expect(minBrot).toBeGreaterThanOrEqual(1);
     expect(state.globalStock.bread).toBeGreaterThan(anfang); // ~2 Brot gebacken, 1 gegessen pro Tag
+  });
+
+  // Die Brotkette backt auf Stufe 1 knapp 2 Brot pro Tag, auf Stufe 2 knapp 4 und auf Stufe 3 etwa 5.
+  // Mit 1 Brot je angefangene 6 Bewohner fehlte darum im Weiler (12 essen 2), im Marktflecken (24 essen 4)
+  // und in der Grossstadt (36 essen 6) jeden Tag Brot, obwohl die Kette so weit ausgebaut war, wie es ging.
+  it('auf jeder Stadtstufe reicht die erlaubt ausgebaute Brotkette für das volle Wohnviertel', () => {
+    for (const { name, grenzen } of STADTSTUFEN) {
+      const state = neuesSpiel();
+      Object.assign(state.globalStock, { wood: 999, stone: 999, gold: 999 });
+      for (const typeId of BROTKETTE) expect(kaufe(state, typeId)).toBe(true);
+      for (const b of state.buildings) {
+        if (b.typeId === 'HOUSE_T1') b.tier = grenzen.wohnen;
+        if (['FARM_GRAIN', 'MILL_WIND', 'BAKERY'].includes(b.typeId)) b.tier = grenzen.werkstatt;
+      }
+      const voll = 6 * grenzen.wohnen;
+      while (state.citizens.length < Math.max(6, voll - 6)) state.citizens.push(createCitizen('IDLE'));
+      const spiel = new Spiel(state);
+      let vollAmTag = 0;
+      let ohneBrot = 0;
+      while (spiel.sekunde < 40 * TAG_SEKUNDEN) {
+        spiel.takt();
+        if (state.globalStock.bread < 1) ohneBrot++;
+        if (!vollAmTag && state.citizens.length >= voll) vollAmTag = spiel.sekunde / TAG_SEKUNDEN;
+      }
+      expect(vollAmTag, name).toBeGreaterThan(0);
+      expect(vollAmTag, name).toBeLessThanOrEqual(10);
+      expect(ohneBrot, `${name}: Sekunden ohne Brot`).toBe(0);
+    }
   });
 });
 

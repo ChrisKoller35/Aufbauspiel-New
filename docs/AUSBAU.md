@@ -42,6 +42,14 @@ die halbe Produktionskette wertlos.
   → Marktplatz → Bank).
 - Das Wohnviertel zeigt im Fenster: Bewohner / Plätze, wer arbeitet und wer frei ist, Zufriedenheit, Brot,
   Steuern pro Tag mit Rechnung, und ob die Stadt wächst (Balken bis zum Tageswechsel).
+- **Brot ist täglicher Verbrauch** (seit 21.10.2026, PR #32): Beim Tageswechsel essen die Bewohner 1 Brot je
+  volle 8 Bewohner, mindestens 1 (6 = 1, 16 = 2, 36 = 4), erst danach wächst die Stadt (ein neuer Bewohner kostet
+  1 Brot, das nach dem Essen übrig sein muss). Ohne Brot gibt es −20 statt +10 Zufriedenheit, niemand zieht aus.
+  Das Startbrot (10) reicht ohne Brotkette 10 Tage. Die Brotkette backt auf Stufe 1 knapp 2, auf Stufe 2 knapp 3,7
+  und auf Stufe 3 etwa 5 Brot pro Tag; der Verbrauch ist so gewählt, dass sie auf der Stufe, die eine Stadtstufe
+  erlaubt, das volle Wohnviertel satt macht (`tests/startwirtschaft.test.ts`). Mit 1 Brot je angefangene
+  6 Bewohner fehlte im Weiler, im Marktflecken und in der Grossstadt jeden Tag Brot, ohne dass man etwas
+  ausbauen konnte.
 - Überbelegung kostet 5 Zufriedenheit je Bewohner zu viel, höchstens 30 (vorher ohne Deckel).
 - Start: 6 Bewohner, Wohnviertel Stufe 1 mit 6 Plätzen (vorher ein Haus für 4 → Start mit Überbelegung,
   Zufriedenheit 30 %, 2 Gold pro Tag; jetzt 50 % und ca. 6 Gold pro Tag).

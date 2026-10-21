@@ -6,11 +6,16 @@ import { createGuildFighter } from '../models/GuildRoster';
 import { wohnKapazitaet, arbeitsplaetze } from './Ausbau';
 
 /** So viele Bewohner werden von einem Brot pro Tag satt. */
-export const BEWOHNER_JE_BROT = 6;
+export const BEWOHNER_JE_BROT = 8;
 
-/** Brot, das die Bewohner jeden Tag essen: 1 je angefangene 6 Bewohner (6 = 1, 7 = 2, 12 = 2). */
+/**
+ * Brot, das die Bewohner jeden Tag essen: 1 je volle 8 Bewohner, mindestens 1 (6 = 1, 15 = 1, 16 = 2, 36 = 4).
+ * So reicht die Brotkette auf der Stufe, die eine Stadtstufe erlaubt, für ihr volles Wohnviertel
+ * (tests/startwirtschaft.test.ts); mit 1 je angefangene 6 fehlte im Weiler, Marktflecken und in der
+ * Grossstadt jeden Tag Brot, ohne dass man etwas ausbauen konnte.
+ */
 export function brotProTag(bewohner: number): number {
-  return Math.ceil(Math.max(0, bewohner) / BEWOHNER_JE_BROT);
+  return bewohner <= 0 ? 0 : Math.max(1, Math.floor(bewohner / BEWOHNER_JE_BROT));
 }
 
 /** Brot, das nach dem Essen beim nächsten Tageswechsel noch im Lager liegt (nie unter 0). */

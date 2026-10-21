@@ -737,7 +737,7 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
     const brot = brotProTag(bewohner);
     const reicht = Math.floor((state.globalStock.bread ?? 0) / Math.max(1, brot));
     zeilen.push({ label: 'Brot pro Tag', wert: `−${brot}`, cls: reicht >= 1 ? undefined : 'schlecht',
-      klein: `1 Brot je angefangene ${BEWOHNER_JE_BROT} Bewohner, der Vorrat reicht ${reicht === 1 ? '1 Tag' : `${reicht} Tage`}.` });
+      klein: `1 Brot je ${BEWOHNER_JE_BROT} Bewohner (mindestens 1), der Vorrat reicht ${reicht === 1 ? '1 Tag' : `${reicht} Tage`}.` });
     zeilen.push({ label: 'Steuern pro Tag', wert: `${r.gesamt} Gold`, cls: 'gut', klein: rechnung });
     return zeilen;
   }
