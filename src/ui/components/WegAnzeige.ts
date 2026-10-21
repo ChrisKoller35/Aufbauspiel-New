@@ -10,16 +10,16 @@ import { WegWirkung, WegWirkungArt } from '../../models/ExpeditionRun';
 import { MEISTER_AB_STUFE, SpezialisierungDef, WEG_AB_STUFE, wegeDerKlasse } from '../../data/spezialisierungen';
 import { istMeister, kannWegWaehlen, wegVon } from '../../systems/Spezialisierung';
 
-/** Bilanz in Worten, in dieser Reihenfolge: «1.240 Schaden, 380 Leben geheilt» */
-const WIRKUNG: [WegWirkungArt, (zahl: string) => string][] = [
+/** Bilanz in Worten, in dieser Reihenfolge: «1.240 Schaden, 380 Leben geheilt» (`eins`: genau 1, Einzahl) */
+const WIRKUNG: [WegWirkungArt, (zahl: string, eins: boolean) => string][] = [
   ['schaden', z => `${z} Schaden`],
   ['verhindert', z => `${z} Schaden verhindert`],
   ['heilung', z => `${z} Leben geheilt`],
   ['schild', z => `${z} Schild verteilt`],
-  ['krit', z => `${z} sichere Krits`],
-  ['umgelenkt', z => `${z} Angriffe umgelenkt`],
-  ['abgefangen', z => `${z} Angriffe abgefangen`],
-  ['angezogen', z => `${z} Angriffe auf sich gezogen`],
+  ['krit', (z, eins) => `${z} ${eins ? 'sicherer Krit' : 'sichere Krits'}`],
+  ['umgelenkt', (z, eins) => `${z} ${eins ? 'Angriff' : 'Angriffe'} umgelenkt`],
+  ['abgefangen', (z, eins) => `${z} ${eins ? 'Angriff' : 'Angriffe'} abgefangen`],
+  ['angezogen', (z, eins) => `${z} ${eins ? 'Angriff' : 'Angriffe'} auf sich gezogen`],
   ['ausgewichen', z => `${z}× ausgewichen`],
 ];
 
@@ -27,8 +27,9 @@ const WIRKUNG: [WegWirkungArt, (zahl: string) => string][] = [
 export function wirkungText(wirkung: WegWirkung | undefined): string {
   if (!wirkung) return '';
   return WIRKUNG
-    .filter(([art]) => Math.round(wirkung[art] ?? 0) > 0)
-    .map(([art, text]) => text(Math.round(wirkung[art]!).toLocaleString('de')))
+    .map(([art, text]) => [Math.round(wirkung[art] ?? 0), text] as const)
+    .filter(([zahl]) => zahl > 0)
+    .map(([zahl, text]) => text(zahl.toLocaleString('de'), zahl === 1))
     .join(', ');
 }
 

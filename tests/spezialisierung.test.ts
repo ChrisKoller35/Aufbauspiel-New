@@ -740,6 +740,8 @@ describe('Wege: Bilanz und Zustände im Kampf', () => {
     expect(wirkungText(undefined)).toBe('');
     const f = held('Brom', 'guardian', 'guardian_phalanx');
     expect(wegWirkungZeile(f, { schild: 240, abgefangen: 2 })).toBe('🧱 Phalanx: 240 Schild verteilt, 2 Angriffe abgefangen');
+    expect(wirkungText({ krit: 1, umgelenkt: 1.2 })).toBe('1 sicherer Krit, 1 Angriff umgelenkt');
+    expect(wirkungText({ krit: 7, angezogen: 1 })).toBe('7 sichere Krits, 1 Angriff auf sich gezogen');
     expect(wegWirkungZeile(held('Lia', 'ranger', null), { schaden: 5 })).toBe('');
     expect(wegBereichHtml(f, null)).toContain('steht hier nach der nächsten Expedition');
     wegBilanzDazu(f, { schild: 120.4 });
