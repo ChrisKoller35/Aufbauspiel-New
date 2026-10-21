@@ -14,6 +14,7 @@ import { BuildingInstance } from '../models/Building';
 import {
   zyklusSekunden, wohnKapazitaet, stufeVon, arbeitsplaetze, besetzt, wirkungsStufe, marktBonusProzent, bankGoldProTag,
 } from './Ausbau';
+import { brotNachEssen } from './PeopleSystem';
 
 export { wohnKapazitaet };
 
@@ -193,7 +194,7 @@ function ertragText(b: BuildingInstance, recipe: RecipeDef): string {
 /** Wächst die Stadt beim nächsten Tageswechsel? Sonst der Grund (wie PeopleSystem.dayTick). */
 export function wachstum(state: GameState): { waechst: boolean; grund?: WarteGrund } {
   if (state.citizens.length >= wohnKapazitaet(state)) return { waechst: false, grund: { art: 'voll' } };
-  if ((state.globalStock.bread ?? 0) < 1) return { waechst: false, grund: { art: 'kein-brot' } };
+  if (brotNachEssen(state) < 1) return { waechst: false, grund: { art: 'kein-brot' } };
   return { waechst: true };
 }
 
