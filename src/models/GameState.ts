@@ -169,7 +169,7 @@ export function createNewGameState(): GameState {
       stone: 15,
       grain: 0,
       flour: 0,
-      bread: 5,
+      bread: 10, // 6 Bewohner essen 1 Brot pro Tag: reicht 10 Tage (5 Minuten) bis zur Brotkette
       gold: 75,
       iron_scrap: 0,
       herb_green: 0,
