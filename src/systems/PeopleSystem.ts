@@ -5,6 +5,19 @@ import { createCitizen } from '../models/Citizen';
 import { createGuildFighter } from '../models/GuildRoster';
 import { wohnKapazitaet, arbeitsplaetze } from './Ausbau';
 
+/** So viele Bewohner werden von einem Brot pro Tag satt. */
+export const BEWOHNER_JE_BROT = 6;
+
+/** Brot, das die Bewohner jeden Tag essen: 1 je angefangene 6 Bewohner (6 = 1, 7 = 2, 12 = 2). */
+export function brotProTag(bewohner: number): number {
+  return Math.ceil(Math.max(0, bewohner) / BEWOHNER_JE_BROT);
+}
+
+/** Brot, das nach dem Essen beim nächsten Tageswechsel noch im Lager liegt (nie unter 0). */
+export function brotNachEssen(state: GameState): number {
+  return Math.max(0, (state.globalStock.bread ?? 0) - brotProTag(state.citizens.length));
+}
+
 /**
  * Handles worker auto-assignment, guild training, and population growth.
  */
@@ -80,14 +93,15 @@ export class PeopleSystem {
   }
 
   /**
-   * Day tick (60s): population growth.
-   * Spawns a new citizen if there's housing capacity, bread available.
+   * Tageswechsel: erst essen die Bewohner (brotProTag), dann wächst die Stadt.
+   * Ein neuer Bewohner kommt nur mit freiem Platz und wenn nach dem Essen noch
+   * Brot übrig ist; er kostet 1 Brot. Fehlt Brot, zieht niemand aus, nur die
+   * Zufriedenheit sinkt (SatisfactionSystem). Das Lager wird nie negativ.
    */
   dayTick(state: GameState): void {
-    const housingCapacity = wohnKapazitaet(state);
-    const currentPop = state.citizens.length;
+    state.globalStock.bread = brotNachEssen(state);
 
-    if (currentPop < housingCapacity && (state.globalStock.bread ?? 0) >= 1) {
+    if (state.citizens.length < wohnKapazitaet(state) && state.globalStock.bread >= 1) {
       state.globalStock.bread -= 1;
       state.citizens.push(createCitizen('IDLE'));
       state.statistics.total_citizens_born = (state.statistics.total_citizens_born ?? 0) + 1;

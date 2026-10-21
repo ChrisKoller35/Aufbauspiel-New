@@ -20,6 +20,7 @@ import { ProvisionSystem } from './systems/ProvisionSystem';
 import { ProductionSystem } from './systems/ProductionSystem';
 import { EconomySystem } from './systems/EconomySystem';
 import { PeopleSystem } from './systems/PeopleSystem';
+import { loeseHeldenBindungen } from './systems/HeldenBindung';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
@@ -55,6 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const loaded = saveSystem.load();
     if (loaded) {
       state = loaded;
+      loeseHeldenBindungen(state);
     } else {
       state = createNewGameState();
       isNewGame = true;
@@ -573,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
       state.dayTickAccumulator -= DAY_TICK_INTERVAL;
       economySystem.dayTick(state);
       peopleSystem.dayTick(state);
+      loeseHeldenBindungen(state);
     }
 
     // Update resource display in header
