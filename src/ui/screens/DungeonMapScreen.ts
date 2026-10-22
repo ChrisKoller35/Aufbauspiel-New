@@ -129,6 +129,10 @@ const GEBIETE: Record<NonNullable<RouteDef['gebiet']>, { stil: BiomeStyle; regio
     stil: { fill: '#1a0b33', stroke: '#fde68a', text: '#fef3c7', glow: '#a855f7', icon: '🌠', label: 'Sterne' },
     region: 'ZWISCHEN DEN STERNEN — UNENDLICH',
   },
+  mond: {
+    stil: { fill: '#0b1a2e', stroke: '#e2e8f0', text: '#f8fafc', glow: '#7dd3fc', icon: '🌙', label: 'Mond' },
+    region: 'IM MONDLICHT — ÜBER DEN STERNEN',
+  },
 };
 
 function getBiomeStyle(route: RouteDef): BiomeStyle {
@@ -213,11 +217,14 @@ function buildGipfelHimmel(width: number, oben: number): string {
   }
   html += `<g>${sternHtml}</g>`;
 
-  // Zwischen den Sternen: violetter Nebel und ein dichteres Sternenfeld, einige Sterne funkeln
+  // Zwischen den Sternen: violetter Nebel und ein dichteres Sternenfeld, einige Sterne funkeln.
+  // Liegt darüber noch ein Gebiet (Mond), endet der Nebel über dem obersten Sternen-Dungeon.
   const sterneYs = gebietsKnoten.filter(k => k.gebiet === 'sterne').map(k => k.n.y);
+  const mondYs = gebietsKnoten.filter(k => k.gebiet === 'mond').map(k => k.n.y);
   if (sterneYs.length > 0) {
     const bis = Math.max(...sterneYs) + 320;
-    const hoehe = bis + oben;
+    const von = mondYs.length > 0 ? Math.min(...sterneYs) - 320 : -oben;
+    const hoehe = bis - von;
     html += `
     <defs>
       <radialGradient id="dmap-nebel">
@@ -226,16 +233,39 @@ function buildGipfelHimmel(width: number, oben: number): string {
         <stop offset="100%" stop-color="#1e1b4b" stop-opacity="0"/>
       </radialGradient>
     </defs>
-    <ellipse cx="${width / 2}" cy="${-oben + hoehe / 2}" rx="${width * 0.8}" ry="${hoehe / 2}" fill="url(#dmap-nebel)"/>`;
+    <ellipse cx="${width / 2}" cy="${von + hoehe / 2}" rx="${width * 0.8}" ry="${hoehe / 2}" fill="url(#dmap-nebel)"/>`;
     let feld = '';
     for (let i = 0; i < 90; i++) {
       const x = (i * 157 + 61) % width;
-      const y = -oben + 24 + ((i * 97) % Math.max(1, hoehe - 48));
+      const y = von + 24 + ((i * 97) % Math.max(1, hoehe - 48));
       const gross = i % 6 === 0;
       const farbe = i % 4 === 0 ? '#fde68a' : '#f8fafc';
       feld += `<circle${gross ? ' class="dmap-funkeln"' : ''} cx="${x}" cy="${y}" r="${gross ? 1.9 : 1}" fill="${farbe}" opacity="${gross ? 0.85 : 0.45}"${gross ? ` style="animation-delay:-${(i % 5) * 0.7}s"` : ''}/>`;
     }
     html += `<g class="dmap-sternenfeld">${feld}</g>`;
+  }
+
+  // Im Mondlicht: statt des Nebels ein dünner, silbergrauer Dunst wie Mondlicht hinter Wolken
+  if (mondYs.length > 0) {
+    const bis = Math.max(...mondYs) + 320;
+    const von = Math.min(...mondYs) - 320;
+    const hoehe = bis - von;
+    html += `
+    <defs>
+      <radialGradient id="dmap-dunst">
+        <stop offset="0%" stop-color="#cbd5e1" stop-opacity=".14"/>
+        <stop offset="60%" stop-color="#94a3b8" stop-opacity=".07"/>
+        <stop offset="100%" stop-color="#64748b" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <ellipse cx="${width / 2}" cy="${von + hoehe / 2}" rx="${width * 0.85}" ry="${hoehe / 2}" fill="url(#dmap-dunst)"/>`;
+    let schleier = '';
+    for (let i = 0; i < 7; i++) {
+      const x = 60 + i * 130 + (i % 2) * 40;
+      const y = von + 80 + ((i * 173) % Math.max(1, hoehe - 160));
+      schleier += `<ellipse cx="${x}" cy="${y}" rx="${120 + ((i * 47) % 70)}" ry="${14 + (i % 3) * 6}" fill="#e2e8f0" opacity="${0.03 + (i % 3) * 0.015}"/>`;
+    }
+    html += `<g class="dmap-monddunst">${schleier}</g>`;
   }
 
   // Wolkenband unter dem Himmel-Gebiet

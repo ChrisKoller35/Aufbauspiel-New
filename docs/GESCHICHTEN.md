@@ -20,8 +20,8 @@ Erzählt wird sie von Ottokar, dem Stadtschreiber, der auch die Stadtchronik fü
 - **Heiltränke und Luftkristalle** aus der Geschichte kommen in den Proviant und lassen sich gleich einsetzen;
   was übrig bleibt, geht nach dem Lauf ins Lager. Alles andere (Kräuter, Kristalle, Talismane …) kommt in die Beute.
 - **Die Dungeons über dem Vulkankern** haben schon feste Wahl-Räume (Drachenhort: Hort-Gold, Himmelsarchiv: verbotene
-  Bücher, Sternenschmiede: Sternenfeuer, Sternenschlund: gefangene Sterne). Dort erzählt die Geschichte über diese
-  Räume, ohne zusätzliche Entscheidungen.
+  Bücher, Sternenschmiede: Sternenfeuer, Sternenschlund: gefangene Sterne, Mondhof: Pfandzettel). Dort erzählt die
+  Geschichte über diese Räume, ohne zusätzliche Entscheidungen.
 - **Nach der Expedition** steht im Bericht die Chronik: ein Satz zu jeder Entscheidung dieses Laufs. Nach dem
   ersten Sieg kommt der Schluss dazu, danach steht er auf der Karte («✓ erlebt»). Der Schluss passt zu jeder Wahl.
 - **Expeditionsfenster:** Im Band über dem Team steht «📜 Geschichte: Titel · 3 Entscheidungen unterwegs».

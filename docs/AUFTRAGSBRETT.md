@@ -44,7 +44,7 @@ und was bei neuen Dungeons zu tun ist.
 - **Trophäensaal.** Ein Sockel je Boss mit dem Bild des Bosses; wer noch nicht bezwungen ist, steht als
   Schatten mit «???» da, das Messingschild ist schon lesbar. Jede Trophäe hat drei Sterne: Boss
   bezwungen, Set des Dungeons komplett, Prunkstück aus der Kette. Die Summe ist der «Glanz des Saals»
-  (bei 14 Bossen 42 Sterne), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
+  (bei 15 Bossen 45 Sterne), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
   der Rangliste, alle Sets der Dungeons (komplett grün) und das Gildenbuch (Expeditionen, Siege, Siege
   ohne Verlust, Gegner, Bosse, bezwungene Dungeons, erledigte Zettel, verdiente Siegel).
   Der Saal zeigt nur; Kampfwerte ändert er nicht.
@@ -65,8 +65,8 @@ Alles in `src/data/auftragsbrett.ts`.
   auf jeder Ebene gleich (25 bis 60 Gold); kein Material. Warum: [Lieferung](#lieferung).
 - **Kapitel der Kette:** 3 + Ebene/2 (aufgerundet) Siegel, das Gold eines ganzen Laufs, das Material von
   zwei Siegen; das letzte Kapitel 15 Siegel dazu.
-- **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 12 (Ebene 7
-  und 8). Material 3 Siegel für die Menge eines Siegs im höchsten bezwungenen Dungeon seines Gebiets.
+- **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 14 (Ebene 9
+  und 10). Material 3 Siegel für die Menge eines Siegs im höchsten bezwungenen Dungeon seines Gebiets.
   Kristallsplitter 2 Siegel für 3 Stück.
 - **Warum Material 3 Siegel kostet:** Mit 2 hätte ein voller Tag (10 Siegel) das Material von 5 Siegen gebracht,
   dazu das Material der Zettel selbst; wer am Tag 3 bis 5 Läufe macht, hätte in der Schmiede etwa dreimal so
@@ -89,6 +89,7 @@ Alles in `src/data/auftragsbrett.ts`.
 | 12 | Das Himmelsarchiv | 6 | 1 Set-Teil | 370 | 6 · 615 · 16 Himmelstinte | 10 |
 | 13 | Die Sternenschmiede | 7 | 2× Sieg | 435 | 7 · 725 · 18 Sternenstahl | 12 |
 | 14 | Der Sternenschlund | 8 | 1× Sieg | 490 | 7 · 820 · 20 Sternenstahl | 12 |
+| 15 | Der Mondhof | 9 | 2× Sieg | 555 | 8 · 925 · 22 Mondsilber | 14 |
 
 «Zettel: Gold» ist das Gold eines Zettels für diesen Dungeon; dazu kommt immer das Material eines Siegs.
 

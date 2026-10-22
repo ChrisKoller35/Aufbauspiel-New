@@ -457,6 +457,49 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     guaranteedGold: { min: 260, max: 360 },
   },
 
+  // --- Der Mondhof (Ebene 9): Schild- und Panzer-Ausrüstung, Kristalle, Amtsstab des Mondvogts ---
+  loot_mondhof_common: {
+    id: 'loot_mondhof_common',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 3, maxQty: 6 },
+      { itemId: 'gold', weight: 18, minQty: 16, maxQty: 26 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 2, maxQty: 4 },
+      { itemId: 'healing_potion', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'aether_guardian_shield', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'dragonlord_plate', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'arcane_amulet', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 20, max: 32 },
+  },
+  loot_mondhof_rare: {
+    id: 'loot_mondhof_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 4, maxQty: 8 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 3, maxQty: 6 },
+      { itemId: 'magitech_component', weight: 10, minQty: 1, maxQty: 2 },
+      { itemId: 'aether_guardian_shield', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'dragonlord_plate', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 30, max: 50 },
+  },
+  loot_boss_argentis: {
+    id: 'loot_boss_argentis',
+    entries: [
+      { itemId: 'amtsstab_des_mondvogts', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'der_letzte_stern', weight: 10, minQty: 1, maxQty: 1 },
+      { itemId: 'korrunds_hammer', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 14, maxQty: 22 },
+      { itemId: 'talisman_fragment', weight: 14, minQty: 9, maxQty: 14 },
+    ],
+    guaranteedGold: { min: 300, max: 420 },
+  },
+
   // --- T4 Legendary Loot (Nemesis-Modifier Bonus) ---
   loot_nemesis_legendary: {
     id: 'loot_nemesis_legendary',

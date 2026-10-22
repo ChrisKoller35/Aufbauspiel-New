@@ -52,9 +52,11 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
     `double_strike`, `anti_heal`, `regen`, `aoe_resist`, `spell_power`, `fire_resist`, `stun_strike`.
 - **Set-Boni:** Zwei Teile geben je Ebene etwas mehr (Ebene 1: +1 Angriff, +5 Leben; Ebene 5: +5 Angriff,
   +15 Leben; Ebene 6: +6 Angriff, +20 Leben; Ebene 7: +7 Angriff, +24 Leben; Ebene 8: +8 Angriff, +8 %
-  Krit-Chance). Die Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort:
-  Drachengier, Gold macht stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team;
-  Sternenschlund: Sternenfall, jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden).
+  Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben). Die Drei-Teile-Fähigkeit ist das Besondere des Sets
+  und passt zum Dungeon (Drachenhort: Drachengier, Gold macht stark; Sternenschmiede: Schmiedetakt, alle
+  3 Runden +3 Angriff fürs ganze Team; Sternenschlund: Sternenfall, jeder dritte Treffer trifft als Stern
+  alle Gegner mit dem halben Schaden; Mondhof: Mondwall, zu Beginn jedes Kampfes und alle 3 Runden ein
+  Schild von 15 für jeden im Team, der sich mit anderen Schilden wie der Phalanx addiert).
 
 ## Ein Set für einen neuen Dungeon
 
@@ -63,10 +65,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 2. **Drei Teile** mit verschiedenen Plätzen, damit ein Held alle drei tragen kann: eine Waffe oder ein
    Schild, eine Rüstung und ein Schmuckstück. `bild` ist ein vorhandener Sprite-Key, `text` ein Satz
    mit Witz, der zum Dungeon passt. Die Gegenstände (`set_<set>_<bauart>`) entstehen von selbst.
-3. **Ebene über 8:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
-   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 8. Die neuen Werte an den besten
+3. **Ebene über 10:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
+   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 10. Die neuen Werte an den besten
    gewöhnlichen Gegenständen der Ebene ausrichten; gibt es auf der Ebene keine, die Reihe im selben Schritt
-   fortsetzen (so sind Ebene 7 und 8 entstanden).
+   fortsetzen (so sind Ebene 7 bis 10 entstanden; die Spalte für Ebene 10 steht schon, ihr Set noch nicht).
 4. **Set-Boni:** `zweiTeile` etwas über der Ebene darunter. `dreiTeile` mit Name, Text und Effekten.
    Eine neue Fähigkeit braucht ihre Wirkung in `src/systems/Kampfeffekte.ts`, Name und Beschreibung in
    `SPECIAL_EFFECT_DEFS` und, falls ihre Kampfzeile eine eigene Farbe haben soll, `getLogLineColor` in
@@ -76,7 +78,8 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
    `npm run validate-refs`, dann `npm run dungeon-eichung -- 200` und die Tabelle unten nachführen.
    Für einen Dungeon über dem Hort die Sets der Musterhelden (`MUSTER_SETS` in `src/data/musterteams.ts`)
    um eine Stufe mit dem neuen Set ergänzen, ab den Sternen mit Stufen aus der Schmiede (`schmiede`) und
-   der Ebene, ab der die Eichung sie misst (`abEbene`).
+   der Ebene, ab der die Eichung sie misst (`abEbene`). Stand: `mond5` (ab Ebene 9: dazu Lia im Schlund-Set,
+   alles auf +5) und `pfand5` (ab Ebene 10: dazu Brom im Pfand des Mondvogts mit dem Amtsstab, alles auf +5).
 7. **Eigene Bilder** für Set-Teile nur mit Christophs Okay (Kosten-Regel). Bis dahin tragen sie Bilder
    vorhandener Gegenstände mit dem Set-Zeichen darauf.
 
@@ -130,7 +133,12 @@ Zwischen den Sternen reichen Sets allein nicht mehr: Erst die Schmiede macht die
 Brom war die erste Fassung deutlich schwächer als die Festung mit der Letzten Bastion; mit dem Schmiedetakt
 hilft das Set jetzt dem ganzen Team, und Grimm in Korrunds Set auf +5 ist stärker als im Hort-Set auf +5.
 **Was Nyxar nicht frass** (Bogen, Leder, Ring) macht den Sternenschlund leicht, wer es hat (Lia ohne
-Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
+Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für den Mondhof.
+**Pfand des Mondvogts** (Zollscheibe, Amtsharnisch, Pfandzettel in Silber; Ebene 9) ist ein Schild-Set für
+Brom: Mondwall gibt dem ganzen Team zu Kampfbeginn und alle 3 Runden einen Schild von 15, zusammen mit dem
+Amtsstab des Mondvogts (Letzte Bastion) also einen Träger, der alles auf sich zieht und das Team dabei schützt.
+Der Mondhof ist noch nicht geeicht (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht»); die Tabelle oben hat darum noch
+keine Zeile für ihn.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher

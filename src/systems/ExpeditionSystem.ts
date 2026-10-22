@@ -12,7 +12,7 @@ import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
-import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen } from './Geschichten';
+import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen, wirkungZeile } from './Geschichten';
 import { schmiedeStufen } from './Schmiede';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
@@ -433,6 +433,14 @@ export class ExpeditionSystem {
       }
       run.combatLog.push(`>> Das hat seinen Preis: Die Gruppe verliert ${choice.kostetLeben}% HP.`);
     }
+    // Preis in Angriff (Pfandzettel): wie das Sternenfeuer, nur nach unten
+    if (choice.kostetAngriff) this.gruppenAngriffWaechst(run, { ...choice, value: -choice.kostetAngriff });
+
+    // Zusage eines Set-Teils (Pfandbuch): zählt wie in den Geschichten, nur mit besiegtem Boss (systems/DungeonSets.ts)
+    if (choice.setTeil) {
+      run.setTeilVersprochen = true;
+      run.combatLog.push(`>> ${choice.label}: ${wirkungZeile(run.routeId, { art: 'setTeil' })}.`);
+    }
 
     if (choice.gier) this.hortGierWaechst(run, choice.gier);
   }
@@ -442,6 +450,8 @@ export class ExpeditionSystem {
    * `value` Prozent mehr Angriff, auch wer gerade am Boden liegt. Mehrmals gewählt zählen die
    * Prozente zusammen, gerechnet auf den Angriff vor dem ersten Mal. Boni aus Kämpfen, die
    * bleiben (Drachengier, Tiefenrausch), wachsen nicht mit: Sie kommen später wieder genau weg.
+   * Mit negativem `value` ist es der Preis einer Wahl (EncounterChoice.kostetAngriff, Pfandzettel):
+   * Die Gruppe schlägt schwächer zu, die flachen Boni (Zorn, Schmiedetakt, Heldenlied) bleiben ganz.
    */
   private gruppenAngriffWaechst(run: ExpeditionRun, choice: EncounterChoice): void {
     const vorher = run.gruppenAngriff ?? 0;
@@ -450,9 +460,13 @@ export class ExpeditionSystem {
     for (const unit of run.party) {
       if (unit.isWarMachine) continue;
       const boni = Object.entries(unit.effektBoni ?? {}).reduce((summe, [k, v]) => summe + (k.endsWith(':atk') ? v : 0), 0);
-      unit.atk = Math.round((unit.atk - boni) * (100 + jetzt) / (100 + vorher)) + boni;
+      unit.atk = Math.max(1, Math.round((unit.atk - boni) * (100 + jetzt) / (100 + vorher))) + boni;
     }
-    run.combatLog.push(`>> ${choice.label}: Die Gruppe hat jetzt ${jetzt}% mehr Angriff bis zum Ende des Dungeons.`);
+    if (jetzt < 0) {
+      run.combatLog.push(`>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons ${-jetzt}% schwächer zu.`);
+    } else {
+      run.combatLog.push(`>> ${choice.label}: Die Gruppe hat jetzt ${jetzt}% mehr Angriff bis zum Ende des Dungeons.`);
+    }
   }
 
   /**

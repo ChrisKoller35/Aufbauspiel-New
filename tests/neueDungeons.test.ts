@@ -11,7 +11,9 @@ import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
-import { musterStand, siegeVon } from '../src/systems/Musterlauf';
+import { setBeute } from '../src/systems/DungeonSets';
+import { setVonItem } from '../src/data/dungeonSets';
+import { musterStand, siegeVon, spieleRoute } from '../src/systems/Musterlauf';
 
 const NEUE = Object.values(ROUTE_DEFS).filter(r => r.gebiet);
 const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
@@ -56,8 +58,8 @@ function boss(run: ExpeditionRun) {
 }
 
 describe('Dungeons über dem Vulkankern', () => {
-  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv bis in den Sternenschlund', () => {
-    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund']);
+  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv zwischen die Sterne und in den Mondhof', () => {
+    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof']);
     const knoten = (id: string) => DUNGEON_GRAPH.find(n => n.routeId === id)!;
     expect(knoten('volcano_core').leadsTo).toContain('drachenhort');
     expect(knoten('drachenhort').y).toBeLessThan(0);
@@ -138,6 +140,10 @@ describe('Dungeons über dem Vulkankern', () => {
 
     state.guildStats.bossesDefeatedIds.push('boss_korrund');
     expect(isRouteAvailable(ROUTE_DEFS.sternenschlund, state)).toBe(true);
+    expect(getRouteLockReasons(ROUTE_DEFS.mondhof, state)).toEqual(['Besiege: Nyxar, der Sternenfresser']);
+
+    state.guildStats.bossesDefeatedIds.push('boss_nyxar');
+    expect(isRouteAvailable(ROUTE_DEFS.mondhof, state)).toBe(true);
   });
 
   it('Hort-Gier: Gold aus dem Hort macht Ignarax um 8 % je Schatz stärker', () => {
@@ -293,6 +299,110 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(run.loot.mat_sternenstahl ?? 0).toBe(ohneWahl);
   });
 
+  it('Pfandzettel: wer verpfändet, schlägt bis zum Ende 10 % schwächer zu, und das Mondsilber kommt erst mit Argentis', () => {
+    const { state, ids } = musterStand('stark', 7919, 'mond5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'mondhof', ids)!);
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 5, nachSieg: true, kostetAngriff: 10 });
+    expect(run.pendingChoice!.optionB).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 1 });
+    const start = run.party.map(u => ({ atk: u.atk, hp: u.hp }));
+    const boss = run.rooms.length - 1;
+
+    system.resolveChoice(run, 0);
+    expect(run.gruppenAngriff).toBe(-10);
+    run.party.forEach((u, i) => {
+      expect(u.atk, u.name).toBe(Math.round(start[i].atk * 90 / 100));
+      expect(u.hp, u.name).toBe(start[i].hp);
+    });
+    expect(run.loot.mat_mondsilber ?? 0).toBe(0);
+    expect(run.geschichtsBeute).toEqual([{ raum: boss, gold: 0, dinge: { mat_mondsilber: 5 } }]);
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 10% schwächer zu.');
+
+    // Das Pfandbuch (Raum 8) verspricht ein Set-Teil, wieder gegen 10 % Angriff, gerechnet auf den Angriff vor dem ersten Mal
+    bisZurWahl(state, run);
+    expect(run.pendingChoice!.roomIndex).toBe(8);
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'kein', setTeil: true, kostetAngriff: 10 });
+    system.resolveChoice(run, 0);
+    expect(run.setTeilVersprochen).toBe(true);
+    expect(run.gruppenAngriff).toBe(-20);
+    run.party.forEach((u, i) => expect(Math.abs(u.atk - start[i].atk * 0.8), u.name).toBeLessThanOrEqual(1));
+    expect(run.combatLog).toContain('>> Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −10% Angriff bis zum Ende): 🌙 +1 Set-Teil, wenn ihr siegt.');
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 20% schwächer zu.');
+
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    expect(run.gruppenAngriff).toBe(-30);
+    expect(run.geschichtsBeute).toEqual([{ raum: boss, gold: 0, dinge: { mat_mondsilber: 14 } }]);
+    // Argentis bleibt, wie er ist: keine Hort-Gier im Mondhof
+    expect(run.gier ?? 0).toBe(0);
+    expect(ROUTE_DEFS.mondhof.hortGier).toBeUndefined();
+  });
+
+  it('Pfandzettel: die flachen Boni aus Zorn und Schmiedetakt bleiben ganz', () => {
+    const { state, ids } = musterStand('stark', 7919, 'mond5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'mondhof', ids)!);
+    const grimm = run.party.find(u => u.name === 'Grimm')!;
+    const eigener = grimm.atk;
+    grimm.effektBoni = { 'zorn:atk': 12, 'schmiedetakt:atk': 9 };
+    grimm.atk += 21;
+    system.resolveChoice(run, 0);
+    expect(grimm.atk).toBe(Math.round(eigener * 90 / 100) + 21);
+  });
+
+  it('wer den kleinen Zettel nimmt, hat das Mondsilber sofort, und der Angriff bleibt, wie er ist', () => {
+    const { state, ids } = musterStand('stark', 7919, 'mond5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'mondhof', ids)!);
+    const atk = run.party.map(u => u.atk);
+    system.resolveChoice(run, 1);
+    expect(run.gruppenAngriff ?? 0).toBe(0);
+    expect(run.party.map(u => u.atk)).toEqual(atk);
+    expect(run.loot.mat_mondsilber).toBe(1);
+    expect(run.setTeilVersprochen).toBeFalsy();
+  });
+
+  it('mit dem Sieg über Argentis kommen alle Pfandzettel und das versprochene Set-Teil, wer umkehrt, lässt sie liegen', () => {
+    const { state, held } = uebermacht();
+    const run = bisZurWahl(state, system.startExpedition(state, 'mondhof', [held])!);
+    system.resolveChoice(run, 0);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    zuEnde(state, run);
+    expect(run.bossesKilled).toBe(1);
+    expect(run.loot.mat_mondsilber).toBe(14);
+    expect(run.combatLog).toContain('📜 Beute aus der Geschichte: +14× Mondsilber');
+    const teile = setBeute(state, run);
+    expect(teile).toHaveLength(2);
+    expect(run.setTeilExtra).toBeTruthy();
+    for (const id of teile) expect(setVonItem(id)?.id, id).toBe('pfand');
+
+    const { state: s2, held: h2 } = uebermacht();
+    const rueckzug = bisZurWahl(s2, system.startExpedition(s2, 'mondhof', [h2])!);
+    system.resolveChoice(rueckzug, 0);
+    for (let schritt = 0; schritt < 50 && rueckzug.status === 'exploring'; schritt++) {
+      const step = system.nextStep(rueckzug);
+      if (step === 'checkpoint') system.resolveCheckpoint(rueckzug, true);
+      else if (step !== 'finish') system.processCurrentRoom(s2);
+    }
+    expect(rueckzug.status).toBe('retreat');
+    expect(rueckzug.loot.mat_mondsilber ?? 0).toBe(0);
+    expect(setBeute(s2, rueckzug)).toEqual([]);
+  });
+
+  it('Amtsstab des Mondvogts: einhändig, mit der Letzten Bastion der Festung', () => {
+    const stab = ITEM_DEFS.amtsstab_des_mondvogts;
+    expect(stab).toMatchObject({ tier: 9, gearSlot: 'mainHand', weaponSlotType: '1h' });
+    expect(stab.tags).toContain('special:letzte_bastion');
+    expect(stab.flavorText).toContain('zieht der Träger 2 Runden lang alle Angriffe auf sich');
+    const state = createNewGameState();
+    const held = createGuildFighter(1, 'paladin', 'Schutzherr', { hp: 100, maxHp: 100, atk: 10, def: 5, spd: 1, critChance: 0, critMult: 1.5 });
+    state.fighters.push(held);
+    state.globalStock.amtsstab_des_mondvogts = 1;
+    const gear = new GearSystem();
+    expect(gear.equip(state, held, 'amtsstab_des_mondvogts')).toBe(true);
+    expect(gear.getSpecialEffects(held).map(e => e.id)).toContain('letzte_bastion');
+  });
+
   it('andere Fund-Räume wählen weiter zufällig zwischen Truhe und zweiter Option', () => {
     const { state, held } = uebermacht();
     const run = system.startExpedition(state, 'swamp_long', [held])!;
@@ -374,5 +484,21 @@ describe('Dungeons über dem Vulkankern', () => {
     const vier = siegeVon('sternenschlund', 'stark', 'vorsichtig', 30, 'sterne5', true, 4);
     expect(vier).toBeGreaterThan(0);
     expect(vier).toBeLessThan(siegeVon('sternenschlund', 'stark', 'vorsichtig', 30, 'sterne5'));
+  });
+
+  it('der Mondhof läuft in jeder Spielweise zu Ende (noch nicht geeicht, darum keine Siegquote)', () => {
+    for (const spielweise of ['vorsichtig', 'klug', 'gierig'] as const) {
+      for (let i = 1; i <= 3; i++) {
+        const { state, ids } = musterStand('stark', i * 7919, 'mond5');
+        const run = spieleRoute(state, ids, 'mondhof', spielweise);
+        expect(run.status).not.toBe('exploring');
+        expect(run.rooms.filter(r => r.completed).length).toBeGreaterThan(0);
+        // Gierig unterschreibt alle drei Pfandzettel: 30 % schwächer, nichts kommt vor dem Boss
+        if (spielweise === 'gierig' && run.rooms.filter(r => r.completed).length >= 15) {
+          expect(run.gruppenAngriff).toBe(-30);
+          expect(run.setTeilVersprochen).toBe(true);
+        }
+      }
+    }
   });
 });

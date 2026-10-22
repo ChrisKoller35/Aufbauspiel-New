@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createNewGameState, GameState } from '../models/GameState';
 import { placeStartingLayout, createStartingCitizens } from '../scenes/CityStartingLayout';
-import { istProbespiel, probespielNeu, probespielSterne, richteProbespielEin } from './Probespiel';
+import { ProbeStufe, istProbespiel, probespielNeu, probespielStufe, richteProbespielEin } from './Probespiel';
 import { SaveSystem, nutzeProbespiel } from './SaveSystem';
 import { istSchmiedbar, schmieden, schmiedeStufe } from './Schmiede';
 import { ITEM_DEFS } from '../data/items';
@@ -11,12 +11,12 @@ import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { BuildingUpgradeSystem } from './BuildingUpgradeSystem';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 
-/** Neues Spiel wie in main.ts, dann zum Probespiel gemacht (mit `sterne` wie ?probe=sterne). */
-function probespiel(sterne = false): GameState {
+/** Neues Spiel wie in main.ts, dann zum Probespiel gemacht (mit `stufe` wie ?probe=sterne oder ?probe=mond). */
+function probespiel(stufe: ProbeStufe = 'neu'): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
   createStartingCitizens(state);
-  richteProbespielEin(state, sterne);
+  richteProbespielEin(state, stufe);
   return state;
 }
 
@@ -46,9 +46,11 @@ describe('Probespiel', () => {
     expect(probespielNeu('?probe=neu')).toBe(true);
     expect(probespielNeu('?probe')).toBe(false);
     expect(probespielNeu('?probe=sterne')).toBe(true);
-    expect(probespielSterne('?probe=sterne')).toBe(true);
-    expect(probespielSterne('?probe')).toBe(false);
-    expect(probespielSterne('?probe=neu')).toBe(false);
+    expect(probespielNeu('?probe=mond')).toBe(true);
+    expect(probespielStufe('?probe=sterne')).toBe('sterne');
+    expect(probespielStufe('?probe=mond')).toBe('mond');
+    expect(probespielStufe('?probe')).toBe('neu');
+    expect(probespielStufe('?probe=neu')).toBe('neu');
   });
 
   it('Magische Stadt mit vier ausgerüsteten Helden, und alle vier gehen mit auf Expedition', () => {
@@ -87,15 +89,15 @@ describe('Probespiel', () => {
   });
 
   it('die Klassen, die eine Gilde mit diesen Bossen schon hat, sind frei: der erste Bericht meldet keine «Neue Klasse»', () => {
-    for (const sterne of [false, true]) {
-      const state = probespiel(sterne);
-      expect(state.classesUnlocked.length, `sterne=${sterne}`).toBeGreaterThanOrEqual(6);
-      expect(new ClassUnlockSystem().checkUnlocks(state), `sterne=${sterne}`).toEqual([]);
+    for (const stufe of ['neu', 'sterne', 'mond'] as const) {
+      const state = probespiel(stufe);
+      expect(state.classesUnlocked.length, stufe).toBeGreaterThanOrEqual(6);
+      expect(new ClassUnlockSystem().checkUnlocks(state), stufe).toEqual([]);
     }
   });
 
   it('?probe=sterne: Team «Stark» mit seinen Wegen in Dungeon-Sets auf +3 vor der offenen Sternenschmiede', () => {
-    const state = probespiel(true);
+    const state = probespiel('sterne');
     expect(state.fighters.map(f => f.name)).toEqual(MUSTER_TEAMS.stark.helden.map(h => h.name));
     expect(new BuildingUpgradeSystem().getPartySlots(state)).toBe(4);
     for (const f of state.fighters) {
@@ -112,11 +114,30 @@ describe('Probespiel', () => {
   });
 
   it('?probe=sterne: im Lager liegt alles, um die Sets und Korrunds Meisterstücke auf +5 zu schmieden', () => {
-    const state = probespiel(true);
+    const state = probespiel('sterne');
     const korrund = setTeilIds(setFuerRoute('sternenschmiede')!);
     // Korrunds Meisterstücke fallen erst in der Sternenschmiede; hier legen wir sie dazu
     for (const id of korrund) state.globalStock[id] = 1;
     for (const itemId of [...Object.keys(state.schmiede!.stufen), ...korrund]) {
+      while (schmieden(state, itemId) !== null);
+      expect(schmiedeStufe(state, itemId), itemId).toBe(5);
+    }
+    for (const [itemId, menge] of Object.entries(state.globalStock)) expect(menge, itemId).toBeGreaterThanOrEqual(0);
+  });
+
+  it('?probe=mond: Team «Stark» in den Sets der Sterne auf +5 vor dem offenen Mondhof, mit Mondsilber für das Pfand des Mondvogts', () => {
+    const state = probespiel('mond');
+    for (const f of state.fighters) {
+      expect(f.gear).toEqual(MUSTER_SETS.mond5.gear[f.name]);
+      for (const itemId of Object.values(f.gear)) {
+        if (itemId && istSchmiedbar(itemId)) expect(schmiedeStufe(state, itemId), itemId).toBe(5);
+      }
+    }
+    expect(isRouteAvailable(ROUTE_DEFS.sternenschlund, state)).toBe(true);
+    expect(isRouteAvailable(ROUTE_DEFS.mondhof, state)).toBe(true);
+    const pfand = setTeilIds(setFuerRoute('mondhof')!);
+    for (const id of pfand) state.globalStock[id] = 1;
+    for (const itemId of pfand) {
       while (schmieden(state, itemId) !== null);
       expect(schmiedeStufe(state, itemId), itemId).toBe(5);
     }

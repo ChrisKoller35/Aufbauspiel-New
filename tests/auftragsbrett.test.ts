@@ -41,7 +41,7 @@ function spielstand(art: 'neu' | 'probe' | 'sterne' = 'neu', samen = 12345): Gam
   state.rngSeed = samen;
   placeStartingLayout(state);
   createStartingCitizens(state);
-  if (art !== 'neu') richteProbespielEin(state, art === 'sterne');
+  if (art !== 'neu') richteProbespielEin(state, art === 'sterne' ? 'sterne' : 'neu');
   return state;
 }
 
@@ -95,7 +95,7 @@ describe('Auftragsbrett: Texte und Daten', () => {
       expect(k.ziel, k.routeId).toBeGreaterThan(0);
       if (k.art === 'set') expect(setFuerRoute(k.routeId), k.routeId).toBeDefined();
     }
-    expect(saalEinleitung()).toContain('Vierzehn leere Sockel');
+    expect(saalEinleitung()).toContain('Fünfzehn leere Sockel');
   });
 
   test('Auftraggeber, Vorlagen und Waren passen zusammen', () => {

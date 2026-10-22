@@ -230,6 +230,7 @@ body {
 .tag-gipfel { background: rgba(124,45,18,.35); color: #fdba74; border: 1px solid #c2410c; }
 .tag-himmel { background: rgba(30,41,90,.4); color: #e0e7ff; border: 1px solid #6366f1; }
 .tag-sterne { background: rgba(46,16,101,.45); color: #fde68a; border: 1px solid #a855f7; }
+.tag-mond { background: rgba(148,163,184,.22); color: #e2e8f0; border: 1px solid #94a3b8; }
 
 /* ── Team Selection ── */
 .team-wrap { display: grid; grid-template-columns: 1fr 240px; gap: 18px; height: 100%; }

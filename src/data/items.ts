@@ -351,6 +351,16 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     flavorText: 'Den hat Nyxar nicht mehr geschafft. Er geht nicht unter: Wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf.',
   },
 
+  // --- Ebene 9: Beute des Mondvogts (erster Sieg garantiert). Einhändig, damit die Schildhand frei bleibt;
+  //     trägt die Letzte Bastion der Festung, also zieht jeder Träger 2 Runden lang alle Angriffe auf sich ---
+  amtsstab_des_mondvogts: {
+    id: 'amtsstab_des_mondvogts', name: 'Amtsstab des Mondvogts', type: 'gear',
+    stackSize: 1, baseValue: 200, gearSlot: 'mainHand', weaponSlotType: '1h', tier: 9, spriteKey: 'ITEM_OAK_STAFF',
+    statBonuses: { atk: 21, def: 6, hp: 26 },
+    tags: ['gear', 'weapon', 'tier9', 'legendary', 'special:letzte_bastion'],
+    flavorText: 'Wer den Stab hebt, hat das Wort: Alle hören zu, auch die, die gerade zuschlagen wollten. Zu Beginn jedes Kampfes zieht der Träger 2 Runden lang alle Angriffe auf sich, ob er das aushält oder nicht. Argentis führt die Sitzungen jetzt mit einem Lineal.',
+  },
+
   // --- Special (expedition-only) ---
   crystal_shard: {
     id: 'crystal_shard', name: 'Kristallsplitter', type: 'special',

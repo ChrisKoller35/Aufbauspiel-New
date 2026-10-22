@@ -616,6 +616,55 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_boss_nyxar', xpReward: 420, goldReward: 220, spriteKey: 'BOSS_NYXAR',
   },
 
+  // ── Der Mondhof (Ebene 9, im Mondlicht über den Sternen) ──
+  // Die Wachen des Schlunds mal 1,15 bei Leben und Angriff, etwas mehr Verteidigung; alle tragen
+  // Bilder anderer Gegner, bis es eigene gibt (docs/NEUE-DUNGEONS.md). Zahlen sind Startwerte vor der Eichung.
+  silberschreiber: {
+    id: 'silberschreiber', name: 'Silberschreiber', role: 'support',
+    hp: 290, atk: 26, def: 6, spd: 1.4, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'tintenspritzer', name: 'Tintenspritzer', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
+      { id: 'pfandzettel', name: 'Pfandzettel', cooldown: 4, effectType: 'heal', power: 105, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 105' },
+    ],
+    lootTableId: 'loot_mondhof_rare', xpReward: 60, goldReward: 22, spriteKey: 'ENEMY_GHOST_MAGE',
+  },
+  mondwache: {
+    id: 'mondwache', name: 'Mondwache', role: 'melee',
+    hp: 615, atk: 30, def: 19, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    skills: [
+      { id: 'hellebardenschwung', name: 'Hellebardenschwung', cooldown: 4, effectType: 'aoe', power: 0.9, target: 'all_players', description: '0.9× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_mondhof_common', xpReward: 66, goldReward: 25, spriteKey: 'ENEMY_SIEGE_DEFENDER',
+  },
+  zollgeist: {
+    id: 'zollgeist', name: 'Zollgeist', role: 'ranged',
+    hp: 405, atk: 38, def: 9, spd: 1.2, critChance: 0.2, critMult: 1.9,
+    skills: [
+      { id: 'pfaendung', name: 'Pfändung', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_mondhof_common', xpReward: 64, goldReward: 24, spriteKey: 'ENEMY_MINE_SPECTER',
+  },
+  mondkalb: {
+    id: 'mondkalb', name: 'Mondkalb', role: 'melee',
+    hp: 275, atk: 32, def: 6, spd: 1.6, critChance: 0.18, critMult: 1.8,
+    skills: [
+      { id: 'verschlucken', name: 'Verschlucken', cooldown: 2, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_mondhof_common', xpReward: 60, goldReward: 21, spriteKey: 'ENEMY_WILD_BOAR',
+  },
+  boss_argentis: {
+    id: 'boss_argentis', name: 'Argentis, der Mondvogt', role: 'boss',
+    hp: 2665, atk: 52, def: 15, spd: 0.95, critChance: 0.13, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'zollstunde', name: 'Zollstunde', cooldown: 3, effectType: 'aoe', power: 1.3, target: 'all_players', description: '1.3× Schaden auf alle' },
+      { id: 'pfaendung_vogt', name: 'Pfändung', cooldown: 4, effectType: 'damage', power: 2.6, target: 'player', description: '2.6× Schaden auf 1 Ziel' },
+      { id: 'mahnung', name: 'Mahnung', cooldown: 5, effectType: 'buff', power: 8, target: 'self', description: '+8 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_boss_argentis', xpReward: 500, goldReward: 260, spriteKey: 'BOSS_ARCHIV_WATCHER',
+  },
+
   // ── Ocean Enemies ──
   deep_sea_angler: {
     id: 'deep_sea_angler',
@@ -1195,6 +1244,33 @@ export const ENEMY_LORE: Record<string, { lore: string; route: string; skillDesc
     route: 'sternenschlund',
     lore: 'Eine Schlange aus Nacht, so lang, dass sie sich um den Himmel legen kann. Jede Nacht frisst Nyxar einen Stern, und jede Nacht wird es über Magic City ein wenig dunkler. Er hat noch nie gefragt, wem die Sterne gehören.',
     skillDescriptions: { sternenhunger: 'Zieht das Licht aus allen (1.3x AOE)', sternenbiss: 'Ein Biss wie ein schwarzes Loch (2.6x Schaden)', sternenmahl: 'Frisst einen Stern, heilt 200' },
+  },
+
+  // ── Der Mondhof ──
+  silberschreiber: {
+    route: 'mondhof',
+    lore: 'Er schreibt die Pfandzettel des Vogts, in Silber und sehr klein. Was er aufschreibt, gilt; was er durchstreicht, heilt. Er streicht lieber durch.',
+    skillDescriptions: { tintenspritzer: 'Silbertinte auf alle (0.8x AOE)', pfandzettel: 'Schreibt den Schwächsten gesund, heilt 105' },
+  },
+  mondwache: {
+    route: 'mondhof',
+    lore: 'Die Schranke des Hofs, mit Hellebarde. Sie fragt nicht nach dem Namen, sie fragt nach der Quittung, und sie hat Zeit, bis eine da ist.',
+    skillDescriptions: { hellebardenschwung: 'Die Hellebarde geht einmal rundum (0.9x AOE)' },
+  },
+  zollgeist: {
+    route: 'mondhof',
+    lore: 'Was im Hof nicht bezahlt wird, holt der Zollgeist. Er nimmt nicht, was am nächsten liegt, sondern was am meisten wehtut, und er trifft darin sehr genau.',
+    skillDescriptions: { pfaendung: 'Pfändet, was am meisten wehtut (2.0x Schaden)' },
+  },
+  mondkalb: {
+    route: 'mondhof',
+    lore: 'Im Mondhof wird alles gezählt, auch die Kälber. Dieses hat gelernt, dass Papier nach Silber schmeckt, und frisst seither Quittungen, Zettel und Finger.',
+    skillDescriptions: { verschlucken: 'Frisst Quittungen, Zettel und Finger (1.6x Schaden)' },
+  },
+  boss_argentis: {
+    route: 'mondhof',
+    lore: 'Argentis nimmt den Zoll von allem, was aufsteigt: Sterne, Rauch, Gebete, Seufzer. Er hat noch nie etwas durchgelassen, ohne eine Quittung zu schreiben, und noch nie eine Quittung geschrieben, ohne etwas zu behalten.',
+    skillDescriptions: { zollstunde: 'Die Zollstunde schlägt für alle (1.3x AOE)', pfaendung_vogt: 'Pfändet, wem es am besten geht (2.6x Schaden)', mahnung: 'Die Mahnung wird deutlicher (+8 ATK)' },
   },
 
   // ── Ocean ──

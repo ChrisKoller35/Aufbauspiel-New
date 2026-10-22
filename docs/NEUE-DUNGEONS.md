@@ -12,28 +12,36 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 6 | Das Himmelsarchiv | Himmel | 16 | Der Oberarchivar | Verbotene Bücher: seltene Funde, kosten aber Leben | Klinge der tausend Schatten |
 | 7 | Die Sternenschmiede | Sterne | 16 | Korrund, der Sternenschmied | Sternenfeuer: Wer die Waffen in die Essen hält, hat bis zum Ende +10 % Angriff (die ganze Gruppe), verliert aber 5 bis 10 % Leben | Korrunds Hammer |
 | 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt 3 bis 5 Sternenstahl, aber erst mit dem Sieg über Nyxar | Der letzte Stern |
+| 9 | Der Mondhof | Mond | 16 | Argentis, der Mondvogt | Pfandzettel: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Zettel unterschreiben; jeder kostet bis zum Ende 10 % Angriff und bringt erst mit dem Sieg über Argentis Mondsilber (5, dann 9) oder einen Set-Teil mehr. Wer am letzten Kontrollpunkt umkehrt, lässt alle Pfandzettel liegen | Amtsstab des Mondvogts |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
-  Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund). Ebenen über 5
-  verlangen den höchsten Rang, den es gibt (V).
+  Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund, Mondhof: Nyxar).
+  Ebenen über 5 verlangen den höchsten Rang, den es gibt (V).
 - **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_<route>_*`). Eigene Bilder haben
   Glutwyrmling, Hortkobold und Drachenpriester, Funkenwichtel, Ambossgolem und Korrund, Lichtmotte,
-  Leerenkriecher und Nyxar; die übrigen tragen Bilder anderer Gegner.
+  Leerenkriecher und Nyxar; die übrigen tragen Bilder anderer Gegner. Im Mondhof tragen alle fünf
+  (Silberschreiber, Mondwache, Zollgeist, Mondkalb, Argentis) Bilder anderer Gegner.
 - **Routenbilder:** `exp_drachenhort`, `exp_himmelsarchiv`, `exp_sternenschmiede` und `exp_sternenschlund`
-  (Karte, Routenliste, Kampf).
+  (Karte, Routenliste, Kampf). Der Mondhof zeigt bis zu einem eigenen Bild `exp_sternenschlund`.
 - **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen besonderen Gegenstand dazu.
   Drachenhort und Himmelsarchiv geben je ein T5-Stück; die drei T5-Stücke wurden dafür so verstärkt, dass
   sie je etwas besser sind als das beste T4-Stück für denselben Platz. Korrund gibt seinen Hammer (T7,
   zweihändig, Funkenflug: jeder Treffer springt mit 40 % auf einen zweiten Gegner über), Nyxar den letzten
-  Stern (T8, Schmuck: wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf).
+  Stern (T8, Schmuck: wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf), Argentis seinen
+  Amtsstab (T9, einhändig, Letzte Bastion: der Träger zieht zu Beginn jedes Kampfes 2 Runden lang alle
+  Angriffe auf sich; der Tooltip warnt davor).
 - **Gebiet «Sterne»** (Ebene 7 und 8): violetter Nebel und ein funkelndes Sternenfeld auf der Karte,
   Material für die Schmiede ist Sternenstahl (`docs/SCHMIEDE.md`).
+- **Gebiet «Mond»** (Ebene 9 und 10): silbergrauer Dunst über dem Sternenfeld, Nebel und Sterne hören
+  darunter auf. Material für die Schmiede ist Mondsilber (`MAT_MONDSILBER`, Bild aus Code).
 - **Nicht dabei:** Wochen-Herausforderungen (nur bis Ebene 4).
 - **Probespiel:** `?probe=neu` startet mit Gildenrang V und allen Bossen bis zum Vulkankern, der
   Drachenhort ist offen. `?probe=sterne` startet zwischen den Sternen: Team «Stark» (Stufe 15, mit
   seinen Wegen) in den Sets aus Ebene 4 und dem Hort-Set, alle Teile auf +3, alle Bosse bis zum
   Oberarchivar besiegt, die Sternenschmiede offen. Im Lager liegt alles, um die Sets und Korrunds
-  Meisterstücke auf +5 zu schmieden. In beiden hat das Gildenhaus Stufe 2, es gehen also vier Helden mit,
+  Meisterstücke auf +5 zu schmieden. `?probe=mond` startet vor dem Mondhof: dasselbe Team in Korrunds
+  Meisterstücken und dem Schlund-Set auf +5, alle Bosse bis Nyxar besiegt, im Lager Mondsilber für das
+  Pfand des Mondvogts auf +5. In allen hat das Gildenhaus Stufe 2, es gehen also vier Helden mit,
   und die Klassen, die diese Bosse freischalten, sind schon frei (der erste Bericht meldet keine «Neue Klasse»).
 
 ## Einen Dungeon dazubauen
@@ -89,8 +97,16 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   unter null macht den Boss um die Anteile aus `hortGier` schwächer (Sternenschlund).
 - **Beute erst mit dem Sieg** (`EncounterChoice.nachSieg` bei `effect: 'item'`): Die Beute wartet auf den
   Bosskampf und kommt nur, wenn der Boss fällt, wie «wenn ihr siegt» in den Geschichten. Wer vorher umkehrt
-  oder fällt, lässt sie liegen; so lässt sie sich nicht mitnehmen und die Gefahr auslassen (Sternenschlund:
-  nach dem letzten Stern kommt noch ein Kontrollpunkt mit Rückzug).
+  oder fällt, lässt sie liegen; so lässt sie sich nicht mitnehmen und die Gefahr auslassen. Kontrollpunkte
+  mit Rückzug kommen nach jedem Raum mit `index % 3 === 2`, also auch nach Raum 14, dem letzten vor dem Boss:
+  Wer dort umkehrt, lässt alle Sterne oder Pfandzettel liegen.
+- **Preis in Angriff** (`EncounterChoice.kostetAngriff`, Prozent): Die Option kostet die ganze Gruppe bis zum
+  Ende des Dungeons Angriff, dreimal gewählt 30 %; das Gegenstück zu «Angriff bis zum Ende» über denselben
+  Weg (`gruppenAngriffWaechst` mit negativem Wert), flache Boni aus Kämpfen bleiben. Das Logbuch meldet
+  «schwächer», die Kampf-Vorschau zeigt es in den Werten der Helden (Mondhof).
+- **Zusage eines Set-Teils** (`EncounterChoice.setTeil`): Die Option verspricht einen Set-Teil mehr, wenn der
+  Boss fällt (`run.setTeilVersprochen`, bezahlt von `setBeute`); nur in einem Raum je Dungeon, sonst zählt die
+  Zusage nur einmal. Mit `kostetAngriff` ist es ein Pfandzettel ohne Beute (Mondhof, Raum 8).
 - **Erstsieg-Beute** (`RouteDef.ersterSiegBeute`).
 
 ## Eichung
@@ -196,6 +212,21 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
   etwas mehr als vorher; in der Sternenschmiede auch, weil die Risiken dort Leben kosten (gierig auf +4 48
   statt 68 %), vorsichtig und klug sind dort gleich geblieben.
 
+### Im Mondlicht (Ebene 9)
+
+**Ziele (Entwurf):** Team «Stark» in Korrunds Meisterstücken und dem Schlund-Set auf +5 (`MUSTER_SETS.mond5`)
+soll den Mondhof vorsichtig in 60 bis 70 % der Läufe schaffen, klug etwa in der Hälfte, mit allen drei
+Pfandzetteln selten; die Pfandzettel sind der Preis für Mondsilber und einen Set-Teil mehr. Dazu zwei neue
+Messgrössen: Läufe, die am Rundenlimit des Bosskampfs enden (unter 5 %), und Siege vor der Wut-Runde (Argentis
+wütet ab Runde 10). Mit dem Pfand des Mondvogts auf +5 (`MUSTER_SETS.pfand5`) misst die Eichung erst ab Ebene 10.
+
+**Noch nicht geeicht (22.10.2026).** Der Mondhof steht mit den Startwerten des Entwurfs; ein Probelauf mit
+`spieleRoute` (50 Läufe je Spielweise, Team «Stark») gab: mit `sterne5` (ohne Schlund-Set) 0 / 0 / 0 Siege,
+mit `mond5` 1 / 0 / 0 Siege, keine Läufe am Rundenlimit, keine Fehler; jeder Lauf kommt bis zu Argentis und
+fällt dort (im Mittel 16 Räume). Zum Vergleich der Sternenschlund mit `sterne5` vorsichtig: 47 von 50. Der
+Mondhof ist also zurzeit viel zu schwer; die Eichung (Argentis und die Mondwachen schwächer, oder die Gegner
+davor) ist der nächste Schritt, nicht Teil des Baus.
+
 ## Entschieden
 
 - **Endlose Treppe** (20.10.2026, Christoph: «Ganz weg»): entfernt. Die Karte wächst nur mit neuen Dungeons;
@@ -207,3 +238,17 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
   Versuch brauchbar und eingebaut (Befund: `/mnt/project-files/magic-city/bilder-sterne/BEFUND.md`).
 - **Zwei Dungeons zwischen den Sternen** (20.10.2026, Christoph: Punkt 3 «gleich auch noch anhängen»):
   Sternenschmiede und Sternenschlund mit Gegnern, Bossen, Sets und Geschichte.
+- **Der Mondhof** (22.10.2026, Entscheid der Richter zum Entwurf «Loot-Builds»): Ebene 9 im neuen Gebiet
+  «Mond» mit Pfandzetteln (Preis in Angriff), Mondsilber, dem Set «Pfand des Mondvogts» (Mondwall: Schild
+  für alle, der sich mit anderen Schilden addiert) und der Geschichte «Der Pfandzettel». Der Set-Teil aus
+  Raum 8 läuft über `EncounterChoice.setTeil`, nicht über `effect: 'geschichte'`. Bilder: keine, alle fünf
+  Gegner und das Routenbild sind Platzhalter, bis Christoph sie freigibt. Weggelassen: Mondschein,
+  Himmelslast, ein zweites Material, Wecken Gefallener.
+
+## Später
+
+Aus den Entwürfen für den Mond bleiben zwei Ideen als Kandidaten für Ebene 11 und 12 liegen, ohne dass die
+Vorgeschichte dazu schon feststeht: **«Erste Stadt / Alruna»**, eine Stadt der Vorigen ohne Rastplatz, in der
+Wachfeuer Gefallene wecken und am Ende Alruna wartet, die den Saal der Gilde gebaut hat; und **«Wut-Runde als
+Preis / Pfeiler»**, ein Dungeon, in dem der Boss nicht stärker, sondern ungeduldiger wird (jeder herausgebrochene
+Pfeiler bringt Material, wenn ihr siegt, und zieht seine Wut-Runde um zwei Runden vor).

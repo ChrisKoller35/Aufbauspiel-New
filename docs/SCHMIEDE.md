@@ -13,8 +13,10 @@ neuer Dungeon für sie braucht.
   («Es fehlen 48 Glutkern.»), und der Knopf ist aus.
 - **Material:** Jedes Gebiet hat sein eigenes (Tabelle unten). Ein Set-Teil braucht das Material aus dem
   Gebiet seines Dungeons. Ein Sieg bringt die **Grundmenge** der Ebene (2 + Ebene: Ebene 1 bringt 3,
-  Ebene 4 bringt 6, Ebene 8 bringt 10). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
-  Sternenstahl dazu, aber erst mit dem Sieg, und Nyxar bleibt stark. Niederlage oder Rückzug bringen die
+  Ebene 4 bringt 6, Ebene 8 bringt 10, Ebene 9 bringt 11). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
+  Sternenstahl dazu, aber erst mit dem Sieg, und Nyxar bleibt stark. Im Mondhof bringen die Pfandzettel aus
+  Raum 2 und 14 zusammen 14 Mondsilber dazu, auch erst mit dem Sieg, und jeder kostet bis zum Ende 10 %
+  Angriff. Niederlage oder Rückzug bringen die
   Hälfte der Grundmenge, anteilig zu den geschafften Räumen. Das Material liegt in der Truhe mit dem
   Hinweis, wofür es ist («⚒️ Für die Schmiede: Set-Teile aus dem Feuer»).
 - **Stufen +1 bis +5:** Jede Stufe macht alle Werte eines Teils um 10 % stärker, gerundet. Der Hauptwert
@@ -93,8 +95,10 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
 | Drachenschuppe | Drachenhort | Der Drachenhort |
 | Himmelstinte | Himmelsarchiv | Das Himmelsarchiv |
 | Sternenstahl | Sterne | Die Sternenschmiede, Der Sternenschlund |
+| Mondsilber | Mond | Der Mondhof |
 
-Die Dungeon-IDs stehen in `SCHMIEDE_MATERIALIEN` (`src/data/schmiede.ts`).
+Die Dungeon-IDs stehen in `SCHMIEDE_MATERIALIEN` (`src/data/schmiede.ts`). Das Pfand des Mondvogts auf +5
+kostet 990 Mondsilber (Grundmenge 11); `?probe=mond` legt das ins Lager.
 
 ## Wo es steht
 
@@ -130,4 +134,5 @@ dazu, bringt ein Sieg schon mehr Material, wie bei den Punkten: Schwer ×1,5, Al
 - **Ruhmestruhe** der Rangliste mit Material: wäre ein schöner Preis, noch nicht eingebaut.
 - **Gewöhnliche Ausrüstung einschmelzen:** Bisher nur Set-Teile. Alte T1- bis T3-Stücke stapeln sich.
 - **Eichung mit Stufen:** erledigt für die Dungeons zwischen den Sternen (Musterteams mit Sets auf +3 und +5,
-  `MUSTER_SETS.sterne3` und `sterne5`). Die Dungeons darunter misst die Eichung weiter ohne Stufen.
+  `MUSTER_SETS.sterne3` und `sterne5`). Die Dungeons darunter misst die Eichung weiter ohne Stufen. Für den
+  Mondhof stehen `mond5` und `pfand5` bereit, gemessen ist er noch nicht (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht»).

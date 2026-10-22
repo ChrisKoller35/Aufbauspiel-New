@@ -111,19 +111,34 @@ export interface MusterSet {
   abEbene?: number;
 }
 
+const SETS_STERNE: Record<string, GuildFighter['gear']> = {
+  ...SETS_HORT,
+  Grimm: { mainHand: 'set_stern_klinge', offHand: null, armor: 'set_stern_platte', trinket: 'set_stern_talisman' },
+};
+
+/** Im Mondlicht: dazu Lia in dem, was Nyxar nicht frass (der Schlüssel für den Mondhof, docs/DUNGEON-SETS.md) */
+const SETS_MOND: Record<string, GuildFighter['gear']> = {
+  ...SETS_STERNE,
+  Lia: { mainHand: 'set_schlund_bogen', offHand: null, armor: 'set_schlund_leder', trinket: 'set_schlund_ring' },
+};
+
+/** Über dem Mondhof: Brom im Pfand des Mondvogts mit dem Amtsstab (Mondwall und Letzte Bastion zugleich) */
+const SETS_PFAND: Record<string, GuildFighter['gear']> = {
+  ...SETS_MOND,
+  Brom: { mainHand: 'amtsstab_des_mondvogts', offHand: 'set_pfand_schild', armor: 'set_pfand_platte', trinket: 'set_pfand_amulett' },
+};
+
 /**
  * Für die Dungeons zwischen den Sternen (Ebene 7 und 8) dazu die Schmiede: Wer dort ankommt,
  * hat seine Sets aus den Dungeons darunter verbessert, und wer weiter will, trägt dazu
- * Korrunds Meisterstücke (Grimm, statt des Hort-Sets).
+ * Korrunds Meisterstücke (Grimm, statt des Hort-Sets). Im Mondlicht (ab Ebene 9) trägt Lia das
+ * Set aus dem Sternenschlund, über dem Mondhof (ab Ebene 10) Brom das Pfand des Mondvogts.
  */
-export const MUSTER_SETS: Record<'ebene4' | 'hort' | 'sterne3' | 'sterne5', MusterSet> = {
+export const MUSTER_SETS: Record<'ebene4' | 'hort' | 'sterne3' | 'sterne5' | 'mond5' | 'pfand5', MusterSet> = {
   ebene4: { name: 'Sets aus Ebene 4', gear: SETS_EBENE_4 },
   hort: { name: 'Ebene 4, Grimm mit dem Hort-Set', gear: SETS_HORT },
   sterne3: { name: 'Ebene 4 und Hort-Set, alle Teile auf +3', gear: SETS_HORT, schmiede: 3, abEbene: 7 },
-  sterne5: {
-    name: 'Dazu Grimm mit Korrunds Meisterstücken, alle Teile auf +5',
-    gear: { ...SETS_HORT, Grimm: { mainHand: 'set_stern_klinge', offHand: null, armor: 'set_stern_platte', trinket: 'set_stern_talisman' } },
-    schmiede: 5,
-    abEbene: 7,
-  },
+  sterne5: { name: 'Dazu Grimm mit Korrunds Meisterstücken, alle Teile auf +5', gear: SETS_STERNE, schmiede: 5, abEbene: 7 },
+  mond5: { name: 'Dazu Lia mit dem Schlund-Set, alle Teile auf +5', gear: SETS_MOND, schmiede: 5, abEbene: 9 },
+  pfand5: { name: 'Dazu Brom im Pfand des Mondvogts mit dem Amtsstab, alle Teile auf +5', gear: SETS_PFAND, schmiede: 5, abEbene: 10 },
 };

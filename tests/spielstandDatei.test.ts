@@ -58,7 +58,7 @@ function neuesSpiel(probe?: 'gut' | 'sterne'): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
   createStartingCitizens(state);
-  if (probe) richteProbespielEin(state, probe === 'sterne');
+  if (probe) richteProbespielEin(state, probe === 'sterne' ? 'sterne' : 'neu');
   return state;
 }
 

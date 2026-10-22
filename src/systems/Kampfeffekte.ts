@@ -245,6 +245,7 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     wegZaehlen(phalanx, 'schild', schild * helden.length);
     log(`★ ${phalanx.name} setzt Phalanx ein → jeder im Team erhält einen Schild von ${schild}`);
   }
+  mondwall(party, log);
   const lied = staerksterTraeger(helden, 'heldenlied');
   if (lied) {
     const e = effekt(lied, 'heldenlied')!;
@@ -279,6 +280,20 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     log(`✦ ${u.name} setzt Feueratem ein → alle Gegner erleiden ${dmg} Schaden`);
     for (const z of ziele) schadenNehmen(z, dmg);
   }
+}
+
+/**
+ * Mondwall (Set «Pfand des Mondvogts»): Zu Beginn jedes Kampfes und danach alle 3 Runden erhält
+ * jeder im Team einen Schild, der sich auf andere Schilde (Phalanx, Moospolster, Fussnote) dazulegt.
+ * Bei mehreren Trägern zählt der stärkste.
+ */
+function mondwall(party: CombatUnit[], log: Log): void {
+  const traeger = staerksterTraeger(party, 'mondwall');
+  const e = traeger && effekt(traeger, 'mondwall');
+  if (!traeger || !e) return;
+  const schild = e.schild ?? staerke(traeger, 'mondwall');
+  for (const h of lebendig(party)) h.schild = (h.schild ?? 0) + schild;
+  log(`✦ ${traeger.name} setzt ${anzeigeName(e)} ein → jeder im Team erhält einen Schild von ${schild}`);
 }
 
 /** Am Ende jedes Kampfs: was nur für einen Kampf gilt, fällt weg */
@@ -752,9 +767,13 @@ export function rundenEnde(
 
 /**
  * Am Rundenende, nach den Effekten der einzelnen Helden, fürs ganze Team einmal (bei mehreren
- * Trägern zählt der stärkste): die Seuche und der Schmiedetakt.
+ * Trägern zählt der stärkste): die Seuche, der Schmiedetakt und der Mondwall.
  */
 function teamRundenEnde(party: CombatUnit[], gegner: CombatUnit[], runde: number, log: Log): void {
+  const wall = staerksterTraeger(party, 'mondwall');
+  const wallEffekt = wall && effekt(wall, 'mondwall');
+  if (wallEffekt && runde % (wallEffekt.runden ?? 3) === 0 && lebendig(gegner).length > 0) mondwall(party, log);
+
   const seuche = staerksterTraeger(party, 'seuche');
   if (seuche && lebendig(gegner).length > 0) {
     const menge = staerke(seuche, 'seuche');

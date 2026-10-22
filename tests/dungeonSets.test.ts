@@ -17,6 +17,7 @@ import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { SPECIAL_EFFECT_DEFS, extractSpecialTags } from '../src/data/specialEffects';
 import { musterStand, siegeVon } from '../src/systems/Musterlauf';
 import { SeededRNG } from '../src/utils/RNG';
+import { kampfBeginn } from '../src/systems/Kampfeffekte';
 
 const gear = new GearSystem();
 const engine = new CombatEngine(gear);
@@ -443,6 +444,29 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(sterne[0][1]).toBeLessThan(treffer[3][1]);
     expect(sterne[0][0]).toBe(`✦ ${traeger.name} setzt Sternenfall ein → ein Stern trifft alle Gegner: Ziel A −${wucht}, Ziel B −${wucht}, Ziel C −${wucht}`);
     expect(traeger.sternenTreffer).toBe(0);
+  });
+
+  test('Mondwall: zu Kampfbeginn und alle 3 Runden ein Schild von 15 für alle, der sich auf die Phalanx dazulegt', () => {
+    const traeger = einheit(heldMitSet('pfand'));
+    const begleiter = einheit(heldMitSet(null));
+    const run = kampf([traeger, begleiter], [gegner('Zöllner', { hp: 99999, maxHp: 99999, atk: 1, spd: 0.1 })]);
+    const wall = (nr: number) => runde(run, nr).filter(l => l.includes('Mondwall'));
+    const zeile = `✦ ${traeger.name} setzt Mondwall ein → jeder im Team erhält einen Schild von 15`;
+    expect(wall(1)).toEqual([zeile]);
+    expect(wall(2)).toEqual([]);
+    expect(wall(3)).toEqual([zeile]);
+    expect(wall(4)).toEqual([]);
+    expect(wall(6)).toEqual([zeile]);
+
+    // Addiert sich auf die Phalanx (und andere Schilde), statt sie zu ersetzen
+    const phalanx = einheit(heldMitSet('pfand'));
+    phalanx.specialEffects!.push({ id: 'phalanx', usesLeft: -1, power: 4 });
+    const andere = einheit(heldMitSet(null));
+    andere.schild = 7;
+    const { run: lauf2 } = lauf([phalanx, andere], [gegner('Zöllner')]);
+    kampfBeginn([phalanx, andere], lauf2.rooms[0].enemies, lauf2, () => {});
+    expect(phalanx.schild).toBe(4 + 15);
+    expect(andere.schild).toBe(7 + 4 + 15);
   });
 
   test('Einfrieren: der Gegner setzt einen Zug aus, aber nie zwei hintereinander', () => {
