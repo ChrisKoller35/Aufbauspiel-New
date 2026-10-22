@@ -40,6 +40,7 @@ function getBiomeTag(route: RouteDef): { label: string; cls: string } {
   if (route.gebiet === 'gipfel') return { label: 'Drachengipfel', cls: 'tag-gipfel' };
   if (route.gebiet === 'himmel') return { label: 'Himmel', cls: 'tag-himmel' };
   if (route.gebiet === 'sterne') return { label: 'Sterne', cls: 'tag-sterne' };
+  if (route.gebiet === 'mond') return { label: 'Mond', cls: 'tag-mond' };
   if (route.isUnderwater) return { label: 'Unterwasser', cls: 'tag-unterwasser' };
   if (route.isSiegeRoute) return { label: 'Belagerung', cls: 'tag-belagerung' };
   if (id.includes('volcano') || id.includes('obsidian') || id.includes('ash') || id.includes('magma')) return { label: 'Vulkan', cls: 'tag-vulkan' };

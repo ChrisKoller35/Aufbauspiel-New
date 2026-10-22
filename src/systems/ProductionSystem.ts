@@ -7,20 +7,14 @@ import { zyklusSekunden } from './Ausbau';
 import { auftragGestartet, hatAuftragsliste, meldeAuftragFertig, naechsterAuftrag } from './Auftraege';
 import { kannBeginnen, planeZyklus, Zyklus } from './Werkstattplan';
 
-/** Stadt-Takt in Sekunden: so oft ruft main.ts update() auf (CITY_TICK_INTERVAL). */
-const TAKT_SEKUNDEN = 1;
-
 /**
- * Wie lange ein Zyklus im Spiel wirklich dauert, von Start zu Start (reine Rechnung für Anzeigen,
- * z. B. systems/Tagesbilanz.ts). Spiegelt update(): Der Zähler läuft je Takt um 1 s, ein Zyklus
- * dauert also ganze Takte (aufgerundet), und der nächste beginnt erst im Takt danach (Leertakt).
- * Ein 10-s-Rezept liefert so alle 11 s, auf Stufe 3 (3,3 s) alle 5 s. Wird update() geändert,
- * gehört diese Funktion mit geändert; tests/tagesbilanzSimulation.test.ts vergleicht beides.
+ * Mehr Zyklen schliesst ein Gebäude in einem Takt nicht ab (Schutz vor einer Endlosschleife, falls ein
+ * Rezept je 0 s dauert). Im Spiel (Takt 1 s, kürzester Zyklus gut 2 s) ist es höchstens einer.
  */
-export function echteZyklusSekunden(b: BuildingInstance, recipe: RecipeDef): number {
-  const takte = Math.max(1, Math.ceil(zyklusSekunden(b, recipe) / TAKT_SEKUNDEN));
-  return (takte + 1) * TAKT_SEKUNDEN;
-}
+const MAX_ZYKLEN_JE_TAKT = 100;
+
+/** Rundungsrauschen bei Bruchteilen (3 × 3,33 s sind 10 s, nicht 10,000000000000002 s). */
+const EPSILON = 1e-9;
 
 /**
  * Handles recipe-based production for all buildings.
@@ -28,11 +22,26 @@ export function echteZyklusSekunden(b: BuildingInstance, recipe: RecipeDef): num
  * Rohstoff-Gebäude wiederholen ihr Rezept, solange es geht. Werkstätten
  * (Aufträge) beginnen nur, was systems/Werkstattplan.ts plant: Auftrag,
  * Vorstufe, Zulieferung oder Vorrat.
+ *
+ * Zyklen laufen ohne Lücke: Ist einer fertig, wird geliefert und der nächste
+ * beginnt im selben Takt; die Zeit über das Ende hinaus zählt für ihn mit.
+ * Ein Gebäude, das durcharbeitet, liefert so im Mittel alle zyklusSekunden
+ * (systems/Ausbau.ts), auch bei Bruchteilen eines Takts: Ein 3,33-s-Rezept
+ * liefert in den Takten 5, 8, 11, 15, 18, 21, 25, 28, 31, ... im Dauerlauf
+ * also 9-mal je 30 s (im ersten Tag 8-mal: Takt 1 beginnt nur).
+ * Was nichts beginnen konnte, versucht es am Ende des Takts noch einmal,
+ * wenn alle anderen geliefert oder Zutaten genommen haben: So mahlt die
+ * Windmühle ohne Lücke weiter, sobald die Bäckerei ihr Mehl genommen hat.
+ * Geliefert wird nur in Takten; Anzeigen (Tagesbilanz, GebaeudeStatus)
+ * rechnen mit zyklusSekunden, tests/tagesbilanzSimulation.test.ts prüft das.
  */
 export class ProductionSystem {
   private cityEventSystem = new CityEventSystem();
 
   update(state: GameState, deltaSec: number): void {
+    /** Gebäude, die in diesem Takt nichts beginnen konnten, mit der Zeit, die ihnen vom letzten Zyklus bleibt. */
+    const nochmal: { building: BuildingInstance; ueberhang: number }[] = [];
+
     for (const building of state.buildings) {
       if (!building.built) continue;
 
@@ -49,8 +58,9 @@ export class ProductionSystem {
 
       if (!building.producing) {
         // Try to start a new production cycle
-        const zyklus = hatAuftragsliste(building) ? planeZyklus(state, building) : this.dauerlauf(state, building);
+        const zyklus = this.naechsterZyklus(state, building);
         if (zyklus) this.starte(state, building, zyklus);
+        else nochmal.push({ building, ueberhang: 0 });
         continue;
       }
 
@@ -62,27 +72,28 @@ export class ProductionSystem {
 
       // Tick down production timer
       building.productionTimer -= deltaSec;
-      if (building.productionTimer <= 0) {
-        // Production complete — add outputs (with event multiplier)
-        const eventMult = this.cityEventSystem.getProductionMultiplier(state, building.typeId);
-        for (const [item, amount] of Object.entries(recipe.outputs)) {
-          const boosted = Math.floor(amount * eventMult);
-          if (building.connected) {
-            state.globalStock[item] = (state.globalStock[item] ?? 0) + boosted;
-          } else {
-            building.localOutputBuffer[item] =
-              (building.localOutputBuffer[item] ?? 0) + boosted;
-          }
+
+      // Fertig: liefern und gleich weitermachen, die Zeit über das Ende hinaus zählt für den nächsten Zyklus
+      for (let n = 0; n < MAX_ZYKLEN_JE_TAKT && building.producing && building.productionTimer <= EPSILON; n++) {
+        const ueberhang = Math.max(0, -building.productionTimer);
+        this.liefere(state, building, RECIPE_DEFS[building.activeRecipeId!]);
+        const naechster = this.naechsterZyklus(state, building);
+        if (!naechster) {
+          nochmal.push({ building, ueberhang });
+          break;
         }
-        building.producing = false;
-        building.productionTimer = 0;
-        // Auftragsliste: Rückmeldung (nur für Aufträge) und nächsten Auftrag einstellen (systems/Auftraege.ts)
-        if (hatAuftragsliste(building)) {
-          if (!building.vonSelbst) meldeAuftragFertig(building, recipe);
-          building.vonSelbst = null;
-          naechsterAuftrag(building);
-        }
+        this.starte(state, building, naechster);
+        building.productionTimer -= ueberhang;
       }
+    }
+
+    // Zweiter Anlauf: Vielleicht hat inzwischen ein anderes Gebäude geliefert oder Zutaten genommen
+    for (const { building, ueberhang } of nochmal) {
+      if (building.producing) continue;
+      const zyklus = this.naechsterZyklus(state, building);
+      if (!zyklus) continue;
+      this.starte(state, building, zyklus);
+      building.productionTimer -= ueberhang;
     }
 
     // Transfer outputs from connected buildings to global stock
@@ -97,10 +108,37 @@ export class ProductionSystem {
     }
   }
 
+  /** Was ein freies Gebäude jetzt beginnt: Werkstätten nach Plan, Rohstoff-Gebäude ihr Rezept. */
+  private naechsterZyklus(state: GameState, building: BuildingInstance): Zyklus | null {
+    return hatAuftragsliste(building) ? planeZyklus(state, building) : this.dauerlauf(state, building);
+  }
+
   /** Rohstoff-Gebäude: das gewählte Rezept, sobald es geht. */
   private dauerlauf(state: GameState, building: BuildingInstance): Zyklus | null {
     const recipe = building.activeRecipeId ? RECIPE_DEFS[building.activeRecipeId] : undefined;
     return recipe && kannBeginnen(state, building, recipe) ? { recipe, art: 'auftrag', fuer: recipe.id } : null;
+  }
+
+  /** Ein Zyklus ist fertig: Ware abliefern (mit dem Faktor eines Stadt-Ereignisses), Werkstatt freigeben. */
+  private liefere(state: GameState, building: BuildingInstance, recipe: RecipeDef): void {
+    const eventMult = this.cityEventSystem.getProductionMultiplier(state, building.typeId);
+    for (const [item, amount] of Object.entries(recipe.outputs)) {
+      const boosted = Math.floor(amount * eventMult);
+      if (building.connected) {
+        state.globalStock[item] = (state.globalStock[item] ?? 0) + boosted;
+      } else {
+        building.localOutputBuffer[item] =
+          (building.localOutputBuffer[item] ?? 0) + boosted;
+      }
+    }
+    building.producing = false;
+    building.productionTimer = 0;
+    // Auftragsliste: Rückmeldung (nur für Aufträge) und nächsten Auftrag einstellen (systems/Auftraege.ts)
+    if (hatAuftragsliste(building)) {
+      if (!building.vonSelbst) meldeAuftragFertig(building, recipe);
+      building.vonSelbst = null;
+      naechsterAuftrag(building);
+    }
   }
 
   private starte(state: GameState, building: BuildingInstance, zyklus: Zyklus): void {

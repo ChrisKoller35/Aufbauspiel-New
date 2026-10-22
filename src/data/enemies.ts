@@ -616,6 +616,110 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_boss_nyxar', xpReward: 420, goldReward: 220, spriteKey: 'BOSS_NYXAR',
   },
 
+  // ── Der Mondhof (Ebene 9, im Mondlicht über den Sternen) ──
+  // Die Wachen des Schlunds mal 1,15 bei Leben und Angriff, etwas mehr Verteidigung; alle tragen
+  // Bilder anderer Gegner, bis es eigene gibt (docs/NEUE-DUNGEONS.md). Geeicht am 22.10.2026: Die Wachen
+  // blieben, Argentis hat weniger Angriff und Leben als im Entwurf (52 → 44, 2665 → 2500), weil jeder Lauf
+  // bis zu ihm kam und dort fiel (docs/NEUE-DUNGEONS.md, «Im Mondlicht»).
+  silberschreiber: {
+    id: 'silberschreiber', name: 'Silberschreiber', role: 'support',
+    hp: 290, atk: 26, def: 6, spd: 1.4, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'tintenspritzer', name: 'Tintenspritzer', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
+      { id: 'pfandzettel', name: 'Pfandzettel', cooldown: 4, effectType: 'heal', power: 105, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 105' },
+    ],
+    lootTableId: 'loot_mondhof_rare', xpReward: 60, goldReward: 22, spriteKey: 'ENEMY_GHOST_MAGE',
+  },
+  mondwache: {
+    id: 'mondwache', name: 'Mondwache', role: 'melee',
+    hp: 615, atk: 30, def: 19, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    skills: [
+      { id: 'hellebardenschwung', name: 'Hellebardenschwung', cooldown: 4, effectType: 'aoe', power: 0.9, target: 'all_players', description: '0.9× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_mondhof_common', xpReward: 66, goldReward: 25, spriteKey: 'ENEMY_SIEGE_DEFENDER',
+  },
+  zollgeist: {
+    id: 'zollgeist', name: 'Zollgeist', role: 'ranged',
+    hp: 405, atk: 38, def: 9, spd: 1.2, critChance: 0.2, critMult: 1.9,
+    skills: [
+      { id: 'pfaendung', name: 'Pfändung', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_mondhof_common', xpReward: 64, goldReward: 24, spriteKey: 'ENEMY_MINE_SPECTER',
+  },
+  mondkalb: {
+    id: 'mondkalb', name: 'Mondkalb', role: 'melee',
+    hp: 275, atk: 32, def: 6, spd: 1.6, critChance: 0.18, critMult: 1.8,
+    skills: [
+      { id: 'verschlucken', name: 'Verschlucken', cooldown: 2, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_mondhof_common', xpReward: 60, goldReward: 21, spriteKey: 'ENEMY_WILD_BOAR',
+  },
+  boss_argentis: {
+    id: 'boss_argentis', name: 'Argentis, der Mondvogt', role: 'boss',
+    hp: 2500, atk: 44, def: 15, spd: 0.95, critChance: 0.13, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'zollstunde', name: 'Zollstunde', cooldown: 3, effectType: 'aoe', power: 1.3, target: 'all_players', description: '1.3× Schaden auf alle' },
+      { id: 'pfaendung_vogt', name: 'Pfändung', cooldown: 4, effectType: 'damage', power: 2.6, target: 'player', description: '2.6× Schaden auf 1 Ziel' },
+      { id: 'mahnung', name: 'Mahnung', cooldown: 5, effectType: 'buff', power: 8, target: 'self', description: '+8 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_boss_argentis', xpReward: 500, goldReward: 260, spriteKey: 'BOSS_ARCHIV_WATCHER',
+  },
+
+  // ── Das Morgentor (Ebene 10, über dem Mondhof) ──
+  // Die Wachen des Schlunds mal 1,32 beim Angriff (×1,15 über dem Mondhof), mehr Verteidigung; bei den Leben
+  // seit der Eichung (22.10.2026) nur noch mal 1,12 (Entwurf ×1,32, dann ×0,85). Sunna hat mehr Angriff und
+  // weniger Leben als im Entwurf (59 → 77, 3060 → 2600): Mit 59 konnte sie Brom im Pfand des Mondvogts nicht
+  // töten, und viele Läufe endeten als Patt am Rundenlimit (docs/NEUE-DUNGEONS.md, «Im Mondlicht»).
+  // Alle tragen Bilder anderer Gegner, bis es eigene gibt.
+  lichtkuester: {
+    id: 'lichtkuester', name: 'Lichtküster', role: 'support',
+    hp: 285, atk: 30, def: 8, spd: 1.3, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'weihrauch', name: 'Weihrauch', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
+      { id: 'morgensegen', name: 'Morgensegen', cooldown: 4, effectType: 'heal', power: 120, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 120' },
+    ],
+    lootTableId: 'loot_morgentor_rare', xpReward: 70, goldReward: 26, spriteKey: 'ENEMY_CURSED_PRIEST',
+  },
+  torhueter: {
+    id: 'torhueter', name: 'Torhüter aus Messing', role: 'melee',
+    hp: 599, atk: 34, def: 23, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    skills: [
+      { id: 'torschlag', name: 'Torschlag', cooldown: 4, effectType: 'aoe', power: 1.0, target: 'all_players', description: '1.0× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_morgentor_common', xpReward: 76, goldReward: 29, spriteKey: 'ENEMY_STONE_GUARDIAN',
+  },
+  daemmerfalke: {
+    id: 'daemmerfalke', name: 'Dämmerfalke', role: 'ranged',
+    hp: 395, atk: 44, def: 11, spd: 1.3, critChance: 0.22, critMult: 1.9,
+    skills: [
+      { id: 'sturzflug', name: 'Sturzflug', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_morgentor_common', xpReward: 74, goldReward: 28, spriteKey: 'ENEMY_FIRE_BAT',
+  },
+  morgenhahn: {
+    id: 'morgenhahn', name: 'Morgenhahn', role: 'melee',
+    hp: 268, atk: 37, def: 8, spd: 1.6, critChance: 0.18, critMult: 1.8,
+    skills: [
+      { id: 'hackschlag', name: 'Hackschlag', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
+      { id: 'kraehen', name: 'Krähen', cooldown: 4, effectType: 'buff', power: 6, target: 'self', description: '+6 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_morgentor_common', xpReward: 70, goldReward: 24, spriteKey: 'ENEMY_GLUTWYRMLING',
+  },
+  boss_sunna: {
+    id: 'boss_sunna', name: 'Sunna, die Tagwächterin', role: 'boss',
+    hp: 2600, atk: 77, def: 17, spd: 1.0, critChance: 0.14, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'erstes_licht', name: 'Erstes Licht', cooldown: 3, effectType: 'aoe', power: 1.3, target: 'all_players', description: '1.3× Schaden auf alle' },
+      { id: 'sonnenschwert', name: 'Sonnenschwert', cooldown: 4, effectType: 'damage', power: 2.7, target: 'player', description: '2.7× Schaden auf 1 Ziel' },
+      { id: 'morgentau', name: 'Morgentau', cooldown: 6, effectType: 'heal', power: 260, target: 'self', description: 'Heilt sich um 260' },
+    ],
+    lootTableId: 'loot_boss_sunna', xpReward: 600, goldReward: 300, spriteKey: 'BOSS_ANCIENT_DRAGON',
+  },
+
   // ── Ocean Enemies ──
   deep_sea_angler: {
     id: 'deep_sea_angler',
@@ -1195,6 +1299,60 @@ export const ENEMY_LORE: Record<string, { lore: string; route: string; skillDesc
     route: 'sternenschlund',
     lore: 'Eine Schlange aus Nacht, so lang, dass sie sich um den Himmel legen kann. Jede Nacht frisst Nyxar einen Stern, und jede Nacht wird es über Magic City ein wenig dunkler. Er hat noch nie gefragt, wem die Sterne gehören.',
     skillDescriptions: { sternenhunger: 'Zieht das Licht aus allen (1.3x AOE)', sternenbiss: 'Ein Biss wie ein schwarzes Loch (2.6x Schaden)', sternenmahl: 'Frisst einen Stern, heilt 200' },
+  },
+
+  // ── Der Mondhof ──
+  silberschreiber: {
+    route: 'mondhof',
+    lore: 'Er schreibt die Pfandzettel des Vogts, in Silber und sehr klein. Was er aufschreibt, gilt; was er durchstreicht, heilt. Er streicht lieber durch.',
+    skillDescriptions: { tintenspritzer: 'Silbertinte auf alle (0.8x AOE)', pfandzettel: 'Schreibt den Schwächsten gesund, heilt 105' },
+  },
+  mondwache: {
+    route: 'mondhof',
+    lore: 'Die Schranke des Hofs, mit Hellebarde. Sie fragt nicht nach dem Namen, sie fragt nach der Quittung, und sie hat Zeit, bis eine da ist.',
+    skillDescriptions: { hellebardenschwung: 'Die Hellebarde geht einmal rundum (0.9x AOE)' },
+  },
+  zollgeist: {
+    route: 'mondhof',
+    lore: 'Was im Hof nicht bezahlt wird, holt der Zollgeist. Er nimmt nicht, was am nächsten liegt, sondern was am meisten wehtut, und er trifft darin sehr genau.',
+    skillDescriptions: { pfaendung: 'Pfändet, was am meisten wehtut (2.0x Schaden)' },
+  },
+  mondkalb: {
+    route: 'mondhof',
+    lore: 'Im Mondhof wird alles gezählt, auch die Kälber. Dieses hat gelernt, dass Papier nach Silber schmeckt, und frisst seither Quittungen, Zettel und Finger.',
+    skillDescriptions: { verschlucken: 'Frisst Quittungen, Zettel und Finger (1.6x Schaden)' },
+  },
+  boss_argentis: {
+    route: 'mondhof',
+    lore: 'Argentis nimmt den Zoll von allem, was aufsteigt: Sterne, Rauch, Gebete, Seufzer. Er hat noch nie etwas durchgelassen, ohne eine Quittung zu schreiben, und noch nie eine Quittung geschrieben, ohne etwas zu behalten.',
+    skillDescriptions: { zollstunde: 'Die Zollstunde schlägt für alle (1.3x AOE)', pfaendung_vogt: 'Pfändet, wem es am besten geht (2.6x Schaden)', mahnung: 'Die Mahnung wird deutlicher (+8 ATK)' },
+  },
+
+  // ── Das Morgentor ──
+  lichtkuester: {
+    route: 'morgentor',
+    lore: 'Er poliert die Sonnenuhr und das Tor, jeden Tag, bevor es hell wird. Wer ihm zusieht, bekommt Weihrauch in die Augen; wer seine Freunde schlägt, bekommt sie von ihm zurück, gesegnet und gesund.',
+    skillDescriptions: { weihrauch: 'Weihrauch in alle Augen (0.8x AOE)', morgensegen: 'Segnet den Schwächsten gesund, heilt 120' },
+  },
+  torhueter: {
+    route: 'morgentor',
+    lore: 'Aus Messing gegossen, poliert, pünktlich. Er steht vor dem Tor, seit es eines gibt, und hat noch nie jemanden durchgelassen, der nicht die Sonne war. Er prüft das sehr gründlich.',
+    skillDescriptions: { torschlag: 'Das Tor schlägt zu, auf alle (1.0x AOE)' },
+  },
+  daemmerfalke: {
+    route: 'morgentor',
+    lore: 'Er jagt in der Stunde zwischen Nacht und Tag, wenn man ihn gegen den Himmel nicht sieht. Was er greift, hat die Sonne nicht mehr gesehen, und das ist hier oben der ganze Witz.',
+    skillDescriptions: { sturzflug: 'Fällt aus dem Grau auf einen herab (2.0x Schaden)' },
+  },
+  morgenhahn: {
+    route: 'morgentor',
+    lore: 'Er ruft den Tag aus, und zwar so lange, bis einer kommt. Mit jedem Krähen wird er lauter und mit jedem Lauterwerden mutiger. Wer ihn nicht zuerst erledigt, hört ihn den ganzen Kampf.',
+    skillDescriptions: { hackschlag: 'Hackt, wo es weh tut (1.5x Schaden)', kraehen: 'Kräht sich Mut an (+6 ATK)' },
+  },
+  boss_sunna: {
+    route: 'morgentor',
+    lore: 'Sunna öffnet das Tor, durch das der Tag kommt, und schliesst es hinter ihm, jeden Morgen, seit dem ersten. Sie hat noch nie zu spät geöffnet und noch nie jemanden vorgelassen. Wer die Sonnenuhr anfasst, bekommt beides zu spüren.',
+    skillDescriptions: { erstes_licht: 'Das erste Licht trifft alle (1.3x AOE)', sonnenschwert: 'Ein Strahl wie ein Schwert, auf einen (2.7x Schaden)', morgentau: 'Trinkt den Morgentau, heilt 260' },
   },
 
   // ── Ocean ──

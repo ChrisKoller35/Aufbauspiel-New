@@ -3,30 +3,35 @@
 Was entsteht und was wird pro Tag (30 Sekunden, `TAG_SEKUNDEN`) verbraucht, wenn alles so weiterläuft wie jetzt?
 Rechnung: `src/systems/Tagesbilanz.ts` (`tagesBilanz(state)`), Anzeige: Reiter «Produktion»
 (`src/ui/screens/ProduktionTab.ts`). Seit 22.10.2026 nach den Regeln der Werkstätten auf Auftrag
-(docs/WERKSTAETTEN.md) und mit der Dauer, die ein Zyklus im Spiel wirklich hat.
+(docs/WERKSTAETTEN.md) und mit der Dauer eines Zyklus.
 
-## Echte Dauer eines Zyklus
+## Dauer eines Zyklus
 
-Gerechnet wird mit `echteZyklusSekunden` (`src/systems/ProductionSystem.ts`), nicht mit der Dauer im Rezept. Der
-Stadt-Takt zählt in ganzen Sekunden, und nach einem fertigen Zyklus beginnt der nächste erst im Takt danach
-(Leertakt). Ein 10-s-Rezept liefert so alle 11 s, auf Stufe 3 (3,3 s) alle 5 s. Stufe, Besetzung und Synergie
-stecken in `zyklusSekunden` und zählen mit (die Synergie bleibt heute bei 1: `updateSynergies` ruft niemand auf).
+Gerechnet wird mit `zyklusSekunden` (`src/systems/Ausbau.ts`): der Dauer im Rezept, geteilt durch die besetzten
+Arbeitsplätze und mit der Synergie (die bleibt heute bei 1: `updateSynergies` ruft niemand auf). Im Spiel laufen die
+Zyklen ohne Lücke: Ist einer fertig, wird geliefert und der nächste beginnt im selben Stadt-Takt, und die Zeit über
+das Ende hinaus zählt für ihn mit (`ProductionSystem.update`). Ein Gebäude, das durcharbeitet, liefert darum im
+Mittel alle `zyklusSekunden`, auch bei Bruchteilen eines Takts: ein 10-s-Rezept alle 10 s, auf Stufe 3 (3,33 s) in
+den Takten 5, 8, 11, 15, 18, 21, 25, 28, 31, … – im Dauerlauf neunmal je 30 s, im Schnitt alle 3,33 s (am ersten Tag
+achtmal, weil der erste Takt nur beginnt).
 
 | Pro Tag | Stufe 1 | Stufe 2 | Stufe 3 |
 |---|---|---|---|
-| Holz, Getreide (Rezept 6 / 12 / 18) | 5,45 | 10 | 12 |
-| Stein (Rezept 2,5 / 5 / 7,5) | 2,31 | 4,29 | 6 |
-| Eisenschrott (Rezept 1 / 2 / 3) | 0,97 | 1,88 | 2,73 |
-| Mehl, höchstens (Rezept 5 / 10 / 15) | 4,62 | 8,57 | 12 |
-| Brot, höchstens (Rezept 2,14 / 4,29 / 6,43) | 2 | 3,75 | 5 |
+| Holz, Getreide | 6 | 12 | 18 |
+| Stein | 2,5 | 5 | 7,5 |
+| Eisenschrott | 1 | 2 | 3 |
+| Mehl, höchstens | 5 | 10 | 15 |
+| Brot, höchstens | 2,14 | 4,29 | 6,43 |
 
-Die Produktion selbst bleibt, wie sie ist. Wird der Leertakt einmal behoben, ändert sich nur `echteZyklusSekunden`;
-`tests/tagesbilanzSimulation.test.ts` vergleicht die Funktion mit `ProductionSystem.update` und schlägt sonst an.
+Das sind genau die Rezept-Mengen. Bis zum 22.10.2026 blieb nach jedem Zyklus ein Takt leer (Holz auf Stufe 3 nur
+12 statt 18 am Tag); seither ist der Leertakt weg, und Anzeigen und Rezept sagen dasselbe. Geliefert wird weiter nur
+in Takten, die einzelnen Abstände sind also 3 oder 4 Sekunden; `tests/tagesbilanzSimulation.test.ts` vergleicht die
+Rechnung mit `ProductionSystem.update` und schlägt an, wenn eine von beiden sich ändert.
 
 ## Was gezählt wird
 
 - **Rohstoff-Gebäude** (Holzfällerhütte, Steinbruch, Eisenmine, Getreidefarm) arbeiten ohne Pause: Ausgaben ×
-  `TAG_SEKUNDEN` / `echteZyklusSekunden`.
+  `TAG_SEKUNDEN` / `zyklusSekunden`.
 - **Bewohner** essen `brotProTag`. Solange das Wohnviertel Platz hat, kostet der nächste Bewohner 1 Brot (Posten
   «Nächster Bewohner −1»). Zusammen ist das `brotBedarfProTag`, wie im Spiel (`PeopleSystem.dayTick`).
 - **Brot für die Bewohner:** Die Bäckerei hält es von selbst für 3 Tage vorrätig (`VORRAETE` in
@@ -68,12 +73,12 @@ Getreidefarm, Windmühle und Bäckerei auf Stufe 1, je 1 Arbeiter, Brunnen, kein
 
 | Ware | Posten | Bilanz |
 |---|---|---|
-| Getreide | Getreidefarm +5,45, Windmühle −2 | +3,45 (Rezept: +4) |
+| Getreide | Getreidefarm +6, Windmühle −2 | +4 |
 | Mehl | Windmühle (Mehl für die Bäckerei) +2, Bäckerei −2 | 0 |
 | Brot | Bäckerei (Brot für die Bewohner) +1, Bewohner −1 | 0 |
 
-Mit 24 Bewohnern essen sie 3 Brot, die Bäckerei schafft 2: Brot −1, «Engpass: Bäckerei (Stufe 1) schafft nur
-2 Brot am Tag.»
+Mit 24 Bewohnern essen sie 3 Brot, die Bäckerei schafft 2,14: Brot −0,9, «Engpass: Bäckerei (Stufe 1) schafft nur
+2,1 Brot am Tag.»
 
 ## Was nicht gezählt wird
 
@@ -89,15 +94,15 @@ Mit 24 Bewohnern essen sie 3 Brot, die Bäckerei schafft 2: Brot −1, «Engpass
 - Nur bei minus: «reicht N Tage» heisst, an so vielen Tageswechseln liegt der ganze Bedarf im Lager. Weniger als
   1 im Lager: «leer». Reicht es nicht bis zum nächsten Tageswechsel: «reicht keinen Tag».
 - Waren ohne Vorrat von selbst: Lager durch Minus, abgerundet.
-- Brot (Vorrat der Bäckerei) Tag für Tag wie im Spiel: Ab dem Ziel (Brot für 3 Tage) ruht die Bäckerei, das Lager
-  sinkt um den ganzen Verbrauch. Lag das Lager beim letzten Tageswechsel am Ziel, backt sie danach wieder an, wartet
-  aber erst auf Mehl (`anlauf`, die Windmühle mahlt erst dann) und schafft an dem Tag weniger. Was sie heute schon
-  gebacken hat, zählt nicht doppelt (`tagFortschritt`). Beispiel: 80 Brot, 24 Bewohner, Brotkette Stufe 1: 30 Tage,
-  genau wie im Spiel (80 / 1 wären 80).
+- Brot (Vorrat der Bäckerei) Brot für Brot wie im Spiel (`vorratReicht`): Ab dem Ziel (Brot für 3 Tage) ruht die
+  Bäckerei, das Lager sinkt um den ganzen Verbrauch. Danach beginnt sie im nächsten Takt, wartet erst auf Mehl
+  (`anlauf`, die Windmühle mahlt nur auf Bedarf) und liefert dann ganze Brote, höchstens so viele, wie sie und ihre
+  Zutaten am Tag hergeben. Was sie gerade backt, zählt mit, und was heute schon im Lager liegt, nicht doppelt
+  (`tagFortschritt`). Beispiel: 80 Brot, 24 Bewohner, Brotkette Stufe 1: 30 Tage, genau wie im Spiel
+  (80 / 0,86 wären 93).
 - Gegen die Spielschleife gemessen: genau oder 1 Tag vorsichtiger in über 95 % der Fälle, nie mehr als 1 Tag zu viel.
-  Bei kleinem Minus (−0,25) bis 4 Tage zu vorsichtig, weil die Bäckerei ganze Brote backt. Am ersten Tag einer neuen
-  Brotkette (noch kein Getreide, kein Mehl) zeigt es zu viel, weil die Kette erst anläuft. Wächst die Stadt, steigt
-  der Verbrauch mit; «reicht» rechnet mit dem heutigen.
+  Am ersten Tag einer neuen Brotkette (noch kein Getreide, kein Mehl) zeigt es zu viel, weil die Kette erst anläuft.
+  Wächst die Stadt, steigt der Verbrauch mit; «reicht» rechnet mit dem heutigen.
 
 ## Anzeige
 
@@ -119,7 +124,8 @@ Mit 24 Bewohnern essen sie 3 Brot, die Bäckerei schafft 2: Brot −1, «Engpass
 ## Tests
 
 - `tests/tagesbilanz.test.ts`: Regeln, Texte und Anzeige.
-- `tests/tagesbilanzSimulation.test.ts`: gegen die Spielschleife wie in `main.ts`. `echteZyklusSekunden` gegen
-  `ProductionSystem.update` (alle Rohstoff-Gebäude, Stufen 1 bis 3, mit Synergie, Bäckerei und Windmühle); jede
-  Stadtstufe mit vollem Wohnviertel und die Engpässe über 90 Tage (Abweichung höchstens 0,012 pro Tag, nur weil
-  das Lager ganze Stücke zählt; der Test erlaubt 0,05); «reicht» gegen die satten Tage.
+- `tests/tagesbilanzSimulation.test.ts`: gegen die Spielschleife wie in `main.ts`. `zyklusSekunden` gegen
+  `ProductionSystem.update` (alle Rohstoff-Gebäude, Stufen 1 bis 3, mit Synergie, Bäckerei und Windmühle; dazu
+  ein Tag mit dem 3,33-s- und dem 10-s-Rezept); jede Stadtstufe mit vollem Wohnviertel und die Engpässe über
+  90 Tage (der Test erlaubt 0,05 Abweichung pro Tag, nur weil das Lager ganze Stücke zählt); «reicht» gegen die
+  satten Tage.

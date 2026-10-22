@@ -37,6 +37,7 @@ export interface AuftragsVorlage {
 /** Unter Wasser, in der Glut und über den Wolken: Dort zieht keine Karawane durch, und dort gräbt niemand */
 export const FERNE_DUNGEONS = [
   'ocean_depths', 'ocean_abyss', 'volcano_core', 'magma_caverns', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund',
+  'mondhof', 'morgentor',
 ];
 
 /** Die Zettel für Dungeons; Lieferungen stehen bei ihrer Ware (LIEFER_WAREN) */
@@ -217,7 +218,7 @@ export const SAAL_EINLEITUNG = 'Hinter dem Gildenhaus liegt ein Saal, den nieman
   + '{anzahl} leere Sockel stehen darin, vor jedem ein Messingschild mit einem Namen, und jeder Name gehört einem Ungeheuer, '
   + 'das heute noch lebt. Jorinde will wissen, wer den Saal gebaut hat. Ich will, dass die Sockel nicht leer bleiben.';
 
-export const SAAL_SCHLUSS = 'Alle Sockel sind voll. Als der Stern auf dem letzten lag, hat Jorinde hinter dem Saal eine '
+export const SAAL_SCHLUSS = 'Alle Sockel sind voll. Als das letzte Prunkstück auf seinem Sockel lag, hat Jorinde hinter dem Saal eine '
   + 'weitere Platte gefunden, ohne Namen, nur mit einem Satz: «Für die Nächsten. Macht es besser als wir.» Die Schrift ist '
   + 'dieselbe wie auf dem Schild in der Asche, mit dem diese Stadt angefangen hat. Ich habe die Platte geputzt und aufgestellt. Daneben ist noch Platz.';
 
@@ -322,9 +323,27 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
   {
     routeId: 'sternenschlund', art: 'sieg', ziel: 1, prunkstueck: 'Der Stern, den Nyxar nicht mehr schaffte',
     schild: 'Der Hungrige. Er frisst, was über uns leuchtet.',
-    text: 'Das letzte Schild ist das neueste, die Buchstaben glänzen noch. Wer diesen Saal gebaut hat, kannte Nyxar und war vor '
+    text: 'Das letzte Schild der Reihe ist das neueste, die Buchstaben glänzen noch. Wer diesen Saal gebaut hat, kannte Nyxar und war vor '
       + 'uns zwischen den Sternen. Der Stern, den wir aus dem Schlund mitgenommen haben, gehört auf diesen Sockel, aber er bleibt nur dort, wenn Nyxar noch einmal fällt.',
-    vorSieg: 'Das letzte Schild ist das neueste, die Buchstaben glänzen noch. Wer diesen Saal gebaut hat, kannte Nyxar und war vor '
+    vorSieg: 'Das letzte Schild der Reihe ist das neueste, die Buchstaben glänzen noch. Wer diesen Saal gebaut hat, kannte Nyxar und war vor '
       + 'uns zwischen den Sternen. Im Schlund hält Nyxar die Sterne, die er noch nicht gefressen hat, in Käfigen. Einer davon gehört auf diesen Sockel.',
+  },
+  {
+    routeId: 'mondhof', art: 'sieg', ziel: 2, prunkstueck: 'Ein Pfandzettel mit dem Siegel des Mondvogts',
+    schild: 'Der Vogt. Er nimmt, was aufsteigt, und gibt Quittungen.',
+    text: 'Die zwei obersten Sockel standen von Anfang an da, nur lagen ihre Schilder unter einer Decke aus Staub, als hätte sie jemand '
+      + 'für später zugedeckt. Das erste davon meint Argentis, den Mondvogt. Auf den Sockel gehört ein Pfandzettel mit seinem Siegel, '
+      + 'aber er gilt im Hof nur, wenn er zweimal eingelöst wurde, sagt Argentis, und zweimal eingelöst heisst zweimal gefallen.',
+    vorSieg: 'Die zwei obersten Sockel standen von Anfang an da, nur lagen ihre Schilder unter einer Decke aus Staub, als hätte sie jemand '
+      + 'für später zugedeckt. Das erste davon meint den Mondvogt, der über dem Sternenschlund Zoll nimmt und noch nie etwas durchgelassen '
+      + 'hat, ohne eine Quittung zu schreiben. Auf den Sockel gehört einer seiner Pfandzettel mit Siegel; er gilt erst, wenn er zweimal eingelöst ist.',
+  },
+  {
+    routeId: 'morgentor', art: 'set', ziel: 1, prunkstueck: 'Der erste Strahl des Tages, in Messing gefasst',
+    schild: 'Die Wächterin. Sie öffnet, wann sie will, und für wen sie will.',
+    text: 'Das zweite der neuen Schilder meint Sunna, die Tagwächterin am Morgentor, und es ist das einzige im Saal, das nicht '
+      + 'angelaufen ist; Jorinde meint, Messing laufe nicht an, wenn jeden Morgen die Sonne darauf fällt, aber hier fällt keine. '
+      + 'In jedes Teil ihrer Morgengabe hat Sunna den ersten Strahl des Tages gefasst, an dem es gemacht wurde. Bringt ein Teil heim: '
+      + 'Das Teil bleibt euch, der Strahl kommt auf den Sockel, und dann ist es in diesem Saal zum ersten Mal hell.',
   },
 ];

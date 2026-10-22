@@ -245,6 +245,7 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     wegZaehlen(phalanx, 'schild', schild * helden.length);
     log(`★ ${phalanx.name} setzt Phalanx ein → jeder im Team erhält einen Schild von ${schild}`);
   }
+  mondwall(party, log);
   const lied = staerksterTraeger(helden, 'heldenlied');
   if (lied) {
     const e = effekt(lied, 'heldenlied')!;
@@ -279,6 +280,20 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     log(`✦ ${u.name} setzt Feueratem ein → alle Gegner erleiden ${dmg} Schaden`);
     for (const z of ziele) schadenNehmen(z, dmg);
   }
+}
+
+/**
+ * Mondwall (Set «Pfand des Mondvogts»): Zu Beginn jedes Kampfes und danach alle 3 Runden erhält
+ * jeder im Team einen Schild, der sich auf andere Schilde (Phalanx, Moospolster, Fussnote) dazulegt.
+ * Bei mehreren Trägern zählt der stärkste.
+ */
+function mondwall(party: CombatUnit[], log: Log): void {
+  const traeger = staerksterTraeger(party, 'mondwall');
+  const e = traeger && effekt(traeger, 'mondwall');
+  if (!traeger || !e) return;
+  const schild = e.schild ?? staerke(traeger, 'mondwall');
+  for (const h of lebendig(party)) h.schild = (h.schild ?? 0) + schild;
+  log(`✦ ${traeger.name} setzt ${anzeigeName(e)} ein → jeder im Team erhält einen Schild von ${schild}`);
 }
 
 /** Am Ende jedes Kampfs: was nur für einen Kampf gilt, fällt weg */
@@ -527,6 +542,7 @@ export function besiegt(angreifer: CombatUnit, log: Log): void {
 export function nachTreffer(
   angreifer: CombatUnit, ziel: CombatUnit, dmg: number,
   gegnerDesAngreifers: CombatUnit[], verbuendete: CombatUnit[], rng: SeededRNG, log: Log,
+  hpVorher: number = ziel.hp,
 ): void {
   const biss = effekt(angreifer, 'giftbiss');
   if (biss && ziel.hp > 0) {
@@ -554,7 +570,24 @@ export function nachTreffer(
   }
   const fall = effekt(angreifer, 'sternenfall');
   if (fall && angreifer.hp > 0) sternenfall(angreifer, fall, dmg, gegnerDesAngreifers, log);
+  const stich = effekt(angreifer, 'sonnenstich');
+  if (stich && angreifer.hp > 0) sonnenstich(angreifer, stich, ziel, hpVorher, log);
   if (angreifer.specialEffects?.some(e => e.weg)) wegNachTreffer(angreifer, ziel, dmg, gegnerDesAngreifers, verbuendete, log);
+}
+
+/**
+ * Sonnenstich (Set «Sunnas Morgengabe»): Jeder Treffer des Trägers auf einen Gegner, dem es noch gut
+ * geht (vor dem Treffer über dem Anteil `power` seiner Leben), brennt zusätzlich `anteil` seiner
+ * vollen Leben weg, höchstens `max`. Ohne Zufall; arbeitet genau oberhalb der Grenze, unter der die
+ * Meuchlerin 2,5-fach trifft.
+ */
+function sonnenstich(angreifer: CombatUnit, stich: SpecialEffect, ziel: CombatUnit, hpVorher: number, log: Log): void {
+  const schwelle = staerke(angreifer, 'sonnenstich');
+  if (ziel.hp <= 0 || hpVorher <= ziel.maxHp * schwelle) return;
+  const brand = Math.min(stich.max ?? 60, Math.max(1, Math.floor(ziel.maxHp * (stich.anteil ?? 0.05))));
+  const verlust = schadenNehmen(ziel, brand);
+  log(`✦ ${angreifer.name} setzt ${anzeigeName(stich)} ein → ${ziel.name} brennt: −${brand}${schildText(brand, verlust)}`);
+  if (ziel.hp <= 0) besiegt(angreifer, log);
 }
 
 /** Wege, die nach einem eigenen Treffer wirken. Ohne Zufall. */
@@ -752,9 +785,13 @@ export function rundenEnde(
 
 /**
  * Am Rundenende, nach den Effekten der einzelnen Helden, fürs ganze Team einmal (bei mehreren
- * Trägern zählt der stärkste): die Seuche und der Schmiedetakt.
+ * Trägern zählt der stärkste): die Seuche, der Schmiedetakt und der Mondwall.
  */
 function teamRundenEnde(party: CombatUnit[], gegner: CombatUnit[], runde: number, log: Log): void {
+  const wall = staerksterTraeger(party, 'mondwall');
+  const wallEffekt = wall && effekt(wall, 'mondwall');
+  if (wallEffekt && runde % (wallEffekt.runden ?? 3) === 0 && lebendig(gegner).length > 0) mondwall(party, log);
+
   const seuche = staerksterTraeger(party, 'seuche');
   if (seuche && lebendig(gegner).length > 0) {
     const menge = staerke(seuche, 'seuche');

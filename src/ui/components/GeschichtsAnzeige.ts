@@ -42,6 +42,11 @@ export function optionsKnopfHtml(label: string, folgen: string): string {
   return `<span class="gs-option-label">${escape(label)}</span>${folgen}`;
 }
 
+/** Der Satz zu einer festen Wahl (EncounterChoice.flavorText) unter dem Knopf, neutral: Gewinn und Preis stehen in der Beschriftung */
+export function flavorHtml(text: string): string {
+  return `<span class="gs-folge flavor">${escape(text)}</span>`;
+}
+
 /** Chronik im Bericht nach der Expedition: die Sätze zu den Entscheidungen, nach dem ersten Sieg der Schluss */
 export function chronikHtml(bilanz: GeschichtsBilanz): string {
   const saetze = bilanz.chronik.map(geschichtsText).join('');

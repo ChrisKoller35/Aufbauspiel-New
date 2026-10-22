@@ -4,9 +4,12 @@
 // (data/musterteams.ts), Gildenrang V und allen Bossen bis zum Vulkankern besiegt,
 // also offenem Drachenhort. ?probe=sterne beginnt es zwischen den Sternen: Team
 // «Stark» mit seinen Wegen in Dungeon-Sets auf +3, alle Bosse bis zum Oberarchivar
-// besiegt, die Sternenschmiede offen. Das Gildenhaus ist ausgebaut, damit alle vier
-// Helden mitgehen. Es hat einen eigenen Speicherplatz
-// (SaveSystem.nutzeProbespiel), der richtige Spielstand bleibt unberührt.
+// besiegt, die Sternenschmiede offen. ?probe=mond beginnt vor dem Mondhof: dasselbe
+// Team in den Sets der Sterne auf +5 (MUSTER_SETS.mond5), alle Bosse bis Nyxar besiegt.
+// ?probe=morgen beginnt vor dem Morgentor: dazu Brom im Pfand des Mondvogts mit dem
+// Amtsstab (MUSTER_SETS.pfand5), alle Bosse bis Argentis besiegt.
+// Das Gildenhaus ist ausgebaut, damit alle vier Helden mitgehen. Es hat einen eigenen
+// Speicherplatz (SaveSystem.nutzeProbespiel), der richtige Spielstand bleibt unberührt.
 // Hinweis im Hauptmenü: ui/components/ProbespielHinweis.ts.
 // ────────────────────────────────────────────────────────────────
 
@@ -23,6 +26,20 @@ import { totalXpForLevel } from './HeroProgression';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { SPLITTER, istSchmiedbar, schmiedeKosten } from './Schmiede';
 
+/** Wo das Probespiel beginnt: vor dem Drachenhort, vor der Sternenschmiede, vor dem Mondhof oder vor dem Morgentor */
+export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen';
+
+/**
+ * Die Stufen über dem Drachenhort: bis zu welcher Ebene die Bosse besiegt sind, welche Sets
+ * der Eichung das Team trägt und welcher Dungeon das nächste Set bringt (sein Material liegt
+ * zum Schmieden bis +5 im Lager).
+ */
+const STUFEN: Record<Exclude<ProbeStufe, 'neu'>, { bisEbene: number; sets: 'sterne3' | 'mond5' | 'pfand5'; naechstesSet: string }> = {
+  sterne: { bisEbene: 6, sets: 'sterne3', naechstesSet: 'sternenschmiede' },
+  mond: { bisEbene: 8, sets: 'mond5', naechstesSet: 'mondhof' },
+  morgen: { bisEbene: 9, sets: 'pfand5', naechstesSet: 'morgentor' },
+};
+
 /**
  * Vorräte für ein paar Aufstiege und etwas zum Bauen, dazu zum Ausprobieren der Schmiede
  * das Set des Magma-Wyrms (eine Klinge doppelt, zum Einschmelzen) und Glutkern für drei Stufen.
@@ -37,15 +54,19 @@ export function istProbespiel(search: string): boolean {
   return new URLSearchParams(search).has('probe');
 }
 
-/** ?probe=neu oder ?probe=sterne: das Probespiel von vorn beginnen */
+/** ?probe=neu, ?probe=sterne, ?probe=mond oder ?probe=morgen: das Probespiel von vorn beginnen */
 export function probespielNeu(search: string): boolean {
   const wert = new URLSearchParams(search).get('probe');
-  return wert === 'neu' || wert === 'sterne';
+  return wert === 'neu' || wert === 'sterne' || wert === 'mond' || wert === 'morgen';
 }
 
-/** ?probe=sterne: das Probespiel beginnt vor der Sternenschmiede */
-export function probespielSterne(search: string): boolean {
-  return new URLSearchParams(search).get('probe') === 'sterne';
+/**
+ * Wo das Probespiel beginnt: ?probe=sterne vor der Sternenschmiede, ?probe=mond vor dem Mondhof,
+ * ?probe=morgen vor dem Morgentor, sonst vor dem Drachenhort
+ */
+export function probespielStufe(search: string): ProbeStufe {
+  const wert = new URLSearchParams(search).get('probe');
+  return wert === 'sterne' || wert === 'mond' || wert === 'morgen' ? wert : 'neu';
 }
 
 /**
@@ -55,12 +76,13 @@ export function probespielSterne(search: string): boolean {
  * dazu Vorräte und ein Set für die Schmiede.
  * Die Gilde hat den höchsten Rang und alle Bosse bis Ebene 4 besiegt: Als Nächstes
  * warten die Dungeons über dem Vulkankern (Drachenhort, dann Himmelsarchiv).
- * Mit `sterne` (?probe=sterne) die Variante vor der Sternenschmiede (richteSterneEin).
+ * Mit `stufe` 'sterne', 'mond' oder 'morgen' die Varianten weiter oben (richteStufeEin).
  */
-export function richteProbespielEin(state: GameState, sterne = false): void {
+export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu'): void {
   state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };
 
-  const bisEbene = sterne ? 6 : 4;
+  const oben = stufe === 'neu' ? undefined : STUFEN[stufe];
+  const bisEbene = oben?.bisEbene ?? 4;
   const bosse = new Set(Object.values(ROUTE_DEFS).filter(r => r.tier <= bisEbene && r.bossId).map(r => r.bossId!));
   state.guildStats.rank = GUILD_RANK_DEFS.length;
   state.guildStats.bossesDefeatedIds = [...bosse];
@@ -73,14 +95,14 @@ export function richteProbespielEin(state: GameState, sterne = false): void {
 
   // Wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire): Helden sind keine
   // Bewohner (citizenId 0), alle Bewohner bleiben Arbeiter.
-  const team = sterne ? MUSTER_TEAMS.stark : MUSTER_TEAMS.gut;
+  const team = oben ? MUSTER_TEAMS.stark : MUSTER_TEAMS.gut;
   for (const muster of team.helden) {
     const fighter = createGuildFighter(0, muster.classId, muster.name, musterWerte(muster));
     fighter.level = muster.stufe;
     fighter.xp = totalXpForLevel(muster.stufe);
-    fighter.gear = { ...((sterne && MUSTER_SETS.sterne3.gear[muster.name]) || muster.gear) };
-    // Zwischen den Sternen gehen sie ihren Weg schon: Ohne Wege ist dort fast nichts zu schaffen
-    if (sterne && muster.weg) fighter.spezialisierung = muster.weg;
+    fighter.gear = { ...((oben && MUSTER_SETS[oben.sets].gear[muster.name]) || muster.gear) };
+    // Über dem Himmelsarchiv gehen sie ihren Weg schon: Ohne Wege ist dort fast nichts zu schaffen
+    if (oben && muster.weg) fighter.spezialisierung = muster.weg;
     state.fighters.push(fighter);
   }
   // Klassen, die eine Gilde mit diesen Bossen und Helden längst hat: Sonst meldet der erste
@@ -90,21 +112,22 @@ export function richteProbespielEin(state: GameState, sterne = false): void {
   for (const [itemId, qty] of Object.entries(PROBE_VORRAT)) {
     state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
   }
-  if (sterne) richteSterneEin(state);
+  if (oben) richteStufeEin(state, oben);
 }
 
 /**
- * Probespiel zwischen den Sternen: Die getragenen Set-Teile stehen in der Schmiede auf +3
- * (wie das Musterset «sterne3» der Eichung, damit ist die Sternenschmiede meist zu schaffen).
- * Dazu liegt alles im Lager, um sie und Korrunds Meisterstücke (fallen in der Sternenschmiede)
- * bis +5 zu schmieden: Erst damit hat der Sternenschlund eine Chance.
+ * Probespiel weiter oben: Die getragenen Set-Teile stehen in der Schmiede auf der Stufe der
+ * Musterausrüstung (sterne3: +3, damit ist die Sternenschmiede meist zu schaffen; mond5 und pfand5: +5).
+ * Dazu liegt alles im Lager, um sie und das Set des nächsten Dungeons (Korrunds Meisterstücke,
+ * das Pfand des Mondvogts bzw. Sunnas Morgengabe, fallen erst dort) bis +5 zu schmieden: Erst
+ * damit hat der Dungeon darüber eine Chance.
  */
-function richteSterneEin(state: GameState): void {
-  const stufe = MUSTER_SETS.sterne3.schmiede ?? 0;
+function richteStufeEin(state: GameState, oben: (typeof STUFEN)[keyof typeof STUFEN]): void {
+  const stufe = MUSTER_SETS[oben.sets].schmiede ?? 0;
   const getragen = [...new Set(state.fighters.flatMap(f => Object.values(f.gear)))].filter((id): id is string => !!id && istSchmiedbar(id));
   state.schmiede = { stufen: Object.fromEntries(getragen.map(id => [id, stufe])) };
-  const korrund = setTeilIds(setFuerRoute('sternenschmiede')!);
-  const teile: [string, number][] = [...getragen.map((id): [string, number] => [id, stufe]), ...korrund.map((id): [string, number] => [id, 0])];
+  const naechstes = setTeilIds(setFuerRoute(oben.naechstesSet)!);
+  const teile: [string, number][] = [...getragen.map((id): [string, number] => [id, stufe]), ...naechstes.map((id): [string, number] => [id, 0])];
   for (const [itemId, ab] of teile) {
     for (let s = ab; s < MAX_SCHMIEDE_STUFE; s++) {
       const kosten = schmiedeKosten({ ...state, schmiede: { stufen: { [itemId]: s } } }, itemId);

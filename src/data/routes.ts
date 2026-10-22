@@ -42,7 +42,7 @@ export interface RouteDef {
   /** Ob eine Kriegsmaschine zwingend benötigt wird */
   requiresWarMachine?: boolean;
   /** Gebiet über dem Vulkankern: bestimmt Farbe und Schild auf Karte und Routenliste */
-  gebiet?: 'gipfel' | 'himmel' | 'sterne';
+  gebiet?: 'gipfel' | 'himmel' | 'sterne' | 'mond';
   /** Eigene Regel dieses Dungeons in einem Satz (Karte, Routenliste) */
   besonderheit?: string;
   /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker, Punkte unter 0 schwächer */
@@ -107,7 +107,9 @@ export const DUNGEON_GRAPH: DungeonGraphNode[] = [
   { routeId: 'drachenhort',        x: 380, y: -300, leadsTo: ['himmelsarchiv'], isMainPath: true },
   { routeId: 'himmelsarchiv',      x: 520, y: -800, leadsTo: ['sternenschmiede'], isMainPath: true },
   { routeId: 'sternenschmiede',    x: 390, y: -1300, leadsTo: ['sternenschlund'], isMainPath: true },
-  { routeId: 'sternenschlund',     x: 510, y: -1800, leadsTo: [], isMainPath: true },
+  { routeId: 'sternenschlund',     x: 510, y: -1800, leadsTo: ['mondhof'], isMainPath: true },
+  { routeId: 'mondhof',            x: 400, y: -2300, leadsTo: ['morgentor'], isMainPath: true },
+  { routeId: 'morgentor',          x: 530, y: -2800, leadsTo: [], isMainPath: true },
 ];
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -438,6 +440,84 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     bossId: 'boss_nyxar',
     recommendedLevel: 'Stufe 15, Sets auf +5 und Korrunds Meisterstücke',
     unlockCondition: { bossesDefeated: ['boss_korrund'] },
+  },
+  mondhof: {
+    id: 'mondhof',
+    name: 'Der Mondhof',
+    tier: 9,
+    rooms: 16,
+    gebiet: 'mond',
+    besonderheit: 'Pfandzettel: Der Mondvogt leiht Mondsilber und Beute gegen Pfand. Wer unterschreibt, schlägt bis zum Ende schwächer zu und bekommt die Beute erst, wenn der Vogt fällt.',
+    ersterSiegBeute: 'amtsstab_des_mondvogts',
+    encounters: [
+      { type: 'combat', enemies: ['zollgeist', 'mondwache'] },
+      { type: 'combat', enemies: ['mondkalb', 'silberschreiber'] },
+      { type: 'find', wahl: {
+        a: { label: 'Den Angriff verpfänden (+5 Mondsilber, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Der Zettel ist in Silber geschrieben und sehr klein. Das Kleingedruckte ist noch kleiner.', effect: 'item', value: 5, itemId: 'mat_mondsilber', nachSieg: true, kostetAngriff: 8 },
+        b: { label: 'Den kleinen Zettel nehmen (+1 Mondsilber)', flavorText: 'Der Schreiber reisst ihn ab, ohne hinzusehen. Er ist Beamter.', effect: 'item', value: 1, itemId: 'mat_mondsilber' },
+      } },
+      { type: 'combat', enemies: ['mondwache', 'zollgeist', 'silberschreiber'] },
+      { type: 'hazard', damage: 20 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['mondkalb', 'mondkalb', 'silberschreiber'] },
+      { type: 'find', wahl: {
+        a: { label: 'Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Unter eurer Unterschrift steht schon eine zweite: die des Vogts. Er hat sie vorsichtshalber vorher hingesetzt.', effect: 'kein', value: 0, setTeil: true, kostetAngriff: 8 },
+        b: { label: 'Nur die Quittung (+2 Mondsilber)', flavorText: 'Für einen Blick ins Buch gibt es zwei Barren. Der Vogt nennt das Lesegebühr, rückwärts.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
+      } },
+      { type: 'combat', enemies: ['zollgeist', 'zollgeist', 'mondwache'] },
+      { type: 'hazard', damage: 22 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['mondwache', 'silberschreiber', 'mondkalb'] },
+      { type: 'combat', enemies: ['zollgeist', 'mondkalb', 'silberschreiber'] },
+      { type: 'find', wahl: {
+        a: { label: 'Alles verpfänden (+9 Mondsilber, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Die Truhe ist voll. Jeder Barren trägt ein Schild mit einem Namen. Einer heisst wie ihr.', effect: 'item', value: 9, itemId: 'mat_mondsilber', nachSieg: true, kostetAngriff: 8 },
+        b: { label: 'Das Kleingeld (+2 Mondsilber)', flavorText: 'Zwei Barren liegen ohne Schild daneben. Der Vogt hat sie vergessen. Der Vogt vergisst nichts.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
+      } },
+      { type: 'boss', enemies: ['boss_argentis'] },
+    ],
+    bossId: 'boss_argentis',
+    recommendedLevel: 'Stufe 15, Sets auf +5 und das Set aus dem Sternenschlund',
+    unlockCondition: { bossesDefeated: ['boss_nyxar'] },
+  },
+  morgentor: {
+    id: 'morgentor',
+    name: 'Das Morgentor',
+    tier: 10,
+    rooms: 16,
+    gebiet: 'mond',
+    besonderheit: 'Die Sonnenuhr: Wer sie vorstellt, bekommt Sunnas Morgengabe, aber der Tag kommt früher, und mit ihm ihre Wut.',
+    ersterSiegBeute: 'der_morgenstern',
+    encounters: [
+      { type: 'combat', enemies: ['daemmerfalke', 'torhueter'] },
+      { type: 'combat', enemies: ['morgenhahn', 'lichtkuester'] },
+      { type: 'find', wahl: {
+        a: { label: 'Die Sonnenuhr vorstellen (+6 Mondsilber, wenn ihr siegt; Sunnas Wut 2 Runden früher)', flavorText: 'Die Sonnenuhr steht im Dunkeln und zeigt trotzdem etwas an. Man muss nur dran drehen.', effect: 'item', value: 6, itemId: 'mat_mondsilber', nachSieg: true, bossWutFrueher: 2 },
+        b: { label: 'Die Uhr lassen (+2 Mondsilber)', flavorText: 'Unter der Uhr liegt, was der letzte Besucher verloren hat. Er hatte es eilig.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
+      } },
+      { type: 'combat', enemies: ['torhueter', 'daemmerfalke', 'lichtkuester'] },
+      { type: 'hazard', damage: 22 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['daemmerfalke', 'daemmerfalke', 'morgenhahn'] },
+      { type: 'rest', healPercent: 15 },
+      { type: 'find', wahl: {
+        a: { label: 'Die Uhr auf Vormittag stellen (+1 Set-Teil, wenn ihr siegt; Sunnas Wut 2 Runden früher)', flavorText: 'Sunnas Morgengabe liegt bereit, für den Tag, der zuerst kommt. Ihr könnt dafür sorgen, dass es dieser ist.', effect: 'kein', value: 0, setTeil: true, bossWutFrueher: 2 },
+        b: { label: 'Die Uhr lassen (+3 Mondsilber)', flavorText: 'Der Lichtküster hat Mondsilber in der Opferschale. Er nennt es Spende, ihr nennt es Beute.', effect: 'item', value: 3, itemId: 'mat_mondsilber' },
+      } },
+      { type: 'combat', enemies: ['morgenhahn', 'torhueter', 'lichtkuester'] },
+      { type: 'hazard', damage: 24 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['lichtkuester', 'daemmerfalke', 'morgenhahn'] },
+      { type: 'combat', enemies: ['torhueter', 'morgenhahn', 'daemmerfalke'] },
+      { type: 'find', wahl: {
+        a: { label: 'Die Uhr auf Mittag stellen (+10 Mondsilber, wenn ihr siegt; Sunnas Wut 2 Runden früher)', flavorText: 'Mittag. Hinter dem Tor wird es schlagartig hell, und jemand räuspert sich sehr laut.', effect: 'item', value: 10, itemId: 'mat_mondsilber', nachSieg: true, bossWutFrueher: 2 },
+        b: { label: 'Im Schatten des Tors warten (+15% HP)', flavorText: 'Der Schatten ist schmal und wird schmaler. Sunna hat Zeit. Sie hat nur noch nicht entschieden, wie viel sie euch davon lässt.', effect: 'heal', value: 15 },
+      } },
+      { type: 'boss', enemies: ['boss_sunna'] },
+    ],
+    bossId: 'boss_sunna',
+    recommendedLevel: 'Stufe 15, Sets auf +5 und das Pfand des Mondvogts',
+    unlockCondition: { bossesDefeated: ['boss_argentis'] },
   },
 
   // ── Siege Routes ──
@@ -791,6 +871,9 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   himmelsarchiv: 'exp_himmelsarchiv',
   sternenschmiede: 'exp_sternenschmiede',
   sternenschlund: 'exp_sternenschlund',
+  // Platzhalter, bis es ein eigenes Routenbild gibt (docs/NEUE-DUNGEONS.md, Bilder nur mit Christophs Okay)
+  mondhof: 'exp_sternenschlund',
+  morgentor: 'exp_sternenschmiede',
 };
 
 // ── Baupläne (Gebäude-Freischaltung über Dungeon-Bosse) ──

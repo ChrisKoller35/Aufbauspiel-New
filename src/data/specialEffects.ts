@@ -271,6 +271,22 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
     procChance: 1.0,
     power: 0.5,
   },
+  mondwall: {
+    id: 'mondwall',
+    name: 'Mondwall',
+    description: 'Zu Beginn jedes Kampfes und alle 3 Runden erhält jeder im Team einen Schild von 15, zusätzlich zu anderen Schilden',
+    trigger: 'on_round_end',
+    procChance: 1.0,
+    power: 15,
+  },
+  sonnenstich: {
+    id: 'sonnenstich',
+    name: 'Sonnenstich',
+    description: 'Jeder Treffer auf einen Gegner über 60 % Leben brennt zusätzlich 5 % seiner vollen Leben weg, höchstens 60',
+    trigger: 'on_deal_damage',
+    procChance: 1.0,
+    power: 0.6,
+  },
 };
 
 /** Extract special effect IDs from an item's tags array */

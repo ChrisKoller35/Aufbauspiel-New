@@ -9,7 +9,7 @@ export interface EncounterChoice {
   /**
    * 'geschichte': Entscheidung der Dungeon-Geschichte, sie wirkt über `wirkung` (systems/Geschichten.ts).
    * 'angriff': Die Gruppe hat bis zum Ende des Dungeons `value` Prozent mehr Angriff (Sternenfeuer).
-   * 'kein': Die Option wirkt nur über Preis und Gier (gefangene Sterne).
+   * 'kein': Die Option wirkt nur über Preis, Gier und Zusage (gefangene Sterne, Pfandbuch).
    */
   effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal' | 'geschichte' | 'angriff' | 'kein';
   /** Stärke des Effekts (Prozent, Goldmenge oder XP-Betrag, je nach effect) */
@@ -25,6 +25,18 @@ export interface EncounterChoice {
   gier?: number;
   /** Preis der Option: jeder lebende Held verliert so viel Prozent seiner max. HP (nie unter 1) */
   kostetLeben?: number;
+  /**
+   * Preis der Option in Angriff (Pfandzettel): Die Gruppe schlägt bis zum Ende des Dungeons so viel
+   * Prozent schwächer zu, wie das Sternenfeuer nur nach unten (gruppenAngriff); flache Boni bleiben.
+   */
+  kostetAngriff?: number;
+  /** Zusage eines Set-Teils mehr, wenn der Boss fällt (wie `setTeil` in den Geschichten); nur in einem Raum je Dungeon */
+  setTeil?: true;
+  /**
+   * Preis der Option in Geduld (Sonnenuhr): Die Wut-Runde des Bosses kommt so viele Runden früher,
+   * nie vor Runde 1 (ExpeditionRun.bossWutFrueher). Jeder Boss wütet (CombatEngine: Vorgabe Runde 8, eigener Wert in `enrage`).
+   */
+  bossWutFrueher?: number;
   /** Geschichte: was die Option bewirkt */
   wirkung?: Wirkung[];
   /** Geschichte: der Satz dazu im Bericht nach der Expedition */
@@ -192,11 +204,13 @@ export interface ExpeditionRun {
   bossesKilled: number;             // Anzahl besiegter Bosse
   /** Hort-Gier: Punkte aus eingesteckten Schätzen, machen den Boss stärker (RouteDef.hortGier) */
   gier?: number;
-  /** Sternenfeuer: so viel Prozent mehr Angriff hat die Gruppe bis zum Ende des Dungeons (EncounterChoice 'angriff') */
+  /** Sternenfeuer: so viel Prozent mehr Angriff hat die Gruppe bis zum Ende des Dungeons (EncounterChoice 'angriff'); unter 0 bei Pfandzetteln (kostetAngriff) */
   gruppenAngriff?: number;
+  /** Sonnenuhr: um so viele Runden kommt die Wut-Runde des Bosses früher (EncounterChoice.bossWutFrueher, summiert) */
+  bossWutFrueher?: number;
   /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
   setTeil?: string | null;
-  /** Geschichte: Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */
+  /** Geschichte oder Wahl-Raum (EncounterChoice.setTeil): Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */
   setTeilVersprochen?: boolean;
   /** Das versprochene Set-Teil, gezogen mit setTeil; null = keins */
   setTeilExtra?: string | null;

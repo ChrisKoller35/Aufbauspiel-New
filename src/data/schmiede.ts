@@ -78,6 +78,11 @@ export const SCHMIEDE_MATERIALIEN: SchmiedeMaterialDef[] = [
     routen: ['sternenschmiede', 'sternenschlund'],
     text: 'Fällt manchmal vom Himmel, meistens jemandem auf den Kopf. Der wird dann Schmied.',
   },
+  {
+    id: 'mat_mondsilber', name: 'Mondsilber', ausGebiet: 'vom Mond', bild: 'MAT_MONDSILBER',
+    routen: ['mondhof', 'morgentor'],
+    text: 'Wird bei Vollmond geschlagen und bei Neumond gezählt. Dazwischen fehlt immer eins.',
+  },
 ];
 
 // ── Stufen und Werte ──

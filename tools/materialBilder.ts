@@ -282,6 +282,29 @@ const BILDER: Record<string, string> = {
       <circle cx="62" cy="92" r="1.8" fill="#ffffff"/><circle cx="30" cy="92" r="1.6" fill="#ffffff"/>
     </g>
     ${funkeln(100, 26, 8, '#fde68a')}${funkeln(24, 34, 5, '#bfdbfe')}`,
+
+  // Barren aus Mondsilber in Sichelform, kalt und hell, mit eisblauem Schein (Mondhof)
+  MAT_MONDSILBER: `
+    <defs>${defs('mo', '#bae6fd')}
+      <linearGradient id="mo-s" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#f8fafc"/><stop offset="50%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#64748b"/>
+      </linearGradient>
+      <linearGradient id="mo-i" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#94a3b8"/><stop offset="100%" stop-color="#334155"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="64" r="54" fill="url(#mo-schein)"/>
+    <g filter="url(#mo-schatten)">
+      <path d="M78 14 C48 20 28 44 30 72 C32 98 52 114 76 116 C60 106 50 90 50 70 C50 48 62 28 78 14Z"
+        fill="url(#mo-s)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M78 14 C62 28 50 48 50 70 C50 90 60 106 76 116 C66 110 58 96 56 78 C54 54 64 32 78 14Z"
+        fill="url(#mo-i)" opacity="0.75"/>
+      <path d="M44 48 C52 36 60 28 68 22" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.8" fill="none"/>
+      <path d="M38 76 L44 76 M40 86 L46 86" stroke="#334155" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+      <circle cx="40" cy="60" r="2" fill="#ffffff" opacity="0.9"/>
+    </g>
+    ${funkeln(96, 44, 8, '#e0f2fe')}${funkeln(104, 84, 5, '#ffffff')}${funkeln(92, 104, 4, '#e0f2fe')}
+    <circle cx="86" cy="64" r="1.8" fill="#ffffff"/><circle cx="100" cy="24" r="1.6" fill="#e0f2fe"/>`,
 };
 
 async function zeichne(key: string): Promise<void> {

@@ -24,10 +24,10 @@ import {
 
 /** Montag, 2. November 2026, 08:00: Das Rennen beginnt an einem Wochenanfang */
 const START = new Date(2026, 10, 2, 8, 0).getTime();
-const MEILENSTEINE = ['volcano_core', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund'];
+const MEILENSTEINE = ['volcano_core', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof', 'morgentor'];
 
 /** Expeditionen bis zum ersten Sieg in einem neuen Dungeon dieser Ebene (normales Tempo, Üben eingerechnet) */
-const MUSTER_EXPEDITIONEN: Record<number, number> = { 1: 2, 2: 4, 3: 6, 4: 9, 5: 14, 6: 20, 7: 28, 8: 38 };
+const MUSTER_EXPEDITIONEN: Record<number, number> = { 1: 2, 2: 4, 3: 6, 4: 9, 5: 14, 6: 20, 7: 28, 8: 38, 9: 50, 10: 64 };
 const TEMPI = { schnell: 0.6, normal: 1, gemuetlich: 1.6 };
 /** Expeditionen pro Woche je Tempo */
 const PRO_WOCHE = { schnell: 80, normal: 40, gemuetlich: 15 };

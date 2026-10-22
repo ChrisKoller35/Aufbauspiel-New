@@ -20,7 +20,6 @@ import {
   planeZyklus, naechsterBedarf, zulieferBedarf, fehlendeZutaten, laufendVonSelbst, vonSelbstText, vorratTage, VORRAETE,
 } from './Werkstattplan';
 import { handelHeute, marktGesperrt } from './Handel';
-import { echteZyklusSekunden } from './ProductionSystem';
 
 export { wohnKapazitaet };
 
@@ -325,12 +324,12 @@ function buildProgress(b: BuildingInstance, def: BuildingDef | undefined): numbe
 }
 
 /**
- * Ertrag pro Tag eines Rezepts ohne Zutaten, z. B. «+5,5 Holz / Tag»: mit der echten Dauer eines
- * Zyklus, wie die Zeile «Pro Tag» (systems/Tagesbilanz.ts), damit Karte und Zeile dasselbe sagen.
+ * Ertrag pro Tag eines Rezepts ohne Zutaten, z. B. «+6 Holz / Tag»: mit zyklusSekunden (Stufe,
+ * Besetzung, Synergie), wie die Zeile «Pro Tag» (systems/Tagesbilanz.ts), damit Karte und Zeile dasselbe sagen.
  */
 function ertragText(b: BuildingInstance, recipe: RecipeDef): string {
   const [item, menge] = Object.entries(recipe.outputs)[0] ?? ['', 0];
-  const proTag = (menge * TAG_SEKUNDEN) / echteZyklusSekunden(b, recipe);
+  const proTag = (menge * TAG_SEKUNDEN) / zyklusSekunden(b, recipe);
   return `+${String(Math.round(proTag * 10) / 10).replace('.', ',')} ${itemName(item)} / Tag`;
 }
 

@@ -1271,4 +1271,97 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       + 'In der Nacht darauf kamen die Sterne über Magic City zurück, einer nach dem anderen, und die Bäckerin hat bis zum Morgen gezählt und zum ersten Mal in zwanzig Jahren das Brot verschlafen. '
       + 'Niemand hat sich beschwert.',
   },
+
+  // ── Im Mondlicht: die Pfandzettel des Vogts sind die festen Wahl-Räume der Route ──
+  {
+    routeId: 'mondhof', titel: 'Der Pfandzettel',
+    einleitung: 'Die Sterne sind zurück, und die Bäckerin war beim Zählen bis vierhundert gekommen, aber seit drei Nächten zählt sie dreihundertneunundneunzig, und am Morgen lag ein Zettel auf dem Brotbrett, in Silber geschrieben: '
+      + '«Zoll für 88 aufgestiegene Sterne, zahlbar im Mondhof. Ein Stern ist als Mahnpfand einbehalten; der letzte Stern ist als Pfand vermerkt.» '
+      + 'Unterschrieben hat ein Argentis, Mondvogt, mit Siegel, und Jorinde hat das Kleingedruckte gelesen: Was nicht bezahlt wird, holt er sich vom Himmel zurück, einen Stern je Nacht. '
+      + 'Wir gehen hinauf, mit dem Stern in der Tasche, und ich nehme ein zweites Tintenfass mit, weil ich ahne, dass dort oben viel geschrieben wird.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Die kleine Waage',
+        text: 'In der ersten Halle steht eine Waage aus Silber, und auf der einen Schale liegt ein Zettel mit eurem Namen. '
+          + 'Legt ihr etwas von eurer Kraft auf die andere Schale, schreibt der Silberschreiber einen Pfandzettel: Mondsilber, auszahlbar beim Vogt. '
+          + 'Wer nichts hinlegt, bekommt den kleinen Zettel, einen Barren und die Bemerkung, man habe schon grössere Gilden gesehen.',
+        nachklang: {
+          a: 'Wir legten ein Stück unserer Kraft auf die Waage, und der Schreiber lächelte zum ersten und einzigen Mal.',
+          b: 'Wir nahmen den kleinen Zettel, einen Barren, und liessen die Waage, wie sie war. Sie zeigte trotzdem auf uns.',
+        },
+      },
+      8: {
+        titel: 'Das Pfandbuch',
+        text: 'Im Pfandbuch des Hofs steht alles, was der Mond je verliehen hat, und auf der aufgeschlagenen Seite ein Eintrag für die Gilde, mit leerem Feld für die Unterschrift. '
+          + 'Wer unterschreibt, bekommt beim Vogt ein Stück aus seinem Pfand dazu (ein Teil des Sets, wenn ihr siegt), und der Vogt bekommt dafür wieder ein Stück Kraft. '
+          + 'Zwei Mondkälber kauen am Buchrücken, ohne es zu merken.',
+        nachklang: {
+          a: 'Wir unterschrieben im Pfandbuch, und unter unserer Unterschrift stand die des Vogts schon, in Silber und vordatiert.',
+          b: 'Wir nahmen nur die Quittung für den Blick ins Buch und liessen die Seite leer. Die Mondkälber kauten weiter.',
+        },
+      },
+      14: {
+        titel: 'Die Vogtstruhe',
+        text: 'Vor der Amtsstube steht die Truhe des Vogts, offen, weil niemand so dumm wäre. Jeder Barren trägt ein Schild mit dem Namen dessen, der ihn verpfändet hat, und einer heisst wie ihr. '
+          + 'Wer alles verpfändet, bekommt die Barren mit seinem Namen beim Vogt zurück, alle, mit Quittung; wer nicht, nimmt das Kleingeld, das daneben liegt, und der Vogt tut, als hätte er es nicht gezählt. '
+          + 'Wer am letzten Kontrollpunkt umkehrt, lässt jeden Pfandzettel liegen.',
+        nachklang: {
+          a: 'Wir verpfändeten, was noch da war, und gingen mit einem Zettel in die Amtsstube, auf dem mehr stand als in unserem Lager.',
+          b: 'Wir nahmen das Kleingeld und liessen die Truhe stehen. Drinnen hörte man Argentis die Feder spitzen.',
+        },
+      },
+    },
+    ende: 'Vor der Amtsstube verlangte Argentis den letzten Stern als Pfand zurück; Jorinde hielt ihm seine eigene Quittung hin, auf der «Pfand erhalten» steht, und er musste, als Beamter, anerkennen, dass die Gilde ihr Pfand längst hinterlegt hat. Gekämpft hat er trotzdem, der Form halber. '
+      + 'Argentis ist besiegt und hat, noch am Boden, die Pfandzettel eingelöst, jeden einzeln, gegengezeichnet und abgestempelt. Den Zoll für die Sterne hat er gestrichen, weil die Gilde, wie er sagt, «mit Kraft bezahlt hat, und die ist im Hof härter als Silber». '
+      + 'Seinen Amtsstab durften wir behalten, mit Quittung, und das Mahnpfand hat er noch in derselben Nacht an den Himmel zurückgehängt. Die Bäckerin zählt wieder vierhundert; den einen in unserer Tasche zählt sie nicht mit, der hat eine Quittung. Und ich habe dem zweiten Tintenfass einen festen Platz im Gepäck gegeben.',
+  },
+
+  // ── Über dem Mondhof: die Sonnenuhr ist der feste Wahl-Raum der Route, dreimal ──
+  {
+    routeId: 'morgentor', titel: 'Die Morgengabe',
+    einleitung: 'Seit die Sterne zurück sind und der Vogt seine Zettel eingelöst hat, kommt der Morgen über Magic City zu spät, jeden Tag ein wenig mehr, '
+      + 'und die Bäckerin, die nach der Sonne backt, hat zum zweiten Mal in zwanzig Jahren das Brot versäumt. '
+      + 'Über dem Mondhof liegt das Morgentor, sagt Argentis, und Sunna, die es öffnet, lässt den Tag erst durch, wenn die Nacht aufgeräumt ist; sie hält uns für die Unordnung. '
+      + 'Wir gehen hinauf, um das Tor zu öffnen, und ich nehme eine Sonnenuhr mit, damit wenigstens einer von uns weiss, wie spät es ist.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Die erste Stunde',
+        text: 'Im Torhaus steht eine Sonnenuhr aus Messing, im Dunkeln, und zeigt trotzdem eine Stunde an: die, in der Sunna aufsteht. '
+          + 'Ein Lichtküster poliert sie und erklärt, die Morgengabe wachse mit jeder Stunde, die der Tag näher komme; er sagt nicht, dass Sunna dann auch näher kommt. '
+          + 'Wer die Uhr nicht anrührt, bekommt, was unter ihr liegt.',
+        nachklang: {
+          a: 'Wir stellten die Sonnenuhr um zwei Stunden vor, und irgendwo über uns drehte sich jemand im Schlaf um.',
+          b: 'Wir liessen die Uhr, wie sie war, und nahmen mit, was der letzte Besucher darunter verloren hatte. Er hatte es offenbar eilig.',
+        },
+      },
+      8: {
+        titel: 'Die zweite Stunde',
+        text: 'Hinter der Torkammer liegt Sunnas Morgengabe auf einem Tisch, ein Teil davon jedenfalls, für den Ersten, der heute durchs Tor geht; bis jetzt war das immer die Sonne. '
+          + 'Die Uhr lässt sich auf Vormittag stellen, dann liegt das Teil beim Sieg in eurer Truhe, und Sunna hat bis dahin schon gefrühstückt und ist entsprechend gelaunt. '
+          + 'Wer die Uhr lässt, nimmt aus der Opferschale des Küsters, was er Spende nennt.',
+        nachklang: {
+          a: 'Wir stellten die Uhr auf Vormittag, und der Lichtküster hörte auf zu polieren und begann zu beten, für uns, sagte er, nicht mit uns.',
+          b: 'Wir nahmen die Spende aus der Opferschale und liessen die Morgengabe liegen. Der Küster trug sie zurück in den Schrank, sehr langsam.',
+        },
+      },
+      14: {
+        titel: 'Die letzte Stunde',
+        text: 'Vor dem Tor steht die grosse Sonnenuhr, und ihr Schatten reicht bis an Sunnas Tür. Wer sie auf Mittag stellt, bekommt den Rest der Morgengabe mit dem Sieg, '
+          + 'und hinter dem Tor wird es sofort sehr hell und sehr still, wie bevor jemand Grosses aufsteht. '
+          + 'Wer im Schatten des Tors wartet, bis die Uhr von selbst weitergeht, atmet durch; der Schatten wird dabei schmaler, aber er reicht. '
+          + 'Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen.',
+        nachklang: {
+          a: 'Wir stellten die Uhr auf Mittag. Hinter dem Tor räusperte sich jemand, laut genug, dass die Falken vom Dach fielen.',
+          b: 'Wir warteten im Schatten des Tors, bis die Uhr von selbst weiterging, und Sunna wartete mit, mit verschränkten Armen, auf der anderen Seite.',
+        },
+      },
+    },
+    ende: 'Am Tor hängt eine Tafel mit Öffnungszeiten, «Täglich ab Sonnenaufgang», und Jorinde wies Sunna darauf hin, dass die Gilde die Uhr vorgestellt habe und es demnach bereits Mittag sei. '
+      + 'Sunna antwortete, sie richte sich nicht nach Uhren, die Uhren richteten sich nach ihr, und öffnete das Tor einen Spalt, um zu zeigen, dass dahinter noch Nacht war. Dann kämpfte sie, pünktlich. '
+      + 'Sunna ist besiegt, und das Tor steht offen; sie hat es selbst aufgestossen, weil, wie sie sagt, jemand den Tag nun einmal angefangen habe und sie ihn nicht halb lassen könne. '
+      + 'Die Morgengabe hat sie uns überreicht wie ein Geschenk, das man seit Jahren im Schrank hatte, und den Morgenstern dazu, mit der Bemerkung, der Witz sei alt. '
+      + 'Über Magic City kam die Sonne am nächsten Tag pünktlich, die Bäckerin hat gebacken, und ich habe meine Sonnenuhr auf dem Marktplatz aufgestellt, ein wenig vorgestellt, nur damit niemand mehr zu spät kommt.',
+  },
 ];

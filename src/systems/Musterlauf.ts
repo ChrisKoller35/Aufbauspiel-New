@@ -37,7 +37,7 @@ export const KLUG_AB_LEBEN = 0.85;
  * Mit `sets` tragen die Helden statt ihrer Ausrüstung die Dungeon-Sets aus MUSTER_SETS.
  * Ihren Weg (ab Stufe 10) gehen sie, ausser `wege` ist false.
  * `schmiede` hebt jedes getragene Set-Teil in der Schmiede auf diese Stufe (docs/SCHMIEDE.md);
- * ohne die Angabe gilt die Stufe der Sets (MusterSet.schmiede).
+ * ohne die Angabe gilt die Stufe der Sets (MusterSet.schmiede, einzelne Teile nach MusterSet.stufen).
  */
 export function musterStand(
   team: MusterTeamName, startwert: number, sets?: MusterSetName, wege = true, schmiede?: number,
@@ -55,10 +55,15 @@ export function musterStand(
     return held.id;
   });
   const stufe = schmiede ?? (sets ? MUSTER_SETS[sets].schmiede ?? 0 : 0);
-  if (stufe > 0) {
+  const einzeln = (schmiede === undefined && sets && MUSTER_SETS[sets].stufen) || {};
+  if (stufe > 0 || Object.keys(einzeln).length > 0) {
     const stufen: Record<string, number> = {};
     for (const held of state.fighters) {
-      for (const itemId of Object.values(held.gear)) if (itemId && istSchmiedbar(itemId)) stufen[itemId] = stufe;
+      for (const itemId of Object.values(held.gear)) {
+        if (!itemId || !istSchmiedbar(itemId)) continue;
+        const eigene = einzeln[itemId] ?? stufe;
+        if (eigene > 0) stufen[itemId] = eigene;
+      }
     }
     state.schmiede = { stufen };
   }
@@ -96,6 +101,52 @@ export function gewonnen(run: ExpeditionRun): boolean {
 }
 
 /**
+ * Der Bosskampf endete nach dem Rundenlimit ohne Sieger (CombatEngine, 20 Runden): Der Boss steht noch,
+ * der Lauf gilt als beendet, aber nicht als bezwungen (`dungeonBezwungen`). Für Dungeons ohne Boss nie.
+ */
+export function amRundenlimit(run: ExpeditionRun): boolean {
+  const bossRaum = run.rooms.find(r => r.type === 'boss');
+  return !!bossRaum && bossRaum.completed && run.status !== 'defeat' && bossRaum.enemies.some(e => e.hp > 0);
+}
+
+/** Der Boss hat im Bosskampf gewütet (Wut-Runde erreicht, CombatEngine schreibt «ENRAGE» ins Protokoll). */
+export function bossWutete(run: ExpeditionRun): boolean {
+  const bossRaum = run.rooms.find(r => r.type === 'boss');
+  return !!bossRaum && bossRaum.enemies.some(e => run.combatLog.includes(`!! ${e.name} ENRAGE !!`));
+}
+
+/** Ergebnis von `messeLaeufe`: Zahlen der Läufe (nicht Prozent) */
+export interface Messung {
+  laeufe: number;
+  siege: number;
+  /** Läufe, die am Rundenlimit des Bosskampfs endeten (kein Sieg, keine Niederlage) */
+  rundenlimit: number;
+  /** Siege, bei denen der Boss seine Wut-Runde nicht mehr erlebt hat (Dungeons ohne Boss: alle Siege) */
+  siegeVorWut: number;
+}
+
+/**
+ * `laeufe` Läufe (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege,
+ * mit `schmiede` die Set-Teile auf dieser Stufe (sonst auf der Stufe der Sets): Siege, Läufe am
+ * Rundenlimit und Siege vor der Wut-Runde (docs/NEUE-DUNGEONS.md, «Eichung»).
+ */
+export function messeLaeufe(
+  routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName, wege = true,
+  schmiede?: number,
+): Messung {
+  const messung: Messung = { laeufe, siege: 0, rundenlimit: 0, siegeVorWut: 0 };
+  for (let i = 1; i <= laeufe; i++) {
+    const { state, ids } = musterStand(team, i * 7919, sets, wege, schmiede);
+    const run = spieleRoute(state, ids, routeId, spielweise);
+    if (gewonnen(run)) {
+      messung.siege++;
+      if (!bossWutete(run)) messung.siegeVorWut++;
+    } else if (amRundenlimit(run)) messung.rundenlimit++;
+  }
+  return messung;
+}
+
+/**
  * Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege,
  * mit `schmiede` die Set-Teile auf dieser Stufe (sonst auf der Stufe der Sets).
  */
@@ -103,10 +154,5 @@ export function siegeVon(
   routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName, wege = true,
   schmiede?: number,
 ): number {
-  let siege = 0;
-  for (let i = 1; i <= laeufe; i++) {
-    const { state, ids } = musterStand(team, i * 7919, sets, wege, schmiede);
-    if (gewonnen(spieleRoute(state, ids, routeId, spielweise))) siege++;
-  }
-  return siege;
+  return messeLaeufe(routeId, team, spielweise, laeufe, sets, wege, schmiede).siege;
 }

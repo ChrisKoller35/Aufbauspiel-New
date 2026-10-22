@@ -57,27 +57,27 @@ export interface DungeonSetDef {
 // So gut wie die besten gewöhnlichen Gegenstände derselben Ebene und Bauart (Ebene 4:
 // Seelenbrecher, Drachenfürstplatte, Aetherkristall-Herz …), damit ein Set-Teil nie ein
 // Rückschritt ist. Die Set-Boni kommen obendrauf und machen den Unterschied.
-// Ebene 7 und 8 (Sternenschmiede, Sternenschlund) setzen die Reihen im selben Schritt fort.
-// Ein Dungeon auf Ebene 9 braucht je eine Zahl mehr in jeder Reihe.
+// Ebene 7 und 8 (Sternenschmiede, Sternenschlund) setzen die Reihen im selben Schritt fort,
+// Ebene 9 und 10 (Mondhof, Morgentor) ebenso. Ein Dungeon auf Ebene 11 braucht je eine Zahl mehr in jeder Reihe.
 
 /** Die höchste Ebene, für die es Werte gibt */
-export const HOECHSTE_EBENE = 8;
+export const HOECHSTE_EBENE = 10;
 
-type Reihe = [number, number, number, number, number, number, number, number];
+type Reihe = [number, number, number, number, number, number, number, number, number, number];
 
 const ART_WERTE: Record<SetTeilArt, Partial<Record<'atk' | 'def' | 'hp' | 'spd' | 'critChance', Reihe>>> = {
-  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18], def: [0, 0, 0, 2, 2, 3, 3, 4], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14] },
-  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2] },
-  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25], hp: [4, 6, 10, 15, 20, 25, 30, 35], def: [0, 1, 2, 3, 3, 4, 5, 6] },
-  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26] },
-  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15], hp: [5, 8, 12, 18, 24, 30, 36, 42], def: [0, 0, 2, 3, 4, 5, 6, 7], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12] },
-  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20], hp: [2, 4, 10, 15, 26, 30, 35, 40], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20], hp: [4, 8, 15, 20, 26, 32, 38, 44], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0] },
-  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15], hp: [5, 7, 12, 14, 18, 22, 26, 30], atk: [0, 1, 1, 2, 3, 4, 5, 6], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2] },
-  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44], atk: [1, 2, 4, 5, 6, 7, 8, 9], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18] },
-  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7], def: [0, 1, 2, 2, 3, 4, 5, 5], hp: [3, 4, 5, 12, 16, 20, 24, 28], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12] },
-  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18] },
-  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9], hp: [4, 6, 8, 15, 18, 22, 26, 30] },
+  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18, 20, 22], def: [0, 0, 0, 2, 2, 3, 3, 4, 4, 5], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14, 0.15, 0.16] },
+  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17, 19, 21], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22] },
+  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25, 28, 31], hp: [4, 6, 10, 15, 20, 25, 30, 35, 40, 45], def: [0, 1, 2, 3, 3, 4, 5, 6, 7, 8] },
+  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17, 19, 21], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3] },
+  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15, 17, 19], hp: [5, 8, 12, 18, 24, 30, 36, 42, 48, 54], def: [0, 0, 2, 3, 4, 5, 6, 7, 8, 9], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14] },
+  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20, 22, 24], hp: [2, 4, 10, 15, 26, 30, 35, 40, 45, 50], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
+  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20, 22, 24], hp: [4, 8, 15, 20, 26, 32, 38, 44, 50, 56], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15, 17, 19], hp: [5, 7, 12, 14, 18, 22, 26, 30, 34, 38], atk: [0, 1, 1, 2, 3, 4, 5, 6, 7, 8], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22] },
+  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44, 50, 56], atk: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22] },
+  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7, 8, 9], def: [0, 1, 2, 2, 3, 4, 5, 5, 6, 6], hp: [3, 4, 5, 12, 16, 20, 24, 28, 32, 36], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12, 0.12, 0.14] },
+  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8, 9, 10], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18, 0.2, 0.22] },
+  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9, 10, 11], hp: [4, 6, 8, 15, 18, 22, 26, 30, 34, 38] },
 };
 
 /**
@@ -113,7 +113,7 @@ const ART_PLATZ: Record<SetTeilArt, { slot: NonNullable<ItemDef['gearSlot']>; ha
 };
 
 /** Grundpreis je Ebene (wie die übrigen Gegenstände derselben Ebene) */
-const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160];
+const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160, 180, 200];
 
 // ── Die Sets, in der Reihenfolge der Dungeon-Karte von unten nach oben ──
 
@@ -506,6 +506,38 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
       name: 'Sternenfall',
       text: 'Jeder dritte Treffer des Trägers holt einen Stern vom Himmel: Er trifft alle Gegner mit der Hälfte des Schadens.',
       effekte: [{ id: 'sternenfall', treffer: 3, anteil: 0.5 }],
+    },
+  },
+
+  // ── Im Mondlicht (das Schild-Set für die Phalanx) ──
+  {
+    id: 'pfand', routeId: 'mondhof', name: 'Pfand des Mondvogts', zeichen: '🌙', tier: 9,
+    teile: [
+      { art: 'schild', name: 'Silberne Zollscheibe', bild: 'ITEM_AETHER_GUARDIAN_SHIELD', text: 'Eine Waagschale des Vogts, umgeschmiedet. Sie wiegt jeden Treffer und gibt das Wechselgeld zurück.' },
+      { art: 'platte', name: 'Amtsharnisch des Vogts', bild: 'ITEM_DRAGONLORD_PLATE', text: 'Mit Silber beschlagen, auf jeder Platte ein Siegel. Wer ihn trägt, wird in jedem Hof zuerst bedient und zuletzt getroffen.' },
+      { art: 'amulett', name: 'Pfandzettel in Silber', bild: 'ITEM_ARCANE_AMULET', text: 'Darauf steht, was die Gilde dem Mond schuldet. Die Zahl ist sehr lang. Das Amulett ist trotzdem leicht.' },
+    ],
+    zweiTeile: { def: 9, hp: 30 },
+    dreiTeile: {
+      name: 'Mondwall',
+      text: 'Zu Beginn jedes Kampfes und danach alle 3 Runden erhält jeder im Team einen Schild von 15, der sich auf andere Schilde (Phalanx, Moospolster, Fussnote) dazulegt.',
+      effekte: [{ id: 'mondwall', schild: 15, runden: 3 }],
+    },
+  },
+
+  // ── Über dem Mondhof (das Dolch-Set für die Meuchlerin) ──
+  {
+    id: 'morgen', routeId: 'morgentor', name: 'Sunnas Morgengabe', zeichen: '🌅', tier: 10,
+    teile: [
+      { art: 'dolch', name: 'Erster Strahl', bild: 'ITEM_BLADE_OF_THOUSAND_SHADOWS', text: 'Ein Sonnenstrahl, bevor er lang wird. Trifft, bevor der Gegner weiss, dass es Tag ist.' },
+      { art: 'leder', name: 'Dämmerwams', bild: 'ITEM_SHADOWHUNTER_ARMOR', text: 'Gegerbt in der Stunde zwischen Nacht und Tag. Wer es trägt, ist für beide Seiten nicht zuständig.' },
+      { art: 'talisman', name: 'Messing-Sonnenuhr', bild: 'ITEM_AETHER_HEART', text: 'Zeigt immer die Stunde, in der der Gegner fällt. Man muss nur dafür sorgen, dass sie stimmt.' },
+    ],
+    zweiTeile: { atk: 10, critChance: 0.1 },
+    dreiTeile: {
+      name: 'Sonnenstich',
+      text: 'Jeder Treffer des Trägers auf einen Gegner, dem es noch gut geht (über 60 % seiner Leben), brennt zusätzlich 5 % seiner vollen Leben weg, höchstens 60.',
+      effekte: [{ id: 'sonnenstich', anteil: 0.05, max: 60, power: 0.6 }],
     },
   },
 ];

@@ -52,9 +52,13 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
     `double_strike`, `anti_heal`, `regen`, `aoe_resist`, `spell_power`, `fire_resist`, `stun_strike`.
 - **Set-Boni:** Zwei Teile geben je Ebene etwas mehr (Ebene 1: +1 Angriff, +5 Leben; Ebene 5: +5 Angriff,
   +15 Leben; Ebene 6: +6 Angriff, +20 Leben; Ebene 7: +7 Angriff, +24 Leben; Ebene 8: +8 Angriff, +8 %
-  Krit-Chance). Die Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort:
-  Drachengier, Gold macht stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team;
-  Sternenschlund: Sternenfall, jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden).
+  Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben; Ebene 10: +10 Angriff, +10 % Krit-Chance). Die
+  Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort: Drachengier, Gold macht
+  stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team; Sternenschlund: Sternenfall,
+  jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden; Mondhof: Mondwall, zu Beginn jedes
+  Kampfes und alle 3 Runden ein Schild von 15 für jeden im Team, der sich mit anderen Schilden wie der Phalanx
+  addiert; Morgentor: Sonnenstich, jeder Treffer auf einen Gegner über 60 % Leben brennt zusätzlich 5 % seiner
+  vollen Leben weg, höchstens 60, also genau bis dorthin, wo die Meuchlerin 2,5-fach trifft).
 
 ## Ein Set für einen neuen Dungeon
 
@@ -63,10 +67,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 2. **Drei Teile** mit verschiedenen Plätzen, damit ein Held alle drei tragen kann: eine Waffe oder ein
    Schild, eine Rüstung und ein Schmuckstück. `bild` ist ein vorhandener Sprite-Key, `text` ein Satz
    mit Witz, der zum Dungeon passt. Die Gegenstände (`set_<set>_<bauart>`) entstehen von selbst.
-3. **Ebene über 8:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
-   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 8. Die neuen Werte an den besten
+3. **Ebene über 10:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
+   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 10. Die neuen Werte an den besten
    gewöhnlichen Gegenständen der Ebene ausrichten; gibt es auf der Ebene keine, die Reihe im selben Schritt
-   fortsetzen (so sind Ebene 7 und 8 entstanden).
+   fortsetzen (so sind Ebene 7 bis 10 entstanden).
 4. **Set-Boni:** `zweiTeile` etwas über der Ebene darunter. `dreiTeile` mit Name, Text und Effekten.
    Eine neue Fähigkeit braucht ihre Wirkung in `src/systems/Kampfeffekte.ts`, Name und Beschreibung in
    `SPECIAL_EFFECT_DEFS` und, falls ihre Kampfzeile eine eigene Farbe haben soll, `getLogLineColor` in
@@ -76,7 +80,11 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
    `npm run validate-refs`, dann `npm run dungeon-eichung -- 200` und die Tabelle unten nachführen.
    Für einen Dungeon über dem Hort die Sets der Musterhelden (`MUSTER_SETS` in `src/data/musterteams.ts`)
    um eine Stufe mit dem neuen Set ergänzen, ab den Sternen mit Stufen aus der Schmiede (`schmiede`) und
-   der Ebene, ab der die Eichung sie misst (`abEbene`).
+   der Ebene, ab der die Eichung sie misst (`abEbene`). Stand: `mond5` (ab Ebene 9: dazu Lia im Schlund-Set,
+   alles auf +5), `pfand5` (ab Ebene 10: dazu Brom im Pfand des Mondvogts mit dem Amtsstab, alles auf +5) und
+   die Stufen dazwischen (`schlund2`, `pfand2`, `pfand3`, `morgen0`; einzelne Teile auf einer anderen Stufe
+   über `MusterSet.stufen`), damit die Tabelle zeigt, was das neue Set einer Ebene ausmacht, bevor es ganz
+   hochgeschmiedet ist.
 7. **Eigene Bilder** für Set-Teile nur mit Christophs Okay (Kosten-Regel). Bis dahin tragen sie Bilder
    vorhandener Gegenstände mit dem Set-Zeichen darauf.
 
@@ -89,6 +97,11 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 - **Hort:** dasselbe, Grimm trägt das Set aus dem Drachenhort.
 - **Sterne +3** (nur zwischen den Sternen gemessen): die Hort-Sets, alle Teile in der Schmiede auf +3.
 - **Sterne +5:** dazu Grimm in Korrunds Meisterstücken, alle Teile auf +5.
+- **Mond +5** (`mond5`, ab Ebene 9): dazu Lia im Set aus dem Sternenschlund, alle Teile auf +5; `schlund2`:
+  dasselbe, Lias Schlund-Set erst auf +2.
+- **Pfand** (`pfand2`, `pfand3` ab Ebene 9 und 10, `pfand5` ab Ebene 10): dazu Brom im Pfand des Mondvogts
+  mit dem Amtsstab, das Pfand-Set auf +2, +3 oder +5, die übrigen auf +5.
+- **Morgengabe** (`morgen0`, ab Ebene 10): dazu Sina in Sunnas Morgengabe ohne Stufen, die übrigen auf +5.
 
 Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
 eingerechnet, Siege von 200 Läufen (vorsichtig / klug / gierig):
@@ -111,6 +124,20 @@ Zwischen den Sternen (Team «Frisch» schafft dort nichts):
 | Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 4 / 1 / 0 % |
 | Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 92 / 57 / 3 % |
 
+Im Mondlicht (Stand 22.10.2026, Team «Stark», 1000 Läufe; Zeilen mit 300 Läufen sind gekennzeichnet). «Frisch»
+und «Gut» schaffen dort mit den Sets der Ebene darunter nichts («Gut» mit `mond5` im Mondhof 1 %, mit `pfand5`
+am Morgentor 2 %), mit dem Lohn-Set aber viel: «Frisch» (Stufe 10) mit Brom im Pfand-Set auf +2 den Mondhof
+100 / 100 / 93 %, «Gut» mit Sina in der Morgengabe das Morgentor 100 / 92 / 41 % (200 Läufe). Die Sets des
+Mondes sind also stärker als die Stufen der Helden:
+
+| Dungeon | Sterne +5 (ohne Set der Ebene darunter) | Schlund-Set auf +2 | Mond +5 | Pfand-Set +2 / +3 / +5 | Morgengabe ohne Stufen |
+|---|---|---|---|---|---|
+| Der Mondhof | 0 / 0 / 0 % | 1 / 0 / 0 % | 74 / 28 / 2 % | ohne Stufen 100 / 100 / 100 % (300 Läufe), +2 100 / 100 / 100 % | – |
+| Das Morgentor | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % | 61 / 31 / 0 %, 62 / 38 / 0 %, 69 / 50 / 1 % | 100 / 100 / 98 % |
+
+Dazu die Läufe am Rundenlimit des Bosskampfs und die Siege vor der Wut-Runde: `docs/NEUE-DUNGEONS.md`,
+«Im Mondlicht».
+
 Vor der Eichung der Wege (21.10.2026) hatte das Team «Gut» im Himmelsarchiv mit Sets aus Ebene 4 54 / 37 / 0 %
 und mit dem Hort-Set 72 / 51 / 0 % (1000 Läufe; jetzt 32 / 18 / 0 % und 47 / 30 / 0 %). Seine Wege auf Stufe 12
 waren deutlich stärker als ihr Ziel; die Gegner sind auf die Teams in eigener Ausrüstung nachgezogen
@@ -124,13 +151,33 @@ der Vergleich auf der Heldenseite. Wege und Sets verstärken sich gegenseitig, d
 Dungeons über dem Vulkankern seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
 Zwischen den Sternen reichen Sets allein nicht mehr: Erst die Schmiede macht die Sternenschmiede machbar
 (+3), für den Sternenschlund braucht es +4 bis +5 und Korrunds Meisterstücke (Stufe für Stufe in
-`docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»).
+`docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Im Mondlicht ist das Set der Ebene darunter der Schlüssel,
+und zwar auf +5: Ohne das Schlund-Set schafft «Stark» den Mondhof nie, mit dem Schlund-Set auf +2 fast nie
+(1 %), auf +4 jeden dritten Lauf, auf +5 drei von vier; ohne das Pfand-Set schafft es das Morgentor nie, mit
+dem Pfand-Set schon auf +2 in 61 % der Läufe (auf +5 69 %), weil dort das Set selbst zählt (Mondwall, Brom als
+Träger der Letzten Bastion), nicht seine Stufe.
 
 **Korrunds Meisterstücke** sind ein Set für einen Kämpfer (Klinge, Platte, Talisman). Als Schild-Set für
 Brom war die erste Fassung deutlich schwächer als die Festung mit der Letzten Bastion; mit dem Schmiedetakt
 hilft das Set jetzt dem ganzen Team, und Grimm in Korrunds Set auf +5 ist stärker als im Hort-Set auf +5.
 **Was Nyxar nicht frass** (Bogen, Leder, Ring) macht den Sternenschlund leicht, wer es hat (Lia ohne
-Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
+Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für den Mondhof.
+**Pfand des Mondvogts** (Zollscheibe, Amtsharnisch, Pfandzettel in Silber; Ebene 9) ist ein Schild-Set für
+Brom: Mondwall gibt dem ganzen Team zu Kampfbeginn und alle 3 Runden einen Schild von 15, zusammen mit dem
+Amtsstab des Mondvogts (Letzte Bastion) also einen Träger, der alles auf sich zieht und das Team dabei schützt.
+Gegen Argentis ist Brom damit unverwundbar (Mindestschaden gegen Verteidigung 79 auf +5), darum schafft das
+Team mit dem Pfand-Set den Mondhof in jeder Spielweise (100 %), auch mit drei Pfandzetteln; am Morgentor war
+genau das der Grund für den Patt am Rundenlimit, bis Sunna genug Angriff bekam, um Brom allein zu fällen
+(`docs/NEUE-DUNGEONS.md`, «Im Mondlicht»).
+**Sunnas Morgengabe** (Erster Strahl, Dämmerwams, Messing-Sonnenuhr; Ebene 10) ist das Dolch-Set für Sina:
+Sonnenstich brennt Gegner über 60 % Leben herunter, genau bis dorthin, wo die Meuchlerin 2,5-fach trifft; oben
+Sonnenstich, unten Meucheln, derselbe Dolch. Es ist das Set gegen dicke einzelne Gegner, also gegen Bosse, und
+der Burst-Build, der am Morgentor die Sonnenuhr vorstellen darf (Eichung: 98 % gierig, Sunna wütet ab Runde 4;
+Brom im Pfand-Set ohne die Morgengabe 1 %).
+Der Morgenstern (Erstsieg-Beute) trägt den Sternenfall des Schlund-Sets auf einen Zweihänder, wie Korrunds Hammer
+den Funkenflug: zwei Sets, drei Waffen, eine Hand zu wenig.
+Mondhof und Morgentor sind seit dem 22.10.2026 geeicht (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht», mit Zielen,
+Messwerten und dem, was nicht erreicht wurde); die Tabelle «Im Mondlicht» oben ist der Stand danach.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher

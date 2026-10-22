@@ -2,8 +2,8 @@
 // Reine Rechnung: Was entsteht und was wird pro Tag (TAG_SEKUNDEN)
 // verbraucht, wenn die Stadt so weiterläuft wie jetzt? Je Ware erzeugt,
 // verbraucht, Bilanz und die Posten, aus denen die Zahlen stammen.
-// Gerechnet wird mit der Dauer, die ein Zyklus im Spiel wirklich hat
-// (echteZyklusSekunden in ProductionSystem), nicht mit der im Rezept.
+// Gerechnet wird mit zyklusSekunden (Ausbau.ts): Stufe, Besetzung und
+// Synergie zählen; Zyklen laufen im Spiel ohne Lücke (ProductionSystem).
 //  - Rohstoff-Gebäude (Holz, Stein, Getreide, Eisen) arbeiten dauernd.
 //  - Werkstätten arbeiten auf Auftrag (docs/WERKSTAETTEN.md): Aufträge
 //    sind einmalig und zählen nicht, auch nicht ihre Vorstufen.
@@ -29,9 +29,9 @@ import {
 } from './GebaeudeStatus';
 import { brotProTag } from './PeopleSystem';
 import { hatAuftragsliste, rezeptFuer } from './Auftraege';
-import { VORRAETE, vorratZiel, vonSelbstText, wareVon } from './Werkstattplan';
-import { echteZyklusSekunden } from './ProductionSystem';
+import { VORRAETE, kannBeginnen, vorratZiel, vonSelbstText, wareVon } from './Werkstattplan';
 import { EconomySystem } from './EconomySystem';
+import { zyklusSekunden } from './Ausbau';
 
 export interface BilanzPosten {
   /** Woher die Menge kommt, z. B. «Bäckerei (Brot für die Bewohner)» oder «Bewohner». */
@@ -70,6 +70,10 @@ export interface VorratBilanz {
   ziel: number;
   /** Sekunden, die sie nach einer Pause auf ihre Zutaten wartet (die Windmühle mahlt erst dann). */
   anlauf: number;
+  /** Stück je Zyklus (Bäckerei: 1 Brot). */
+  ladung: number;
+  /** Sekunden, die sie selbst an einem Zyklus arbeitet (zyklusSekunden), 0 ohne Gebäude. */
+  zyklus: number;
   /** Wer weniger als den Bedarf zulässt, sonst null. */
   engpass: VorratEngpass | null;
 }
@@ -149,7 +153,7 @@ interface Plan {
 }
 
 /**
- * Plant eine Werkstatt, die von selbst arbeitet: ihre eigenen Zyklen (echte Dauer, 0 bei Hindernis),
+ * Plant eine Werkstatt, die von selbst arbeitet: ihre eigenen Zyklen (zyklusSekunden, 0 bei Hindernis),
  * aber nicht mehr, als ihre Zutaten hergeben. Reicht das Lager heute, kommt die Zutat von dort.
  * Sonst macht sie eine Zulieferer-Werkstatt (Windmühle: so viel sie schafft), oder es kommt nur, was
  * Rohstoff-Gebäude pro Tag mehr machen, als sonst verbraucht wird (Getreidefarm). Eine Kette, die
@@ -163,7 +167,7 @@ function plane(
   const def = BUILDING_DEFS[b.typeId];
   const grund: WarteGrund | null = def ? produktionsHindernis(b, def, recipe) : { art: 'im-bau' };
   if (grund) return { b, recipe, zyklen: 0, engpass: { art: 'steht', typeId: b.typeId, grund }, zulieferer: [] };
-  const eigene = TAG_SEKUNDEN / echteZyklusSekunden(b, recipe);
+  const eigene = TAG_SEKUNDEN / zyklusSekunden(b, recipe);
   const plan: Plan = { b, recipe, zyklen: eigene, engpass: { art: 'schafft', typeId: b.typeId, zutat }, zulieferer: [] };
   if (tiefe >= MAX_TIEFE) return plan;
   const gefragt = Math.min(eigene, wunsch);
@@ -199,7 +203,7 @@ function anlaufSekunden(plan: Plan): number {
   let sekunden = 0;
   for (const { item, plan: z } of plan.zulieferer) {
     const zyklen = Math.ceil(plan.recipe.inputs[item] / z.recipe.outputs[item]);
-    sekunden = Math.max(sekunden, zyklen * echteZyklusSekunden(z.b, z.recipe) + anlaufSekunden(z));
+    sekunden = Math.max(sekunden, zyklen * zyklusSekunden(z.b, z.recipe) + anlaufSekunden(z));
   }
   return sekunden;
 }
@@ -239,7 +243,10 @@ function vorratBilanz(
   const ziel = vorratZiel(state, typeId);
   const b = dasGebaeude(state, typeId);
   if (!b) {
-    return { typeId, item, bedarf, menge: 0, hoechstens: 0, ziel, anlauf: 0, engpass: bedarf > 0 ? { art: 'fehlt', typeId } : null };
+    return {
+      typeId, item, bedarf, menge: 0, hoechstens: 0, ziel, anlauf: 0, ladung: stueck, zyklus: 0,
+      engpass: bedarf > 0 ? { art: 'fehlt', typeId } : null,
+    };
   }
   const plan = plane(state, waren, b, recipe, bedarf / stueck, undefined, 0);
   const zyklen = Math.min(bedarf / stueck, plan.zyklen);
@@ -247,6 +254,7 @@ function vorratBilanz(
   const menge = zyklen * stueck;
   return {
     typeId, item, bedarf, menge, hoechstens: plan.zyklen * stueck, ziel, anlauf: anlaufSekunden(plan),
+    ladung: stueck, zyklus: zyklusSekunden(b, recipe),
     engpass: menge < bedarf - 1e-9 ? plan.engpass : null,
   };
 }
@@ -257,14 +265,14 @@ function vorratBilanz(
 export function tagesBilanz(state: GameState): TagesBilanz {
   const waren: Record<string, WarenBilanz> = {};
 
-  // Rohstoff-Gebäude: ihr Rezept, so oft es im Spiel wirklich fertig wird. Werkstätten nie über
+  // Rohstoff-Gebäude: ihr Rezept, so oft es am Tag fertig wird. Werkstätten nie über
   // activeRecipeId: dort steht der laufende Auftrag oder was sie gerade von selbst macht.
   for (const b of state.buildings) {
     if (!b || !b.activeRecipeId || hatAuftragsliste(b)) continue;
     const def = BUILDING_DEFS[b.typeId];
     const recipe = RECIPE_DEFS[b.activeRecipeId];
     if (!def || !recipe || produktionsHindernis(b, def, recipe)) continue;
-    const zyklen = TAG_SEKUNDEN / echteZyklusSekunden(b, recipe);
+    const zyklen = TAG_SEKUNDEN / zyklusSekunden(b, recipe);
     const name = gebaeudeName(b.typeId);
     for (const [item, menge] of Object.entries(recipe.outputs)) buche(waren, item, name, menge * zyklen);
     for (const [item, menge] of Object.entries(recipe.inputs)) buche(waren, item, name, -menge * zyklen);
@@ -291,54 +299,100 @@ export function reichtTage(vorrat: number, bilanz: number): number | null {
   return Math.max(0, Math.floor(Math.max(0, vorrat) / -bilanz));
 }
 
+/** Takt, in dem eine ruhende Werkstatt nur beginnt (ProductionSystem zählt erst ab dem nächsten). */
+const KALTSTART_SEKUNDEN = 1;
+
+/** Mehr Tage rechnet «reicht» nicht voraus. */
+const MAX_REICHT_TAGE = 10_000;
+
+/** Das Stück, das die Werkstatt des Vorrats gerade macht oder als Nächstes beginnt, in Sekunden ab jetzt. */
+interface Backstand {
+  start: number;
+  fertig: number;
+}
+
 /**
- * «reicht» für einen Vorrat von selbst (Brot), Tag für Tag wie im Spiel. Gegessen wird beim
- * Tageswechsel; satt ist ein Tag, wenn dann der ganze Verbrauch im Lager liegt. Ab dem Ziel ruht die
- * Werkstatt bis zum nächsten Tageswechsel. Lag der Vorrat dort am Ziel, backt sie danach wieder an,
- * wartet aber erst auf ihre Zutaten (`anlauf`) und schafft an dem Tag weniger. Sonst backt sie durch,
- * und es fehlt jeden Tag nur, was sie nicht schafft. `tagesAnteil`: so viel vom heutigen Tag ist
- * vorbei (was sie heute schon gebacken hat, liegt im Lager und zählt nicht doppelt).
+ * Was die Werkstatt des Vorrats gerade tut: Backt sie das Brot, den Rest ihres Zyklus; ist sie frei, beginnt
+ * sie im nächsten Takt (KALTSTART_SEKUNDEN) und holt erst Zutaten (`anlauf`), falls ihr welche fehlen; ist sie
+ * beschäftigt (Auftrag), danach (die Windmühle mahlt derweil). Ruht sie am Ziel, null: Sie backt erst nach
+ * dem nächsten Tageswechsel wieder.
  */
-function vorratReicht(vorrat: number, v: VorratBilanz, wert: number, tagesAnteil: number): number {
-  const verbrauch = v.menge - wert;
-  const anlauf = Math.min(1, v.anlauf / TAG_SEKUNDEN);
+function backstand(state: GameState, v: VorratBilanz): Backstand | null {
+  const b = dasGebaeude(state, v.typeId);
+  if (!b) return null;
+  const laufend = b.producing && b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
+  const rest = laufend ? Math.max(0, b.productionTimer) : 0;
+  if (laufend && (laufend.outputs[v.item] ?? 0) > 0) return { start: rest - v.zyklus, fertig: rest };
+  if ((state.globalStock[v.item] ?? 0) >= v.ziel) return null;
+  const rezept = rezeptFuer(b, v.item);
+  const start = laufend ? Math.max(rest, v.anlauf)
+    : KALTSTART_SEKUNDEN + (rezept && kannBeginnen(state, b, rezept) ? 0 : v.anlauf);
+  return { start, fertig: start + v.zyklus };
+}
+
+/**
+ * «reicht» für einen Vorrat von selbst (Brot), Brot für Brot wie im Spiel (Werkstattplan): Die Bäckerei
+ * liefert ganze Brote und beginnt das nächste, sobald das letzte fertig ist und die Zutaten da sind. Die
+ * Windmühle mahlt nur auf Bedarf: Sie beginnt mit dem Brot und braucht `anlauf` Sekunden, aber nur, wenn
+ * das Lager mit dem laufenden Brot noch unter dem Ziel bleibt; sonst erst wieder nach dem Tageswechsel.
+ * Mehr als `hoechstens` am Tag (Getreide der Farm) gibt es nicht. Erreicht das Lager das Ziel, ruht die
+ * Bäckerei bis zum nächsten Tageswechsel und beginnt danach im nächsten Takt neu. Gegessen wird beim
+ * Tageswechsel; satt ist ein Tag, wenn dann der ganze Bedarf im Lager liegt. `tagesAnteil`: so viel vom
+ * heutigen Tag ist vorbei; `stand`: woran die Bäckerei gerade ist (null: sie ruht).
+ */
+function vorratReicht(vorrat: number, v: VorratBilanz, stand: Backstand | null, tagesAnteil: number): number {
+  const periode = (v.ladung * TAG_SEKUNDEN) / v.hoechstens;
+  // Uhr in Sekunden seit dem letzten Tageswechsel, läuft über die Tage weiter
+  const jetzt = tagesAnteil * TAG_SEKUNDEN;
   let lager = vorrat;
-  let vorbei = tagesAnteil;
-  // Backt sie heute wieder an? Dann lag beim letzten Tageswechsel der Vorrat am Ziel
-  let anbacken = lager - v.menge * Math.max(0, vorbei - anlauf) + verbrauch >= v.ziel;
   let tage = 0;
-  // Ruhetage, dann höchstens zwei Tage Anbacken (das Ziel erreicht sie nur am ersten), dann durch
-  for (let schritt = 0; schritt < 4; schritt++) {
-    if (lager >= v.ziel) {
-      // Ruht bis unter das Ziel; das Ziel (Brot für 3 Tage) ist nie kleiner als der Verbrauch
-      const ruhetage = Math.floor((lager - v.ziel) / verbrauch) + 1;
-      lager -= ruhetage * verbrauch;
+  let backt = stand !== null;
+  let start = stand ? jetzt + stand.start : 0;
+  let fertig = stand ? jetzt + stand.fertig : Infinity;
+  // Wann die Zutaten für das Brot danach bereit sind (Infinity: die Mühle mahlt noch nicht)
+  let bereit = backt && lager + v.ladung < v.ziel ? start + v.anlauf : Infinity;
+  while (tage < MAX_REICHT_TAGE) {
+    if (!backt && lager >= v.ziel) {
+      // Ruht, bis das Lager unter das Ziel fällt (das Ziel, Brot für 3 Tage, ist nie kleiner als der Bedarf)
+      const ruhetage = Math.floor((lager - v.ziel) / v.bedarf) + 1;
+      lager -= ruhetage * v.bedarf;
       tage += ruhetage;
-      vorbei = 0;
-      anbacken = true;
     }
-    const bisZiel = v.ziel - lager;
-    const kann = v.menge * Math.max(0, 1 - (anbacken ? Math.max(vorbei, anlauf) : vorbei));
-    if (!anbacken && kann < bisZiel) break;
-    anbacken = kann >= bisZiel;
-    lager += Math.min(kann, bisZiel);
-    if (lager < verbrauch) return tage;
-    lager -= verbrauch;
+    if (!backt) {
+      // Beginnt nach dem Tageswechsel neu: nächster Takt, erst die Zutaten, dann das Brot
+      start = tage * TAG_SEKUNDEN + KALTSTART_SEKUNDEN + v.anlauf;
+      fertig = start + v.zyklus;
+      bereit = lager + v.ladung < v.ziel ? start + v.anlauf : Infinity;
+      backt = true;
+    }
+    const tagEnde = (tage + 1) * TAG_SEKUNDEN;
+    while (backt && fertig <= tagEnde + 1e-9) {
+      lager += v.ladung;
+      if (lager >= v.ziel) {
+        backt = false;
+        break;
+      }
+      start = Math.max(fertig, bereit, start + periode);
+      fertig = start + v.zyklus;
+      bereit = lager + v.ladung < v.ziel ? start + v.anlauf : Infinity;
+    }
+    if (lager < v.bedarf) return tage;
+    lager -= v.bedarf;
     tage++;
-    vorbei = 0;
+    // Nach dem Essen braucht es wieder Brot: Die Mühle mahlt ab dem nächsten Takt
+    if (backt && bereit === Infinity && lager + v.ladung < v.ziel) bereit = tagEnde + KALTSTART_SEKUNDEN + v.anlauf;
   }
-  // Backt durch: Jeden Tag fehlt, was sie nicht schafft
-  return tage + Math.floor(Math.max(0, lager - v.menge * vorbei) / -wert + 1e-9);
+  return tage;
 }
 
 /**
  * «reicht N Tage» für eine Ware der Tagesbilanz, null ohne Minus. Hält eine Werkstatt die Ware von
- * selbst vorrätig (Brot), rechnet vorratReicht mit ihren Pausen (alte Spielstände mit viel Brot).
+ * selbst vorrätig (Brot), zählt vorratReicht ganze Brote und ihre Pausen (alte Spielstände mit viel Brot).
  */
 export function reichtTageFuer(state: GameState, bilanz: TagesBilanz, item: string): number | null {
   const wert = bilanz.waren[item]?.bilanz ?? 0;
   const vorrat = Math.max(0, state.globalStock[item] ?? 0);
   const v = bilanz.vorraete.find(x => x.item === item);
-  if (wert >= 0 || !v || v.menge <= 0) return reichtTage(vorrat, wert);
-  return vorratReicht(vorrat, v, wert, tagFortschritt(state));
+  if (wert >= 0 || !v || v.menge <= 0 || v.hoechstens <= 0) return reichtTage(vorrat, wert);
+  return vorratReicht(vorrat, v, backstand(state, v), tagFortschritt(state));
 }
