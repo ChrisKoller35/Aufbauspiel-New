@@ -7,6 +7,21 @@ import { zyklusSekunden } from './Ausbau';
 import { auftragGestartet, hatAuftragsliste, meldeAuftragFertig, naechsterAuftrag } from './Auftraege';
 import { kannBeginnen, planeZyklus, Zyklus } from './Werkstattplan';
 
+/** Stadt-Takt in Sekunden: so oft ruft main.ts update() auf (CITY_TICK_INTERVAL). */
+const TAKT_SEKUNDEN = 1;
+
+/**
+ * Wie lange ein Zyklus im Spiel wirklich dauert, von Start zu Start (reine Rechnung für Anzeigen,
+ * z. B. systems/Tagesbilanz.ts). Spiegelt update(): Der Zähler läuft je Takt um 1 s, ein Zyklus
+ * dauert also ganze Takte (aufgerundet), und der nächste beginnt erst im Takt danach (Leertakt).
+ * Ein 10-s-Rezept liefert so alle 11 s, auf Stufe 3 (3,3 s) alle 5 s. Wird update() geändert,
+ * gehört diese Funktion mit geändert; tests/tagesbilanzSimulation.test.ts vergleicht beides.
+ */
+export function echteZyklusSekunden(b: BuildingInstance, recipe: RecipeDef): number {
+  const takte = Math.max(1, Math.ceil(zyklusSekunden(b, recipe) / TAKT_SEKUNDEN));
+  return (takte + 1) * TAKT_SEKUNDEN;
+}
+
 /**
  * Handles recipe-based production for all buildings.
  * Called every city tick (1.0s).

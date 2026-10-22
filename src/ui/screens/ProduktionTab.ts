@@ -16,13 +16,16 @@ import { NETZ_REIHEN, NETZ_KANTEN, NetzKnoten, netzKnoten, netzGebaeudeIds } fro
 import { ERKLAERUNG } from '../../data/gebaeudeErklaerungen';
 import { GameState } from '../../models/GameState';
 import {
-  getGebaeudeStatus, gebaeudeName, itemName, getBuiltTypeIds, dasGebaeude, GebaeudeStatus, kostenText,
+  getGebaeudeStatus, gebaeudeName, itemName, getBuiltTypeIds, dasGebaeude, GebaeudeStatus, kostenText, grundText,
 } from '../../systems/GebaeudeStatus';
 import { naechsterBau } from '../../systems/Empfehlung';
 import { BUILDING_DEFS } from '../../data/buildings';
 import { engpaesseDerStadt } from '../../systems/EngpassSystem';
-import { maxStufe, kannAusbauen } from '../../systems/Ausbau';
-import { tagesBilanz, reichtTage, TagesBilanz, BilanzPosten } from '../../systems/Tagesbilanz';
+import { maxStufe, kannAusbauen, stufeVon, besetzt, arbeitsplaetze } from '../../systems/Ausbau';
+import { BROT_VORRAT_TAGE } from '../../systems/Werkstattplan';
+import {
+  tagesBilanz, reichtTageFuer, TagesBilanz, BilanzPosten, VorratBilanz, VorratEngpass,
+} from '../../systems/Tagesbilanz';
 import '../html/tagesbilanz.css';
 
 export type ProduktionZiel = 'expeditions' | 'heroes' | 'aufbau';
@@ -118,19 +121,23 @@ function chips(state: GameState, bilanz: TagesBilanz): string {
 
 // ── Tagesbilanz (systems/Tagesbilanz.ts) ────────────────────────
 
-const WAREN_SYMBOL: Record<string, string> = {
-  gold: '💰', wood: '🪵', stone: '🪨', grain: '🌾', flour: '🫓', bread: '🍞',
-  iron_scrap: '⚙️', crystal_shard: '💎', herb_green: '🌿', healing_potion: '⚗️', power_bread: '🍞',
+/** Zeichen der Waren; Gold wie in der Kopfzeile (Münze), Kraft-Brot nicht wie Brot. */
+export const WAREN_SYMBOL: Record<string, string> = {
+  gold: '🪙', wood: '🪵', stone: '🪨', grain: '🌾', flour: '🫓', bread: '🍞', power_bread: '🥖',
+  iron_scrap: '⚙️', crystal_shard: '💎', herb_green: '🌿', healing_potion: '⚗️',
 };
 
-/** «+12», «−1,4» (eine Nachkommastelle), leer bei 0. */
+/** «+12», «−1,4» (eine Nachkommastelle, plus und minus gleich gerundet), leer bei 0. */
 export function bilanzZahl(n: number): string {
-  const r = Math.round(n * 10) / 10;
-  if (r === 0) return '';
+  const r = Math.sign(n) * Math.round(Math.abs(n) * 10) / 10;
+  if (!r) return '';
   return `${r > 0 ? '+' : '−'}${String(Math.abs(r)).replace('.', ',')}`;
 }
 
-function tageText(tage: number): string {
+/** «reicht 3 Tage», «reicht 1 Tag», «reicht keinen Tag», bei leerem Lager «leer». */
+export function reichtText(vorrat: number, tage: number): string {
+  if (vorrat < 1) return 'leer';
+  if (tage <= 0) return 'reicht keinen Tag';
   return `reicht ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
 }
 
@@ -144,32 +151,99 @@ function bilanzWert(bilanz: TagesBilanz, item: string): number {
   return item === 'gold' ? bilanz.gold.gesamt : bilanz.waren[item]?.bilanz ?? 0;
 }
 
-/** Zeile «Pro Tag:» mit einem Chip je Ware, deren Bilanz nicht 0 ist. */
-export function bilanzZeileHTML(state: GameState, bilanz: TagesBilanz): string {
-  const chipsHTML = bilanzWaren(bilanz).map(item => {
-    const wert = bilanzWert(bilanz, item);
-    const zahl = bilanzZahl(wert);
-    if (!zahl) return '';
-    const tage = reichtTage(state.globalStock[item] ?? 0, wert);
-    const reicht = tage === null ? '' : ` <small>· ${tageText(tage)}</small>`;
-    const symbol = WAREN_SYMBOL[item] ?? itemName(item);
-    return `<span class="tb-chip${wert < 0 ? ' minus' : ''}" data-bilanz="${item}" tabindex="0" `
-      + `aria-label="${itemName(item)} pro Tag">${symbol} ${zahl}${reicht}</span>`;
-  }).join('');
-  return `<b class="tb-titel">Pro Tag:</b>${chipsHTML || '<span class="tb-leer">noch nichts</span>'}`;
+function warenName(item: string): string {
+  return item === 'gold' ? 'Gold' : itemName(item);
 }
 
-/** Erklärung zu einem Chip der Tagesbilanz: die Posten. */
+/** «reicht …» einer Ware oder leer, wenn ihre Bilanz nicht negativ ist. */
+function reichtFuer(state: GameState, bilanz: TagesBilanz, item: string): string {
+  const tage = item === 'gold' ? null : reichtTageFuer(state, bilanz, item);
+  return tage === null ? '' : reichtText(state.globalStock[item] ?? 0, tage);
+}
+
+/** Ein Chip der Zeile «Pro Tag:» (dieselben Daten zeichnen und nachführen ihn). */
+export interface BilanzChip {
+  item: string;
+  minus: boolean;
+  /** Inhalt als HTML: Zeichen, Zahl und klein «reicht …». */
+  inhalt: string;
+  /** Für Screenreader, mit Zahl: «Brot pro Tag: −1,9, reicht 3 Tage». */
+  label: string;
+}
+
+/** Chips der Zeile «Pro Tag:»: je Ware, deren Bilanz gerundet nicht 0 ist, Gold zuerst. */
+export function bilanzChips(state: GameState, bilanz: TagesBilanz): BilanzChip[] {
+  const liste: BilanzChip[] = [];
+  for (const item of bilanzWaren(bilanz)) {
+    const wert = bilanzWert(bilanz, item);
+    const zahl = bilanzZahl(wert);
+    if (!zahl) continue;
+    const reicht = reichtFuer(state, bilanz, item);
+    liste.push({
+      item, minus: wert < 0,
+      inhalt: `${WAREN_SYMBOL[item] ?? itemName(item)} ${zahl}${reicht ? ` <small>· ${reicht}</small>` : ''}`,
+      label: `${warenName(item)} pro Tag: ${zahl}${reicht ? `, ${reicht}` : ''}`,
+    });
+  }
+  return liste;
+}
+
+function chipKlasse(c: BilanzChip): string {
+  return `tb-chip${c.minus ? ' minus' : ''}`;
+}
+
+const LEER_HTML = '<span class="tb-leer">noch nichts</span>';
+
+/** Zeile «Pro Tag:» mit einem Chip je Ware, deren Bilanz nicht 0 ist. */
+export function bilanzZeileHTML(state: GameState, bilanz: TagesBilanz): string {
+  const chipsHTML = bilanzChips(state, bilanz).map(c =>
+    `<span class="${chipKlasse(c)}" data-bilanz="${c.item}" tabindex="0" role="img" aria-label="${c.label}">${c.inhalt}</span>`).join('');
+  return `<b class="tb-titel">Pro Tag:</b>${chipsHTML || LEER_HTML}`;
+}
+
+/** «(Stufe 2)», bei fehlenden Arbeitern «(Stufe 3, 1/3 Arbeiter)». */
+function stufeUndArbeiter(state: GameState, typeId: string): string {
+  const b = dasGebaeude(state, typeId);
+  if (!b) return '';
+  const fehlen = besetzt(b) < arbeitsplaetze(b) ? `, ${besetzt(b)}/${arbeitsplaetze(b)} Arbeiter` : '';
+  return ` (Stufe ${stufeVon(b)}${fehlen})`;
+}
+
+/** Woran es liegt, dass der Vorrat nicht reicht, in einem Satz. */
+function engpassSatz(state: GameState, v: VorratBilanz, e: VorratEngpass): string {
+  if (e.art === 'zutat') return `Engpass: ${itemName(e.item)} fehlt im Lager.`;
+  const name = gebaeudeName(e.typeId);
+  if (e.art === 'fehlt') return `Engpass: ${name} fehlt.`;
+  if (e.art === 'steht') return `Engpass: ${name} steht (${grundText(e.grund)}).`;
+  const zahl = bilanzZahl(v.hoechstens).replace('+', '') || '0';
+  const was = e.zutat ? `${itemName(e.zutat)} für ${zahl} ${itemName(v.item)}` : `${zahl} ${itemName(v.item)}`;
+  return `Engpass: ${name}${stufeUndArbeiter(state, e.typeId)} schafft nur ${was} am Tag.`;
+}
+
+/** Sätze zu einem Vorrat von selbst: wer ihn hält und, wenn er nicht reicht, der Engpass. */
+function vorratSaetze(state: GameState, v: VorratBilanz): string[] {
+  const satz = v.item === 'bread'
+    ? `Brot für die Bewohner backt die ${gebaeudeName(v.typeId)} von selbst, bis es für ${BROT_VORRAT_TAGE} Tage reicht.`
+    : `${gebaeudeName(v.typeId)} hält ${itemName(v.item)} von selbst für ${BROT_VORRAT_TAGE} Tage vorrätig.`;
+  return v.engpass ? [satz, engpassSatz(state, v, v.engpass)] : [satz];
+}
+
+/** Erklärung zu einem Chip der Tagesbilanz: die Posten (erst was entsteht), Vorrat und Engpass, «reicht». */
 export function bilanzTipp(state: GameState, item: string): { titel: string; zeilen: string[] } {
   const bilanz = tagesBilanz(state);
   const posten: BilanzPosten[] = item === 'gold'
     ? [{ quelle: 'Steuern', menge: bilanz.gold.steuern }, { quelle: 'Bank', menge: bilanz.gold.bank }]
     : bilanz.waren[item]?.posten ?? [];
-  const zeilen = posten.filter(p => bilanzZahl(p.menge)).map(p => `${p.quelle} ${bilanzZahl(p.menge)}`);
-  const wert = bilanzWert(bilanz, item);
-  const tage = reichtTage(state.globalStock[item] ?? 0, wert);
-  if (tage !== null) zeilen.push(`Im Lager ${Math.floor(state.globalStock[item] ?? 0)}, ${tageText(tage)}.`);
-  return { titel: `${item === 'gold' ? 'Gold' : itemName(item)} pro Tag: ${bilanzZahl(wert) || '0'}`, zeilen };
+  const sortiert = [...posten.filter(p => p.menge > 0), ...posten.filter(p => p.menge < 0)];
+  const zeilen = sortiert.filter(p => bilanzZahl(p.menge)).map(p => `${p.quelle} ${bilanzZahl(p.menge)}`);
+  const vorrat = bilanz.vorraete.find(v => v.item === item);
+  if (vorrat) zeilen.push(...vorratSaetze(state, vorrat));
+  const reicht = reichtFuer(state, bilanz, item);
+  if (reicht) {
+    const lager = Math.floor(state.globalStock[item] ?? 0);
+    zeilen.push(lager < 1 ? 'Das Lager ist leer.' : `Im Lager ${lager}, ${reicht}.`);
+  }
+  return { titel: `${warenName(item)} pro Tag: ${bilanzZahl(bilanzWert(bilanz, item)) || '0'}`, zeilen };
 }
 
 function kartenKlasse(s: GebaeudeStatus, lager: boolean, empfohlen: boolean): string {
@@ -479,12 +553,68 @@ export function aktualisiereProduktionTab(panel: HTMLElement, state: GameState):
     const neu = engpaesseHTML(state);
     if (eng.innerHTML !== neu) eng.innerHTML = neu;
   }
-  const zeile = panel.querySelector('.tb-zeile');
-  if (zeile) {
-    const neu = bilanzZeileHTML(state, bilanz);
-    if (zeile.innerHTML !== neu) zeile.innerHTML = neu;
-  }
+  const zeile = panel.querySelector('.tb-zeile') as HTMLElement | null;
+  if (zeile) aktualisiereBilanzZeile(zeile, bilanzChips(state, bilanz));
+  frischeTippAuf(panel, state);
   zeichneKanten(panel, state);
+}
+
+/** Hat das Element den Fokus von der Tastatur (nicht von einem Klick)? Alte Browser ohne :focus-visible: ja. */
+function mitTastatur(el: HTMLElement): boolean {
+  try {
+    return el.matches(':focus-visible');
+  } catch {
+    return true;
+  }
+}
+
+/**
+ * Zeile «Pro Tag:» an Ort und Stelle nachführen: Ein Chip bleibt dasselbe Element, solange seine
+ * Ware eine Bilanz hat, so behält er den Tastatur-Fokus. Neue Chips kommen an ihren festen Platz
+ * (Reihenfolge wie bilanzWaren), darum muss kein bestehender Chip wandern.
+ */
+function aktualisiereBilanzZeile(zeile: HTMLElement, soll: BilanzChip[]): void {
+  const da = new Map<string, HTMLElement>();
+  zeile.querySelectorAll<HTMLElement>('.tb-chip[data-bilanz]').forEach(el => da.set(el.dataset.bilanz!, el));
+  const bleibt = new Set(soll.map(c => c.item));
+
+  // Fällt der Chip mit Tastatur-Fokus weg, geht der Fokus zum Nachbarn statt an den Seitenanfang
+  const fokus = document.activeElement as HTMLElement | null;
+  let fokusNach: HTMLElement | null = null;
+  const weg = fokus?.dataset.bilanz;
+  if (fokus && weg && da.get(weg) === fokus && !bleibt.has(weg) && mitTastatur(fokus)) {
+    const reihe = [...da.values()];
+    const i = reihe.indexOf(fokus);
+    fokusNach = [...reihe.slice(i + 1), ...reihe.slice(0, i).reverse()].find(el => bleibt.has(el.dataset.bilanz!)) ?? null;
+  }
+  for (const [item, el] of da) {
+    if (bleibt.has(item)) continue;
+    el.remove();
+    da.delete(item);
+  }
+
+  const leer = zeile.querySelector('.tb-leer');
+  if (soll.length > 0) leer?.remove();
+  else if (!leer) zeile.insertAdjacentHTML('beforeend', LEER_HTML);
+
+  // Von hinten: ein neuer Chip kommt vor seinen Nachfolger
+  let danach: HTMLElement | null = null;
+  for (let i = soll.length - 1; i >= 0; i--) {
+    const c = soll[i];
+    let el = da.get(c.item);
+    if (!el) {
+      el = document.createElement('span');
+      el.dataset.bilanz = c.item;
+      el.tabIndex = 0;
+      el.setAttribute('role', 'img');
+      zeile.insertBefore(el, danach);
+    }
+    if (el.className !== chipKlasse(c)) el.className = chipKlasse(c);
+    if (el.getAttribute('aria-label') !== c.label) el.setAttribute('aria-label', c.label);
+    if (el.innerHTML !== c.inhalt) el.innerHTML = c.inhalt;
+    danach = el;
+  }
+  if (fokusNach) fokusNach.focus();
 }
 
 // ── Erklärung (Tooltip) ─────────────────────────────────────────
@@ -521,15 +651,19 @@ function escape(t: string): string {
   return t.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
 }
 
-function zeigeTipp(panel: HTMLElement, el: HTMLElement, state: GameState): void {
-  const tip = panel.querySelector('.pk-tip') as HTMLElement | null;
+/** Zu welchem Kasten die offene Erklärung gehört (je Reiter), damit sie mit den Zahlen mitgeht. */
+const tippZiel = new WeakMap<HTMLElement, HTMLElement>();
+
+function tippHTML(state: GameState, el: HTMLElement): string | null {
   const id = el.dataset.knoten;
   const ware = el.dataset.bilanz;
-  if (!tip || (!id && !ware)) return;
+  if (!id && !ware) return null;
   const e = ware ? bilanzTipp(state, ware) : erklaerung(state, id!);
-  tip.innerHTML = `<b>${escape(e.titel)}</b>${e.zeilen.map(z => `<span>${escape(z)}</span>`).join('')}`;
-  tip.hidden = false;
-  // Unter die Karte, sonst darüber; immer ganz im Fenster
+  return `<b>${escape(e.titel)}</b>${e.zeilen.map(z => `<span>${escape(z)}</span>`).join('')}`;
+}
+
+/** Unter den Kasten, sonst darüber; immer ganz im Fenster. */
+function legeTipp(tip: HTMLElement, el: HTMLElement): void {
   const r = el.getBoundingClientRect();
   const w = tip.offsetWidth;
   const h = tip.offsetHeight;
@@ -539,9 +673,38 @@ function zeigeTipp(panel: HTMLElement, el: HTMLElement, state: GameState): void 
   tip.style.top = `${Math.round(top)}px`;
 }
 
+function zeigeTipp(panel: HTMLElement, el: HTMLElement, state: GameState): void {
+  const tip = panel.querySelector('.pk-tip') as HTMLElement | null;
+  const html = tippHTML(state, el);
+  if (!tip || html === null) return;
+  tip.innerHTML = html;
+  tip.hidden = false;
+  tippZiel.set(panel, el);
+  legeTipp(tip, el);
+}
+
 function versteckeTipp(panel: HTMLElement): void {
   const tip = panel.querySelector('.pk-tip') as HTMLElement | null;
   if (tip) tip.hidden = true;
+  tippZiel.delete(panel);
+}
+
+/**
+ * Offene Erklärung mit den neuen Zahlen auffrischen (Chips und Karten bleiben stehen, es kommt
+ * also kein neues «Maus darüber»). Ist ihr Kasten verschwunden, verschwindet sie auch.
+ */
+function frischeTippAuf(panel: HTMLElement, state: GameState): void {
+  const tip = panel.querySelector('.pk-tip') as HTMLElement | null;
+  const el = tippZiel.get(panel);
+  if (!tip || !el || tip.hidden) return;
+  const html = el.isConnected && panel.contains(el) ? tippHTML(state, el) : null;
+  if (html === null) {
+    versteckeTipp(panel);
+    return;
+  }
+  if (tip.innerHTML === html) return;
+  tip.innerHTML = html;
+  legeTipp(tip, el);
 }
 
 // ── Klicks ──────────────────────────────────────────────────────
