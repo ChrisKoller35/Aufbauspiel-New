@@ -14,6 +14,7 @@ import {
   SaveSystem, SpielstandZusammenfassung, StandVorLaden, fasseSpielstandZusammen, pruefeSpielstandText,
   probespielAktiv, spielstandDateiname,
 } from '../../systems/SaveSystem';
+import { fensterTaste, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 
 /** Grössere Dateien liest das Fenster gar nicht erst (ein Spielstand passt in die etwa 5 MB des Browsers). */
 const MAX_DATEI_BYTES = 10 * 1024 * 1024;
@@ -189,57 +190,15 @@ export function schliesseSpielstand(): void {
   document.querySelector<HTMLElement>('.ss-oeffnen')?.focus();
 }
 
-/**
- * Nach dem Schliessen mit einem Klick: Der zweite Klick eines Doppelklicks (✕, Hintergrund)
- * träfe sonst das Hauptmenü dahinter und öffnete eine Kachel.
- */
+/** Schliesst nach einem Klick (✕, Hintergrund), ohne dass der zweite Klick dahinter etwas öffnet. */
 function schliesseMitKlick(): void {
   schliesseSpielstand();
-  const schlucke = (e: MouseEvent) => {
-    if (e.detail > 1) {
-      e.stopImmediatePropagation();
-      e.preventDefault();
-      return;
-    }
-    window.removeEventListener('click', schlucke, true);
-  };
-  window.addEventListener('click', schlucke, true);
-  setTimeout(() => window.removeEventListener('click', schlucke, true), 700);
+  schluckeZweitenKlick();
 }
 
-/** Tab und Umschalt+Tab bleiben im Fenster (es ist modal). */
-function halteFokusImFenster(e: KeyboardEvent, fenster: HTMLElement): void {
-  const ziele = Array.from(fenster.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
-  const aktiv = document.activeElement;
-  const draussen = !(aktiv instanceof HTMLElement) || aktiv === fenster || !fenster.contains(aktiv);
-  if (ziele.length === 0) {
-    e.preventDefault();
-    fenster.focus();
-  } else if (e.shiftKey && (draussen || aktiv === ziele[0])) {
-    e.preventDefault();
-    ziele[ziele.length - 1].focus();
-  } else if (!e.shiftKey && (draussen || aktiv === ziele[ziele.length - 1])) {
-    e.preventDefault();
-    ziele[0].focus();
-  }
-}
-
-/**
- * Tasten, solange das Fenster offen ist (auf window in der Capture-Phase, also vor allen anderen):
- * Escape schliesst, Tab bleibt im Fenster. Die Tastenkürzel des Spiels dahinter (K, A, G, Escape in
- * main.ts, 1/2/3/0 im Hauptmenü) bekommen die Taste nicht. Enter und Leertaste auf Knöpfen wirken
- * weiter, sie sind kein Tastenkürzel. F5 geht durch: main.ts speichert damit statt neu zu laden.
- */
+/** Tasten, solange das Fenster offen ist (siehe fensterTaste). */
 function tasteImFenster(e: KeyboardEvent): void {
-  const fenster = document.querySelector<HTMLElement>('.ss-fenster');
-  if (!fenster || e.key === 'F5') return;
-  e.stopImmediatePropagation();
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    schliesseSpielstand();
-  } else if (e.key === 'Tab') {
-    halteFokusImFenster(e, fenster);
-  }
+  fensterTaste(e, document.querySelector<HTMLElement>('.ss-fenster'), schliesseSpielstand);
 }
 
 /** Öffnet das Fenster «Spielstand». */
@@ -283,16 +242,12 @@ export function oeffneSpielstand(state: GameState): void {
     }
   });
 
-  // Schliessen über den Hintergrund nur, wenn der Klick dort begann und kein Doppelklick ist: Der
-  // zweite Klick eines Doppelklicks auf «💾 Spielstand» träfe sonst den eben geöffneten Hintergrund.
-  let druckAufHintergrund = false;
-  ov.addEventListener('pointerdown', e => {
-    druckAufHintergrund = e.target === ov;
-  });
+  // Der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann (siehe hintergrundKlick)
+  const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', e => {
     const ziel = e.target as HTMLElement;
     if (ziel === ov) {
-      if (druckAufHintergrund && e.detail === 1) schliesseMitKlick();
+      if (hintergrund(e)) schliesseMitKlick();
       return;
     }
     // Der zweite Klick eines Doppelklicks löst nichts ein zweites Mal aus
