@@ -9,6 +9,17 @@
   color: var(--txt); padding: 3px 10px; cursor: pointer; font-size: 0.75rem; transition: .2s;
 }
 .ss-oeffnen:hover, .ss-oeffnen:focus-visible { border-color: var(--gold); color: var(--gold); }
+/* Touch und Handy: 44 px hohe Tippfläche, ohne dass Knopf oder Leiste wachsen (die Leiste steht fest
+   über dem Hauptmenü, ein höherer Knopf würde die untersten Kacheln verdecken) */
+@media (pointer: coarse), (max-width: 700px) {
+  .ss-oeffnen { position: relative; }
+  .ss-oeffnen::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+}
+/* Die feste Leiste unten rechts (Hintergrund-Wahl und dieser Knopf) läge ganz unten am PC über der
+   breiten Gildenhaus-Kachel: Platz für die Leiste unter den Kacheln (am Handy 70 px, magic-city.css) */
+@media (min-width: 701px) {
+  #s-main .main-grid { padding-bottom: 64px; }
+}
 
 .ss-ov {
   position: fixed; inset: 0; z-index: 210; display: flex; align-items: center; justify-content: center;
@@ -39,15 +50,22 @@
   color: var(--txt); font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 1px; transition: .2s;
 }
 .ss-knopf:hover, .ss-knopf:focus-visible { border-color: var(--gold); color: var(--gold); }
-.ss-ersetzen { background: #3a1414; border-color: var(--red); }
-.ss-ersetzen:hover, .ss-ersetzen:focus-visible { border-color: #f87171; color: #fecaca; }
+.ss-ersetzen, .ss-zurueck-ja { background: #3a1414; border-color: var(--red); }
+.ss-ersetzen:hover, .ss-ersetzen:focus-visible, .ss-zurueck-ja:hover, .ss-zurueck-ja:focus-visible { border-color: #f87171; color: #fecaca; }
+/* Nach dem Schreiben bis zum Neuladen gesperrt */
+.ss-knopf:disabled, .ss-knopf:disabled:hover { cursor: default; opacity: .45; border-color: var(--bdr); color: var(--txt); }
 
 .ss-meldung:empty { display: none; }
 .ss-meldung { margin-top: 12px; }
 .ss-fehler { color: #fca5a5; }
 .ss-ok { color: #86efac; word-break: break-all; }
 .ss-bestaetigen { border-top: 1px solid var(--bdr); padding-top: 12px; }
+/* Bestätigen: Breite nach Text, damit «Zurückholen und neu starten» auf eine Zeile passt (am Handy untereinander) */
+.ss-bestaetigen .ss-knopf { flex: 1 1 auto; }
 .ss-warnung { color: #fcd34d; }
+
+/* Stand vor dem Laden (zurückholen) */
+.ss-vorher { margin-top: 18px; padding-top: 14px; border-top: 1px solid var(--bdr); }
 
 @media (max-width: 700px) {
   .ss-ov { padding: 0; align-items: stretch; }
