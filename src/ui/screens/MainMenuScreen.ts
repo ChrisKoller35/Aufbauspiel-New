@@ -7,6 +7,7 @@ import { GameState } from '../../models/GameState';
 import { renderHeader } from './HeaderRenderer';
 import { stadtBannerHtml, bindeStadtBanner } from './StadtwegFenster';
 import { probespielHinweisHtml } from '../components/ProbespielHinweis';
+import { oeffneSpielstand } from '../components/SpielstandFenster';
 
 /** Chosen background; survives re-renders of the main menu on navigation. */
 let chosenBg = 1;
@@ -58,6 +59,7 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
       <button class="bg-btn" data-bg="2">2</button>
       <button class="bg-btn" data-bg="3">3</button>
       <button class="bg-btn" data-bg="0">Aus</button>
+      <button type="button" class="ss-oeffnen">💾 Spielstand</button>
     </div>
   `;
 
@@ -95,6 +97,10 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
   setBg(chosenBg);
 
   switcherEl.addEventListener('click', (e: MouseEvent) => {
+    if ((e.target as HTMLElement).closest('.ss-oeffnen')) {
+      oeffneSpielstand(state);
+      return;
+    }
     const btn = (e.target as HTMLElement).closest<HTMLElement>('.bg-btn');
     if (!btn) return;
     const num = parseInt(btn.dataset.bg || '0', 10);
