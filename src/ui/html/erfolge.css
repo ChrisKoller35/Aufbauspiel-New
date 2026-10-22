@@ -1,0 +1,42 @@
+/* ─── Magic City – Erfolge: Knopf in der Kopfzeile und Bildschirm ─── */
+
+/* Knopf «🏆» rechts in der Kopfzeile, mit Zahl der neuen Erfolge */
+.hdr-erfolge {
+  display: inline-flex; align-items: center; gap: 4px; flex-shrink: 0;
+  min-height: 32px; padding: 2px 8px;
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px;
+  color: var(--gold); font-size: 1rem; line-height: 1; cursor: pointer;
+}
+.hdr-erfolge:hover { border-color: var(--gold); }
+.hdr-erfolge-neu {
+  min-width: 18px; padding: 2px 5px; border-radius: 9px;
+  background: #b91c1c; color: #fff;
+  font-family: 'Cinzel', serif; font-size: 0.7rem; font-weight: 700; text-align: center;
+}
+
+/* Handy: Knopf bleibt oben rechts, die Vorräte rutschen in die zweite Zeile */
+@media (max-width: 700px) {
+  .hdr .res { order: 2; }
+  .hdr-erfolge { min-height: 36px; }
+}
+
+/* ── Bildschirm ── */
+.erf-kopf { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; font-size: 13px; opacity: 0.8; }
+.erf-gruppe { margin: 18px 0 8px; font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold); letter-spacing: 1px; }
+.erf-gruppe-zahl { color: var(--mut); font-size: 0.75rem; margin-left: 6px; }
+.erf-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(260px, 100%), 1fr)); gap: 10px; }
+.ach-card {
+  display: flex; align-items: center; gap: 12px; padding: 10px 12px;
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 8px;
+}
+.ach-card.ach-unlocked { border-color: var(--gd); }
+.ach-ico { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+.ach-card.ach-locked .ach-ico { filter: grayscale(1); opacity: 0.55; }
+.ach-info { flex: 1; min-width: 0; }
+.ach-title { font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--txt); }
+.ach-card.ach-unlocked .ach-title { color: var(--gold); }
+.ach-desc { font-size: 0.75rem; color: var(--mut); margin-top: 2px; }
+.ach-progress { display: flex; align-items: center; gap: 8px; }
+.ach-progress .lvbar { margin-top: 6px; flex: 1; }
+.ach-prog-text { font-size: 0.7rem; color: var(--mut); margin-top: 6px; white-space: nowrap; }
+.ach-check { flex-shrink: 0; }

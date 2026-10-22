@@ -2,10 +2,12 @@
 // Returns header HTML string for use across all screens.
 // ────────────────────────────────────────────────────────────────
 
+import '../html/erfolge.css';
 import { GameState } from '../../models/GameState';
-import { ScreenId } from '../ScreenRouter';
+import { ScreenId, navigateTo } from '../ScreenRouter';
 import { BUILDING_DEFS } from '../../data/buildings';
 import { beiAuftragFertig } from '../../systems/Auftraege';
+import { beiNeuenErfolgen, ungeseheneErfolge } from '../../systems/AchievementSystem';
 
 const HINWEIS_MS = 4000;
 let hinweisTimer: number | null = null;
@@ -34,6 +36,34 @@ export function zeigeKopfHinweis(text: string): void {
 beiAuftragFertig((b, recipe) => {
   zeigeKopfHinweis(`✔ ${recipe.name} fertig (${BUILDING_DEFS[b.typeId]?.name ?? b.typeId})`);
 });
+
+// ── Knopf «Erfolge» ──
+
+/** Inhalt des Erfolge-Knopfs: 🏆 und die Zahl der noch nicht angeschauten Erfolge */
+function erfolgKnopfInhalt(state: GameState): string {
+  const neu = ungeseheneErfolge(state);
+  return neu > 0 ? `🏆<span class="hdr-erfolge-neu">${neu}</span>` : '🏆';
+}
+
+/** Zahl an allen Erfolge-Knöpfen neu setzen (die Kopfzeilen werden sonst nur beim Navigieren neu gezeichnet). */
+export function aktualisiereErfolgKnoepfe(state: GameState): void {
+  if (typeof document === 'undefined') return;
+  const html = erfolgKnopfInhalt(state);
+  document.querySelectorAll('.hdr-erfolge').forEach(k => { k.innerHTML = html; });
+}
+
+beiNeuenErfolgen((namen, state) => {
+  aktualisiereErfolgKnoepfe(state);
+  zeigeKopfHinweis(`🏆 Erfolg: ${namen.join(', ')}`);
+});
+
+// Ein Klick-Hörer für alle Kopfzeilen (nicht jeder Bildschirm reicht data-nav weiter)
+if (typeof document !== 'undefined') {
+  document.addEventListener('click', (e) => {
+    const knopf = (e.target as HTMLElement | null)?.closest?.('.hdr-erfolge');
+    if (knopf) navigateTo('achievements');
+  });
+}
 
 /**
  * Renders the standard header bar with logo, optional back button, and resource display.
@@ -77,6 +107,7 @@ export function renderHeader(
         <span>\uD83D\uDC8E ${gems}</span>
         <span style="color:var(--mut)">Tag ${state.day}</span>
       </div>
+      <button class="hdr-erfolge" data-nav="achievements" title="Erfolge" aria-label="Erfolge">${erfolgKnopfInhalt(state)}</button>
     </div>`;
 }
 

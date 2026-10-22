@@ -13,8 +13,10 @@ export interface GuildRankDef {
     totalBossesDefeated?: number;
     guildHallT2?: boolean;
   };
-  unlocks: string[];         // human-readable unlock descriptions
-  modifierUnlocks?: string[]; // modifier IDs unlocked at this rank
+  /** Was der Rang wirklich bringt (Text beim Aufstieg): Dungeons aus routeUnlocks,
+   *  Gebäude mit freischaltung.gildenrang, Gildenhaus Stufe 2. Prüfung: tests/erfolge.test.ts */
+  unlocks: string[];
+  modifierUnlocks?: string[]; // modifier IDs (noch ohne Wirkung, darum nicht im Text)
   routeUnlocks?: string[];   // route IDs unlocked at this rank
 }
 
@@ -24,7 +26,7 @@ export const GUILD_RANK_DEFS: GuildRankDef[] = [
     name: 'Novize',
     title: 'Gilden-Rang I: Novize',
     conditions: {},
-    unlocks: ['Alle MVP-Gebäude', 'Route: Waldpfad (kurz)'],
+    unlocks: ['Dungeon: Waldpfad (kurz)'],
     routeUnlocks: ['forest_short'],
   },
   {
@@ -32,7 +34,10 @@ export const GUILD_RANK_DEFS: GuildRankDef[] = [
     name: 'Abenteurer',
     title: 'Gilden-Rang II: Abenteurer',
     conditions: { forestShortCompleted: 3 },
-    unlocks: ['Route: Tiefwald (mittel)', 'Schmiede-Rezepte sichtbar'],
+    unlocks: [
+      'Dungeons: Tiefwald (mittel), Tiefe Höhle, Spinnenhöhle',
+      'Gebäude: Arkanschmiede, Marktplatz (je mit Bauplan)',
+    ],
     modifierUnlocks: ['iron_trial'],
     routeUnlocks: ['forest_medium', 'cave_deep', 'cave_spider'],
   },
@@ -41,7 +46,11 @@ export const GUILD_RANK_DEFS: GuildRankDef[] = [
     name: 'Veteran',
     title: 'Gilden-Rang III: Veteran',
     conditions: { forestMediumBossDefeated: true },
-    unlocks: ['Guild Hall T2 Upgrade', 'Talisman-Crafting'],
+    unlocks: [
+      'Dungeons: Giftsumpf, Alte Krypta',
+      'Gebäude: Bank (mit Bauplan)',
+      'Gildenhaus auf Stufe 2 ausbauen (4 Helden je Expedition)',
+    ],
     modifierUnlocks: ['death_march'],
     routeUnlocks: ['swamp_long', 'ruins_crypts'],
   },
@@ -50,7 +59,10 @@ export const GUILD_RANK_DEFS: GuildRankDef[] = [
     name: 'Champion',
     title: 'Gilden-Rang IV: Champion',
     conditions: { totalBossesDefeated: 3 },
-    unlocks: ['Weitere Routen', '+1 Proviant-Slot'],
+    unlocks: [
+      'Dungeons: Tiefe Ruinen, Vulkankern',
+      'Gebäude: Kriegsmaschinen-Werkstatt (mit Bauplan)',
+    ],
     modifierUnlocks: ['speed_march'],
     routeUnlocks: ['ruins_depths', 'volcano_core'],
   },
@@ -59,6 +71,6 @@ export const GUILD_RANK_DEFS: GuildRankDef[] = [
     name: 'Legende',
     title: 'Gilden-Rang V: Legende',
     conditions: { totalBossesDefeated: 5, guildHallT2: true },
-    unlocks: ['Endgame-Banner „Gildenmeister"'],
+    unlocks: ['Titel Gildenmeister (Erfolg «Gildenmeister»)'],
   },
 ];

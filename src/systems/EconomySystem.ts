@@ -2,6 +2,7 @@ import { GameState } from '../models/GameState';
 import { FighterSynergySystem } from './FighterSynergySystem';
 import { wirkungsStufe, marktBonusProzent, bankGoldProTag } from './Ausbau';
 import { stadtSteuerProzent } from './Stadtweg';
+import { erfolgePruefen } from './AchievementSystem';
 
 /** Jeder Bewohner zahlt pro Tag so viel Gold, mal Zufriedenheit (0-1). */
 export const STEUER_PRO_BEWOHNER = 2;
@@ -50,5 +51,8 @@ export class EconomySystem {
   dayTick(state: GameState): void {
     state.globalStock.gold = (state.globalStock.gold ?? 0) + this.steuernProTag(state);
     state.day++;
+    state.statistics['total_days_survived'] = (state.statistics['total_days_survived'] ?? 0) + 1;
+    // Erfolge auch beim Tageswechsel prüfen (Stadtstufe, Helden, Sets …)
+    erfolgePruefen(state);
   }
 }
