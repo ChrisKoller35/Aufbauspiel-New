@@ -1275,8 +1275,8 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
   // ── Im Mondlicht: die Pfandzettel des Vogts sind die festen Wahl-Räume der Route ──
   {
     routeId: 'mondhof', titel: 'Der Pfandzettel',
-    einleitung: 'Die Sterne sind zurück, aber die Bäckerin zählt seit drei Nächten dreihundertelf statt dreihundertzwölf, und am Morgen lag ein Zettel auf dem Brotbrett, in Silber geschrieben: '
-      + '«Zoll für 312 aufgestiegene Sterne, zahlbar im Mondhof. Der letzte Stern ist als Pfand vermerkt.» '
+    einleitung: 'Die Sterne sind zurück, und die Bäckerin war beim Zählen bis vierhundert gekommen, aber seit drei Nächten zählt sie dreihundertneunundneunzig, und am Morgen lag ein Zettel auf dem Brotbrett, in Silber geschrieben: '
+      + '«Zoll für 88 aufgestiegene Sterne, zahlbar im Mondhof. Ein Stern ist als Mahnpfand einbehalten; der letzte Stern ist als Pfand vermerkt.» '
       + 'Unterschrieben hat ein Argentis, Mondvogt, mit Siegel, und Jorinde hat das Kleingedruckte gelesen: Was nicht bezahlt wird, holt er sich vom Himmel zurück, einen Stern je Nacht. '
       + 'Wir gehen hinauf, mit dem Stern in der Tasche, und ich nehme ein zweites Tintenfass mit, weil ich ahne, dass dort oben viel geschrieben wird.',
     wahlen: [],
@@ -1304,7 +1304,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       14: {
         titel: 'Die Vogtstruhe',
         text: 'Vor der Amtsstube steht die Truhe des Vogts, offen, weil niemand so dumm wäre. Jeder Barren trägt ein Schild mit dem Namen dessen, der ihn verpfändet hat, und einer heisst wie ihr. '
-          + 'Wer alles verpfändet, bekommt sie beim Vogt leer zurück, mit Inhalt; wer nicht, nimmt das Kleingeld, das daneben liegt, und der Vogt tut, als hätte er es nicht gezählt. '
+          + 'Wer alles verpfändet, bekommt die Barren mit seinem Namen beim Vogt zurück, alle, mit Quittung; wer nicht, nimmt das Kleingeld, das daneben liegt, und der Vogt tut, als hätte er es nicht gezählt. '
           + 'Wer am letzten Kontrollpunkt umkehrt, lässt jeden Pfandzettel liegen.',
         nachklang: {
           a: 'Wir verpfändeten, was noch da war, und gingen mit einem Zettel in die Amtsstube, auf dem mehr stand als in unserem Lager.',
@@ -1314,7 +1314,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
     },
     ende: 'Vor der Amtsstube verlangte Argentis den letzten Stern als Pfand zurück; Jorinde hielt ihm seine eigene Quittung hin, auf der «Pfand erhalten» steht, und er musste, als Beamter, anerkennen, dass die Gilde ihr Pfand längst hinterlegt hat. Gekämpft hat er trotzdem, der Form halber. '
       + 'Argentis ist besiegt und hat, noch am Boden, die Pfandzettel eingelöst, jeden einzeln, gegengezeichnet und abgestempelt. Den Zoll für die Sterne hat er gestrichen, weil die Gilde, wie er sagt, «mit Kraft bezahlt hat, und die ist im Hof härter als Silber». '
-      + 'Seinen Amtsstab durften wir behalten, mit Quittung. Die Bäckerin zählt wieder dreihundertzwölf, und ich habe dem zweiten Tintenfass einen festen Platz im Gepäck gegeben.',
+      + 'Seinen Amtsstab durften wir behalten, mit Quittung, und das Mahnpfand hat er noch in derselben Nacht an den Himmel zurückgehängt. Die Bäckerin zählt wieder vierhundert; den einen in unserer Tasche zählt sie nicht mit, der hat eine Quittung. Und ich habe dem zweiten Tintenfass einen festen Platz im Gepäck gegeben.',
   },
 
   // ── Über dem Mondhof: die Sonnenuhr ist der feste Wahl-Raum der Route, dreimal ──

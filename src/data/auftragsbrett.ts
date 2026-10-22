@@ -331,11 +331,11 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
   {
     routeId: 'mondhof', art: 'sieg', ziel: 2, prunkstueck: 'Ein Pfandzettel mit dem Siegel des Mondvogts',
     schild: 'Der Vogt. Er nimmt, was aufsteigt, und gibt Quittungen.',
-    text: 'Hinter der Platte ohne Namen hat Jorinde zwei weitere Sockel freigelegt, unter einer Decke aus Staub, als hätte sie jemand '
-      + 'für später zugedeckt. Das erste Schild meint Argentis, den Mondvogt. Auf den Sockel gehört ein Pfandzettel mit seinem Siegel, '
+    text: 'Die zwei obersten Sockel standen von Anfang an da, nur lagen ihre Schilder unter einer Decke aus Staub, als hätte sie jemand '
+      + 'für später zugedeckt. Das erste davon meint Argentis, den Mondvogt. Auf den Sockel gehört ein Pfandzettel mit seinem Siegel, '
       + 'aber er gilt im Hof nur, wenn er zweimal eingelöst wurde, sagt Argentis, und zweimal eingelöst heisst zweimal gefallen.',
-    vorSieg: 'Hinter der Platte ohne Namen hat Jorinde zwei weitere Sockel freigelegt, unter einer Decke aus Staub, als hätte sie jemand '
-      + 'für später zugedeckt. Das erste Schild meint den Mondvogt, der über dem Sternenschlund Zoll nimmt und noch nie etwas durchgelassen '
+    vorSieg: 'Die zwei obersten Sockel standen von Anfang an da, nur lagen ihre Schilder unter einer Decke aus Staub, als hätte sie jemand '
+      + 'für später zugedeckt. Das erste davon meint den Mondvogt, der über dem Sternenschlund Zoll nimmt und noch nie etwas durchgelassen '
       + 'hat, ohne eine Quittung zu schreiben. Auf den Sockel gehört einer seiner Pfandzettel mit Siegel; er gilt erst, wenn er zweimal eingelöst ist.',
   },
   {

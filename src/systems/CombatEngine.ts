@@ -30,6 +30,14 @@ export function wutAbRunde(enrage: { afterRound: number }, run: Pick<ExpeditionR
   return Math.max(1, enrage.afterRound - (run.bossWutFrueher ?? 0));
 }
 
+/** Wut eines Bosses ohne eigenen Eintrag (EnemyDef.enrage): ab Runde 8, Angriff ×1,5, Tempo ×1,3 */
+export const STANDARD_WUT = { afterRound: 8, atkMult: 1.5, spdMult: 1.3 } as const;
+
+/** Die Wut eines Bosses: sein eigener Eintrag oder die Vorgabe. Protokoll, Vorschau und Kampf lesen dieselbe. */
+export function bossWut(defId?: string): { afterRound: number; atkMult: number; spdMult: number } {
+  return (defId ? ENEMY_DEFS[defId]?.enrage : undefined) ?? STANDARD_WUT;
+}
+
 /**
  * Auto-battler combat engine: processCombat, unit factories, loot rolling.
  */
@@ -73,11 +81,10 @@ export class CombatEngine {
       const allUnits = [...aliveParty, ...aliveEnemies];
       allUnits.sort((a, b) => b.spd - a.spd);
 
-      // Boss enrage: per-enemy config via defId, fallback to round 8 / 1.5× ATK / 1.3× SPD
+      // Boss enrage: per-enemy config via defId, fallback STANDARD_WUT (round 8 / 1.5× ATK / 1.3× SPD)
       if (room.type === 'boss') {
         for (const e of aliveEnemies) {
-          const enemyDef = e.defId ? ENEMY_DEFS[e.defId] : undefined;
-          const enrage = enemyDef?.enrage ?? { afterRound: 8, atkMult: 1.5, spdMult: 1.3 };
+          const enrage = bossWut(e.defId);
           if (round === wutAbRunde(enrage, run)) {
             wutAnfall(e, enrage.atkMult, enrage.spdMult);
             run.combatLog.push(`!! ${e.name} ENRAGE !!`);
@@ -825,6 +832,7 @@ export class CombatEngine {
     }
 
     wegAnteileZaehlen(unit, target, dmg, gegner, verbuendete);
+    const hpVorher = target.hp;
     const verlust = schadenNehmen(target, dmg);
     log(zeile(schildText(dmg, verlust)));
 
@@ -833,7 +841,7 @@ export class CombatEngine {
 
     beimGetroffenWerden(target, unit, gegner, rng, log);
     if (unit.hp <= 0) this.checkRevive(unit, run);
-    nachTreffer(unit, target, dmg, gegner, verbuendete, rng, log);
+    nachTreffer(unit, target, dmg, gegner, verbuendete, rng, log, hpVorher);
   }
 
   /** Regeneration am Rundenende (Gegenstände mit Regeneration, Set-Fähigkeit Wurzelkraft) */

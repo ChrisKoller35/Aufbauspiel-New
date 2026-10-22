@@ -34,7 +34,7 @@ export interface EncounterChoice {
   setTeil?: true;
   /**
    * Preis der Option in Geduld (Sonnenuhr): Die Wut-Runde des Bosses kommt so viele Runden früher,
-   * nie vor Runde 1 (ExpeditionRun.bossWutFrueher, CombatEngine). Nur bei Bossen mit `enrage` spürbar.
+   * nie vor Runde 1 (ExpeditionRun.bossWutFrueher). Jeder Boss wütet (CombatEngine: Vorgabe Runde 8, eigener Wert in `enrage`).
    */
   bossWutFrueher?: number;
   /** Geschichte: was die Option bewirkt */

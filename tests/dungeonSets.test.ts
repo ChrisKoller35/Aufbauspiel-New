@@ -455,14 +455,15 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(stiche.length).toBeGreaterThan(0);
     // 5 % von 2000 = 100, gedeckelt auf 60
     expect(stiche[0]).toBe(`✦ ${traeger.name} setzt Sonnenstich ein → Torhüter brennt: −60`);
-    // Jeder Treffer (auch der Doppelschlag des Dolchs) über 60 % Leben (1200) brennt gleich danach, darunter keiner mehr
+    // Jeder Treffer (auch der Doppelschlag des Dolchs) auf einen Gegner über 60 % Leben (1200) brennt gleich danach, darunter keiner mehr
     let leben = 2000;
     let gesehen = 0;
     for (let i = 0; i < zeilen.length; i++) {
       const hit = zeilen[i].match(new RegExp(`^${traeger.name} greift Torhüter an für (\\d+)`)) ?? zeilen[i].match(/DOPPELSCHLAG! (\d+) extra Schaden/);
       if (!hit) continue;
+      const brennt = leben > 1200; // Stand VOR dem Treffer entscheidet
       leben -= Number(hit[1]);
-      if (leben > 1200) {
+      if (brennt) {
         expect(zeilen[i + 1], `nach Zeile ${i}`).toBe(stiche[0]);
         leben -= 60;
         gesehen++;
@@ -473,6 +474,12 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(gesehen).toBe(stiche.length);
     expect(leben).toBeLessThanOrEqual(1200);
 
+    // Gegner bei 65 %: der erste Treffer brennt (vorher über 60 %), danach keiner mehr
+    const angeschlagen = gegner('Müder Torhüter', { hp: 1300, maxHp: 2000 });
+    const lauf65 = kampf([einheit(heldMitSet('morgen'), { spd: 5 })], [angeschlagen]);
+    const stiche65 = lauf65.combatLog.filter(l => l.includes('setzt Sonnenstich ein'));
+    expect(stiche65.length).toBe(1);
+    expect(lauf65.combatLog.indexOf(stiche65[0])).toBe(lauf65.combatLog.findIndex(l => l.includes('greift Müder Torhüter an')) + 1);
     // Kleiner Gegner: 5 % von 400 = 20, und er fällt nicht am Stich allein
     const klein = gegner('Hahn', { hp: 400, maxHp: 400 });
     const lauf2 = kampf([einheit(heldMitSet('morgen'), { spd: 5 })], [klein]);

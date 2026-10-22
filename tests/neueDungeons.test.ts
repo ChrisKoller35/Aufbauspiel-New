@@ -321,7 +321,7 @@ describe('Dungeons über dem Vulkankern', () => {
     });
     expect(run.loot.mat_mondsilber ?? 0).toBe(0);
     expect(run.geschichtsBeute).toEqual([{ raum: boss, gold: 0, dinge: { mat_mondsilber: 5 } }]);
-    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 8% schwächer zu.');
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt jetzt bis zum Ende des Dungeons 8% schwächer zu.');
 
     // Das Pfandbuch (Raum 8) verspricht ein Set-Teil, wieder gegen 8 % Angriff, gerechnet auf den Angriff vor dem ersten Mal
     bisZurWahl(state, run);
@@ -332,7 +332,7 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(run.gruppenAngriff).toBe(-16);
     run.party.forEach((u, i) => expect(Math.abs(u.atk - start[i].atk * 0.84), u.name).toBeLessThanOrEqual(1));
     expect(run.combatLog).toContain('>> Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −8% Angriff bis zum Ende): 🌙 +1 Set-Teil, wenn ihr siegt.');
-    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 16% schwächer zu.');
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt jetzt bis zum Ende des Dungeons 16% schwächer zu.');
 
     bisZurWahl(state, run);
     system.resolveChoice(run, 0);
@@ -629,12 +629,16 @@ describe('Dungeons über dem Vulkankern', () => {
         const { state, ids } = musterStand('stark', i * 7919, 'mond5');
         const run = spieleRoute(state, ids, 'mondhof', spielweise);
         expect(run.status).not.toBe('exploring');
-        expect(run.rooms.filter(r => r.completed).length).toBeGreaterThan(0);
-        // Gierig unterschreibt alle drei Pfandzettel: 24 % schwächer, nichts kommt vor dem Boss
-        if (spielweise === 'gierig' && run.rooms.filter(r => r.completed).length >= 15) {
-          expect(run.gruppenAngriff).toBe(-24);
-          expect(run.setTeilVersprochen).toBe(true);
+        // Die Zusicherungen hängen an den tatsächlich getroffenen Wahlen, damit sie nie leer laufen
+        const wahlen = run.rooms.filter(r => r.type === 'find' && r.completed).length;
+        expect(wahlen).toBeGreaterThanOrEqual(1); // Raum 2 wird mit «stark» immer erreicht
+        if (spielweise === 'gierig') {
+          // jeder Pfandzettel kostet 8 %, der zweite verspricht das Set-Teil; nichts kommt vor dem Boss
+          expect(run.gruppenAngriff ?? 0).toBe(-8 * wahlen);
+          expect(!!run.setTeilVersprochen).toBe(wahlen >= 2);
+          expect(run.loot.mat_mondsilber ?? 0).toBe(run.bossesKilled > 0 ? 14 : 0);
         }
+        if (spielweise === 'vorsichtig') expect(run.gruppenAngriff ?? 0).toBe(0);
       }
     }
   });
@@ -667,11 +671,12 @@ describe('Dungeons über dem Vulkankern', () => {
         const { state, ids } = musterStand('stark', i * 7919, 'pfand5');
         const run = spieleRoute(state, ids, 'morgentor', spielweise);
         expect(run.status).not.toBe('exploring');
-        expect(run.rooms.filter(r => r.completed).length).toBeGreaterThan(0);
-        // Gierig stellt die Uhr dreimal vor: Sunna wütet ab Runde 4, nichts kommt vor dem Boss
-        if (spielweise === 'gierig' && run.rooms.filter(r => r.completed).length >= 15) {
-          expect(run.bossWutFrueher).toBe(6);
-          expect(run.setTeilVersprochen).toBe(true);
+        const wahlen = run.rooms.filter(r => r.type === 'find' && r.completed).length;
+        expect(wahlen).toBeGreaterThanOrEqual(1);
+        if (spielweise === 'gierig') {
+          // jede Uhr kostet 2 Runden Geduld, die zweite verspricht das Set-Teil; nichts kommt vor dem Boss
+          expect(run.bossWutFrueher ?? 0).toBe(2 * wahlen);
+          expect(!!run.setTeilVersprochen).toBe(wahlen >= 2);
           expect(run.loot.mat_mondsilber ?? 0).toBe(run.bossesKilled > 0 ? 16 : 0);
         }
         if (spielweise === 'vorsichtig') expect(run.bossWutFrueher ?? 0).toBe(0);

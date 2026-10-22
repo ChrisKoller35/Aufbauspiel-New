@@ -9,7 +9,7 @@ import { ProvisionSystem } from './ProvisionSystem';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { MODIFIER_DEFS } from '../data/modifiers';
-import { CombatEngine, wutAbRunde } from './CombatEngine';
+import { CombatEngine, bossWut, wutAbRunde } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
 import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen, wirkungZeile } from './Geschichten';
@@ -251,9 +251,9 @@ export class ExpeditionSystem {
       case 'checkpoint':
         if (run.activeModifier !== 'death_march') {
           run.lastCheckpoint = run.currentRoom;
-          run.combatLog.push('>> Checkpoint erreicht!');
+          run.combatLog.push('>> Kontrollpunkt erreicht!');
         } else {
-          run.combatLog.push('>> Todesmarsch: Checkpoint ignoriert!');
+          run.combatLog.push('>> Todesmarsch: Kontrollpunkt ignoriert!');
         }
         break;
       case 'find':
@@ -445,11 +445,8 @@ export class ExpeditionSystem {
     // Preis in Geduld (Sonnenuhr): Die Wut-Runde des Bosses kommt früher, nie vor Runde 1 (CombatEngine.wutAbRunde)
     if (choice.bossWutFrueher) {
       run.bossWutFrueher = (run.bossWutFrueher ?? 0) + choice.bossWutFrueher;
-      const bossId = ROUTE_DEFS[run.routeId]?.bossId;
-      const wut = bossId ? ENEMY_DEFS[bossId]?.enrage : undefined;
-      if (wut) {
-        run.combatLog.push(`>> Das hat seinen Preis: ${this.bossKurzname(run.routeId, 'Der Boss')} wird ab Runde ${wutAbRunde(wut, run)} wütend.`);
-      }
+      const wut = bossWut(ROUTE_DEFS[run.routeId]?.bossId ?? undefined);
+      run.combatLog.push(`>> Das hat seinen Preis: ${this.bossKurzname(run.routeId, 'Der Boss')} wird ab Runde ${wutAbRunde(wut, run)} wütend.`);
     }
 
     if (choice.gier) this.hortGierWaechst(run, choice.gier);
@@ -473,7 +470,7 @@ export class ExpeditionSystem {
       unit.atk = Math.max(1, Math.round((unit.atk - boni) * (100 + jetzt) / (100 + vorher))) + boni;
     }
     if (jetzt < 0) {
-      run.combatLog.push(`>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons ${-jetzt}% schwächer zu.`);
+      run.combatLog.push(`>> Das hat seinen Preis: Die Gruppe schlägt jetzt bis zum Ende des Dungeons ${-jetzt}% schwächer zu.`);
     } else {
       run.combatLog.push(`>> ${choice.label}: Die Gruppe hat jetzt ${jetzt}% mehr Angriff bis zum Ende des Dungeons.`);
     }

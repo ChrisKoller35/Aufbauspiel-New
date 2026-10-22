@@ -463,7 +463,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['mondkalb', 'mondkalb', 'silberschreiber'] },
       { type: 'find', wahl: {
         a: { label: 'Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Unter eurer Unterschrift steht schon eine zweite: die des Vogts. Er hat sie vorsichtshalber vorher hingesetzt.', effect: 'kein', value: 0, setTeil: true, kostetAngriff: 8 },
-        b: { label: 'Nur die Quittung (+2 Mondsilber)', flavorText: 'Für einen Blick ins Buch gibt es zwei Münzen. Der Vogt nennt das Lesegebühr, rückwärts.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
+        b: { label: 'Nur die Quittung (+2 Mondsilber)', flavorText: 'Für einen Blick ins Buch gibt es zwei Barren. Der Vogt nennt das Lesegebühr, rückwärts.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
       } },
       { type: 'combat', enemies: ['zollgeist', 'zollgeist', 'mondwache'] },
       { type: 'hazard', damage: 22 },

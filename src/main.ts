@@ -34,7 +34,7 @@ import { truhenHinweise } from './ui/components/SchmiedeAnzeige';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
 import { wegBilanz, wegWirkungZeile } from './ui/components/WegAnzeige';
-import { chronikHtml, einleitungHtml, folgenHtml, geschichtsText, optionsKnopfHtml } from './ui/components/GeschichtsAnzeige';
+import { chronikHtml, einleitungHtml, flavorHtml, folgenHtml, geschichtsText, optionsKnopfHtml } from './ui/components/GeschichtsAnzeige';
 import { einleitungGelesen, geschichtsBilanz, GeschichtsBilanz, istGeschichtsWahl, raumWahlText, ungeleseneEinleitung, wahlNachRaum } from './systems/Geschichten';
 import { getRouteBauplan } from './data/routes';
 
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     onClick: () => void;
   }
 
-  const DIALOG_BTN_BASE = "flex:1 1 140px;padding:12px;border-radius:6px;font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:1px;transition:.2s;";
+  const DIALOG_BTN_BASE = "flex:1 1 140px;min-height:44px;padding:12px;border-radius:6px;font-family:'Cinzel',serif;font-size:.8rem;letter-spacing:1px;transition:.2s;";
   const DIALOG_BTN_PRIMARY = 'background:linear-gradient(135deg,#c8a227,#7a5c08);border:1px solid #c8a227;color:#0f1420;font-weight:700;';
   const DIALOG_BTN_SECONDARY = 'background:none;border:1px solid #6b7280;color:#9ca3af;';
 
@@ -271,15 +271,18 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;';
 
     const box = document.createElement('div');
-    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;max-height:90vh;max-height:90dvh;overflow-y:auto;text-align:center;font-family:'Cinzel',serif;";
+    // Flex-Spalte: nur der Text scrollt, die Knopfreihe bleibt auf jedem Handy im Bild
+    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;max-height:90vh;max-height:90dvh;display:flex;flex-direction:column;overflow:hidden;text-align:center;font-family:'Cinzel',serif;";
     box.innerHTML = `
-      <div style="font-size:2rem;margin-bottom:8px;">${icon}</div>
-      <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">${title}</div>
-      ${bodyHtml}
+      <div style="overflow-y:auto;flex:1 1 auto;min-height:0;">
+        <div style="font-size:2rem;margin-bottom:8px;">${icon}</div>
+        <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">${title}</div>
+        ${bodyHtml}
+      </div>
     `;
 
     const row = document.createElement('div');
-    row.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
+    row.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;flex:0 0 auto;padding-top:12px;';
     for (const b of buttons) {
       const btn = document.createElement('button');
       btn.disabled = !!b.disabled;
@@ -333,11 +336,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  /**
+   * Was noch auf einen Sieg wartet (Beute einer mutigen Wahl, Pfandzettel, Morgengabe, ein zugesagtes
+   * Set-Teil): Wer am Kontrollpunkt umkehrt, lässt es liegen, und der Dialog sagt das, statt das Gegenteil.
+   */
+  function wartendeBeuteText(run: ActiveRun): string {
+    let gold = 0;
+    const dinge: Record<string, number> = {};
+    for (const b of run.geschichtsBeute ?? []) {
+      gold += b.gold;
+      for (const [itemId, menge] of Object.entries(b.dinge)) dinge[itemId] = (dinge[itemId] ?? 0) + menge;
+    }
+    const teile = [
+      ...(gold > 0 ? [`${gold} Gold`] : []),
+      ...Object.entries(dinge).map(([itemId, menge]) => `${menge} ${ITEM_DEFS[itemId]?.name ?? itemId}`),
+      ...(run.setTeilVersprochen ? ['1 Set-Teil'] : []),
+    ];
+    return teile.length === 0
+      ? 'Bei Rückzug behältst du die bisherige Beute.'
+      : `Was auf den Sieg wartet (${teile.join(', ')}), bleibt beim Rückzug liegen.`;
+  }
+
   function showCheckpointDialog(run: ActiveRun): void {
-    showExpeditionDialog('⚑', 'CHECKPOINT ERREICHT', `
+    showExpeditionDialog('⚑', 'KONTROLLPUNKT ERREICHT', `
       <div style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;">Raum ${run.currentRoom + 1} von ${run.rooms.length}</div>
       ${partyHpHtml(run)}
-      <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">Bei Rückzug behältst du die bisherige Beute.</div>
+      <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">${wartendeBeuteText(run)}</div>
     `, [
       { label: 'RÜCKZUG', onClick: () => { expeditionSystem.resolveCheckpoint(run, true); finishExpedition(); } },
       { label: 'WEITER', primary: true, onClick: () => { expeditionSystem.resolveCheckpoint(run, false); continueExpedition(run); } },
@@ -378,22 +402,16 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
-    const option = (c: EncounterChoice): string => `
-      <div style="margin-bottom:10px;">
-        <div style="color:#e5e7eb;font-size:.85rem;">${c.label}</div>
-        <div style="color:#6b7280;font-size:.75rem;">${c.flavorText}</div>
-      </div>`;
-    // Feste Wahl-Räume der obersten Dungeons erzählen ihre Geschichte mit
+    // Feste Wahl-Räume: jede Option steht einmal da, als Knopf mit ihrem Satz darunter (Gewinn und
+    // Preis stehen in der Beschriftung); die obersten Dungeons erzählen ihre Geschichte dazu
     const raum = raumWahlText(run.routeId, choice.roomIndex);
+    const knopf = (c: EncounterChoice, index: 0 | 1): DialogButton =>
+      ({ label: c.label, folgen: flavorHtml(c.flavorText), onClick: waehlen(index) });
 
     showExpeditionDialog(raum ? '📜' : '✦', raum?.titel ?? 'EURE WAHL', `
       ${raum ? geschichtsText(raum.text) : ''}
       ${partyHpHtml(run)}
-      <div style="margin-bottom:20px;">${option(choice.optionA)}${option(choice.optionB)}</div>
-    `, [
-      { label: choice.optionA.label, primary: true, onClick: waehlen(0) },
-      { label: choice.optionB.label, primary: true, onClick: waehlen(1) },
-    ]);
+    `, [knopf(choice.optionA, 0), knopf(choice.optionB, 1)]);
   }
 
   function showNextCombatRoom(): void {
