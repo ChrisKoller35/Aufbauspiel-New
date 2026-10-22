@@ -255,6 +255,22 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
     procChance: 1.0,
     power: 30,
   },
+  schmiedetakt: {
+    id: 'schmiedetakt',
+    name: 'Schmiedetakt',
+    description: 'Alle 3 Runden hat das ganze Team 3 Angriff mehr, bis Kampfende höchstens +9',
+    trigger: 'on_round_end',
+    procChance: 1.0,
+    power: 3,
+  },
+  sternenfall: {
+    id: 'sternenfall',
+    name: 'Sternenfall',
+    description: 'Jeder dritte Treffer trifft als Stern alle Gegner mit der Hälfte des Schadens',
+    trigger: 'on_deal_damage',
+    procChance: 1.0,
+    power: 0.5,
+  },
 };
 
 /** Extract special effect IDs from an item's tags array */

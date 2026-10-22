@@ -14,6 +14,7 @@
 import { BUILDING_DEFS } from '../data/buildings';
 import { RECIPE_DEFS, RecipeDef } from '../data/recipes';
 import { BUILDING_UPGRADE_DEFS } from '../data/buildingUpgrades';
+import { buendelProTag } from '../data/handel';
 import { GrenzArt, stadtStufeFuerAusbau, stadtStufeVon, stufeDef } from '../data/stadtstufen';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
@@ -162,7 +163,9 @@ export function ausbauWirkung(typeId: string, stufe: number): string {
   }
   if (typeId === 'GUILD_HALL') return GILDE_T2.description;
   const plaetze = stufe === 1 ? '1 Arbeitsplatz' : `${stufe} Arbeitsplätze`;
-  if (typeId === 'MARKETPLACE') return `bis +${marktBonusProzent(stufe)} % Steuern (${plaetze})`;
+  if (typeId === 'MARKETPLACE') {
+    return `bis +${marktBonusProzent(stufe)} % Steuern und ${buendelProTag(stufe)} Bündel Handel pro Tag (${plaetze})`;
+  }
   if (typeId === 'BANK') return `bis +${bankGoldProTag(stufe)} Gold / Tag (${plaetze})`;
   return '';
 }

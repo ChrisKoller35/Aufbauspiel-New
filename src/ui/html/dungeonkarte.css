@@ -5,6 +5,15 @@
 
 .dmap-legend-knopf { display: none; }
 
+/* Zwischen den Sternen: einige Sterne funkeln (DungeonMapScreen buildGipfelHimmel) */
+.dmap-funkeln { animation: dmap-funkeln 3.5s ease-in-out infinite; }
+@keyframes dmap-funkeln { 0%, 100% { opacity: .85; } 50% { opacity: .2; } }
+@media (prefers-reduced-motion: reduce) { .dmap-funkeln { animation: none; } }
+
+/* Wappen der Gilden auf ihrem höchsten Dungeon (Rangliste mit Rivalen) */
+.dmap-wappen.du circle { filter: drop-shadow(0 0 4px rgba(230, 192, 96, 0.8)); }
+.dmap-lwappen { width: 12px; font-size: 10px; line-height: 1; text-align: center; flex-shrink: 0; }
+
 @media (max-width: 700px) {
   /* Seitlich und senkrecht wischen; Rand, damit Namen an den Kanten ganz sichtbar sind */
   #s-dungeon .dmap-wrap {

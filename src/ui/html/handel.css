@@ -1,22 +1,41 @@
 /* ============================================================
    Magic City – Handel am Marktplatz (Gebäude-Fenster)
-   Je Ware: Name und Vorrat, «verkaufen», «kaufen».
-   Ist das Fenster schmal (Handy), rutschen die Knöpfe unter den Namen.
+   Kopf mit dem Gold, darunter je Ware: Name und Vorrat, «verkaufen», «kaufen».
+   Geht ein Knopf nicht, steht der Grund klein darunter (Handys zeigen keine Titel);
+   was den ganzen Markt sperrt, steht einmal über den Waren.
+   Ist das Fenster schmal (Handy), steht der Name über den beiden Knöpfen.
    ============================================================ */
 
 .hd { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--s3); }
-.hd .lbl { display: block; margin-bottom: 4px; }
+.hd-kopf {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 4px;
+}
+.hd-gold { font-size: 0.85rem; color: var(--gl); white-space: nowrap; }
+.hd-zu { margin: 2px 0 4px; font-size: 0.78rem; line-height: 1.3; color: #f0c674; }
 .hd-ware {
-  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: flex-start;
   padding: 5px 0; border-bottom: 1px solid var(--s3);
 }
-.hd-name { flex: 1 1 8rem; min-width: 0; font-size: 0.9rem; color: var(--txt); }
+.hd-name { flex: 1 1 8rem; min-width: 0; align-self: center; font-size: 0.9rem; color: var(--txt); }
 .hd-name small { display: block; font-size: 0.72rem; color: var(--mut); }
+/* Knopf und Grund darunter; der Grund macht die Zelle nicht breiter, er bricht um */
+.hd-zelle { flex: 1 0 auto; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .hd-btn {
-  flex: 1 0 auto; background: var(--s2); border: 1px solid var(--bdr); border-radius: 4px; color: var(--txt);
+  width: 100%; background: var(--s2); border: 1px solid var(--bdr); border-radius: 4px; color: var(--txt);
   padding: 6px 8px; font: inherit; font-size: 0.78rem; white-space: nowrap; cursor: pointer;
 }
 .hd-verkaufen:not(:disabled) { border-color: var(--grn); color: #9be0a5; }
 .hd-kaufen:not(:disabled) { border-color: var(--gd); color: var(--gl); }
 .hd-btn:not(:disabled):hover { background: var(--s3); }
 .hd-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+.hd-grund { width: 0; min-width: 100%; font-size: 0.7rem; line-height: 1.25; color: #f0c674; text-align: center; }
+
+@media (max-width: 700px) {
+  .hd-name { flex-basis: 100%; }
+  .hd-zelle { flex: 1 1 0; }
+  .hd-btn { white-space: normal; padding: 6px 4px; }
+}
+
+@media (pointer: coarse) {
+  .hd-btn { min-height: 40px; }
+}

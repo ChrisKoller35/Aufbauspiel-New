@@ -5,6 +5,7 @@ import { LOOT_TABLE_DEFS } from '../data/lootTables';
 import { CLASS_DEFS } from '../data/classes';
 import { ITEM_DEFS } from '../data/items';
 import { GearSystem } from './GearSystem';
+import type { SchmiedeStufen } from './Schmiede';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
@@ -13,6 +14,7 @@ import {
   kampfBeginn, kampfEnde, zustandAktualisieren, setztAus, schattenstoss,
   beimGetroffenWerden, besiegt, nachTreffer, rundenEnde, goldFaktor, neueToteMelden,
   zielschuss, wegSchaden, schattentanz, abfangen, schwaechstesZiel, deckung, vergeltung, wutAnfall,
+  wegZaehlen, wegAnteileZaehlen, wegZustandDerRunde,
 } from './Kampfeffekte';
 
 /** Check if a unit has a specific active special effect */
@@ -310,6 +312,7 @@ export class CombatEngine {
       const enemyHp: Record<number, number> = {};
       for (const e of enemies) enemyHp[e.id] = e.hp;
       const markiert = enemies.filter(e => e.markiert).map(e => e.id);
+      const wegZustand = wegZustandDerRunde(run.party, enemies);
       run.combatRoundSnapshots!.push({
         round,
         partyHp,
@@ -318,6 +321,7 @@ export class CombatEngine {
         hadCrit,
         hadDeath,
         ...(markiert.length > 0 ? { markiert } : {}),
+        ...(wegZustand ? { wegZustand } : {}),
       });
     }
 
@@ -559,11 +563,13 @@ export class CombatEngine {
       const enemyHp: Record<number, number> = {};
       for (const e of enemies) enemyHp[e.id] = e.hp;
       const markiert = enemies.filter(e => e.markiert).map(e => e.id);
+      const wegZustand = wegZustandDerRunde(run.party, enemies);
       run.combatRoundSnapshots!.push({
         round, partyHp, enemyHp, logLines: roundLogLines,
         hadCrit, hadDeath,
         fortificationHp: fort.hp,
         ...(markiert.length > 0 ? { markiert } : {}),
+        ...(wegZustand ? { wegZustand } : {}),
       });
     }
 
@@ -647,8 +653,9 @@ export class CombatEngine {
     }
   }
 
-  fighterToCombatUnit(fighter: GuildFighter): CombatUnit {
-    const stats = this.gearSystem.getEffectiveStats(fighter);
+  /** stufen: Stufen der Schmiede (Schmiede.schmiedeStufen), damit verbesserte Set-Teile zählen */
+  fighterToCombatUnit(fighter: GuildFighter, stufen?: SchmiedeStufen): CombatUnit {
+    const stats = this.gearSystem.getEffectiveStats(fighter, stufen);
     const cls = CLASS_DEFS[fighter.classId];
     const specialEffects = this.gearSystem.getSpecialEffects(fighter);
 
@@ -740,6 +747,9 @@ export class CombatEngine {
   ): void {
     const log = (zeile: string): void => { run.combatLog.push(zeile); };
 
+    // Bilanz: Angriffe, welche die Bärin auf sich zieht
+    if (target.baerin && target.tauntRounds > 0) wegZaehlen(target, 'angezogen', 1);
+
     // Scharfschützin in Deckung, Schutzherr fängt Angriffe auf schwer verletzte Helden ab
     target = abfangen(deckung(target, gegner, rng, log), gegner, log);
 
@@ -761,7 +771,7 @@ export class CombatEngine {
       dmg = Math.floor(dmg * stoss);
       log(`✦ ${unit.name} setzt Schattenstoss ein → ${stoss}-facher Schaden aus dem Hinterhalt`);
     }
-    dmg = wegSchaden(unit, target, dmg, log);
+    dmg = wegSchaden(unit, target, dmg, log, verbuendete);
     this.treffer(unit, target, dmg, gegner, verbuendete, run, rng,
       schild => `${unit.name} greift ${target.name} an für ${dmg}${isCrit ? ' KRIT!' : ''}${schild}`);
 
@@ -773,7 +783,7 @@ export class CombatEngine {
           log(`  ${unit.name}: DOPPELSCHLAG → AUSGEWICHEN!`);
         } else {
           // Wege wie die Meuchlerin wirken auch hier, ihre Zeile steht schon beim ersten Treffer
-          const dmg2 = wegSchaden(unit, target, grundSchaden(unit.atk, target.def), () => {});
+          const dmg2 = wegSchaden(unit, target, grundSchaden(unit.atk, target.def), () => {}, verbuendete);
           this.treffer(unit, target, dmg2, gegner, verbuendete, run, rng,
             schild => `  ${unit.name}: DOPPELSCHLAG! ${dmg2} extra Schaden!${schild}`);
         }
@@ -806,6 +816,7 @@ export class CombatEngine {
       if (unit.hp <= 0) this.checkRevive(unit, run);
     }
 
+    wegAnteileZaehlen(unit, target, dmg, gegner, verbuendete);
     const verlust = schadenNehmen(target, dmg);
     log(zeile(schildText(dmg, verlust)));
 

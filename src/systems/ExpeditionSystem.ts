@@ -12,6 +12,8 @@ import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
+import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen } from './Geschichten';
+import { schmiedeStufen } from './Schmiede';
 
 /** Händler-Sortiment (Feature #16): Preis in Beutegold des laufenden Runs */
 export const MERCHANT_PRICES: Record<string, number> = {
@@ -67,8 +69,9 @@ export class ExpeditionSystem {
       if (citizen) citizen.status = 'ON_EXPEDITION';
     }
 
-    // Build party combat units
-    const party: CombatUnit[] = fighters.map(f => this.combatEngine.fighterToCombatUnit(f));
+    // Build party combat units (mit den Stufen der Schmiede)
+    const stufen = schmiedeStufen(state);
+    const party: CombatUnit[] = fighters.map(f => this.combatEngine.fighterToCombatUnit(f, stufen));
 
     // Apply iron_trial modifier: halve party DEF
     if (modifierId === 'iron_trial') {
@@ -292,6 +295,9 @@ export class ExpeditionSystem {
       return false;
     }
 
+    // Geschichte: Beute einer mutigen Wahl, die auf diesen Kampf gewartet hat
+    geschichtsBeuteNachKampf(run, room);
+
     if (room.type === 'boss') this.ersterSiegBeute(state, run, room);
 
     // Auto-retreat check: if team HP < 20%
@@ -300,6 +306,9 @@ export class ExpeditionSystem {
     if (totalHp / totalMaxHp < 0.2 && !run.desperateResolveUsed) {
       run.combatLog.push('>> Team HP kritisch! Auto-Rückzug verfügbar.');
     }
+
+    // Geschichte: Steht nach diesem Raum eine Entscheidung an, wartet der Lauf darauf
+    if (geschichtsWahlStellen(run, room)) return false;
 
     this.raumGeschafft(run, room);
     return run.status === 'exploring' && !run.pendingCheckpoint;
@@ -342,6 +351,7 @@ export class ExpeditionSystem {
     run.pendingChoice = undefined;
 
     this.applyEncounterChoice(run, choice);
+    chronikNachWahl(run, room.index, choiceIndex, choice);
 
     room.completed = true;
     this.raumGeschafft(run, room);
@@ -387,9 +397,14 @@ export class ExpeditionSystem {
       }
       case 'item': {
         if (choice.itemId) {
-          run.loot[choice.itemId] = (run.loot[choice.itemId] ?? 0) + choice.value;
           const itemName = ITEM_DEFS[choice.itemId]?.name ?? choice.itemId;
-          run.combatLog.push(`>> ${choice.label}: +${choice.value}× ${itemName} erhalten.`);
+          if (choice.nachSieg) {
+            beuteNachBoss(run, { [choice.itemId]: choice.value });
+            run.combatLog.push(`>> ${choice.label}: ${choice.value}× ${itemName} kommen mit, wenn ${this.bossKurzname(run.routeId, 'der Boss')} fällt.`);
+          } else {
+            run.loot[choice.itemId] = (run.loot[choice.itemId] ?? 0) + choice.value;
+            run.combatLog.push(`>> ${choice.label}: +${choice.value}× ${itemName} erhalten.`);
+          }
         }
         break;
       }
@@ -401,9 +416,17 @@ export class ExpeditionSystem {
         run.combatLog.push(`>> ${choice.label}: +${choice.value} XP für alle.`);
         break;
       }
+      case 'geschichte':
+        geschichteWirkt(run, choice.wirkung ?? []);
+        break;
+      case 'angriff':
+        this.gruppenAngriffWaechst(run, choice);
+        break;
+      case 'kein':
+        break;
     }
 
-    // Preis der Wahl (verbotene Bücher im Himmelsarchiv): kostet Leben, aber nie das letzte
+    // Preis der Wahl (verbotene Bücher, Sternenfeuer, befreite Sterne): kostet Leben, aber nie das letzte
     if (choice.kostetLeben) {
       for (const unit of aliveParty) {
         unit.hp = Math.max(1, unit.hp - Math.floor(unit.maxHp * choice.kostetLeben / 100));
@@ -415,8 +438,27 @@ export class ExpeditionSystem {
   }
 
   /**
+   * Sternenfeuer (EncounterChoice 'angriff'): Die ganze Gruppe hat bis zum Ende des Dungeons
+   * `value` Prozent mehr Angriff, auch wer gerade am Boden liegt. Mehrmals gewählt zählen die
+   * Prozente zusammen, gerechnet auf den Angriff vor dem ersten Mal. Boni aus Kämpfen, die
+   * bleiben (Drachengier, Tiefenrausch), wachsen nicht mit: Sie kommen später wieder genau weg.
+   */
+  private gruppenAngriffWaechst(run: ExpeditionRun, choice: EncounterChoice): void {
+    const vorher = run.gruppenAngriff ?? 0;
+    const jetzt = vorher + choice.value;
+    run.gruppenAngriff = jetzt;
+    for (const unit of run.party) {
+      if (unit.isWarMachine) continue;
+      const boni = Object.entries(unit.effektBoni ?? {}).reduce((summe, [k, v]) => summe + (k.endsWith(':atk') ? v : 0), 0);
+      unit.atk = Math.round((unit.atk - boni) * (100 + jetzt) / (100 + vorher)) + boni;
+    }
+    run.combatLog.push(`>> ${choice.label}: Die Gruppe hat jetzt ${jetzt}% mehr Angriff bis zum Ende des Dungeons.`);
+  }
+
+  /**
    * Hort-Gier (RouteDef.hortGier): Jeder Punkt macht den Boss um feste Anteile seiner
-   * Startwerte stärker. Wirkt sofort, damit die Kampf-Vorschau die echten Werte zeigt.
+   * Startwerte stärker, Punkte unter 0 schwächer (Sternenschlund). Wirkt sofort, damit
+   * die Kampf-Vorschau die echten Werte zeigt.
    */
   private hortGierWaechst(run: ExpeditionRun, punkte: number): void {
     const route = ROUTE_DEFS[run.routeId];
@@ -436,9 +478,20 @@ export class ExpeditionSystem {
         boss.maxHp = maxHp;
       }
     }
-    const bossName = route.bossId ? ENEMY_DEFS[route.bossId]?.name ?? 'Der Boss' : 'Der Boss';
-    const prozent = (anteil: number): number => Math.round(jetzt * anteil * 100);
-    run.combatLog.push(`>> ${bossName} wittert den Diebstahl: +${prozent(regel.angriffProPunkt)}% Angriff, +${prozent(regel.lebenProPunkt)}% Leben.`);
+    const bossName = this.bossKurzname(run.routeId, 'Der Boss');
+    const prozent = (anteil: number): string => {
+      const p = Math.round(jetzt * anteil * 100);
+      return p < 0 ? `−${-p}` : `+${p}`;
+    };
+    const was = punkte > 0 ? 'wittert den Diebstahl' : 'wird schwächer';
+    run.combatLog.push(`>> ${bossName} ${was}: ${prozent(regel.angriffProPunkt)}% Angriff, ${prozent(regel.lebenProPunkt)}% Leben.`);
+  }
+
+  /** Name des Routen-Bosses ohne Beinamen, für Sätze: «Nyxar wird schwächer», nicht «Nyxar, der Sternenfresser wird schwächer» */
+  private bossKurzname(routeId: string, ohneBoss: string): string {
+    const bossId = ROUTE_DEFS[routeId]?.bossId;
+    const name = bossId ? ENEMY_DEFS[bossId]?.name : undefined;
+    return name ? name.split(',')[0] : ohneBoss;
   }
 
   /** Erster Sieg der Gilde über den Routen-Boss: garantierte Beute (RouteDef.ersterSiegBeute). */

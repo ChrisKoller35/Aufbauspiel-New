@@ -26,7 +26,7 @@ man erreicht sie nur nach und nach.
 | Alle Werkstätten (Holzfällerhütte, Steinbruch, Farm, Eisenmine, Mühle, Bäckerei, Kräutergarten, Schmiede, Arkanschmiede, Kriegsmaschinen) | 1–3 | **Stufe N = N Arbeitsplätze.** Das Gebäude arbeitet so vielfach schnell, wie Plätze besetzt sind. Stufe 3 mit einem Arbeiter ist so schnell wie Stufe 1. |
 | Wohnviertel (früher «Wohnhaus») | 1–6 | 6 Plätze für Bewohner je Stufe (6 … 36). |
 | Gildenhaus | 1–2 | Stufe 2: 4 statt 3 Helden je Expedition. |
-| Marktplatz | 1–3 | je besetztem Arbeitsplatz +25 / +40 / +50 % Steuern. |
+| Marktplatz | 1–3 | je besetztem Arbeitsplatz +25 / +40 / +50 % Steuern und 3 / 6 / 10 Bündel Handel pro Tag (Waren gegen Gold, [HANDEL.md](HANDEL.md)). |
 | Bank | 1–3 | je besetztem Arbeitsplatz +10 Gold pro Tag. |
 | Brunnen, Lagerhaus | 1 | keine Stufen. |
 
@@ -42,6 +42,15 @@ die halbe Produktionskette wertlos.
   → Marktplatz → Bank).
 - Das Wohnviertel zeigt im Fenster: Bewohner / Plätze, wer arbeitet und wer frei ist, Zufriedenheit, Brot,
   Steuern pro Tag mit Rechnung, und ob die Stadt wächst (Balken bis zum Tageswechsel).
+- **Brot ist täglicher Verbrauch** (seit 21.10.2026, PR #32): Beim Tageswechsel essen die Bewohner 1 Brot je
+  volle 8 Bewohner, mindestens 1 (6 = 1, 16 = 2, 36 = 4), erst danach wächst die Stadt (ein neuer Bewohner kostet
+  1 Brot, das nach dem Essen übrig sein muss). Ohne Brot gibt es −20 statt +10 Zufriedenheit, niemand zieht aus.
+  Das Startbrot (10) reicht ohne Brotkette 10 Tage. Die Brotkette backt auf Stufe 1 knapp 2, auf Stufe 2 knapp 3,7
+  und auf Stufe 3 etwa 5 Brot pro Tag; der Verbrauch ist so gewählt, dass sie auf der Stufe, die eine Stadtstufe
+  erlaubt, das volle Wohnviertel satt macht (`tests/startwirtschaft.test.ts`). Seit 21.10.2026 backt die Bäckerei
+  nicht mehr ohne Pause, sondern hält von selbst Brot für 3 Tage bereit, vor ihren Aufträgen (`docs/WERKSTAETTEN.md`). Mit 1 Brot je angefangene
+  6 Bewohner fehlte im Weiler, im Marktflecken und in der Grossstadt jeden Tag Brot, ohne dass man etwas
+  ausbauen konnte.
 - Überbelegung kostet 5 Zufriedenheit je Bewohner zu viel, höchstens 30 (vorher ohne Deckel).
 - Start: 6 Bewohner, Wohnviertel Stufe 1 mit 6 Plätzen (vorher ein Haus für 4 → Start mit Überbelegung,
   Zufriedenheit 30 %, 2 Gold pro Tag; jetzt 50 % und ca. 6 Gold pro Tag).
@@ -52,8 +61,10 @@ Vier Reihen von oben nach unten, Linien aus den echten Kartenpositionen (SVG, go
 stehen, gestrichelt = Wasser-Versorgung):
 
 1. **Gewinnen:** Holzfällerhütte, Steinbruch, Getreidefarm, Eisenmine, Kristalle und Kräuter aus den Dungeons.
-2. **Lager:** Lagerhaus als Balken über die ganze Breite mit den wichtigsten Vorräten, daneben «Bauen & Ausbauen» und der Brunnen.
-3. **Werkstätten:** Schmiede, Arkanschmiede, Kriegsmaschinen-Werkstatt, Kräutergarten, Windmühle, Bäckerei.
+2. **Lager:** Lagerhaus als Balken über die ganze Breite mit den wichtigsten Vorräten, daneben «Bauen & Ausbauen».
+3. **Werkstätten:** Schmiede, Arkanschmiede, Kriegsmaschinen-Werkstatt, Kräutergarten, Brunnen, Bäckerei, Windmühle.
+   Seit 21.10.2026 steht der Brunnen zwischen den beiden Gebäuden, die er mit Wasser versorgt, und die Mühle liefert
+   von rechts in die Bäckerei: nur kurze Linien, keine kreuzt eine andere (`docs/WERKSTAETTEN.md`).
 4. **Stadt:** Gildenhaus, «Expeditionen», Wohnviertel, Marktplatz, Bank.
 
 Über der Karte stehen bis zu drei **Engpässe** der Stadt als Knöpfe (klick öffnet das Gebäude). Jedes
@@ -86,5 +97,6 @@ Unwetter-Stopp hängen am behaltenen Gebäude. Test: `src/systems/SaveSystem.tes
 ## Vorläufig (Balancing, Manager-Issue #23)
 
 - Markt (+25/40/50 %) und Bank (+10 Gold je Platz, Baukosten 50 Holz, 40 Stein, 150 Gold; vorher gratis) sind
-  erste Werte. Idee für später: der Marktplatz bekommt ein Handelsfenster (Waren gegen Gold).
+  erste Werte. Das Handelsfenster am Marktplatz (Waren gegen Gold) gibt es inzwischen; Preise, Tagesmengen
+  und warum keine Kette Gewinn bringt: [HANDEL.md](HANDEL.md).
 - Ausbau-Kosten «× Stufe» sind bewusst einfach; ob Stufe 3 zu billig ist, zeigt das Spielen.

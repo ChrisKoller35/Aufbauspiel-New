@@ -8,21 +8,24 @@
 
 import { createNewGameState, GameState } from '../models/GameState';
 import { createGuildFighter } from '../models/GuildRoster';
-import { ExpeditionRun } from '../models/ExpeditionRun';
+import { ExpeditionRun, dungeonBezwungen } from '../models/ExpeditionRun';
 import { MUSTER_SETS, MUSTER_TEAMS, musterWerte } from '../data/musterteams';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { totalXpForLevel } from './HeroProgression';
+import { istGeschichtsWahl } from './Geschichten';
+import { istSchmiedbar } from './Schmiede';
 
 export type MusterTeamName = keyof typeof MUSTER_TEAMS;
 export type MusterSetName = keyof typeof MUSTER_SETS;
 
 /**
- * Spielweise bei Wahl-Räumen (Rastplätze: immer rasten):
- * - vorsichtig: feste Wahl immer Option B (Heilung statt Hort-Gold oder verbotenem Buch)
- * - gierig: feste Wahl immer Option A
- * - klug: Option A nur, solange die Gruppe mindestens 85 % ihrer Leben hat
+ * Spielweise bei Wahl-Räumen (Rastplätze: immer rasten) und bei den Entscheidungen
+ * der Geschichte (systems/Geschichten.ts, dort ist das Wagnis Option B):
+ * - vorsichtig: feste Wahl immer Option B (Heilung statt Hort-Gold oder verbotenem Buch), Geschichte sicher
+ * - gierig: feste Wahl immer Option A, Geschichte mutig
+ * - klug: das Wagnis nur, solange die Gruppe mindestens 85 % ihrer Leben hat
  */
 export type Spielweise = 'vorsichtig' | 'gierig' | 'klug';
 
@@ -33,9 +36,11 @@ export const KLUG_AB_LEBEN = 0.85;
  * Neuer Spielstand mit den Helden des Musterteams (startExpedition prüft keine Sperren).
  * Mit `sets` tragen die Helden statt ihrer Ausrüstung die Dungeon-Sets aus MUSTER_SETS.
  * Ihren Weg (ab Stufe 10) gehen sie, ausser `wege` ist false.
+ * `schmiede` hebt jedes getragene Set-Teil in der Schmiede auf diese Stufe (docs/SCHMIEDE.md);
+ * ohne die Angabe gilt die Stufe der Sets (MusterSet.schmiede).
  */
 export function musterStand(
-  team: MusterTeamName, startwert: number, sets?: MusterSetName, wege = true,
+  team: MusterTeamName, startwert: number, sets?: MusterSetName, wege = true, schmiede?: number,
 ): { state: GameState; ids: number[] } {
   const state = createNewGameState();
   state.rngSeed = startwert;
@@ -49,6 +54,14 @@ export function musterStand(
     state.fighters.push(held);
     return held.id;
   });
+  const stufe = schmiede ?? (sets ? MUSTER_SETS[sets].schmiede ?? 0 : 0);
+  if (stufe > 0) {
+    const stufen: Record<string, number> = {};
+    for (const held of state.fighters) {
+      for (const itemId of Object.values(held.gear)) if (itemId && istSchmiedbar(itemId)) stufen[itemId] = stufe;
+    }
+    state.schmiede = { stufen };
+  }
   return { state, ids };
 }
 
@@ -70,24 +83,29 @@ export function spieleRoute(state: GameState, ids: number[], routeId: string, sp
     else if (step === 'choice') {
       const raum = run.rooms[run.pendingChoice!.roomIndex];
       const risiko = spielweise === 'gierig' || (spielweise === 'klug' && gruppenLeben(run) >= KLUG_AB_LEBEN);
-      system.resolveChoice(run, raum.type === 'rest' || risiko ? 0 : 1);
+      if (istGeschichtsWahl(run.pendingChoice)) system.resolveChoice(run, risiko ? 1 : 0);
+      else system.resolveChoice(run, raum.type === 'rest' || risiko ? 0 : 1);
     } else system.processCurrentRoom(state);
   }
   return run;
 }
 
-/** Gewonnen heisst: bis zum Ende und den Boss besiegt. */
+/** Gewonnen heisst: bis zum Ende und den Boss besiegt (Dungeons ohne Boss: bis zum Ende). */
 export function gewonnen(run: ExpeditionRun): boolean {
-  return run.status === 'victory' && run.bossesKilled > 0;
+  return dungeonBezwungen(run);
 }
 
-/** Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege. */
+/**
+ * Siege in `laeufe` Läufen (Startwerte 1 × 7919, 2 × 7919 …), mit `sets` in Dungeon-Sets, mit oder ohne Wege,
+ * mit `schmiede` die Set-Teile auf dieser Stufe (sonst auf der Stufe der Sets).
+ */
 export function siegeVon(
   routeId: string, team: MusterTeamName, spielweise: Spielweise, laeufe: number, sets?: MusterSetName, wege = true,
+  schmiede?: number,
 ): number {
   let siege = 0;
   for (let i = 1; i <= laeufe; i++) {
-    const { state, ids } = musterStand(team, i * 7919, sets, wege);
+    const { state, ids } = musterStand(team, i * 7919, sets, wege, schmiede);
     if (gewonnen(spieleRoute(state, ids, routeId, spielweise))) siege++;
   }
   return siege;

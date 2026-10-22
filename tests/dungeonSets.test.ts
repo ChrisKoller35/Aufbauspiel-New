@@ -224,12 +224,12 @@ describe('Set-Beute', () => {
   test('nur ein Sieg bringt ein Set-Teil, und nur einmal', () => {
     const state = createNewGameState();
     const { run } = lauf([], [], { routeId: 'cave_spider', status: 'defeat' });
-    expect(setBeute(state, run)).toBeNull();
+    expect(setBeute(state, run)).toEqual([]);
     expect(run.loot).toEqual({});
 
     const gewonnen = sieg(state, 'cave_spider', 3);
     const teil = gewonnen.setTeil!;
-    expect(setBeute(state, gewonnen)).toBe(teil);
+    expect(setBeute(state, gewonnen)).toEqual([teil]);
     expect(gewonnen.loot[teil]).toBe(1);
   });
 });
@@ -411,6 +411,38 @@ describe('Set-Fähigkeiten im Kampf', () => {
       expect(runde(run, 2).some(l => l.includes('seite ein'))).toBe(false);
     }
     expect(seiten.size).toBe(3);
+  });
+
+  test('Schmiedetakt: alle 3 Runden hat das ganze Team 3 Angriff mehr, höchstens +9', () => {
+    const traeger = einheit(heldMitSet('stern'));
+    const begleiter = einheit(heldMitSet(null));
+    const atk = begleiter.atk;
+    const run = kampf([traeger, begleiter], [gegner('Amboss', { hp: 99999, maxHp: 99999 })]);
+    const takt = (nr: number) => runde(run, nr).filter(l => l.includes('Schmiedetakt'));
+    expect(takt(2)).toEqual([]);
+    expect(takt(3)).toEqual([`✦ ${traeger.name} setzt Schmiedetakt ein → das ganze Team hat +3 Angriff bis Kampfende`]);
+    expect(runde(run, 4)).toContain(`${begleiter.name} greift Amboss an für ${atk + 3}`);
+    expect(takt(6)).toEqual([`✦ ${traeger.name} setzt Schmiedetakt ein → das ganze Team hat +6 Angriff bis Kampfende`]);
+    expect(takt(9)).toEqual([`✦ ${traeger.name} setzt Schmiedetakt ein → das ganze Team hat +9 Angriff bis Kampfende`]);
+    expect(takt(12)).toEqual([]);
+    expect(runde(run, 13)).toContain(`${begleiter.name} greift Amboss an für ${atk + 9}`);
+    expect(begleiter.atk).toBe(atk);
+  });
+
+  test('Sternenfall: jeder dritte Treffer holt einen Stern, der alle Gegner mit halbem Schaden trifft', () => {
+    const traeger = einheit(heldMitSet('schlund'), { spd: 5 });
+    const run = kampf([traeger], ['A', 'B', 'C'].map(n => gegner(`Ziel ${n}`, { hp: 5000, maxHp: 5000 })));
+    const zeilen = run.combatLog;
+    const treffer = zeilen.map((l, i) => [l, i] as const).filter(([l]) => l.startsWith(`${traeger.name} greift `));
+    const sterne = zeilen.map((l, i) => [l, i] as const).filter(([l]) => l.includes('setzt Sternenfall ein'));
+    expect(sterne.length).toBe(Math.floor(treffer.length / 3));
+    // Der erste Stern fällt mit dem dritten Treffer, mit der Hälfte von dessen Schaden auf alle drei
+    const [dritter, nach] = treffer[2];
+    const wucht = Math.floor(Number(dritter.match(/für (\d+)/)![1]) * 0.5);
+    expect(sterne[0][1]).toBeGreaterThan(nach);
+    expect(sterne[0][1]).toBeLessThan(treffer[3][1]);
+    expect(sterne[0][0]).toBe(`✦ ${traeger.name} setzt Sternenfall ein → ein Stern trifft alle Gegner: Ziel A −${wucht}, Ziel B −${wucht}, Ziel C −${wucht}`);
+    expect(traeger.sternenTreffer).toBe(0);
   });
 
   test('Einfrieren: der Gegner setzt einen Zug aus, aber nie zwei hintereinander', () => {

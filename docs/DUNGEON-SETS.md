@@ -9,11 +9,17 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 - **Beute.** Nach jedem Sieg kann ein Teil des Dungeon-Sets in der Truhe liegen. Das erste Teil
   eines Sets ist sicher, danach 50 % (Normal), 65 % (Schwer), 80 % (Albtraum) und 100 % (Infernal).
   Teile, die der Gilde fehlen, kommen zuerst. Sind alle drei da, kann jedes fallen, für einen zweiten Helden.
+  Eine mutige Entscheidung der Dungeon-Geschichte kann ein Teil mehr versprechen («+1 Set-Teil, wenn ihr
+  siegt»): Es kommt zum gewöhnlichen Wurf dazu, beim ersten Sieg sind es also zwei verschiedene
+  (`docs/GESCHICHTEN.md`). Das Versprechen gilt nur, wenn der Boss besiegt ist; endet sein Kampf nach
+  dem Rundenlimit, bleibt es beim gewöhnlichen Wurf (`dungeonBezwungen`).
 - **Zwei Teile** geben Werte (z. B. +5 Angriff und +15 Leben), **drei Teile** die Set-Fähigkeit.
   Sie löst im Kampf sichtbar aus: grünes ✦-Banner und eine grüne Zeile im Kampfprotokoll.
   Zwei gleiche Teile zählen als eines.
 - **Eigenschaften.** Ab Ebene 3 trägt jedes Teil eine Eigenschaft wie die übrigen Gegenstände
   dieser Ebenen (Doppelschlag, Reflexion …). Gleiche Eigenschaften zählen nicht doppelt, es gilt die stärkste.
+- **Schmiede.** Mit Material aus den Dungeons werden die Teile bis +5 besser, jede Stufe um 10 %.
+  Alle drei Teile auf +5 sind ein Meisterset: Der Zwei-Teile-Bonus zählt doppelt (`docs/SCHMIEDE.md`).
 - **Sichtbar** auf der Heldenseite (Platz oder Gegenstand antippen: Werte, Eigenschaft, Vergleich mit
   dem getragenen Teil, Set-Boni; Anlegen und Ablegen per Knopf), im Tab «Sets» (Sammlung je Dungeon),
   als Abzeichen im Inventar, auf den Routenkarten («🐺 Rudel des Waldpfads · 0 von 3»), bei der
@@ -30,6 +36,7 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 | `src/ui/components/SetAnzeige.ts` | Set-Abzeichen und Set-Zeilen für alle Ansichten |
 | `src/ui/screens/HeroesScreen.ts` | Heldenseite: Auswahl, Vergleich, Tab «Sets» |
 | `tests/dungeonSets.test.ts` | Regeln der Sets, Beute, Kampfeffekte, Stärke im Musterlauf |
+| `src/systems/Schmiede.ts` | Stufen +1 bis +5 der Teile (`docs/SCHMIEDE.md`) |
 
 ## Wie stark ein Teil ist
 
@@ -44,8 +51,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
   - nur Eigenschaften aus `SPECIAL_EFFECT_DEFS`: `lifesteal`, `dodge`, `reflect`, `revive`,
     `double_strike`, `anti_heal`, `regen`, `aoe_resist`, `spell_power`, `fire_resist`, `stun_strike`.
 - **Set-Boni:** Zwei Teile geben je Ebene etwas mehr (Ebene 1: +1 Angriff, +5 Leben; Ebene 5: +5 Angriff,
-  +15 Leben; Ebene 6: +6 Angriff, +20 Leben). Die Drei-Teile-Fähigkeit ist das Besondere des Sets
-  und passt zum Dungeon (Drachenhort: Drachengier, Gold macht stark).
+  +15 Leben; Ebene 6: +6 Angriff, +20 Leben; Ebene 7: +7 Angriff, +24 Leben; Ebene 8: +8 Angriff, +8 %
+  Krit-Chance). Die Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort:
+  Drachengier, Gold macht stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team;
+  Sternenschlund: Sternenfall, jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden).
 
 ## Ein Set für einen neuen Dungeon
 
@@ -54,9 +63,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 2. **Drei Teile** mit verschiedenen Plätzen, damit ein Held alle drei tragen kann: eine Waffe oder ein
    Schild, eine Rüstung und ein Schmuckstück. `bild` ist ein vorhandener Sprite-Key, `text` ein Satz
    mit Witz, der zum Dungeon passt. Die Gegenstände (`set_<set>_<bauart>`) entstehen von selbst.
-3. **Ebene über 6:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`), sonst
-   bekommt das Set die Werte von Ebene 6. Die neuen Werte an den besten gewöhnlichen Gegenständen
-   der Ebene ausrichten.
+3. **Ebene über 8:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
+   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 8. Die neuen Werte an den besten
+   gewöhnlichen Gegenständen der Ebene ausrichten; gibt es auf der Ebene keine, die Reihe im selben Schritt
+   fortsetzen (so sind Ebene 7 und 8 entstanden).
 4. **Set-Boni:** `zweiTeile` etwas über der Ebene darunter. `dreiTeile` mit Name, Text und Effekten.
    Eine neue Fähigkeit braucht ihre Wirkung in `src/systems/Kampfeffekte.ts`, Name und Beschreibung in
    `SPECIAL_EFFECT_DEFS` und, falls ihre Kampfzeile eine eigene Farbe haben soll, `getLogLineColor` in
@@ -65,7 +75,8 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 6. **Prüfen:** `npm test` (jede Route hat ein Set, Eigenschaften einmalig …), `npm run build`,
    `npm run validate-refs`, dann `npm run dungeon-eichung -- 200` und die Tabelle unten nachführen.
    Für einen Dungeon über dem Hort die Sets der Musterhelden (`MUSTER_SETS` in `src/data/musterteams.ts`)
-   um eine Stufe mit dem neuen Set ergänzen.
+   um eine Stufe mit dem neuen Set ergänzen, ab den Sternen mit Stufen aus der Schmiede (`schmiede`) und
+   der Ebene, ab der die Eichung sie misst (`abEbene`).
 7. **Eigene Bilder** für Set-Teile nur mit Christophs Okay (Kosten-Regel). Bis dahin tragen sie Bilder
    vorhandener Gegenstände mit dem Set-Zeichen darauf.
 
@@ -76,24 +87,50 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 
 - **Sets aus Ebene 4:** Brom Festung (behält den Seelenbrecher), Grimm Magma-Wyrm, Lia Abyss, Sina Schatten.
 - **Hort:** dasselbe, Grimm trägt das Set aus dem Drachenhort.
+- **Sterne +3** (nur zwischen den Sternen gemessen): die Hort-Sets, alle Teile in der Schmiede auf +3.
+- **Sterne +5:** dazu Grimm in Korrunds Meisterstücken, alle Teile auf +5.
 
-Stand 20.10.2026, mit Wegen (`docs/SPEZIALISIERUNG.md`), Siege von 200 Läufen (vorsichtig / klug / gierig):
+Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
+eingerechnet, Siege von 200 Läufen (vorsichtig / klug / gierig):
 
 | Dungeon | Team | eigene Ausrüstung | Sets aus Ebene 4 | dazu Grimm im Hort-Set |
 |---|---|---|---|---|
-| Der Drachenhort | frisch | 0 / 0 / 0 % | 50 / 3 / 0 % | 100 / 80 / 14 % |
-| Der Drachenhort | gut | 80 / 58 / 3 % | 100 / 100 / 95 % | 100 / 100 / 100 % |
-| Der Drachenhort | stark | 100 / 100 / 97 % | 100 / 100 / 100 % | 100 / 100 / 100 % |
+| Der Drachenhort | frisch | 0 / 0 / 0 % | 75 / 44 / 0 % | 93 / 79 / 4 % |
+| Der Drachenhort | gut | 86 / 53 / 0 % | 100 / 100 / 99 % | 100 / 100 / 100 % |
+| Der Drachenhort | stark | 100 / 100 / 99 % | 100 / 100 / 100 % | 100 / 100 / 100 % |
 | Das Himmelsarchiv | frisch | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
-| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 26 / 4 / 0 % | 62 / 32 / 7 % |
-| Das Himmelsarchiv | stark | 53 / 32 / 3 % | 100 / 90 / 50 % | 100 / 100 / 89 % |
+| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 32 / 19 / 0 % | 48 / 33 / 0 % |
+| Das Himmelsarchiv | stark | 48 / 30 / 1 % | 100 / 99 / 54 % | 100 / 100 / 78 % |
+
+Zwischen den Sternen (Team «Frisch» schafft dort nichts):
+
+| Dungeon | Team | Hort-Set, ohne Stufen | Sterne +3 | Sterne +5 |
+|---|---|---|---|---|
+| Die Sternenschmiede | gut | 0 / 0 / 0 % | 1 / 1 / 0 % | 98 / 99 / 78 % |
+| Die Sternenschmiede | stark | 1 / 2 / 0 % | 83 / 82 / 10 % | 100 / 100 / 100 % |
+| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 4 / 1 / 0 % |
+| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 92 / 57 / 3 % |
+
+Vor der Eichung der Wege (21.10.2026) hatte das Team «Gut» im Himmelsarchiv mit Sets aus Ebene 4 54 / 37 / 0 %
+und mit dem Hort-Set 72 / 51 / 0 % (1000 Läufe; jetzt 32 / 18 / 0 % und 47 / 30 / 0 %). Seine Wege auf Stufe 12
+waren deutlich stärker als ihr Ziel; die Gegner sind auf die Teams in eigener Ausrüstung nachgezogen
+(`docs/NEUE-DUNGEONS.md`, «Eichung»), nicht auf diese Mischung.
 
 **So ist es gedacht:** Die Sets einer Ebene machen den nächsten Dungeon machbar. Mit Sets aus Ebene 4
 wagt sich schon ein frisches Team in den Drachenhort, und mit dem Hort-Set rückt das Himmelsarchiv
-für ein gutes Team in Reichweite (vorsichtig gut jeder zweite Lauf). Ohne Sets bleibt es das ferne Ziel.
+für ein gutes Team in Reichweite (vorsichtig etwa jeder zweite Lauf). Ohne Sets bleibt es das ferne Ziel.
 Sets aus einer tieferen Ebene sind für ein Team mit besserer Ausrüstung ein Rückschritt; das zeigt
 der Vergleich auf der Heldenseite. Wege und Sets verstärken sich gegenseitig, darum sind die Gegner der
-zwei obersten Dungeons seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
+Dungeons über dem Vulkankern seit den Wegen stärker (`docs/SPEZIALISIERUNG.md`, «Eichung»).
+Zwischen den Sternen reichen Sets allein nicht mehr: Erst die Schmiede macht die Sternenschmiede machbar
+(+3), für den Sternenschlund braucht es +4 bis +5 und Korrunds Meisterstücke (Stufe für Stufe in
+`docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»).
+
+**Korrunds Meisterstücke** sind ein Set für einen Kämpfer (Klinge, Platte, Talisman). Als Schild-Set für
+Brom war die erste Fassung deutlich schwächer als die Festung mit der Letzten Bastion; mit dem Schmiedetakt
+hilft das Set jetzt dem ganzen Team, und Grimm in Korrunds Set auf +5 ist stärker als im Hort-Set auf +5.
+**Was Nyxar nicht frass** (Bogen, Leder, Ring) macht den Sternenschlund leicht, wer es hat (Lia ohne
+Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für Dungeons, die einmal darüber kommen.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher
@@ -101,8 +138,9 @@ endete er nach dem zweiten eigenen Zug des Trägers und hielt in Belagerungen de
 ist schon mit der neuen Regel gemessen; in den übrigen Dungeons ändern sich die Siege mit Sets kaum
 (Festung «frisch» mit Sets aus Ebene 4: 1 von 40 Läufen vorher, 0 von 40 jetzt).
 
-**Nach Manager #43 und #44 neu messen.** Mindestschaden und stärkere Startklassen verschieben alle Werte
-(Vorab-Messung in `docs/NEUE-DUNGEONS.md`, «Eichung»).
+**Nach Manager #43 und #44 neu gemessen** (21.10.2026): Mindestschaden und stärkere Startklassen machten die
+obersten Dungeons leichter, ihre Gegner sind darum etwas stärker (`docs/NEUE-DUNGEONS.md`, «Eichung»).
+Die Tabelle oben ist der Stand danach.
 
 ## Offen
 
@@ -110,4 +148,4 @@ ist schon mit der neuen Regel gemessen; in den übrigen Dungeons ändern sich di
   `SPECIAL_EFFECT_DEFS` nicht gibt und die darum nichts tun und nirgends angezeigt werden:
   `magic_resist` (T3-Platte), `piercing` (T4-Waffe), `evasion` (T4-Leder), `spell_amplify` (T4-Robe),
   `slow_on_hit` und `air_decay_resist` (Abyss-Gegenstände in `src/data/items.ts`).
-- **Eigene Set-Bilder:** 75 Teile, etwa 0.06 USD je Bild, nur mit Christophs Okay.
+- **Eigene Set-Bilder:** 81 Teile (27 Sets), etwa 0.06 USD je Bild, nur mit Christophs Okay.

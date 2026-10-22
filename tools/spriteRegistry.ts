@@ -793,6 +793,36 @@ The character fills 80% of the frame.`),
     `${STYLES.ENEMY}, a Dragon Priest: tall cultist in deep crimson and gold vestments wearing a horned dragon skull mask, dragon scale pauldrons, staff topped with a glowing ember crystal, swirling fire runes around one raised hand, zealous preacher of the dragon flame in a support caster pose`),
 
   // ═══════════════════════════════════════════════════════════
+  // GEGNER Post-MVP – STERNENSCHMIEDE UND STERNENSCHLUND (über dem Himmelsarchiv)
+  // Bilder vom 20.10.2026 (Christophs Okay für 8), freigestellt mit npm run sprite-freistellen.
+  // 192 px, weil der Kampf am PC die Bilder bis 230 px gross zeigt.
+  // ═══════════════════════════════════════════════════════════
+
+  sprite("BOSS_KORRUND", "boss", 192, 192, "post-mvp",
+    "Boss: Korrund, der Sternenschmied (Sternenschmiede)",
+    `${STYLES.BOSS}, Korrund the Star Smith: a colossal titan blacksmith whose skin is dark blue-black star-metal crossed by thin glowing white-gold cracks, a long braided beard made of white-hot sparks, bare muscular arms, a heavy brown leather smith's apron dotted with tiny shining stars, raising an enormous forge hammer whose head is a glowing meteorite, holding a small newborn star in long iron tongs in his other hand, proud and grumpy master craftsman about to strike`),
+
+  sprite("ENEMY_FUNKENWICHTEL", "enemy", 192, 192, "post-mvp",
+    "Gegner: Funkenwichtel (Sternenschmiede)",
+    `${STYLES.ENEMY}, a Spark Imp: a small mischievous imp whose body is made of crackling golden-white sparks and dark grey soot smoke, glowing ember-orange eyes and a wide cheeky grin, long pointed ears, tiny wings of flickering yellow flame, hugging a stolen glowing star fragment like a treasure, darting forward in a quick leaping attack pose, sparks kept compact close to its body`),
+
+  sprite("ENEMY_AMBOSSGOLEM", "enemy", 192, 192, "post-mvp",
+    "Gegner: Ambossgolem (Sternenschmiede)",
+    `${STYLES.ENEMY}, an Anvil Golem: a hulking golem whose chest is a huge black iron anvil, arms and legs made of chained dark meteorite chunks, seams of molten white-gold metal glowing between the parts, tiny constellation-like points of light speckled across the dark iron, small fierce glowing eyes in a squat blocky head, heavy fists raised in a slow powerful guarding stance`),
+
+  sprite("BOSS_NYXAR", "boss", 192, 192, "post-mvp",
+    "Boss: Nyxar, der Sternenfresser (Sternenschlund)",
+    `${STYLES.BOSS}, Nyxar the Star Eater: a colossal cosmic serpent-dragon whose long body is an opaque dark blue-black hide that looks like a piece of the night sky, full of tiny stars and swirling teal nebulae, edged by a glowing ice-blue rim, a gigantic gaping maw ringed with rows of pale crystal teeth, many small glowing ice-blue eyes along its long head, a half-swallowed golden star shining between its jaws, coiling forward out of the darkness in a devouring strike`),
+
+  sprite("ENEMY_LICHTMOTTE", "enemy", 192, 192, "post-mvp",
+    "Gegner: Lichtmotte (Sternenschlund)",
+    `${STYLES.ENEMY}, a Light Moth: a giant fluffy moth the size of a wolf, huge wings patterned like a deep blue starry night sky with glowing golden constellation eye-spots, thick soft silver-white fur, large feathery glowing antennae, big dark shiny eyes, a long curled proboscis greedily sipping a thin stream of golden starlight, swooping forward in an attacking hover`),
+
+  sprite("ENEMY_LEERENKRIECHER", "enemy", 192, 192, "post-mvp",
+    "Gegner: Leerenkriecher (Sternenschlund)",
+    `${STYLES.ENEMY}, a Void Crawler: a low spider-like creature made of living darkness, its body an opaque deep black void sprinkled with faint tiny white stars, six long thin jointed legs tipped with pale ice-blue light, a cluster of small white glowing eyes, wisps of dark blue-grey mist trailing from its back, creeping forward ready to pounce`),
+
+  // ═══════════════════════════════════════════════════════════
   // GEGNER Post-MVP – VERFLUCHTE BIBLIOTHEK
   // ═══════════════════════════════════════════════════════════
 

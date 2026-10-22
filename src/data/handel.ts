@@ -3,8 +3,14 @@
 // Nur Stadtwaren; Kristallsplitter, Dungeon-Zutaten, Ausrüstung und
 // Tränke kommen weiter aus Dungeons und Werkstätten.
 // Kauf = KAUF_FAKTOR × Verkauf, damit Hin und Her nie Gewinn bringt.
-// Ein Arbeiter, dessen Tagesproduktion verkauft wird, bringt 1-2 Gold
-// pro Tag, etwa so viel wie seine Steuern. Regeln: docs/HANDEL.md.
+// Zukaufen und verarbeiten bringt auch nie Gewinn: «Getreide kaufen,
+// mahlen, backen, Brot verkaufen» geht genau auf (12 gegen 12 Gold).
+// Wer Brot verteuert oder Getreide im Kauf verbilligt, macht daraus
+// eine Goldquelle (tests/handel.test.ts prüft alle Ketten).
+// Ein Arbeiter in Holzfällerhütte, Getreidefarm, Steinbruch oder Eisenmine
+// bringt mit verkaufter Tagesproduktion etwa 1 bis 1,5 Gold pro Tag, etwa
+// so viel wie seine Steuern. Gemessen im Spieltakt, auf Stufe 2 und 3 etwas
+// weniger. Regeln und Zahlen: docs/HANDEL.md.
 // ────────────────────────────────────────────────────────────────
 
 /** Stück pro Bündel. */
@@ -27,9 +33,9 @@ export const VERKAUFSPREIS: Readonly<Record<string, number>> = {
 /** Handelbare Waren in Anzeige-Reihenfolge. */
 export const HANDELSWAREN: readonly string[] = Object.keys(VERKAUFSPREIS);
 
-/** Gold, das der Kauf von BUENDEL Stück kostet. */
+/** Gold, das der Kauf von BUENDEL Stück kostet (0 für alles, was der Markt nicht handelt). */
 export function kaufpreis(ware: string): number {
-  return (VERKAUFSPREIS[ware] ?? 0) * KAUF_FAKTOR;
+  return HANDELSWAREN.includes(ware) ? VERKAUFSPREIS[ware] * KAUF_FAKTOR : 0;
 }
 
 /** Bündel pro Tag nach besetzten Plätzen am Marktplatz (0 = kein Handel). */

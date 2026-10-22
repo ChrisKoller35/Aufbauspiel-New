@@ -12,7 +12,7 @@ export interface MusterHeld {
   name: string;
   stufe: number;
   gear: GuildFighter['gear'];
-  /** Weg ab Stufe 10 (data/spezialisierungen.ts). Das Probespiel lässt ihn weg, damit man selbst wählt. */
+  /** Weg ab Stufe 10 (data/spezialisierungen.ts). ?probe lässt ihn weg, damit man selbst wählt; ?probe=sterne nicht. */
   weg?: string;
 }
 
@@ -97,10 +97,33 @@ const SETS_EBENE_4: Record<string, GuildFighter['gear']> = {
   Sina: { mainHand: 'set_schatten_dolch', offHand: null, armor: 'set_schatten_leder', trinket: 'set_schatten_ring' },
 };
 
-export const MUSTER_SETS: Record<'ebene4' | 'hort', { name: string; gear: Record<string, GuildFighter['gear']> }> = {
+const SETS_HORT: Record<string, GuildFighter['gear']> = {
+  ...SETS_EBENE_4,
+  Grimm: { mainHand: 'set_hort_klinge', offHand: null, armor: 'set_hort_platte', trinket: 'set_hort_amulett' },
+};
+
+export interface MusterSet {
+  name: string;
+  gear: Record<string, GuildFighter['gear']>;
+  /** Stufe aller getragenen Set-Teile in der Schmiede (docs/SCHMIEDE.md) */
+  schmiede?: number;
+  /** Die Eichung misst diese Ausrüstung erst in Dungeons ab dieser Ebene */
+  abEbene?: number;
+}
+
+/**
+ * Für die Dungeons zwischen den Sternen (Ebene 7 und 8) dazu die Schmiede: Wer dort ankommt,
+ * hat seine Sets aus den Dungeons darunter verbessert, und wer weiter will, trägt dazu
+ * Korrunds Meisterstücke (Grimm, statt des Hort-Sets).
+ */
+export const MUSTER_SETS: Record<'ebene4' | 'hort' | 'sterne3' | 'sterne5', MusterSet> = {
   ebene4: { name: 'Sets aus Ebene 4', gear: SETS_EBENE_4 },
-  hort: {
-    name: 'Ebene 4, Grimm mit dem Hort-Set',
-    gear: { ...SETS_EBENE_4, Grimm: { mainHand: 'set_hort_klinge', offHand: null, armor: 'set_hort_platte', trinket: 'set_hort_amulett' } },
+  hort: { name: 'Ebene 4, Grimm mit dem Hort-Set', gear: SETS_HORT },
+  sterne3: { name: 'Ebene 4 und Hort-Set, alle Teile auf +3', gear: SETS_HORT, schmiede: 3, abEbene: 7 },
+  sterne5: {
+    name: 'Dazu Grimm mit Korrunds Meisterstücken, alle Teile auf +5',
+    gear: { ...SETS_HORT, Grimm: { mainHand: 'set_stern_klinge', offHand: null, armor: 'set_stern_platte', trinket: 'set_stern_talisman' } },
+    schmiede: 5,
+    abEbene: 7,
   },
 };

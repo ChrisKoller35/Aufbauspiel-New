@@ -1,22 +1,27 @@
 // ─── ExpeditionFinalizer ────────────────────────────────────────
 // Progress awarded when an expedition ends (victory/defeat/retreat):
-// hero XP, score + scoreboard, statistics, guild rank, defeated bosses,
-// class unlocks, bestiarium, achievements.
+// hero XP, score + scoreboard, rangliste (fame of the week, summit ranking),
+// statistics, guild rank, defeated bosses, class unlocks, bestiarium,
+// Auftragsbrett (Zettel und Kette), the trophy count of the Trophäensaal and
+// last the achievements (erfolgePruefen: rank, Monsterbuch, Kette count at once).
 // Loot, provisions and fighter release stay in main.ts (UI flow).
 // ──────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
-import { ExpeditionRun } from '../models/ExpeditionRun';
+import { ExpeditionRun, WegWirkung } from '../models/ExpeditionRun';
 import { ScoreboardEntry } from '../models/ScoreboardEntry';
 import { ENEMY_DEFS } from '../data/enemies';
 import { CLASS_DEFS } from '../data/classes';
-import { ACHIEVEMENT_DEFS } from '../data/achievements';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GuildRankSystem } from './GuildRankSystem';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { BestiariumSystem } from './BestiariumSystem';
-import { AchievementSystem } from './AchievementSystem';
+import { erfolgName, erfolgePruefen } from './AchievementSystem';
 import { awardXP } from './HeroProgression';
+import { wegBilanzDazu } from './Spezialisierung';
+import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
+import { AuftragsBilanz, auftraegeNachExpedition } from './Auftragsbrett';
+import { trophaeeNachExpedition } from './Trophaeensaal';
 
 /** Bonus XP per hero for winning the run */
 export const VICTORY_XP_BONUS = 10;
@@ -24,16 +29,22 @@ const SCOREBOARD_LIMIT = 100;
 
 export interface ExpeditionProgress {
   entry: ScoreboardEntry;
-  xp: { id: number; name: string; xp: number; level: number; levelUps: number }[];
+  /** wegWirkung: was der Weg des Helden in dieser Expedition bewirkt hat */
+  xp: { id: number; name: string; xp: number; level: number; levelUps: number; wegWirkung?: WegWirkung }[];
   rankUp: { newRank: number; title: string; unlocks: string[] } | null;
   newClasses: string[];
   newAchievements: string[];
+  /** Ruhm der Woche und Platz in der Rangliste mit Rivalen */
+  rangliste: RanglistenBilanz;
+  /** Zettel und Kette am Auftragsbrett: Fortschritt und Belohnungen */
+  auftraege: AuftragsBilanz;
+  /** Erster Sieg über diesen Boss: ein neuer Sockel im Trophäensaal */
+  neueTrophaee: boolean;
 }
 
 const guildRankSystem = new GuildRankSystem();
 const classUnlockSystem = new ClassUnlockSystem();
 const bestiariumSystem = new BestiariumSystem();
-const achievementSystem = new AchievementSystem();
 
 /**
  * Apply all progress of a finished run to the game state.
@@ -46,6 +57,9 @@ export function finalizeExpeditionProgress(
 ): ExpeditionProgress {
   const victory = run.status === 'victory';
 
+  // Trophäensaal vor der Rangliste: ein älterer Spielstand legt den Zähler so ohne diesen Sieg an
+  const neueTrophaee = trophaeeNachExpedition(state, run);
+
   // ── XP to heroes (CombatUnit.id === GuildFighter.id) ──
   const xpMap = run.xpEarned ?? {};
   const xp: ExpeditionProgress['xp'] = [];
@@ -54,7 +68,11 @@ export function finalizeExpeditionProgress(
     if (!fighter) continue;
     const earned = (xpMap[unit.id] ?? 0) + (victory ? VICTORY_XP_BONUS : 0);
     const levelUps = awardXP(fighter, earned);
-    xp.push({ id: fighter.id, name: fighter.name, xp: earned, level: fighter.level, levelUps });
+    wegBilanzDazu(fighter, unit.wegWirkung);
+    xp.push({
+      id: fighter.id, name: fighter.name, xp: earned, level: fighter.level, levelUps,
+      ...(unit.wegWirkung ? { wegWirkung: unit.wegWirkung } : {}),
+    });
   }
 
   // ── Score + scoreboard ──
@@ -71,6 +89,8 @@ export function finalizeExpeditionProgress(
     enemiesKilled: run.enemiesKilled ?? 0,
     bossesKilled: run.bossesKilled ?? 0,
   };
+  // Rangliste vor dem Eintrag in die Bestenliste: erkennt den ersten Sieg in diesem Dungeon
+  const rangliste = ranglisteNachExpedition(state, run, entry.timestamp);
   if (!state.scoreboard) state.scoreboard = [];
   state.scoreboard.push(entry);
   if (state.scoreboard.length > SCOREBOARD_LIMIT) {
@@ -104,11 +124,16 @@ export function finalizeExpeditionProgress(
 
   const newClasses = classUnlockSystem.checkUnlocks(state).map(id => CLASS_DEFS[id]?.name ?? id);
 
-  // ── Bestiarium + achievements ──
+  // ── Bestiarium ──
   bestiariumSystem.processExpeditionEnd(state, run);
-  const newAchievementIds = achievementSystem.checkAchievements(stats, state.achievements);
-  state.achievements.push(...newAchievementIds);
-  const newAchievements = newAchievementIds.map(id => ACHIEVEMENT_DEFS.find(d => d.id === id)?.name ?? id);
 
-  return { entry, xp, rankUp, newClasses, newAchievements };
+  // ── Auftragsbrett: zählt Siege, Jagd und Set-Teile (der Set-Wurf ist schon gefallen) ──
+  const auftraege = auftraegeNachExpedition(state, run, entry.timestamp);
+
+  // ── Erfolge zuletzt, damit Rang, Monsterbuch, Kette und Trophäen schon mitzählen. Ohne Hinweis in
+  //    der Kopfzeile: Die Bilanz nennt sie (main.ts), und der Tageswechsel findet sie nicht noch einmal ──
+  if (rangliste.platzNachher === 1) stats.gipfel_spitze = 1;
+  const newAchievements = erfolgePruefen(state, { hinweis: false }).map(erfolgName);
+
+  return { entry, xp, rankUp, newClasses, newAchievements, rangliste, auftraege, neueTrophaee };
 }

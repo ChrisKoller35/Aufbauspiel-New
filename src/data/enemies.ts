@@ -423,7 +423,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // Leben und Angriff sind auf Helden mit Weg geeicht (docs/SPEZIALISIERUNG.md, «Eichung»).
   hortgolem: {
     id: 'hortgolem', name: 'Hortgolem', role: 'melee',
-    hp: 355, atk: 18, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    hp: 360, atk: 18, def: 11, spd: 0.6, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'glutfaust', name: 'Glutfaust', cooldown: 3, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
     ],
@@ -431,7 +431,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   glutwyrmling: {
     id: 'glutwyrmling', name: 'Glutwyrmling', role: 'melee',
-    hp: 200, atk: 21, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
+    hp: 203, atk: 21, def: 5, spd: 1.4, critChance: 0.15, critMult: 1.8,
     skills: [
       { id: 'feuerbiss', name: 'Feuerbiss', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
     ],
@@ -439,7 +439,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   hortkobold: {
     id: 'hortkobold', name: 'Hortkobold', role: 'ranged',
-    hp: 145, atk: 16, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
+    hp: 147, atk: 16, def: 3, spd: 1.3, critChance: 0.2, critMult: 1.6,
     skills: [
       { id: 'muenzhagel', name: 'Münzhagel', cooldown: 3, effectType: 'aoe', power: 0.6, target: 'all_players', description: '0.6× Schaden auf alle' },
       { id: 'glaenzende_augen', name: 'Glänzende Augen', cooldown: 4, effectType: 'buff', power: 4, target: 'self', description: '+4 ATK für 3 Runden' },
@@ -448,7 +448,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   drachenpriester: {
     id: 'drachenpriester', name: 'Drachenpriester', role: 'support',
-    hp: 180, atk: 19, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
+    hp: 183, atk: 19, def: 4, spd: 1.0, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'glutsegen', name: 'Glutsegen', cooldown: 3, effectType: 'heal', power: 60, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 60' },
       { id: 'flammenwort', name: 'Flammenwort', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
@@ -457,7 +457,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_ignarax: {
     id: 'boss_ignarax', name: 'Ignarax, der Uralte', role: 'boss',
-    hp: 945, atk: 27, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
+    hp: 959, atk: 27, def: 9, spd: 0.9, critChance: 0.1, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -472,7 +472,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // Wie der Drachenhort auf Helden mit Weg geeicht.
   folianten_waechter: {
     id: 'folianten_waechter', name: 'Foliantenwächter', role: 'melee',
-    hp: 370, atk: 19, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
+    hp: 376, atk: 20, def: 13, spd: 0.6, critChance: 0.04, critMult: 1.5,
     skills: [
       { id: 'buchdeckel', name: 'Buchdeckel', cooldown: 3, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
     ],
@@ -480,7 +480,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   archivritter: {
     id: 'archivritter', name: 'Archivritter', role: 'melee',
-    hp: 240, atk: 24, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
+    hp: 243, atk: 25, def: 9, spd: 1.0, critChance: 0.12, critMult: 1.8,
     skills: [
       { id: 'klingenzitat', name: 'Klingenzitat', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
     ],
@@ -488,7 +488,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   fluestergeist: {
     id: 'fluestergeist', name: 'Flüstergeist', role: 'support',
-    hp: 185, atk: 18, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
+    hp: 187, atk: 19, def: 2, spd: 1.3, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'psst', name: 'Psst!', cooldown: 3, effectType: 'aoe', power: 0.7, target: 'all_players', description: '0.7× Schaden auf alle' },
       { id: 'stille_restaurierung', name: 'Stille Restaurierung', cooldown: 4, effectType: 'heal', power: 70, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 70' },
@@ -497,7 +497,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   knochenschreiber: {
     id: 'knochenschreiber', name: 'Knochenschreiber', role: 'ranged',
-    hp: 195, atk: 21, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
+    hp: 198, atk: 22, def: 5, spd: 1.2, critChance: 0.18, critMult: 1.8,
     skills: [
       { id: 'federkiel_salve', name: 'Federkiel-Salve', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
       { id: 'mahngebuehr', name: 'Mahngebühr', cooldown: 4, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
@@ -506,7 +506,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_oberarchivar: {
     id: 'boss_oberarchivar', name: 'Der Oberarchivar', role: 'boss',
-    hp: 1210, atk: 32, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    hp: 1228, atk: 32, def: 10, spd: 0.9, critChance: 0.12, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -515,6 +515,105 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
       { id: 'neuauflage', name: 'Neuauflage', cooldown: 6, effectType: 'heal', power: 150, target: 'self', description: 'Heilt sich um 150' },
     ],
     lootTableId: 'loot_boss_oberarchivar', xpReward: 280, goldReward: 150, spriteKey: 'BOSS_ARCHIV_WATCHER',
+  },
+
+  // ── Sternenschmiede (Ebene 7, zwischen den Sternen) ──
+  // Funkenwichtel, Ambossgolem und Korrund haben eigene Bilder (tools/spriteRegistry.ts),
+  // Essengeist und Lichtguss tragen Bilder aus dem Vulkan. Geeicht mit Sets aus der Schmiede
+  // (docs/NEUE-DUNGEONS.md, «Eichung»).
+  funkenwichtel: {
+    id: 'funkenwichtel', name: 'Funkenwichtel', role: 'ranged',
+    hp: 240, atk: 28, def: 4, spd: 1.5, critChance: 0.15, critMult: 1.7,
+    skills: [
+      { id: 'funkenregen', name: 'Funkenregen', cooldown: 3, effectType: 'aoe', power: 0.7, target: 'all_players', description: '0.7× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_sternenschmiede_common', xpReward: 44, goldReward: 17, spriteKey: 'ENEMY_FUNKENWICHTEL',
+  },
+  ambossgolem: {
+    id: 'ambossgolem', name: 'Ambossgolem', role: 'melee',
+    hp: 525, atk: 25, def: 15, spd: 0.55, critChance: 0.04, critMult: 1.5,
+    skills: [
+      { id: 'hammerschlag', name: 'Hammerschlag', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_sternenschmiede_common', xpReward: 48, goldReward: 18, spriteKey: 'ENEMY_AMBOSSGOLEM',
+  },
+  essengeist: {
+    id: 'essengeist', name: 'Essengeist', role: 'support',
+    hp: 234, atk: 23, def: 3, spd: 1.3, critChance: 0.08, critMult: 1.6,
+    skills: [
+      { id: 'blasebalg', name: 'Blasebalg', cooldown: 4, effectType: 'heal', power: 80, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 80' },
+      { id: 'stichflamme', name: 'Stichflamme', cooldown: 2, effectType: 'damage', power: 1.4, target: 'player', description: '1.4× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_sternenschmiede_rare', xpReward: 44, goldReward: 16, spriteKey: 'ENEMY_FLAME_SPIRIT',
+  },
+  lichtguss: {
+    id: 'lichtguss', name: 'Lichtguss', role: 'melee',
+    hp: 313, atk: 31, def: 9, spd: 0.9, critChance: 0.1, critMult: 1.8,
+    skills: [
+      { id: 'weissglut', name: 'Weissglut', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_sternenschmiede_common', xpReward: 46, goldReward: 18, spriteKey: 'ENEMY_LAVA_ELEMENTAL',
+  },
+  boss_korrund: {
+    id: 'boss_korrund', name: 'Korrund, der Sternenschmied', role: 'boss',
+    hp: 1677, atk: 42, def: 12, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'sternenregen', name: 'Sternenregen', cooldown: 3, effectType: 'aoe', power: 1.2, target: 'all_players', description: '1.2× Schaden auf alle' },
+      { id: 'meisterschlag', name: 'Meisterschlag', cooldown: 4, effectType: 'damage', power: 2.4, target: 'player', description: '2.4× Schaden auf 1 Ziel' },
+      { id: 'nachgluehen', name: 'Nachglühen', cooldown: 5, effectType: 'buff', power: 7, target: 'self', description: '+7 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_boss_korrund', xpReward: 340, goldReward: 180, spriteKey: 'BOSS_KORRUND',
+  },
+
+  // ── Sternenschlund (Ebene 8, ganz oben) ──
+  // Lichtmotte, Leerenkriecher und Nyxar haben eigene Bilder, Kometenkäfer und Nyxars Brut
+  // tragen Bilder aus den Höhlen.
+  lichtmotte: {
+    id: 'lichtmotte', name: 'Lichtmotte', role: 'support',
+    hp: 252, atk: 23, def: 4, spd: 1.4, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'lichtstaub', name: 'Lichtstaub', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
+      { id: 'mondschimmer', name: 'Mondschimmer', cooldown: 4, effectType: 'heal', power: 90, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 90' },
+    ],
+    lootTableId: 'loot_sternenschlund_rare', xpReward: 52, goldReward: 19, spriteKey: 'ENEMY_LICHTMOTTE',
+  },
+  leerenkriecher: {
+    id: 'leerenkriecher', name: 'Leerenkriecher', role: 'melee',
+    hp: 351, atk: 33, def: 8, spd: 1.1, critChance: 0.2, critMult: 1.9,
+    skills: [
+      { id: 'griff_ins_leere', name: 'Griff ins Leere', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_sternenschlund_common', xpReward: 56, goldReward: 21, spriteKey: 'ENEMY_LEERENKRIECHER',
+  },
+  kometenkaefer: {
+    id: 'kometenkaefer', name: 'Kometenkäfer', role: 'melee',
+    hp: 535, atk: 26, def: 17, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    skills: [
+      { id: 'einschlag', name: 'Einschlag', cooldown: 4, effectType: 'aoe', power: 0.9, target: 'all_players', description: '0.9× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_sternenschlund_common', xpReward: 58, goldReward: 22, spriteKey: 'ENEMY_CRYSTAL_BEETLE',
+  },
+  nyxarbrut: {
+    id: 'nyxarbrut', name: 'Nyxars Brut', role: 'melee',
+    hp: 237, atk: 28, def: 5, spd: 1.6, critChance: 0.18, critMult: 1.8,
+    skills: [
+      { id: 'gieriger_biss', name: 'Gieriger Biss', cooldown: 2, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_sternenschlund_common', xpReward: 52, goldReward: 18, spriteKey: 'ENEMY_DEEP_CRAWLER',
+  },
+  boss_nyxar: {
+    id: 'boss_nyxar', name: 'Nyxar, der Sternenfresser', role: 'boss',
+    hp: 2318, atk: 45, def: 13, spd: 0.95, critChance: 0.13, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'sternenhunger', name: 'Sternenhunger', cooldown: 3, effectType: 'aoe', power: 1.3, target: 'all_players', description: '1.3× Schaden auf alle' },
+      { id: 'sternenbiss', name: 'Sternenbiss', cooldown: 4, effectType: 'damage', power: 2.6, target: 'player', description: '2.6× Schaden auf 1 Ziel' },
+      { id: 'sternenmahl', name: 'Sternenmahl', cooldown: 6, effectType: 'heal', power: 200, target: 'self', description: 'Frisst einen Stern und heilt sich um 200' },
+    ],
+    lootTableId: 'loot_boss_nyxar', xpReward: 420, goldReward: 220, spriteKey: 'BOSS_NYXAR',
   },
 
   // ── Ocean Enemies ──
@@ -1042,6 +1141,60 @@ export const ENEMY_LORE: Record<string, { lore: string; route: string; skillDesc
     route: 'himmelsarchiv',
     lore: 'Das Archiv hat ein Auge auf alles. Eigentlich tausend. Der Oberarchivar hat jedes Buch gelesen, das je geschrieben wurde, auch eure Chronik, und er hat Anmerkungen.',
     skillDescriptions: { tausend_blicke: 'Alle Augen auf euch (1.2x AOE)', fussnote: 'Eine vernichtende Fußnote (2.4x Schaden)', neuauflage: 'Überarbeitet sich selbst, heilt 150' },
+  },
+
+  // ── Sternenschmiede ──
+  funkenwichtel: {
+    route: 'sternenschmiede',
+    lore: 'Ein Funke, der zu lange in der Esse lag und Arme bekommen hat. Er hilft beim Schmieden, indem er überall hinspringt, wo er nicht hingehört.',
+    skillDescriptions: { funkenregen: 'Funken auf alle (0.7x AOE)' },
+  },
+  ambossgolem: {
+    route: 'sternenschmiede',
+    lore: 'Korrund hat ihn als Amboss gebaut und dann gemerkt, dass ein Amboss, der selbst zurückschlägt, doppelt so schnell arbeitet.',
+    skillDescriptions: { hammerschlag: 'Ein Schlag wie auf glühendes Eisen (1.8x Schaden)' },
+  },
+  essengeist: {
+    route: 'sternenschmiede',
+    lore: 'Er lebt in der grossen Esse und hält das Feuer am Leben, und alles andere in der Schmiede auch. Wer verletzt ist, bekommt einen warmen Luftstoss.',
+    skillDescriptions: { blasebalg: 'Facht einen Verbündeten an, heilt 80', stichflamme: 'Eine Flamme wie eine Klinge (1.4x Schaden)' },
+  },
+  lichtguss: {
+    route: 'sternenschmiede',
+    lore: 'Flüssiges Sternenlicht, das aus der Gussform gelaufen ist, bevor es fertig war. Es ist sehr heiss und sehr beleidigt.',
+    skillDescriptions: { weissglut: 'Weissglühender Hieb (2.0x Schaden)' },
+  },
+  boss_korrund: {
+    route: 'sternenschmiede',
+    lore: 'Korrund schmiedet die Sterne, seit es Nacht gibt. Er hat jeden einzelnen gemacht, und jeden zweimal, weil der erste nie gut genug war. Er mag keine Besucher, aber er mag gute Arbeit, und er erkennt sie, wenn sie ihn trifft.',
+    skillDescriptions: { sternenregen: 'Glühende Splitter auf alle (1.2x AOE)', meisterschlag: 'Der Schlag des Meisters (2.4x Schaden)', nachgluehen: 'Die Esse glüht nach (+7 ATK)' },
+  },
+
+  // ── Sternenschlund ──
+  lichtmotte: {
+    route: 'sternenschlund',
+    lore: 'Motten fliegen zum Licht. Diese hier fliegen zu den Sternen, die Nyxar übrig lässt, und schützen sie mit allem, was sie haben, also vor allem mit Staub.',
+    skillDescriptions: { lichtstaub: 'Leuchtender Staub auf alle (0.8x AOE)', mondschimmer: 'Heilt einen Verbündeten um 90' },
+  },
+  leerenkriecher: {
+    route: 'sternenschlund',
+    lore: 'Er kommt aus dem Nichts zwischen den Sternen und will dorthin zurück, am liebsten mit Gesellschaft.',
+    skillDescriptions: { griff_ins_leere: 'Packt zu und zieht ins Nichts (2.0x Schaden)' },
+  },
+  kometenkaefer: {
+    route: 'sternenschlund',
+    lore: 'Fliegt nicht, aber fällt sehr gut. Wo er landet, ist danach ein Krater, und wo ein Krater ist, war vorher meistens jemand.',
+    skillDescriptions: { einschlag: 'Fällt auf alle (0.9x AOE)' },
+  },
+  nyxarbrut: {
+    route: 'sternenschlund',
+    lore: 'Nyxars Junge haben noch keine eigenen Sterne gefressen, nur die Krümel. Darum sind sie so hungrig, und darum so schnell.',
+    skillDescriptions: { gieriger_biss: 'Beisst, als wäre es ein Stern (1.6x Schaden)' },
+  },
+  boss_nyxar: {
+    route: 'sternenschlund',
+    lore: 'Eine Schlange aus Nacht, so lang, dass sie sich um den Himmel legen kann. Jede Nacht frisst Nyxar einen Stern, und jede Nacht wird es über Magic City ein wenig dunkler. Er hat noch nie gefragt, wem die Sterne gehören.',
+    skillDescriptions: { sternenhunger: 'Zieht das Licht aus allen (1.3x AOE)', sternenbiss: 'Ein Biss wie ein schwarzes Loch (2.6x Schaden)', sternenmahl: 'Frisst einen Stern, heilt 200' },
   },
 
   // ── Ocean ──

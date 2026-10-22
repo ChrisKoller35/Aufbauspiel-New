@@ -1,0 +1,286 @@
+/* ── Gildenhaus: Auftragsbrett und Trophäensaal (ui/screens/GildenhausScreen.ts) ── */
+
+.gh-reiter {
+  display: flex; gap: 8px; justify-content: center; flex-wrap: wrap;
+  width: 100%; max-width: 980px; margin: 0 auto; padding: 14px 16px 4px;
+}
+.gh-reiter-knopf {
+  font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1.5px; cursor: pointer;
+  background: var(--s2); color: var(--mut); border: 1px solid var(--bdr); border-radius: 999px;
+  padding: 9px 20px; min-height: 44px; transition: .2s;
+}
+.gh-reiter-knopf:hover { color: var(--gl); border-color: var(--gd); }
+.gh-reiter-knopf.aktiv { background: linear-gradient(135deg, var(--gd), #7a5c08); color: var(--gl); border-color: var(--gold); }
+
+.gh-inhalt {
+  width: 100%; max-width: 980px; margin: 0 auto; padding: 10px 16px 40px;
+  display: flex; flex-direction: column; gap: 16px;
+}
+
+/* Gildensiegel: ein rotes Wachssiegel aus CSS */
+.gh-siegel {
+  position: relative; display: inline-block; flex-shrink: 0;
+  width: 1.05em; height: 1.05em; border-radius: 50%; vertical-align: -0.16em; margin-right: 4px;
+  background: radial-gradient(circle at 35% 30%, #e57263 0%, #a3241b 48%, #5f0f0b 100%);
+  box-shadow: inset 0 -2px 3px rgba(0, 0, 0, .45), 0 1px 2px rgba(0, 0, 0, .6);
+}
+.gh-siegel::after {
+  content: ''; position: absolute; inset: 24%; border-radius: 50%;
+  border: 1.5px solid rgba(255, 220, 200, .4);
+}
+
+/* ── Auftragsbrett ── */
+
+.gh-kopf {
+  display: flex; align-items: center; gap: 10px 26px; flex-wrap: wrap;
+  background: radial-gradient(ellipse at 8% 0%, rgba(200, 162, 39, .16), transparent 60%), var(--s1);
+  border: 1px solid var(--bdr2); border-radius: 10px; padding: 12px 16px;
+}
+.gh-siegel-stand { display: flex; align-items: center; gap: 4px; font-family: 'Cinzel', serif; font-size: 0.95rem; color: var(--gl); white-space: nowrap; }
+.gh-siegel-stand b { font-size: 1.5rem; margin-right: 6px; }
+.gh-siegel-stand .gh-siegel { font-size: 1.5rem; }
+.gh-kopf-info { display: flex; flex-direction: column; gap: 2px; font-size: 0.82rem; color: var(--mut); line-height: 1.4; }
+
+.gh-ottokar { margin: 0 4px; font-size: 0.92rem; line-height: 1.5; font-style: italic; color: var(--txt); }
+
+/* Das Brett: dunkle Bretter, darauf drei Zettel */
+.gh-brett {
+  display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); align-items: start; gap: 22px 18px;
+  padding: 26px 20px 24px; border-radius: 12px; border: 6px solid #2a190c;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, .28), transparent 16%, transparent 84%, rgba(0, 0, 0, .32)),
+    repeating-linear-gradient(90deg, transparent 0 138px, rgba(0, 0, 0, .38) 138px 140px),
+    repeating-linear-gradient(0deg, rgba(255, 255, 255, .025) 0 3px, rgba(0, 0, 0, .04) 3px 7px),
+    linear-gradient(180deg, #4b301b, #392314);
+  box-shadow: inset 0 0 30px rgba(0, 0, 0, .55), 0 6px 18px rgba(0, 0, 0, .45);
+}
+
+.gh-zettel {
+  position: relative; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  padding: 24px 16px 14px; border-radius: 3px; color: #3b2a16;
+  background: linear-gradient(172deg, #f2e7ca 0%, #e7d7ae 58%, #dbc795 100%);
+  box-shadow: 0 8px 14px rgba(0, 0, 0, .45), inset 0 0 26px rgba(120, 85, 30, .22);
+  transform: rotate(var(--dreh, 0deg)); transition: transform .2s;
+}
+.gh-zettel:hover { transform: rotate(0deg) translateY(-2px); }
+.gh-nadel {
+  position: absolute; top: 7px; left: 50%; width: 14px; height: 14px; margin-left: -7px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #f87171, #b91c1c 55%, #6b0f0f);
+  box-shadow: 0 2px 3px rgba(0, 0, 0, .5);
+}
+.gh-von { font-size: 0.8rem; font-style: italic; color: #6b4f2a; }
+.gh-titel { font-family: 'Cinzel', serif; font-size: 1.04rem; font-weight: 600; letter-spacing: .5px; line-height: 1.25; color: #2a1a0a; }
+.gh-ort { font-size: 0.76rem; color: #6b4f2a; }
+.gh-text { font-size: 0.92rem; line-height: 1.45; }
+.gh-ziel { font-size: 0.86rem; font-weight: 600; line-height: 1.35; color: #2a1a0a; }
+.gh-fortschritt { display: flex; align-items: center; gap: 8px; }
+.gh-balken {
+  flex: 1; height: 8px; border-radius: 999px; overflow: hidden;
+  background: rgba(60, 40, 15, .2); box-shadow: inset 0 1px 2px rgba(0, 0, 0, .25);
+}
+.gh-balken span { display: block; height: 100%; border-radius: inherit; background: linear-gradient(90deg, #a16207, #e6c060); }
+.gh-zahl { font-family: 'Cinzel', serif; font-size: 0.8rem; white-space: nowrap; }
+.gh-lohn { font-family: 'Cinzel', serif; font-size: 0.8rem; line-height: 1.4; color: #5b3d14; }
+.gh-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 4px; }
+.gh-knopf {
+  font-family: 'Cinzel', serif; font-size: 0.78rem; letter-spacing: 1px; cursor: pointer;
+  background: #3b2a16; color: #f2e7ca; border: 1px solid #2a1a0a; border-radius: 5px;
+  padding: 8px 12px; min-height: 40px; transition: .2s;
+}
+.gh-knopf:hover { background: #57401f; }
+.gh-knopf-leise { background: transparent; color: #5b3d14; border-color: rgba(91, 61, 20, .5); }
+.gh-knopf-leise:hover { background: rgba(91, 61, 20, .12); }
+.gh-lager { font-size: 0.76rem; color: #6b4f2a; }
+
+/* Erledigt: verblasst, darüber ein roter Stempel */
+.gh-fertig > :not(.gh-stempel):not(.gh-nadel) { opacity: .55; }
+.gh-stempel {
+  position: absolute; right: 14px; top: 38%; transform: rotate(-14deg); pointer-events: none;
+  font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.15rem; letter-spacing: 3px; text-transform: uppercase;
+  color: rgba(153, 27, 27, .88); border: 3px double rgba(153, 27, 27, .82); border-radius: 6px; padding: 3px 12px;
+}
+
+/* Die Kette «Der Saal der Gilde» */
+.gh-kette {
+  position: relative; display: flex; flex-direction: column; gap: 6px;
+  padding: 16px 18px; border-radius: 10px; color: var(--txt); border: 1px solid var(--gd);
+  background: radial-gradient(ellipse at 92% 0%, rgba(200, 162, 39, .18), transparent 55%), linear-gradient(180deg, #1b1527, #110d1b);
+  box-shadow: inset 0 0 0 1px rgba(200, 162, 39, .12), 0 6px 16px rgba(0, 0, 0, .4);
+}
+.gh-kette-voll { border-color: var(--gold); }
+.gh-kette-kopf { padding-right: 56px; font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 2px; text-transform: uppercase; color: #9a8c74; }
+.gh-kette .gh-titel { color: var(--gl); font-size: 1.15rem; }
+.gh-kette .gh-ort { color: var(--mut); }
+.gh-kette .gh-ziel { color: var(--txt); }
+.gh-kette .gh-lohn { color: var(--gl); }
+.gh-kette .gh-lohn-prunk { color: #fde68a; }
+.gh-kette .gh-zahl { color: var(--gl); }
+.gh-kette .gh-balken { background: rgba(255, 255, 255, .08); }
+.gh-kette .gh-knopf { background: linear-gradient(135deg, var(--gd), #7a5c08); color: var(--gl); border-color: var(--gold); }
+.gh-kette .gh-knopf:hover { filter: brightness(1.2); }
+.gh-einleitung { color: #b9ab90; font-style: italic; }
+.gh-wachs {
+  position: absolute; top: 12px; right: 14px; width: 44px; height: 44px; border-radius: 50%;
+  background: radial-gradient(circle at 35% 30%, #e57263, #a3241b 50%, #5c0f0b);
+  box-shadow: inset 0 -3px 5px rgba(0, 0, 0, .5), 0 2px 6px rgba(0, 0, 0, .6);
+}
+.gh-wachs::after {
+  content: '✦'; position: absolute; inset: 7px; border-radius: 50%; border: 1.5px solid rgba(255, 220, 200, .35);
+  display: flex; align-items: center; justify-content: center; font-size: 1rem; color: rgba(255, 220, 200, .55);
+}
+/* Messingschild am Sockel */
+.gh-schild {
+  align-self: flex-start; max-width: 100%; padding: 5px 12px; border-radius: 3px;
+  font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: .5px; line-height: 1.35; color: #2a1a0a;
+  background: linear-gradient(180deg, #e6c060, #a17a1c);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 1px 3px rgba(0, 0, 0, .6);
+}
+.gh-gesperrt { font-size: 0.82rem; color: var(--mut); }
+
+/* Siegel einlösen und Blöcke im Saal */
+.gh-einloesen, .gh-block {
+  display: flex; flex-direction: column; gap: 12px;
+  background: var(--s1); border: 1px solid var(--bdr); border-radius: 10px; padding: 14px 16px;
+}
+.gh-h2 {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap;
+  font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600; letter-spacing: 2px; text-transform: uppercase; color: var(--gl);
+}
+.gh-h2-info { display: inline-flex; align-items: center; gap: 2px; font-size: 0.8rem; letter-spacing: 1px; text-transform: none; color: var(--mut); }
+.gh-h2-info b { color: var(--gl); margin-right: 4px; }
+.gh-angebot { display: flex; flex-direction: column; gap: 8px; padding-top: 10px; border-top: 1px solid var(--bdr); }
+.gh-angebot h3 { font-family: 'Cinzel', serif; font-size: 0.86rem; font-weight: 600; letter-spacing: 1px; color: var(--txt); }
+.gh-angebot-text { font-size: 0.82rem; line-height: 1.45; color: var(--mut); }
+.gh-wahl { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 0.82rem; color: var(--mut); }
+.gh-wahl select {
+  max-width: 100%; min-height: 40px; padding: 8px 10px; border-radius: 6px;
+  background: var(--s2); color: var(--txt); border: 1px solid var(--bdr); font: inherit; font-size: 0.88rem;
+}
+.gh-waren { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 8px; }
+.gh-ware {
+  display: grid; grid-template-columns: 44px minmax(0, 1fr); column-gap: 10px; align-items: center; text-align: left;
+  min-height: 66px; padding: 8px 10px; border-radius: 8px; cursor: pointer; transition: .2s;
+  background: var(--s2); color: var(--txt); border: 1px solid var(--bdr); font: inherit;
+}
+.gh-ware img { grid-row: 1 / 4; width: 44px; height: 44px; object-fit: contain; }
+.gh-ware:hover:not(:disabled) { border-color: var(--gd); transform: translateY(-1px); }
+.gh-ware:disabled { opacity: .45; cursor: not-allowed; }
+.gh-ware-name { font-size: 0.84rem; font-weight: 600; line-height: 1.2; overflow-wrap: anywhere; }
+.gh-ware-info { font-size: 0.72rem; color: var(--mut); }
+.gh-preis { display: inline-flex; align-items: center; font-family: 'Cinzel', serif; font-size: 0.82rem; color: var(--gl); }
+.gh-leer { font-size: 0.82rem; font-style: italic; color: var(--mut); }
+
+/* ── Trophäensaal ── */
+
+.gh-glanz {
+  display: flex; align-items: center; gap: 12px 20px; flex-wrap: wrap;
+  background: radial-gradient(ellipse at 12% 0%, rgba(251, 191, 36, .18), transparent 60%), var(--s1);
+  border: 1px solid var(--bdr2); border-radius: 10px; padding: 14px 16px;
+}
+.gh-glanz-zahl { font-family: 'Cinzel', serif; font-size: 1.8rem; white-space: nowrap; color: #fbbf24; text-shadow: 0 0 14px rgba(251, 191, 36, .4); }
+.gh-glanz-zahl small { font-size: 0.8rem; color: var(--mut); text-shadow: none; }
+.gh-glanz-text { flex: 1 1 240px; display: flex; flex-direction: column; gap: 6px; font-size: 0.84rem; line-height: 1.45; color: var(--mut); }
+.gh-glanz-text b { font-family: 'Cinzel', serif; font-weight: 600; letter-spacing: 1px; color: var(--gl); }
+.gh-glanz .gh-balken { flex: none; background: rgba(255, 255, 255, .08); }
+
+.gh-saal {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 14px;
+  padding: 18px; border-radius: 12px; border: 1px solid var(--bdr);
+  background:
+    radial-gradient(ellipse at 50% 0%, rgba(230, 192, 96, .10), transparent 60%),
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .018) 0 64px, rgba(0, 0, 0, .14) 64px 65px),
+    linear-gradient(180deg, #151324, #0b0a14);
+}
+.gh-sockel {
+  --rahmen: #3a3550; --licht: transparent; --kegel: rgba(230, 192, 96, .14);
+  display: flex; flex-direction: column; align-items: center; gap: 8px; min-width: 0; margin: 0;
+  padding: 12px 10px 12px; border-radius: 10px; text-align: center;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .035), rgba(0, 0, 0, .22));
+  border: 1px solid var(--rahmen); box-shadow: 0 0 16px var(--licht);
+}
+.gh-stufe-1 { --rahmen: #b4733a; }
+.gh-stufe-2 { --rahmen: #d1d5db; --licht: rgba(209, 213, 219, .12); }
+.gh-stufe-3 { --rahmen: #f59e0b; --licht: rgba(245, 158, 11, .32); --kegel: rgba(251, 191, 36, .26); }
+.gh-trophaee { position: relative; display: flex; align-items: flex-end; justify-content: center; width: 100%; height: 124px; }
+/* Lichtkegel hinter der Trophäe, darunter der Sockel */
+.gh-trophaee::before {
+  content: ''; position: absolute; inset: 0 8% 14px;
+  background: radial-gradient(ellipse at 50% 100%, var(--kegel), transparent 70%);
+}
+.gh-trophaee::after {
+  content: ''; position: absolute; left: 16%; right: 16%; bottom: 0; height: 16px; border-radius: 3px 3px 6px 6px;
+  background: linear-gradient(180deg, #4b4560, #24203a); border-top: 2px solid var(--rahmen);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, .5);
+}
+.gh-trophaee img {
+  position: relative; z-index: 1; max-width: 90%; max-height: 108px; margin-bottom: 13px; object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .6));
+}
+.gh-unbekannt .gh-trophaee img { filter: brightness(0) drop-shadow(0 0 1px rgba(160, 150, 200, .7)); opacity: .5; }
+.gh-unbekannt .gh-trophaee::before { display: none; }
+.gh-sockel figcaption { display: flex; flex-direction: column; align-items: center; gap: 3px; width: 100%; min-width: 0; }
+.gh-sockel-name { font-family: 'Cinzel', serif; font-size: 0.86rem; letter-spacing: .5px; color: var(--gl); overflow-wrap: anywhere; }
+.gh-unbekannt .gh-sockel-name { color: var(--mut); letter-spacing: 3px; }
+.gh-sockel-ort, .gh-sockel-info { font-size: 0.74rem; line-height: 1.3; color: var(--mut); }
+.gh-sterne { font-size: 1.05rem; letter-spacing: 2px; color: #3a3550; }
+.gh-sterne .an { color: #fbbf24; text-shadow: 0 0 6px rgba(251, 191, 36, .6); }
+.gh-sockel-schild { font-size: 0.76rem; font-style: italic; line-height: 1.35; color: var(--txt); opacity: .8; }
+.gh-prunk { font-size: 0.76rem; line-height: 1.3; color: #fde68a; }
+
+.gh-pokale { display: flex; align-items: center; gap: 8px 18px; flex-wrap: wrap; font-family: 'Cinzel', serif; font-size: 1rem; color: var(--txt); }
+.gh-pokal-info { font-family: 'Crimson Text', serif; font-size: 0.86rem; color: var(--mut); }
+
+.gh-sets { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 6px; }
+.gh-set {
+  display: grid; grid-template-columns: 26px minmax(0, 1fr) auto; align-items: center; gap: 8px;
+  padding: 7px 10px; border-radius: 7px; background: var(--s2); border: 1px solid var(--bdr);
+}
+.gh-set-komplett { border-color: #34d39988; background: linear-gradient(90deg, rgba(52, 211, 153, .12), var(--s2)); }
+.gh-set-zeichen { font-size: 1.05rem; text-align: center; }
+.gh-set-name { min-width: 0; font-size: 0.84rem; line-height: 1.25; color: var(--txt); overflow-wrap: anywhere; }
+.gh-set-name small { display: block; font-size: 0.7rem; color: var(--mut); }
+.gh-set-stand { font-family: 'Cinzel', serif; font-size: 0.8rem; white-space: nowrap; color: var(--mut); }
+.gh-set-komplett .gh-set-stand { color: #6ee7b7; }
+
+.gh-buch { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 4px 18px; }
+.gh-buch-zeile {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 10px;
+  padding: 5px 2px; border-bottom: 1px dotted var(--bdr); font-size: 0.88rem; color: var(--mut);
+}
+.gh-buch-zeile b { font-family: 'Cinzel', serif; font-weight: 600; color: var(--txt); }
+
+/* Handy: ein Zettel je Zeile, weniger schräg, Sockel zu zweit */
+@media (max-width: 700px) {
+  .gh-reiter { padding-top: 10px; flex-wrap: nowrap; }
+  .gh-reiter-knopf { flex: 1 1 0; min-width: 0; padding: 9px 8px; font-size: 0.78rem; letter-spacing: .5px; }
+  .gh-inhalt { gap: 12px; padding-bottom: 70px; }
+  .gh-brett { grid-template-columns: 1fr; gap: 18px; padding: 20px 12px; border-width: 4px; }
+  .gh-zettel { transform: rotate(calc(var(--dreh, 0deg) / 2)); }
+  .gh-kette { padding: 14px; }
+  .gh-saal { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; padding: 10px; }
+  .gh-trophaee { height: 104px; }
+  .gh-trophaee img { max-height: 88px; }
+  .gh-waren, .gh-sets, .gh-buch { grid-template-columns: 1fr; }
+  /* Unter 16px zoomt das iPhone beim Antippen der Auswahl hinein */
+  .gh-wahl select { font-size: 16px; width: 100%; }
+}
+
+/* ── Anschlüsse ausserhalb des Gildenhauses ── */
+
+/* Hauptmenü: breite Kachel unter den vier anderen (Bild: das Gildenhaus ohne seinen Bildrahmen, Tür und Fenster im Blick) */
+.tile.tile-gildenhaus { grid-column: 1 / -1; aspect-ratio: 32 / 9; background-size: 106% auto; background-position: center 68%; }
+.tile-gildenhaus .tile-desc { max-width: 560px; }
+@media (max-width: 700px) {
+  .tile.tile-gildenhaus { aspect-ratio: 16 / 7; }
+}
+
+/* Expeditionsliste und Dungeon-Karte: offene Aufträge für diesen Dungeon */
+.exp-auftrag {
+  font-size: 0.7rem; color: #fdba74; text-shadow: 0 1px 4px rgba(0, 0, 0, .9); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+/* Am Handy gibt es keinen Hinweis beim Darüberfahren: die Zeile ganz zeigen */
+@media (max-width: 700px) {
+  .exp-auftrag { white-space: normal; }
+}
+.dmap-auftrag { color: #fdba74; }

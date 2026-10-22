@@ -1,3 +1,5 @@
+import type { WegWirkung } from './ExpeditionRun';
+
 export interface FighterStats {
   hp: number;
   maxHp: number;
@@ -25,6 +27,8 @@ export interface GuildFighter {
   level: number;
   /** Gewählter Weg ab Stufe 10 (data/spezialisierungen.ts), fehlt bis zur Wahl */
   spezialisierung?: string;
+  /** Was sein Weg in allen Expeditionen zusammen bewirkt hat (Heldenfenster) */
+  wegBilanz?: WegWirkung;
 }
 
 let nextFighterId = 1;

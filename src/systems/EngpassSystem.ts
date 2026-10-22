@@ -4,26 +4,19 @@
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../data/buildings';
-import { RECIPE_DEFS } from '../data/recipes';
 import { netzGebaeudeIds } from '../data/produktionsnetz';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 import {
-  getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, dasGebaeude, einzelStatus, WarteGrund,
+  getGebaeudeStatus, gebaeudeName, itemName, kostenText, wohnKapazitaet, dasGebaeude, einzelStatus, grundText, nachschub,
+  WarteGrund,
 } from './GebaeudeStatus';
 import { maxStufe, stufeVon, arbeitsplaetze, besetzt, fehlendeStadtstufe } from './Ausbau';
 import { brotNachEssen } from './PeopleSystem';
 import { naechsterBau } from './Empfehlung';
 
-/** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept). */
-export function lieferantFuer(item: string): string | null {
-  for (const def of Object.values(BUILDING_DEFS)) {
-    for (const id of def.recipes) {
-      if ((RECIPE_DEFS[id]?.outputs[item] ?? 0) > 0) return def.id;
-    }
-  }
-  return null;
-}
+/** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept); steht seit 21.10.2026 in GebaeudeStatus. */
+export { lieferantFuer } from './GebaeudeStatus';
 
 function freieBewohner(state: GameState): number {
   return state.citizens.filter(c => c.status === 'IDLE').length;
@@ -56,6 +49,19 @@ function ausbauHinweis(state: GameState, typeId: string): string {
   return `${name} liefert sie und läuft schon auf höchster Stufe, es braucht Zeit.`;
 }
 
+/**
+ * Wie es mit einer fehlenden Zutat weitergeht (GebaeudeStatus.nachschub): Hängt sie, auch Stufen
+ * tiefer, an Beute oder an einem Gebäude, das fehlt oder nicht arbeiten kann, steht das da
+ * («Dafür fehlt Eisenschrott. Baue Eisenmine.»), sonst der Ausbau-Hinweis für ihren Hersteller.
+ */
+function lieferHinweis(state: GameState, item: string): string {
+  const n = nachschub(state, item);
+  const dafuer = n.item !== item ? `Dafür fehlt ${itemName(n.item)}. ` : '';
+  if (n.von === null) return `${dafuer}${itemName(n.item)} gibt es als Beute in den Dungeons.`;
+  if (n.kommt || n.grund === null) return dafuer + ausbauHinweis(state, n.von);
+  return `${dafuer}${gebaeudeName(n.von)} kann gerade nicht liefern: ${grundText(n.grund)}.`;
+}
+
 export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): string | null {
   const name = gebaeudeName(typeId);
   switch (grund.art) {
@@ -64,6 +70,8 @@ export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): 
     case 'nicht-verbunden': return `${name} ist nicht verbunden.`;
     case 'kein-rezept': return `${name} hat kein Rezept gewählt.`;
     case 'auftrag': return null; // Der Spieler entscheidet selbst, wann er herstellt
+    case 'zulieferung': return null; // Die Zutat entsteht gerade in der liefernden Werkstatt
+    case 'vorrat': return null; // Vorrat voll, die Werkstatt ruht
     case 'kein-wasser': return `${name} braucht Wasser: baue einen Brunnen.`;
     case 'kein-arbeiter':
       return freieBewohner(state) > 0
@@ -71,12 +79,8 @@ export function grundSatz(state: GameState, typeId: string, grund: WarteGrund): 
         : `${name} hat keinen Arbeiter, alle Bewohner arbeiten schon. ${wohnHinweis(state)}`;
     case 'kein-brot': return 'Bewohner essen jeden Tag Brot, neue kommen nur mit Brot übrig: baue die Brot-Kette auf.';
     case 'voll': return `Das Wohnviertel ist voll (${state.citizens.length}/${wohnKapazitaet(state)}). ${wohnAusbauSatz(state)}`;
-    case 'zutaten': {
-      const ware = itemName(grund.item);
-      const lieferant = lieferantFuer(grund.item);
-      const weiter = lieferant ? ausbauHinweis(state, lieferant) : `${ware} gibt es als Beute in den Dungeons.`;
-      return `${ware}: ${grund.vorrat} im Lager, ${grund.bedarf} pro Auftrag. ${weiter}`;
-    }
+    case 'zutaten':
+      return `${itemName(grund.item)}: ${grund.vorrat} im Lager, ${grund.bedarf} pro Auftrag. ${lieferHinweis(state, grund.item)}`;
   }
 }
 

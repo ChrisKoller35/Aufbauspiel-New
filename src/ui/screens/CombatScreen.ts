@@ -5,7 +5,7 @@
 // Camera shake replaced with CSS animation on #app.
 // ============================================================
 
-import { ExpeditionRun, CombatUnit, CombatSkill, EncounterRoom, CombatRoundSnapshot } from '../../models/ExpeditionRun';
+import { ExpeditionRun, CombatUnit, CombatSkill, EncounterRoom, CombatRoundSnapshot, WegZustand } from '../../models/ExpeditionRun';
 import { ExpeditionSystem } from '../../systems/ExpeditionSystem';
 import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, ROUTE_IMAGE_MAP } from '../../data/routes';
@@ -16,6 +16,7 @@ import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
+import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -57,6 +58,9 @@ export class CombatScreen {
 
   // Pre-combat HP snapshot
   private preHpMap = new Map<number, number>();
+
+  // Länge des Kampfprotokolls vor diesem Raum: was danach dazukommt, gehört zu diesem Kampf
+  private logStart = 0;
 
   // Unit entries (DOM refs)
   private partyEntries: UnitEntry[] = [];
@@ -206,6 +210,8 @@ export class CombatScreen {
     this.titleEl.textContent = isBoss ? 'BOSS KAMPF!' : 'KAMPF';
     this.titleEl.style.color = isBoss ? 'var(--mc-damage)' : 'var(--mc-accent-expedition)';
     this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
+
+    this.logStart = run.combatLog.length;
 
     // HP snapshot
     this.preHpMap.clear();
@@ -474,6 +480,8 @@ export class CombatScreen {
           badge.className = 'mc-co-badge mc-co-badge-weg';
           badge.textContent = weg.zeichen;
           badge.title = `★ ${weg.name}: ${weg.kurz}`;
+          badge.dataset.zeichen = badge.textContent;
+          badge.dataset.titel = badge.title;
           badges.appendChild(badge);
           continue;
         }
@@ -898,6 +906,7 @@ export class CombatScreen {
       this.updateLog(snapshot.logLines.slice(-6));
       this.showActionBanners(snapshot.logLines, run.party, room.enemies);
       for (const id of snapshot.markiert ?? []) this.markieren(id);
+      this.wegZustaendeZeigen(snapshot.wegZustand);
 
       // Update fortification HP bar during siege rounds
       if (room.type === 'fortification' && room.fortification && snapshot.fortificationHp !== undefined) {
@@ -1157,18 +1166,64 @@ export class CombatScreen {
     return { y: rect.top + 6 + stapel * 24, innen: true };
   }
 
-  /** Fährtenleserin: Der markierte Gegner bekommt ein 🐾 auf seine Karte (nach ID, Gegner heissen oft gleich) */
-  private markieren(unitId: number): void {
-    const entry = this.enemyEntries.find(e => e.unitId === unitId);
-    if (!entry || entry.el.querySelector('.mc-co-badge-marke')) return;
+  /** Zeile mit den Abzeichen einer Karte (wird angelegt, wenn die Einheit noch keine hat) */
+  private abzeichenZeile(entry: UnitEntry): Element | null {
     const info = entry.el.querySelector('.mc-co-unit-info');
-    if (!info) return;
+    if (!info) return null;
     let badges = info.querySelector('.mc-co-badges');
     if (!badges) {
       badges = document.createElement('div');
       badges.className = 'mc-co-badges';
       info.insertBefore(badges, info.firstChild);
     }
+    return badges;
+  }
+
+  /**
+   * Zustände aus den Wegen nach dieser Runde mit Zahl: 🔥+4 (Zorn), 🐻 (Bärin), 💀2 (Skelette) leuchten
+   * im Weg-Abzeichen des Helden selbst, 🕸️−2 (Fluch) und 🎭−2 (Kränkung) sind eigene Abzeichen bei den
+   * Gegnern. Was nicht mehr gilt, verschwindet.
+   */
+  private wegZustaendeZeigen(zustand: CombatRoundSnapshot['wegZustand']): void {
+    const karten: [UnitEntry[], Record<number, WegZustand[]> | undefined][] = [
+      [this.partyEntries, zustand?.helden], [this.enemyEntries, zustand?.gegner],
+    ];
+    for (const [entries, liste] of karten) {
+      for (const entry of entries) {
+        entry.el.querySelectorAll('.mc-co-badge-zustand').forEach(b => b.remove());
+        entry.el.querySelectorAll<HTMLElement>('.mc-co-badge-weg.aktiv').forEach(b => {
+          b.textContent = b.dataset.zeichen ?? b.textContent;
+          b.title = b.dataset.titel ?? b.title;
+          b.classList.remove('aktiv');
+        });
+        const zustaende = liste?.[entry.unitId];
+        if (!zustaende) continue;
+        const badges = this.abzeichenZeile(entry);
+        for (const z of zustaende) {
+          const eigenes = Array.from(badges?.querySelectorAll<HTMLElement>('.mc-co-badge-weg[data-zeichen]') ?? [])
+            .find(b => z.zeichen.startsWith(b.dataset.zeichen!));
+          if (eigenes) {
+            eigenes.textContent = z.zeichen;
+            eigenes.title = `${eigenes.dataset.titel} · ${z.titel}`;
+            eigenes.classList.add('aktiv');
+            continue;
+          }
+          const badge = document.createElement('span');
+          badge.className = 'mc-co-badge mc-co-badge-weg mc-co-badge-zustand';
+          badge.textContent = z.zeichen;
+          badge.title = z.titel;
+          badges?.appendChild(badge);
+        }
+      }
+    }
+  }
+
+  /** Fährtenleserin: Der markierte Gegner bekommt ein 🐾 auf seine Karte (nach ID, Gegner heissen oft gleich) */
+  private markieren(unitId: number): void {
+    const entry = this.enemyEntries.find(e => e.unitId === unitId);
+    if (!entry || entry.el.querySelector('.mc-co-badge-marke')) return;
+    const badges = this.abzeichenZeile(entry);
+    if (!badges) return;
     const badge = document.createElement('span');
     badge.className = 'mc-co-badge mc-co-badge-weg mc-co-badge-marke';
     badge.textContent = '🐾';
@@ -1227,6 +1282,14 @@ export class CombatScreen {
       cleared.className = 'mc-co-room-cleared';
       cleared.textContent = 'Raum geschafft!';
       this.actionsEl.appendChild(cleared);
+    }
+
+    // Geschichte: Beute einer mutigen Wahl, die auf diesen Kampf gewartet hat (oder liegen bleibt)
+    for (const zeile of run.combatLog.slice(this.logStart).filter(istGeschichtsBeuteZeile)) {
+      const beute = document.createElement('div');
+      beute.className = 'mc-co-geschichte-beute';
+      beute.textContent = zeile;
+      this.actionsEl.appendChild(beute);
     }
 
     const label = isOver ? 'Einsammeln & Schließen' : 'Weiter';

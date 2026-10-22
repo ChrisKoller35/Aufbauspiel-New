@@ -1,7 +1,7 @@
 import { EncounterChoice, EncounterType } from '../models/ExpeditionRun';
 import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
-import { GUILD_RANK_DEFS } from './guildRanks';
+import { rangFuerEbene } from './guildRanks';
 import { LOOT_TABLE_DEFS } from './lootTables';
 
 export interface EncounterTemplate {
@@ -42,10 +42,10 @@ export interface RouteDef {
   /** Ob eine Kriegsmaschine zwingend benötigt wird */
   requiresWarMachine?: boolean;
   /** Gebiet über dem Vulkankern: bestimmt Farbe und Schild auf Karte und Routenliste */
-  gebiet?: 'gipfel' | 'himmel';
+  gebiet?: 'gipfel' | 'himmel' | 'sterne';
   /** Eigene Regel dieses Dungeons in einem Satz (Karte, Routenliste) */
   besonderheit?: string;
-  /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker */
+  /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker, Punkte unter 0 schwächer */
   hortGier?: { angriffProPunkt: number; lebenProPunkt: number };
   /** Gegenstand, den der Boss beim ersten Sieg der Gilde über ihn garantiert dazugibt */
   ersterSiegBeute?: string;
@@ -105,7 +105,9 @@ export const DUNGEON_GRAPH: DungeonGraphNode[] = [
 
   // ── ÜBER DEM VULKANKERN: neue Dungeons, die Karte wächst nach oben (docs/NEUE-DUNGEONS.md) ──
   { routeId: 'drachenhort',        x: 380, y: -300, leadsTo: ['himmelsarchiv'], isMainPath: true },
-  { routeId: 'himmelsarchiv',      x: 520, y: -800, leadsTo: [], isMainPath: true },
+  { routeId: 'himmelsarchiv',      x: 520, y: -800, leadsTo: ['sternenschmiede'], isMainPath: true },
+  { routeId: 'sternenschmiede',    x: 390, y: -1300, leadsTo: ['sternenschlund'], isMainPath: true },
+  { routeId: 'sternenschlund',     x: 510, y: -1800, leadsTo: [], isMainPath: true },
 ];
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -113,7 +115,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'forest_short',
     name: 'Waldpfad (kurz)',
     tier: 1,
-    rooms: 6,
+    rooms: 5,
     encounters: [
       { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
       { type: 'combat', enemies: ['forest_bandit'] },
@@ -128,7 +130,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'forest_medium',
     name: 'Tiefwald (mittel)',
     tier: 2,
-    rooms: 10,
+    rooms: 9,
     encounters: [
       { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
       { type: 'combat', enemies: ['forest_bandit', 'forest_bandit'] },
@@ -191,7 +193,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
   },
   cave_spider: {
     id: 'cave_spider',
-    name: 'Spinnenhoehle',
+    name: 'Spinnenhöhle',
     tier: 2,
     rooms: 8,
     encounters: [
@@ -358,6 +360,85 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     recommendedLevel: 'Stufe 15 und volle T4-Ausrüstung',
     unlockCondition: { bossesDefeated: ['boss_ignarax'] },
   },
+  sternenschmiede: {
+    id: 'sternenschmiede',
+    name: 'Die Sternenschmiede',
+    tier: 7,
+    rooms: 16,
+    gebiet: 'sterne',
+    besonderheit: 'Sternenfeuer: Wer die Waffen in die Essen hält, schlägt bis zum Ende härter zu, aber die Hitze kostet Leben.',
+    ersterSiegBeute: 'korrunds_hammer',
+    encounters: [
+      { type: 'combat', enemies: ['funkenwichtel', 'ambossgolem'] },
+      { type: 'combat', enemies: ['essengeist', 'funkenwichtel'] },
+      { type: 'find', wahl: {
+        a: { label: 'Waffen ins Sternenfeuer halten (+10% Angriff bis zum Ende, −5% HP)', flavorText: 'Die Klingen glühen weiss. Die Hände leider auch.', effect: 'angriff', value: 10, kostetLeben: 5 },
+        b: { label: 'Am Kühltrog verschnaufen (+10% HP)', flavorText: 'Das Wasser zischt, und ihr atmet durch.', effect: 'heal', value: 10 },
+      } },
+      { type: 'combat', enemies: ['ambossgolem', 'lichtguss', 'funkenwichtel'] },
+      { type: 'hazard', damage: 16 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['funkenwichtel', 'funkenwichtel', 'essengeist'] },
+      { type: 'find', wahl: {
+        a: { label: 'Waffen in die grosse Esse halten (+10% Angriff bis zum Ende, −5% HP)', flavorText: 'Hier schmiedet Korrund die grossen Sterne. Die Hitze geht durch jede Rüstung.', effect: 'angriff', value: 10, kostetLeben: 5 },
+        b: { label: 'Am Kühltrog verschnaufen (+10% HP)', flavorText: 'Ihr kühlt die Hände und lasst die Esse Esse sein.', effect: 'heal', value: 10 },
+      } },
+      { type: 'combat', enemies: ['ambossgolem', 'lichtguss', 'essengeist'] },
+      { type: 'hazard', damage: 18 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['lichtguss', 'ambossgolem', 'funkenwichtel'] },
+      { type: 'combat', enemies: ['ambossgolem', 'essengeist', 'lichtguss', 'funkenwichtel'] },
+      { type: 'find', wahl: {
+        a: { label: 'Auf Korrunds Amboss nachschärfen (+10% Angriff bis zum Ende, −10% HP)', flavorText: '«Für den letzten Stern. Nicht anfassen.» steht darauf. Ihr fasst ihn an.', effect: 'angriff', value: 10, kostetLeben: 10 },
+        b: { label: 'Durchatmen vor dem Kampf (+15% HP)', flavorText: 'Korrund lässt sich Zeit, ihr euch auch.', effect: 'heal', value: 15 },
+      } },
+      { type: 'boss', enemies: ['boss_korrund'] },
+    ],
+    bossId: 'boss_korrund',
+    recommendedLevel: 'Stufe 15 und Sets auf +3',
+    unlockCondition: { bossesDefeated: ['boss_oberarchivar'] },
+  },
+  sternenschlund: {
+    id: 'sternenschlund',
+    name: 'Der Sternenschlund',
+    tier: 8,
+    rooms: 16,
+    gebiet: 'sterne',
+    besonderheit: 'Gefangene Sterne: Wer sie befreit, schwächt Nyxar und verbrennt sich dabei; wer sie ausschlachtet, bekommt Sternenstahl.',
+    hortGier: { angriffProPunkt: 0.1, lebenProPunkt: 0.1 },
+    ersterSiegBeute: 'der_letzte_stern',
+    encounters: [
+      { type: 'combat', enemies: ['leerenkriecher', 'lichtmotte'] },
+      { type: 'combat', enemies: ['kometenkaefer', 'nyxarbrut'] },
+      { type: 'find', wahl: {
+        a: { label: 'Sternenstahl herausschlagen (+3 Sternenstahl, wenn ihr siegt)', flavorText: 'Der Stern im Käfig wimmert leise. Die Splitter glänzen trotzdem schön.', effect: 'item', value: 3, itemId: 'mat_sternenstahl', nachSieg: true },
+        b: { label: 'Den Stern befreien (Nyxar wird schwächer, −5% HP)', flavorText: 'Der Käfig glüht, als ihr ihn aufbiegt. Der Stern saust davon, zurück an den Himmel.', effect: 'kein', value: 0, gier: -1, kostetLeben: 5 },
+      } },
+      { type: 'combat', enemies: ['lichtmotte', 'leerenkriecher', 'kometenkaefer'] },
+      { type: 'hazard', damage: 18 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['nyxarbrut', 'leerenkriecher', 'lichtmotte'] },
+      { type: 'find', wahl: {
+        a: { label: 'Sternenstahl herausschlagen (+4 Sternenstahl, wenn ihr siegt)', flavorText: 'Im Netz hängen Sterne wie Fliegen. Einer davon lässt sich gut zerlegen.', effect: 'item', value: 4, itemId: 'mat_sternenstahl', nachSieg: true },
+        b: { label: 'Die Sterne befreien (Nyxar wird schwächer, −5% HP)', flavorText: 'Ihr zerreisst das Netz. Es ist aus Licht und brennt wie Nesseln.', effect: 'kein', value: 0, gier: -1, kostetLeben: 5 },
+      } },
+      { type: 'combat', enemies: ['lichtmotte', 'lichtmotte', 'kometenkaefer'] },
+      { type: 'hazard', damage: 20 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['kometenkaefer', 'nyxarbrut', 'leerenkriecher'] },
+      { type: 'combat', enemies: ['leerenkriecher', 'lichtmotte', 'nyxarbrut'] },
+      { type: 'find', wahl: {
+        a: { label: 'Sternenstahl herausschlagen (+5 Sternenstahl, wenn ihr siegt)', flavorText: 'Der grösste Stern liegt direkt vor Nyxars Lager. Er ist für später gedacht.', effect: 'item', value: 5, itemId: 'mat_sternenstahl', nachSieg: true },
+        b: { label: 'Den grössten Stern befreien (Nyxar wird schwächer, −5% HP)', flavorText: 'Er steigt auf, und im Schlund wird es heller. Drinnen faucht jemand.', effect: 'kein', value: 0, gier: -1, kostetLeben: 5 },
+      } },
+      { type: 'boss', enemies: ['boss_nyxar'] },
+    ],
+    bossId: 'boss_nyxar',
+    recommendedLevel: 'Stufe 15, Sets auf +5 und Korrunds Meisterstücke',
+    unlockCondition: { bossesDefeated: ['boss_korrund'] },
+  },
 
   // ── Siege Routes ──
   siege_walls: {
@@ -417,7 +498,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'ocean_shallows',
     name: 'Versunkene Küste',
     tier: 2,
-    rooms: 8,
+    rooms: 7,
     isUnderwater: true,
     airDecayPerRoom: 8,
     encounters: [
@@ -466,7 +547,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'forest_ruins',
     name: 'Verfallene Lichtung',
     tier: 1,
-    rooms: 7,
+    rooms: 6,
     encounters: [
       { type: 'combat', enemies: ['forest_wolf', 'forest_spider'] },
       { type: 'combat', enemies: ['forest_bandit'] },
@@ -502,7 +583,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'cave_tunnels',
     name: 'Verschlungene Tunnel',
     tier: 2,
-    rooms: 8,
+    rooms: 7,
     encounters: [
       { type: 'combat', enemies: ['cave_bat', 'cave_goblin'] },
       { type: 'combat', enemies: ['cave_slime', 'cave_slime'] },
@@ -520,7 +601,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'crystal_mines',
     name: 'Kristallminen',
     tier: 3,
-    rooms: 10,
+    rooms: 9,
     encounters: [
       { type: 'combat', enemies: ['crystal_beetle', 'cave_goblin'] },
       { type: 'combat', enemies: ['deep_crawler', 'crystal_beetle'] },
@@ -563,7 +644,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'swamp_village',
     name: 'Sumpfdorf',
     tier: 2,
-    rooms: 7,
+    rooms: 6,
     encounters: [
       { type: 'combat', enemies: ['leech_swarm', 'toxic_toad'] },
       { type: 'merchant' },
@@ -599,7 +680,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'shadow_catacombs',
     name: 'Schattenkatakomben',
     tier: 4,
-    rooms: 11,
+    rooms: 10,
     encounters: [
       { type: 'combat', enemies: ['bone_knight', 'ghost_mage'] },
       { type: 'combat', enemies: ['tomb_horror', 'skeleton_warrior'] },
@@ -620,7 +701,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'obsidian_tunnels',
     name: 'Obsidiantunnel',
     tier: 3,
-    rooms: 9,
+    rooms: 8,
     encounters: [
       { type: 'combat', enemies: ['lava_elemental', 'fire_bat'] },
       { type: 'combat', enemies: ['obsidian_crab', 'fire_bat', 'fire_bat'] },
@@ -639,7 +720,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     id: 'ash_wastes',
     name: 'Aschewüste',
     tier: 4,
-    rooms: 10,
+    rooms: 9,
     encounters: [
       { type: 'combat', enemies: ['ash_golem', 'fire_bat'] },
       { type: 'hazard', damage: 12 },
@@ -708,6 +789,8 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   magma_caverns: 'exp_magma_caverns',
   drachenhort: 'exp_drachenhort',
   himmelsarchiv: 'exp_himmelsarchiv',
+  sternenschmiede: 'exp_sternenschmiede',
+  sternenschlund: 'exp_sternenschlund',
 };
 
 // ── Baupläne (Gebäude-Freischaltung über Dungeon-Bosse) ──
@@ -736,7 +819,7 @@ export function getBauplanHinweis(bauplanId: string): string {
 
 // ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
 
-type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard'>;
+type RouteProgress = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
 
 /** Route spielbar: Gildenrang ≥ Ebene und alle verlangten Bosse besiegt. */
 export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean {
@@ -754,16 +837,21 @@ export function gipfelDungeons(): RouteDef[] {
     .map(n => ROUTE_DEFS[n.routeId]);
 }
 
-/** Mindestens ein Sieg auf dieser Route (abgeschlossene Routen bleiben wiederholbar). */
+/**
+ * Route bezwungen: Boss besiegt oder ohne Boss gewonnen (abgeschlossene Routen bleiben wiederholbar).
+ * Liest den Merker GameState.bezwungen (systems/Bezwungen.ts), solange es ihn nicht gibt die Bestenliste.
+ */
 export function isRouteCompleted(routeId: string, state: RouteProgress): boolean {
-  return (state.scoreboard ?? []).some(s => s.routeId === routeId && s.status === 'victory');
+  if (state.bezwungen && routeId in state.bezwungen) return true;
+  const mitBoss = !!ROUTE_DEFS[routeId]?.bossId;
+  return (state.scoreboard ?? []).some(s => s.routeId === routeId && s.status === 'victory' && (!mitBoss || s.bossesKilled > 0));
 }
 
 /** Gründe, warum die Route gesperrt ist; leer = verfügbar. */
 export function getRouteLockReasons(route: RouteDef, state: RouteProgress): string[] {
   const reasons: string[] = [];
   // Ebenen über dem höchsten Gildenrang (Drachenhort, Himmelsarchiv …) brauchen den höchsten Rang
-  const rang = Math.min(route.tier, GUILD_RANK_DEFS.length);
+  const rang = rangFuerEbene(route.tier);
   if ((state.guildStats?.rank ?? 1) < rang) reasons.push(`Gildenrang ${rang} benötigt`);
   const defeated = state.guildStats?.bossesDefeatedIds ?? [];
   const missing = (route.unlockCondition?.bossesDefeated ?? []).filter(b => !defeated.includes(b));

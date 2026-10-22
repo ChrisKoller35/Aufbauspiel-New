@@ -1,4 +1,5 @@
 import { setItemDefs } from './dungeonSets';
+import { materialItemDefs } from './schmiede';
 
 export type ItemType = 'resource' | 'consumable' | 'gear' | 'material' | 'special';
 export type GearSlot = 'mainHand' | 'offHand' | 'armor' | 'trinket';
@@ -254,7 +255,7 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
 
   // --- T4 Legendary Gear (Boss-Drops & Arkanschmiede T4) ---
   soulbreaker: {
-    id: 'soulbreaker', name: 'Seelenbrechter', type: 'gear',
+    id: 'soulbreaker', name: 'Seelenbrecher', type: 'gear',
     stackSize: 1, baseValue: 72, gearSlot: 'mainHand', weaponSlotType: '1h', tier: 4,
     statBonuses: { atk: 10, def: 2, critChance: 0.08 },
     tags: ['gear', 'weapon', 'tier4', 'legendary', 'special:double_strike'],
@@ -332,6 +333,22 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     statBonuses: { atk: 4, def: 3, hp: 16, spd: 0.08, critChance: 0.08 },
     tags: ['gear', 'trinket', 'tier5', 'nemesis', 'special:revive'],
     flavorText: 'Einmal. Nur einmal. Wer es trägt, steht nach dem ersten tödlichen Treffer mit 25% HP wieder auf.',
+  },
+
+  // --- Ebene 7 und 8: Beute der Bosse zwischen den Sternen (erster Sieg garantiert) ---
+  korrunds_hammer: {
+    id: 'korrunds_hammer', name: 'Korrunds Hammer', type: 'gear',
+    stackSize: 1, baseValue: 150, gearSlot: 'mainHand', weaponSlotType: '2h', tier: 7, spriteKey: 'ITEM_WAR_HAMMER',
+    statBonuses: { atk: 24, hp: 32, def: 5 },
+    tags: ['gear', 'weapon', 'tier7', 'legendary', 'special:funkenflug'],
+    flavorText: 'Damit hat Korrund die Sterne geschmiedet. Jeder Schlag schlägt Funken, die auf den nächsten Gegner überspringen. Korrund arbeitet jetzt mit dem Ersatzhammer und schaut euch sehr lange an.',
+  },
+  der_letzte_stern: {
+    id: 'der_letzte_stern', name: 'Der letzte Stern', type: 'gear',
+    stackSize: 1, baseValue: 175, gearSlot: 'trinket', tier: 8, spriteKey: 'ITEM_CRYSTAL_PENDANT',
+    statBonuses: { atk: 8, def: 5, hp: 30, spd: 0.12, critChance: 0.12 },
+    tags: ['gear', 'trinket', 'tier8', 'legendary', 'special:revive'],
+    flavorText: 'Den hat Nyxar nicht mehr geschafft. Er geht nicht unter: Wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf.',
   },
 
   // --- Special (expedition-only) ---
@@ -666,6 +683,9 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
 
   // --- Dungeon-Sets: drei Teile je Dungeon (data/dungeonSets.ts) ---
   ...setItemDefs(),
+
+  // --- Material für die Schmiede: eins je Gebiet (data/schmiede.ts) ---
+  ...materialItemDefs(),
 };
 
 /** Resolve sprite key for an item. Uses explicit spriteKey if set, otherwise derives from id. */

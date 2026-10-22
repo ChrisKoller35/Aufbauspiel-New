@@ -6,7 +6,8 @@
 // Aufträge, baut und baut aus.
 // ────────────────────────────────────────────────────────────────
 
-import { BUILDING_DEFS, BUILD_MENU_ORDER, BuildingDef } from '../../data/buildings';
+import { BUILDING_DEFS, BuildingDef } from '../../data/buildings';
+import { netzGebaeudeIds } from '../../data/produktionsnetz';
 import { RECIPE_DEFS, RecipeDef } from '../../data/recipes';
 import { ITEM_DEFS } from '../../data/items';
 import { GameState } from '../../models/GameState';
@@ -15,10 +16,13 @@ import { STARTING_BUILDING_TYPES } from '../../scenes/CityStartingLayout';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { renderAufbauTab, bindAufbauTab } from './AufbauTab';
-import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab, ProduktionZiel } from './ProduktionTab';
+import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab, ProduktionZiel, reichtText } from './ProduktionTab';
+import { reichtTageFuer, tagesBilanz } from '../../systems/Tagesbilanz';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import {
   freischaltHinweise, itemName, stockFor, canAffordRecipe, cycleProgress, produktionsHindernis, WarteGrund,
-  dasGebaeude, wachstum, tagFortschritt, wohnKapazitaet, einzelStatus,
+  dasGebaeude, wachstum, tagFortschritt, wohnKapazitaet, einzelStatus, grundText, gebaeudeName, nachschub, nachschubText,
+  lieferantFuer,
 } from '../../systems/GebaeudeStatus';
 import { engpassFuerInstanz } from '../../systems/EngpassSystem';
 import {
@@ -26,13 +30,16 @@ import {
   erstatteLaufendenZyklus, entferneGebaeude, investiert, wirkungsStufe, marktBonusProzent, bankGoldProTag,
 } from '../../systems/Ausbau';
 import { EconomySystem, STEUER_PRO_BEWOHNER } from '../../systems/EconomySystem';
-import { brotProTag, BEWOHNER_JE_BROT } from '../../systems/PeopleSystem';
+import { brotProTag, brotBedarfProTag, BEWOHNER_JE_BROT } from '../../systems/PeopleSystem';
 import {
   MAX_AUFTRAEGE, auftragsListe, auftragGeben, auftragAbbrechen, hatAuftragsliste, kannAuftragGeben, restzeitSekunden,
+  laeuftAuftrag, rezeptFuer,
 } from '../../systems/Auftraege';
+import { laufendVonSelbst, vonSelbstSatz, fehlendeZutaten, vorratVorAuftraegen } from '../../systems/Werkstattplan';
 import { BUENDEL, HANDELSWAREN, VERKAUFSPREIS, kaufpreis } from '../../data/handel';
-import { HandelsArt, handelHeute, handle, kannHandeln, marktGesperrt, tagesmenge } from '../../systems/Handel';
+import { HandelsArt, handelHeute, handelZu, handle, kannHandeln, marktGesperrt, tagesmenge, vorbehalten } from '../../systems/Handel';
 import '../html/handel.css';
+import { hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 
 /** Map building typeId to card background image. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -164,12 +171,14 @@ function stufenText(b: BuildingInstance): string {
 
 // ── Crafting Tab ────────────────────────────────────────────────
 
-/** Building types that own recipes, in shop order. */
+/**
+ * Werkstätten (arbeiten auf Auftrag) in der Reihenfolge der Mindmap. Rohstoff-Gebäude
+ * laufen von selbst, es gibt bei ihnen nichts zu bestellen: Sie stehen nur im Reiter «Produktion».
+ */
 function craftingBuildingTypes(): string[] {
-  const ordered = BUILD_MENU_ORDER.filter(id => (BUILDING_DEFS[id]?.recipes.length ?? 0) > 0);
-  const rest = Object.keys(BUILDING_DEFS).filter(
-    id => !ordered.includes(id) && BUILDING_DEFS[id].recipes.length > 0,
-  );
+  const werkstatt = (id: string) => !!BUILDING_DEFS[id]?.manualCraft && BUILDING_DEFS[id].recipes.length > 0;
+  const ordered = netzGebaeudeIds().filter(werkstatt);
+  const rest = Object.keys(BUILDING_DEFS).filter(id => !ordered.includes(id) && werkstatt(id));
   return [...ordered, ...rest];
 }
 
@@ -178,47 +187,108 @@ function renderCrafting(state: GameState): string {
   const lockedGroups: string[] = [];
 
   for (const typeId of craftingBuildingTypes()) {
-    const def = BUILDING_DEFS[typeId];
-    const b = dasGebaeude(state, typeId);
-    const recipes = def.recipes.map(id => RECIPE_DEFS[id]).filter((r): r is RecipeDef => !!r);
-    if (recipes.length === 0) continue;
+    const html = renderCraftGruppe(state, typeId);
+    if (html) (dasGebaeude(state, typeId) ? ownedGroups : lockedGroups).push(html);
+  }
 
-    const cards = recipes.map(rcp => renderCraftCard(rcp, def, b, state)).join('');
-    const badge = b
-      ? `<span class="craft-group-cnt">${stufenText(b)}${def.manualCraft ? ' · Aufträge per Hand' : ''}</span>`
-      : `<span class="craft-lock">🔒 braucht ${def.name}</span>`;
-    const html = `
-      <div class="craft-group${b ? '' : ' locked'}">
+  const hint = ownedGroups.length === 0
+    ? '<p class="craft-hint">Du besitzt noch keine Werkstatt. Baue eine im Reiter «Produktion».</p>'
+    : '<p class="craft-hint">Werkstätten arbeiten auf Auftrag: «+ Auftrag» auf einem Rezept, ein Klick auf die Karte '
+      + 'öffnet die Werkstatt. Gelbe Zutaten mit ↻ fehlen noch, kommen aber von selbst; rote kommen nicht von selbst '
+      + '(Beute, oder ein Gebäude dafür fehlt). Rohstoffe gewinnt die Stadt weiter von selbst (Reiter «Produktion»).</p>';
+
+  return `${hint}${ownedGroups.join('')}${lockedGroups.join('')}`;
+}
+
+/** Eine Gebäude-Gruppe im Reiter «Crafting»: Kopf, was läuft, Rezeptkarten. */
+function renderCraftGruppe(state: GameState, typeId: string): string {
+  const def = BUILDING_DEFS[typeId];
+  const b = dasGebaeude(state, typeId);
+  const recipes = def.recipes.map(id => RECIPE_DEFS[id]).filter((r): r is RecipeDef => !!r);
+  if (recipes.length === 0) return '';
+
+  const cards = recipes.map(rcp => renderCraftCard(rcp, def, b, state)).join('');
+  const badge = b
+    ? `<span class="craft-group-cnt">${stufenText(b)}${def.manualCraft ? ' · auf Auftrag' : ''}</span>`
+    : `<span class="craft-lock">🔒 braucht ${def.name}</span>`;
+  return `
+      <div class="craft-group${b ? '' : ' locked'}" data-gruppe="${typeId}" data-sig="${craftSignatur(state, typeId)}">
         <div class="craft-group-hd">${categoryEmoji(def.category)} ${def.name} ${badge}</div>
         ${b ? `<div class="craft-lauf" data-lauf="${typeId}">${renderLaufend(state, b)}</div>` : ''}
         <div class="craft-grid">${cards}</div>
       </div>`;
-    (b ? ownedGroups : lockedGroups).push(html);
-  }
+}
 
-  const hint = ownedGroups.length === 0
-    ? '<p class="craft-hint">Du besitzt noch kein Gebäude mit Rezepten. Baue eines im Reiter «Produktion».</p>'
-    : '<p class="craft-hint">Hergestellt wird im Gebäude. Klick auf ein Rezept öffnet die Werkstatt.</p>';
+/**
+ * Wovon Aufbau und Knöpfe einer Gruppe abhängen (ohne Lager und Restzeiten): ändert es sich,
+ * wird die Gruppe neu gezeichnet. Steht beim Zeichnen in data-sig (nur Zeichen ohne Maskierung).
+ */
+function craftSignatur(state: GameState, typeId: string): string {
+  const b = dasGebaeude(state, typeId);
+  if (!b) return '';
+  const selbst = b.vonSelbst ? `${b.vonSelbst.art}:${b.vonSelbst.fuer}` : '';
+  return [b.producing, b.activeRecipeId ?? '', (b.auftraege ?? []).join(','), selbst, b.built, b.tier, besetzt(b)].join('|');
+}
 
-  return `${hint}${ownedGroups.join('')}${lockedGroups.join('')}`;
+/** Warum eine freie Werkstatt ohne Auftrag ruht oder wartet, kurz für die Zeile im Reiter «Crafting». */
+function ruheText(state: GameState, b: BuildingInstance): string {
+  const st = einzelStatus(state, b);
+  if (st.laeuft) return `startet gleich: ${st.text ?? st.recipe?.name ?? ''}`;
+  const g = st.grund;
+  if (!g || (g.art === 'auftrag' && !g.liefert)) return 'Keine Aufträge';
+  return `Keine Aufträge · ${g.art === 'auftrag' ? 'liefert bei Bedarf' : grundText(g)}`;
 }
 
 /** Was in der Werkstatt gerade läuft und was noch wartet, mit Restzeit (Reiter «Crafting»). */
 function renderLaufend(state: GameState, b: BuildingInstance): string {
   const name = (id: string) => RECIPE_DEFS[id]?.name ?? id;
   if (hatAuftragsliste(b)) {
+    const teile: string[] = [];
+    const selbst = laufendVonSelbst(b);
+    if (selbst) teile.push(`<span class="ingr craft-run craft-selbst">● ${selbst} · noch ${sekundenText(b.productionTimer)}</span>`);
     const liste = auftragsListe(b);
-    if (liste.length === 0) return '<span class="ws-msg">Keine Aufträge</span>';
-    const chips = liste.map((id, i) => i === 0 && b.producing
+    if (liste.length === 0) {
+      if (!selbst) teile.push(`<span class="ws-msg">${ruheText(state, b)}</span>`);
+      return teile.join('');
+    }
+    liste.forEach((id, i) => teile.push(i === 0 && laeuftAuftrag(b)
       ? `<span class="ingr craft-run">● ${name(id)} · noch ${sekundenText(b.productionTimer)}</span>`
-      : `<span class="ingr">${i + 1}. ${name(id)}</span>`).join('');
-    return `${chips}<span class="ccard-time">Aufträge ${restzeitText(b)}</span>`;
+      : `<span class="ingr">${i + 1}. ${name(id)}</span>`));
+    if (!b.producing) {
+      const warten = auftragWartetText(state, b, RECIPE_DEFS[liste[0]]);
+      if (warten.warn) teile.push(`<span class="ws-msg ws-warn">${warten.text}</span>`);
+    }
+    return `${teile.join('')}<span class="ccard-time">Aufträge ${restzeitText(b, state)}</span>`;
   }
   const st = einzelStatus(state, b);
   if (b.producing && st.recipe) {
     return `<span class="ingr craft-run">● ${st.recipe.name} · noch ${sekundenText(b.productionTimer)}</span>`;
   }
   return `<span class="ws-msg">${st.recipe ? `${st.recipe.name}: ` : ''}${st.laeuft ? 'startet gleich' : 'wartet'}</span>`;
+}
+
+/**
+ * Worauf der nächste Auftrag wartet: Hindernis, Brot für die Bewohner (geht vor), Zutat aus der
+ * eigenen Vorstufe oder von einer anderen Werkstatt, oder eine Zutat, die nicht von selbst kommt
+ * (Beute, ein Gebäude fehlt oder steht, auch Stufen tiefer). `warn` = der Spieler muss etwas tun.
+ */
+function auftragWartetText(state: GameState, b: BuildingInstance, recipe: RecipeDef | undefined): { text: string; warn: boolean } {
+  if (!recipe) return { text: '', warn: false };
+  const blocker = productionBlocker(b, BUILDING_DEFS[b.typeId], recipe);
+  if (blocker) return { text: blocker, warn: true };
+  const fehlend = fehlendeZutaten(state, b, recipe).map(z => ({ ...z, n: nachschub(state, z.item) }));
+  if (fehlend.length === 0) {
+    const vorrat = vorratVorAuftraegen(state, b);
+    if (vorrat) return { text: `zuerst Brot für die Bewohner (noch ${vorrat.zyklen}×)`, warn: false };
+    return { text: b.producing ? 'Startet danach' : 'Startet beim nächsten Takt…', warn: false };
+  }
+  const x = fehlend.find(z => !z.n.kommt) ?? fehlend[0];
+  const menge = recipe.inputs[x.item];
+  const zahl = `${menge - x.fehlt}/${menge}`;
+  const ware = itemName(x.item);
+  if (!x.n.kommt) return { text: `fehlt: ${ware} ${zahl} · ${nachschubText(x.item, x.n)}`, warn: true };
+  if (rezeptFuer(b, x.item)) return { text: `zuerst ${ware} (${zahl})`, warn: false };
+  return { text: `wartet auf ${ware} ${zahl} (${gebaeudeName(lieferantFuer(x.item) ?? x.n.von)})`, warn: false };
 }
 
 function renderCraftCard(rcp: RecipeDef, def: BuildingDef, b: BuildingInstance | undefined, state: GameState): string {
@@ -229,18 +299,23 @@ function renderCraftCard(rcp: RecipeDef, def: BuildingDef, b: BuildingInstance |
   const ico = itemDef ? itemIcon(outputKey) : '⚗️';
   const locked = !b;
 
-  let status = '';
+  const liste = !!b && hatAuftragsliste(b);
+  const teile: string[] = [];
   if (!b) {
-    status = `<span class="craft-lock">braucht ${def.name}</span>`;
+    teile.push(`<span class="craft-lock">braucht ${def.name}</span>`);
   } else if (b.activeRecipeId === rcp.id && b.producing) {
-    status = '<span class="craft-run">● läuft</span>';
-  } else if (hatAuftragsliste(b)) {
-    const wartend = b.auftraege.filter(id => id === rcp.id).length;
-    if (wartend > 0) status = `<span class="craft-run">${wartend}× in Auftrag</span>`;
-  } else if (b.activeRecipeId === rcp.id) {
-    status = '<span class="craft-run">► gewählt</span>';
+    // Was es von selbst macht und für wen, steht in der Zeile über den Karten
+    teile.push(laufendVonSelbst(b) ? '<span class="craft-run craft-selbst">● von selbst</span>' : '<span class="craft-run">● läuft</span>');
+  } else if (!liste && b.activeRecipeId === rcp.id) {
+    teile.push('<span class="craft-run">► gewählt</span>');
   }
+  const wartend = liste ? b!.auftraege.filter(id => id === rcp.id).length : 0;
+  if (wartend > 0) teile.push(`<span class="craft-run">${wartend}× in Auftrag</span>`);
   const sekunden = Math.round(b ? zyklusSekunden(b, rcp) : rcp.cycleTimeSec);
+  // Werkstätten: Auftrag direkt hier geben, ein Klick auf die Karte öffnet die Werkstatt
+  const knopf = locked ? '<button class="btn-craft">GEBÄUDE BAUEN</button>'
+    : liste ? `<button class="btn-craft ccard-add" data-craft-add="${rcp.id}"${kannAuftragGeben(b!, rcp.id) ? '' : ' disabled'}>+ AUFTRAG</button>`
+    : '<button class="btn-craft">ZUR WERKSTATT</button>';
 
   return `
     <div class="ccard${locked ? ' locked' : ''}" data-rcp="${rcp.id}" data-btype="${def.id}">
@@ -250,8 +325,8 @@ function renderCraftCard(rcp: RecipeDef, def: BuildingDef, b: BuildingInstance |
         <span class="crar ${rarity}">${rarity}</span>
       </div>
       <div class="cingr">${renderRecipeChips(rcp, state, b ?? null)}</div>
-      <div class="ccard-ft">${status}<span class="ccard-time">⏱ ${sekunden}s</span></div>
-      <button class="btn-craft">${locked ? 'GEBÄUDE BAUEN' : 'ZUR WERKSTATT'}</button>
+      <div class="ccard-ft"><span class="ccard-st">${teile.join(' · ')}</span><span class="ccard-time">⏱ ${sekunden}s</span></div>
+      ${knopf}
     </div>`;
 }
 
@@ -265,8 +340,11 @@ function renderRecipeChips(rcp: RecipeDef, state: GameState, b: BuildingInstance
     ? '<span class="ingr">Keine Zutaten</span>'
     : inEntries.map(([key, qty]) => {
         const have = b ? stockFor(state, b, key) : (state.globalStock[key] ?? 0);
-        const cls = have >= qty ? 'cost-ok' : 'cost-miss';
-        return `<span class="ingr ${cls}">${itemName(key)} ${have}/${qty}</span>`;
+        // Werkstätten: gelb mit ↻, wenn die Zutat von selbst kommt, sonst rot mit dem Grund (GebaeudeStatus.nachschub)
+        const n = have < qty && !!b && hatAuftragsliste(b) ? nachschub(state, key) : null;
+        const cls = have >= qty ? 'cost-ok' : n?.kommt ? 'cost-auto' : 'cost-miss';
+        const titel = n ? ` title="${n.kommt ? 'fehlt noch, ' : 'fehlt: '}${nachschubText(key, n)}"` : '';
+        return `<span class="ingr ${cls}"${titel}>${itemName(key)} ${Math.floor(have)}/${qty}${n?.kommt ? ' ↻' : ''}</span>`;
       }).join('');
   const water = rcp.requirements?.waterSupplied ? '<span class="ingr">💧 braucht Brunnen</span>' : '';
   return outHTML + inHTML + water;
@@ -289,7 +367,7 @@ function itemIcon(key: string): string {
     healing_potion: '⚗️', iron_scrap: '⚙️',
     iron_sword: '⚔️', iron_shield: '🛡️',
     leather_armor: '🧥', crystal_shard: '💎',
-    power_bread: '🍞', steel_sword: '⚔️',
+    power_bread: '🥖', steel_sword: '⚔️',
     longbow: '🏹', crystal_staff: '🪄',
     steel_armor: '🛡️',
   };
@@ -322,15 +400,53 @@ function aktualisiereMindmap(root: HTMLElement, state: GameState): void {
   if (panel) aktualisiereProduktionTab(panel, state);
 }
 
-/** Laufende Aufträge im Reiter «Crafting» nachführen (nur die kleinen Zeilen, nicht die Karten). */
-function aktualisiereCrafting(root: HTMLElement, state: GameState): void {
-  if (currentTab !== 'crafting') return;
-  const zeilen = root.querySelectorAll('.craft-lauf');
-  for (let i = 0; i < zeilen.length; i++) {
-    const el = zeilen[i] as HTMLElement;
-    const b = dasGebaeude(state, el.dataset.lauf ?? '');
-    if (b) el.innerHTML = renderLaufend(state, b);
-  }
+/** Zuletzt gesetztes HTML der Stellen, die laufend nachgeführt werden. */
+const gezeichnet = new WeakMap<HTMLElement, string>();
+
+function setzeHtml(el: HTMLElement, html: string): void {
+  if (gezeichnet.get(el) === html) return;
+  el.innerHTML = html;
+  gezeichnet.set(el, html);
+}
+
+/**
+ * Reiter «Crafting» nachführen, ohne die Seite neu zu zeichnen (die Scroll-Stelle bleibt):
+ * Ändert sich der Aufbau einer Werkstatt (Auftrag fertig, neuer Zyklus), kommt ihre Gruppe neu.
+ * Zutaten und die Zeile mit Restzeiten werden an Ort und Stelle ersetzt, die Knöpfe bleiben
+ * stehen. `sofort` zeichnet die Gruppe immer neu.
+ */
+function aktualisiereCrafting(root: HTMLElement, state: GameState, sofort?: string): void {
+  if (currentTab !== 'crafting' && !sofort) return;
+  root.querySelectorAll<HTMLElement>('.craft-group[data-gruppe]').forEach(gruppe => {
+    const typeId = gruppe.dataset.gruppe!;
+    const b = dasGebaeude(state, typeId);
+    if (!b) return;
+    if (sofort === typeId || gruppe.dataset.sig !== craftSignatur(state, typeId)) {
+      const neu = document.createElement('div');
+      neu.innerHTML = renderCraftGruppe(state, typeId).trim();
+      gruppe.replaceWith(neu.firstElementChild as HTMLElement);
+      return;
+    }
+    const lauf = gruppe.querySelector('.craft-lauf') as HTMLElement | null;
+    if (lauf) setzeHtml(lauf, renderLaufend(state, b));
+    gruppe.querySelectorAll<HTMLElement>('.ccard[data-rcp]').forEach(karte => {
+      const rcp = RECIPE_DEFS[karte.dataset.rcp!];
+      const chips = karte.querySelector('.cingr') as HTMLElement | null;
+      if (rcp && chips) setzeHtml(chips, renderRecipeChips(rcp, state, b));
+    });
+  });
+}
+
+/** Wann zuletzt gedrückt und losgelassen wurde (Maus oder Finger, bindGlobalListeners). */
+const druck = { seit: 0, los: 0 };
+
+/**
+ * Wird gerade gedrückt (oder eben losgelassen)? Dann wird nichts neu gezeichnet: Ein Knopf, der
+ * zwischen Drücken und Loslassen ersetzt wird, verliert den Klick. Hängt das Loslassen, höchstens 2 s.
+ */
+function wirdGedrueckt(): boolean {
+  const jetzt = Date.now();
+  return (druck.seit > druck.los && jetzt - druck.seit < 2000) || jetzt - druck.los < 300;
 }
 
 function switchTab(root: HTMLElement, tabId: BuildingsTab): void {
@@ -354,6 +470,11 @@ function switchTab(root: HTMLElement, tabId: BuildingsTab): void {
 function bindGlobalListeners(): void {
   if (globalListenersBound) return;
   globalListenersBound = true;
+  window.addEventListener('pointerdown', () => { druck.seit = Date.now(); }, true);
+  const los = () => { druck.los = Date.now(); };
+  window.addEventListener('pointerup', los, true);
+  window.addEventListener('pointercancel', los, true);
+  window.addEventListener('blur', los);
   const redraw = () => {
     const root = document.getElementById('s-buildings');
     if (root && cachedState) aktualisiereMindmap(root, cachedState);
@@ -374,6 +495,7 @@ function startLiveTimer(root: HTMLElement, state: GameState): void {
       return;
     }
     if (root.offsetParent === null && root.style.display === 'none') return;
+    if (wirdGedrueckt()) return;
     aktualisiereMindmap(root, state);
     aktualisiereCrafting(root, state);
   }, 500);
@@ -421,15 +543,21 @@ function bindEvents(root: HTMLElement, state: GameState): void {
   // Aufbau-Reiter: Karte anklicken → Fenster des Gebäudes oder Bau-Dialog
   bindAufbauTab(root, typeId => oeffneGebaeudeOderBau(root, typeId, state));
 
-  // Recipe cards → open the building's workshop (locked: offer to build it)
-  const craftCards = root.querySelectorAll('.ccard');
-  for (let i = 0; i < craftCards.length; i++) {
-    craftCards[i].addEventListener('click', () => {
-      const card = craftCards[i] as HTMLElement;
-      const { rcp, btype } = card.dataset;
-      if (rcp && btype) openRecipeInWorkshop(root, btype, rcp, state);
-    });
-  }
+  // Rezeptkarten: «+ Auftrag» gibt den Auftrag gleich hier, sonst öffnet die Karte die Werkstatt
+  // (gesperrt: Bau-Dialog). Ein Listener für den ganzen Reiter, weil Gruppen neu gezeichnet werden.
+  const crafting = panelFor(root, 'crafting');
+  crafting?.addEventListener('click', (e) => {
+    const ziel = e.target as HTMLElement;
+    const card = ziel.closest('.ccard') as HTMLElement | null;
+    const { rcp, btype } = card?.dataset ?? {};
+    if (!rcp || !btype) return;
+    if (ziel.closest('[data-craft-add]')) {
+      const b = dasGebaeude(state, btype);
+      if (b && auftragGeben(b, rcp)) aktualisiereCrafting(root, state, btype);
+      return;
+    }
+    openRecipeInWorkshop(root, btype, rcp, state);
+  });
 
   startLiveTimer(root, state);
   aktualisiereMindmap(root, state);
@@ -495,11 +623,13 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   `;
   root.appendChild(ov);
 
-  // Close handlers
+  // Close handlers: der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann
+  const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (target === ov || target.classList.contains('btn-close-modal')) {
+    if ((target === ov && hintergrund(e)) || target.classList.contains('btn-close-modal')) {
       ov.remove();
+      schluckeZweitenKlick();
     }
     if (target.classList.contains('btn-zum-aufbau')) {
       ov.remove();
@@ -543,6 +673,7 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
 
   // Track statistics
   state.statistics['total_buildings_built'] = (state.statistics['total_buildings_built'] ?? 0) + 1;
+  erfolgePruefen(state); // «Baumeister» gleich zählen, nicht erst beim Tageswechsel
 
   // Re-render; der aktive Reiter bleibt (currentTab)
   reRenderBuildingsScreen(root, state);
@@ -599,44 +730,74 @@ function sekundenText(sek: number): string {
   return s >= 60 ? `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')} min` : `${s}s`;
 }
 
-function restzeitText(b: BuildingInstance): string {
+function restzeitText(b: BuildingInstance, state: GameState): string {
   const liste = auftragsListe(b);
-  return liste.length > 0 ? `${liste.length}/${MAX_AUFTRAEGE} · gesamt noch ${sekundenText(restzeitSekunden(b))}` : `0/${MAX_AUFTRAEGE}`;
+  if (liste.length === 0) return `0/${MAX_AUFTRAEGE}`;
+  // Brot für die Bewohner kommt vor den Aufträgen (systems/Werkstattplan.ts)
+  const vorrat = vorratVorAuftraegen(state, b);
+  const vorher = vorrat ? vorrat.zyklen * zyklusSekunden(b, vorrat.recipe) : 0;
+  return `${liste.length}/${MAX_AUFTRAEGE} · gesamt noch ${sekundenText(restzeitSekunden(b, state) + vorher)}`;
 }
 
-/** Auftragsliste einer Werkstatt mit Aufträgen per Hand: laufender mit Balken, dann die wartenden. */
+/** Balken mit Restzeit des laufenden Zyklus (Auftrag oder von selbst). */
+function laufBalken(b: BuildingInstance, def: BuildingDef, recipe: RecipeDef): string {
+  const blocker = productionBlocker(b, def, recipe);
+  const pct = Math.round(cycleProgress(b, recipe) * 100);
+  return `
+        <div class="ws-bar"><div class="ws-bar-fill" style="width:${pct}%"></div></div>
+        <div class="ws-bar-txt">${blocker ? `Angehalten: ${blocker}` : `noch ${Math.ceil(b.productionTimer)}s`}</div>`;
+}
+
+/**
+ * Auftragsliste einer Werkstatt: was sie gerade von selbst macht (ohne ✕), der laufende
+ * Auftrag mit Balken, dann die wartenden; darunter, was sie ohne Auftrag von selbst macht.
+ */
 function renderAuftragsliste(b: BuildingInstance, def: BuildingDef, state: GameState): string {
   const liste = auftragsListe(b);
-  const kopf = `<div class="ws-active">AUFTRÄGE <span class="ws-rest">${restzeitText(b)}</span></div>`;
-  if (liste.length === 0) return `${kopf}<p class="ws-msg">Keine Aufträge. Gib unten einen Auftrag (bis ${MAX_AUFTRAEGE} nacheinander).</p>`;
+  const laeuft = laeuftAuftrag(b);
+  const kopf = `<div class="ws-active">AUFTRÄGE <span class="ws-rest">${restzeitText(b, state)}</span></div>`;
+  const selbst = laufendVonSelbst(b);
+  const laufend = b.producing && b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
+  const selbstZeile = selbst && laufend ? `
+      <div class="ws-auf ws-selbst on">
+        <div class="ws-rcp-hd">
+          <span class="cico">${itemIcon(Object.keys(laufend.outputs)[0] ?? '')}</span>
+          <span class="ws-rcp-nm">${selbst}</span>
+          <span class="ws-von-selbst">von selbst</span>
+        </div>
+        ${laufBalken(b, def, laufend)}
+      </div>` : '';
+  const satz = vonSelbstSatz(state, b.typeId);
+  const erklaerung = satz ? `<p class="ws-msg ws-selbst-satz">↻ ${satz}</p>` : '';
+  if (liste.length === 0) {
+    const leer = selbst ? '' : `<p class="ws-msg">${ruheText(state, b)}. Gib unten einen Auftrag (bis ${MAX_AUFTRAEGE} nacheinander).</p>`;
+    return `${kopf}${selbstZeile ? `<div class="ws-list">${selbstZeile}</div>` : ''}${leer}${erklaerung}`;
+  }
 
   const zeilen = liste.map((id, i) => {
     const recipe = RECIPE_DEFS[id];
     if (!recipe) return '';
-    const blocker = productionBlocker(b, def, recipe);
+    const laeuftDieser = laeuft && i === 0;
     let unten: string;
-    if (b.producing && i === 0) {
-      const pct = Math.round(cycleProgress(b, recipe) * 100);
-      unten = `
-        <div class="ws-bar"><div class="ws-bar-fill" style="width:${pct}%"></div></div>
-        <div class="ws-bar-txt">${blocker ? `Angehalten: ${blocker}` : `noch ${Math.ceil(b.productionTimer)}s`}</div>`;
+    if (laeuftDieser) {
+      unten = laufBalken(b, def, recipe);
     } else if (i === 0) {
-      const text = blocker ?? (canAffordRecipe(state, b, recipe) ? 'Startet beim nächsten Takt…' : 'Wartet auf Zutaten');
-      unten = `<div class="ws-msg${blocker || text === 'Wartet auf Zutaten' ? ' ws-warn' : ''}">${text}</div>`;
+      const warten = auftragWartetText(state, b, recipe);
+      unten = `<div class="ws-msg${warten.warn ? ' ws-warn' : ''}">${warten.text}</div>`;
     } else {
       unten = `<div class="ws-msg">wartet · ⏱ ${Math.round(zyklusSekunden(b, recipe))}s</div>`;
     }
     return `
-      <div class="ws-auf${b.producing && i === 0 ? ' on' : ''}">
+      <div class="ws-auf${laeuftDieser ? ' on' : ''}">
         <div class="ws-rcp-hd">
           <span class="cico">${itemIcon(Object.keys(recipe.outputs)[0] ?? '')}</span>
           <span class="ws-rcp-nm">${i + 1}. ${recipe.name}</span>
-          <button class="ws-cancel" data-ws-cancel="${i}" title="Abbrechen${b.producing && i === 0 ? ' (Zutaten zurück)' : ''}">✕</button>
+          <button class="ws-cancel" data-ws-cancel="${i}" title="Abbrechen${laeuftDieser ? ' (Zutaten zurück)' : ''}">✕</button>
         </div>
         ${unten}
       </div>`;
   }).join('');
-  return `${kopf}<div class="ws-list">${zeilen}</div>`;
+  return `${kopf}<div class="ws-list">${selbstZeile}${zeilen}</div>${erklaerung}`;
 }
 
 function renderWorkshop(b: BuildingInstance, def: BuildingDef, state: GameState, highlightId: string | null, confirmSwitchId: string | null): string {
@@ -713,9 +874,16 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
   }
 
   if (def.recipes.length > 0) {
+    const selbst = laufendVonSelbst(b);
+    // Steht sie, sagt der Status warum (wie die Karte in der Mindmap): wartet auf Mehl, Brot reicht 3 Tage …
+    const st = b.built && !b.producing ? einzelStatus(state, b) : undefined;
+    const grund = st?.grund ? grundText(st.grund) : '';
     const status = !b.built ? '🚧 Im Bau'
       : b.eventPaused ? '⚠️ Pausiert (Unwetter)'
+      : selbst ? `✅ Von selbst: ${selbst}`
       : b.producing ? '✅ Produziert'
+      : st?.laeuft ? '✅ Startet gleich'
+      : grund ? `⏸️ ${grund.charAt(0).toUpperCase()}${grund.slice(1)}`
       : '⏸️ Leerlauf';
     zeilen.push({ label: 'Status', wert: status });
     return zeilen;
@@ -737,10 +905,20 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
     zeilen.push({ label: 'Arbeiten · frei', wert: `${arbeiten} · ${frei}` });
     zeilen.push({ label: 'Zufriedenheit', wert: `${zufrieden} %`, cls: zufrieden >= 50 ? 'gut' : 'schlecht' });
     zeilen.push({ label: 'Brot im Lager', wert: `${Math.floor(state.globalStock.bread ?? 0)}`, cls: (state.globalStock.bread ?? 0) >= 1 ? 'gut' : 'schlecht' });
-    const brot = brotProTag(bewohner);
-    const reicht = Math.floor((state.globalStock.bread ?? 0) / Math.max(1, brot));
-    zeilen.push({ label: 'Brot pro Tag', wert: `−${brot}`, cls: reicht >= 1 ? undefined : 'schlecht',
-      klein: `1 Brot je angefangene ${BEWOHNER_JE_BROT} Bewohner, der Vorrat reicht ${reicht === 1 ? '1 Tag' : `${reicht} Tage`}.` });
+    // Wie die Bäckerei rechnet (systems/Werkstattplan.ts): essen und, solange Platz ist, 1 für den nächsten Bewohner
+    const essen = brotProTag(bewohner);
+    const brot = brotBedarfProTag(state);
+    // Wie lange der Vorrat reicht, mit dem, was die Bäckerei nachbackt (wie die Zeile «Pro Tag»)
+    const vorrat = state.globalStock.bread ?? 0;
+    const tage = reichtTageFuer(state, tagesBilanz(state), 'bread');
+    const baeckerei = state.buildings.some(g => g.typeId === 'BAKERY' && g.built);
+    const reichtSatz = tage === null
+      ? 'Die Bäckerei backt nach, was gegessen wird, bis der Vorrat für 3 Tage reicht.'
+      : `Der Vorrat ${reichtText(vorrat, tage).replace(/^leer$/, 'ist leer')}`
+        + `${baeckerei ? ', auch mit dem, was die Bäckerei nachbackt' : ''}.`;
+    zeilen.push({ label: 'Brot pro Tag', wert: `−${brot}`, cls: tage !== null && tage < 1 ? 'schlecht' : undefined,
+      klein: `${essen} essen die Bewohner (1 je ${BEWOHNER_JE_BROT}, mindestens 1)${brot > essen ? ', 1 kostet der nächste Bewohner' : ''}. `
+        + reichtSatz });
     zeilen.push({ label: 'Steuern pro Tag', wert: `${r.gesamt} Gold`, cls: 'gut', klein: rechnung });
     return zeilen;
   }
@@ -803,24 +981,35 @@ function renderVorrat(state: GameState): string {
   return `<span class="lbl">VORRAT</span><div class="pk-chips bm-vorrat">${vorratChips(state)}</div>`;
 }
 
-function handelKnopf(state: GameState, ware: string, art: HandelsArt): string {
+/**
+ * Ein Knopf; geht er nicht, steht der Grund sichtbar darunter (am Handy gibt es keine Titel).
+ * Was den ganzen Markt sperrt (`zu`), steht einmal über den Waren und hier nicht noch einmal.
+ */
+function handelKnopf(state: GameState, ware: string, art: HandelsArt, zu: string): string {
   const p = kannHandeln(state, ware, art);
   const text = art === 'verkaufen' ? `${BUENDEL} verkaufen +${VERKAUFSPREIS[ware]} Gold` : `${BUENDEL} kaufen −${kaufpreis(ware)} Gold`;
   const titel = p.ok ? `${BUENDEL} ${itemName(ware)} ${art}` : p.grund;
-  return `<button class="hd-btn hd-${art}" data-handel-ware="${ware}" data-handel-art="${art}" title="${titel}"${p.ok ? '' : ' disabled'}>${text}</button>`;
+  const grund = p.ok || p.grund === zu ? '' : `<small class="hd-grund">${p.grund}</small>`;
+  return `<span class="hd-zelle"><button class="hd-btn hd-${art}" data-handel-ware="${ware}" data-handel-art="${art}" title="${titel}"${p.ok ? '' : ' disabled'}>${text}</button>${grund}</span>`;
 }
 
-/** Marktplatz: je Ware Vorrat, verkaufen und kaufen. */
+/** Marktplatz: dein Gold (am Handy deckt das Fenster die Kopfzeile zu), je Ware Vorrat, verkaufen und kaufen. */
 function renderHandel(state: GameState): string {
+  const zu = handelZu(state);
+  const gold = Math.floor(state.globalStock.gold ?? 0) || 0;
   return `
     <div class="hd">
-      <span class="lbl">HANDEL</span>
-      ${HANDELSWAREN.map(ware => `
+      <div class="hd-kopf"><span class="lbl">HANDEL</span><span class="hd-gold">🪙 ${gold.toLocaleString('de')} Gold</span></div>
+      ${zu ? `<p class="hd-zu">${zu}</p>` : ''}
+      ${HANDELSWAREN.map(ware => {
+        const fuer = vorbehalten(state, ware);
+        return `
       <div class="hd-ware">
-        <span class="hd-name">${itemName(ware)} <small>${Math.floor(state.globalStock[ware] ?? 0)} im Lager</small></span>
-        ${handelKnopf(state, ware, 'verkaufen')}
-        ${handelKnopf(state, ware, 'kaufen')}
-      </div>`).join('')}
+        <span class="hd-name">${itemName(ware)} <small>${Math.floor(state.globalStock[ware] ?? 0)} im Lager${fuer > 0 ? `, ${fuer} für die Bewohner` : ''}</small></span>
+        ${handelKnopf(state, ware, 'verkaufen', zu)}
+        ${handelKnopf(state, ware, 'kaufen', zu)}
+      </div>`;
+      }).join('')}
     </div>`;
 }
 
@@ -848,8 +1037,12 @@ function modalSignature(b: BuildingInstance, def: BuildingDef, state: GameState)
     for (const item of Object.keys(RECIPE_DEFS[id]?.inputs ?? {})) items.add(item);
   }
   const info = ausbauInfo(state, b);
+  const kopf = hatAuftragsliste(b) && !b.producing && b.auftraege.length > 0
+    ? auftragWartetText(state, b, RECIPE_DEFS[b.auftraege[0]]).text : null;
   return JSON.stringify([
-    b.activeRecipeId, b.producing, b.pendingCraft, b.auftraege, b.built, b.connected, b.eventPaused,
+    b.activeRecipeId, b.producing, b.pendingCraft, b.auftraege, b.vonSelbst ?? null, kopf,
+    hatAuftragsliste(b) ? [ruheText(state, b), vonSelbstSatz(state, b.typeId)] : null,
+    b.built, b.connected, b.eventPaused,
     b.waterSupplied, besetzt(b), b.tier, info.bezahlbar, info.hinweis, info.kosten,
     [...items].map(item => stockFor(state, b, item)),
     infoZeilen(state, b, def),
@@ -956,6 +1149,7 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
       window.clearInterval(timer);
       return;
     }
+    if (wirdGedrueckt()) return;
     if (modalSignature(bInst, def, state) !== lastSig) {
       refreshBody();
       return;
@@ -969,7 +1163,7 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
       txt.textContent = blocker ? `Angehalten: ${blocker}` : `noch ${Math.ceil(bInst.productionTimer)}s`;
     }
     const rest = body.querySelector('.ws-rest') as HTMLElement | null;
-    if (rest) rest.textContent = restzeitText(bInst);
+    if (rest) rest.textContent = restzeitText(bInst, state);
     const wachs = body.querySelector('.bm-wachs .pk-bar > i') as HTMLElement | null;
     if (wachs) wachs.style.width = `${Math.round(tagFortschritt(state) * 100)}%`;
   }, 500);
@@ -981,10 +1175,20 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
     reRenderBuildingsScreen(root, state);
   };
 
+  // Der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann (siehe hintergrundKlick)
+  const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (target === ov || target.classList.contains('btn-close-modal')) {
+    if (target === ov) {
+      if (hintergrund(e)) {
+        close();
+        schluckeZweitenKlick();
+      }
+      return;
+    }
+    if (target.classList.contains('btn-close-modal')) {
       close();
+      schluckeZweitenKlick();
       return;
     }
 
@@ -1000,7 +1204,10 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
     }
 
     if (target.classList.contains('btn-ausbau')) {
-      if (ausbauen(state, bInst)) refreshBody();
+      if (ausbauen(state, bInst)) {
+        erfolgePruefen(state); // Ausbau-Erfolge gleich zählen
+        refreshBody();
+      }
       return;
     }
 

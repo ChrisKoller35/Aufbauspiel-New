@@ -10,7 +10,8 @@
 //   einem Feuerwirbel), nicht nur das vom Bildrand aus erreichbare.
 // - Ein Schatten auf dem Magenta (dunkleres Magenta) gilt als Hintergrund.
 // - Leuchten und Kanten, die ins Magenta übergehen, werden entmischt:
-//   Sie werden halb durchsichtig statt rosa.
+//   Sie werden halb durchsichtig statt rosa. Grauer Rauch auf dem Magenta
+//   bleibt grau und halb durchsichtig statt violett.
 //
 // Anleitung: npm run sprite-freistellen -- ENEMY_A ENEMY_B
 //   --boden 0.87       entfernt dünne Bodenlinien (Risse) ab 87 % der Bildhöhe
@@ -36,6 +37,8 @@ const SAUM_BREITE = 48;
 const MISCH_REST = 20;
 /** Ab diesem Anteil Motiv ist ein Saum-Pixel ganz deckend. */
 const DECKEND_AB = 0.85;
+/** So weit dürfen Rot, Grün und Blau des Graus hinter halb durchsichtigem Rauch auseinander liegen. */
+const RAUCH_REST = 30;
 /** Bodenlinien bis zu dieser halben Dicke (Pixel bei 1024) verschwinden mit --boden. */
 const BODEN_RADIUS = 5;
 
@@ -61,6 +64,22 @@ function randFarbe(px: Buffer, w: number, h: number): Farbe {
  */
 function magentaAnteil(C: Farbe, K: Farbe): number {
   return Math.min(1, C[0] / K[0], C[2] / K[2], (255 - C[1]) / (255 - K[1]));
+}
+
+/**
+ * Grauer Rauch oder Nebel, halb durchsichtig auf dem Magenta: Passt C zu t·(s,s,s) + (1−t)·K?
+ * Dann ist t der Anteil Rauch (sonst null). Rot und Blau müssen gleich viel Magenta tragen,
+ * und das Grau dahinter muss in Rot, Grün und Blau gleich hell sein.
+ */
+function rauchAnteil(C: Farbe, K: Farbe): number | null {
+  const mRot = (C[0] - C[1]) / (K[0] - K[1]);
+  const mBlau = (C[2] - C[1]) / (K[2] - K[1]);
+  if (mRot < 0 || mBlau < 0 || mRot > 1 || mBlau > 1 || Math.abs(mRot - mBlau) > 0.15) return null;
+  const m = (mRot + mBlau) / 2, t = 1 - m;
+  if (t < 0.05) return null;
+  const grau = C.map((c, k) => (c - m * K[k]) / t);
+  if (Math.max(...grau) - Math.min(...grau) > RAUCH_REST || Math.min(...grau) < -RAUCH_REST || Math.max(...grau) > 255 + RAUCH_REST) return null;
+  return t;
 }
 
 /** Abgedunkeltes Magenta (Schatten auf dem Hintergrund): Rot und Blau gleich stark, kaum Grün. */
@@ -188,9 +207,10 @@ function freistellen(px: Buffer, w: number, h: number, bodenAnteil: number | nul
         rest = Math.hypot(u[0] - a * v[0], u[1] - a * v[1], u[2] - a * v[2]);
       }
       if (rest > MISCH_REST) {
-        // Keine Mischung aus F und Magenta. Hell: ein Leuchten in eigener Farbe (z. B. um einen
-        // Kristall), so durchsichtig wie möglich. Sonst Motiv (rosa Lichtkante auf dem Mantel).
-        a = C[0] >= 200 ? 1 - magentaAnteil(C, K) : 1;
+        // Keine Mischung aus F und Magenta. Grauer Rauch (Russwolke, Nebel): so durchsichtig, wie er
+        // auf dem Magenta war. Hell: ein Leuchten in eigener Farbe (z. B. um einen Kristall), so
+        // durchsichtig wie möglich. Sonst Motiv (rosa Lichtkante auf dem Mantel).
+        a = rauchAnteil(C, K) ?? (C[0] >= 200 ? 1 - magentaAnteil(C, K) : 1);
       }
       // Farbe ohne den Magenta-Anteil; fast deckende Pixel ganz deckend, sonst schimmert das Motiv durch
       if (a > 0.02 && a < 1) [r, g, b] = C.map((c, k) => Math.max(0, Math.min(255, Math.round((c - (1 - a) * K[k]) / a)))) as Farbe;

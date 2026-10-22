@@ -8,6 +8,7 @@ import { DUNGEON_SETS, DungeonSetDef, SET_TEIL_NAMEN, setTeilIds, setVonItem, se
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { ROUTE_DEFS, isRouteAvailable, isRouteCompleted } from '../../data/routes';
 import { gesammelteTeile, setChance } from '../../systems/DungeonSets';
+import { escapeAttr, stufeAbzeichen } from './SchmiedeAnzeige';
 
 /** Die zwei Bonus-Zeilen eines Sets; getragen = so viele Teile trägt der Held (für aktiv/inaktiv) */
 export function setBoniHtml(set: DungeonSetDef, getragen = 0): string {
@@ -40,10 +41,6 @@ export function setAbzeichen(itemId: string | null): string {
   return set ? `<span class="set-abzeichen" title="${set.name}">${set.zeichen}</span>` : '';
 }
 
-function escapeAttr(text: string): string {
-  return text.replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
-}
-
 /** Die drei Teile als Bilder: gesammelte farbig, fehlende als Schatten */
 export function setTeileHtml(state: GameState, set: DungeonSetDef): string {
   const gesammelt = new Set(gesammelteTeile(state, set));
@@ -51,10 +48,11 @@ export function setTeileHtml(state: GameState, set: DungeonSetDef): string {
     const def = ITEM_DEFS[id];
     const hat = gesammelt.has(id);
     const teil = set.teile[i];
-    const titel = escapeAttr(`${def.name} (${SET_TEIL_NAMEN[teil.art]})${hat ? '' : ' – noch nicht gefunden'}\n«${teil.text}»`);
+    const stufe = hat ? state.schmiede?.stufen[id] ?? 0 : 0;
+    const titel = escapeAttr(`${def.name}${stufe > 0 ? ` +${stufe}` : ''} (${SET_TEIL_NAMEN[teil.art]})${hat ? '' : ' – noch nicht gefunden'}\n«${teil.text}»`);
     return `
       <div class="set-teil${hat ? ' hat' : ''}" title="${titel}">
-        <img src="assets/sprites/final/${getItemSpriteKey(id)}.png" onerror="this.style.display='none'">
+        <span class="set-teil-bild"><img src="assets/sprites/final/${getItemSpriteKey(id)}.png" onerror="this.style.display='none'">${hat ? stufeAbzeichen(state.schmiede?.stufen, id) : ''}</span>
         <span class="set-teil-name">${hat ? def.name : SET_TEIL_NAMEN[teil.art]}</span>
       </div>`;
   }).join('');
@@ -96,7 +94,7 @@ export function setSammlungHtml(state: GameState): string {
   return `
     <div class="sets-kopf">
       <div class="sets-zahlen"><b>${teileGesamt}</b> von ${DUNGEON_SETS.length * 3} Set-Teilen · <b>${komplett}</b> von ${DUNGEON_SETS.length} Sets komplett</div>
-      <div class="sets-erklaerung">Jeder Dungeon lässt sein eigenes Set fallen: Ein Sieg bringt ein Teil, fehlende Teile zuerst. Der erste Sieg bringt sicher eins, danach ist es Glückssache (schwerere Stufen erhöhen die Chance). Zwei Teile geben Werte, alle drei die Set-Fähigkeit, die im Kampf grün aufleuchtet.</div>
+      <div class="sets-erklaerung">Jeder Dungeon lässt sein eigenes Set fallen: Ein Sieg bringt ein Teil, fehlende Teile zuerst. Der erste Sieg bringt sicher eins, danach ist es Glückssache (schwerere Stufen erhöhen die Chance). Zwei Teile geben Werte, alle drei die Set-Fähigkeit, die im Kampf grün aufleuchtet. In der Schmiede (⚒️) werden die Teile mit Material aus den Dungeons bis +5 besser.</div>
     </div>
     ${abschnitte}`;
 }

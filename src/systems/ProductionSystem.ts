@@ -1,13 +1,33 @@
 import { GameState } from '../models/GameState';
+import { BuildingInstance } from '../models/Building';
 import { BUILDING_DEFS } from '../data/buildings';
-import { RECIPE_DEFS } from '../data/recipes';
+import { RECIPE_DEFS, RecipeDef } from '../data/recipes';
 import { CityEventSystem } from './CityEventSystem';
 import { zyklusSekunden } from './Ausbau';
 import { auftragGestartet, hatAuftragsliste, meldeAuftragFertig, naechsterAuftrag } from './Auftraege';
+import { kannBeginnen, planeZyklus, Zyklus } from './Werkstattplan';
+
+/** Stadt-Takt in Sekunden: so oft ruft main.ts update() auf (CITY_TICK_INTERVAL). */
+const TAKT_SEKUNDEN = 1;
+
+/**
+ * Wie lange ein Zyklus im Spiel wirklich dauert, von Start zu Start (reine Rechnung für Anzeigen,
+ * z. B. systems/Tagesbilanz.ts). Spiegelt update(): Der Zähler läuft je Takt um 1 s, ein Zyklus
+ * dauert also ganze Takte (aufgerundet), und der nächste beginnt erst im Takt danach (Leertakt).
+ * Ein 10-s-Rezept liefert so alle 11 s, auf Stufe 3 (3,3 s) alle 5 s. Wird update() geändert,
+ * gehört diese Funktion mit geändert; tests/tagesbilanzSimulation.test.ts vergleicht beides.
+ */
+export function echteZyklusSekunden(b: BuildingInstance, recipe: RecipeDef): number {
+  const takte = Math.max(1, Math.ceil(zyklusSekunden(b, recipe) / TAKT_SEKUNDEN));
+  return (takte + 1) * TAKT_SEKUNDEN;
+}
 
 /**
  * Handles recipe-based production for all buildings.
  * Called every city tick (1.0s).
+ * Rohstoff-Gebäude wiederholen ihr Rezept, solange es geht. Werkstätten
+ * (Aufträge) beginnen nur, was systems/Werkstattplan.ts plant: Auftrag,
+ * Vorstufe, Zulieferung oder Vorrat.
  */
 export class ProductionSystem {
   private cityEventSystem = new CityEventSystem();
@@ -15,14 +35,11 @@ export class ProductionSystem {
   update(state: GameState, deltaSec: number): void {
     for (const building of state.buildings) {
       if (!building.built) continue;
-      if (!building.activeRecipeId) continue;
 
       // Skip production if paused by city event (storm)
       if (building.eventPaused) continue;
 
       const def = BUILDING_DEFS[building.typeId];
-      const recipe = RECIPE_DEFS[building.activeRecipeId];
-      if (!recipe) continue;
 
       // Needs connectivity?
       if (def.requiresConnectivity && !building.connected) continue;
@@ -30,42 +47,40 @@ export class ProductionSystem {
       // Needs worker?
       if (def.workerSlots > 0 && building.assignedWorkerIds.length === 0) continue;
 
+      if (!building.producing) {
+        // Try to start a new production cycle
+        const zyklus = hatAuftragsliste(building) ? planeZyklus(state, building) : this.dauerlauf(state, building);
+        if (zyklus) this.starte(state, building, zyklus);
+        continue;
+      }
+
+      const recipe = building.activeRecipeId ? RECIPE_DEFS[building.activeRecipeId] : undefined;
+      if (!recipe) continue;
+
       // Needs water?
       if (recipe.requirements?.waterSupplied && !building.waterSupplied) continue;
 
-      if (building.producing) {
-        // Tick down production timer
-        building.productionTimer -= deltaSec;
-        if (building.productionTimer <= 0) {
-          // Production complete — add outputs (with event multiplier)
-          const eventMult = this.cityEventSystem.getProductionMultiplier(state, building.typeId);
-          for (const [item, amount] of Object.entries(recipe.outputs)) {
-            const boosted = Math.floor(amount * eventMult);
-            if (building.connected) {
-              state.globalStock[item] = (state.globalStock[item] ?? 0) + boosted;
-            } else {
-              building.localOutputBuffer[item] =
-                (building.localOutputBuffer[item] ?? 0) + boosted;
-            }
-          }
-          building.producing = false;
-          building.productionTimer = 0;
-          // Auftragsliste: Rückmeldung und nächsten Auftrag einstellen (systems/Auftraege.ts)
-          if (hatAuftragsliste(building)) {
-            meldeAuftragFertig(building, recipe);
-            naechsterAuftrag(building);
+      // Tick down production timer
+      building.productionTimer -= deltaSec;
+      if (building.productionTimer <= 0) {
+        // Production complete — add outputs (with event multiplier)
+        const eventMult = this.cityEventSystem.getProductionMultiplier(state, building.typeId);
+        for (const [item, amount] of Object.entries(recipe.outputs)) {
+          const boosted = Math.floor(amount * eventMult);
+          if (building.connected) {
+            state.globalStock[item] = (state.globalStock[item] ?? 0) + boosted;
+          } else {
+            building.localOutputBuffer[item] =
+              (building.localOutputBuffer[item] ?? 0) + boosted;
           }
         }
-      } else {
-        // Try to start a new production cycle
-        const needsManual = def.manualCraft === true;
-        if ((!needsManual || building.pendingCraft) && this.canStartRecipe(state, building, recipe)) {
-          this.deductInputs(state, building, recipe);
-          // Stufe 2 und 3 arbeiten doppelt bzw. dreifach so schnell (systems/Ausbau.ts)
-          building.productionTimer = zyklusSekunden(building, recipe);
-          building.producing = true;
-          building.pendingCraft = false;
-          auftragGestartet(building);
+        building.producing = false;
+        building.productionTimer = 0;
+        // Auftragsliste: Rückmeldung (nur für Aufträge) und nächsten Auftrag einstellen (systems/Auftraege.ts)
+        if (hatAuftragsliste(building)) {
+          if (!building.vonSelbst) meldeAuftragFertig(building, recipe);
+          building.vonSelbst = null;
+          naechsterAuftrag(building);
         }
       }
     }
@@ -82,25 +97,29 @@ export class ProductionSystem {
     }
   }
 
-  private canStartRecipe(
-    state: GameState,
-    building: { connected: boolean; localInputBuffer: Record<string, number> },
-    recipe: { inputs: Record<string, number> },
-  ): boolean {
-    for (const [item, needed] of Object.entries(recipe.inputs)) {
-      const available = building.connected
-        ? (state.globalStock[item] ?? 0)
-        : (building.localInputBuffer[item] ?? 0);
-      if (available < needed) return false;
-    }
-    return true;
+  /** Rohstoff-Gebäude: das gewählte Rezept, sobald es geht. */
+  private dauerlauf(state: GameState, building: BuildingInstance): Zyklus | null {
+    const recipe = building.activeRecipeId ? RECIPE_DEFS[building.activeRecipeId] : undefined;
+    return recipe && kannBeginnen(state, building, recipe) ? { recipe, art: 'auftrag', fuer: recipe.id } : null;
   }
 
-  private deductInputs(
-    state: GameState,
-    building: { connected: boolean; localInputBuffer: Record<string, number> },
-    recipe: { inputs: Record<string, number> },
-  ): void {
+  private starte(state: GameState, building: BuildingInstance, zyklus: Zyklus): void {
+    const { recipe, art, fuer } = zyklus;
+    this.deductInputs(state, building, recipe);
+    building.activeRecipeId = recipe.id;
+    // Stufe 2 und 3 arbeiten doppelt bzw. dreifach so schnell (systems/Ausbau.ts)
+    building.productionTimer = zyklusSekunden(building, recipe);
+    building.producing = true;
+    if (art === 'auftrag') {
+      building.vonSelbst = null;
+      if (hatAuftragsliste(building)) auftragGestartet(building);
+      else building.pendingCraft = false;
+    } else {
+      building.vonSelbst = { art, fuer };
+    }
+  }
+
+  private deductInputs(state: GameState, building: BuildingInstance, recipe: RecipeDef): void {
     for (const [item, needed] of Object.entries(recipe.inputs)) {
       if (building.connected) {
         state.globalStock[item] -= needed;

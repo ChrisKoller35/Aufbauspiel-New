@@ -161,6 +161,23 @@ Mysterious and forbidding atmosphere with silver moonlight, pale blue and deep i
 Style: painterly digital illustration, modern fantasy RPG, rich colors, dramatic lighting.
 Dark moody lower third suitable for text overlay. No text, no UI elements, no borders.`,
   },
+  // ── Über dem Himmelsarchiv: die Sterne (Bilder vom 20.10.2026, quadratisch) ──
+  {
+    key: "exp_sternenschmiede",
+    prompt: `A colossal forge built into a fallen star high above the clouds, as a square full-bleed image for a fantasy RPG expedition card.
+A gigantic anvil glowing white-hot under a vaulted roof of dark star-metal, streams of molten starlight pouring from huge crucibles, freshly forged stars hanging on chains like lanterns, showers of golden sparks drifting into a deep violet night sky full of constellations, stone bridges and heavy chains suspended over a sea of clouds far below.
+Warm white-gold forge light against deep violet and midnight blue.
+Style: painterly digital illustration, modern fantasy RPG, rich colors, dramatic lighting.
+Dark moody lower third suitable for text overlay. No people or figures. No text, no UI elements, no borders.`,
+  },
+  {
+    key: "exp_sternenschlund",
+    prompt: `A vast swirling rift in the night sky that swallows the stars, seen from a crumbling floating stone path at the edge of the world, as a square full-bleed image for a fantasy RPG expedition card.
+Stars being pulled into a black spiral maw ringed with faint violet light, broken constellations, floating rock fragments and snapped ancient star-chains drifting in the void, a few small lanterns along the path leading toward the dark.
+Ominous, awe-inspiring cosmic atmosphere with deep black, violet and ice-blue tones and a few warm golden star accents.
+Style: painterly digital illustration, modern fantasy RPG, rich colors, dramatic lighting.
+Dark moody lower third suitable for text overlay. No people or figures. No text, no UI elements, no borders.`,
+  },
   {
     key: "exp_siege_walls",
     prompt: `A medieval fantasy siege battle scene in 4:3 landscape format for a fantasy RPG expedition card.

@@ -15,6 +15,12 @@ import {
   zyklusSekunden, wohnKapazitaet, stufeVon, arbeitsplaetze, besetzt, wirkungsStufe, marktBonusProzent, bankGoldProTag,
 } from './Ausbau';
 import { brotNachEssen } from './PeopleSystem';
+import { hatAuftragsliste, rezeptFuer } from './Auftraege';
+import {
+  planeZyklus, naechsterBedarf, zulieferBedarf, fehlendeZutaten, laufendVonSelbst, vonSelbstText, vorratTage, VORRAETE,
+} from './Werkstattplan';
+import { handelHeute, marktGesperrt } from './Handel';
+import { echteZyklusSekunden } from './ProductionSystem';
 
 export { wohnKapazitaet };
 
@@ -31,7 +37,12 @@ export type WarteGrund =
   | { art: 'kein-wasser' }
   | { art: 'kein-rezept' }
   | { art: 'zutaten'; item: string; vorrat: number; bedarf: number }
-  | { art: 'auftrag' }
+  /** Eine andere Werkstatt stellt die fehlende Zutat gerade her (Mehl von der Windmühle). */
+  | { art: 'zulieferung'; item: string; von: string }
+  /** Werkstatt ohne Auftrag; `liefert` = sie stellt nur Zutaten für andere her (Windmühle). */
+  | { art: 'auftrag'; liefert?: boolean }
+  /** Werkstatt ohne Auftrag, ihr Vorrat ist voll (Bäckerei: Brot für die Bewohner). */
+  | { art: 'vorrat'; item: string; tage: number }
   | { art: 'kein-brot' }
   | { art: 'voll' };
 
@@ -132,10 +143,71 @@ export function grundText(grund: WarteGrund): string {
     case 'kein-wasser': return 'wartet auf Wasser';
     case 'kein-rezept': return 'kein Rezept gewählt';
     case 'zutaten': return `fehlt: ${itemName(grund.item)} ${grund.vorrat}/${grund.bedarf}`;
-    case 'auftrag': return 'bereit · Auftrag geben';
+    case 'zulieferung': return `wartet auf ${itemName(grund.item)} (${gebaeudeName(grund.von)})`;
+    case 'auftrag': return grund.liefert ? 'bereit · liefert bei Bedarf' : 'bereit · Auftrag geben';
+    case 'vorrat': return `${itemName(grund.item)} reicht ${grund.tage === 1 ? '1 Tag' : `${grund.tage} Tage`}`;
     case 'kein-brot': return 'kein Brot für neue Bewohner';
     case 'voll': return 'voll · ausbauen';
   }
+}
+
+// ── Nachschub: kommt eine fehlende Zutat von selbst? ────────────
+
+/** Gebäude-Typ, der eine Ware herstellt (erstes passendes Rezept), oder null: nur Beute aus den Dungeons. */
+export function lieferantFuer(item: string): string | null {
+  for (const def of Object.values(BUILDING_DEFS)) {
+    for (const id of def.recipes) {
+      if ((RECIPE_DEFS[id]?.outputs[item] ?? 0) > 0) return def.id;
+    }
+  }
+  return null;
+}
+
+/**
+ * Wie eine fehlende Zutat kommt. `item` ist die Ware, an der es am Ende hängt: die Zutat
+ * selbst oder, Stufen tiefer, eine Zutat ihres Herstellers (Eisenschrott für die
+ * Magitech-Komponente). `von` stellt sie her (null: nur Beute aus den Dungeons);
+ * `grund` sagt, warum es nicht weitergeht (null: das Gebäude fehlt).
+ */
+export type Nachschub =
+  | { kommt: true; item: string; von: string }
+  | { kommt: false; item: string; von: string | null; grund: WarteGrund | null };
+
+/**
+ * Kommt eine fehlende Zutat von selbst? Werkstätten stellen sie her, wenn sie gebraucht wird
+ * (Vorstufe oder Zulieferung, systems/Werkstattplan.ts), Rohstoff-Gebäude laufen ohnehin. Sie
+ * kommt, wenn ihr Hersteller arbeiten kann und dessen fehlende Zutaten auch kommen; dann ist
+ * `item` die tiefste fehlende Ware, auf die alles wartet (Getreide für das Mehl).
+ */
+export function nachschub(state: GameState, item: string, tiefe = 0): Nachschub {
+  const typeId = lieferantFuer(item);
+  if (!typeId) return { kommt: false, item, von: null, grund: null };
+  const w = dasGebaeude(state, typeId);
+  if (!w) return { kommt: false, item, von: typeId, grund: null };
+  // Werkstätten nehmen das passende Rezept von selbst, Rohstoff-Gebäude nur das gewählte
+  const aktiv = w.activeRecipeId ? RECIPE_DEFS[w.activeRecipeId] : undefined;
+  const recipe = hatAuftragsliste(w) ? rezeptFuer(w, item) : (aktiv?.outputs[item] ?? 0) > 0 ? aktiv : null;
+  if (!recipe) return { kommt: false, item, von: typeId, grund: { art: 'kein-rezept' } };
+  const hindernis = produktionsHindernis(w, BUILDING_DEFS[typeId], recipe);
+  if (hindernis) return { kommt: false, item, von: typeId, grund: hindernis };
+  let tiefste: Nachschub = { kommt: true, item, von: typeId };
+  if (tiefe < 4) {
+    for (const z of fehlendeZutaten(state, w, recipe)) {
+      const tiefer = nachschub(state, z.item, tiefe + 1);
+      if (!tiefer.kommt) return tiefer;
+      if (tiefste.item === item) tiefste = tiefer;
+    }
+  }
+  return tiefste;
+}
+
+/** Kurz, wie eine fehlende Zutat kommt oder woran es hängt («kommt von selbst (Windmühle)», «Eisenmine fehlt»). */
+export function nachschubText(item: string, n: Nachschub): string {
+  if (n.kommt) return `kommt von selbst (${gebaeudeName(lieferantFuer(item) ?? n.von)})`;
+  const wo = n.von === null ? 'Beute aus den Dungeons'
+    : n.grund === null ? `${gebaeudeName(n.von)} fehlt`
+    : `${gebaeudeName(n.von)}: ${grundText(n.grund)}`;
+  return n.item === item ? wo : `dafür fehlt ${itemName(n.item)} (${wo})`;
 }
 
 /** Erste fehlende Zutat eines Rezepts. */
@@ -154,12 +226,83 @@ export interface EinzelStatus {
   fortschritt: number | null;
   grund?: WarteGrund;
   recipe?: RecipeDef;
+  /** Werkstatt: was gerade läuft oder gleich beginnt («Heiltrank brauen», «Mehl für Bäckerei»). */
+  text?: string;
+}
+
+/** Stellt die Werkstatt nur Zutaten für andere Werkstätten her (Windmühle: Mehl für die Bäckerei)? */
+export function istZulieferer(typeId: string): boolean {
+  const def = BUILDING_DEFS[typeId];
+  const andere = Object.values(BUILDING_DEFS).filter(d => d.manualCraft && d.id !== typeId);
+  return !!def && def.recipes.length > 0 && def.recipes.every(rid =>
+    Object.keys(RECIPE_DEFS[rid]?.outputs ?? {}).every(item =>
+      andere.some(d => d.recipes.some(id => (RECIPE_DEFS[id]?.inputs[item] ?? 0) > 0))));
+}
+
+/** Stellt die Werkstatt die Ware gerade her oder beginnt gleich damit? */
+function stelltHer(state: GameState, w: BuildingInstance, item: string): boolean {
+  const laeuft = w.producing && (RECIPE_DEFS[w.activeRecipeId ?? '']?.outputs[item] ?? 0) > 0;
+  return laeuft || (planeZyklus(state, w)?.recipe.outputs[item] ?? 0) > 0;
+}
+
+/**
+ * Warum eine freie Werkstatt nicht beginnt: Hindernis, eine Zutat, die nicht von selbst kommt
+ * (zuerst, da muss der Spieler etwas tun), eine Zulieferung, die gerade entsteht, sonst Ruhe.
+ */
+function werkstattGrund(state: GameState, b: BuildingInstance, def: BuildingDef): { grund: WarteGrund; recipe?: RecipeDef } {
+  // Eigener Bedarf (Auftrag, Vorrat), sonst was andere Werkstätten von hier brauchen
+  const bedarf = naechsterBedarf(state, b) ?? zulieferBedarf(state, b)[0]?.recipe ?? null;
+  if (!bedarf) {
+    const vorrat = VORRAETE[b.typeId];
+    return vorrat
+      ? { grund: { art: 'vorrat', item: vorrat.item, tage: vorratTage(state, b.typeId) ?? 0 } }
+      : { grund: { art: 'auftrag', liefert: istZulieferer(b.typeId) } };
+  }
+  const hindernis = produktionsHindernis(b, def, bedarf);
+  if (hindernis) return { grund: hindernis, recipe: bedarf };
+  const fehlend = fehlendeZutaten(state, b, bedarf);
+  if (fehlend.length === 0) return { grund: { art: 'auftrag' }, recipe: bedarf };
+  const zutaten = ({ item, fehlt }: { item: string; fehlt: number }): WarteGrund =>
+    ({ art: 'zutaten', item, vorrat: bedarf.inputs[item] - fehlt, bedarf: bedarf.inputs[item] });
+  const fest = fehlend.find(z => !nachschub(state, z.item).kommt);
+  if (fest) return { grund: zutaten(fest), recipe: bedarf };
+  const erste = fehlend[0];
+  const lieferant = lieferantFuer(erste.item);
+  const w = lieferant ? dasGebaeude(state, lieferant) : undefined;
+  if (w && w !== b && hatAuftragsliste(w) && stelltHer(state, w, erste.item)) {
+    return { grund: { art: 'zulieferung', item: erste.item, von: w.typeId }, recipe: bedarf };
+  }
+  return { grund: zutaten(erste), recipe: bedarf };
+}
+
+/**
+ * Werkstatt (Aufträge, Vorstufe, Zulieferung, Vorrat; systems/Werkstattplan.ts):
+ * läuft, beginnt beim nächsten Takt, wartet (worauf) oder ruht.
+ */
+function werkstattStatus(state: GameState, b: BuildingInstance, def: BuildingDef): EinzelStatus {
+  const laufend = b.producing && b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
+  if (laufend) {
+    const text = laufendVonSelbst(b) ?? laufend.name;
+    const hindernis = produktionsHindernis(b, def, laufend);
+    return hindernis
+      ? { laeuft: false, fortschritt: cycleProgress(b, laufend), grund: hindernis, recipe: laufend, text }
+      : { laeuft: true, fortschritt: cycleProgress(b, laufend), recipe: laufend, text };
+  }
+  const plan = planeZyklus(state, b);
+  if (plan) {
+    // Beginnt beim nächsten Takt
+    const text = plan.art === 'auftrag' ? plan.recipe.name : vonSelbstText(plan.recipe, plan.art, plan.fuer);
+    return { laeuft: true, fortschritt: 0, recipe: plan.recipe, text };
+  }
+  const { grund, recipe } = werkstattGrund(state, b, def);
+  return { laeuft: false, fortschritt: null, grund, recipe };
 }
 
 /** Zustand eines gebauten Gebäudes mit Rezepten. */
 export function einzelStatus(state: GameState, b: BuildingInstance): EinzelStatus {
   const def = BUILDING_DEFS[b.typeId];
   if (!b.built) return { laeuft: false, fortschritt: buildProgress(b, def), grund: { art: 'im-bau' } };
+  if (hatAuftragsliste(b)) return werkstattStatus(state, b, def);
   const recipe = b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
   if (!recipe) return { laeuft: false, fortschritt: null, grund: { art: 'kein-rezept' } };
 
@@ -172,7 +315,6 @@ export function einzelStatus(state: GameState, b: BuildingInstance): EinzelStatu
   if (hindernis) return { laeuft: false, fortschritt: null, grund: hindernis, recipe };
   const fehlt = fehlendeZutat(state, b, recipe);
   if (fehlt) return { laeuft: false, fortschritt: null, grund: fehlt, recipe };
-  if (def.manualCraft && !b.pendingCraft) return { laeuft: false, fortschritt: null, grund: { art: 'auftrag' }, recipe };
   // Startet beim nächsten Takt
   return { laeuft: true, fortschritt: 0, recipe };
 }
@@ -182,11 +324,14 @@ function buildProgress(b: BuildingInstance, def: BuildingDef | undefined): numbe
   return Math.min(1, b.buildProgress / def.buildTimeSec);
 }
 
-/** Ertrag pro Tag eines Rezepts ohne Zutaten, z. B. «+6 Holz / Tag». */
+/**
+ * Ertrag pro Tag eines Rezepts ohne Zutaten, z. B. «+5,5 Holz / Tag»: mit der echten Dauer eines
+ * Zyklus, wie die Zeile «Pro Tag» (systems/Tagesbilanz.ts), damit Karte und Zeile dasselbe sagen.
+ */
 function ertragText(b: BuildingInstance, recipe: RecipeDef): string {
   const [item, menge] = Object.entries(recipe.outputs)[0] ?? ['', 0];
-  const proTag = (menge * TAG_SEKUNDEN) / Math.max(1, zyklusSekunden(b, recipe));
-  return `+${Math.round(proTag * 10) / 10} ${itemName(item)} / Tag`;
+  const proTag = (menge * TAG_SEKUNDEN) / echteZyklusSekunden(b, recipe);
+  return `+${String(Math.round(proTag * 10) / 10).replace('.', ',')} ${itemName(item)} / Tag`;
 }
 
 // ── Gebäude ohne Rezepte ────────────────────────────────────────
@@ -225,7 +370,10 @@ function statusOhneRezept(state: GameState, def: BuildingDef, b: BuildingInstanc
   if (def.radiusEffect?.type === 'water') text = 'Wasser für die Stadt';
   else if (def.expeditions) text = `${state.fighters.length} Helden in der Gilde`;
   else if (def.id === 'WAREHOUSE') text = `${Math.floor(s.wood ?? 0)} Holz · ${Math.floor(s.stone ?? 0)} Stein`;
-  else if (def.id === 'MARKETPLACE') text = `+${marktBonusProzent(wirkungsStufe(state, def.id))} % Steuern`;
+  else if (def.id === 'MARKETPLACE') {
+    const handel = marktGesperrt(state) ? '' : ` · Handel: noch ${handelHeute(state)} Bündel`;
+    text = `+${marktBonusProzent(wirkungsStufe(state, def.id))} % Steuern${handel}`;
+  }
   else if (def.id === 'BANK') text = `+${bankGoldProTag(wirkungsStufe(state, def.id))} Gold / Tag`;
   return { ...basis, zustand: 'bereit', text, fortschritt: null };
 }
@@ -255,12 +403,12 @@ export function getGebaeudeStatus(state: GameState, typeId: string): GebaeudeSta
   const s = einzelStatus(state, b);
   if (s.laeuft) {
     const recipe = s.recipe!;
-    let text = Object.keys(recipe.inputs).length === 0 ? ertragText(b, recipe) : recipe.name;
+    let text = s.text ?? (Object.keys(recipe.inputs).length === 0 ? ertragText(b, recipe) : recipe.name);
     // Nicht alle Arbeitsplätze besetzt: läuft, aber langsamer
     if (besetzt(b) < arbeitsplaetze(b)) text += ` · ${besetzt(b)}/${arbeitsplaetze(b)} Arbeiter`;
     return { typeId, zustand: 'laeuft', text, fortschritt: s.fortschritt, anzahl: 1, stufe };
   }
   const grund = s.grund ?? { art: 'kein-rezept' as const };
-  const zustand: Zustand = grund.art === 'auftrag' ? 'bereit' : 'wartet';
+  const zustand: Zustand = grund.art === 'auftrag' || grund.art === 'vorrat' ? 'bereit' : 'wartet';
   return { typeId, zustand, text: grundText(grund), fortschritt: s.fortschritt, anzahl: 1, stufe, grund };
 }

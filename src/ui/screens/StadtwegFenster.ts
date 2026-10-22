@@ -16,6 +16,8 @@ import { kostenText } from '../../systems/GebaeudeStatus';
 import { stadtSilhouette } from './StadtSilhouette';
 import { SaveSystem } from '../../systems/SaveSystem';
 import { navigateTo } from '../ScreenRouter';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
+import { fensterTaste, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gipfelDungeons, isRouteAvailable, isRouteCompleted, getRouteLockReasons } from '../../data/routes';
 
 let spielstand: GameState | null = null;
@@ -299,17 +301,21 @@ export function schliesseStadtweg(): void {
   const ov = document.querySelector<HTMLElement>('.sw-ov');
   if (!ov) return;
   ov.remove();
-  document.removeEventListener('keydown', tasteImFenster, true);
+  window.removeEventListener('keydown', tasteImFenster, true);
   aktualisiereBanner();
   const banner = document.querySelector<HTMLElement>('.sw-banner');
   if (banner?.offsetParent) banner.focus();
 }
 
+/** Tasten, solange das Fenster offen ist (siehe fensterTaste): K, A und G gehen nicht ans Spiel dahinter. */
 function tasteImFenster(e: KeyboardEvent): void {
-  if (e.key === 'Escape') {
-    e.stopPropagation();
-    schliesseStadtweg();
-  }
+  fensterTaste(e, document.querySelector<HTMLElement>('.sw-fenster'), schliesseStadtweg);
+}
+
+/** Schliesst nach einem Klick, ohne dass der zweite Klick eines Doppelklicks dahinter etwas öffnet. */
+function schliesseMitKlick(): void {
+  schliesseStadtweg();
+  schluckeZweitenKlick();
 }
 
 /** Öffnet das Fenster «Der Weg zur Magischen Stadt». */
@@ -325,18 +331,27 @@ export function oeffneStadtweg(state: GameState): void {
   ov.innerHTML = '<div class="sw-fenster" tabindex="-1"></div>';
   document.body.appendChild(ov);
   zeichneFenster(ov, state);
-  document.addEventListener('keydown', tasteImFenster, true);
+  window.addEventListener('keydown', tasteImFenster, true);
 
+  // Der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann (siehe hintergrundKlick)
+  const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', e => {
     const ziel = e.target as HTMLElement;
-    if (ziel === ov || ziel.closest('.sw-zu')) {
-      schliesseStadtweg();
+    if (ziel === ov) {
+      if (hintergrund(e)) schliesseMitKlick();
+      return;
+    }
+    // Der zweite Klick eines Doppelklicks löst nichts ein zweites Mal aus (Aufsteigen, Herzstein)
+    if (e.detail > 1) return;
+    if (ziel.closest('.sw-zu')) {
+      schliesseMitKlick();
       return;
     }
     if (ziel.closest('.sw-auf')) {
       const neu = steigeAuf(state);
       if (neu) {
         zeichneFest(ov, state, neu);
+        erfolgePruefen(state); // Stadtstufe gleich zählen, nicht erst beim Tageswechsel
         speichern(state);
       }
       return;
@@ -346,7 +361,7 @@ export function oeffneStadtweg(state: GameState): void {
       return;
     }
     if (ziel.closest('.sw-zur-karte')) {
-      schliesseStadtweg();
+      schliesseMitKlick();
       navigateTo('dungeon');
       return;
     }

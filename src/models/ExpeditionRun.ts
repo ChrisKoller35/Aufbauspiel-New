@@ -1,18 +1,34 @@
+import type { Wirkung } from '../data/dungeonGeschichten';
+
 export type EncounterType = 'combat' | 'rest' | 'hazard' | 'boss' | 'checkpoint' | 'find' | 'merchant' | 'survivor' | 'fortification';
 
 /** Eine wählbare Option in einem Begegnungs-Dialog */
 export interface EncounterChoice {
   label: string;
   flavorText: string;
-  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal';
+  /**
+   * 'geschichte': Entscheidung der Dungeon-Geschichte, sie wirkt über `wirkung` (systems/Geschichten.ts).
+   * 'angriff': Die Gruppe hat bis zum Ende des Dungeons `value` Prozent mehr Angriff (Sternenfeuer).
+   * 'kein': Die Option wirkt nur über Preis und Gier (gefangene Sterne).
+   */
+  effect: 'heal' | 'gold' | 'item' | 'xp' | 'risky_heal' | 'geschichte' | 'angriff' | 'kein';
   /** Stärke des Effekts (Prozent, Goldmenge oder XP-Betrag, je nach effect) */
   value: number;
   /** Optionaler Item-Key für effect='item' */
   itemId?: string;
-  /** Hort-Gier: so viele Punkte kommen dazu, wenn diese Option gewählt wird (RouteDef.hortGier) */
+  /**
+   * Die Beute (effect 'item') kommt erst, wenn der Boss fällt (Sternenschlund: ausgeschlachtete Sterne).
+   * Bis dahin wartet sie in `geschichtsBeute`; wer vorher umkehrt oder fällt, lässt sie liegen.
+   */
+  nachSieg?: boolean;
+  /** Hort-Gier: so viele Punkte kommen dazu, wenn diese Option gewählt wird (RouteDef.hortGier); weniger als 0 schwächt den Boss */
   gier?: number;
   /** Preis der Option: jeder lebende Held verliert so viel Prozent seiner max. HP (nie unter 1) */
   kostetLeben?: number;
+  /** Geschichte: was die Option bewirkt */
+  wirkung?: Wirkung[];
+  /** Geschichte: der Satz dazu im Bericht nach der Expedition */
+  nachklang?: string;
 }
 
 /** Zustand einer Befestigungsanlage (Mauer, Tor, Turm, Bergfried) */
@@ -47,8 +63,10 @@ export interface SpecialEffect {
   chance?: number;
   /** Dauer oder Abstand in Runden (Gift, Gezeitenwelle, Spott …) */
   runden?: number;
-  /** Höchstwert (Glutherz, Drachengier) */
+  /** Höchstwert (Glutherz, Drachengier, Schmiedetakt) */
   max?: number;
+  /** Jeder wievielte Treffer des Trägers (Sternenfall) */
+  treffer?: number;
   /** Anteil an Schaden oder Leben (Druckwelle, Gezeitenwelle …) */
   anteil?: number;
   /** Schild je Teammitglied (Verbotene Fussnote) */
@@ -109,11 +127,25 @@ export interface CombatUnit {
   zielschuss?: boolean;
   /** Fährtenleserin: markierter Gegner erleidet so viel mehr Schaden von Helden (Anteil) */
   markiert?: number;
+  /** Bärengestalt: ist gerade Bärin und zieht die Angriffe auf sich, bis sie unter die Hälfte ihrer Leben fällt */
+  baerin?: boolean;
+  /** Was der Weg des Helden in dieser Expedition bewirkt hat, für die Bilanz danach (Kampfeffekte.wegZaehlen) */
+  wegWirkung?: WegWirkung;
   /** Knochenherr: Skelette, die bis zum Ende der Expedition für den Helden kämpfen */
   skelette?: number;
+  /** Sternenfall: Treffer in diesem Kampf seit dem letzten Stern */
+  sternenTreffer?: number;
   /** Angriff und Verteidigung, die Kampfeffekte gerade dazugeben (Glutherz, Tiefenrausch, Drachengier, Bastion) */
   effektBoni?: Record<string, number>;
 }
+
+/**
+ * Bilanz eines Wegs: Extraschaden, verhinderter Schaden, Heilung, verteilter Schild und wie oft
+ * er Angriffe umgelenkt, abgefangen oder auf sich gezogen, ausgewichen oder sicher kritisch getroffen hat
+ */
+export type WegWirkungArt =
+  'schaden' | 'verhindert' | 'heilung' | 'schild' | 'umgelenkt' | 'abgefangen' | 'angezogen' | 'ausgewichen' | 'krit';
+export type WegWirkung = Partial<Record<WegWirkungArt, number>>;
 
 export interface CombatBuff {
   stat: string;
@@ -160,8 +192,20 @@ export interface ExpeditionRun {
   bossesKilled: number;             // Anzahl besiegter Bosse
   /** Hort-Gier: Punkte aus eingesteckten Schätzen, machen den Boss stärker (RouteDef.hortGier) */
   gier?: number;
+  /** Sternenfeuer: so viel Prozent mehr Angriff hat die Gruppe bis zum Ende des Dungeons (EncounterChoice 'angriff') */
+  gruppenAngriff?: number;
   /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
   setTeil?: string | null;
+  /** Geschichte: Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */
+  setTeilVersprochen?: boolean;
+  /** Das versprochene Set-Teil, gezogen mit setTeil; null = keins */
+  setTeilExtra?: string | null;
+  /** Material für die Schmiede, das der Lauf gebracht hat (systems/Schmiede.ts); fehlt = noch nicht vergeben */
+  schmiedeMaterial?: { itemId: string; menge: number } | null;
+  /** Geschichte: die Sätze zu den Entscheidungen dieses Laufs, für den Bericht (systems/Geschichten.ts) */
+  chronik?: string[];
+  /** Geschichte: Beute einer mutigen Wahl, die erst kommt, wenn der Kampf in Raum `raum` gewonnen ist */
+  geschichtsBeute?: { raum: number; gold: number; dinge: Record<string, number> }[];
   /** Feature #11: Ausstehende Begegnungs-Wahl (find/rest Raum) */
   pendingChoice?: { roomIndex: number; optionA: EncounterChoice; optionB: EncounterChoice };
   /** Feature #15: Checkpoint-Dialog ausstehend */
@@ -193,6 +237,15 @@ export interface ExpeditionRun {
   warMachineItemId?: string;
 }
 
+/**
+ * Bis zum Ende gekommen, und wo es einen Boss gibt, ist er besiegt. Ein Kampf endet nach dem
+ * Rundenlimit auch ohne Sieger (CombatEngine), dann zählt die Expedition als Sieg, der Boss lebt aber.
+ * Geschichte, versprochenes Set-Teil und Musterlauf zählen nur einen echten Sieg.
+ */
+export function dungeonBezwungen(run: ExpeditionRun): boolean {
+  return run.status === 'victory' && (run.bossesKilled > 0 || !run.rooms.some(r => r.type === 'boss'));
+}
+
 /** Snapshot of HP values after a combat round – used by CombatOverlay for round-by-round animation */
 export interface CombatRoundSnapshot {
   round: number;
@@ -210,4 +263,12 @@ export interface CombatRoundSnapshot {
   fortificationHp?: number;
   /** Fährtenleserin: IDs der Gegner, die nach dieser Runde markiert sind */
   markiert?: number[];
+  /** Zustände aus den Wegen nach dieser Runde (Zorn, Bärin, Fluch, Kränkung …) je Held und je Gegner, nach ID */
+  wegZustand?: { helden: Record<number, WegZustand[]>; gegner: Record<number, WegZustand[]> };
+}
+
+/** Ein Zustand aus einem Weg auf der Kampfkarte: Zeichen mit Zahl und Erklärung, z. B. «🔥+4» */
+export interface WegZustand {
+  zeichen: string;
+  titel: string;
 }

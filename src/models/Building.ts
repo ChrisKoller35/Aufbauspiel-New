@@ -10,6 +10,8 @@ export interface BuildingInstance {
   activeRecipeId: string | null;
   productionTimer: number;  // seconds remaining in current cycle
   producing: boolean;       // currently producing?
+  /** Laufender Zyklus ohne Auftrag: Vorstufe, Zulieferung oder Vorrat (systems/Werkstattplan.ts). */
+  vonSelbst?: { art: 'vorstufe' | 'zulieferung' | 'vorrat'; fuer: string } | null;
   localInputBuffer: Record<string, number>;
   localOutputBuffer: Record<string, number>;
   connected: boolean;

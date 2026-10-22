@@ -229,6 +229,7 @@ body {
 .tag-frost { background: rgba(30,60,120,.3); color: #a5b4fc; border: 1px solid #3730a3; }
 .tag-gipfel { background: rgba(124,45,18,.35); color: #fdba74; border: 1px solid #c2410c; }
 .tag-himmel { background: rgba(30,41,90,.4); color: #e0e7ff; border: 1px solid #6366f1; }
+.tag-sterne { background: rgba(46,16,101,.45); color: #fde68a; border: 1px solid #a855f7; }
 
 /* ── Team Selection ── */
 .team-wrap { display: grid; grid-template-columns: 1fr 240px; gap: 18px; height: 100%; }
@@ -787,8 +788,17 @@ text.pk-kl.an { fill: var(--gl); }
 .ws-cancel { margin-left: auto; background: transparent; border: 1px solid var(--bdr); color: #f87171; border-radius: 4px; padding: 0 7px; cursor: pointer; }
 .ws-cancel:hover { border-color: #f87171; }
 .ws-rcp.ws-rcp-auf { cursor: default; }
-.ws-rcp-auf .ws-add { width: auto; margin: 0 0 0 6px; padding: 3px 9px; font-size: 0.65rem; }
+.ws-rcp-auf .ws-add { width: auto; margin: 0 0 0 6px; padding: 3px 9px; font-size: 0.65rem; white-space: nowrap; flex: none; }
 .craft-lauf { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 9px; }
+/* Von selbst (systems/Werkstattplan.ts): fehlende Zutat, die eine Werkstatt der Stadt macht, und der Zyklus dafür */
+.cost-auto { color: #f0c674; }
+.craft-selbst { color: #f0c674; }
+.ingr.craft-selbst { border-color: rgba(240,198,116,.45); }
+.ccard-st { min-width: 0; }
+.ws-auf.ws-selbst { border-style: dashed; }
+.ws-auf.ws-selbst.on { border-color: rgba(240,198,116,.6); }
+.ws-von-selbst { margin-left: auto; font-size: 0.62rem; color: #f0c674; border: 1px solid rgba(240,198,116,.45); border-radius: 3px; padding: 0 6px; white-space: nowrap; }
+.ws-selbst-satz { margin-top: 8px; font-size: 0.7rem; line-height: 1.45; }
 .hdr-note { font-size: 0.75rem; color: #4ade80; margin-left: 12px; animation: hdr-note-in .3s ease-out; }
 @keyframes hdr-note-in { from { opacity: 0; transform: translateY(-3px); } to { opacity: 1; transform: none; } }
 
@@ -1063,6 +1073,10 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .hdm2-weg-text { font-size: 0.72rem; color: var(--txt); line-height: 1.4; }
 .hdm2-weg-meister { font-size: 0.7rem; color: var(--mut); line-height: 1.4; }
 .hdm2-weg-meister.aktiv { color: #fcd34d; }
+.hdm2-weg-bilanz { font-size: 0.7rem; color: #fcd34d; line-height: 1.4; margin-top: 4px; }
+.hdm2-weg-bilanz.leer { color: var(--mut); font-style: italic; }
+/* Bilanz der Wege nach einer Expedition, unter der Zeile des Helden */
+.weg-wirkung-zeile { color: #fcd34d; font-size: .74rem; margin: -3px 0 7px 12px; }
 .hdm2-weg-frage { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 2px; font-size: 0.74rem; color: #fcd34d; }
 .weg-knopf {
   align-self: flex-start; cursor: pointer; border-radius: 4px; transition: .2s; padding: 6px 12px; margin-top: 2px;
@@ -1337,6 +1351,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .mc-co-badge-set { font-family: inherit; font-size: 0.7rem; padding: 0 4px; border-color: #34d399; color: #6ee7b7; background: rgba(52,211,153,.12); }
 .mc-co-badge-weg { font-family: inherit; font-size: 0.7rem; padding: 0 4px; border-color: #fcd34d; color: #fcd34d; background: rgba(252,211,77,.12); }
 .mc-co-badge-marke { border-color: #f59e0b; background: rgba(245,158,11,.15); }
+/* Zustände aus den Wegen nach jeder Runde: 🔥+4, 🐻, 💀2 im Weg-Abzeichen, 🕸️−2 und 🎭−2 bei Gegnern */
+.mc-co-badge-zustand, .mc-co-badge-weg.aktiv { white-space: nowrap; }
+.mc-co-badge-weg.aktiv { background: rgba(252,211,77,.28); box-shadow: 0 0 6px rgba(252,211,77,.7); }
 /* HP bar */
 .mc-bar-track {
   height: 6px; background: #0c1220; border-radius: 3px; overflow: hidden; margin-top: 2px;
@@ -1403,6 +1420,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 @keyframes mc-co-outcome-in { from { opacity: 0; transform: scale(1.2); } to { opacity: 1; transform: scale(1); } }
 .mc-co-room-cleared {
   font-family: 'Cinzel', serif; font-size: 0.9rem; color: #4ade80; letter-spacing: 2px;
+}
+.mc-co-geschichte-beute {
+  font-family: 'Cinzel', serif; font-size: 0.8rem; color: #e6c060; letter-spacing: 1px;
 }
 
 /* Abilities */

@@ -1,7 +1,7 @@
 import './ui/html/magic-city.css';
 import { GameState, createNewGameState } from './models/GameState';
 import { SaveSystem, nutzeProbespiel } from './systems/SaveSystem';
-import { istProbespiel, probespielNeu, richteProbespielEin } from './systems/Probespiel';
+import { istProbespiel, probespielNeu, probespielSterne, richteProbespielEin } from './systems/Probespiel';
 import { renderMainMenu } from './ui/screens/MainMenuScreen';
 import { renderHeroesScreen, initHeroesScreen } from './ui/screens/HeroesScreen';
 import { renderBuildingsScreen, initBuildingsScreen } from './ui/screens/BuildingsScreen';
@@ -10,8 +10,9 @@ import { renderRankingScreen, initRankingScreen } from './ui/screens/RankingScre
 import { renderBestiariumScreen, initBestiariumScreen } from './ui/screens/BestiariumScreen';
 import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/AchievementsScreen';
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
+import { renderGildenhausScreen, initGildenhausScreen } from './ui/screens/GildenhausScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
-import { navigateTo, initScreenStyles, ScreenId } from './ui/ScreenRouter';
+import { navigateTo, initScreenStyles, ScreenId, setzeNavigationsSperre } from './ui/ScreenRouter';
 import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from './systems/ExpeditionSystem';
 import { EncounterChoice } from './models/ExpeditionRun';
 import { ITEM_DEFS } from './data/items';
@@ -24,10 +25,17 @@ import { loeseHeldenBindungen } from './systems/HeldenBindung';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
-import { setBeute, setTeilHinweis } from './systems/DungeonSets';
+import { erfolgName, erfolgePruefen } from './systems/AchievementSystem';
+import { ranglistenZeilen } from './ui/components/RanglistenBilanzAnzeige';
+import { auftragsZeilen } from './ui/components/AuftragsBilanzAnzeige';
+import { setBeute, setTeilHinweise } from './systems/DungeonSets';
+import { bereiteTeile, neuBereit, schmiedeBeute, schmiedeStufen } from './systems/Schmiede';
+import { truhenHinweise } from './ui/components/SchmiedeAnzeige';
 import { placeStartingLayout, createStartingCitizens } from './scenes/CityStartingLayout';
 import { showChestReveal } from './ui/components/ChestRevealOverlay';
-import { wegBilanz } from './ui/components/WegAnzeige';
+import { wegBilanz, wegWirkungZeile } from './ui/components/WegAnzeige';
+import { chronikHtml, einleitungHtml, folgenHtml, geschichtsText, optionsKnopfHtml } from './ui/components/GeschichtsAnzeige';
+import { einleitungGelesen, geschichtsBilanz, GeschichtsBilanz, istGeschichtsWahl, raumWahlText, ungeleseneEinleitung, wahlNachRaum } from './systems/Geschichten';
 import { getRouteBauplan } from './data/routes';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -36,6 +44,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // localhost:5173/?probe: eigenes Spiel zum Ausprobieren der obersten Dungeons, eigener Speicherplatz
   const probe = istProbespiel(location.search);
+  const probeSterne = probespielSterne(location.search);
   if (probe) nutzeProbespiel();
   const saveSystem = new SaveSystem();
   if (probe && probespielNeu(location.search)) {
@@ -65,7 +74,7 @@ document.addEventListener('DOMContentLoaded', () => {
   if (isNewGame) {
     placeStartingLayout(state);
     createStartingCitizens(state);
-    if (probe) richteProbespielEin(state);
+    if (probe) richteProbespielEin(state, probeSterne);
   }
 
   // Initialize game systems
@@ -85,6 +94,10 @@ document.addEventListener('DOMContentLoaded', () => {
     saveSystem.save(state);
   }
 
+  // Während einer Expedition kein Bildschirmwechsel: Der Kampf läuft am Router vorbei und
+  // wäre sonst versteckt, ohne Weg zurück (Tasten K, A, G, Escape und alle Knöpfe)
+  setzeNavigationsSperre(() => state.activeExpedition != null);
+
   // Every run starts at full HP (GearSystem), so stored HP is display-only:
   // heal heroes wounded by older saves.
   for (const fighter of state.fighters) {
@@ -99,6 +112,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initBestiariumScreen(state);
   initAchievementsScreen(state);
   initDungeonMapScreen(state);
+  initGildenhausScreen(state);
 
   // Redraw the target screen on every navigation so numbers (XP, gold, rank, unlocks) are current.
   // Registered before the screens render, so screen-own mc:navigate listeners
@@ -111,6 +125,7 @@ document.addEventListener('DOMContentLoaded', () => {
     bestiarium: () => replaceScreen('s-bestiarium', () => renderBestiariumScreen(app)),
     achievements: () => replaceScreen('s-achievements', () => renderAchievementsScreen(app)),
     dungeon: () => replaceScreen('s-dungeon', () => renderDungeonMapScreen(app)),
+    gildenhaus: () => replaceScreen('s-gildenhaus', () => renderGildenhausScreen(app)),
     // List + team screen keep their delegated listeners and the current team selection
     expeditions: refreshExpeditionsScreens,
     team: refreshExpeditionsScreens,
@@ -133,6 +148,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
+  // Neue Zettel am Auftragsbrett gleich speichern: Sie entstehen aus dem Lager von jetzt,
+  // und Neuladen soll sie nicht anders würfeln (systems/Auftragsbrett.ts)
+  let gespeicherterBrettTag = state.auftragsbrett?.tag.id;
+  const neueZettelSpeichern = (): void => {
+    const tag = state.auftragsbrett?.tag.id;
+    if (!tag || tag === gespeicherterBrettTag) return;
+    gespeicherterBrettTag = tag;
+    saveSystem.save(state);
+  };
+
   window.addEventListener('mc:navigate', ((e: CustomEvent) => {
     const screen = e.detail?.screen as ScreenId;
     try {
@@ -140,6 +165,7 @@ document.addEventListener('DOMContentLoaded', () => {
     } catch (err) {
       console.error(`✗ ${screen} re-render failed:`, err);
     }
+    neueZettelSpeichern();
   }) as EventListener);
 
   // Render all screens into #app
@@ -153,6 +179,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['Bestiarium', () => renderBestiariumScreen(app)],
     ['Achievements', () => renderAchievementsScreen(app)],
     ['DungeonMap', () => renderDungeonMapScreen(app)],
+    ['Gildenhaus', () => renderGildenhausScreen(app)],
   ] as const;
 
   for (const [name, render] of screens) {
@@ -163,6 +190,7 @@ document.addEventListener('DOMContentLoaded', () => {
       console.error(`✗ ${name} failed:`, e);
     }
   }
+  neueZettelSpeichern();
 
   // Combat screen (class-based, manages its own DOM)
   const combatScreen = new CombatScreen(app);
@@ -179,6 +207,24 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
 
+    // Geschichte: vor dem ersten Aufbruch in diesen Dungeon die Einleitung des Stadtschreibers
+    const geschichte = ungeleseneEinleitung(state, routeId);
+    if (geschichte) {
+      showExpeditionDialog('📜', geschichte.titel, einleitungHtml(geschichte), [
+        { label: 'ZURÜCK', onClick: () => {} },
+        {
+          label: 'AUFBRECHEN', primary: true, onClick: () => {
+            einleitungGelesen(state, routeId);
+            aufbrechen(routeId, heroIds, provisionMap);
+          },
+        },
+      ]);
+      return;
+    }
+    aufbrechen(routeId, heroIds, provisionMap);
+  }
+
+  function aufbrechen(routeId: string, heroIds: number[], provisionMap: Record<string, number>): void {
     // Convert provision map {itemId: qty} to requestedConsumables array
     const consumables: string[] = [];
     for (const [itemId, qty] of Object.entries(provisionMap)) {
@@ -195,6 +241,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Track statistics
     state.statistics['total_expeditions'] = (state.statistics['total_expeditions'] ?? 0) + 1;
+    saveSystem.save(state);
 
     // Show combat for first combat room
     showNextCombatRoom();
@@ -206,6 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
     label: string;
     primary?: boolean;
     disabled?: boolean;
+    /** Entscheidung der Geschichte: die Folgen unter der Beschriftung (HTML aus GeschichtsAnzeige) */
+    folgen?: string;
     onClick: () => void;
   }
 
@@ -222,7 +271,7 @@ document.addEventListener('DOMContentLoaded', () => {
     overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:200;display:flex;align-items:center;justify-content:center;';
 
     const box = document.createElement('div');
-    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;text-align:center;font-family:'Cinzel',serif;";
+    box.style.cssText = "background:#0f1420;border:1px solid #c8a227;border-radius:10px;padding:28px 32px;max-width:440px;width:90%;max-height:90vh;max-height:90dvh;overflow-y:auto;text-align:center;font-family:'Cinzel',serif;";
     box.innerHTML = `
       <div style="font-size:2rem;margin-bottom:8px;">${icon}</div>
       <div style="color:#c8a227;font-size:1.1rem;letter-spacing:2px;margin-bottom:16px;">${title}</div>
@@ -233,10 +282,15 @@ document.addEventListener('DOMContentLoaded', () => {
     row.style.cssText = 'display:flex;gap:12px;flex-wrap:wrap;';
     for (const b of buttons) {
       const btn = document.createElement('button');
-      btn.textContent = b.label;
       btn.disabled = !!b.disabled;
-      btn.style.cssText = DIALOG_BTN_BASE + (b.primary ? DIALOG_BTN_PRIMARY : DIALOG_BTN_SECONDARY)
-        + (b.disabled ? 'opacity:.4;cursor:not-allowed;' : 'cursor:pointer;');
+      if (b.folgen !== undefined) {
+        btn.className = 'gs-option';
+        btn.innerHTML = optionsKnopfHtml(b.label, b.folgen);
+      } else {
+        btn.textContent = b.label;
+        btn.style.cssText = DIALOG_BTN_BASE + (b.primary ? DIALOG_BTN_PRIMARY : DIALOG_BTN_SECONDARY)
+          + (b.disabled ? 'opacity:.4;cursor:not-allowed;' : 'cursor:pointer;');
+      }
       btn.addEventListener('click', () => {
         if (b.disabled) return;
         overlay.remove();
@@ -311,18 +365,34 @@ document.addEventListener('DOMContentLoaded', () => {
   function showChoiceDialog(run: ActiveRun): void {
     const choice = run.pendingChoice;
     if (!choice) { continueExpedition(run); return; }
+    const waehlen = (index: 0 | 1) => (): void => { expeditionSystem.resolveChoice(run, index); continueExpedition(run); };
+
+    // Entscheidung der Geschichte: die Lage, darunter zwei Knöpfe mit ihren Folgen
+    const wahl = istGeschichtsWahl(choice) ? wahlNachRaum(run.routeId, choice.roomIndex) : undefined;
+    if (wahl) {
+      const knopf = (c: EncounterChoice, index: 0 | 1): DialogButton =>
+        ({ label: c.label, folgen: folgenHtml(run.routeId, c.wirkung ?? []), onClick: waehlen(index) });
+      showExpeditionDialog('📜', wahl.titel, geschichtsText(wahl.text) + partyHpHtml(run), [
+        knopf(choice.optionA, 0), knopf(choice.optionB, 1),
+      ]);
+      return;
+    }
+
     const option = (c: EncounterChoice): string => `
       <div style="margin-bottom:10px;">
         <div style="color:#e5e7eb;font-size:.85rem;">${c.label}</div>
         <div style="color:#6b7280;font-size:.75rem;">${c.flavorText}</div>
       </div>`;
+    // Feste Wahl-Räume der obersten Dungeons erzählen ihre Geschichte mit
+    const raum = raumWahlText(run.routeId, choice.roomIndex);
 
-    showExpeditionDialog('✦', 'EURE WAHL', `
+    showExpeditionDialog(raum ? '📜' : '✦', raum?.titel ?? 'EURE WAHL', `
+      ${raum ? geschichtsText(raum.text) : ''}
       ${partyHpHtml(run)}
       <div style="margin-bottom:20px;">${option(choice.optionA)}${option(choice.optionB)}</div>
     `, [
-      { label: choice.optionA.label, primary: true, onClick: () => { expeditionSystem.resolveChoice(run, 0); continueExpedition(run); } },
-      { label: choice.optionB.label, primary: true, onClick: () => { expeditionSystem.resolveChoice(run, 1); continueExpedition(run); } },
+      { label: choice.optionA.label, primary: true, onClick: waehlen(0) },
+      { label: choice.optionB.label, primary: true, onClick: waehlen(1) },
     ]);
   }
 
@@ -376,9 +446,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const run = state.activeExpedition;
     if (!run) return;
 
-    // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe
-    const setTeil = setBeute(state, run);
-    const setHinweise = setTeil ? { [setTeil]: setTeilHinweis(state, setTeil) } : {};
+    // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe (eins mehr, wenn die Geschichte es versprochen hat)
+    const setHinweise = setTeilHinweise(state, setBeute(state, run));
+    // Material für die Schmiede: ein Sieg bringt die volle Menge, sonst nach den geschafften Räumen
+    const material = schmiedeBeute(run);
+    const hinweise = truhenHinweise(state, setHinweise, material?.itemId ?? null);
 
     // Capture loot data before clearing
     const loot = { ...run.loot };
@@ -389,6 +461,9 @@ document.addEventListener('DOMContentLoaded', () => {
     if (neuerBauplan) loot[neuerBauplan] = (loot[neuerBauplan] ?? 0) + 1;
     const goldEarned = run.goldEarned ?? 0;
     const hasLoot = goldEarned > 0 || Object.values(loot).some(q => q > 0);
+
+    // Was in der Schmiede schon vorher ging (danach kommen Material der Zettel und die Beute dazu)
+    const schonBereit = bereiteTeile(state);
 
     // XP, score + scoreboard, statistics, guild rank, bestiarium, achievements
     // (before returning provisions: leftover provisions count towards the score)
@@ -407,6 +482,9 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
+    // Geschichte: was der Stadtschreiber festhält (der erste Sieg zählt sie als erlebt)
+    const geschichte = geschichtsBilanz(state, run);
+
     // Clear active expedition
     state.activeExpedition = null;
 
@@ -418,12 +496,14 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
       if (neuerBauplan) state.erhalteneBauplaene.push(neuerBauplan);
+      // Erfolge, die erst mit der Beute im Lager zählen (ganzes Set: Stern im Trophäensaal), auch in die Bilanz
+      progress.newAchievements.push(...erfolgePruefen(state, { hinweis: false }).map(erfolgName));
 
       // Save
       saveSystem.save(state);
       console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
 
-      showExpeditionSummary(progress, () => {
+      showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), () => {
         // Reset expedition screen state and navigate back
         initExpeditionsScreen(state);
         navigateTo('expeditions');
@@ -432,14 +512,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Show chest reveal animation if there's loot
     if (hasLoot) {
-      showChestReveal(loot, goldEarned, setHinweise).then(applyLootAndFinish);
+      showChestReveal(loot, goldEarned, hinweise, undefined, schmiedeStufen(state)).then(applyLootAndFinish);
     } else {
       applyLootAndFinish();
     }
   }
 
-  /** Result dialog after the chest: score, hero XP and everything newly unlocked. */
-  function showExpeditionSummary(progress: ExpeditionProgress, onClose: () => void): void {
+  /**
+   * Result dialog after the chest: score, hero XP, everything newly unlocked, what the Schmiede can
+   * now do (schmiede: «Rudelreisser auf +2») and the chronicle of the story.
+   */
+  function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], onClose: () => void): void {
     const { entry, xp, rankUp, newClasses, newAchievements } = progress;
     const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
     const line = (text: string, color = '#e5e7eb'): string =>
@@ -451,15 +534,22 @@ document.addEventListener('DOMContentLoaded', () => {
       const weg = held ? wegBilanz(held, h.levelUps) : '';
       const farbe = weg ? '#fcd34d' : h.levelUps > 0 ? '#4ade80' : '#9ca3af';
       body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}${weg}`, farbe);
+      const wirkung = held ? wegWirkungZeile(held, h.wegWirkung) : '';
+      if (wirkung) body += `<div class="weg-wirkung-zeile">${wirkung}</div>`;
     }
     if (rankUp) {
+      // Was der Rang öffnet (rangFreischaltungen): Dungeons, Gebäude, Ausbau, Titel
       body += line(`${rankUp.title}!`, '#c8a227');
-      for (const u of rankUp.unlocks) body += line(`Freigeschaltet: ${u}`, '#9ca3af');
+      for (const u of rankUp.unlocks) body += line(u, '#9ca3af');
     }
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
-    for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
+    for (const a of newAchievements) body += line(`🏅 Erfolg: ${a}`, '#4ade80');
+    for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
+    for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
+    if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
 
-    showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>`, [
+    const chronik = geschichte ? chronikHtml(geschichte) : '';
+    showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [
       { label: 'WEITER', primary: true, onClick: onClose },
     ]);
   }
@@ -467,16 +557,14 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Keyboard Shortcuts ──────────────────────────────────────
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
-    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+    if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
+    // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben)
     switch (e.key.toUpperCase()) {
       case 'K': navigateTo('bestiarium'); break;
       case 'A': navigateTo('achievements'); break;
-      case 'ESCAPE':
-        // If combat is active, don't allow ESC to navigate away
-        if (state.activeExpedition) return;
-        navigateTo('main');
-        break;
+      case 'G': navigateTo('gildenhaus'); break;
+      case 'ESCAPE': navigateTo('main'); break;
     }
 
     if (e.key === 'F5') {
@@ -516,6 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
       economySystem.dayTick(state);
       peopleSystem.dayTick(state);
       loeseHeldenBindungen(state);
+      // Noch einmal nach dem ganzen Tageswechsel: Die Stadt wächst erst in peopleSystem.dayTick
+      erfolgePruefen(state);
     }
 
     // Update resource display in header

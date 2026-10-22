@@ -14,6 +14,8 @@
 .tb-chip {
   color: #9be0a5; background: rgba(22,101,52,.14); border: 1px solid rgba(34,197,94,.4);
   border-radius: 3px; padding: 2px 7px; white-space: nowrap; cursor: help;
+  /* Wie die Karten (magic-city.css): langes Drücken zeigt die Erklärung, kein Markieren, kein Kopier-Menü */
+  touch-action: manipulation; -webkit-touch-callout: none; -webkit-user-select: none; user-select: none;
 }
 .tb-chip small { color: inherit; opacity: .85; }
 .tb-chip.minus { color: #f19a9a; background: rgba(153,27,27,.18); border-color: rgba(239,68,68,.5); }

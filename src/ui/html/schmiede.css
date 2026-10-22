@@ -1,0 +1,166 @@
+/* ── Schmiede (ui/screens/SchmiedeTab.ts, ui/components/SchmiedeAnzeige.ts) ── */
+
+/* «+3» an verbesserten Set-Teilen: unten links (oben links das Set-Zeichen, unten rechts die Anzahl) */
+.schmiede-plus {
+  position: absolute; bottom: 1px; left: 1px; pointer-events: none;
+  font-family: 'Cinzel', serif; font-size: 0.62rem; font-weight: 700; line-height: 1;
+  padding: 2px 4px; border-radius: 4px; background: rgba(6, 8, 16, .85);
+  color: #e7b98a; border: 1px solid #b4733a;
+}
+.schmiede-plus.silber { color: #e5e7eb; border-color: #9ca3af; }
+.schmiede-plus.gold { color: #fde68a; border-color: #f59e0b; box-shadow: 0 0 6px rgba(245, 158, 11, .55); }
+/* Im Inventar liegt unten der Name: dort steht die Stufe oben neben dem Set-Zeichen */
+.inv-cell .schmiede-plus { top: 1px; bottom: auto; left: 20px; z-index: 2; }
+/* In der Truhe unten links auf dem Bild */
+.chest-item .schmiede-plus { left: 4px; bottom: 4px; z-index: 2; }
+
+.schmiede-punkte { display: inline-flex; gap: 3px; vertical-align: middle; margin-left: 4px; }
+.schmiede-punkt { width: 8px; height: 8px; transform: rotate(45deg); border: 1px solid var(--gd); background: transparent; border-radius: 1px; }
+.schmiede-punkt.an { background: #b4733a; border-color: #e7b98a; }
+.schmiede-punkt.an.silber { background: #9ca3af; border-color: #e5e7eb; }
+.schmiede-punkt.an.gold { background: #f59e0b; border-color: #fde68a; box-shadow: 0 0 4px rgba(245, 158, 11, .7); }
+
+.mat-bild { width: 34px; height: 34px; object-fit: contain; flex-shrink: 0; }
+.mat-bild.klein { width: 18px; height: 18px; vertical-align: -4px; margin-right: 3px; }
+.mat-zeile { white-space: nowrap; }
+.mat-zeile b { color: #fbbf24; font-weight: 600; }
+
+/* Material auf Routenkarten, im Band über dem Team und im Fenster der Dungeon-Karte */
+.exp-mat { font-size: 0.7rem; color: #fde68a; text-shadow: 0 1px 4px rgba(0, 0, 0, .9); margin-top: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.exp-mat:empty { display: none; }
+.exp-mat-info { font-size: 0.85rem; color: #fde68a; line-height: 1.35; }
+
+/* ── Tab «Schmiede» ── */
+.schmiede { padding: 0 16px 24px; max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 12px; }
+.schmiede-kopf {
+  background: radial-gradient(ellipse at 12% 0%, rgba(245, 158, 11, .14), transparent 60%), var(--s1);
+  border: 1px solid var(--bdr2); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 10px;
+}
+.schmiede-gruss { display: flex; gap: 10px; align-items: center; }
+.schmiede-gruss p { font-size: 0.88rem; line-height: 1.45; color: var(--txt); font-style: italic; }
+.schmiede-amboss { font-size: 2rem; line-height: 1; filter: drop-shadow(0 0 8px rgba(245, 158, 11, .5)); }
+.schmiede-erklaerung { font-size: 0.78rem; color: var(--mut); line-height: 1.5; }
+.schmiede-erklaerung b { color: var(--gl); }
+.schmiede-rabatt { font-size: 0.78rem; color: #fde68a; }
+.schmiede-rabatt.aus { color: var(--mut); }
+
+.mat-leiste { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.mat-chip {
+  display: grid; grid-template-columns: 34px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 8px; align-items: center;
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 7px; padding: 4px 8px; min-width: 0;
+}
+.mat-chip .mat-bild { grid-row: 1 / 3; }
+.mat-chip-zahl { font-family: 'Cinzel', serif; font-size: 0.92rem; color: var(--gl); line-height: 1.1; }
+.mat-chip-name { font-size: 0.7rem; color: var(--mut); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mat-chip.leer { opacity: .45; }
+.mat-chip.leer .mat-bild { filter: grayscale(.8); }
+
+.schm-set { background: var(--s1); border: 1px solid var(--bdr); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
+.schm-set.meister { border-color: #f59e0b88; box-shadow: 0 0 14px rgba(245, 158, 11, .15); }
+.schm-set-kopf { display: flex; align-items: center; gap: 8px; }
+.schm-set-titel { flex: 1; min-width: 0; }
+.schm-meister { font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--mut); white-space: nowrap; }
+.schm-meister.an { color: #fde68a; text-shadow: 0 0 8px rgba(245, 158, 11, .6); }
+
+.schm-teil {
+  display: grid; grid-template-columns: 64px minmax(0, 1fr) auto; gap: 4px 12px; align-items: center;
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 8px; padding: 8px 10px;
+}
+.schm-bild {
+  position: relative; width: 64px; height: 64px; border-radius: 8px; border: 1px solid #34d39988;
+  background: var(--s3); display: flex; align-items: center; justify-content: center;
+}
+.schm-bild img { width: 100%; height: 100%; object-fit: contain; border-radius: 8px; }
+.schm-bild.stufe-silber { border-color: #d1d5db; }
+.schm-bild.stufe-gold { border-color: #f59e0b; box-shadow: 0 0 12px rgba(245, 158, 11, .45); }
+.schm-name { font-size: 0.92rem; font-weight: 600; color: var(--txt); }
+.schm-plus { font-family: 'Cinzel', serif; color: #e7b98a; }
+.schm-plus.silber { color: #e5e7eb; }
+.schm-plus.gold { color: #fde68a; }
+.schm-wo { font-size: 0.7rem; color: var(--mut); margin-top: 1px; }
+.schm-werte { display: flex; flex-wrap: wrap; gap: 2px 10px; font-size: 0.78rem; margin-top: 4px; }
+.sprung { color: var(--txt); white-space: nowrap; }
+.sprung b { color: #4ade80; }
+.sprung.gleich { color: var(--mut); }
+.schm-kosten { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 0.76rem; margin-top: 4px; color: var(--txt); }
+.schm-preis { white-space: nowrap; }
+.schm-preis b { color: #4ade80; }
+.schm-preis.fehlt b { color: #f87171; }
+.schm-fehlt { font-size: 0.72rem; color: #fca5a5; margin-top: 2px; }
+.schm-satz { font-size: 0.8rem; color: #fde68a; font-style: italic; margin-top: 5px; animation: schm-satz-ein .5s ease both .45s; }
+.schm-knoepfe { display: flex; flex-direction: column; gap: 6px; align-items: stretch; width: 172px; }
+.schm-knopf {
+  font-family: 'Cinzel', serif; font-size: 0.72rem; letter-spacing: 1px; white-space: nowrap;
+  padding: 8px 12px; border-radius: 6px; cursor: pointer; transition: .15s;
+  background: linear-gradient(180deg, #8a5a14, #5c3a0b); color: #fde68a; border: 1px solid #c8a227;
+}
+.schm-knopf:hover:not(:disabled) { filter: brightness(1.2); }
+.schm-knopf:disabled { opacity: .45; cursor: default; filter: grayscale(.6); }
+.schm-knopf.schmelzen { background: none; color: #fdba74; border-color: #9a3412; font-size: 0.66rem; padding: 6px 10px; }
+.schm-knopf.leise { background: none; color: #cbd5e1; border-color: #475569; }
+.schm-max { font-family: 'Cinzel', serif; font-size: 0.74rem; color: #fde68a; white-space: nowrap; text-align: center; }
+.schm-frage {
+  grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px;
+  font-size: 0.8rem; color: var(--txt); background: rgba(154, 52, 18, .18); border-left: 3px solid #ea580c;
+  border-radius: 4px; padding: 8px 10px;
+}
+.schm-frage span { flex: 1 1 260px; }
+
+/* Funken, Hammer und Glühen nach dem Schmieden; ein kurzes Aufflammen beim Einschmelzen */
+.schm-funken { position: absolute; inset: 0; pointer-events: none; }
+.schm-funken i { position: absolute; left: 50%; top: 50%; width: 5px; height: 5px; border-radius: 50%; background: #fde68a; opacity: 0; box-shadow: 0 0 6px #f59e0b; }
+.schm-teil.geschmiedet { animation: schm-zeile .9s ease both; }
+.schm-teil.geschmiedet .schm-bild { animation: schm-gluehen 1.4s ease-out both; }
+.schm-teil.geschmiedet .schm-bild::after {
+  content: '🔨'; position: absolute; top: -14px; right: -10px; font-size: 1.4rem;
+  transform-origin: 80% 80%; animation: schm-hammer .55s ease-in 2 both;
+}
+.schm-teil.geschmiedet .schm-funken i { animation: schm-funke .8s ease-out both .5s; }
+.schm-teil.geschmiedet .schm-funken i:nth-child(1) { --x: -38px; --y: -30px; }
+.schm-teil.geschmiedet .schm-funken i:nth-child(2) { --x: 36px; --y: -34px; animation-delay: .55s; }
+.schm-teil.geschmiedet .schm-funken i:nth-child(3) { --x: -44px; --y: 6px; animation-delay: .6s; }
+.schm-teil.geschmiedet .schm-funken i:nth-child(4) { --x: 42px; --y: 10px; animation-delay: .52s; }
+.schm-teil.geschmiedet .schm-funken i:nth-child(5) { --x: -16px; --y: -46px; animation-delay: .58s; }
+.schm-teil.geschmiedet .schm-funken i:nth-child(6) { --x: 18px; --y: -44px; animation-delay: .63s; }
+.schm-teil.geschmiedet .schmiede-plus { animation: schm-plus .6s ease-out both .5s; }
+.schm-teil.eingeschmolzen .schm-bild { animation: schm-schmelzen 1s ease-out both; }
+
+@keyframes schm-zeile { 0% { border-color: var(--bdr); } 40% { border-color: #f59e0b; box-shadow: 0 0 16px rgba(245, 158, 11, .35); } 100% { border-color: var(--bdr); } }
+@keyframes schm-gluehen { 0%, 30% { box-shadow: none; } 45% { box-shadow: 0 0 22px 6px rgba(253, 186, 116, .85); filter: brightness(1.6); } 100% { filter: none; } }
+@keyframes schm-hammer { 0% { transform: rotate(-35deg); opacity: 1; } 70% { transform: rotate(25deg); } 100% { transform: rotate(-10deg); opacity: 0; } }
+@keyframes schm-funke { 0% { opacity: 1; transform: translate(-50%, -50%) scale(1); } 100% { opacity: 0; transform: translate(calc(-50% + var(--x)), calc(-50% + var(--y))) scale(.4); } }
+@keyframes schm-plus { 0% { transform: scale(2.2); } 100% { transform: scale(1); } }
+@keyframes schm-satz-ein { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: none; } }
+@keyframes schm-schmelzen { 0% { filter: none; } 40% { filter: brightness(1.8) sepia(1) hue-rotate(-20deg) saturate(3); box-shadow: 0 0 18px rgba(234, 88, 12, .8); } 100% { filter: none; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .schm-teil.geschmiedet, .schm-teil.geschmiedet .schm-bild, .schm-teil.geschmiedet .schm-funken i,
+  .schm-teil.geschmiedet .schmiede-plus, .schm-teil.eingeschmolzen .schm-bild, .schm-satz { animation: none; }
+  .schm-teil.geschmiedet .schm-bild::after { display: none; }
+}
+
+/* Heldenfenster: Weg in die Schmiede, Meisterset bei den Set-Boni */
+.hdm2-schmiede-link {
+  margin-top: 8px; width: 100%; text-align: left; cursor: pointer;
+  font-size: 0.76rem; color: #fde68a; background: rgba(245, 158, 11, .1);
+  border: 1px solid #c8a22766; border-radius: 6px; padding: 6px 9px; font-family: inherit;
+}
+.hdm2-schmiede-link:hover { border-color: var(--gold); }
+.set-meister { color: #fde68a; }
+
+/* Sammlung: Platz für das «+3» am Bild */
+.set-teil-bild { position: relative; display: inline-block; line-height: 0; }
+
+@media (max-width: 700px) {
+  .schmiede { padding: 0 10px 20px; }
+  .schm-teil { grid-template-columns: 56px minmax(0, 1fr); }
+  .schm-bild { width: 56px; height: 56px; }
+  .schm-knoepfe { grid-column: 1 / -1; flex-direction: row; width: auto; }
+  .schm-knoepfe > * { flex: 1 1 0; }
+  /* Am Handy vier Material-Kästchen je Zeile: Bild und Zahl oben, der Name darunter über die ganze Breite */
+  .mat-leiste { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 5px; }
+  .mat-chip { grid-template-columns: 26px minmax(0, 1fr); column-gap: 5px; padding: 4px 5px; }
+  .mat-chip .mat-bild { grid-row: 1; width: 26px; height: 26px; }
+  .mat-chip-name { grid-column: 1 / -1; font-size: 0.62rem; }
+  .schm-set-kopf { flex-wrap: wrap; }
+}

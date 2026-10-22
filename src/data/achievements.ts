@@ -1,11 +1,15 @@
 /**
  * Erfolge für Magic City, in Gruppen.
  * Jede Bedingung liest nur state.statistics. Werte, die niemand von selbst
- * zählt (Stadtstufe, Helden, Sets, Monsterbuch …), schreibt
- * kennzahlenAktualisieren() in systems/AchievementSystem.ts dort hinein.
+ * zählt (Stadtstufe, Helden, Sets, Monsterbuch, Auftragsbrett, Trophäensaal …),
+ * schreibt kennzahlenAktualisieren() in systems/AchievementSystem.ts dort hinein.
  * Die IDs der ersten zwölf Erfolge stehen in alten Spielständen
  * (state.achievements) und dürfen sich nicht ändern. Liste: docs/ERFOLGE.md.
+ * Jedes Ziel ist mit den echten Regeln erreichbar: tests/erfolgeErreichbar.test.ts.
  */
+
+import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
+import { MAX_SCHMIEDE_STUFE } from './schmiede';
 
 export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Sammeln';
 
@@ -42,6 +46,12 @@ function erfolg(
 /** Beendete Expeditionen: Siege, Niederlagen und Rückzüge (total_expeditions zählt schon beim Start) */
 export const BEENDETE_EXPEDITIONEN = ['total_victories', 'total_defeats', 'total_retreats'];
 
+/** Sockel im Trophäensaal: einer je Boss-Dungeon der Karte, so viele Kapitel hat auch die Kette «Der Saal der Gilde» */
+export const SAAL_SOCKEL = DUNGEON_GRAPH.filter(n => ROUTE_DEFS[n.routeId]?.bossId).length;
+/** Drei Sterne je Sockel (Boss, ganzes Set, Prunkstück); «Glanz des Saals» will die Hälfte davon */
+const SAAL_STERNE = 3 * SAAL_SOCKEL;
+const SAAL_HALBER_GLANZ = Math.ceil(SAAL_STERNE / 2);
+
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // ── Stadt ──
   erfolg('first_building', 'Stadt', '🏗️', 'Grundsteinlegung', 'Errichte dein erstes Gebäude.', 'total_buildings_built', 1),
@@ -49,7 +59,9 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('ausbau_10', 'Stadt', '🔨', 'Ausbauer', 'Baue Gebäude 10 Mal aus.', 'total_upgrades', 10),
   erfolg('gebaeude_max', 'Stadt', '🏰', 'Ganz oben', 'Baue ein Gebäude bis zu seiner Höchststufe aus.', 'gebaeude_auf_hoechststufe', 1),
   erfolg('wohnviertel_6', 'Stadt', '🏘️', 'Volles Viertel', 'Baue das Wohnviertel auf Stufe 6 aus.', 'hoechste_wohnstufe', 6),
-  erfolg('bewohner_50', 'Stadt', '👶', 'Wachsende Stadt', '50 neue Bewohner ziehen ein.', 'total_citizens_born', 50),
+  // Früher «bewohner_50»: Ein volles Wohnviertel hat 36 Plätze, 6 Bewohner sind schon da, also ziehen
+  // höchstens 30 ein. Die alte ID kann in keinem Spielstand stehen und wird übersprungen.
+  erfolg('bewohner_25', 'Stadt', '👶', 'Wachsende Stadt', '25 neue Bewohner ziehen ein.', 'total_citizens_born', 25),
   erfolg('stadtstufe_3', 'Stadt', '🛖', 'Dorf', 'Erreiche die Stadtstufe «Dorf» (3).', 'stadtstufe', 3),
   erfolg('stadtstufe_5', 'Stadt', '🏙️', 'Stadtrecht', 'Erreiche die Stadtstufe «Stadt» (5).', 'stadtstufe', 5),
   erfolg('stadtstufe_7', 'Stadt', '✨', 'Magische Stadt', 'Erreiche die Stadtstufe «Magische Stadt» (7).', 'stadtstufe', 7),
@@ -58,6 +70,11 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // ── Gilde ──
   erfolg('gildenrang_3', 'Gilde', '🎖️', 'Veteranengilde', 'Erreiche Gildenrang III.', 'gildenrang', 3),
   erfolg('gildenrang_5', 'Gilde', '👑', 'Gildenmeister', 'Erreiche Gildenrang V und trage den Titel Gildenmeister.', 'gildenrang', 5),
+  erfolg('zettel_10', 'Gilde', '📌', 'Fleissige Gilde', 'Erledige 10 Zettel am Auftragsbrett.', 'zettel_erledigt', 10),
+  erfolg('saal_kette', 'Gilde', '🏺', 'Alle Sockel voll', 'Stelle alle Prunkstücke der Kette «Der Saal der Gilde» in den Trophäensaal.', 'saal_prunkstuecke', SAAL_SOCKEL),
+  erfolg('saal_glanz', 'Gilde', '🌟', 'Glanz des Saals', `Sammle ${SAAL_HALBER_GLANZ} der ${SAAL_STERNE} Sterne im Trophäensaal.`, 'saal_sterne', SAAL_HALBER_GLANZ),
+  erfolg('rangliste_pokal', 'Gilde', '🥉', 'Aufs Treppchen', 'Gewinne einen Pokal in der Wochenwertung der Rangliste (Platz 1 bis 3).', 'rangliste_pokale', 1),
+  erfolg('gipfel_1', 'Gilde', '🏔️', 'Gipfelstürmer', 'Führe die Gipfel-Rangliste an, vor allen Rivalen-Gilden.', 'gipfel_spitze', 1),
 
   // ── Helden ──
   erfolg('army_builder', 'Helden', '🛡️', 'Armeeführer', 'Habe 10 Helden in der Gilde.', 'helden_anzahl', 10),
@@ -80,6 +97,8 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // ── Sammeln ──
   erfolg('ganzes_set', 'Sammeln', '🧩', 'Komplett', 'Ein Held trägt alle drei Teile eines Dungeon-Sets.', 'ganze_sets', 1),
   erfolg('ganze_sets_3', 'Sammeln', '🎒', 'Sammler', 'Deine Helden tragen 3 verschiedene ganze Dungeon-Sets.', 'ganze_sets', 3),
+  erfolg('schmiede_1', 'Sammeln', '⚒️', 'Am Amboss', 'Verbessere ein Set-Teil in der Schmiede.', 'schmiede_hoechste_stufe', 1),
+  erfolg('schmiede_5', 'Sammeln', '💫', 'Meisterstück', `Schmiede ein Set-Teil auf +${MAX_SCHMIEDE_STUFE}.`, 'schmiede_hoechste_stufe', MAX_SCHMIEDE_STUFE),
   erfolg('monsterbuch_25', 'Sammeln', '📖', 'Monsterkundler', 'Entdecke 25 Monster für das Monsterbuch.', 'monsterbuch_entdeckt', 25),
   erfolg('monsterbuch_50', 'Sammeln', '📚', 'Monstergelehrter', 'Entdecke 50 Monster für das Monsterbuch.', 'monsterbuch_entdeckt', 50),
 ];

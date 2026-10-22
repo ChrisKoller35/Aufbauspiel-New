@@ -3,6 +3,63 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 22.10.2026: Bot-Nacht übernommen, Erfolge sofort, Knopf «Neues Spiel»
+
+Die vier Bot-Aufträge der Nacht (Erfolge #34, Spielstand sichern #35, Marktplatz-Handel #36, Tagesbilanz #37) sind
+auf master und in PR #29 nachgebessert: Erfolge sind alle erreichbar (ein Musterspiel mit den echten Regeln schafft
+alle 37) und zählen gleich nach der Tat, 🏅 in der Kopfzeile (🏆 bleibt dem Trophäensaal); das Fenster «💾 Spielstand»
+hält den Stand vor dem Laden einer Datei auf einem eigenen Platz und holt ihn zurück, prüft Dateien streng und hat den
+Knopf «Neues Spiel» mit Nachfrage und Rückweg; der Markt verkauft das Brot der Bewohner nicht; die Tagesbilanz rechnet
+nach den Werkstatt-Regeln und mit der echten Dauer eines Zyklus. Offen: Die Produktion braucht je Zyklus eine Sekunde
+Leertakt (10-s-Rezept alle 11 s), die Anzeigen rechnen das mit; ob er wegkommt, ist Christophs Entscheidung.
+Anleitungen: `docs/ERFOLGE.md`, `docs/SPIELSTAND.md`, `docs/HANDEL.md`, `docs/TAGESBILANZ.md`.
+
+## Nachtrag 21.10.2026 (abends): Wege geeicht, Werkstätten auf Auftrag, Gildenhaus
+
+Alle 20 Wege der Helden bringen etwa gleich viel (+2,5 % auf Stufe 12, +4 % als Meister) und zeigen im Kampf, im
+Bericht und im Heldenfenster, was sie bewirken (`docs/SPEZIALISIERUNG.md`). Die sechs Werkstätten arbeiten nur noch auf
+Auftrag («+ AUFTRAG» im Reiter «Crafting»), fehlende Zutaten holt die Stadt selbst, die Bäckerei hält zuerst Brot für
+3 Tage; der Brunnen steht in der Mindmap zwischen Kräutergarten und Bäckerei (`docs/WERKSTAETTEN.md`). Neu im Hauptmenü
+die Kachel «Gildenhaus» mit Auftragsbrett (drei Zettel am Tag, Kette «Der Saal der Gilde», Siegel einlösen) und
+Trophäensaal mit einem Sockel je Boss (`docs/AUFTRAGSBRETT.md`).
+
+## Nachtrag 21.10.2026: Zwei Dungeons zwischen den Sternen
+
+Über dem Himmelsarchiv geht die Karte in einem violetten Sternenfeld weiter: die Sternenschmiede (Ebene 7,
+Korrund, der Sternenschmied) und der Sternenschlund (Ebene 8, Nyxar, der Sternenfresser). Je vier Gegner und ein
+Boss mit eigenen Bildern (6 Gegner, 2 Routenbilder), eigene Sets (Korrunds Meisterstücke mit Schmiedetakt, Was Nyxar
+nicht frass mit Sternenfall), Material Sternenstahl, Erstsieg-Beute und die Geschichte des Stadtschreibers über die
+Wahl-Räume: Sternenfeuer gibt der Gruppe Angriff bis zum Ende und kostet Leben, befreite Sterne schwächen Nyxar.
+Ohne Schmiede kein Durchkommen: Die Sternenschmiede verlangt Sets auf etwa +3, der Sternenschlund +4 bis +5. Dazu Drachenhort
+und Himmelsarchiv nach den Bot-Aufträgen (Mindestschaden, stärkere Startklassen) neu geeicht, das Probespiel
+`?probe=sterne`, ein ausgebautes Gildenhaus im Probespiel (vorher gingen nur drei der vier Helden mit) und dort
+schon freie Klassen (vorher meldete der erste Bericht sechsmal «Neue Klasse»).
+Regeln und Eichung: `docs/NEUE-DUNGEONS.md`.
+
+## Nachtrag 20.10.2026 (spät): Schmiede für die Dungeon-Sets
+
+Neuer Tab «⚒️ Schmiede» auf der Heldenseite: Set-Teile werden mit Material aus den Dungeons bis +5 besser,
+jede Stufe um 10 % (der Hauptwert mindestens um 1). Jedes Gebiet hat sein eigenes Material (Waldharz bis
+Himmelstinte, Bilder aus Code gezeichnet), ein Sieg bringt am meisten. Doppelte Teile lassen sich einschmelzen,
+alle drei Teile eines Sets auf +5 sind ein Meisterset (Zwei-Teile-Bonus doppelt). Die Stufe steht als «+3» an
+jedem Bild, im Namen und in den Werten; Truhe, Routen, Karte und Ergebnis nennen das Material.
+Regeln, Kosten und Material je Gebiet: `docs/SCHMIEDE.md`.
+
+## Nachtrag 20.10.2026 (abends): Rangliste mit Rivalen
+
+Neun Computer-Gilden klettern auf der Dungeon-Karte mit, eine Runde pro beendeter Expedition. Die Rangliste
+zeigt, wer am höchsten steht (Höhe, dann Sterne), wer bald vorbeizieht und welcher Sieg einen selbst
+vorbeibringt; ihre Wappen stehen auf der Karte. Dazu eine Wochenwertung um Ruhm mit Ruhmestruhe und Pokal für
+Platz 1 bis 3. Ein dauerhafter Merker hält fest, welche Dungeons wirklich bezwungen sind (Boss besiegt);
+Karte und Stadtweg lesen ihn. Regeln, Rivalen und Eichung: `docs/RANGLISTE.md`.
+
+## Nachtrag 20.10.2026 (Nachmittag): Geschichten der Dungeons
+
+Jeder der 25 Dungeons erzählt eine kurze Geschichte des Stadtschreibers Ottokar: die Einleitung beim ersten Aufbruch,
+2 bis 3 Entscheidungen unterwegs, die Beute oder Gefahr verändern (die mutige Option bringt Gold, Gegenstände oder
+ein Set-Teil mehr, macht aber Gegner oder Boss stärker), eine Chronik im Bericht und nach dem ersten Sieg den Schluss.
+Drachenhort und Himmelsarchiv erzählen über ihre festen Wahl-Räume. Regeln und Eichung: `docs/GESCHICHTEN.md`.
+
 ## Nachtrag 20.10.2026 (Mittag): Dungeon-Sets und Wege der Helden
 
 Jeder Dungeon lässt ein eigenes Set aus drei Teilen fallen, zwei Teile geben Werte, drei eine Fähigkeit, die im Kampf
@@ -118,6 +175,7 @@ NPC-Rettung, Talismane, Stadt-Ereignisse, Synergien, Wochen-Herausforderungen: C
   Steuer nur 2 Gold pro Tag. Gold ist am Anfang viel zu knapp, Holz praktisch unendlich (Holzfäller kostet 10 Holz).
 - Stein ist der Engpass: Die Eisenmine braucht den ganzen Startstein.
 - Brot wird kaum gebraucht (nur für Wachstum), die Brot-Kette (Farm, Mühle, Bäckerei, Brunnen) lohnt sich kaum.
+  → Behoben 21.10.2026 (PR #32): Die Bewohner essen jeden Tag Brot, siehe `docs/AUSBAU.md`.
 - Nie erhältlich: Wasser, Glutwurzel, Schimmerpilz, Sumpfblüte, Knochenstaub, Mondkraut. Dadurch sind 5 von 7
   Trank-Rezepten unmöglich. Kristallsplitter fallen nur selten (ca. 5 % in seltener Beute), werden aber für fast
   alle besseren Rezepte und die Arkanschmiede gebraucht. → Behoben 18.10.2026, siehe `docs/BALANCING.md`.

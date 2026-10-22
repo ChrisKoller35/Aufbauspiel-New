@@ -24,7 +24,8 @@ export interface BuildingDef {
   training: { trainingTimeSec: number; trainingCost: Record<string, number> } | null;
   tags: string[];
   requirements?: { waterSupplied?: boolean };
-  manualCraft?: boolean;  // true = player must click "Herstellen" to start each cycle
+  /** Werkstatt: arbeitet nur Aufträge ab und macht fehlende Zutaten von selbst (systems/Werkstattplan.ts). */
+  manualCraft?: boolean;
   freischaltung: BuildingFreischaltung;
   spriteKey: string;
 }
@@ -87,6 +88,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     expeditions: null,
     training: null,
     tags: ['food'],
+    manualCraft: true,
     freischaltung: { braucht: ['FARM_GRAIN'] },
     spriteKey: 'MILL_WIND',
   },
@@ -108,6 +110,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['food'],
     requirements: { waterSupplied: true },
+    manualCraft: true,
     freischaltung: { braucht: ['MILL_WIND', 'WELL'] },
     spriteKey: 'BAKERY',
   },
@@ -229,6 +232,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     training: null,
     tags: ['herb', 'farm'],
     requirements: { waterSupplied: true },
+    manualCraft: true,
     freischaltung: { braucht: ['FARM_GRAIN', 'WELL'] },
     spriteKey: 'HERB_GARDEN',
   },
