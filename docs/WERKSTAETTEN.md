@@ -28,6 +28,13 @@ Tests: `tests/werkstattplan.test.ts`, `tests/startwirtschaft.test.ts`, `tests/pr
   für den nächsten Bewohner, solange Platz ist), erst dann ihre Aufträge. Das Mehl dafür mahlt die Mühle. Mehr Brot,
   etwa für Expeditionen, gibt es per Auftrag.
 
+**Ohne Leertakt (22.10.2026):** Ist ein Zyklus fertig, wird geliefert und der nächste beginnt im selben Stadt-Takt;
+die Zeit über das Ende hinaus zählt für ihn mit (`ProductionSystem.update`). Eine Werkstatt, die durcharbeitet,
+liefert darum im Mittel alle `zyklusSekunden` (Rezept geteilt durch die besetzten Arbeitsplätze) statt eine Sekunde
+später. Vorher ging je Zyklus ein Takt verloren: Holz auf Stufe 3 brachte 12 statt 18 am Tag, ein 10-s-Rezept lieferte
+alle 11 s. Geliefert wird weiter nur in Takten zu 1 s, die einzelnen Abstände schwanken also um eine Sekunde.
+Zahlen und Anzeigen dazu: [TAGESBILANZ.md](TAGESBILANZ.md).
+
 Reihenfolge, sobald eine Werkstatt frei ist (`planeZyklus`):
 
 1. Vorrat (nur Bäckerei: Brot, bis es für 3 Tage reicht)
@@ -47,6 +54,9 @@ Alle Stadtstufen 12 Tage lang simuliert, Brotkette auf der erlaubten Stufe:
 - Ohne Startbrot fehlt es gleich viele Sekunden wie vorher.
 - Im Lager liegen jetzt 2 bis 8 Brot und höchstens 2 Mehl statt 30 bis 80 Brot und bis 80 Mehl. Getreide sammelt
   sich dafür an.
+
+Gemessen vor dem 22.10.2026, also noch mit dem Leertakt. Ohne ihn arbeitet die ganze Kette ein Stück schneller
+(Bäckerei Stufe 1: 2,14 statt 2 Brot am Tag); die Tests laufen mit den neuen Zahlen weiter durch.
 
 Brot gegen Aufträge (Gegenprüfung 21.10.2026, `tests/werkstattplan.test.ts`): Ging Brot den Aufträgen erst vor, wenn
 es keinen Tag mehr reichte, fehlte mit dauernd bestelltem Kraft-Brot in 30 Tagen 562 von 900 Sekunden Brot und die

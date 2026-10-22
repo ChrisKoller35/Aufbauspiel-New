@@ -155,13 +155,16 @@ describe('Werkstätten auf Klick', () => {
     expect(vorratZiel(state, 'BAKERY')).toBe(3);
     auftragGeben(baeckerei, KRAFTBROT);
     expect(planeZyklus(state, baeckerei)).toMatchObject({ art: 'vorrat', recipe: { id: BROT } });
+    // Reicht das Brot schon für 3 Tage, kommt der Auftrag zuerst
+    state.globalStock.bread = 3;
+    expect(planeZyklus(state, baeckerei)).toMatchObject({ art: 'auftrag', recipe: { id: KRAFTBROT } });
+    state.globalStock.bread = 1;
+
     laufe(state, 1);
     expect(baeckerei.vonSelbst).toEqual({ art: 'vorrat', fuer: 'bread' });
-    laufe(state, 29); // zweimal Brot backen
+    laufe(state, 28); // zweimal Brot backen (je 14 s, ohne Leertakt dazwischen)
     expect(state.globalStock.bread).toBe(3);
-    // 3 Tage sind gesichert: jetzt kommt der Auftrag
-    expect(planeZyklus(state, baeckerei)).toMatchObject({ art: 'auftrag', recipe: { id: KRAFTBROT } });
-    laufe(state, 1);
+    // 3 Tage sind gesichert: der Auftrag beginnt im selben Takt, in dem das zweite Brot fertig wird
     expect(baeckerei.activeRecipeId).toBe(KRAFTBROT);
     expect(baeckerei.vonSelbst ?? null).toBeNull();
   });

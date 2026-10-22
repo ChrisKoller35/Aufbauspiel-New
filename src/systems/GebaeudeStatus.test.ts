@@ -61,8 +61,8 @@ describe('GebaeudeStatus', () => {
     arbeiter(state, bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1'));
     const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
     expect(s.zustand).toBe('laeuft');
-    // Wie die Zeile «Pro Tag»: 2 Holz alle 11 s (10 s Rezept, dazu der Takt bis zum nächsten Start)
-    expect(s.text).toBe('+5,5 Holz / Tag');
+    // Wie die Zeile «Pro Tag»: 2 Holz alle 10 s, wie im Rezept
+    expect(s.text).toBe('+6 Holz / Tag');
     expect(s.stufe).toBe(1);
   });
 

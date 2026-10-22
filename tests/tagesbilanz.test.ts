@@ -6,20 +6,18 @@ import { BUILDING_DEFS } from '../src/data/buildings';
 import { RECIPE_DEFS } from '../src/data/recipes';
 import { brotProTag, brotBedarfProTag } from '../src/systems/PeopleSystem';
 import { EconomySystem } from '../src/systems/EconomySystem';
-import { echteZyklusSekunden } from '../src/systems/ProductionSystem';
 import { tagesBilanz, reichtTage, reichtTageFuer, TagesBilanz } from '../src/systems/Tagesbilanz';
 import { auftragGeben } from '../src/systems/Auftraege';
 import {
   bilanzZahl, bilanzZeileHTML, bilanzTipp, bilanzChips, reichtText, WAREN_SYMBOL,
 } from '../src/ui/screens/ProduktionTab';
 
-// Pro Tag mit der echten Dauer eines Zyklus (ProductionSystem.echteZyklusSekunden): Der Zähler läuft
-// in ganzen Sekunden, und der nächste Zyklus beginnt erst eine Sekunde später (Leertakt).
-// Ein 10-s-Rezept liefert so alle 11 s: 2 Holz × 30 / 11 = 5,45 statt 6 laut Rezept.
+// Pro Tag mit der Dauer eines Zyklus (zyklusSekunden: Rezept, Stufe, Besetzung, Synergie). Zyklen laufen
+// im Spiel ohne Lücke (ProductionSystem mit Übertrag): Ein 10-s-Rezept liefert alle 10 s, 2 Holz × 30 / 10 = 6.
 const proTag = (menge: number, sekunden: number) => (menge * 30) / sekunden;
-const GETREIDE_FARM = proTag(2, 11);   // Getreidefarm Stufe 1: 5,45
-const MEHL_MUEHLE = proTag(2, 13);     // Windmühle Stufe 1: 12 s + 1 = 13 s, 4,62 Mehl = Mehl für 2,31 Brot
-const BROT_BAECKEREI = proTag(1, 15);  // Bäckerei Stufe 1: 14 s + 1 = 15 s, 2 Brot
+const GETREIDE_FARM = proTag(2, 10);   // Getreidefarm Stufe 1: 6
+const MEHL_MUEHLE = proTag(2, 12);     // Windmühle Stufe 1: 5 Mehl = Mehl für 2,5 Brot
+const BROT_BAECKEREI = proTag(1, 14);  // Bäckerei Stufe 1: 2,14 Brot
 
 /** Leere Stadt mit `bewohner` Bewohnern (ohne Startgebäude, ohne Wohnviertel: kein freier Platz). */
 function stadt(bewohner = 0): GameState {
@@ -64,27 +62,27 @@ function fuelle(state: GameState, bewohner: number): void {
   while (state.citizens.length < bewohner) state.citizens.push(createCitizen());
 }
 
-describe('Tagesbilanz: Rohstoffe, mit der echten Dauer eines Zyklus', () => {
-  it('Holzfällerhütte Stufe 1 mit 1 Arbeiter: 2 Holz alle 11 s = +5,45 (Rezept: +6)', () => {
+describe('Tagesbilanz: Rohstoffe, mit der Dauer eines Zyklus', () => {
+  it('Holzfällerhütte Stufe 1 mit 1 Arbeiter: 2 Holz alle 10 s = +6, wie im Rezept', () => {
     const state = stadt();
     baue(state, 'LUMBER_CAMP');
     const holz = tagesBilanz(state).waren.wood;
-    expect(holz.erzeugt).toBeCloseTo(proTag(2, 11));
+    expect(holz.erzeugt).toBeCloseTo(6);
     expect(holz.verbraucht).toBe(0);
-    expect(holz.bilanz).toBeCloseTo(5.4545, 3);
-    expect(holz.posten).toEqual([{ quelle: 'Holzfällerhütte', menge: expect.closeTo(proTag(2, 11)) }]);
+    expect(holz.bilanz).toBeCloseTo(6);
+    expect(holz.posten).toEqual([{ quelle: 'Holzfällerhütte', menge: expect.closeTo(6) }]);
   });
 
-  it('Holzfällerhütte Stufe 3 mit 3 Arbeitern: 2 Holz alle 5 s = +12 (Rezept: +18)', () => {
+  it('Holzfällerhütte Stufe 3 mit 3 Arbeitern: 2 Holz alle 3,33 s = +18', () => {
     const state = stadt();
     baue(state, 'LUMBER_CAMP', 3, 3);
-    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo(12);
+    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo(18);
   });
 
   it('Stufe 3 mit nur 1 Arbeiter arbeitet wie Stufe 1', () => {
     const state = stadt();
     baue(state, 'LUMBER_CAMP', 3, 1);
-    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo(proTag(2, 11));
+    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo(6);
   });
 
   it('ein Gebäude ohne Arbeiter zählt nicht', () => {
@@ -93,21 +91,20 @@ describe('Tagesbilanz: Rohstoffe, mit der echten Dauer eines Zyklus', () => {
     expect(tagesBilanz(state).waren.wood).toBeUndefined();
   });
 
-  it('echte Dauer: auf ganze Sekunden aufgerundet, dazu 1 s bis zum nächsten Start', () => {
+  it('Bruchteile eines Takts zählen: Stufe 3 mit Synergie 0,85 (2,83 s) = +21,2, Stufe 2 (5 s) = +12', () => {
     const state = stadt();
-    const holz = RECIPE_DEFS.RCP_WOOD_1; // 10 s
-    expect(echteZyklusSekunden(baue(state, 'LUMBER_CAMP', 1), holz)).toBe(11);
-    expect(echteZyklusSekunden(baue(state, 'LUMBER_CAMP', 2), holz)).toBe(6); // 5 s + 1
-    const stufe3 = baue(state, 'LUMBER_CAMP', 3);
-    expect(echteZyklusSekunden(stufe3, holz)).toBe(5);                         // 3,33 s → 4 s + 1
+    const stufe3 = baue(state, 'LUMBER_CAMP', 3, 3);
     stufe3.synergySpeedMult = 0.85;
-    expect(echteZyklusSekunden(stufe3, holz)).toBe(4);                         // 2,83 s → 3 s + 1
-    expect(echteZyklusSekunden(baue(state, 'BAKERY', 2), RECIPE_DEFS.RCP_BREAD_1)).toBe(8); // genau 7 s + 1
+    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo((2 * 30) / ((10 * 0.85) / 3));
+    stufe3.tier = 2;
+    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo((2 * 30) / ((10 * 0.85) / 2));
+    stufe3.synergySpeedMult = 1;
+    expect(tagesBilanz(state).waren.wood.bilanz).toBeCloseTo(12);
   });
 });
 
 describe('Tagesbilanz: Brotkette (Werkstätten auf Auftrag, Brot von selbst)', () => {
-  it('3 Bewohner ohne freien Platz: Brot 0, Mehl 0, Getreide +3,45 (Rezept: +4)', () => {
+  it('3 Bewohner ohne freien Platz: Brot 0, Mehl 0, Getreide +4', () => {
     const state = stadt();
     brotkette(state);
     expect(state.citizens).toHaveLength(3);
@@ -128,11 +125,11 @@ describe('Tagesbilanz: Brotkette (Werkstätten auf Auftrag, Brot von selbst)', (
 
     expect(waren.grain.erzeugt).toBeCloseTo(GETREIDE_FARM);
     expect(waren.grain.verbraucht).toBeCloseTo(2);
-    expect(waren.grain.bilanz).toBeCloseTo(GETREIDE_FARM - 2); // 6 − 2 = 4 laut Rezept, im Spiel 3,45
+    expect(waren.grain.bilanz).toBeCloseTo(GETREIDE_FARM - 2); // 6 − 2 = 4
     expect(waren.grain.posten.map(p => p.quelle)).toEqual(['Getreidefarm', 'Windmühle']);
 
     const html = bilanzZeileHTML(state, tagesBilanz(state));
-    expect(html).toContain('🌾 +3,5');
+    expect(html).toContain('🌾 +4');
     expect(html).not.toContain('data-bilanz="bread"');
     expect(html).not.toContain('data-bilanz="flour"');
   });
@@ -202,11 +199,11 @@ describe('Tagesbilanz: Brotkette (Werkstätten auf Auftrag, Brot von selbst)', (
     brunnen(state);
     fuelle(state, 43); // essen 5
     const bilanz = tagesBilanz(state);
-    // Die Bäckerei schaffte 5, die Mühle Mehl für 6; die Farm liefert Getreide für 2,7 Brot
+    // Die Bäckerei schaffte 6,4, die Mühle Mehl für 7,5; die Farm liefert Getreide für 3 Brot
     expect(bilanz.waren.bread.bilanz).toBeCloseTo(GETREIDE_FARM / 2 - 5);
     expect(bilanz.waren.grain.bilanz).toBeCloseTo(0);
     expect(bilanz.vorraete[0].engpass).toEqual({ art: 'schafft', typeId: 'FARM_GRAIN', zutat: 'grain' });
-    expect(bilanzTipp(state, 'bread').zeilen).toContain('Engpass: Getreidefarm (Stufe 1) schafft nur Getreide für 2,7 Brot am Tag.');
+    expect(bilanzTipp(state, 'bread').zeilen).toContain('Engpass: Getreidefarm (Stufe 1) schafft nur Getreide für 3 Brot am Tag.');
   });
 
   it('Bäckerei ohne Brunnen zählt 0, die Mühle ruht, es bleibt nur der Hunger', () => {
@@ -244,23 +241,24 @@ describe('Tagesbilanz: Brotkette (Werkstätten auf Auftrag, Brot von selbst)', (
   it('Bäckerei zu klein: Brot rot mit «reicht», Engpass Bäckerei', () => {
     const state = stadt();
     brotkette(state);
-    fuelle(state, 24); // essen 3, die Bäckerei Stufe 1 schafft 2
+    fuelle(state, 24); // essen 3, die Bäckerei Stufe 1 schafft 2,14
     state.globalStock.bread = 4;
     const bilanz = tagesBilanz(state);
     expect(bilanz.waren.bread.bilanz).toBeCloseTo(BROT_BAECKEREI - 3);
-    expect(bilanz.vorraete[0]).toMatchObject({ bedarf: 3, menge: expect.closeTo(2), engpass: { art: 'schafft', typeId: 'BAKERY' } });
+    expect(bilanz.vorraete[0]).toMatchObject({ bedarf: 3, menge: expect.closeTo(BROT_BAECKEREI), engpass: { art: 'schafft', typeId: 'BAKERY' } });
     expect(bilanz.waren.flour.bilanz).toBeCloseTo(0);
     const html = bilanzZeileHTML(state, bilanz);
     expect(html).toMatch(/class="tb-chip minus" data-bilanz="bread"/);
-    expect(html).toContain('🍞 −1 <small>· reicht 4 Tage</small>');
+    // 3 Tage wie im Spiel (tests/tagesbilanzSimulation.test.ts): Die Bäckerei holt erst Mehl, dann ganze Brote
+    expect(html).toContain('🍞 −0,9 <small>· reicht 3 Tage</small>');
     expect(bilanzTipp(state, 'bread')).toEqual({
-      titel: 'Brot pro Tag: −1',
+      titel: 'Brot pro Tag: −0,9',
       zeilen: [
-        'Bäckerei (Brot für die Bewohner) +2',
+        'Bäckerei (Brot für die Bewohner) +2,1',
         'Bewohner −3',
         'Brot für die Bewohner backt die Bäckerei von selbst, bis es für 3 Tage reicht.',
-        'Engpass: Bäckerei (Stufe 1) schafft nur 2 Brot am Tag.',
-        'Im Lager 4, reicht 4 Tage.',
+        'Engpass: Bäckerei (Stufe 1) schafft nur 2,1 Brot am Tag.',
+        'Im Lager 4, reicht 3 Tage.',
       ],
     });
   });
@@ -273,12 +271,12 @@ describe('Tagesbilanz: Brotkette (Werkstätten auf Auftrag, Brot von selbst)', (
     brunnen(state);
     fuelle(state, 24);
     const bilanz = tagesBilanz(state);
-    // Die Bäckerei schaffte 3,75, die Mühle mahlt nur Mehl für 2,31 Brot
+    // Die Bäckerei schaffte 4,29, die Mühle mahlt nur Mehl für 2,5 Brot
     expect(bilanz.waren.bread.bilanz).toBeCloseTo(MEHL_MUEHLE / 2 - 3);
     expect(bilanz.waren.flour.bilanz).toBeCloseTo(0);
     expect(bilanz.waren.grain.bilanz).toBeCloseTo(GETREIDE_FARM - MEHL_MUEHLE);
     expect(bilanz.vorraete[0].engpass).toEqual({ art: 'schafft', typeId: 'MILL_WIND', zutat: 'flour' });
-    expect(bilanzTipp(state, 'bread').zeilen).toContain('Engpass: Windmühle (Stufe 1) schafft nur Mehl für 2,3 Brot am Tag.');
+    expect(bilanzTipp(state, 'bread').zeilen).toContain('Engpass: Windmühle (Stufe 1) schafft nur Mehl für 2,5 Brot am Tag.');
   });
 
   it('fehlen Arbeiter, nennt der Engpass sie', () => {
@@ -286,7 +284,7 @@ describe('Tagesbilanz: Brotkette (Werkstätten auf Auftrag, Brot von selbst)', (
     brotkette(state);
     state.buildings.find(b => b.typeId === 'BAKERY')!.tier = 3; // 1 von 3 Plätzen besetzt
     fuelle(state, 24);
-    expect(bilanzTipp(state, 'bread').zeilen).toContain('Engpass: Bäckerei (Stufe 3, 1/3 Arbeiter) schafft nur 2 Brot am Tag.');
+    expect(bilanzTipp(state, 'bread').zeilen).toContain('Engpass: Bäckerei (Stufe 3, 1/3 Arbeiter) schafft nur 2,1 Brot am Tag.');
   });
 });
 
@@ -346,22 +344,23 @@ describe('Tagesbilanz: «reicht»', () => {
     expect(reichtTage(10, 2)).toBeNull();
   });
 
-  it('viel Brot im Lager: ab dem Ziel ruht die Bäckerei, danach backt sie erst wieder an', () => {
+  it('viel Brot im Lager: ab dem Ziel ruht die Bäckerei, danach backt sie ganze Brote, erst mit Mehl', () => {
     const state = stadt();
     brotkette(state);
-    fuelle(state, 24); // essen 3, die Bäckerei schafft 2, Ziel 9 Brot
+    fuelle(state, 24); // essen 3, die Bäckerei schafft 2,14, Ziel 9 Brot
     const reicht = (brot: number) => {
       state.globalStock.bread = brot;
       return reichtTageFuer(state, tagesBilanz(state), 'bread');
     };
-    // 80 Brot: 24 Tage Pause (bis 8), dann wieder anbacken (erst Mehl mahlen), dann 1 Brot weniger pro Tag.
-    // Gleich viele Tage wie im Spiel (tests/tagesbilanzSimulation.test.ts); 80 / 1 wären 80 Tage.
+    // 80 Brot: 24 Tage Pause (bis 8), dann wieder anbacken (erst Mehl mahlen), dann 2 oder 3 Brote am Tag.
+    // Gleich viele Tage wie im Spiel (tests/tagesbilanzSimulation.test.ts); 80 / 0,86 wären 93 Tage.
     expect(reicht(80)).toBe(30);
     expect(reicht(30)).toBe(13);
     expect(reicht(12)).toBe(7);
     expect(reicht(9)).toBe(6); // am Ziel ruht sie noch einen Tag
-    expect(reicht(7)).toBe(6); // vor dem Essen waren es 10: am Ziel, sie backt erst wieder an
-    expect(reicht(5)).toBe(5); // vor dem Essen 8: sie backt durch, 5 / 1
+    expect(reicht(7)).toBe(6); // frei: erst Mehl, dann 1 Brot heute, danach 2 am Tag
+    expect(reicht(5)).toBe(4);
+    expect(reicht(4)).toBe(3);
   });
 
   it('was die Bäckerei heute schon gebacken hat, zählt nicht doppelt', () => {
@@ -369,9 +368,9 @@ describe('Tagesbilanz: «reicht»', () => {
     brotkette(state);
     fuelle(state, 24);
     state.globalStock.bread = 5;
-    expect(reichtTageFuer(state, tagesBilanz(state), 'bread')).toBe(5);
-    state.dayTickAccumulator = 15; // halber Tag vorbei: 1 der 5 Brote ist von heute
     expect(reichtTageFuer(state, tagesBilanz(state), 'bread')).toBe(4);
+    state.dayTickAccumulator = 15; // halber Tag vorbei: Das erste Brot kommt erst morgen
+    expect(reichtTageFuer(state, tagesBilanz(state), 'bread')).toBe(3);
 
     const ohneBaeckerei = stadt(24);
     ohneBaeckerei.globalStock.bread = 5;
@@ -417,7 +416,7 @@ describe('Tagesbilanz: Anzeige im Reiter «Produktion»', () => {
     state.globalStock.bread = 9;
     const html = bilanzZeileHTML(state, tagesBilanz(state));
     expect(html).toContain('Pro Tag:');
-    expect(html).toContain('🪵 +5,5');
+    expect(html).toContain('🪵 +6');
     expect(html).toMatch(/class="tb-chip minus" data-bilanz="bread"/);
     expect(html).toContain(`reicht ${Math.floor(9 / brotProTag(state.citizens.length))} Tage`);
     // Ohne Bilanz kein Chip

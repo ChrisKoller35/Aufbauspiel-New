@@ -140,8 +140,8 @@ describe('Preise', () => {
     expect(rohstoffe.map(x => x.werkstatt).sort()).toEqual(['FARM_GRAIN', 'IRON_MINE', 'LUMBER_CAMP', 'QUARRY']);
     for (const { werkstatt, r } of rohstoffe) {
       const rezept = wert(r.outputs) * TAG_SEKUNDEN / r.cycleTimeSec;
-      // Im Spieltakt dauert jeder Zyklus zurzeit eine Sekunde länger (ProductionSystem): Holz 5,5 statt 6 am Tag.
-      // Mehr als das Rezept wird es nie; fällt die Sekunde einmal weg, gilt die Tabelle in docs/HANDEL.md neu.
+      // Im Spieltakt laufen die Zyklen ohne Lücke (ProductionSystem mit Übertrag), es kommt also heraus, was im
+      // Rezept steht; nur der erste Takt startet bloss, darum über 30 Tage ein Hauch weniger (docs/HANDEL.md).
       const spieltakt = echtesGoldProTag(werkstatt, r.id);
       expect(spieltakt, `${werkstatt} ${r.id}`).toBeLessThanOrEqual(rezept);
       for (const gold of [rezept, spieltakt]) {

@@ -24,24 +24,23 @@ Am Marktplatz kann man Stadtwaren gegen Gold tauschen. Er handelt in **Bündeln 
 
 Gold pro Arbeiter und Tag, wenn man alles verkauft, was er macht. Ein Tag dauert 30 Sekunden.
 
-| Ware (Werkstatt) | Stück pro Arbeiter und Tag laut Rezept | im Spiel, Stufe 1 / 2 / 3 | Gold pro Arbeiter und Tag im Spiel, Stufe 1 / 2 / 3 |
-|---|---:|---:|---:|
-| Holz (Holzfällerhütte) | 6 | 5,5 / 5 / 4 | 1,1 / 1,0 / 0,8 |
-| Getreide (Farm) | 6 | 5,5 / 5 / 4 | 1,1 / 1,0 / 0,8 |
-| Stein (Steinbruch) | 2,5 | 2,3 / 2,1 / 2 | 1,2 / 1,1 / 1,0 |
-| Eisenschrott (Eisenmine) | 1 | 0,97 / 0,94 / 0,91 | 1,5 / 1,4 / 1,4 |
-| Grüne Kräuter (Kräutergarten, **auf Auftrag**) | 2 | 1,9 / 1,7 / 1,7 | 0,9 / 0,8 / 0,8 |
-| Mehl (Mühle, **auf Auftrag**) | 5 aus 5 Getreide | 4,6 / 4,3 / 4 | 2,3 / 2,1 / 2,0, also +1,4 / +1,3 / +1,2 mehr als das Getreide |
-| Brot (Bäckerei, **auf Auftrag**) | gut 2 aus gut 4 Mehl | 2 / 1,9 / 1,7 | 2,4 / 2,3 / 2,0, also +0,4 / +0,4 / +0,3 mehr als das Mehl |
+| Ware (Werkstatt) | Stück pro Arbeiter und Tag | Gold pro Arbeiter und Tag |
+|---|---:|---:|
+| Holz (Holzfällerhütte) | 6 | 1,2 |
+| Getreide (Farm) | 6 | 1,2 |
+| Stein (Steinbruch) | 2,5 | 1,25 |
+| Eisenschrott (Eisenmine) | 1 | 1,5 |
+| Grüne Kräuter (Kräutergarten, **auf Auftrag**) | 2 | 1,0 |
+| Mehl (Mühle, **auf Auftrag**) | 5 aus 5 Getreide | 2,5, also +1,3 mehr als das Getreide |
+| Brot (Bäckerei, **auf Auftrag**) | 2,14 aus 4,29 Mehl | 2,6, also +0,4 mehr als das Mehl |
 
-**Im Spiel kommt weniger heraus als im Rezept.** Das Spiel rechnet die Produktion in Schritten zu 1 Sekunde
-(`ProductionSystem`): Ist ein Zyklus fertig, beginnt der nächste erst im nächsten Schritt, und angefangene
-Sekunden zählen ganz. Jeder Zyklus dauert so eine Sekunde länger, als das Rezept sagt: Holz auf Stufe 1
-11 statt 10 Sekunden (−9 %), auf Stufe 3 5 statt 3,3 Sekunden (−33 %). Je kürzer der Zyklus, desto mehr fehlt,
-darum bringen höhere Stufen pro Arbeiter etwas weniger. Die Produktion bleibt, wie sie ist (darüber entscheidet
-der Spieler); die Zahlen hier sind mit der echten Spielschleife gemessen (60 Tage im 1-Sekunden-Takt),
-`tests/handel.test.ts` prüft Stufe 1. Fällt die Sekunde einmal weg, gelten die Rezept-Werte, und die Tabelle
-muss neu gemessen werden.
+**Die Werte gelten auf jeder Stufe gleich, je Arbeiter.** Seit dem 22.10.2026 laufen die Zyklen ohne Leertakt:
+Ist einer fertig, beginnt der nächste im selben Stadt-Takt, und die Zeit über das Ende hinaus zählt für ihn mit
+(`ProductionSystem`, [TAGESBILANZ.md](TAGESBILANZ.md)). Im Spiel kommt darum heraus, was im Rezept steht. Vorher
+dauerte jeder Zyklus eine Sekunde länger, und höhere Stufen brachten je Arbeiter weniger (Holz auf Stufe 3 nur
+4 statt 6 pro Arbeiter und Tag). Die Zahlen hier sind mit der echten Spielschleife gemessen (60 Tage im
+1-Sekunden-Takt, Stufen 1 bis 3; der erste Takt startet nur, darum fehlen über 60 Tage 0,03 Stück pro Tag),
+`tests/handel.test.ts` prüft Stufe 1.
 
 **Auf Auftrag** ([WERKSTAETTEN.md](WERKSTAETTEN.md)): Von selbst laufen nur Holzfällerhütte, Farm, Steinbruch
 und Eisenmine. Der Kräutergarten zieht grüne Kräuter sonst nur als Zutat für einen bestellten Trank, die Mühle
@@ -51,14 +50,14 @@ Markt nicht verkauft. Kräuter, Mehl oder Brot zum Verkaufen gibt es also nur, w
 ### Warum diese Preise
 
 - **Kauf = 3 × Verkauf.** Wer ein Bündel kauft und gleich wieder verkauft, verliert zwei Drittel des Preises. Gefordert ist mindestens das Doppelte.
-- **Ein Arbeiter bringt etwa 1 bis 1,5 Gold pro Tag**, wenn man alles verkauft, was er macht (im Spiel, Stufe 1; Holz und Getreide auf Stufe 3 nur 0,8). Steuern zahlt jeder Bewohner, ob er arbeitet oder nicht: 2 Gold × Zufriedenheit pro Tag. Waren zu verkaufen ist also ein Zubrot und kein Goldesel. Der Test prüft das für jede Werkstatt, die von selbst läuft, im Rezept und im Spieltakt.
-- **Knappes ist teuer:** Eisenschrott (knapp 1 pro Tag) ist am meisten wert, Holz und Getreide (gut 5 pro Tag) am wenigsten.
+- **Ein Arbeiter bringt etwa 1 bis 1,5 Gold pro Tag**, wenn man alles verkauft, was er macht (auf jeder Stufe gleich). Steuern zahlt jeder Bewohner, ob er arbeitet oder nicht: 2 Gold × Zufriedenheit pro Tag. Waren zu verkaufen ist also ein Zubrot und kein Goldesel. Der Test prüft das für jede Werkstatt, die von selbst läuft, im Rezept und im Spieltakt.
+- **Knappes ist teuer:** Eisenschrott (1 pro Tag) ist am meisten wert, Holz und Getreide (6 pro Tag) am wenigsten.
 - **Verarbeitet ist mehr wert:** 10 Mehl (5 Gold) bringen mehr als 10 Getreide (2), 10 Brot (12) mehr als die 20 Mehl (10), die man dafür braucht.
 
 ### Die Bäckerei verdient am Markt wenig, und das bleibt so
 
 Ein Arbeiter in der Bäckerei macht pro Tag nur 0,4 Gold mehr aus seinem Mehl. Die ganze Kette Farm, Mühle,
-Bäckerei bringt etwa 0,9 Gold pro Arbeiter und Tag, etwas weniger als rohes Getreide. Mehr geht nicht, ohne
+Bäckerei bringt etwa 1 Gold pro Arbeiter und Tag, etwas weniger als rohes Getreide. Mehr geht nicht, ohne
 eine Goldquelle zu öffnen: 10 Brot brauchen 20 Getreide, und 20 Getreide kosten am Markt 12 Gold, genau so viel,
 wie 10 Brot bringen. Jedes Gold mehr für Brot (oder weniger für gekauftes Getreide) liesse sich mit Gold aus
 dem Nichts verdienen: Getreide kaufen, backen lassen, verkaufen, jeden Tag. Die Bäckerei ist für das Brot der

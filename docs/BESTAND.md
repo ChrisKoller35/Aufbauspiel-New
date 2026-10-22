@@ -10,8 +10,9 @@ auf master und in PR #29 nachgebessert: Erfolge sind alle erreichbar (ein Muster
 alle 37) und zählen gleich nach der Tat, 🏅 in der Kopfzeile (🏆 bleibt dem Trophäensaal); das Fenster «💾 Spielstand»
 hält den Stand vor dem Laden einer Datei auf einem eigenen Platz und holt ihn zurück, prüft Dateien streng und hat den
 Knopf «Neues Spiel» mit Nachfrage und Rückweg; der Markt verkauft das Brot der Bewohner nicht; die Tagesbilanz rechnet
-nach den Werkstatt-Regeln und mit der echten Dauer eines Zyklus. Offen: Die Produktion braucht je Zyklus eine Sekunde
-Leertakt (10-s-Rezept alle 11 s), die Anzeigen rechnen das mit; ob er wegkommt, ist Christophs Entscheidung.
+nach den Werkstatt-Regeln und mit der Dauer eines Zyklus. Der Leertakt ist weg: Zyklen laufen mit Übertrag ohne
+Lücke, ein 10-s-Rezept liefert alle 10 s, Holz auf Stufe 3 bringt 18 statt 12 am Tag, und Anzeigen und Tagesbilanz
+sind nachgezogen (`docs/TAGESBILANZ.md`, `docs/WERKSTAETTEN.md`).
 Anleitungen: `docs/ERFOLGE.md`, `docs/SPIELSTAND.md`, `docs/HANDEL.md`, `docs/TAGESBILANZ.md`.
 
 ## Nachtrag 21.10.2026 (abends): Wege geeicht, Werkstätten auf Auftrag, Gildenhaus

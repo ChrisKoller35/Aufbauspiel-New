@@ -2,8 +2,9 @@
 // Stimmt, was die Zeile «Pro Tag:» zeigt, mit dem Lager im Spiel überein? Die Schleife hier spielt
 // main.ts nach: jede Sekunde ein Stadt-Takt (Produktion, Arbeiter, Zufriedenheit), alle 30 Sekunden
 // der Tageswechsel (Steuern, essen, wachsen). Ohne Stadt-Ereignisse gibt es keinen Zufall.
-// Die Anzeige rechnet mit ProductionSystem.echteZyklusSekunden: Ändert sich update() (etwa ohne
-// Leertakt), schlagen diese Tests an, bis die Funktion mitgeändert ist. Regeln: docs/TAGESBILANZ.md.
+// Die Anzeige rechnet mit zyklusSekunden (Ausbau.ts); ProductionSystem.update liefert nur in Takten, lässt
+// aber keine Lücke zwischen den Zyklen (Übertrag). Ändert sich update(), schlagen diese Tests an, bis die
+// Rechnung mitgeändert ist. Regeln: docs/TAGESBILANZ.md.
 // ────────────────────────────────────────────────────────────────
 
 import { describe, it, expect } from 'vitest';
@@ -14,7 +15,8 @@ import { BUILDING_DEFS } from '../src/data/buildings';
 import { RECIPE_DEFS } from '../src/data/recipes';
 import { STADTSTUFEN } from '../src/data/stadtstufen';
 import { placeStartingLayout, createStartingCitizens } from '../src/scenes/CityStartingLayout';
-import { ProductionSystem, echteZyklusSekunden } from '../src/systems/ProductionSystem';
+import { ProductionSystem } from '../src/systems/ProductionSystem';
+import { zyklusSekunden } from '../src/systems/Ausbau';
 import { PeopleSystem, brotProTag, brotBedarfProTag } from '../src/systems/PeopleSystem';
 import { SatisfactionSystem } from '../src/systems/SatisfactionSystem';
 import { EconomySystem } from '../src/systems/EconomySystem';
@@ -104,26 +106,40 @@ function baueStadt(s: Stadt): GameState {
   return state;
 }
 
-/** Sekunden (Stadt-Takte ab 1), in denen ein Gebäude einen Zyklus abschliesst. */
+/**
+ * Sekunden (Stadt-Takte ab 1), in denen ein Gebäude einen Zyklus abschliesst: Es steht danach still, oder
+ * sein Zähler ist gestiegen, weil im selben Takt der nächste Zyklus begann (jeder dauert über 1 s).
+ */
 function fertigZeiten(state: GameState, b: BuildingInstance, sekunden: number): number[] {
   const production = new ProductionSystem();
   const zeiten: number[] = [];
   for (let t = 1; t <= sekunden; t++) {
-    const lief = b.producing;
+    const vorher = b.producing ? b.productionTimer : null;
     production.update(state, 1);
-    if (lief && !b.producing) zeiten.push(t);
+    if (vorher !== null && (!b.producing || b.productionTimer > vorher)) zeiten.push(t);
   }
   return zeiten;
 }
 
-/** Abstand von Start zu Start (= von Ende zu Ende) muss überall gleich der echten Dauer sein. */
-function pruefeTakt(zeiten: number[], echt: number, name: string): void {
+/**
+ * Geliefert wird nur in Takten, aber ohne Lücke: Der k-te Zyklus endet im ersten Takt nach 1 + k × Dauer
+ * (Start im ersten Takt, dann der Zähler). Jeder Abstand ist die Dauer auf- oder abgerundet, und in
+ * `sekunden` Takten werden genau floor((sekunden − 1) / Dauer) Zyklen fertig.
+ */
+function pruefeTakt(zeiten: number[], dauer: number, sekunden: number, name: string): void {
   expect(zeiten.length, name).toBeGreaterThan(3);
-  expect(zeiten[0], `${name}: erster Zyklus`).toBe(echt); // beginnt im ersten Takt, endet nach echt − 1 Takten Zählen
-  for (let i = 1; i < zeiten.length; i++) expect(zeiten[i] - zeiten[i - 1], `${name}: Zyklus ${i + 1}`).toBe(echt);
+  expect(zeiten.length, `${name}: Zyklen in ${sekunden} s`).toBe(Math.floor((sekunden - 1) / dauer + 1e-9));
+  for (let k = 0; k < zeiten.length; k++) {
+    expect(zeiten[k], `${name}: Zyklus ${k + 1}`).toBe(1 + Math.ceil((k + 1) * dauer - 1e-9));
+  }
+  for (let i = 1; i < zeiten.length; i++) {
+    const abstand = zeiten[i] - zeiten[i - 1];
+    expect(abstand, `${name}: Abstand vor Zyklus ${i + 1}`).toBeGreaterThanOrEqual(Math.floor(dauer));
+    expect(abstand, `${name}: Abstand vor Zyklus ${i + 1}`).toBeLessThanOrEqual(Math.ceil(dauer));
+  }
 }
 
-describe('echte Dauer eines Zyklus: echteZyklusSekunden gegen ProductionSystem.update', () => {
+describe('Dauer eines Zyklus: zyklusSekunden gegen ProductionSystem.update (ohne Leertakt)', () => {
   it.each(['LUMBER_CAMP', 'QUARRY', 'IRON_MINE', 'FARM_GRAIN'])('%s auf Stufe 1 bis 3, mit und ohne Synergie', typeId => {
     const recipe = RECIPE_DEFS[BUILDING_DEFS[typeId].recipes[0]];
     for (const stufe of [1, 2, 3]) {
@@ -131,16 +147,45 @@ describe('echte Dauer eines Zyklus: echteZyklusSekunden gegen ProductionSystem.u
         const state = baueStadt({ stufen: { [typeId]: stufe }, bewohner: 0, synergie: { [typeId]: synergie } });
         const b = state.buildings[0];
         const name = `${typeId} Stufe ${stufe}, Synergie ${synergie}`;
-        pruefeTakt(fertigZeiten(state, b, 400), echteZyklusSekunden(b, recipe), name);
+        pruefeTakt(fertigZeiten(state, b, 400), zyklusSekunden(b, recipe), 400, name);
       }
     }
+  });
+
+  it('Holzfällerhütte Stufe 3 (3,33 s): an einem Tag TAG_SEKUNDEN / zyklusSekunden Zyklen (±1), 18 Holz', () => {
+    const state = baueStadt({ stufen: { LUMBER_CAMP: 3 }, bewohner: 0 });
+    const b = state.buildings[0];
+    const dauer = zyklusSekunden(b, RECIPE_DEFS.RCP_WOOD_1);
+    expect(dauer).toBeCloseTo(10 / 3);
+    const zeiten = fertigZeiten(state, b, TAG_SEKUNDEN);
+    expect(zeiten).toEqual([5, 8, 11, 15, 18, 21, 25, 28]); // kein Takt dazwischen leer
+    expect(zeiten.length).toBeGreaterThanOrEqual(TAG_SEKUNDEN / dauer - 1);
+    expect(zeiten.length).toBeLessThanOrEqual(TAG_SEKUNDEN / dauer + 1);
+    expect(state.globalStock.wood).toBe(2 * zeiten.length);
+    // Über zehn Tage mittelt es sich auf die Rezept-Menge aus: 18 Holz am Tag statt 12 mit Leertakt
+    const lang = baueStadt({ stufen: { LUMBER_CAMP: 3 }, bewohner: 0 });
+    const tage = 10;
+    fertigZeiten(lang, lang.buildings[0], tage * TAG_SEKUNDEN);
+    expect(lang.globalStock.wood / tage).toBeCloseTo((2 * TAG_SEKUNDEN) / dauer, 0);
+    expect(lang.globalStock.wood / tage).toBeGreaterThan(17);
+  });
+
+  it('ein 10-s-Rezept liefert 1-mal je 10 s: Holzfällerhütte Stufe 1, 6 Holz am Tag', () => {
+    const state = baueStadt({ stufen: { LUMBER_CAMP: 1 }, bewohner: 0 });
+    const b = state.buildings[0];
+    expect(zyklusSekunden(b, RECIPE_DEFS.RCP_WOOD_1)).toBe(10);
+    const tage = 10;
+    const zeiten = fertigZeiten(state, b, tage * TAG_SEKUNDEN);
+    expect(zeiten.slice(0, 4)).toEqual([11, 21, 31, 41]); // Start im ersten Takt, dann alle 10 s
+    expect(zeiten.length).toBe(Math.floor((tage * TAG_SEKUNDEN - 1) / 10));
+    expect(state.globalStock.wood / tage).toBeCloseTo((2 * TAG_SEKUNDEN) / 10, 0); // 6 Holz am Tag
   });
 
   it('Stufe 3 mit 2 von 3 Arbeitern arbeitet doppelt so schnell', () => {
     const state = baueStadt({ stufen: { LUMBER_CAMP: 3 }, bewohner: 0, arbeiter: { LUMBER_CAMP: 2 } });
     const b = state.buildings[0];
-    expect(echteZyklusSekunden(b, RECIPE_DEFS.RCP_WOOD_1)).toBe(6);
-    pruefeTakt(fertigZeiten(state, b, 200), 6, 'Holzfällerhütte 2/3');
+    expect(zyklusSekunden(b, RECIPE_DEFS.RCP_WOOD_1)).toBe(5);
+    pruefeTakt(fertigZeiten(state, b, 200), 5, 200, 'Holzfällerhütte 2/3');
   });
 
   it('die Bäckerei backt ihren Vorrat im gleichen Takt, die Windmühle liefert so zu', () => {
@@ -149,13 +194,13 @@ describe('echte Dauer eines Zyklus: echteZyklusSekunden gegen ProductionSystem.u
       const state = baueStadt({ stufen: { BAKERY: stufe }, bewohner: 200, lager: { flour: 999, bread: 0 } });
       new SatisfactionSystem().update(state); // Wasser vom Brunnen
       const baeckerei = state.buildings[0];
-      pruefeTakt(fertigZeiten(state, baeckerei, 300), echteZyklusSekunden(baeckerei, RECIPE_DEFS.RCP_BREAD_1), `Bäckerei Stufe ${stufe}`);
+      pruefeTakt(fertigZeiten(state, baeckerei, 300), zyklusSekunden(baeckerei, RECIPE_DEFS.RCP_BREAD_1), 300, `Bäckerei Stufe ${stufe}`);
     }
     // Schnelle Bäckerei, langsame Mühle: Die Mühle mahlt ohne Pause
     const state = baueStadt({ stufen: { MILL_WIND: 1, BAKERY: 3 }, bewohner: 200, lager: { grain: 999, bread: 0 } });
     new SatisfactionSystem().update(state);
     const muehle = state.buildings[0];
-    pruefeTakt(fertigZeiten(state, muehle, 300), echteZyklusSekunden(muehle, RECIPE_DEFS.RCP_FLOUR_1), 'Windmühle');
+    pruefeTakt(fertigZeiten(state, muehle, 300), zyklusSekunden(muehle, RECIPE_DEFS.RCP_FLOUR_1), 300, 'Windmühle');
   });
 });
 
@@ -240,11 +285,11 @@ describe('Tagesbilanz gegen die Spielschleife: Lager nach 90 Tagen', () => {
     expect(um, `${ware}: Anzeige ${m.anzeige[ware]}, Spiel ${m.echt[ware]}`).toBeLessThan(0.05);
   });
 
-  it('Stichproben: Getreide +3,45 (Rezept +4), Brot −1 und Mühlen-Engpass −0,7 sind echt', () => {
-    expect(miss(baueStadt({ stufen: BROTKETTE_1, bewohner: 3 })).echt.grain).toBeCloseTo(60 / 11 - 2, 1);
-    expect(miss(baueStadt({ stufen: BROTKETTE_1, bewohner: 24 })).echt.bread).toBeCloseTo(-1, 1);
+  it('Stichproben: Getreide +4 (wie im Rezept), Brot −0,86 und Mühlen-Engpass −0,5 sind echt', () => {
+    expect(miss(baueStadt({ stufen: BROTKETTE_1, bewohner: 3 })).echt.grain).toBeCloseTo(60 / 10 - 2, 1);
+    expect(miss(baueStadt({ stufen: BROTKETTE_1, bewohner: 24 })).echt.bread).toBeCloseTo(30 / 14 - 3, 1);
     const engpass = miss(baueStadt({ stufen: { FARM_GRAIN: 1, MILL_WIND: 1, BAKERY: 2 }, bewohner: 24 }));
-    expect(engpass.echt.bread).toBeCloseTo(30 / 13 - 3, 1);
+    expect(engpass.echt.bread).toBeCloseTo(30 / 12 - 3, 1);
   });
 
   it('Kraft-Brot-Aufträge laufen nebenher: Das Brot für die Bewohner stimmt trotzdem', () => {
@@ -295,14 +340,14 @@ describe('«reicht» gegen die Spielschleife', () => {
   }
 
   it.each([
-    ['Bäckerei zu klein, Brot −1', BROTKETTE_1, 24],
-    ['Windmühle als Engpass, Brot −0,7', { FARM_GRAIN: 1, MILL_WIND: 1, BAKERY: 2 }, 24],
-    ['Brotkette Stufe 3, Brot −1', { FARM_GRAIN: 3, MILL_WIND: 3, BAKERY: 3 }, 48],
-    ['ohne Bäckerei, Brot −3', { FARM_GRAIN: 1 }, 24],
-  ] as [string, Record<string, number>, number][])('%s: nie mehr als 1 Tag zu viel, meist genau', (_name, stufen, bewohner) => {
+    ['Bäckerei zu klein, Brot −0,86', { stufen: BROTKETTE_1, bewohner: 24 }],
+    ['Windmühle als Engpass, Brot −0,5', { stufen: { FARM_GRAIN: 1, MILL_WIND: 1, BAKERY: 2 }, bewohner: 24 }],
+    ['Brotkette Stufe 3, Brot −1,6', { stufen: { FARM_GRAIN: 3, MILL_WIND: 3, BAKERY: 3 }, bewohner: 64 }],
+    ['ohne Bäckerei, Brot −3', { stufen: { FARM_GRAIN: 1 }, bewohner: 24 }],
+  ] as [string, Stadt][])('%s: nie mehr als 1 Tag zu viel, meist genau', (_name, stadt) => {
     let zuViel = 0, genau = 0, anzahl = 0;
     for (const brot of [3, 8, 9, 20, 80]) {
-      const r = vergleiche({ stufen, bewohner, lager: { bread: brot } }, 60);
+      const r = vergleiche({ ...stadt, lager: { bread: brot } }, 60);
       zuViel = Math.max(zuViel, r.zuViel);
       genau += r.genau;
       anzahl += r.anzahl;
@@ -312,26 +357,37 @@ describe('«reicht» gegen die Spielschleife', () => {
     expect(genau / anzahl).toBeGreaterThan(0.95); // genau oder 1 Tag vorsichtiger
   });
 
-  it('kleines Minus (−0,25): «reicht» ist eher zu vorsichtig, nie mehr als 1 Tag zu viel', () => {
+  it('kleines Minus (−0,3): «reicht» ist eher zu vorsichtig, nie mehr als 1 Tag zu viel', () => {
+    // Bäckerei Stufe 2 mit Synergie: 4,71 Brot am Tag, 40 Bewohner essen 5
+    const stadt: Stadt = { stufen: { FARM_GRAIN: 2, MILL_WIND: 2, BAKERY: 2 }, bewohner: 40, synergie: { BAKERY: 0.91 } };
+    const state = baueStadt(stadt);
+    new SatisfactionSystem().update(state); // Wasser vom Brunnen
+    expect(tagesBilanz(state).waren.bread.bilanz).toBeCloseTo(30 / (7 * 0.91) - 5, 2);
     for (const brot of [9, 20, 80]) {
-      const r = vergleiche({ stufen: { FARM_GRAIN: 2, MILL_WIND: 2, BAKERY: 2 }, bewohner: 36, lager: { bread: brot } }, 150);
+      const r = vergleiche({ ...stadt, lager: { bread: brot } }, 150);
       expect(r.anzahl).toBeGreaterThan(0);
       expect(r.zuViel).toBeLessThanOrEqual(1);
     }
   });
 
-  it('altes Spiel mit 80 Brot, 24 Bewohner, Brotkette Stufe 1: 30 Tage, wie angezeigt', () => {
-    const state = baueStadt({ stufen: BROTKETTE_1, bewohner: 24, lager: { bread: 80, grain: 50 } });
-    const spiel = new Spiel(state);
-    expect(reichtTageFuer(state, tagesBilanz(state), 'bread')).toBe(30);
-    let satt = 0;
-    while (satt < 100) {
-      for (let i = 0; i < TAG_SEKUNDEN; i++) spiel.takt();
-      if ((state.globalStock.bread ?? 0) < brotProTag(24)) break;
-      satt++;
-      spiel.tageswechsel();
+  it('altes Spiel mit viel Brot, 24 Bewohner, Brotkette Stufe 1: so viele Tage satt wie angezeigt (80 Brot: 30 Tage)', () => {
+    const erwartet: Record<number, number> = {};
+    for (const brot of [80, 30, 12, 9, 7, 5, 4]) {
+      const state = baueStadt({ stufen: BROTKETTE_1, bewohner: 24, lager: { bread: brot, grain: 50 } });
+      const spiel = new Spiel(state);
+      const anzeige = reichtTageFuer(state, tagesBilanz(state), 'bread');
+      let satt = 0;
+      while (satt < 100) {
+        for (let i = 0; i < TAG_SEKUNDEN; i++) spiel.takt();
+        if ((state.globalStock.bread ?? 0) < brotProTag(24)) break;
+        satt++;
+        spiel.tageswechsel();
+      }
+      expect(anzeige, `${brot} Brot`).toBe(satt);
+      erwartet[brot] = satt;
     }
-    expect(satt).toBe(30);
+    // Dieselben Zahlen prüft tests/tagesbilanz.test.ts («viel Brot im Lager»)
+    expect(erwartet).toEqual({ 80: 30, 30: 13, 12: 7, 9: 6, 7: 6, 5: 4, 4: 3 });
   });
 
   it('neues Spiel mit Platz für 6 mehr: 10 Brot reichen 5 Tage, der nächste Bewohner isst mit', () => {
