@@ -14,14 +14,17 @@ import { ENEMY_DEFS } from '../src/data/enemies';
 import { ITEM_DEFS } from '../src/data/items';
 import { setFuerRoute, setTeilIds } from '../src/data/dungeonSets';
 import {
-  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, EINLOESE_ANGEBOTE, FERNE_DUNGEONS, LIEFER_WAREN, MATERIAL_PREIS, SAAL_EINLEITUNG, SAAL_KAPITEL,
-  SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL, setTeilPreis,
+  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, EINLOESE_ANGEBOTE, FERNE_DUNGEONS, GOLD_ANTEIL, LIEFER_AUFSCHLAG, LIEFER_WAREN, MATERIAL_PREIS,
+  SAAL_EINLEITUNG, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL,
+  setTeilPreis,
 } from '../src/data/auftragsbrett';
 import {
   auftraegeFuerDungeon, auftraegeNachExpedition, brettGesehen, brettKurz, brettStand, einloesbareMaterialien, einloesbareSets,
-  istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText, laufendesKapitel, lieferbareWaren, liefern, materialEinloesen,
-  saalEinleitung, saalKapitel, setTeilEinloesen, spielbareDungeons, splitterEinloesen, tagVon, tauschen, tauschUebrig, zettelText,
+  goldJeLauf, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText, laufendesKapitel, lieferbareWaren, lieferGold, liefern,
+  materialEinloesen, saalEinleitung, saalKapitel, setTeilEinloesen, spielbareDungeons, splitterEinloesen, tagVon, tauschen, tauschUebrig,
+  zettelText,
 } from '../src/systems/Auftragsbrett';
+import { marktKosten } from '../src/systems/Handel';
 import { bossTrophaeen, gildenbuch, saalGlanz, setSammlung, trophaeenStand } from '../src/systems/Trophaeensaal';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
 import { materialJeSieg } from '../src/systems/Schmiede';
@@ -353,6 +356,58 @@ describe('Auftragsbrett: Fortschritt nach der Expedition', () => {
     expect(state.globalStock.gold).toBe(gold + 100);
     expect(liefern(state, 0, MITTAG)).toBeNull();
     expect(brettKurz(state, MITTAG).abgeben).toBe(false);
+  });
+
+  test('Lieferung: Gold nach dem Marktpreis der Zutaten, auf jeder Ebene gleich', () => {
+    // Das Dreifache des billigsten Wegs über den Markt, z. B. 3 Heiltränke = 9 Kräuter = 13,50 Gold → 40 Gold
+    const erwartet: Record<string, number> = { healing_potion: 40, power_bread: 25, iron_sword: 60, iron_shield: 60, leather_armor: 35 };
+    expect(LIEFER_WAREN.map(w => w.itemId).sort()).toEqual(Object.keys(erwartet).sort());
+    const leichtesterDungeon = Math.min(...DUNGEON_GRAPH.map(n => Math.max(5, Math.round(goldJeLauf(n.routeId) * GOLD_ANTEIL / 5) * 5)));
+    for (const w of LIEFER_WAREN) {
+      const zutaten = marktKosten(w.itemId) * w.menge;
+      expect(Number.isFinite(zutaten), w.itemId).toBe(true);
+      expect(lieferGold(w.itemId, w.menge), w.itemId).toBe(erwartet[w.itemId]);
+      // Wer die Zutaten kauft, bekommt höchstens das Dreifache zurück (plus Rundung)
+      expect(lieferGold(w.itemId, w.menge), w.itemId).toBeLessThanOrEqual(LIEFER_AUFSCHLAG * zutaten + 2.5);
+      // Nicht langweilig: so viele Siegel wie ein Sieg, mehr Gold als ein Zettel für den leichtesten Dungeon
+      expect(SIEGEL_JE_ART.lieferung).toBe(SIEGEL_JE_ART.sieg);
+      expect(lieferGold(w.itemId, w.menge), w.itemId).toBeGreaterThan(leichtesterDungeon);
+    }
+  });
+
+  test('Lieferung am Brett: das Gold hängt an der Ware, nicht am höchsten Dungeon', () => {
+    const gefunden: Record<string, Set<number>> = {};
+    const ebenen = new Set<number>();
+    for (const art of ['probe', 'sterne'] as const) {
+      for (let samen = 1; samen <= 120; samen++) {
+        const state = spielstand(art, samen);
+        ebenen.add(ROUTE_DEFS[spielbareDungeons(state)[0]].tier);
+        for (const z of brettStand(state, MITTAG).auftraege.filter(a => a.art === 'lieferung')) {
+          expect(z.belohnung.gold, z.itemId).toBe(lieferGold(z.itemId!, z.ziel));
+          expect(z.belohnung.dinge).toEqual({});
+          (gefunden[z.itemId!] ??= new Set()).add(z.belohnung.gold);
+        }
+      }
+    }
+    expect(ebenen.size).toBeGreaterThan(1);
+    expect(Object.keys(gefunden).length).toBeGreaterThan(1);
+    for (const [ware, gold] of Object.entries(gefunden)) expect(gold.size, ware).toBe(1);
+  });
+
+  test('Lieferung: nur Waren, deren Zutaten der Markt hat (sonst gäbe es keinen Preis)', () => {
+    // Stahlschwert braucht Kristallsplitter aus den Dungeons: Es hätte kein Gold (Infinity, im Spielstand null)
+    expect(marktKosten('steel_sword')).toBe(Infinity);
+    const state = spielstand('sterne');
+    state.globalStock.steel_sword = 5;
+    LIEFER_WAREN.push({ ...LIEFER_WAREN[0], itemId: 'steel_sword', menge: 2 });
+    try {
+      const waren = lieferbareWaren(state).map(w => w.itemId);
+      expect(waren).not.toContain('steel_sword');
+      expect(waren.length).toBeGreaterThan(0);
+      expect(brettStand(state, MITTAG).auftraege.every(a => Number.isFinite(a.belohnung.gold))).toBe(true);
+    } finally {
+      LIEFER_WAREN.pop();
+    }
   });
 
   test('Expeditionsliste und Karte: welche Zettel in einem Dungeon zählen', () => {

@@ -108,7 +108,8 @@ export interface LieferWare {
 
 /**
  * Waren aus den Werkstätten. Am Brett hängt nur eine Ware, die die Stadt herstellen kann
- * (die Werkstatt steht und ihre Zutaten kommen), oder die schon im Lager liegt.
+ * (die Werkstatt steht und ihre Zutaten kommen), oder die schon im Lager liegt. Ihre Zutaten
+ * gibt es auch am Markt; daran hängt ihr Gold (LIEFER_AUFSCHLAG, tests/auftragsbrett.test.ts).
  */
 export const LIEFER_WAREN: LieferWare[] = [
   {
@@ -150,9 +151,16 @@ export const TAGESBONUS_SIEGEL = 3;
 export const ZETTEL_JE_TAG = 3;
 export const TAUSCH_JE_TAG = 1;
 
-/** Gold eines Zettels: dieser Anteil vom Gold eines Laufs im Dungeon (Lieferung: GOLD_JE_WARE mal Ware mal Ebene) */
+/** Gold eines Zettels: dieser Anteil vom Gold eines Laufs im Dungeon (Lieferung: LIEFER_AUFSCHLAG) */
 export const GOLD_ANTEIL = 0.6;
-export const GOLD_JE_WARE = 15;
+
+/**
+ * Gold einer Lieferung: das Dreifache dessen, was ihre Zutaten auf dem billigsten Weg am Markt kosten
+ * (marktKosten in systems/Handel.ts), auf jeder Ebene gleich. Wer die Zutaten kauft, behält höchstens
+ * zwei Drittel davon, in ganzen Bündeln oft weniger; was die Stadt selbst macht, bringt das Ganze.
+ * Vorher 15 Gold je Stück mal Ebene: bis 360 Gold für Kräuter, die am Markt 15 kosten (docs/AUFTRAGSBRETT.md).
+ */
+export const LIEFER_AUFSCHLAG = 3;
 
 // ── Siegel einlösen ──
 

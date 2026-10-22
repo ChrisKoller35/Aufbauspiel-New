@@ -21,7 +21,7 @@ import { DungeonSetDef, setFuerRoute, setVonItem } from '../data/dungeonSets';
 import { SCHMIEDE_MATERIALIEN, SchmiedeMaterialDef } from '../data/schmiede';
 import { dungeonWen, imDungeon } from '../data/dungeonNamen';
 import {
-  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, GOLD_ANTEIL, GOLD_JE_WARE, LIEFER_WAREN, MATERIAL_PREIS, SAAL_EINLEITUNG,
+  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, GOLD_ANTEIL, LIEFER_AUFSCHLAG, LIEFER_WAREN, MATERIAL_PREIS, SAAL_EINLEITUNG,
   SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, SaalKapitel,
   TAGESBONUS_SIEGEL, TAUSCH_JE_TAG, ZETTEL_JE_TAG, setTeilPreis,
 } from '../data/auftragsbrett';
@@ -30,6 +30,7 @@ import { bezwungeneDungeons } from './Bezwungen';
 import { dungeonHoehe } from './Rangliste';
 import { materialJeSieg, SPLITTER } from './Schmiede';
 import { nachschub } from './GebaeudeStatus';
+import { marktKosten } from './Handel';
 
 // ── Der Tag ──
 
@@ -149,19 +150,27 @@ function dungeonZettel(art: AuftragsArt, routeId: string, rng: SeededRNG, vergeb
   }
 }
 
-/** Waren, die am Brett hängen dürfen: die Stadt stellt sie her, oder sie liegen schon im Lager */
+/**
+ * Gold einer Lieferung: das Dreifache dessen, was ihre Zutaten auf dem billigsten Weg am Markt kosten,
+ * auf jeder Ebene gleich. Mit Ebene × Stück bezahlt, brachten 9 Kräuter für 15 Gold bis 360 Gold.
+ */
+export function lieferGold(itemId: string, menge: number): number {
+  return rund5(LIEFER_AUFSCHLAG * marktKosten(itemId) * menge);
+}
+
+/** Waren, die am Brett hängen dürfen: die Stadt stellt sie her, oder sie liegen schon im Lager (und sie haben einen Preis) */
 export function lieferbareWaren(state: GameState): typeof LIEFER_WAREN {
-  return LIEFER_WAREN.filter(w => (state.globalStock[w.itemId] ?? 0) >= w.menge || nachschub(state, w.itemId).kommt);
+  return LIEFER_WAREN.filter(w => Number.isFinite(marktKosten(w.itemId))
+    && ((state.globalStock[w.itemId] ?? 0) >= w.menge || nachschub(state, w.itemId).kommt));
 }
 
 function lieferZettel(state: GameState, rng: SeededRNG, vergeben: Auftrag[]): Auftrag | null {
   const waren = lieferbareWaren(state).filter(w => !vergeben.some(a => a.itemId === w.itemId));
   if (waren.length === 0) return null;
   const ware = rng.pick(waren);
-  const ebene = ROUTE_DEFS[spielbareDungeons(state)[0]]?.tier ?? 1;
   return {
     art: 'lieferung', vorlage: `ware_${ware.itemId}`, routeId: '', itemId: ware.itemId, ziel: ware.menge, stand: 0, fertig: false,
-    belohnung: { siegel: SIEGEL_JE_ART.lieferung, gold: rund5(GOLD_JE_WARE * ware.menge * ebene), dinge: {} },
+    belohnung: { siegel: SIEGEL_JE_ART.lieferung, gold: lieferGold(ware.itemId, ware.menge), dinge: {} },
   };
 }
 
