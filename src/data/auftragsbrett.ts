@@ -37,7 +37,7 @@ export interface AuftragsVorlage {
 /** Unter Wasser, in der Glut und über den Wolken: Dort zieht keine Karawane durch, und dort gräbt niemand */
 export const FERNE_DUNGEONS = [
   'ocean_depths', 'ocean_abyss', 'volcano_core', 'magma_caverns', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund',
-  'mondhof',
+  'mondhof', 'morgentor',
 ];
 
 /** Die Zettel für Dungeons; Lieferungen stehen bei ihrer Ware (LIEFER_WAREN) */
@@ -337,5 +337,13 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
     vorSieg: 'Hinter der Platte ohne Namen hat Jorinde zwei weitere Sockel freigelegt, unter einer Decke aus Staub, als hätte sie jemand '
       + 'für später zugedeckt. Das erste Schild meint den Mondvogt, der über dem Sternenschlund Zoll nimmt und noch nie etwas durchgelassen '
       + 'hat, ohne eine Quittung zu schreiben. Auf den Sockel gehört einer seiner Pfandzettel mit Siegel; er gilt erst, wenn er zweimal eingelöst ist.',
+  },
+  {
+    routeId: 'morgentor', art: 'set', ziel: 1, prunkstueck: 'Der erste Strahl des Tages, in Messing gefasst',
+    schild: 'Die Wächterin. Sie öffnet, wann sie will, und für wen sie will.',
+    text: 'Das zweite der neuen Schilder meint Sunna, die Tagwächterin am Morgentor, und es ist das einzige im Saal, das nicht '
+      + 'angelaufen ist; Jorinde meint, Messing laufe nicht an, wenn jeden Morgen die Sonne darauf fällt, aber hier fällt keine. '
+      + 'In jedes Teil ihrer Morgengabe hat Sunna den ersten Strahl des Tages gefasst, an dem es gemacht wurde. Bringt ein Teil heim: '
+      + 'Das Teil bleibt euch, der Strahl kommt auf den Sockel, und dann ist es in diesem Saal zum ersten Mal hell.',
   },
 ];

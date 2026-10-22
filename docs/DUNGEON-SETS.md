@@ -52,11 +52,13 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
     `double_strike`, `anti_heal`, `regen`, `aoe_resist`, `spell_power`, `fire_resist`, `stun_strike`.
 - **Set-Boni:** Zwei Teile geben je Ebene etwas mehr (Ebene 1: +1 Angriff, +5 Leben; Ebene 5: +5 Angriff,
   +15 Leben; Ebene 6: +6 Angriff, +20 Leben; Ebene 7: +7 Angriff, +24 Leben; Ebene 8: +8 Angriff, +8 %
-  Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben). Die Drei-Teile-Fähigkeit ist das Besondere des Sets
-  und passt zum Dungeon (Drachenhort: Drachengier, Gold macht stark; Sternenschmiede: Schmiedetakt, alle
-  3 Runden +3 Angriff fürs ganze Team; Sternenschlund: Sternenfall, jeder dritte Treffer trifft als Stern
-  alle Gegner mit dem halben Schaden; Mondhof: Mondwall, zu Beginn jedes Kampfes und alle 3 Runden ein
-  Schild von 15 für jeden im Team, der sich mit anderen Schilden wie der Phalanx addiert).
+  Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben; Ebene 10: +10 Angriff, +10 % Krit-Chance). Die
+  Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort: Drachengier, Gold macht
+  stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team; Sternenschlund: Sternenfall,
+  jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden; Mondhof: Mondwall, zu Beginn jedes
+  Kampfes und alle 3 Runden ein Schild von 15 für jeden im Team, der sich mit anderen Schilden wie der Phalanx
+  addiert; Morgentor: Sonnenstich, jeder Treffer auf einen Gegner über 60 % Leben brennt zusätzlich 5 % seiner
+  vollen Leben weg, höchstens 60, also genau bis dorthin, wo die Meuchlerin 2,5-fach trifft).
 
 ## Ein Set für einen neuen Dungeon
 
@@ -68,7 +70,7 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 3. **Ebene über 10:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
    `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 10. Die neuen Werte an den besten
    gewöhnlichen Gegenständen der Ebene ausrichten; gibt es auf der Ebene keine, die Reihe im selben Schritt
-   fortsetzen (so sind Ebene 7 bis 10 entstanden; die Spalte für Ebene 10 steht schon, ihr Set noch nicht).
+   fortsetzen (so sind Ebene 7 bis 10 entstanden).
 4. **Set-Boni:** `zweiTeile` etwas über der Ebene darunter. `dreiTeile` mit Name, Text und Effekten.
    Eine neue Fähigkeit braucht ihre Wirkung in `src/systems/Kampfeffekte.ts`, Name und Beschreibung in
    `SPECIAL_EFFECT_DEFS` und, falls ihre Kampfzeile eine eigene Farbe haben soll, `getLogLineColor` in
@@ -137,8 +139,14 @@ Stufen: 100 / 96 / 56 %); es ist der Lohn für Nyxar und der Schlüssel für den
 **Pfand des Mondvogts** (Zollscheibe, Amtsharnisch, Pfandzettel in Silber; Ebene 9) ist ein Schild-Set für
 Brom: Mondwall gibt dem ganzen Team zu Kampfbeginn und alle 3 Runden einen Schild von 15, zusammen mit dem
 Amtsstab des Mondvogts (Letzte Bastion) also einen Träger, der alles auf sich zieht und das Team dabei schützt.
-Der Mondhof ist noch nicht geeicht (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht»); die Tabelle oben hat darum noch
-keine Zeile für ihn.
+**Sunnas Morgengabe** (Erster Strahl, Dämmerwams, Messing-Sonnenuhr; Ebene 10) ist das Dolch-Set für Sina:
+Sonnenstich brennt Gegner über 60 % Leben herunter, genau bis dorthin, wo die Meuchlerin 2,5-fach trifft; oben
+Sonnenstich, unten Meucheln, derselbe Dolch. Es ist das Set gegen dicke einzelne Gegner, also gegen Bosse, und
+der Burst-Build, der am Morgentor die Sonnenuhr vorstellen darf (Probelauf: 100 % gierig, Sunna wütet ab Runde 4).
+Der Morgenstern (Erstsieg-Beute) trägt den Sternenfall des Schlund-Sets auf einen Zweihänder, wie Korrunds Hammer
+den Funkenflug: zwei Sets, drei Waffen, eine Hand zu wenig.
+Mondhof und Morgentor sind noch nicht geeicht (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht»); die Tabelle oben hat
+darum noch keine Zeilen für sie.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher

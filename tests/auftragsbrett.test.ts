@@ -95,7 +95,7 @@ describe('Auftragsbrett: Texte und Daten', () => {
       expect(k.ziel, k.routeId).toBeGreaterThan(0);
       if (k.art === 'set') expect(setFuerRoute(k.routeId), k.routeId).toBeDefined();
     }
-    expect(saalEinleitung()).toContain('Fünfzehn leere Sockel');
+    expect(saalEinleitung()).toContain('Sechzehn leere Sockel');
   });
 
   test('Auftraggeber, Vorlagen und Waren passen zusammen', () => {
@@ -458,7 +458,9 @@ describe('Kette: Der Saal der Gilde', () => {
     stand.kette.stand = letztes.ziel - 1;
     const angezeigt = kapitelBelohnungVon(stand, letztes);
     expect(kapitelBelohnungVon(stand, alle[0]).siegel).toBe(3 + Math.ceil(ROUTE_DEFS[alle[0].routeId].tier / 2));
-    const bilanz = auftraegeNachExpedition(state, lauf(letztes.routeId), MITTAG);
+    // Das letzte Kapitel (Morgentor) verlangt ein Teil aus Sunnas Morgengabe, kein zweites Mal den Sieg
+    expect(letztes).toMatchObject({ routeId: 'morgentor', art: 'set', ziel: 1 });
+    const bilanz = auftraegeNachExpedition(state, lauf(letztes.routeId, { setTeil: setTeilIds(setFuerRoute(letztes.routeId)!)[0] }), MITTAG);
     expect(bilanz.saalVoll).toBe(true);
     const meldung = bilanz.meldungen.find(m => m.prunkstueck)!;
     expect(meldung.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS[letztes.routeId].tier / 2) + SAAL_SCHLUSS_SIEGEL);

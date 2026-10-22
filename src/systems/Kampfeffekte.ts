@@ -569,7 +569,24 @@ export function nachTreffer(
   }
   const fall = effekt(angreifer, 'sternenfall');
   if (fall && angreifer.hp > 0) sternenfall(angreifer, fall, dmg, gegnerDesAngreifers, log);
+  const stich = effekt(angreifer, 'sonnenstich');
+  if (stich && angreifer.hp > 0) sonnenstich(angreifer, stich, ziel, log);
   if (angreifer.specialEffects?.some(e => e.weg)) wegNachTreffer(angreifer, ziel, dmg, gegnerDesAngreifers, verbuendete, log);
+}
+
+/**
+ * Sonnenstich (Set «Sunnas Morgengabe»): Jeder Treffer des Trägers auf einen Gegner, dem es noch gut
+ * geht (nach dem Treffer über dem Anteil `power` seiner Leben), brennt zusätzlich `anteil` seiner
+ * vollen Leben weg, höchstens `max`. Ohne Zufall; arbeitet genau oberhalb der Grenze, unter der die
+ * Meuchlerin 2,5-fach trifft.
+ */
+function sonnenstich(angreifer: CombatUnit, stich: SpecialEffect, ziel: CombatUnit, log: Log): void {
+  const schwelle = staerke(angreifer, 'sonnenstich');
+  if (ziel.hp <= 0 || ziel.hp <= ziel.maxHp * schwelle) return;
+  const brand = Math.min(stich.max ?? 60, Math.max(1, Math.floor(ziel.maxHp * (stich.anteil ?? 0.05))));
+  const verlust = schadenNehmen(ziel, brand);
+  log(`✦ ${angreifer.name} setzt ${anzeigeName(stich)} ein → ${ziel.name} brennt: −${brand}${schildText(brand, verlust)}`);
+  if (ziel.hp <= 0) besiegt(angreifer, log);
 }
 
 /** Wege, die nach einem eigenen Treffer wirken. Ohne Zufall. */

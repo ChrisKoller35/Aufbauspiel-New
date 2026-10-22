@@ -1316,4 +1316,52 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       + 'Argentis ist besiegt und hat, noch am Boden, die Pfandzettel eingelöst, jeden einzeln, gegengezeichnet und abgestempelt. Den Zoll für die Sterne hat er gestrichen, weil die Gilde, wie er sagt, «mit Kraft bezahlt hat, und die ist im Hof härter als Silber». '
       + 'Seinen Amtsstab durften wir behalten, mit Quittung. Die Bäckerin zählt wieder dreihundertzwölf, und ich habe dem zweiten Tintenfass einen festen Platz im Gepäck gegeben.',
   },
+
+  // ── Über dem Mondhof: die Sonnenuhr ist der feste Wahl-Raum der Route, dreimal ──
+  {
+    routeId: 'morgentor', titel: 'Die Morgengabe',
+    einleitung: 'Seit die Sterne zurück sind und der Vogt seine Zettel eingelöst hat, kommt der Morgen über Magic City zu spät, jeden Tag ein wenig mehr, '
+      + 'und die Bäckerin, die nach der Sonne backt, hat zum zweiten Mal in zwanzig Jahren das Brot versäumt. '
+      + 'Über dem Mondhof liegt das Morgentor, sagt Argentis, und Sunna, die es öffnet, lässt den Tag erst durch, wenn die Nacht aufgeräumt ist; sie hält uns für die Unordnung. '
+      + 'Wir gehen hinauf, um das Tor zu öffnen, und ich nehme eine Sonnenuhr mit, damit wenigstens einer von uns weiss, wie spät es ist.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Die erste Stunde',
+        text: 'Im Torhaus steht eine Sonnenuhr aus Messing, im Dunkeln, und zeigt trotzdem eine Stunde an: die, in der Sunna aufsteht. '
+          + 'Ein Lichtküster poliert sie und erklärt, die Morgengabe wachse mit jeder Stunde, die der Tag näher komme; er sagt nicht, dass Sunna dann auch näher kommt. '
+          + 'Wer die Uhr nicht anrührt, bekommt, was unter ihr liegt.',
+        nachklang: {
+          a: 'Wir stellten die Sonnenuhr um zwei Stunden vor, und irgendwo über uns drehte sich jemand im Schlaf um.',
+          b: 'Wir liessen die Uhr, wie sie war, und nahmen mit, was der letzte Besucher darunter verloren hatte. Er hatte es offenbar eilig.',
+        },
+      },
+      8: {
+        titel: 'Die zweite Stunde',
+        text: 'Hinter der Torkammer liegt Sunnas Morgengabe auf einem Tisch, ein Teil davon jedenfalls, für den Ersten, der heute durchs Tor geht; bis jetzt war das immer die Sonne. '
+          + 'Die Uhr lässt sich auf Vormittag stellen, dann liegt das Teil beim Sieg in eurer Truhe, und Sunna hat bis dahin schon gefrühstückt und ist entsprechend gelaunt. '
+          + 'Wer die Uhr lässt, nimmt aus der Opferschale des Küsters, was er Spende nennt.',
+        nachklang: {
+          a: 'Wir stellten die Uhr auf Vormittag, und der Lichtküster hörte auf zu polieren und begann zu beten, für uns, sagte er, nicht mit uns.',
+          b: 'Wir nahmen die Spende aus der Opferschale und liessen die Morgengabe liegen. Der Küster trug sie zurück in den Schrank, sehr langsam.',
+        },
+      },
+      14: {
+        titel: 'Die letzte Stunde',
+        text: 'Vor dem Tor steht die grosse Sonnenuhr, und ihr Schatten reicht bis an Sunnas Tür. Wer sie auf Mittag stellt, bekommt den Rest der Morgengabe mit dem Sieg, '
+          + 'und hinter dem Tor wird es sofort sehr hell und sehr still, wie bevor jemand Grosses aufsteht. '
+          + 'Wer im Schatten des Tors wartet, bis die Uhr von selbst weitergeht, atmet durch; der Schatten wird dabei schmaler, aber er reicht. '
+          + 'Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen.',
+        nachklang: {
+          a: 'Wir stellten die Uhr auf Mittag. Hinter dem Tor räusperte sich jemand, laut genug, dass die Falken vom Dach fielen.',
+          b: 'Wir warteten im Schatten des Tors, bis die Uhr von selbst weiterging, und Sunna wartete mit, mit verschränkten Armen, auf der anderen Seite.',
+        },
+      },
+    },
+    ende: 'Am Tor hängt eine Tafel mit Öffnungszeiten, «Täglich ab Sonnenaufgang», und Jorinde wies Sunna darauf hin, dass die Gilde die Uhr vorgestellt habe und es demnach bereits Mittag sei. '
+      + 'Sunna antwortete, sie richte sich nicht nach Uhren, die Uhren richteten sich nach ihr, und öffnete das Tor einen Spalt, um zu zeigen, dass dahinter noch Nacht war. Dann kämpfte sie, pünktlich. '
+      + 'Sunna ist besiegt, und das Tor steht offen; sie hat es selbst aufgestossen, weil, wie sie sagt, jemand den Tag nun einmal angefangen habe und sie ihn nicht halb lassen könne. '
+      + 'Die Morgengabe hat sie uns überreicht wie ein Geschenk, das man seit Jahren im Schrank hatte, und den Morgenstern dazu, mit der Bemerkung, der Witz sei alt. '
+      + 'Über Magic City kam die Sonne am nächsten Tag pünktlich, die Bäckerin hat gebacken, und ich habe meine Sonnenuhr auf dem Marktplatz aufgestellt, ein wenig vorgestellt, nur damit niemand mehr zu spät kommt.',
+  },
 ];

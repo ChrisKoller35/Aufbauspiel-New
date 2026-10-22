@@ -32,6 +32,11 @@ export interface EncounterChoice {
   kostetAngriff?: number;
   /** Zusage eines Set-Teils mehr, wenn der Boss fällt (wie `setTeil` in den Geschichten); nur in einem Raum je Dungeon */
   setTeil?: true;
+  /**
+   * Preis der Option in Geduld (Sonnenuhr): Die Wut-Runde des Bosses kommt so viele Runden früher,
+   * nie vor Runde 1 (ExpeditionRun.bossWutFrueher, CombatEngine). Nur bei Bossen mit `enrage` spürbar.
+   */
+  bossWutFrueher?: number;
   /** Geschichte: was die Option bewirkt */
   wirkung?: Wirkung[];
   /** Geschichte: der Satz dazu im Bericht nach der Expedition */
@@ -201,6 +206,8 @@ export interface ExpeditionRun {
   gier?: number;
   /** Sternenfeuer: so viel Prozent mehr Angriff hat die Gruppe bis zum Ende des Dungeons (EncounterChoice 'angriff'); unter 0 bei Pfandzetteln (kostetAngriff) */
   gruppenAngriff?: number;
+  /** Sonnenuhr: um so viele Runden kommt die Wut-Runde des Bosses früher (EncounterChoice.bossWutFrueher, summiert) */
+  bossWutFrueher?: number;
   /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
   setTeil?: string | null;
   /** Geschichte oder Wahl-Raum (EncounterChoice.setTeil): Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */

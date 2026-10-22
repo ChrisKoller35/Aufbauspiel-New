@@ -446,6 +446,64 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(traeger.sternenTreffer).toBe(0);
   });
 
+  test('Sonnenstich: jeder Treffer auf einen Gegner über 60 % Leben brennt 5 % seiner vollen Leben dazu, höchstens 60', () => {
+    const traeger = einheit(heldMitSet('morgen'), { spd: 5 });
+    const dick = gegner('Torhüter', { hp: 2000, maxHp: 2000 });
+    const run = kampf([traeger], [dick]);
+    const zeilen = run.combatLog;
+    const stiche = zeilen.filter(l => l.includes('setzt Sonnenstich ein'));
+    expect(stiche.length).toBeGreaterThan(0);
+    // 5 % von 2000 = 100, gedeckelt auf 60
+    expect(stiche[0]).toBe(`✦ ${traeger.name} setzt Sonnenstich ein → Torhüter brennt: −60`);
+    // Jeder Treffer (auch der Doppelschlag des Dolchs) über 60 % Leben (1200) brennt gleich danach, darunter keiner mehr
+    let leben = 2000;
+    let gesehen = 0;
+    for (let i = 0; i < zeilen.length; i++) {
+      const hit = zeilen[i].match(new RegExp(`^${traeger.name} greift Torhüter an für (\\d+)`)) ?? zeilen[i].match(/DOPPELSCHLAG! (\d+) extra Schaden/);
+      if (!hit) continue;
+      leben -= Number(hit[1]);
+      if (leben > 1200) {
+        expect(zeilen[i + 1], `nach Zeile ${i}`).toBe(stiche[0]);
+        leben -= 60;
+        gesehen++;
+      } else {
+        expect(zeilen[i + 1] ?? '', `nach Zeile ${i}`).not.toContain('Sonnenstich');
+      }
+    }
+    expect(gesehen).toBe(stiche.length);
+    expect(leben).toBeLessThanOrEqual(1200);
+
+    // Kleiner Gegner: 5 % von 400 = 20, und er fällt nicht am Stich allein
+    const klein = gegner('Hahn', { hp: 400, maxHp: 400 });
+    const lauf2 = kampf([einheit(heldMitSet('morgen'), { spd: 5 })], [klein]);
+    const stich2 = lauf2.combatLog.find(l => l.includes('setzt Sonnenstich ein'));
+    expect(stich2).toMatch(/→ Hahn brennt: −20$/);
+    // Der Stich trifft zuerst den Schild
+    const schild = gegner('Wall', { hp: 2000, maxHp: 2000, schild: 200 });
+    const lauf3 = kampf([einheit(heldMitSet('morgen'), { spd: 5 })], [schild]);
+    expect(lauf3.combatLog.some(l => l.includes('Wall brennt: −60') && l.includes('vom Schild'))).toBe(true);
+  });
+
+  test('Der Morgenstern trägt den Sternenfall als Gegenstand: jeder dritte Treffer, halber Schaden auf alle', () => {
+    const fighter = createGuildFighter(0, 'berserker', 'Zornig', GRUND);
+    const state = createNewGameState();
+    state.fighters = [fighter];
+    state.globalStock.der_morgenstern = 1;
+    expect(gear.equip(state, fighter, 'der_morgenstern')).toBe(true);
+    const traeger = einheit(fighter, { spd: 5 });
+    expect(traeger.specialEffects).toContainEqual({ id: 'sternenfall', usesLeft: -1 });
+    const run = kampf([traeger], ['A', 'B', 'C'].map(n => gegner(`Ziel ${n}`, { hp: 5000, maxHp: 5000 })));
+    const zeilen = run.combatLog;
+    const treffer = zeilen.map((l, i) => [l, i] as const).filter(([l]) => l.startsWith(`${traeger.name} greift `));
+    const sterne = zeilen.map((l, i) => [l, i] as const).filter(([l]) => l.includes('setzt Sternenfall ein'));
+    expect(sterne.length).toBe(Math.floor(treffer.length / 3));
+    const [dritter, nach] = treffer[2];
+    const wucht = Math.floor(Number(dritter.match(/für (\d+)/)![1]) * 0.5);
+    expect(sterne[0][1]).toBeGreaterThan(nach);
+    expect(sterne[0][1]).toBeLessThan(treffer[3][1]);
+    expect(sterne[0][0]).toBe(`✦ ${traeger.name} setzt Sternenfall ein → ein Stern trifft alle Gegner: Ziel A −${wucht}, Ziel B −${wucht}, Ziel C −${wucht}`);
+  });
+
   test('Mondwall: zu Kampfbeginn und alle 3 Runden ein Schild von 15 für alle, der sich auf die Phalanx dazulegt', () => {
     const traeger = einheit(heldMitSet('pfand'));
     const begleiter = einheit(heldMitSet(null));

@@ -4,7 +4,7 @@ Christoph (19.10.2026): «Endlos» heisst, dass es auf der Dungeon-Karte immer w
 mit immer neuen, verschiedenen Dungeons. Ab und zu kommen ein oder zwei dazu. Diese Datei hält fest,
 was es schon gibt und wie der nächste Dungeon dazukommt.
 
-## Was es gibt (Stand 21.10.2026)
+## Was es gibt (Stand 22.10.2026)
 
 | Ebene | Dungeon | Gebiet | Räume | Boss | Besonderheit | Erster Sieg bringt |
 |---|---|---|---|---|---|---|
@@ -13,23 +13,27 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 7 | Die Sternenschmiede | Sterne | 16 | Korrund, der Sternenschmied | Sternenfeuer: Wer die Waffen in die Essen hält, hat bis zum Ende +10 % Angriff (die ganze Gruppe), verliert aber 5 bis 10 % Leben | Korrunds Hammer |
 | 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt 3 bis 5 Sternenstahl, aber erst mit dem Sieg über Nyxar | Der letzte Stern |
 | 9 | Der Mondhof | Mond | 16 | Argentis, der Mondvogt | Pfandzettel: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Zettel unterschreiben; jeder kostet bis zum Ende 10 % Angriff und bringt erst mit dem Sieg über Argentis Mondsilber (5, dann 9) oder einen Set-Teil mehr. Wer am letzten Kontrollpunkt umkehrt, lässt alle Pfandzettel liegen | Amtsstab des Mondvogts |
+| 10 | Das Morgentor | Mond | 16 | Sunna, die Tagwächterin | Die Sonnenuhr: Dreimal (Raum 2, 8, 14) kann die Gruppe sie vorstellen; jedes Mal kommt Sunnas Wut-Runde 2 Runden früher (ab Runde 10, dreimal gewählt ab Runde 4), und erst mit dem Sieg kommen Mondsilber (6, dann 10) oder ein Set-Teil mehr. Ihre Werte ändern sich nie, nur ihre Geduld; die Kampf-Vorschau zeigt «Wut ab Runde X». Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen | Der Morgenstern |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
-  Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund, Mondhof: Nyxar).
-  Ebenen über 5 verlangen den höchsten Rang, den es gibt (V).
+  Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund, Mondhof: Nyxar,
+  Morgentor: Argentis). Ebenen über 5 verlangen den höchsten Rang, den es gibt (V).
 - **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_<route>_*`). Eigene Bilder haben
   Glutwyrmling, Hortkobold und Drachenpriester, Funkenwichtel, Ambossgolem und Korrund, Lichtmotte,
   Leerenkriecher und Nyxar; die übrigen tragen Bilder anderer Gegner. Im Mondhof tragen alle fünf
-  (Silberschreiber, Mondwache, Zollgeist, Mondkalb, Argentis) Bilder anderer Gegner.
+  (Silberschreiber, Mondwache, Zollgeist, Mondkalb, Argentis) Bilder anderer Gegner, am Morgentor ebenso
+  (Lichtküster, Torhüter aus Messing, Dämmerfalke, Morgenhahn, Sunna).
 - **Routenbilder:** `exp_drachenhort`, `exp_himmelsarchiv`, `exp_sternenschmiede` und `exp_sternenschlund`
-  (Karte, Routenliste, Kampf). Der Mondhof zeigt bis zu einem eigenen Bild `exp_sternenschlund`.
+  (Karte, Routenliste, Kampf). Der Mondhof zeigt bis zu einem eigenen Bild `exp_sternenschlund`, das
+  Morgentor `exp_sternenschmiede`.
 - **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen besonderen Gegenstand dazu.
   Drachenhort und Himmelsarchiv geben je ein T5-Stück; die drei T5-Stücke wurden dafür so verstärkt, dass
   sie je etwas besser sind als das beste T4-Stück für denselben Platz. Korrund gibt seinen Hammer (T7,
   zweihändig, Funkenflug: jeder Treffer springt mit 40 % auf einen zweiten Gegner über), Nyxar den letzten
   Stern (T8, Schmuck: wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf), Argentis seinen
   Amtsstab (T9, einhändig, Letzte Bastion: der Träger zieht zu Beginn jedes Kampfes 2 Runden lang alle
-  Angriffe auf sich; der Tooltip warnt davor).
+  Angriffe auf sich; der Tooltip warnt davor), Sunna den Morgenstern (T10, zweihändig, Sternenfall: jeder
+  dritte Treffer trifft als Stern alle Gegner mit halbem Schaden, wie das Schlund-Set, nur für den Kämpfer).
 - **Gebiet «Sterne»** (Ebene 7 und 8): violetter Nebel und ein funkelndes Sternenfeld auf der Karte,
   Material für die Schmiede ist Sternenstahl (`docs/SCHMIEDE.md`).
 - **Gebiet «Mond»** (Ebene 9 und 10): silbergrauer Dunst über dem Sternenfeld, Nebel und Sterne hören
@@ -41,7 +45,9 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   Oberarchivar besiegt, die Sternenschmiede offen. Im Lager liegt alles, um die Sets und Korrunds
   Meisterstücke auf +5 zu schmieden. `?probe=mond` startet vor dem Mondhof: dasselbe Team in Korrunds
   Meisterstücken und dem Schlund-Set auf +5, alle Bosse bis Nyxar besiegt, im Lager Mondsilber für das
-  Pfand des Mondvogts auf +5. In allen hat das Gildenhaus Stufe 2, es gehen also vier Helden mit,
+  Pfand des Mondvogts auf +5. `?probe=morgen` startet vor dem Morgentor: dazu Brom im Pfand des Mondvogts
+  mit dem Amtsstab auf +5, alle Bosse bis Argentis besiegt, im Lager Mondsilber für Sunnas Morgengabe auf +5.
+  In allen hat das Gildenhaus Stufe 2, es gehen also vier Helden mit,
   und die Klassen, die diese Bosse freischalten, sind schon frei (der erste Bericht meldet keine «Neue Klasse»).
 
 ## Einen Dungeon dazubauen
@@ -107,6 +113,11 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 - **Zusage eines Set-Teils** (`EncounterChoice.setTeil`): Die Option verspricht einen Set-Teil mehr, wenn der
   Boss fällt (`run.setTeilVersprochen`, bezahlt von `setBeute`); nur in einem Raum je Dungeon, sonst zählt die
   Zusage nur einmal. Mit `kostetAngriff` ist es ein Pfandzettel ohne Beute (Mondhof, Raum 8).
+- **Frühere Wut** (`EncounterChoice.bossWutFrueher`, Runden): Die Option holt die Wut-Runde des Bosses
+  (`EnemyDef.enrage.afterRound`) um so viele Runden näher, summiert in `run.bossWutFrueher`, nie vor Runde 1
+  (`wutAbRunde` in `CombatEngine.ts`). Der Preis trifft nicht die Werte, sondern die Zeit: Wer den Boss schnell
+  fällt, merkt ihn kaum, wer Kämpfe über 15 Runden gewinnt, zahlt voll. Das Logbuch meldet «Sunna wird ab
+  Runde X wütend», die Kampf-Vorschau zeigt bei jedem Boss «Wut ab Runde X» (Morgentor: dreimal 2 Runden).
 - **Erstsieg-Beute** (`RouteDef.ersterSiegBeute`).
 
 ## Eichung
@@ -212,13 +223,18 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
   etwas mehr als vorher; in der Sternenschmiede auch, weil die Risiken dort Leben kosten (gierig auf +4 48
   statt 68 %), vorsichtig und klug sind dort gleich geblieben.
 
-### Im Mondlicht (Ebene 9)
+### Im Mondlicht (Ebene 9 und 10)
 
 **Ziele (Entwurf):** Team «Stark» in Korrunds Meisterstücken und dem Schlund-Set auf +5 (`MUSTER_SETS.mond5`)
 soll den Mondhof vorsichtig in 60 bis 70 % der Läufe schaffen, klug etwa in der Hälfte, mit allen drei
 Pfandzetteln selten; die Pfandzettel sind der Preis für Mondsilber und einen Set-Teil mehr. Dazu zwei neue
 Messgrössen: Läufe, die am Rundenlimit des Bosskampfs enden (unter 5 %), und Siege vor der Wut-Runde (Argentis
 wütet ab Runde 10). Mit dem Pfand des Mondvogts auf +5 (`MUSTER_SETS.pfand5`) misst die Eichung erst ab Ebene 10.
+Das Morgentor soll dasselbe Team mit dem Pfand des Mondvogts auf +5 (`pfand5`) vorsichtig in 60 bis 70 %
+schaffen, klug in 35 bis 50 %, gierig (Sunna wütet ab Runde 4) höchstens in 5 %; ohne Pfand-Set (`mond5`)
+höchstens 15 % vorsichtig und 0 % gierig, damit das Set der Ebene darunter der Schlüssel bleibt. Lohn: Sina in
+Sunnas Morgengabe ohne Stufen mindestens 90 % vorsichtig und, als Burst-Build, mindestens 40 % gierig,
+deutlich mehr als jedes andere Team gierig; so zeigt sich, dass die Sonnenuhr vom Build abhängt.
 
 **Noch nicht geeicht (22.10.2026).** Der Mondhof steht mit den Startwerten des Entwurfs; ein Probelauf mit
 `spieleRoute` (50 Läufe je Spielweise, Team «Stark») gab: mit `sterne5` (ohne Schlund-Set) 0 / 0 / 0 Siege,
@@ -226,6 +242,24 @@ mit `mond5` 1 / 0 / 0 Siege, keine Läufe am Rundenlimit, keine Fehler; jeder La
 fällt dort (im Mittel 16 Räume). Zum Vergleich der Sternenschlund mit `sterne5` vorsichtig: 47 von 50. Der
 Mondhof ist also zurzeit viel zu schwer; die Eichung (Argentis und die Mondwachen schwächer, oder die Gegner
 davor) ist der nächste Schritt, nicht Teil des Baus.
+
+**Morgentor, noch nicht geeicht (22.10.2026).** Startwerte des Entwurfs; Probelauf mit `spieleRoute`
+(50 Läufe je Spielweise, Team «Stark», Siege vorsichtig / klug / gierig):
+
+| Ausrüstung | Siege | am Rundenlimit | Siege vor der Wut | Niederlagen |
+|---|---|---|---|---|
+| `mond5` (ohne Pfand-Set) | 0 / 0 / 0 % | 0 / 0 / 0 % | – | 100 / 100 / 100 % |
+| `pfand5` (Brom im Pfand-Set mit Amtsstab) | 88 / 68 / 12 % | 12 / 32 / 72 % | 1 von 44 / 0 / 0 | 0 / 0 / 16 % |
+| `pfand5`, Sina in Sunnas Morgengabe ohne Stufen | 100 / 100 / 100 % | 0 / 0 / 0 % | 49 von 50 / 0 / 0 | 0 / 0 / 0 % |
+
+Keine Fehler, keine Endlosschleife, jeder Lauf kommt bis zu Sunna (ohne Pfand-Set 84 %, die übrigen fallen
+davor). Was auffällt: Mit dem Pfand-Set stirbt fast niemand, aber viele Läufe enden am Rundenlimit (20 Runden
+ohne Sieger, der Dungeon zählt als geschafft, die Morgengabe bleibt liegen), gierig fast drei von vier; Sunnas
+Morgentau (260 alle 6 Runden) gegen Mondwall und Amtsstab ist ein Patt. Das Ziel «unter 5 % am Rundenlimit»
+ist weit verfehlt, die Stellschraube ist der Morgentau (notfalls 200, Entscheid 9) vor ihrem Angriff. Die
+Sonnenuhr wirkt wie gedacht: ohne Burst-Build kostet sie den Sieg (88 → 12 %), mit Sina im Morgengabe-Set
+kostet sie nichts (100 % gierig, alle Siege zwischen Runde 4 und 10). Das Set ist in dieser Rechnung eher zu
+stark (100 % vorsichtig, 49 von 50 vor Runde 10). Die Eichung ist der nächste Schritt, nicht Teil des Baus.
 
 ## Entschieden
 
@@ -244,6 +278,13 @@ davor) ist der nächste Schritt, nicht Teil des Baus.
   Raum 8 läuft über `EncounterChoice.setTeil`, nicht über `effect: 'geschichte'`. Bilder: keine, alle fünf
   Gegner und das Routenbild sind Platzhalter, bis Christoph sie freigibt. Weggelassen: Mondschein,
   Himmelslast, ein zweites Material, Wecken Gefallener.
+- **Das Morgentor** (22.10.2026, derselbe Entscheid): Ebene 10 im Gebiet «Mond» mit der Sonnenuhr (Preis in
+  Geduld: Sunnas Wut-Runde kommt je Wahl 2 Runden früher, neuer Baustein `bossWutFrueher`, Vorschau «Wut ab
+  Runde X»), dem Set «Sunnas Morgengabe» (Sonnenstich: Treffer auf Gegner über 60 % Leben brennen 5 % ihrer
+  vollen Leben dazu, höchstens 60), dem Morgenstern (Sternenfall auf einem Zweihänder) und der Geschichte
+  «Die Morgengabe». Der Saal der Gilde hat damit sechzehn Sockel, das Morgentor ist der letzte. Bilder: keine,
+  alle fünf Gegner und das Routenbild sind Platzhalter. Eigene Probestufe `?probe=morgen`, damit `?probe=mond`
+  weiter vor dem Mondhof beginnt.
 
 ## Später
 
@@ -251,4 +292,5 @@ Aus den Entwürfen für den Mond bleiben zwei Ideen als Kandidaten für Ebene 11
 Vorgeschichte dazu schon feststeht: **«Erste Stadt / Alruna»**, eine Stadt der Vorigen ohne Rastplatz, in der
 Wachfeuer Gefallene wecken und am Ende Alruna wartet, die den Saal der Gilde gebaut hat; und **«Wut-Runde als
 Preis / Pfeiler»**, ein Dungeon, in dem der Boss nicht stärker, sondern ungeduldiger wird (jeder herausgebrochene
-Pfeiler bringt Material, wenn ihr siegt, und zieht seine Wut-Runde um zwei Runden vor).
+Pfeiler bringt Material, wenn ihr siegt, und zieht seine Wut-Runde um zwei Runden vor; den Baustein dafür gibt
+es seit dem Morgentor, `bossWutFrueher`, der Pfeiler-Dungeon müsste ihn also anders einsetzen als die Sonnenuhr).

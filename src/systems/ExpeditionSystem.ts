@@ -9,7 +9,7 @@ import { ProvisionSystem } from './ProvisionSystem';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { MODIFIER_DEFS } from '../data/modifiers';
-import { CombatEngine } from './CombatEngine';
+import { CombatEngine, wutAbRunde } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
 import { expeditionsBeginn } from './Kampfeffekte';
 import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen, wirkungZeile } from './Geschichten';
@@ -440,6 +440,16 @@ export class ExpeditionSystem {
     if (choice.setTeil) {
       run.setTeilVersprochen = true;
       run.combatLog.push(`>> ${choice.label}: ${wirkungZeile(run.routeId, { art: 'setTeil' })}.`);
+    }
+
+    // Preis in Geduld (Sonnenuhr): Die Wut-Runde des Bosses kommt früher, nie vor Runde 1 (CombatEngine.wutAbRunde)
+    if (choice.bossWutFrueher) {
+      run.bossWutFrueher = (run.bossWutFrueher ?? 0) + choice.bossWutFrueher;
+      const bossId = ROUTE_DEFS[run.routeId]?.bossId;
+      const wut = bossId ? ENEMY_DEFS[bossId]?.enrage : undefined;
+      if (wut) {
+        run.combatLog.push(`>> Das hat seinen Preis: ${this.bossKurzname(run.routeId, 'Der Boss')} wird ab Runde ${wutAbRunde(wut, run)} wütend.`);
+      }
     }
 
     if (choice.gier) this.hortGierWaechst(run, choice.gier);

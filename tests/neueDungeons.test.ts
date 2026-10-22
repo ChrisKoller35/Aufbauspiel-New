@@ -3,6 +3,8 @@ import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter } from '../src/models/GuildRoster';
 import { ExpeditionRun } from '../src/models/ExpeditionRun';
 import { ROUTE_DEFS, DUNGEON_GRAPH, isRouteAvailable, getRouteLockReasons } from '../src/data/routes';
+import { CombatEngine, wutAbRunde } from '../src/systems/CombatEngine';
+import { SeededRNG } from '../src/utils/RNG';
 import { ENEMY_DEFS, ENEMY_LORE } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { ITEM_DEFS } from '../src/data/items';
@@ -58,8 +60,8 @@ function boss(run: ExpeditionRun) {
 }
 
 describe('Dungeons über dem Vulkankern', () => {
-  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv zwischen die Sterne und in den Mondhof', () => {
-    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof']);
+  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv zwischen die Sterne, in den Mondhof und ans Morgentor', () => {
+    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof', 'morgentor']);
     const knoten = (id: string) => DUNGEON_GRAPH.find(n => n.routeId === id)!;
     expect(knoten('volcano_core').leadsTo).toContain('drachenhort');
     expect(knoten('drachenhort').y).toBeLessThan(0);
@@ -144,6 +146,10 @@ describe('Dungeons über dem Vulkankern', () => {
 
     state.guildStats.bossesDefeatedIds.push('boss_nyxar');
     expect(isRouteAvailable(ROUTE_DEFS.mondhof, state)).toBe(true);
+    expect(getRouteLockReasons(ROUTE_DEFS.morgentor, state)).toEqual(['Besiege: Argentis, der Mondvogt']);
+
+    state.guildStats.bossesDefeatedIds.push('boss_argentis');
+    expect(isRouteAvailable(ROUTE_DEFS.morgentor, state)).toBe(true);
   });
 
   it('Hort-Gier: Gold aus dem Hort macht Ignarax um 8 % je Schatz stärker', () => {
@@ -403,6 +409,137 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(gear.getSpecialEffects(held).map(e => e.id)).toContain('letzte_bastion');
   });
 
+  it('Sonnenuhr: jedes Vorstellen holt Sunnas Wut 2 Runden näher, die Beute kommt erst mit dem Sieg, ihre Werte bleiben', () => {
+    const { state, ids } = musterStand('stark', 7919, 'pfand5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'morgentor', ids)!);
+    expect(run.pendingChoice!.roomIndex).toBe(2);
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 6, nachSieg: true, bossWutFrueher: 2 });
+    expect(run.pendingChoice!.optionB).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 2 });
+    const start = run.party.map(u => ({ atk: u.atk, hp: u.hp }));
+    const sunna = boss(run);
+    const werte = { hp: sunna.hp, maxHp: sunna.maxHp, atk: sunna.atk, spd: sunna.spd };
+    const bossRaum = run.rooms.length - 1;
+    expect(ENEMY_DEFS.boss_sunna.enrage!.afterRound).toBe(10);
+
+    system.resolveChoice(run, 0);
+    expect(run.bossWutFrueher).toBe(2);
+    expect(wutAbRunde(ENEMY_DEFS.boss_sunna.enrage!, run)).toBe(8);
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Sunna wird ab Runde 8 wütend.');
+    expect(run.loot.mat_mondsilber ?? 0).toBe(0);
+    expect(run.geschichtsBeute).toEqual([{ raum: bossRaum, gold: 0, dinge: { mat_mondsilber: 6 } }]);
+    // Die Sonnenuhr ändert nichts an den Werten, weder bei den Helden noch bei Sunna (keine Hort-Gier)
+    run.party.forEach((u, i) => expect({ atk: u.atk, hp: u.hp }, u.name).toEqual(start[i]));
+    expect({ hp: sunna.hp, maxHp: sunna.maxHp, atk: sunna.atk, spd: sunna.spd }).toEqual(werte);
+    expect(run.gruppenAngriff ?? 0).toBe(0);
+    expect(run.gier ?? 0).toBe(0);
+    expect(ROUTE_DEFS.morgentor.hortGier).toBeUndefined();
+
+    // Die zweite Stunde (Raum 8) verspricht ein Set-Teil, wieder gegen 2 Runden Geduld
+    bisZurWahl(state, run);
+    expect(run.pendingChoice!.roomIndex).toBe(8);
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'kein', setTeil: true, bossWutFrueher: 2 });
+    system.resolveChoice(run, 0);
+    expect(run.setTeilVersprochen).toBe(true);
+    expect(run.bossWutFrueher).toBe(4);
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Sunna wird ab Runde 6 wütend.');
+
+    bisZurWahl(state, run);
+    expect(run.pendingChoice!.roomIndex).toBe(14);
+    system.resolveChoice(run, 0);
+    expect(run.bossWutFrueher).toBe(6);
+    expect(wutAbRunde(ENEMY_DEFS.boss_sunna.enrage!, run)).toBe(4);
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Sunna wird ab Runde 4 wütend.');
+    expect(run.geschichtsBeute).toEqual([{ raum: bossRaum, gold: 0, dinge: { mat_mondsilber: 16 } }]);
+  });
+
+  it('Sonnenuhr: im Bosskampf wütet Sunna dann ab Runde 4, und nie vor Runde 1', () => {
+    const engine = new CombatEngine(new GearSystem());
+    const wutRunde = (frueher: number | undefined): number => {
+      const sunna = engine.enemyToCombatUnit('boss_sunna');
+      sunna.atk = 1;
+      const held: typeof sunna = { ...engine.enemyToCombatUnit('boss_sunna'), id: 1, name: 'Testheld', isPlayer: true, atk: 1, hp: 99999, maxHp: 99999 };
+      const room = { index: 0, type: 'boss' as const, enemies: [sunna], healPercent: 0, hazardDamage: 0, completed: false };
+      const run: ExpeditionRun = {
+        routeId: 'morgentor', party: [held], rooms: [room], currentRoom: 0, combatLog: [], loot: {}, goldEarned: 0,
+        provisions: [], status: 'exploring', lastCheckpoint: 0, desperateResolveUsed: false, rngSeed: 1,
+        focusTarget: null, focusTargetCooldown: 0, difficulty: 'normal', activeModifier: null, score: 0,
+        totalCombatRounds: 0, enemiesKilled: 0, bossesKilled: 0, abilitiesUsed: {}, bossWutFrueher: frueher,
+      };
+      engine.processCombat(run, room, new SeededRNG(3));
+      const wut = run.combatRoundSnapshots!.find(s => s.logLines.some(l => l === `!! ${sunna.name} ENRAGE !!`));
+      expect(wut, `bossWutFrueher ${frueher}`).toBeTruthy();
+      return wut!.round;
+    };
+    expect(wutRunde(undefined)).toBe(10);
+    expect(wutRunde(6)).toBe(4);
+    expect(wutRunde(50)).toBe(1);
+  });
+
+  it('wer die Uhr lässt, hat das Mondsilber sofort oder atmet durch, und Sunna bleibt geduldig', () => {
+    const { state, ids } = musterStand('stark', 7919, 'pfand5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'morgentor', ids)!);
+    system.resolveChoice(run, 1);
+    expect(run.bossWutFrueher ?? 0).toBe(0);
+    expect(run.loot.mat_mondsilber).toBe(2);
+    expect(run.setTeilVersprochen).toBeFalsy();
+    expect(run.combatLog.some(l => l.includes('wütend'))).toBe(false);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 1);
+    expect(run.loot.mat_mondsilber).toBe(5);
+    bisZurWahl(state, run);
+    expect(run.pendingChoice!.optionB).toMatchObject({ effect: 'heal', value: 15 });
+    const vorher = run.party.map(u => u.hp);
+    system.resolveChoice(run, 1);
+    run.party.forEach((u, i) => expect(u.hp, u.name).toBeGreaterThanOrEqual(vorher[i]));
+    expect(run.bossWutFrueher ?? 0).toBe(0);
+  });
+
+  it('mit dem Sieg über Sunna kommen 16 Mondsilber und das versprochene Set-Teil, wer umkehrt, lässt die Morgengabe liegen', () => {
+    const { state, held } = uebermacht();
+    const run = bisZurWahl(state, system.startExpedition(state, 'morgentor', [held])!);
+    system.resolveChoice(run, 0);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    zuEnde(state, run);
+    expect(run.bossesKilled).toBe(1);
+    expect(run.loot.mat_mondsilber).toBe(16);
+    expect(run.combatLog).toContain('📜 Beute aus der Geschichte: +16× Mondsilber');
+    const teile = setBeute(state, run);
+    expect(teile).toHaveLength(2);
+    expect(run.setTeilExtra).toBeTruthy();
+    for (const id of teile) expect(setVonItem(id)?.id, id).toBe('morgen');
+
+    const { state: s2, held: h2 } = uebermacht();
+    const rueckzug = bisZurWahl(s2, system.startExpedition(s2, 'morgentor', [h2])!);
+    system.resolveChoice(rueckzug, 0);
+    for (let schritt = 0; schritt < 50 && rueckzug.status === 'exploring'; schritt++) {
+      const step = system.nextStep(rueckzug);
+      if (step === 'checkpoint') system.resolveCheckpoint(rueckzug, true);
+      else if (step !== 'finish') system.processCurrentRoom(s2);
+    }
+    expect(rueckzug.status).toBe('retreat');
+    expect(rueckzug.loot.mat_mondsilber ?? 0).toBe(0);
+    expect(setBeute(s2, rueckzug)).toEqual([]);
+  });
+
+  it('Der Morgenstern: zweihändig, Ebene 10, mit dem Sternenfall des Schlund-Sets', () => {
+    const stern = ITEM_DEFS.der_morgenstern;
+    expect(stern).toMatchObject({ tier: 10, gearSlot: 'mainHand', weaponSlotType: '2h' });
+    expect(stern.tags).toContain('special:sternenfall');
+    expect(stern.flavorText).toContain('Jeder dritte Treffer holt einen Stern vom Himmel');
+    expect(ROUTE_DEFS.morgentor.ersterSiegBeute).toBe('der_morgenstern');
+    const state = createNewGameState();
+    const held = createGuildFighter(1, 'berserker', 'Zornig', { hp: 100, maxHp: 100, atk: 10, def: 5, spd: 1, critChance: 0, critMult: 1.5 });
+    state.fighters.push(held);
+    state.globalStock.der_morgenstern = 1;
+    const gear = new GearSystem();
+    expect(gear.equip(state, held, 'der_morgenstern')).toBe(true);
+    // Vom Gegenstand kommt nur die Kennung; Kampfeffekte nimmt dann treffer 3 und anteil 0.5 als Vorgabe
+    expect(gear.getSpecialEffects(held)).toContainEqual({ id: 'sternenfall', usesLeft: -1 });
+  });
+
   it('andere Fund-Räume wählen weiter zufällig zwischen Truhe und zweiter Option', () => {
     const { state, held } = uebermacht();
     const run = system.startExpedition(state, 'swamp_long', [held])!;
@@ -498,6 +635,24 @@ describe('Dungeons über dem Vulkankern', () => {
           expect(run.gruppenAngriff).toBe(-30);
           expect(run.setTeilVersprochen).toBe(true);
         }
+      }
+    }
+  });
+
+  it('das Morgentor läuft in jeder Spielweise zu Ende (noch nicht geeicht, darum keine Siegquote)', () => {
+    for (const spielweise of ['vorsichtig', 'klug', 'gierig'] as const) {
+      for (let i = 1; i <= 3; i++) {
+        const { state, ids } = musterStand('stark', i * 7919, 'pfand5');
+        const run = spieleRoute(state, ids, 'morgentor', spielweise);
+        expect(run.status).not.toBe('exploring');
+        expect(run.rooms.filter(r => r.completed).length).toBeGreaterThan(0);
+        // Gierig stellt die Uhr dreimal vor: Sunna wütet ab Runde 4, nichts kommt vor dem Boss
+        if (spielweise === 'gierig' && run.rooms.filter(r => r.completed).length >= 15) {
+          expect(run.bossWutFrueher).toBe(6);
+          expect(run.setTeilVersprochen).toBe(true);
+          expect(run.loot.mat_mondsilber ?? 0).toBe(run.bossesKilled > 0 ? 16 : 0);
+        }
+        if (spielweise === 'vorsichtig') expect(run.bossWutFrueher ?? 0).toBe(0);
       }
     }
   });

@@ -44,7 +44,7 @@ und was bei neuen Dungeons zu tun ist.
 - **Trophäensaal.** Ein Sockel je Boss mit dem Bild des Bosses; wer noch nicht bezwungen ist, steht als
   Schatten mit «???» da, das Messingschild ist schon lesbar. Jede Trophäe hat drei Sterne: Boss
   bezwungen, Set des Dungeons komplett, Prunkstück aus der Kette. Die Summe ist der «Glanz des Saals»
-  (bei 15 Bossen 45 Sterne), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
+  (bei 16 Bossen 48 Sterne), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
   der Rangliste, alle Sets der Dungeons (komplett grün) und das Gildenbuch (Expeditionen, Siege, Siege
   ohne Verlust, Gegner, Bosse, bezwungene Dungeons, erledigte Zettel, verdiente Siegel).
   Der Saal zeigt nur; Kampfwerte ändert er nicht.
@@ -90,6 +90,7 @@ Alles in `src/data/auftragsbrett.ts`.
 | 13 | Die Sternenschmiede | 7 | 2× Sieg | 435 | 7 · 725 · 18 Sternenstahl | 12 |
 | 14 | Der Sternenschlund | 8 | 1× Sieg | 490 | 7 · 820 · 20 Sternenstahl | 12 |
 | 15 | Der Mondhof | 9 | 2× Sieg | 555 | 8 · 925 · 22 Mondsilber | 14 |
+| 16 | Das Morgentor | 10 | 1 Set-Teil | 605 | 8 · 1010 · 24 Mondsilber | 14 |
 
 «Zettel: Gold» ist das Gold eines Zettels für diesen Dungeon; dazu kommt immer das Material eines Siegs.
 

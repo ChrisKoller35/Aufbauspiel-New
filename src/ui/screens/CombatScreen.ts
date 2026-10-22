@@ -7,6 +7,7 @@
 
 import { ExpeditionRun, CombatUnit, CombatSkill, EncounterRoom, CombatRoundSnapshot, WegZustand } from '../../models/ExpeditionRun';
 import { ExpeditionSystem } from '../../systems/ExpeditionSystem';
+import { wutAbRunde } from '../../systems/CombatEngine';
 import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, ROUTE_IMAGE_MAP } from '../../data/routes';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
@@ -451,6 +452,16 @@ export class CombatScreen {
     statsEl.className = 'mc-co-unit-stats';
     statsEl.textContent = `ATK:${unit.atk} DEF:${unit.def} SPD:${unit.spd.toFixed(1)}`;
 
+    // Boss: ab wann er wütet, mit der Sonnenuhr (run.bossWutFrueher) früher. Der Preis einer Wahl muss
+    // sofort zu sehen sein, wie die Hort-Gier in den Werten.
+    const wut = isEnemy && this.previewRoom?.type === 'boss' && unit.defId ? ENEMY_DEFS[unit.defId]?.enrage : undefined;
+    const wutEl = wut && this.expRun ? document.createElement('div') : null;
+    if (wutEl && wut) {
+      wutEl.className = 'mc-co-unit-stats mc-co-unit-wut';
+      wutEl.textContent = `Wut ab Runde ${wutAbRunde(wut, this.expRun!)}`;
+      wutEl.title = `Ab dieser Runde: Angriff ×${wut.atkMult}, Tempo ×${wut.spdMult}`;
+    }
+
     const hpText = document.createElement('div');
     hpText.className = 'mc-co-unit-hp';
     hpText.textContent = `${Math.max(0, unit.hp)} / ${unit.maxHp}`;
@@ -506,6 +517,7 @@ export class CombatScreen {
 
     info.appendChild(nameEl);
     info.appendChild(statsEl);
+    if (wutEl) info.appendChild(wutEl);
     info.appendChild(hpText);
     info.appendChild(barTrack);
 

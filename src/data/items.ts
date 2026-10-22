@@ -361,6 +361,16 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     flavorText: 'Wer den Stab hebt, hat das Wort: Alle hören zu, auch die, die gerade zuschlagen wollten. Zu Beginn jedes Kampfes zieht der Träger 2 Runden lang alle Angriffe auf sich, ob er das aushält oder nicht. Argentis führt die Sitzungen jetzt mit einem Lineal.',
   },
 
+  // --- Ebene 10: Beute der Tagwächterin (erster Sieg garantiert). Zweihändig, mit dem Sternenfall des
+  //     Schlund-Sets: jeder dritte Treffer holt einen Stern, der alle Gegner mit halbem Schaden trifft ---
+  der_morgenstern: {
+    id: 'der_morgenstern', name: 'Der Morgenstern', type: 'gear',
+    stackSize: 1, baseValue: 225, gearSlot: 'mainHand', weaponSlotType: '2h', tier: 10, spriteKey: 'ITEM_WAR_HAMMER',
+    statBonuses: { atk: 31, hp: 44, def: 8 },
+    tags: ['gear', 'weapon', 'tier10', 'legendary', 'special:sternenfall'],
+    flavorText: 'Es ist ein Morgenstern. Es ist auch der Morgenstern: Jeder dritte Treffer holt einen Stern vom Himmel, der alle Gegner mit der Hälfte des Schadens trifft. Sunna fand das lustig, einmal, vor sehr langer Zeit, und hat ihn seither nicht mehr angefasst.',
+  },
+
   // --- Special (expedition-only) ---
   crystal_shard: {
     id: 'crystal_shard', name: 'Kristallsplitter', type: 'special',

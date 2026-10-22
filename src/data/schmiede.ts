@@ -80,7 +80,7 @@ export const SCHMIEDE_MATERIALIEN: SchmiedeMaterialDef[] = [
   },
   {
     id: 'mat_mondsilber', name: 'Mondsilber', ausGebiet: 'vom Mond', bild: 'MAT_MONDSILBER',
-    routen: ['mondhof'],
+    routen: ['mondhof', 'morgentor'],
     text: 'Wird bei Vollmond geschlagen und bei Neumond gezählt. Dazwischen fehlt immer eins.',
   },
 ];

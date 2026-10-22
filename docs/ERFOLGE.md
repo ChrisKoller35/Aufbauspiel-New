@@ -158,8 +158,8 @@ dort eine Zeile.
 - Bewohner: Wohnraum gibt nur das Wohnviertel, und das gibt es einmal. Auf Stufe 6 hat es 36 Plätze,
   6 Bewohner sind vom Start da, also ziehen höchstens 30 ein.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
-- Sets: 27 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
-- Trophäensaal: 14 Sockel mit je 3 Sternen.
+- Sets: 29 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
+- Trophäensaal: 16 Sockel mit je 3 Sternen.
 - Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg

@@ -47,8 +47,10 @@ describe('Probespiel', () => {
     expect(probespielNeu('?probe')).toBe(false);
     expect(probespielNeu('?probe=sterne')).toBe(true);
     expect(probespielNeu('?probe=mond')).toBe(true);
+    expect(probespielNeu('?probe=morgen')).toBe(true);
     expect(probespielStufe('?probe=sterne')).toBe('sterne');
     expect(probespielStufe('?probe=mond')).toBe('mond');
+    expect(probespielStufe('?probe=morgen')).toBe('morgen');
     expect(probespielStufe('?probe')).toBe('neu');
     expect(probespielStufe('?probe=neu')).toBe('neu');
   });
@@ -89,7 +91,7 @@ describe('Probespiel', () => {
   });
 
   it('die Klassen, die eine Gilde mit diesen Bossen schon hat, sind frei: der erste Bericht meldet keine «Neue Klasse»', () => {
-    for (const stufe of ['neu', 'sterne', 'mond'] as const) {
+    for (const stufe of ['neu', 'sterne', 'mond', 'morgen'] as const) {
       const state = probespiel(stufe);
       expect(state.classesUnlocked.length, stufe).toBeGreaterThanOrEqual(6);
       expect(new ClassUnlockSystem().checkUnlocks(state), stufe).toEqual([]);
@@ -138,6 +140,28 @@ describe('Probespiel', () => {
     const pfand = setTeilIds(setFuerRoute('mondhof')!);
     for (const id of pfand) state.globalStock[id] = 1;
     for (const itemId of pfand) {
+      while (schmieden(state, itemId) !== null);
+      expect(schmiedeStufe(state, itemId), itemId).toBe(5);
+    }
+    for (const [itemId, menge] of Object.entries(state.globalStock)) expect(menge, itemId).toBeGreaterThanOrEqual(0);
+  });
+
+  it('?probe=morgen: Brom im Pfand des Mondvogts mit dem Amtsstab auf +5 vor dem offenen Morgentor, mit Mondsilber für Sunnas Morgengabe', () => {
+    const state = probespiel('morgen');
+    for (const f of state.fighters) {
+      expect(f.gear).toEqual(MUSTER_SETS.pfand5.gear[f.name]);
+      for (const itemId of Object.values(f.gear)) {
+        if (itemId && istSchmiedbar(itemId)) expect(schmiedeStufe(state, itemId), itemId).toBe(5);
+      }
+    }
+    expect(state.fighters.find(f => f.name === 'Brom')!.gear.mainHand).toBe('amtsstab_des_mondvogts');
+    expect(state.guildStats.bossesDefeatedIds).toContain('boss_argentis');
+    expect(state.guildStats.bossesDefeatedIds).not.toContain('boss_sunna');
+    expect(isRouteAvailable(ROUTE_DEFS.mondhof, state)).toBe(true);
+    expect(isRouteAvailable(ROUTE_DEFS.morgentor, state)).toBe(true);
+    const morgen = setTeilIds(setFuerRoute('morgentor')!);
+    for (const id of morgen) state.globalStock[id] = 1;
+    for (const itemId of morgen) {
       while (schmieden(state, itemId) !== null);
       expect(schmiedeStufe(state, itemId), itemId).toBe(5);
     }

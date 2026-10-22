@@ -23,6 +23,14 @@ export function hasEffect(unit: CombatUnit, effectId: string): boolean {
 }
 
 /**
+ * Runde, ab der ein Boss wütet: seine Wut-Runde (EnemyDef.enrage.afterRound), durch die Sonnenuhr
+ * (run.bossWutFrueher, Morgentor) um so viele Runden früher, aber nie vor Runde 1.
+ */
+export function wutAbRunde(enrage: { afterRound: number }, run: Pick<ExpeditionRun, 'bossWutFrueher'>): number {
+  return Math.max(1, enrage.afterRound - (run.bossWutFrueher ?? 0));
+}
+
+/**
  * Auto-battler combat engine: processCombat, unit factories, loot rolling.
  */
 export class CombatEngine {
@@ -70,7 +78,7 @@ export class CombatEngine {
         for (const e of aliveEnemies) {
           const enemyDef = e.defId ? ENEMY_DEFS[e.defId] : undefined;
           const enrage = enemyDef?.enrage ?? { afterRound: 8, atkMult: 1.5, spdMult: 1.3 };
-          if (round === enrage.afterRound) {
+          if (round === wutAbRunde(enrage, run)) {
             wutAnfall(e, enrage.atkMult, enrage.spdMult);
             run.combatLog.push(`!! ${e.name} ENRAGE !!`);
           }

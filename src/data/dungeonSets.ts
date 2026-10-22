@@ -524,6 +524,22 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
       effekte: [{ id: 'mondwall', schild: 15, runden: 3 }],
     },
   },
+
+  // ── Über dem Mondhof (das Dolch-Set für die Meuchlerin) ──
+  {
+    id: 'morgen', routeId: 'morgentor', name: 'Sunnas Morgengabe', zeichen: '🌅', tier: 10,
+    teile: [
+      { art: 'dolch', name: 'Erster Strahl', bild: 'ITEM_BLADE_OF_THOUSAND_SHADOWS', text: 'Ein Sonnenstrahl, bevor er lang wird. Trifft, bevor der Gegner weiss, dass es Tag ist.' },
+      { art: 'leder', name: 'Dämmerwams', bild: 'ITEM_SHADOWHUNTER_ARMOR', text: 'Gegerbt in der Stunde zwischen Nacht und Tag. Wer es trägt, ist für beide Seiten nicht zuständig.' },
+      { art: 'talisman', name: 'Messing-Sonnenuhr', bild: 'ITEM_AETHER_HEART', text: 'Zeigt immer die Stunde, in der der Gegner fällt. Man muss nur dafür sorgen, dass sie stimmt.' },
+    ],
+    zweiTeile: { atk: 10, critChance: 0.1 },
+    dreiTeile: {
+      name: 'Sonnenstich',
+      text: 'Jeder Treffer des Trägers auf einen Gegner, dem es noch gut geht (über 60 % seiner Leben), brennt zusätzlich 5 % seiner vollen Leben weg, höchstens 60.',
+      effekte: [{ id: 'sonnenstich', anteil: 0.05, max: 60, power: 0.6 }],
+    },
+  },
 ];
 
 // ── Abgeleitete Daten ──
