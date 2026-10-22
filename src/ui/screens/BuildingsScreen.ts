@@ -37,6 +37,7 @@ import { laufendVonSelbst, vonSelbstSatz, fehlendeZutaten, vorratVorAuftraegen }
 import { BUENDEL, HANDELSWAREN, VERKAUFSPREIS, kaufpreis } from '../../data/handel';
 import { HandelsArt, handelHeute, handelZu, handle, kannHandeln, marktGesperrt, tagesmenge, vorbehalten } from '../../systems/Handel';
 import '../html/handel.css';
+import { hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 
 /** Map building typeId to card background image. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -620,11 +621,13 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   `;
   root.appendChild(ov);
 
-  // Close handlers
+  // Close handlers: der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann
+  const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (target === ov || target.classList.contains('btn-close-modal')) {
+    if ((target === ov && hintergrund(e)) || target.classList.contains('btn-close-modal')) {
       ov.remove();
+      schluckeZweitenKlick();
     }
     if (target.classList.contains('btn-zum-aufbau')) {
       ov.remove();
@@ -1162,10 +1165,20 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
     reRenderBuildingsScreen(root, state);
   };
 
+  // Der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann (siehe hintergrundKlick)
+  const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
-    if (target === ov || target.classList.contains('btn-close-modal')) {
+    if (target === ov) {
+      if (hintergrund(e)) {
+        close();
+        schluckeZweitenKlick();
+      }
+      return;
+    }
+    if (target.classList.contains('btn-close-modal')) {
       close();
+      schluckeZweitenKlick();
       return;
     }
 

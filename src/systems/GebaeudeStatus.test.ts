@@ -106,14 +106,14 @@ describe('GebaeudeStatus', () => {
     expect(getGebaeudeStatus(state, 'HOUSE_T1').zustand).toBe('laeuft');
   });
 
-  it('Marktplatz ohne Arbeiter wartet, mit Arbeiter zeigt er den Steuer-Bonus', () => {
+  it('Marktplatz ohne Arbeiter wartet, mit Arbeiter zeigt er den Steuer-Bonus und den Handel', () => {
     const state = createNewGameState();
     const markt = bauen(state, 'MARKETPLACE');
     expect(getGebaeudeStatus(state, 'MARKETPLACE').zustand).toBe('wartet');
     arbeiter(state, markt);
     const s = getGebaeudeStatus(state, 'MARKETPLACE');
     expect(s.zustand).toBe('bereit');
-    expect(s.text).toBe('+25 % Steuern');
+    expect(s.text).toBe('+25 % Steuern · Handel: noch 3 Bündel');
   });
 });
 

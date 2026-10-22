@@ -19,6 +19,7 @@ import { hatAuftragsliste, rezeptFuer } from './Auftraege';
 import {
   planeZyklus, naechsterBedarf, zulieferBedarf, fehlendeZutaten, laufendVonSelbst, vonSelbstText, vorratTage, VORRAETE,
 } from './Werkstattplan';
+import { handelHeute, marktGesperrt } from './Handel';
 
 export { wohnKapazitaet };
 
@@ -365,7 +366,10 @@ function statusOhneRezept(state: GameState, def: BuildingDef, b: BuildingInstanc
   if (def.radiusEffect?.type === 'water') text = 'Wasser für die Stadt';
   else if (def.expeditions) text = `${state.fighters.length} Helden in der Gilde`;
   else if (def.id === 'WAREHOUSE') text = `${Math.floor(s.wood ?? 0)} Holz · ${Math.floor(s.stone ?? 0)} Stein`;
-  else if (def.id === 'MARKETPLACE') text = `+${marktBonusProzent(wirkungsStufe(state, def.id))} % Steuern`;
+  else if (def.id === 'MARKETPLACE') {
+    const handel = marktGesperrt(state) ? '' : ` · Handel: noch ${handelHeute(state)} Bündel`;
+    text = `+${marktBonusProzent(wirkungsStufe(state, def.id))} % Steuern${handel}`;
+  }
   else if (def.id === 'BANK') text = `+${bankGoldProTag(wirkungsStufe(state, def.id))} Gold / Tag`;
   return { ...basis, zustand: 'bereit', text, fortschritt: null };
 }
