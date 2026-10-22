@@ -30,6 +30,9 @@ import { brotProTag, BEWOHNER_JE_BROT } from '../../systems/PeopleSystem';
 import {
   MAX_AUFTRAEGE, auftragsListe, auftragGeben, auftragAbbrechen, hatAuftragsliste, kannAuftragGeben, restzeitSekunden,
 } from '../../systems/Auftraege';
+import { BUENDEL, HANDELSWAREN, VERKAUFSPREIS, kaufpreis } from '../../data/handel';
+import { HandelsArt, handelHeute, handle, kannHandeln, marktGesperrt, tagesmenge } from '../../systems/Handel';
+import '../html/handel.css';
 
 /** Map building typeId to card background image. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -746,6 +749,12 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
     const n = wirkungsStufe(state, def.id);
     zeilen.push({ label: 'Wirkung', wert: `+${marktBonusProzent(n)} % Steuern`, cls: n > 0 ? 'gut' : 'schlecht',
       klein: n > 0 ? undefined : 'Wirkt erst mit einem Arbeiter.' });
+    const gesperrt = marktGesperrt(state);
+    const rest = handelHeute(state);
+    zeilen.push(gesperrt
+      ? { label: 'Handel', wert: gesperrt, cls: 'schlecht' }
+      : { label: 'Handel', wert: `Heute noch ${rest} Bündel`, cls: rest > 0 ? 'gut' : 'schlecht',
+        klein: `${tagesmenge(state)} Bündel zu ${BUENDEL} Stück pro Tag, Kauf und Verkauf zusammen.` });
   } else if (def.id === 'BANK') {
     const n = wirkungsStufe(state, def.id);
     zeilen.push({ label: 'Wirkung', wert: `+${bankGoldProTag(n)} Gold / Tag`, cls: n > 0 ? 'gut' : 'schlecht',
@@ -794,6 +803,27 @@ function renderVorrat(state: GameState): string {
   return `<span class="lbl">VORRAT</span><div class="pk-chips bm-vorrat">${vorratChips(state)}</div>`;
 }
 
+function handelKnopf(state: GameState, ware: string, art: HandelsArt): string {
+  const p = kannHandeln(state, ware, art);
+  const text = art === 'verkaufen' ? `${BUENDEL} verkaufen +${VERKAUFSPREIS[ware]} Gold` : `${BUENDEL} kaufen −${kaufpreis(ware)} Gold`;
+  const titel = p.ok ? `${BUENDEL} ${itemName(ware)} ${art}` : p.grund;
+  return `<button class="hd-btn hd-${art}" data-handel-ware="${ware}" data-handel-art="${art}" title="${titel}"${p.ok ? '' : ' disabled'}>${text}</button>`;
+}
+
+/** Marktplatz: je Ware Vorrat, verkaufen und kaufen. */
+function renderHandel(state: GameState): string {
+  return `
+    <div class="hd">
+      <span class="lbl">HANDEL</span>
+      ${HANDELSWAREN.map(ware => `
+      <div class="hd-ware">
+        <span class="hd-name">${itemName(ware)} <small>${Math.floor(state.globalStock[ware] ?? 0)} im Lager</small></span>
+        ${handelKnopf(state, ware, 'verkaufen')}
+        ${handelKnopf(state, ware, 'kaufen')}
+      </div>`).join('')}
+    </div>`;
+}
+
 function renderAusbau(state: GameState, b: BuildingInstance): string {
   if (maxStufe(b.typeId) <= 1) return '';
   const info = ausbauInfo(state, b);
@@ -825,6 +855,7 @@ function modalSignature(b: BuildingInstance, def: BuildingDef, state: GameState)
     infoZeilen(state, b, def),
     def.housing ? (wachstum(state).grund?.art ?? 'waechst') : null,
     def.id === 'WAREHOUSE' ? vorratChips(state) : null,
+    def.id === 'MARKETPLACE' ? renderHandel(state) : null,
     engpassFuerInstanz(state, b),
   ]);
 }
@@ -874,6 +905,7 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
       ${renderZeilen(infoZeilen(state, bInst, def))}
       ${def.housing ? renderWachstum(state) : ''}
       ${def.id === 'WAREHOUSE' ? renderVorrat(state) : ''}
+      ${def.id === 'MARKETPLACE' ? renderHandel(state) : ''}
       ${engpassZeile()}
       ${renderWorkshop(bInst, def, state, highlightRecipeId, confirmSwitchId)}
       ${renderAusbau(state, bInst)}`;
@@ -890,7 +922,7 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
   const ov = document.createElement('div');
   ov.className = 'ov on';
   ov.innerHTML = `
-    <div class="modal${hasWorkshop ? ' modal-ws' : ''}">
+    <div class="modal${hasWorkshop || def.id === 'MARKETPLACE' ? ' modal-ws' : ''}">
       <div style="text-align:center;margin-bottom:8px;">
         <img src="assets/sprites/final/${spriteKey}.png" style="width:64px;height:64px;object-fit:contain;"
              onerror="this.style.display='none'">
@@ -969,6 +1001,12 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
 
     if (target.classList.contains('btn-ausbau')) {
       if (ausbauen(state, bInst)) refreshBody();
+      return;
+    }
+
+    const handel = target.closest('[data-handel-ware]') as HTMLElement | null;
+    if (handel) {
+      if (handle(state, handel.dataset.handelWare!, handel.dataset.handelArt as HandelsArt).ok) refreshBody();
       return;
     }
 
