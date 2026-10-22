@@ -26,7 +26,7 @@ const GRUND = { hp: 100, maxHp: 100, atk: 10, def: 0, spd: 1, critChance: 0, cri
 
 /** Ein Held, der alle drei Teile des Sets trägt (oder nur die ersten anzahl Teile) */
 function heldMitSet(setId: string | null, anzahl = 3, werte: Partial<typeof GRUND> = {}): GuildFighter {
-  const fighter = createGuildFighter(0, 'berserker', setId ? `Träger ${setId}` : 'Begleiter', { ...GRUND, ...werte });
+  const fighter = createGuildFighter('berserker', setId ? `Träger ${setId}` : 'Begleiter', { ...GRUND, ...werte });
   if (setId) {
     const set = getSet(setId)!;
     for (const id of setTeilIds(set).slice(0, anzahl)) fighter.gear[ITEM_DEFS[id].gearSlot!] = id;
@@ -78,7 +78,7 @@ describe('Set-Daten', () => {
 
     const state = createNewGameState();
     for (const set of DUNGEON_SETS) {
-      const fighter = createGuildFighter(0, 'guardian', 'Probe', GRUND);
+      const fighter = createGuildFighter('guardian', 'Probe', GRUND);
       state.fighters = [fighter];
       // Ein Schild braucht eine Einhandwaffe in der Haupthand
       if (set.teile.some(t => t.art === 'schild') && !set.teile.some(t => t.art === 'klinge' || t.art === 'dolch')) {
@@ -138,14 +138,14 @@ describe('Set-Boni', () => {
   });
 
   test('zwei gleiche Klingen zählen als ein Teil', () => {
-    const f = createGuildFighter(0, 'assassin', 'Zwilling', GRUND);
+    const f = createGuildFighter('assassin', 'Zwilling', GRUND);
     f.gear.mainHand = 'set_rudel_klinge';
     f.gear.offHand = 'set_rudel_klinge';
     expect(getrageneSets(f.gear)).toEqual([{ set: getSet('rudel'), teile: 1 }]);
   });
 
   test('zwei halbe Sets geben beide Zwei-Teile-Boni', () => {
-    const f = createGuildFighter(0, 'guardian', 'Mischer', GRUND);
+    const f = createGuildFighter('guardian', 'Mischer', GRUND);
     f.gear.mainHand = 'set_rudel_klinge';
     f.gear.trinket = 'set_rudel_amulett';
     f.gear.offHand = 'set_lichtung_schild';
@@ -163,13 +163,6 @@ describe('Set-Boni', () => {
     const stats = gear.getEffectiveStats(f);
     expect(stats.critMult).toBeCloseTo(GRUND.critMult + 0.6);
     expect(stats.critChance).toBeCloseTo(krit + 0.06 + 0.08);
-  });
-
-  test('Ausrüstung, die repariert werden muss, gibt auch halben Set-Bonus', () => {
-    const f = heldMitSet('borke', 2);
-    const voll = gear.getEffectiveStats(f).maxHp;
-    f.gearNeedsRepair = true;
-    expect(gear.getEffectiveStats(f).maxHp).toBeLessThan(voll);
   });
 });
 
@@ -205,7 +198,7 @@ describe('Set-Beute', () => {
     const set = getSet('spinne')!;
     const [dolch, leder, amulett] = setTeilIds(set);
     state.globalStock[dolch] = 1;
-    const held = createGuildFighter(0, 'assassin', 'Träger', GRUND);
+    const held = createGuildFighter('assassin', 'Träger', GRUND);
     held.gear.armor = leder;
     state.fighters.push(held);
     expect(besitz(state, leder)).toBe(1);
@@ -492,7 +485,7 @@ describe('Set-Fähigkeiten im Kampf', () => {
   });
 
   test('Der Morgenstern trägt den Sternenfall als Gegenstand: jeder dritte Treffer, halber Schaden auf alle', () => {
-    const fighter = createGuildFighter(0, 'berserker', 'Zornig', GRUND);
+    const fighter = createGuildFighter('berserker', 'Zornig', GRUND);
     const state = createNewGameState();
     state.fighters = [fighter];
     state.globalStock.der_morgenstern = 1;

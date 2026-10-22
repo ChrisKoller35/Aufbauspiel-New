@@ -179,6 +179,23 @@ export interface CombatSkill {
   drainAirAmount?: number;
 }
 
+/**
+ * Wirkung eines Vorrats, die über den Moment hinaus gilt (ExpeditionSystem.useProvision, docs/GILDENSTADT.md
+ * «Tränke mit Wirkung»): Kraft-Brot und Schnelligkeitstrank für die nächsten Räume, Krafttrank und
+ * Titan-Gebräu bis zum Ende des Dungeons.
+ */
+export interface TrankWirkung {
+  /** Der Vorrat, der sie gegeben hat (ITEM_DEFS-Key, z. B. 'power_bread') */
+  itemId: string;
+  /** Angriff und Tempo liegen als flacher Bonus in CombatUnit.effektBoni['trank:atk' | 'trank:spd'], maximale Leben direkt auf der Einheit */
+  stat: 'atk' | 'spd' | 'maxHp';
+  wert: number;
+  /** Läuft ab, sobald dieser Raum betreten wird (run.currentRoom); fehlt = bis zum Ende des Dungeons */
+  bisRaum?: number;
+  /** IDs der Helden, die sie bekommen haben: nur ihnen wird sie beim Ablauf wieder abgezogen, und keiner bekommt sie doppelt */
+  helden: number[];
+}
+
 export interface ExpeditionRun {
   routeId: string;
   party: CombatUnit[];
@@ -208,6 +225,8 @@ export interface ExpeditionRun {
   gruppenAngriff?: number;
   /** Sonnenuhr: um so viele Runden kommt die Wut-Runde des Bosses früher (EncounterChoice.bossWutFrueher, summiert) */
   bossWutFrueher?: number;
+  /** Tränke mit Wirkung: was die Gruppe gerade getrunken hat und wie lange es gilt (ExpeditionSystem.useProvision) */
+  trankWirkungen?: TrankWirkung[];
   /** Set-Teil, das der Sieg eingebracht hat (systems/DungeonSets.ts); null = keins, fehlt = noch nicht gewürfelt */
   setTeil?: string | null;
   /** Geschichte oder Wahl-Raum (EncounterChoice.setTeil): Eine Entscheidung verspricht nach dem Sieg ein Set-Teil mehr (systems/Geschichten.ts) */
@@ -228,8 +247,6 @@ export interface ExpeditionRun {
   pendingMerchant?: boolean;
   /** Feature #16: Anzahl der Käufe beim aktuellen Händler */
   merchantPurchases?: number;
-  /** Feature #17: Im Survivor-Raum gefundener Spezialist */
-  specialistFound?: string;
   /** Feature #18: Großmeister-Prüfung aktiv */
   isGrandmasterTrial?: boolean;
   /** Tracks which party units have used their one ability this expedition (unit.id → used) */

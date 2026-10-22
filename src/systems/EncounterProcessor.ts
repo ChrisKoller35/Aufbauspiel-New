@@ -2,7 +2,6 @@ import { ExpeditionRun, EncounterRoom, EncounterChoice } from '../models/Expedit
 import { ITEM_DEFS } from '../data/items';
 import { ROUTE_DEFS } from '../data/routes';
 import { SeededRNG } from '../utils/RNG';
-import { pickRandomSpecialist } from '../data/specialists';
 import { hasEffect } from './CombatEngine';
 import { sichererWeg, staerke } from './Kampfeffekte';
 
@@ -162,7 +161,7 @@ export class EncounterProcessor {
     run.combatLog.push('   Heiltrankh: 15 Gold | Brot: 8 Gold | Kraft-Brot: 25 Gold');
   }
 
-  processSurvivor(run: ExpeditionRun, _room: EncounterRoom, rng: SeededRNG): void {
+  processSurvivor(run: ExpeditionRun): void {
     // 3 XP für jedes lebende Party-Mitglied
     const aliveParty = run.party.filter(u => u.hp > 0);
     if (!run.xpEarned) run.xpEarned = {};
@@ -170,19 +169,6 @@ export class EncounterProcessor {
       run.xpEarned[u.id] = (run.xpEarned[u.id] ?? 0) + 3;
     }
     run.combatLog.push('>> Ihr findet einen Überlebenden! Er teilt wertvolle Erfahrungen. (+3 XP)');
-
-    // Feature #17: 20% Chance einen Spezialisten zu finden
-    if (rng.chance(0.2)) {
-      // Bereits gefundene Spezialisten ausschließen
-      const ownedSpecialists: string[] = [];
-      if (run.specialistFound) ownedSpecialists.push(run.specialistFound);
-
-      const specialist = pickRandomSpecialist(ownedSpecialists, () => rng.next());
-      if (specialist) {
-        run.specialistFound = specialist.id;
-        run.combatLog.push(`>> SPEZIALIST! ${specialist.name} schließt sich euch an! (${specialist.flavorText})`);
-      }
-    }
   }
 }
 

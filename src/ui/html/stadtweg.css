@@ -55,6 +55,7 @@
   background: rgba(6,8,16,.7); border: 1px solid var(--bdr); color: var(--txt); font-size: 1rem; cursor: pointer;
 }
 .sw-zu:hover { color: var(--gl); border-color: var(--gd); }
+@media (pointer: coarse) { .sw-zu { width: 44px; height: 44px; } }
 .sw-bild { position: relative; height: 240px; overflow: hidden; }
 .sw-bild-titel { position: absolute; top: 16px; left: 22px; display: flex; flex-direction: column; gap: 2px;
   text-shadow: 0 2px 10px rgba(0,0,0,.9); pointer-events: none; }
@@ -164,8 +165,6 @@
 .sw-flamme { transform-box: fill-box; transform-origin: 50% 100%; animation: sw-feuer .9s ease-in-out infinite alternate; }
 .sw-flamme2 { animation-duration: .6s; }
 @keyframes sw-feuer { from { transform: scale(1.05, .85); opacity: .85; } to { transform: scale(.95, 1.12); opacity: 1; } }
-.sw-fluegel { transform-box: fill-box; transform-origin: center; animation: sw-drehen 14s linear infinite; }
-@keyframes sw-drehen { to { transform: rotate(360deg); } }
 .sw-rauch { transform-box: fill-box; transform-origin: center; animation: sw-rauch 4s ease-out infinite; }
 @keyframes sw-rauch { 0% { opacity: 0; transform: none; } 15% { opacity: .35; } 100% { opacity: 0; transform: translate(10px, -34px) scale(2.2); } }
 .sw-stern { animation: sw-funkeln 3.2s ease-in-out infinite; }
@@ -184,7 +183,7 @@
 @keyframes sw-neu { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .sw-banner.bereit, .sw-auf:not(:disabled), .sw-flamme, .sw-fluegel, .sw-rauch, .sw-stern, .sw-flacker, .sw-aura,
+  .sw-banner.bereit, .sw-auf:not(:disabled), .sw-flamme, .sw-rauch, .sw-stern, .sw-flacker, .sw-aura,
   .sw-funke, .sw-pfad, .sw-fahne, .sw-neu, .sw-fest-titel, .sw-brief, .sw-toast { animation: none; }
   .sw-funke { opacity: .8; }
 }

@@ -48,7 +48,7 @@ function zuEnde(state: GameState, run: ExpeditionRun): ExpeditionRun {
 /** Spielstand mit einem übermächtigen Helden, der jeden Kampf gewinnt. */
 function uebermacht(): { state: GameState; held: number } {
   const state = createNewGameState();
-  const held = createGuildFighter(1, 'guardian', 'Testheld', {
+  const held = createGuildFighter('guardian', 'Testheld', {
     hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1,
   });
   state.fighters.push(held);
@@ -401,7 +401,7 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(stab.tags).toContain('special:letzte_bastion');
     expect(stab.flavorText).toContain('zieht der Träger 2 Runden lang alle Angriffe auf sich');
     const state = createNewGameState();
-    const held = createGuildFighter(1, 'paladin', 'Schutzherr', { hp: 100, maxHp: 100, atk: 10, def: 5, spd: 1, critChance: 0, critMult: 1.5 });
+    const held = createGuildFighter('paladin', 'Schutzherr', { hp: 100, maxHp: 100, atk: 10, def: 5, spd: 1, critChance: 0, critMult: 1.5 });
     state.fighters.push(held);
     state.globalStock.amtsstab_des_mondvogts = 1;
     const gear = new GearSystem();
@@ -531,7 +531,7 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(stern.flavorText).toContain('Jeder dritte Treffer holt einen Stern vom Himmel');
     expect(ROUTE_DEFS.morgentor.ersterSiegBeute).toBe('der_morgenstern');
     const state = createNewGameState();
-    const held = createGuildFighter(1, 'berserker', 'Zornig', { hp: 100, maxHp: 100, atk: 10, def: 5, spd: 1, critChance: 0, critMult: 1.5 });
+    const held = createGuildFighter('berserker', 'Zornig', { hp: 100, maxHp: 100, atk: 10, def: 5, spd: 1, critChance: 0, critMult: 1.5 });
     state.fighters.push(held);
     state.globalStock.der_morgenstern = 1;
     const gear = new GearSystem();

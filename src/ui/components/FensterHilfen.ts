@@ -1,8 +1,10 @@
 // ─── Magic City – Hilfen für Fenster über dem Spiel ─────────────
-// Gemeinsam für die Fenster «Spielstand» (SpielstandFenster.ts) und
-// «Der Weg zur Magischen Stadt» (StadtwegFenster.ts): Tasten gehen nicht
-// an das Spiel dahinter, Tab bleibt im Fenster, und der zweite Klick
-// eines Doppelklicks löst nichts aus, was hinter dem Fenster liegt.
+// Gemeinsam für die Fenster «Spielstand» (SpielstandFenster.ts), «Der
+// Weg zur Magischen Stadt» (StadtwegFenster.ts) und die Fenster der
+// Gebäude-Seite (HaendlerFenster.ts, GebaeudeFenster.ts, Bau-Dialog):
+// Tasten gehen nicht an das Spiel dahinter, Tab bleibt im Fenster, und
+// der zweite Klick eines Doppelklicks löst nichts aus, was hinter dem
+// Fenster liegt.
 // ────────────────────────────────────────────────────────────────
 
 /** Tab und Umschalt+Tab bleiben im Fenster (es ist modal). */
@@ -38,6 +40,27 @@ export function fensterTaste(e: KeyboardEvent, fenster: HTMLElement | null, schl
   } else if (e.key === 'Tab') {
     halteFokusImFenster(e, fenster);
   }
+}
+
+/**
+ * Tasten für ein Fenster, das in der Seite liegt (`.ov` der Gebäude-Seite): bindet fensterTaste in
+ * der Capture-Phase, solange `ov` in der Seite hängt. Wird das Fenster anders entfernt als über
+ * `schliessen` (Neuzeichnen der Seite, ein nächstes Fenster), löst sich der Hörer beim nächsten
+ * Tastendruck selbst. Liegt die Seite versteckt hinter einer anderen, bleibt die Taste dem Spiel.
+ * Gibt die Funktion zurück, die den Hörer löst (im `schliessen` des Fensters aufrufen).
+ */
+export function bindeFensterTasten(ov: HTMLElement, fenster: HTMLElement | null, schliessen: () => void): () => void {
+  const hoerer = (e: KeyboardEvent) => {
+    if (!ov.isConnected) {
+      loesen();
+      return;
+    }
+    if (ov.getClientRects().length === 0) return;
+    fensterTaste(e, fenster, schliessen);
+  };
+  const loesen = () => window.removeEventListener('keydown', hoerer, true);
+  window.addEventListener('keydown', hoerer, true);
+  return loesen;
 }
 
 /**

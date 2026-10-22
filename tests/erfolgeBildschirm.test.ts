@@ -37,7 +37,7 @@ const seite = {
 let router: typeof import('../src/ui/ScreenRouter');
 let bildschirm: typeof import('../src/ui/screens/AchievementsScreen');
 let erfolge: typeof import('../src/systems/AchievementSystem');
-let EconomySystem: typeof import('../src/systems/EconomySystem').EconomySystem;
+let neuerTag: typeof import('../src/systems/Tag').neuerTag;
 
 beforeAll(async () => {
   vi.stubGlobal('window', fenster);
@@ -47,7 +47,7 @@ beforeAll(async () => {
   router = await import('../src/ui/ScreenRouter');
   bildschirm = await import('../src/ui/screens/AchievementsScreen');
   erfolge = await import('../src/systems/AchievementSystem');
-  ({ EconomySystem } = await import('../src/systems/EconomySystem'));
+  ({ neuerTag } = await import('../src/systems/Tag'));
 });
 
 // Jeder Test beginnt im Hauptmenü, ohne alten Hinweis (auch wenn einer davor scheitert)
@@ -70,7 +70,7 @@ function gespeichertZaehlen(): () => number {
 describe('Erfolge-Bildschirm offen, wenn am Tageswechsel ein Erfolg kommt', () => {
   test('die Karte erscheint gleich freigeschaltet, leuchtet auf und gilt als angeschaut', () => {
     const state = createNewGameState();
-    state.statistics.total_days_survived = 99;
+    state.day = 100; // der neue Tag zählt 100 überstandene Tage
     bildschirm.initAchievementsScreen(state);
     kopfzeilen = [new Kopfzeile({})];
     const gespeichert = gespeichertZaehlen();
@@ -79,7 +79,7 @@ describe('Erfolge-Bildschirm offen, wenn am Tageswechsel ein Erfolg kommt', () =
     expect(router.getCurrentScreen()).toBe('achievements');
     const vorher = gespeichert();
 
-    new EconomySystem().dayTick(state);
+    neuerTag(state);
     expect(state.achievements).toContain('survivor_100');
     // Neu gezeichnet: Karte mit Haken und Leuchten, Zahl oben stimmt
     expect(inhalt.innerHTML).toMatch(/ach-card ach-unlocked ach-neu">\s*<div class="ach-ico">⭐<\/div>/);
@@ -98,12 +98,12 @@ describe('Erfolge-Bildschirm offen, wenn am Tageswechsel ein Erfolg kommt', () =
 
   test('auf einem anderen Bildschirm bleibt der Erfolg neu (Zahl am Knopf)', () => {
     const state = createNewGameState();
-    state.statistics.total_days_survived = 99;
+    state.day = 100; // der neue Tag zählt 100 überstandene Tage
     bildschirm.initAchievementsScreen(state);
     inhalt.innerHTML = '';
     kopfzeilen = [new Kopfzeile({})];
 
-    new EconomySystem().dayTick(state);
+    neuerTag(state);
     expect(state.achievements).toContain('survivor_100');
     expect(inhalt.innerHTML).toBe('');
     expect(erfolge.ungeseheneErfolge(state)).toBe(1);

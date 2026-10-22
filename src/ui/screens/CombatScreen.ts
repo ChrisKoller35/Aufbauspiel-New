@@ -31,7 +31,14 @@ interface UnitEntry {
   el: HTMLElement;
   hpFill: HTMLElement;
   hpText: HTMLElement;
+  /** ATK/DEF/SPD-Zeile: wird nach einem Trank in der Vorschau neu geschrieben */
+  statsEl: HTMLElement;
   unitId: number;
+}
+
+/** Die Werte-Zeile einer Einheit in der Kampfkarte */
+function statsText(unit: CombatUnit): string {
+  return `ATK:${unit.atk} DEF:${unit.def} SPD:${unit.spd.toFixed(1)}`;
 }
 
 // ─── CSS Shake (replaces Phaser camera.shake) ────────────────
@@ -450,7 +457,7 @@ export class CombatScreen {
 
     const statsEl = document.createElement('div');
     statsEl.className = 'mc-co-unit-stats';
-    statsEl.textContent = `ATK:${unit.atk} DEF:${unit.def} SPD:${unit.spd.toFixed(1)}`;
+    statsEl.textContent = statsText(unit);
 
     // Boss: ab wann er wütet, mit der Sonnenuhr (run.bossWutFrueher) früher. Der Preis einer Wahl muss
     // sofort zu sehen sein, wie die Hort-Gier in den Werten.
@@ -524,7 +531,7 @@ export class CombatScreen {
     card.appendChild(spriteEl);
     card.appendChild(info);
 
-    return { el: card, hpFill, hpText, unitId: unit.id };
+    return { el: card, hpFill, hpText, statsEl, unitId: unit.id };
   }
 
   private colorHpText(el: HTMLElement, hp: number, maxHp: number): void {
@@ -809,8 +816,12 @@ export class CombatScreen {
       entry.hpFill.style.width = `${pct * 100}%`;
       entry.hpText.textContent = `${Math.max(0, unit.hp)} / ${unit.maxHp}`;
       this.colorHpText(entry.hpText, unit.hp, unit.maxHp);
+      // Tränke wirken sofort auf Angriff und Tempo (Krafttrank, Schnelligkeitstrank): die Vorschau zeigt es
+      entry.statsEl.textContent = statsText(unit);
       this.preHpMap.set(unit.id, unit.hp);
     }
+    // Was der Vorrat bewirkt hat («Krafttrank: +3 Angriff bis zum Ende des Dungeons», «wirkt schon») steht im Protokoll
+    this.updateLog(run.combatLog.slice(this.logStart).slice(-8));
     this.buildItemSection(run, this.previewRoom ?? undefined);
   }
 

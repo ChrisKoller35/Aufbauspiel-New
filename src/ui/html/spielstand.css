@@ -35,6 +35,7 @@
   background: rgba(6,8,16,.7); border: 1px solid var(--bdr); color: var(--txt); font-size: 1rem; cursor: pointer;
 }
 .ss-zu:hover { color: var(--gl); border-color: var(--gd); }
+@media (pointer: coarse) { .ss-zu { width: 44px; height: 44px; } }
 .ss-titel { margin: 0 44px 12px 0; font-family: 'Cinzel', serif; font-size: 1.4rem; color: var(--gold); letter-spacing: 1px; }
 .ss-fenster p { margin: 0 0 10px; line-height: 1.45; }
 .ss-stand b, .ss-bestaetigen b { color: var(--gl); font-weight: normal; }
@@ -45,7 +46,7 @@
 
 .ss-knoepfe { display: flex; flex-wrap: wrap; gap: 10px; margin: 14px 0 4px; }
 .ss-knopf {
-  flex: 1 1 160px; min-height: 42px; padding: 8px 14px; cursor: pointer;
+  flex: 1 1 160px; min-height: 44px; padding: 8px 14px; cursor: pointer;
   background: var(--s2); border: 1px solid var(--gd); border-radius: 6px;
   color: var(--txt); font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 1px; transition: .2s;
 }

@@ -12,7 +12,6 @@ export interface FighterStats {
 
 export interface GuildFighter {
   id: number;
-  citizenId: number;
   classId: string;
   name: string;
   baseStats: FighterStats;
@@ -22,7 +21,6 @@ export interface GuildFighter {
     armor: string | null;
     trinket: string | null;
   };
-  gearNeedsRepair: boolean;
   xp: number;
   level: number;
   /** Gewählter Weg ab Stufe 10 (data/spezialisierungen.ts), fehlt bis zur Wahl */
@@ -33,15 +31,13 @@ export interface GuildFighter {
 
 let nextFighterId = 1;
 
-export function createGuildFighter(citizenId: number, classId: string, name: string, baseStats: FighterStats): GuildFighter {
+export function createGuildFighter(classId: string, name: string, baseStats: FighterStats): GuildFighter {
   return {
     id: nextFighterId++,
-    citizenId,
     classId,
     name,
     baseStats: { ...baseStats },
     gear: { mainHand: null, offHand: null, armor: null, trinket: null },
-    gearNeedsRepair: false,
     xp: 0,
     level: 1,
   };

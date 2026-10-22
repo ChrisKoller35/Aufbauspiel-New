@@ -29,7 +29,7 @@ const GRUND = { hp: 100, maxHp: 100, atk: 10, def: 0, spd: 1, critChance: 0, cri
 
 /** Ein Held auf Stufe stufe, mit Weg (null: noch ohne) */
 function held(name: string, classId: string, weg: string | null, stufe = WEG_AB_STUFE, werte: Partial<typeof GRUND> = {}): GuildFighter {
-  const f = createGuildFighter(0, classId, name, { ...GRUND, ...werte });
+  const f = createGuildFighter(classId, name, { ...GRUND, ...werte });
   f.level = stufe;
   if (weg && !waehleWeg(f, weg)) throw new Error(`${weg} passt nicht zu ${classId}`);
   return f;
@@ -141,14 +141,12 @@ describe('Wege: Regeln', () => {
     expect(wegEffekte(f)).toEqual([]);
   });
 
-  test('Werte und Effekte kommen über die Ausrüstung in den Kampf, Reparaturen ziehen nichts ab', () => {
+  test('Werte und Effekte kommen über die Ausrüstung in den Kampf', () => {
     const mit = held('Bärbel', 'druid', 'druid_baerengestalt');
     const ohne = held('Ohne', 'druid', null);
     const { hp, def } = getSpezialisierung('druid_baerengestalt')!.werte!;
     expect(gear.getEffectiveStats(mit).maxHp).toBe(gear.getEffectiveStats(ohne).maxHp + hp!);
     expect(gear.getEffectiveStats(mit).def).toBe(gear.getEffectiveStats(ohne).def + def!);
-    mit.gearNeedsRepair = true;
-    expect(gear.getEffectiveStats(mit).maxHp).toBe(gear.getEffectiveStats(ohne).maxHp + hp!);
     expect(gear.getSpecialEffects(mit).map(e => e.id)).toEqual(['baerengestalt']);
     expect(engine.fighterToCombatUnit(mit).specialEffects?.[0].weg).toBe('druid_baerengestalt');
 

@@ -5,7 +5,7 @@ import { isRouteCompleted } from '../data/routes';
 import { MAX_SCHMIEDE_STUFE } from '../data/schmiede';
 import { stadtStufeVon } from '../data/stadtstufen';
 import { GameState } from '../models/GameState';
-import { maxStufe, stufeVon } from './Ausbau';
+import { stufeVon } from './Ausbau';
 import { saalKapitel } from './Auftragsbrett';
 import { gesammelteTeile, getrageneSets } from './DungeonSets';
 import { getGildenrang } from './GebaeudeStatus';
@@ -65,12 +65,27 @@ export function saalSterne(state: GameState): number {
 }
 
 /**
+ * Baupläne, die die Gilde je hatte: im Lager, schon verbaut (die Werkstatt steht) oder als
+ * Erst-Sieg-Beute eines Bosses vergeben (state.erhalteneBauplaene).
+ */
+function bauplaeneErworben(state: GameState): Set<string> {
+  const steht = new Set((state.buildings ?? []).filter(b => b && b.built).map(b => b.typeId));
+  const ids = new Set<string>(state.erhalteneBauplaene ?? []);
+  for (const def of Object.values(BUILDING_DEFS)) {
+    const bauplan = def.freischaltung?.bauplan;
+    if (bauplan && ((state.globalStock?.[bauplan] ?? 0) > 0 || steht.has(def.id))) ids.add(bauplan);
+  }
+  return ids;
+}
+
+/**
  * Schreibt die Kennzahlen, die niemand von selbst zählt, in state.statistics:
  * Stadtstufe, Helden, Wege und Meister, ganze Sets, Monsterbuch, Gildenrang,
- * Ausbaustufen, Auftragsbrett, Trophäensaal, Pokale und Schmiede. Es zählt jeweils
- * der höchste je erreichte Wert, damit kein Fortschrittsbalken zurückfällt (z. B.
- * wenn ein Held die Gilde verlässt). Ältere Spielstände holen hier nach, was ihre
- * Daten schon hergeben (Tage, Siege, Bosse und Gegner aus Gildenstatistik und Bestenliste).
+ * Werkstätten und ihre Stufen, Baupläne, Auftragsbrett, Trophäensaal, Pokale und
+ * Schmiede. Es zählt jeweils der höchste je erreichte Wert, damit kein Fortschrittsbalken
+ * zurückfällt (z. B. wenn ein Held die Gilde verlässt). Tage, Siege, Bosse und Gegner
+ * kommen aus dem Spielstand selbst (Tag, Gildenstatistik und Bestenliste). Käufe beim Händler
+ * (total_haendler_kaeufe) zählt systems/Haendler.ts bei jedem Kauf; hier wird nur gelesen.
  */
 export function kennzahlenAktualisieren(state: GameState): void {
   const stats = state.statistics ?? (state.statistics = {});
@@ -90,8 +105,7 @@ export function kennzahlenAktualisieren(state: GameState): void {
   }
 
   const gebaeude = (state.buildings ?? []).filter(b => b && b.built);
-  const wohnstufen = gebaeude.filter(b => BUILDING_DEFS[b.typeId]?.housing).map(stufeVon);
-  const ganzAusgebaut = gebaeude.filter(b => maxStufe(b.typeId) > 1 && stufeVon(b) >= maxStufe(b.typeId));
+  const werkstaetten = gebaeude.filter(b => BUILDING_DEFS[b.typeId]?.manualCraft);
 
   hoechstens('stadtstufe', stadtStufeVon(state));
   hoechstens('helden_anzahl', helden.length);
@@ -100,8 +114,9 @@ export function kennzahlenAktualisieren(state: GameState): void {
   hoechstens('ganze_sets', ganzeSets.size);
   hoechstens('monsterbuch_entdeckt', new Set(state.bestiarium?.discovered ?? []).size);
   hoechstens('gildenrang', getGildenrang(state));
-  hoechstens('hoechste_wohnstufe', Math.max(0, ...wohnstufen));
-  hoechstens('gebaeude_auf_hoechststufe', ganzAusgebaut.length);
+  hoechstens('werkstaetten', werkstaetten.length);
+  hoechstens('werkstatt_hoechste_stufe', Math.max(0, ...werkstaetten.map(stufeVon)));
+  hoechstens('bauplaene', bauplaeneErworben(state).size);
 
   // Gildenhaus: Auftragsbrett, Kette «Der Saal der Gilde» und Trophäensaal; Pokale der Rangliste
   // (abgeholte und solche, deren Ruhmestruhe noch wartet); die beste Stufe aus der Schmiede
@@ -116,8 +131,8 @@ export function kennzahlenAktualisieren(state: GameState): void {
     + (state.rangliste?.offen ?? []).filter(w => w.pokal).length);
   hoechstens('schmiede_hoechste_stufe', Math.min(MAX_SCHMIEDE_STUFE, Math.max(0, ...stufen)));
 
-  // Ältere Spielstände: Tage zählt erst der Tageswechsel seit den Erfolgen in Gruppen (Tag 1 = 0 überstanden);
-  // Siege und Bosse kennt die Gildenstatistik vollständig, die Bestenliste nur ihre 100 besten Läufe
+  // Tag 1 = 0 Tage überstanden; Siege und Bosse kennt die Gildenstatistik vollständig,
+  // die Bestenliste nur ihre 100 besten Läufe
   const bestenliste = state.scoreboard ?? [];
   const mitStatus = (status: string): number => bestenliste.filter(e => e.status === status).length;
   const summe = (feld: 'enemiesKilled' | 'bossesKilled'): number => bestenliste.reduce((s, e) => s + (e[feld] ?? 0), 0);

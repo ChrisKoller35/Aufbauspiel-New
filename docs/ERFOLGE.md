@@ -11,21 +11,19 @@ haben («Siegreich» 🏆), nur 🏅 trägt keiner selbst.
 - **Am Ende jeder Expedition** (`ExpeditionFinalizer.ts`, nach Gildenrang, Monsterbuch, Rangliste
   und Auftragsbrett): Gildenrang, Kette, Gipfel-Rangliste und alles andere zählt sofort. Die neuen
   Erfolge stehen in der Bilanz («🏅 Erfolg: Veteranengilde»), die Kopfzeile zeigt dazu keinen
-  Hinweis. Liegt die Beute im Lager, prüft `main.ts` noch einmal (ein ganzes Set gibt einen Stern
+  Hinweis. Liegt die Beute im Lager, prüft `ExpeditionFlow.ts` noch einmal (ein ganzes Set gibt einen Stern
   im Trophäensaal); auch das steht in derselben Bilanz.
-- **Bei jedem Tageswechsel** (`EconomySystem.dayTick`): Hinweis in der Kopfzeile. Ein oder zwei
-  Erfolge mit Namen («🏅 Erfolge: Dorf, Sammler»), ab drei nur die Zahl («🏅 5 neue Erfolge»).
+- **Bei jedem Tageswechsel** (`neuerTag` in `src/systems/Tag.ts`, alle 30 Sekunden): Hinweis in der Kopfzeile.
+  Ein oder zwei Erfolge mit Namen («🏅 Erfolge: Dorf, Sammler»), ab drei nur die Zahl («🏅 5 neue Erfolge»).
   Ist gerade keine Kopfzeile zu sehen (Kampf, Truhe, Bilanz), kommt der Hinweis auf dem nächsten
   Bildschirm. Wer dann gleich die Erfolge öffnet, sieht sie dort.
-- **Beim Laden des Spiels** (der Erfolge-Bildschirm wird dabei gezeichnet): Was ein älterer
-  Spielstand schon erfüllt, kommt hier dazu, mit Hinweis wie am Tageswechsel («🏅 8 neue Erfolge»).
+- **Beim Laden des Spiels** (der Erfolge-Bildschirm wird dabei gezeichnet): Was ein Spielstand schon
+  erfüllt, kommt hier dazu, mit Hinweis wie am Tageswechsel («🏅 8 neue Erfolge»).
 - **Beim Öffnen des Erfolge-Bildschirms.**
-
-- **Gleich nach der Tat**, mit Hinweis in der Kopfzeile: Gebäude bauen oder ausbauen, Held anwerben,
-  Weg wählen, Gegenstand anlegen (ein ganzes Set), Stadt aufsteigen (Stadtweg), in der Schmiede
-  verbessern, Zettel liefern und Set-Teil einlösen (Gildenhaus). Beim Tageswechsel prüft `main.ts`
-  zum Schluss noch einmal, denn die Stadt wächst erst in `PeopleSystem.dayTick`. Kommen zwei
-  Hinweise fast gleichzeitig («📜 Zettel erledigt» und der Erfolg dazu), stehen sie nebeneinander.
+- **Gleich nach der Tat**, mit Hinweis in der Kopfzeile: Gebäude bauen oder ausbauen, beim Händler kaufen
+  (Ware oder Bauplan), Held anwerben, Weg wählen, Gegenstand anlegen (ein ganzes Set), Stadt aufsteigen (Stadtweg),
+  in der Schmiede verbessern, Zettel liefern und Set-Teil einlösen (Gildenhaus). Kommen zwei Hinweise fast
+  gleichzeitig («📜 Zettel erledigt» und der Erfolg dazu), stehen sie nebeneinander.
 
 Jeder Erfolg wird genau einmal gemeldet: `erfolgePruefen()` trägt ihn in `state.achievements` ein
 und meldet ihn den Hörern (`beiNeuenErfolgen`). Pokale der Rangliste zählen am Ende der Expedition
@@ -57,22 +55,25 @@ zurück, und die Expedition hing bis zum Neuladen (dann brach das Spiel sie ab).
 Was niemand von selbst zählt, schreibt `kennzahlenAktualisieren(state)` vor jeder Prüfung in
 `state.statistics` (jeweils der höchste je erreichte Wert, kein Balken fällt zurück):
 `stadtstufe`, `helden_anzahl`, `helden_mit_weg`, `helden_meister`, `ganze_sets`,
-`monsterbuch_entdeckt`, `gildenrang`, `hoechste_wohnstufe`, `gebaeude_auf_hoechststufe`,
+`monsterbuch_entdeckt`, `gildenrang`, `werkstaetten` (stehende Werkstätten), `werkstatt_hoechste_stufe`,
+`bauplaene` (Baupläne im Lager, verbaut oder als Erst-Sieg-Beute vergeben: `erhalteneBauplaene`),
 `zettel_erledigt`, `saal_prunkstuecke`, `saal_sterne`, `rangliste_pokale`, `schmiede_hoechste_stufe`.
 
 Die Funktion liest nur. Sie legt kein Auftragsbrett, keine Rangliste und keinen Trophäensaal an
 (das täten `brettStand`, `ranglisteStand` und `bossTrophaeen` nebenbei). Die Sterne im Saal zählt
 `saalSterne()` wie der Saal selbst: je Sockel einer für den bezwungenen Boss, einer für das ganze
 Set des Dungeons, einer für das Prunkstück aus der Kette. `gipfel_spitze` setzt das Ende einer
-Expedition, wenn die Gilde danach die Gipfel-Rangliste anführt.
+Expedition, wenn die Gilde danach die Gipfel-Rangliste anführt. `total_haendler_kaeufe` zählt
+`systems/Haendler.ts` bei jedem Kauf (Ware oder Bauplan, nicht beim Verkauf).
 
-## Ältere Spielstände
+## Aus dem Spielstand nachgeholt
 
-Was die Daten schon hergeben, holt `kennzahlenAktualisieren` nach (wieder nur nach oben):
+Was die Daten hergeben, holt `kennzahlenAktualisieren` nach (wieder nur nach oben), etwa nach dem Laden einer
+Datei:
 
 | Zähler | woher |
 |---|---|
-| `total_days_survived` | `state.day - 1` (Tag 1 = noch kein Tag überstanden) |
+| `total_days_survived` | `state.day - 1` (Tag 1 = noch kein Tag überstanden; `neuerTag` setzt denselben Wert) |
 | `total_victories` | Gildenstatistik (`totalExpeditionsCompleted`), sonst Siege in der Bestenliste |
 | `total_defeats`, `total_retreats` | Bestenliste |
 | `total_bosses_killed` | Gildenstatistik (`totalBossesDefeated`), sonst Bestenliste |
@@ -81,24 +82,25 @@ Was die Daten schon hergeben, holt `kennzahlenAktualisieren` nach (wieder nur na
 | `total_upgrades` | Ausbaustufen der Gebäude (jede Stufe über 1 war ein Ausbau) |
 | `total_buildings_built` | mindestens die Ausbauten (ein Ausbau zählt für «Baumeister» wie ein Bau) |
 
-Stadtstufe, Gildenrang, Helden, Sets, Monsterbuch, Auftragsbrett, Saal, Pokale und Schmiede liest
-die Funktion ohnehin aus dem Spielstand. Die Bestenliste behält nur die 100 besten Läufe, darum ist
-sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
+Stadtstufe, Gildenrang, Helden, Sets, Monsterbuch, Werkstätten, Baupläne, Auftragsbrett, Saal, Pokale und
+Schmiede liest die Funktion ohnehin aus dem Spielstand. Die Bestenliste behält nur die 100 besten Läufe, darum
+ist sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
 
 ## Liste
 
-37 Erfolge. Seit Oktober 2026 neue sind mit «neu» markiert. Die IDs der alten Erfolge stehen in
-alten Spielständen (`state.achievements`) und dürfen sich nicht ändern. Unbekannte IDs (wie das
-frühere `bewohner_50`) überspringt das Spiel.
+38 Erfolge. Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
+Die IDs stehen in Spielständen (`state.achievements`) und dürfen sich nicht ändern. Unbekannte IDs (wie die
+gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`) überspringt das Spiel.
 
 | Gruppe | Zeichen | Name | Bedingung | Zähler | ID |
 |---|---|---|---|---|---|
+| Stadt | 🛒 | Erster Kauf (Gildenstadt) | zum ersten Mal beim Händler kaufen: Proviant, Ausrüstung oder ein Bauplan | `total_haendler_kaeufe` ≥ 1 | `haendler_1` |
+| Stadt | 📜 | Erster Bauplan (Gildenstadt) | der erste Bauplan, beim Händler oder von einem Boss | `bauplaene` ≥ 1 | `bauplan_1` |
 | Stadt | 🏗️ | Grundsteinlegung | 1 Gebäude gebaut | `total_buildings_built` ≥ 1 | `first_building` |
-| Stadt | 🏛️ | Baumeister | 20 Mal gebaut (Neubauten und Ausbauten) | `total_buildings_built` ≥ 20 | `mass_builder` |
-| Stadt | 🔨 | Ausbauer (neu) | 10 Ausbauten | `total_upgrades` ≥ 10 | `ausbau_10` |
-| Stadt | 🏰 | Ganz oben (neu) | ein Gebäude auf seiner Höchststufe | `gebaeude_auf_hoechststufe` ≥ 1 | `gebaeude_max` |
-| Stadt | 🏘️ | Volles Viertel (neu) | Wohnviertel auf Stufe 6 | `hoechste_wohnstufe` ≥ 6 | `wohnviertel_6` |
-| Stadt | 👶 | Wachsende Stadt (neu) | 25 neue Bewohner | `total_citizens_born` ≥ 25 | `bewohner_25` |
+| Stadt | 🏘️ | Gildenstadt (Gildenstadt) | alle vier Werkstätten stehen | `werkstaetten` ≥ 4 | `werkstaetten_4` |
+| Stadt | 🏛️ | Baumeister | 10 Mal gebaut (Neubauten und Ausbauten) | `total_buildings_built` ≥ 10 | `mass_builder` |
+| Stadt | 🔨 | Ausbauer (Gildenstadt) | 5 Ausbauten | `total_upgrades` ≥ 5 | `ausbau_5` |
+| Stadt | 🏰 | Meisterwerkstatt (Gildenstadt) | eine Werkstatt auf Stufe 3 | `werkstatt_hoechste_stufe` ≥ 3 | `werkstatt_3` |
 | Stadt | 🛖 | Dorf (neu) | Stadtstufe 3 «Dorf» | `stadtstufe` ≥ 3 | `stadtstufe_3` |
 | Stadt | 🏙️ | Stadtrecht (neu) | Stadtstufe 5 «Stadt» | `stadtstufe` ≥ 5 | `stadtstufe_5` |
 | Stadt | ✨ | Magische Stadt (neu) | Stadtstufe 7 «Magische Stadt» | `stadtstufe` ≥ 7 | `stadtstufe_7` |
@@ -106,8 +108,8 @@ frühere `bewohner_50`) überspringt das Spiel.
 | Gilde | 🎖️ | Veteranengilde (neu) | Gildenrang III | `gildenrang` ≥ 3 | `gildenrang_3` |
 | Gilde | 👑 | Gildenmeister (neu) | Gildenrang V, Titel Gildenmeister | `gildenrang` ≥ 5 | `gildenrang_5` |
 | Gilde | 📌 | Fleissige Gilde (neu) | 10 Zettel am Auftragsbrett erledigt | `zettel_erledigt` ≥ 10 | `zettel_10` |
-| Gilde | 🏺 | Alle Sockel voll (neu) | alle 14 Prunkstücke der Kette «Der Saal der Gilde» | `saal_prunkstuecke` ≥ 14 | `saal_kette` |
-| Gilde | 🌟 | Glanz des Saals (neu) | 21 der 42 Sterne im Trophäensaal | `saal_sterne` ≥ 21 | `saal_glanz` |
+| Gilde | 🏺 | Alle Sockel voll (neu) | alle 16 Prunkstücke der Kette «Der Saal der Gilde» | `saal_prunkstuecke` ≥ 16 | `saal_kette` |
+| Gilde | 🌟 | Glanz des Saals (neu) | 24 der 48 Sterne im Trophäensaal | `saal_sterne` ≥ 24 | `saal_glanz` |
 | Gilde | 🥉 | Aufs Treppchen (neu) | ein Pokal der Wochenwertung (Platz 1 bis 3) | `rangliste_pokale` ≥ 1 | `rangliste_pokal` |
 | Gilde | 🏔️ | Gipfelstürmer (neu) | Platz 1 der Gipfel-Rangliste nach einer Expedition | `gipfel_spitze` ≥ 1 | `gipfel_1` |
 | Helden | 🛡️ | Armeeführer | 10 Helden in der Gilde | `helden_anzahl` ≥ 10 | `army_builder` |
@@ -131,16 +133,19 @@ frühere `bewohner_50`) überspringt das Spiel.
 | Sammeln | 📖 | Monsterkundler (neu) | 25 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 25 | `monsterbuch_25` |
 | Sammeln | 📚 | Monstergelehrter (neu) | 50 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 50 | `monsterbuch_50` |
 
-Die Zahlen 14 (Sockel), 21 und 42 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
+Die Zahlen 16 (Sockel), 24 und 48 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
 Boss-Dungeon der Karte (`SAAL_SOCKEL`), drei Sterne je Sockel, die Hälfte davon für «Glanz des
 Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
 
 ## Geändert gegenüber früher
 
-- **Wachsende Stadt** wollte 50 neue Bewohner, möglich sind 30 (siehe unten). Jetzt 25, unter
-  der neuen ID `bewohner_25`; die alte ID `bewohner_50` konnte kein Spielstand haben.
-- **Überlebenskünstler** war nie erreichbar: niemand zählte `total_days_survived`. Jetzt zählt der
-  Tageswechsel, ältere Spielstände ab ihrem Tag.
+- **Gildenstadt (22.10.2026):** Alle Erfolge um Bewohner, Wohnviertel, Markt, Bank und Zufriedenheit sind
+  gestrichen (`wohnviertel_6`, `bewohner_25`, auch `gebaeude_max` und `ausbau_10`). Neu: «Erster Kauf», «Erster
+  Bauplan», «Gildenstadt» (vier Werkstätten), «Ausbauer» mit 5 statt 10 und «Meisterwerkstatt». **Baumeister**
+  will 10 statt 20 Bauten: Mehr als 4 Neubauten und 9 Ausbauten (vier Werkstätten je zwei, Gildenhaus eins) gibt es
+  in der Gildenstadt nicht.
+- **Überlebenskünstler** war nie erreichbar: niemand zählte `total_days_survived`. Jetzt setzt `neuerTag` den Wert
+  aus `day`.
 - **Armeeführer** zählte nur ausgebildete Kämpfer (`total_fighters_trained`), Anheuern zählte nicht.
   Jetzt: 10 Helden in der Gilde.
 - **Veteran** zählte auch bloss gestartete Expeditionen. Jetzt nur beendete.
@@ -149,18 +154,18 @@ Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
 
 ## Ziele und Grenzen
 
-`tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (Bauen, Ausbauen,
-Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
-zu setzen: Eine starke Gilde schafft alle 37 Erfolge in 41 Tagen und 246 Expeditionen. Dazu hat
+`tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (Baupläne beim Händler kaufen, Bauen,
+Ausbauen, Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
+zu setzen: Eine starke Gilde schafft alle 38 Erfolge in unter 60 Tagen und unter 400 Expeditionen. Dazu hat
 jeder Zähler eine Obergrenze aus den Daten, kein Ziel liegt darüber, und ein neuer Zähler braucht
 dort eine Zeile.
 
-- Bewohner: Wohnraum gibt nur das Wohnviertel, und das gibt es einmal. Auf Stufe 6 hat es 36 Plätze,
-  6 Bewohner sind vom Start da, also ziehen höchstens 30 ein.
+- Bauten: 4 Neubauten (die Werkstätten) und 9 Ausbauten, also höchstens 13 für «Baumeister»; Werkstätten höchstens
+  4 auf Stufe 3; Baupläne höchstens 4.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
 - Sets: 29 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
 - Trophäensaal: 16 Sockel mit je 3 Sternen.
-- Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale), hat keine Grenze.
+- Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg
 
@@ -177,9 +182,10 @@ getrennt nach «gleich offen» und «nach Bosssiegen». Beispiel Rang II in eine
 Gilden-Rang II: Abenteurer!
 Neue Dungeons (7), gleich offen: Tiefwald (mittel), Geisterwald, Tiefe Höhle, Versunkene Küste
 Nach Bosssiegen: Spinnenhöhle, Verschlungene Tunnel, Sumpfdorf
-Neue Gebäude: Arkanschmiede, Marktplatz (je mit Bauplan)
+Neues Gebäude: Arkanschmiede (mit Bauplan)
 ```
 
 Rang II, III und IV öffnen je 7 Dungeons, Rang V den Drachenhort, das Himmelsarchiv, die
-Sternenschmiede und den Sternenschlund. Dazu kommen Gebäude mit `freischaltung.gildenrang`, der
-Ausbau des Gildenhauses (Rang III) und der Titel Gildenmeister (Rang V).
+Sternenschmiede und den Sternenschlund. Dazu kommen Gebäude mit `freischaltung.gildenrang` (Rang II die
+Arkanschmiede, Rang IV die Kriegsmaschinen-Werkstatt), der Ausbau des Gildenhauses (Rang III) und der Titel
+Gildenmeister (Rang V).

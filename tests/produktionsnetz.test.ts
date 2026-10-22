@@ -14,10 +14,10 @@ function platz(id: string): { reihe: number; index: number } {
   throw new Error(`Knoten ${id} fehlt im Netz`);
 }
 
-/** Das Lagerhaus geht über die ganze Reihe: seine Linien laufen senkrecht zum Ziel. */
+/** Der Beute-Balken geht über die ganze Reihe: seine Linien laufen senkrecht zum Ziel. */
 function breit(id: string): boolean {
   const k = netzKnoten(id);
-  return !!(k && k.art === 'gebaeude' && k.breit);
+  return !!(k && k.art !== 'ziel' && k.breit);
 }
 
 describe('Mindmap: Linien', () => {
@@ -40,17 +40,6 @@ describe('Mindmap: Linien', () => {
         expect(oben * unten >= 0, `${a.von} → ${a.nach} kreuzt ${b.von} → ${b.nach}`).toBe(true);
       }
     }
-  });
-
-  it('der Brunnen steht direkt neben Kräutergarten und Bäckerei, die Mühle neben der Bäckerei', () => {
-    const nachbarn = (a: string, b: string) => {
-      const pa = platz(a);
-      const pb = platz(b);
-      return pa.reihe === pb.reihe && Math.abs(pa.index - pb.index) === 1;
-    };
-    expect(nachbarn('WELL', 'HERB_GARDEN')).toBe(true);
-    expect(nachbarn('WELL', 'BAKERY')).toBe(true);
-    expect(nachbarn('MILL_WIND', 'BAKERY')).toBe(true);
   });
 
   it('jedes Gebäude kommt genau einmal vor', () => {

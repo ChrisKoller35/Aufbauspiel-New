@@ -8,7 +8,7 @@ import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 /** State with one overpowered hero so every combat is won. */
 function setup(): { state: GameState; system: ExpeditionSystem; heroId: number } {
   const state = createNewGameState();
-  const hero = createGuildFighter(1, 'guardian', 'Testheld', {
+  const hero = createGuildFighter('guardian', 'Testheld', {
     hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1,
   });
   state.fighters.push(hero);
@@ -42,15 +42,13 @@ test('Punkt 1: nach Kampf in Raum 6 (cave_deep) wird der Kontrollpunkt verlangt'
   expect(system.nextStep(run)).toBe('room');
 });
 
-test('Punkt 2: laufende Expedition abbrechen gibt Proviant zurück und gibt Helden frei', () => {
+test('Punkt 2: laufende Expedition abbrechen gibt Proviant zurück, danach geht eine neue', () => {
   const { state, system, heroId } = setup();
   state.globalStock['healing_potion'] = 2;
-  state.citizens.push({ id: 1, fighterId: heroId, status: 'IDLE' } as GameState['citizens'][number]);
 
   system.startExpedition(state, 'cave_deep', [heroId], 'normal', null, false, ['healing_potion', 'healing_potion']);
   expect(state.activeExpedition).toBeTruthy();
   expect(state.globalStock['healing_potion']).toBe(0);
-  expect(state.citizens[0].status).toBe('ON_EXPEDITION');
 
   // Simulate reload: state round-trips through JSON like LocalStorage
   const reloaded: GameState = JSON.parse(JSON.stringify(state));
@@ -58,19 +56,19 @@ test('Punkt 2: laufende Expedition abbrechen gibt Proviant zurück und gibt Held
   expect(reloaded.activeExpedition).toBe(null);
   expect(reloaded.globalStock['healing_potion']).toBe(2);
   expect(reloaded.globalStock['bread'] ?? 0).toBe(state.globalStock['bread'] ?? 0);
-  expect(reloaded.citizens[0].status).toBe('IDLE');
 
   // A new expedition can start again
   expect(system.startExpedition(reloaded, 'cave_deep', [heroId])).toBeTruthy();
 });
 
-test('Punkt 3: Gratis-Proviant vermehrt sich nicht', () => {
+test('Punkt 3: Gratis-Proviant (Brot und Heiltrank) vermehrt sich nicht', () => {
   const { state, system, heroId } = setup();
   const before = { ...state.globalStock };
   const run = system.startExpedition(state, 'cave_deep', [heroId])!;
+  expect(run.provisions.filter(p => p.gifted).map(p => p.itemId).sort()).toEqual(['bread', 'healing_potion']);
   system.retreat(run);
   system.returnProvisions(state, run);
-  for (const id of ['healing_potion', 'bread', 'power_bread']) {
+  for (const id of ['healing_potion', 'bread']) {
     expect(state.globalStock[id] ?? 0).toBe(before[id] ?? 0);
   }
 });

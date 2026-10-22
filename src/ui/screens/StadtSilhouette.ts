@@ -1,9 +1,15 @@
 // ─── Magic City – Die wachsende Stadt (Bild aus Code) ───────────
-// Nachtbild der Stadt als SVG: je Stadtstufe kommen Gebäude dazu
-// (Zelte und Lagerfeuer, Hütten, Windmühle, Markt, Stadtmauer, Burg),
+// Nachtbild der Gildenstadt als SVG: je Stadtstufe kommen Gebäude dazu,
+// die es im Spiel gibt (data/buildings.ts): Zelte und Lagerfeuer mit dem
+// Stand des Händlers, die Schmiede (Weiler), Gildenhaus und Kräuterküche
+// (Dorf), die Halle des Händlers (Marktflecken), Arkanschmiede und
+// Stadtmauer (Stadt), Kriegsmaschinen-Werkstatt und Burg (Grossstadt);
 // ab der Grossstadt wächst das Arkane Herz, in der Magischen Stadt
 // leuchtet es und ein Pfad glüht über den Berg hinauf zu den Dungeons ganz oben.
-// Wird im Hauptmenü (klein) und im Stadtweg-Fenster (gross) gezeigt.
+// Wird im Hauptmenü (klein) und im Stadtweg-Fenster (gross) gezeigt. Das
+// kleine Bild passt sich der Breite des Banners an («meet»): am Handy sieht
+// man die ganze Stadt, am PC den Ausschnitt um den Dorfplatz; Himmel und
+// Boden reichen über den Ausschnitt hinaus, damit kein Rand leer bleibt.
 // ────────────────────────────────────────────────────────────────
 
 const G = 214; // Bodenlinie
@@ -39,7 +45,7 @@ function fensterFarbe(s: Kontext, r: () => number): string {
   return s.stufe >= 7 && r() < 0.45 ? '#d9b8ff' : '#f2c46d';
 }
 
-/** Fenster in einem Raster, ein Teil davon beleuchtet. */
+/** Fenster in Reihen, ein Teil davon beleuchtet. */
 function fenster(s: Kontext, x: number, y: number, w: number, h: number, seed: number): string {
   const r = zufall(seed);
   const spalten = Math.max(1, Math.floor((w - 6) / 10));
@@ -91,16 +97,15 @@ function schild(x: number): string {
     + `<text x="${x + 1}" y="${G - 24.5}" font-size="6.3" text-anchor="middle" fill="#e6c060" font-family="Cinzel, serif" letter-spacing=".6">MAGIC CITY</text></g>`;
 }
 
-function muehle(x: number): string {
-  const nabeY = G - 76;
-  const fluegel = [0, 90, 180, 270].map(w =>
-    `<rect x="${x - 2.5}" y="${nabeY - 34}" width="5" height="34" fill="#232a4a" transform="rotate(${w} ${x} ${nabeY})"/>`
-    + `<rect x="${x - 7}" y="${nabeY - 32}" width="5" height="22" fill="#2b3357" transform="rotate(${w} ${x} ${nabeY})"/>`,
-  ).join('');
-  return `<g><polygon points="${x - 15},${G} ${x - 9},${nabeY + 4} ${x + 9},${nabeY + 4} ${x + 15},${G}" fill="${HINTEN}"/>`
-    + `<polygon points="${x - 11},${nabeY + 5} ${x},${nabeY - 8} ${x + 11},${nabeY + 5}" fill="${HINTEN}"/>`
-    + `<rect x="${x - 2}" y="${G - 40}" width="4" height="6" fill="#f2c46d"/>`
-    + `<g class="sw-fluegel">${fluegel}<circle cx="${x}" cy="${nabeY}" r="3" fill="#2b3357"/></g></g>`;
+/** Gildenhaus: breite Halle mit hohem Giebel, Schwerter-Schild über dem Tor und goldener Fahne. */
+function gildenhaus(s: Kontext, x: number): string {
+  const y = G - 58;
+  return `<g><rect x="${x}" y="${y}" width="70" height="58" fill="${HINTEN}"/>`
+    + `<polygon points="${x - 4},${y} ${x + 35},${y - 30} ${x + 74},${y}" fill="${HINTEN}"/>`
+    + `<path d="M${x + 28} ${G} V${G - 18} A7 7 0 0 1 ${x + 42} ${G - 18} V${G} Z" fill="#e0953e" opacity=".55"/>`
+    + `<circle cx="${x + 35}" cy="${G - 30}" r="5" fill="#c8a227" opacity=".85"/>`
+    + `<text x="${x + 35}" y="${G - 27.5}" font-size="7" text-anchor="middle" fill="#0f1420" font-family="Cinzel, serif">⚔</text>`
+    + fahne(x + 34, y - 48, '#c8a227') + fenster(s, x, y, 70, 40, 35) + '</g>';
 }
 
 function rauch(x: number, y: number): string {
@@ -109,12 +114,42 @@ function rauch(x: number, y: number): string {
   ).join('');
 }
 
-function baeckerei(s: Kontext, x: number): string {
+/** Kräuterküche: Haus mit rauchendem Kamin und Kräuterbeeten davor. */
+function kraeuterkueche(s: Kontext, x: number): string {
+  const beete = [0, 1, 2, 3].map(i =>
+    `<ellipse cx="${x - 10 + i * 6}" cy="${G - 2}" rx="2.6" ry="4" fill="#3f7a3a" opacity=".8"/>`).join('');
   return `<g><rect x="${x + 26}" y="${G - 52}" width="7" height="16" fill="${VORNE}"/>${rauch(x + 29.5, G - 54)}`
-    + haus(s, x, 40, 32, 14, VORNE, 31) + '</g>';
+    + haus(s, x, 40, 32, 14, VORNE, 31) + beete + '</g>';
 }
 
-function marktstand(x: number, farbe: string): string {
+/** Schmiede: Haus mit Esse, Rauch und dem Glühen der Esse im offenen Tor. */
+function schmiede(s: Kontext, x: number): string {
+  return `<g><rect x="${x + 4}" y="${G - 46}" width="8" height="18" fill="${VORNE}"/>${rauch(x + 8, G - 48)}`
+    + haus(s, x, 42, 28, 14, VORNE, 24)
+    + `<rect x="${x + 24}" y="${G - 12}" width="12" height="12" fill="#f97316" opacity=".75" class="sw-flacker"/>`
+    + `<rect x="${x + 16}" y="${G - 4}" width="6" height="4" fill="#3b2412"/></g>`;
+}
+
+/** Arkanschmiede: schmaler Turm, oben ein Kristall, der violett leuchtet. */
+function arkanschmiede(s: Kontext, x: number): string {
+  const y = G - 92;
+  return `<g>${turm(s, x, 28, 92, 26, HINTEN, 52)}`
+    + `<circle cx="${x + 14}" cy="${y - 34}" r="14" fill="#a855f7" opacity=".18"/>`
+    + `<polygon class="sw-flacker" points="${x + 14},${y - 46} ${x + 20},${y - 34} ${x + 14},${y - 22} ${x + 8},${y - 34}" fill="#c084fc" opacity=".9"/></g>`;
+}
+
+/** Kriegsmaschinen-Werkstatt: flache breite Halle, daneben ein Katapult. */
+function kriegswerkstatt(s: Kontext, x: number): string {
+  const k = x + 54;
+  return `<g>${haus(s, x, 48, 40, 12, VORNE, 54)}`
+    + `<rect x="${k}" y="${G - 8}" width="26" height="4" fill="#2a2016"/>`
+    + `<circle cx="${k + 5}" cy="${G - 3}" r="3" fill="#2a2016"/><circle cx="${k + 21}" cy="${G - 3}" r="3" fill="#2a2016"/>`
+    + `<line x1="${k + 8}" y1="${G - 8}" x2="${k + 24}" y2="${G - 34}" stroke="#4b3a22" stroke-width="2.5"/>`
+    + `<circle cx="${k + 25}" cy="${G - 35}" r="3" fill="#6b7280"/></g>`;
+}
+
+/** Stand des Händlers: Pfosten, gestreiftes Dach, eine Laterne. */
+function haendlerstand(x: number, farbe: string): string {
   let streifen = '';
   for (let i = 0; i < 6; i++) {
     streifen += `<rect x="${x + i * 7}" y="${G - 30}" width="7" height="8" fill="${i % 2 ? '#e8dcc0' : farbe}" opacity=".75"/>`;
@@ -125,7 +160,8 @@ function marktstand(x: number, farbe: string): string {
     + `<circle cx="${x + 21}" cy="${G - 17}" r="2.2" fill="#fbbf24" class="sw-flacker"/></g>`;
 }
 
-function markthalle(s: Kontext, x: number): string {
+/** Halle des Händlers (Marktflecken): grosses Haus mit Turm und Laterne. */
+function haendlerhalle(s: Kontext, x: number): string {
   return `<g>${haus(s, x, 66, 50, 18, HINTEN, 41)}`
     + `<rect x="${x + 25}" y="${G - 96}" width="16" height="46" fill="${HINTEN}"/>`
     + `<polygon points="${x + 23},${G - 96} ${x + 33},${G - 116} ${x + 43},${G - 96}" fill="${HINTEN}"/>`
@@ -220,12 +256,11 @@ function herz(s: Kontext): string {
 // Reihenfolge = Zeichenreihenfolge: erst hinten, dann vorne, die Mauer zuletzt.
 const TEILE: Teil[] = [
   // Hintere Reihe
-  { ab: 3, svg: () => muehle(132) },
-  { ab: 4, svg: s => markthalle(s, 488) },
+  { ab: 3, svg: s => gildenhaus(s, 118) },
+  { ab: 4, svg: s => haendlerhalle(s, 488) },
   { ab: 5, svg: s => haus(s, 222, 40, 70, 18, HINTEN, 51) },
-  { ab: 5, svg: s => turm(s, 292, 28, 92, 40, HINTEN, 52) },
+  { ab: 5, svg: s => arkanschmiede(s, 292) },
   { ab: 5, svg: s => haus(s, 604, 42, 64, 16, HINTEN, 53) },
-  { ab: 6, svg: s => haus(s, 168, 44, 82, 18, HINTEN, 54) },
   { ab: 6, svg: s => burg(s, 676) },
   { ab: 6, svg: s => herz(s) },
   // Vordere Reihe
@@ -234,16 +269,16 @@ const TEILE: Teil[] = [
   { ab: 1, bis: 2, svg: () => zelt(434, 42, 30) },
   { ab: 1, bis: 4, svg: () => lagerfeuer(400) },
   { ab: 1, bis: 2, svg: () => schild(492) },
-  { ab: 2, svg: s => haus(s, 214, 38, 26, 16, VORNE, 21) },
-  { ab: 2, svg: s => haus(s, 528, 40, 28, 16, VORNE, 22) },
-  { ab: 2, svg: s => haus(s, 574, 34, 24, 14, VORNE, 23) },
+  { ab: 1, svg: () => haendlerstand(530, '#b91c1c') },
+  { ab: 2, svg: s => schmiede(s, 214) },
+  { ab: 2, svg: s => haus(s, 578, 34, 24, 14, VORNE, 23) },
   { ab: 3, svg: s => haus(s, 258, 44, 44, 18, VORNE, 32) },
-  { ab: 3, svg: s => baeckerei(s, 612) },
+  { ab: 3, svg: s => kraeuterkueche(s, 612) },
   { ab: 3, svg: s => haus(s, 660, 46, 38, 16, VORNE, 33) },
-  { ab: 4, svg: () => marktstand(304, '#b91c1c') },
-  { ab: 4, svg: () => marktstand(454, '#1d4ed8') },
+  { ab: 4, svg: () => haendlerstand(304, '#1d4ed8') },
   { ab: 4, svg: s => haus(s, 158, 38, 32, 14, VORNE, 42) },
   { ab: 4, svg: s => haus(s, 712, 40, 34, 14, VORNE, 43) },
+  { ab: 6, svg: s => kriegswerkstatt(s, 440) },
   { ab: 5, svg: () => stadtmauer() },
 ];
 
@@ -265,9 +300,13 @@ export function stadtSilhouette(
     .filter(t => stufe >= t.ab && (t.bis === undefined || stufe <= t.bis))
     .map(t => (opts.neu && t.ab === stufe ? `<g class="sw-neu">${t.svg(s)}</g>` : t.svg(s)))
     .join('');
-  // Klein (Banner im Hauptmenü): Ausschnitt um den Dorfplatz, damit die Häuser grösser wirken
+  // Klein (Banner im Hauptmenü): Ausschnitt um den Dorfplatz, damit die Häuser grösser wirken. «meet»
+  // statt «slice»: Ist der Banner breiter als der Ausschnitt (Handy, eine Spalte), zeigt er links und
+  // rechts mehr Stadt statt oben die Dächer abzuschneiden; nichts wird verzerrt. Das grosse Bild füllt
+  // sein Feld («slice», am Handy mit Rand links und rechts).
   const viewBox = opts.klein ? '170 56 460 184' : '0 0 800 240';
-  return `<svg class="sw-svg" viewBox="${viewBox}" preserveAspectRatio="xMidYMax slice" role="img" aria-label="Die Stadt auf Stufe ${stufe}">
+  const passung = opts.klein ? 'xMidYMax meet' : 'xMidYMax slice';
+  return `<svg class="sw-svg" viewBox="${viewBox}" preserveAspectRatio="${passung}" role="img" aria-label="Die Stadt auf Stufe ${stufe}">
   <defs>
     <linearGradient id="${s.id('himmel')}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#070a1c"/><stop offset=".6" stop-color="#141838"/><stop offset="1" stop-color="${stufe >= 7 ? '#3b2766' : '#2a2350'}"/>
@@ -275,12 +314,14 @@ export function stadtSilhouette(
     <radialGradient id="${s.id('aura')}"><stop offset="0" stop-color="#a855f7" stop-opacity=".55"/><stop offset=".55" stop-color="#7c3aed" stop-opacity=".18"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
     <linearGradient id="${s.id('kristall')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5f3ff"/><stop offset=".35" stop-color="#c084fc"/><stop offset=".75" stop-color="#7c3aed"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
   </defs>
+  <rect x="-400" y="-400" width="1600" height="400" fill="#070a1c"/>
+  <rect x="-400" width="400" height="240" fill="url(#${s.id('himmel')})"/><rect x="800" width="400" height="240" fill="url(#${s.id('himmel')})"/>
   <rect width="800" height="240" fill="url(#${s.id('himmel')})"/>
   ${sterne}
   <circle cx="566" cy="74" r="32" fill="#efe3c0" opacity=".08"/><circle cx="566" cy="74" r="14" fill="#efe3c0" opacity=".9"/>
   ${berg(s)}
   <path d="M0 ${G - 18} Q120 ${G - 34} 240 ${G - 16} T520 ${G - 14} T800 ${G - 22} V${G} H0 Z" fill="#0e1228"/>
   ${teile}
-  <rect y="${G}" width="800" height="${240 - G}" fill="#080b17"/><rect y="${G}" width="800" height="1" fill="#1f2547"/>
+  <rect x="-400" y="${G}" width="1600" height="${240 - G + 400}" fill="#080b17"/><rect x="-400" y="${G}" width="1600" height="1" fill="#1f2547"/>
 </svg>`;
 }

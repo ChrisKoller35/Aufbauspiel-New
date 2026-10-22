@@ -1,41 +1,34 @@
-// ─── Magic City – CityStartingLayout ────────────────────────────────────────
-// Places initial buildings when a new game is created.
-// Buildings are pushed to state.buildings (dense array).
-// ─────────────────────────────────────────────────────────────────────────────
+// ─── Magic City – CityStartingLayout ────────────────────────────
+// Stellt auf, womit jede neue Stadt beginnt: Gildenhaus und Händler
+// als Gebäude, dazu ein Held (Guardian, Stufe 1, wie beim Anheuern im
+// Heldenhaus). Alles andere baut man mit Bauplan (data/buildings.ts)
+// oder heuert man an (systems/Empfehlung.ts: anheuerKosten).
+// Keine Bewohner, kein Raster.
+// ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
 import { createBuildingInstance } from '../models/Building';
-import { createCitizen } from '../models/Citizen';
+import { createGuildFighter } from '../models/GuildRoster';
 import { BUILDING_DEFS } from '../data/buildings';
+import { CLASS_DEFS } from '../data/classes';
 
-/** Buildings every new city starts with (the last one of each type cannot be demolished). */
+/** Gebäude, mit denen jede neue Stadt beginnt (sie lassen sich nicht abreissen). */
 export const STARTING_BUILDING_TYPES: readonly string[] = [
-  // General buildings
-  'WAREHOUSE',
   'GUILD_HALL',
-  'LUMBER_CAMP',     // Holzfällerlager — generates wood from start
-  'DUNGEON_CAMP',
-  // Housing
-  'HOUSE_T1',
+  'HAENDLER',
 ];
 
+/** Klasse des ersten Helden: Ohne ihn gäbe es keine Expedition und damit kein Gold. */
+export const START_HELD_KLASSE = 'guardian';
+
 export function placeStartingLayout(state: GameState): void {
-  for (const typeId of STARTING_BUILDING_TYPES) placeBuilding(state, typeId);
-}
-
-export function createStartingCitizens(state: GameState): void {
-  for (let i = 0; i < 6; i++) {
-    state.citizens.push(createCitizen('IDLE'));
+  for (const typeId of STARTING_BUILDING_TYPES) {
+    if (!BUILDING_DEFS[typeId]) continue;
+    state.buildings.push(createBuildingInstance(typeId));
   }
-}
-
-function placeBuilding(state: GameState, typeId: string): void {
-  const def = BUILDING_DEFS[typeId];
-  if (!def) return;
-
-  const building = createBuildingInstance(typeId, 0, 0, true);
-  if (def.recipes.length > 0) building.activeRecipeId = def.recipes[0];
-  building.connected = true;
-
-  state.buildings.push(building);
+  // Wie HeroesScreen.handleHire: Name der Klasse, Grundwerte, Stufe 1, ohne Ausrüstung
+  const klasse = CLASS_DEFS[START_HELD_KLASSE];
+  if (klasse && !state.fighters.some(f => f.classId === klasse.id)) {
+    state.fighters.push(createGuildFighter(klasse.id, klasse.name, klasse.baseStats));
+  }
 }

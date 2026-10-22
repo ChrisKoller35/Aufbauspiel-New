@@ -177,7 +177,7 @@ function zurueckholen(ov: HTMLElement): void {
 function frageNeuesSpiel(ov: HTMLElement, state: GameState): void {
   const bestaetigen = element('div', 'ss-bestaetigen');
   bestaetigen.append(
-    element('p', 'ss-warnung', 'Fängt von vorn an: Tag 1, die Startstadt, keine Helden.'),
+    element('p', 'ss-warnung', 'Fängt von vorn an: Tag 1, die Startstadt mit Gildenhaus, Händler und einem Helden.'),
     element('p', 'ss-erklaerung', `Dein jetziger Stand (${standText(fasseSpielstandZusammen(state))}) bleibt hier gesichert. `
       + 'Du kannst ihn zurückholen, bis du wieder eine Datei lädst oder noch einmal neu anfängst.'),
     knopfReihe(knopf('ss-neu-ja', 'Neu anfangen'), knopf('ss-abbrechen', 'Abbrechen')),

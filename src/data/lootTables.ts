@@ -20,7 +20,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_forest_common: {
     id: 'loot_forest_common',
     entries: [
-      { itemId: 'wood', weight: 35, minQty: 1, maxQty: 3 },
+      { itemId: 'iron_scrap', weight: 35, minQty: 1, maxQty: 2 },
       { itemId: 'herb_green', weight: 22, minQty: 1, maxQty: 2 },
       { itemId: 'bread', weight: 13, minQty: 1, maxQty: 1 },
       { itemId: 'healing_potion', weight: 10, minQty: 1, maxQty: 1 },
@@ -33,7 +33,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_forest_rare: {
     id: 'loot_forest_rare',
     entries: [
-      { itemId: 'wood', weight: 20, minQty: 2, maxQty: 4 },
+      { itemId: 'iron_scrap', weight: 20, minQty: 1, maxQty: 3 },
       { itemId: 'herb_green', weight: 20, minQty: 1, maxQty: 3 },
       { itemId: 'healing_potion', weight: 20, minQty: 1, maxQty: 2 },
       { itemId: 'leather_armor', weight: 10, minQty: 1, maxQty: 1 },
@@ -50,7 +50,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
       { itemId: 'herb_moonwort', weight: 40, minQty: 1, maxQty: 2 },
       { itemId: 'herb_green', weight: 20, minQty: 1, maxQty: 2 },
       { itemId: 'healing_potion', weight: 15, minQty: 1, maxQty: 1 },
-      { itemId: 'wood', weight: 15, minQty: 1, maxQty: 3 },
+      { itemId: 'iron_scrap', weight: 15, minQty: 1, maxQty: 2 },
       { itemId: 'wolf_fang_necklace', weight: 10, minQty: 1, maxQty: 1 },
     ],
     guaranteedGold: { min: 2, max: 5 },
@@ -58,8 +58,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_cave_common: {
     id: 'loot_cave_common',
     entries: [
-      { itemId: 'stone', weight: 25, minQty: 1, maxQty: 3 },
-      { itemId: 'iron_scrap', weight: 22, minQty: 1, maxQty: 2 },
+      { itemId: 'iron_scrap', weight: 47, minQty: 1, maxQty: 3 },
       { itemId: 'healing_potion', weight: 13, minQty: 1, maxQty: 1 },
       { itemId: 'bread', weight: 13, minQty: 1, maxQty: 1 },
       { itemId: 'herb_shimmer_shroom', weight: 10, minQty: 1, maxQty: 1 },
@@ -91,9 +90,8 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_treant: {
     id: 'loot_boss_treant',
-    ersterSiegBauplan: 'bauplan_marktplatz',
     entries: [
-      { itemId: 'wood', weight: 20, minQty: 5, maxQty: 10 },
+      { itemId: 'iron_scrap', weight: 20, minQty: 3, maxQty: 6 },
       { itemId: 'herb_green', weight: 15, minQty: 3, maxQty: 6 },
       { itemId: 'healing_potion', weight: 15, minQty: 2, maxQty: 3 },
       { itemId: 'oak_staff', weight: 15, minQty: 1, maxQty: 1 },
@@ -107,8 +105,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     id: 'loot_boss_golem',
     ersterSiegBauplan: 'bauplan_arkanschmiede',
     entries: [
-      { itemId: 'iron_scrap', weight: 20, minQty: 5, maxQty: 10 },
-      { itemId: 'stone', weight: 15, minQty: 5, maxQty: 8 },
+      { itemId: 'iron_scrap', weight: 35, minQty: 5, maxQty: 10 },
       { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 4 },
       { itemId: 'iron_sword', weight: 10, minQty: 1, maxQty: 1 },
       { itemId: 'iron_shield', weight: 10, minQty: 1, maxQty: 1 },
@@ -123,13 +120,10 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_swamp_common: {
     id: 'loot_swamp_common',
     entries: [
-      { itemId: 'herb_green', weight: 22, minQty: 1, maxQty: 3 },
-      { itemId: 'wood', weight: 18, minQty: 1, maxQty: 3 },
-      { itemId: 'gold', weight: 13, minQty: 2, maxQty: 5 },
-      { itemId: 'iron_scrap', weight: 13, minQty: 1, maxQty: 2 },
-      { itemId: 'grain', weight: 13, minQty: 1, maxQty: 3 },
+      { itemId: 'herb_green', weight: 30, minQty: 1, maxQty: 3 },
+      { itemId: 'gold', weight: 26, minQty: 2, maxQty: 5 },
+      { itemId: 'iron_scrap', weight: 31, minQty: 1, maxQty: 3 },
       { itemId: 'herb_swamp_blossom', weight: 15, minQty: 1, maxQty: 2 },
-      { itemId: 'stone', weight: 8, minQty: 1, maxQty: 2 },
       { itemId: 'spider_silk_robe', weight: 8, minQty: 1, maxQty: 1 },
       { itemId: 'leather_armor', weight: 5, minQty: 1, maxQty: 1 },
     ],
@@ -151,8 +145,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_ruins_common: {
     id: 'loot_ruins_common',
     entries: [
-      { itemId: 'stone', weight: 17, minQty: 2, maxQty: 5 },
-      { itemId: 'iron_scrap', weight: 17, minQty: 1, maxQty: 3 },
+      { itemId: 'iron_scrap', weight: 34, minQty: 1, maxQty: 4 },
       { itemId: 'gold', weight: 17, minQty: 3, maxQty: 7 },
       { itemId: 'crystal_shard', weight: 13, minQty: 1, maxQty: 2 },
       { itemId: 'talisman_fragment', weight: 12, minQty: 1, maxQty: 2 },
@@ -179,8 +172,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_volcano_common: {
     id: 'loot_volcano_common',
     entries: [
-      { itemId: 'stone', weight: 16, minQty: 3, maxQty: 7 },
-      { itemId: 'iron_scrap', weight: 16, minQty: 2, maxQty: 4 },
+      { itemId: 'iron_scrap', weight: 32, minQty: 2, maxQty: 5 },
       { itemId: 'gold', weight: 16, minQty: 4, maxQty: 8 },
       { itemId: 'crystal_shard', weight: 13, minQty: 1, maxQty: 2 },
       { itemId: 'talisman_fragment', weight: 12, minQty: 1, maxQty: 2 },
@@ -262,7 +254,6 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_lich: {
     id: 'loot_boss_lich',
-    ersterSiegBauplan: 'bauplan_bank',
     entries: [
       { itemId: 'talisman_fragment', weight: 30, minQty: 2, maxQty: 5 },
       { itemId: 'crystal_shard', weight: 25, minQty: 3, maxQty: 6 },
@@ -622,8 +613,7 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   loot_siege_common: {
     id: 'loot_siege_common',
     entries: [
-      { itemId: 'iron_scrap', weight: 25, minQty: 2, maxQty: 5 },
-      { itemId: 'stone', weight: 20, minQty: 2, maxQty: 4 },
+      { itemId: 'iron_scrap', weight: 45, minQty: 2, maxQty: 5 },
       { itemId: 'gold', weight: 18, minQty: 4, maxQty: 9 },
       { itemId: 'healing_potion', weight: 15, minQty: 1, maxQty: 2 },
       { itemId: 'crystal_shard', weight: 12, minQty: 1, maxQty: 2 },

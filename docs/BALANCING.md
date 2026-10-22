@@ -1,23 +1,16 @@
 # Magic City – Balancing
 
-## 1. Alle Zutaten erreichbar (18.10.2026)
+## 1. Alle Zutaten erreichbar (18.10.2026, Gildenstadt 22.10.2026)
 
-Ausgangslage (`docs/BESTAND.md`): Wasser, Glutwurzel, Schimmerpilz, Sumpfblüte, Knochenstaub und Mondkraut
-gab es nie, 5 von 7 Trank-Rezepten im Kräutergarten waren unmöglich. Kristallsplitter fielen fast nur bei Bossen.
-Der Test `src/data/zutaten.test.ts` prüft jetzt, dass jede Zutat aus Beute (Gegner auf einer Route) oder aus einem
+Ausgangslage (`docs/BESTAND.md`): Glutwurzel, Schimmerpilz, Sumpfblüte, Knochenstaub und Mondkraut gab es nie,
+5 von 7 Trank-Rezepten waren unmöglich. Kristallsplitter fielen fast nur bei Bossen. Der Test
+`src/data/zutaten.test.ts` prüft, dass jede Zutat aus Beute (Gegner auf einer Route), beim Händler oder aus einem
 Rezept kommt, dessen Zutaten selbst erreichbar sind.
 
-### Wasser
-
-| Rezept | vorher | jetzt |
-|---|---|---|
-| Manatrank | Schimmerpilz 1 + Wasser 1, Brunnen nötig | Schimmerpilz 1, Brunnen nötig |
-| Titan-Gebräu | Knochenstaub 1 + Wasser 1, Brunnen nötig | Knochenstaub 1, Brunnen nötig |
-| Schnelligkeitstrank | Mondkraut 2 + Wasser 1, Brunnen nötig | Mondkraut 2, Brunnen nötig |
-
-Begründung: Die Rezepte hatten schon `requirements.waterSupplied`, Wasser also doppelt verlangt. So funktionieren
-auch Brot, Kräuter und Heiltrank. Ein Wasser-Rezept am Brunnen hätte den Brunnen zur Werkstatt mit Arbeiter und
-Ausbaustufen gemacht und nur Klickarbeit gebracht. Das Item `water` bleibt in `items.ts`, es wird nur nicht mehr verlangt.
+Seit der Gildenstadt (`docs/GILDENSTADT.md`) sind alle Zutaten Gold und Beute aus den Dungeons (Eisenschrott,
+Kristallsplitter, Grüne und seltene Kräuter, Talisman-Fragmente), dazu Brot vom Händler für Kraft-Brot. Die
+frühere Wasser-Versorgung, Rohstoffe aus Gebäuden und die Rezepte, die sie herstellten, gibt es nicht mehr; der
+Abschnitt «Wasser» von damals ist damit gegenstandslos.
 
 ### Seltene Kräuter (Gewicht in der Tabelle, Menge je Treffer)
 
@@ -33,7 +26,8 @@ Begründung: Jedes Kraut kommt aus dem Gebiet, nach dem es klingt. Ein Lauf im p
 einen Trank. Die Kräuter verdrängen dort nur wenig andere Beute (rund 10 bis 15 % Anteil). Der Geisterwald hatte
 nur Gegner, die er sich mit dem Tiefwald teilt. Darum sind 3 der 4 Waldgeister dort jetzt Verfluchte Irrlichter
 (gab es schon, wurden nirgends eingesetzt), nie zwei im selben Kampf, weil sie heilen. Ihre Tabelle
-`loot_haunted_common` hat Mondkraut. Der Fund-Raum bietet Mondkraut statt Grünkraut an.
+`loot_haunted_common` hat Mondkraut. Der Fund-Raum bietet Mondkraut statt Grünkraut an. Seit der Gildenstadt haben
+die Tränke daraus eine echte Wirkung im Dungeon (`docs/GILDENSTADT.md`, Abschnitt «Tränke mit Wirkung»).
 
 ### Kristallsplitter
 
@@ -64,11 +58,23 @@ brauchen je 1, Kristallstab und Kristallamulett je 2). Der Test prüft «≥ 5»
 Kristallminen: Die Aufgabe nannte «garantiert 1-3». Die Route hat aber 6 Kristallkäfer, darum gibt es jetzt
 6 sichere Splitter. Das ist Absicht: Die Minen sind erst nach Golem und Spinnenkönigin offen (Stufe 3), haben keinen
 Boss und sonst kaum Beute. Sie sind die Quelle für die Arkanschmiede: Magitech-Komponente 2, Arkanklinge 4,
-Arkan-Amulett 5, Kanone 7 Splitter.
+Arkan-Amulett 5, Kanone 7 Splitter. Dazu kommen seit der Gildenstadt die Abgaben der Stadtstufen (5 bis 10), der
+Ausbau der Arkanschmiede (5 / 10) und das Gildenhaus Stufe 2 (3); am Auftragsbrett gibt es 3 Splitter für 2 Siegel.
 
-### Nicht umgesetzt: Eisenmine ab Stufe 2
+### Eisenschrott
 
-Geplant war ein langsames Kristall-Rezept an der Eisenmine ab Ausbau-Stufe 2. `requirements.minBuildingTier` gibt es
-zwar, aber nichts prüft es. Für eine saubere Lösung müssten `ProductionSystem`, `GebaeudeStatus` (neuer Wartegrund),
-`EngpassSystem` und `BuildingsScreen` (Hinweis «ab Stufe 2») angepasst werden. Das geht über diese Aufgabe hinaus,
-die nur Daten ändern soll. Die Beute reicht für das Ziel auch ohne das Rezept. Gute eigene Aufgabe für später.
+Seit der Gildenstadt gibt es keine Eisenmine mehr: Eisenschrott kommt nur als Beute. Die Beutetabellen-Einträge für
+Holz, Stein und Getreide wurden gewichtsneutral zu Eisenschrott (Wald 1-2 bzw. 1-3; Höhle, Ruinen, Vulkan und
+Belagerung mit dem bestehenden Eisen-Eintrag zusammengelegt) bzw. Gold (Sumpf) umgewidmet; alle anderen Drops
+fallen gleich oft. Eisenschrott fällt damit schon auf dem Waldpfad (mindestens 2 je Lauf). Was ihn braucht:
+Schmiede-Rezepte 1 bis 3 je Stück, Bau und Ausbau von Arkanschmiede und Kriegsmaschinen-Werkstatt, Ausbau der
+Schmiede (10 / 20), Abgaben der Stadtstufen (10 bis 40), Herzsteine (10 bis 50).
+
+## 2. Gold (Gildenstadt 22.10.2026)
+
+Gold kam schon vor der Gildenstadt zu rund 90 % aus den Dungeons; jetzt ganz: Beute, mutige Wahlen der Geschichten,
+Fund-Räume, Auftragsbrett (Zettel und Lieferungen), Ruhmestruhe der Rangliste, Geschenke der Stadtstufen (100 bis
+500) und der Ankauf beim Händler (halber Grundwert, `docs/HAENDLER.md`). Gold ist zugleich Zutat der
+Schmiede-Rezepte (10 bis 30) und des Katapults (60), Preis der Baupläne (50 bis 250) und der Ausbauten
+(Baukosten × Stufe). Startgold 100: ein zweiter Held (50) und der Bauplan der Schmiede (50), oder Heiltränke.
+Erste Werte, noch nicht am Spiel gemessen; Balancing läuft über Manager-Issue #23.

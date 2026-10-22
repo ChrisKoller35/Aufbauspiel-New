@@ -1,7 +1,7 @@
 /**
- * Building upgrade definitions.
- * MVP: Only Guild Hall T2 (partySlots 3→4).
- * Unlocked at Guild Rank III.
+ * Ausbau des Gildenhauses auf Stufe 2: vier Helden je Expedition.
+ * Freigeschaltet ab Gildenrang III; der Ausbau ist sofort fertig
+ * (systems/Ausbau.ts nutzt diese Kosten für GUILD_HALL).
  */
 
 export interface BuildingUpgradeDef {
@@ -12,11 +12,8 @@ export interface BuildingUpgradeDef {
   name: string;
   description: string;
   cost: Record<string, number>;
-  buildTimeSec: number;
   changes: {
-    partySlots?: number;       // new partySlots value
-    workerSlots?: number;      // new workerSlots value
-    housingCapacity?: number;  // new housing capacity
+    partySlots?: number;       // neue Zahl der Helden je Expedition
   };
   unlockCondition: {
     minGuildRank: number;
@@ -31,8 +28,7 @@ export const BUILDING_UPGRADE_DEFS: Record<string, BuildingUpgradeDef> = {
     toTier: 2,
     name: 'Gildenhaus T2',
     description: 'Erweitert die Party auf 4 Kämpfer.',
-    cost: { wood: 60, stone: 20, crystal_shard: 3, gold: 80 },
-    buildTimeSec: 120,
+    cost: { gold: 80, crystal_shard: 3 },
     changes: {
       partySlots: 4,
     },
@@ -41,13 +37,3 @@ export const BUILDING_UPGRADE_DEFS: Record<string, BuildingUpgradeDef> = {
     },
   },
 };
-
-/** Find available upgrade for a building type + tier. */
-export function getAvailableUpgrade(
-  buildingTypeId: string,
-  currentTier: number,
-): BuildingUpgradeDef | null {
-  return Object.values(BUILDING_UPGRADE_DEFS).find(
-    u => u.buildingTypeId === buildingTypeId && u.fromTier === currentTier,
-  ) ?? null;
-}

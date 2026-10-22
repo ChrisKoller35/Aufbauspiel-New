@@ -1199,7 +1199,7 @@ The character fills 80% of the frame.`),
     `${STYLES.ITEM}, a talisman fragment: broken piece of ancient magical artifact, faint residual glow, mysterious runes, raw material`),
 
   // ═══════════════════════════════════════════════════════════
-  // SPEZIALISTEN-PORTRAITS (Post-MVP)
+  // PORTRAITS SPEC_* (Post-MVP, von keinem System geladen)
   // ═══════════════════════════════════════════════════════════
 
   sprite("SPEC_BAKER_MASTER", "specialist", 32, 32, "post-mvp",

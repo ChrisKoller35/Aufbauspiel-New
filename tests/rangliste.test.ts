@@ -266,7 +266,7 @@ describe('Rangliste: Ruhm und eigene Siege', () => {
 
   test('Expedition bis zum Ende gespielt: Bilanz im Ergebnis, Sieg im Merker', () => {
     const state = createNewGameState();
-    const hero = createGuildFighter(1, 'guardian', 'Testheld', {
+    const hero = createGuildFighter('guardian', 'Testheld', {
       hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1,
     });
     state.fighters.push(hero);

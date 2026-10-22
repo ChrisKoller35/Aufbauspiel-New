@@ -105,36 +105,41 @@ export interface LieferWare {
   von: string;
   titel: string;
   text: string;
+  /** Fester Lohn für die ganze Lieferung, auf jeder Ebene gleich. */
+  gold: number;
 }
 
 /**
  * Waren aus den Werkstätten. Am Brett hängt nur eine Ware, die die Stadt herstellen kann
- * (die Werkstatt steht und ihre Zutaten kommen), oder die schon im Lager liegt. Ihre Zutaten
- * gibt es auch am Markt; daran hängt ihr Gold (LIEFER_AUFSCHLAG, tests/auftragsbrett.test.ts).
+ * (die Werkstatt steht und ihre Zutaten kommen), oder die schon im Lager liegt. Der Lohn ist
+ * fest und liegt über dem, was die Zutaten (Beute und Gold) wert sind, aber nie über dem, was
+ * die Ware beim Händler mit dem höchsten Rabatt kostet (Stadtstufe 7, 20 %: Heiltrank 8, Schwert
+ * 20): Kaufen und abgeben bringt kein Gold, der eigentliche Lohn sind die Siegel
+ * (tests/auftragsbrett.test.ts). Kraft-Brot führt der Händler nicht.
  */
 export const LIEFER_WAREN: LieferWare[] = [
   {
-    itemId: 'healing_potion', menge: 3, von: 'hauptmann', titel: 'Tränke für die Nachtwache',
+    itemId: 'healing_potion', menge: 3, gold: 24, von: 'hauptmann', titel: 'Tränke für die Nachtwache',
     text: 'Die Nachtwache will Heiltränke im Wachhaus haben, nicht weil etwas passiert, sondern damit nichts passiert. '
-      + 'Gebt dem Kräutergarten den Auftrag, die Kräuter zieht er selbst.',
+      + 'Gebt der Kräuterküche den Auftrag, drei Grüne Kräuter je Trank.',
   },
   {
-    itemId: 'power_bread', menge: 3, von: 'jorinde', titel: 'Proviant für die Grabung',
+    itemId: 'power_bread', menge: 3, gold: 40, von: 'jorinde', titel: 'Proviant für die Grabung',
     text: 'Jorinde gräbt eine Woche lang unter dem Stadttor. Normales Brot reicht ihr nur bis Mittag, sagt sie, '
-      + 'sie braucht Kraft-Brot. Die Bäckerei backt es, wenn ihr es bestellt.',
+      + 'sie braucht Kraft-Brot. Die Kräuterküche backt es aus Brot und Grünen Kräutern, wenn ihr es bestellt.',
   },
   {
-    itemId: 'iron_sword', menge: 2, von: 'hauptmann', titel: 'Schwerter für die Rekruten',
+    itemId: 'iron_sword', menge: 2, gold: 40, von: 'hauptmann', titel: 'Schwerter für die Rekruten',
     text: 'Die Stadtwache hat neue Leute und alte Schwerter, und die alten Schwerter sind aus Holz. '
       + 'Die Schmiede kann helfen, wenn die Gilde sie beauftragt.',
   },
   {
-    itemId: 'iron_shield', menge: 2, von: 'glaser', titel: 'Schilde vor die Fenster',
+    itemId: 'iron_shield', menge: 2, gold: 40, von: 'glaser', titel: 'Schilde vor die Fenster',
     text: 'Der Glaser hat neue Fenster ins Gildenhaus gesetzt und will sie schützen, bevor der nächste Sturm kommt. '
       + 'Zwei Eisenschilde, sagt er. Mehr Fenster hat er noch nicht.',
   },
   {
-    itemId: 'leather_armor', menge: 2, von: 'haendler', titel: 'Rüstung für die Fuhrleute',
+    itemId: 'leather_armor', menge: 2, gold: 40, von: 'haendler', titel: 'Rüstung für die Fuhrleute',
     text: 'Der Händler schickt eine Karawane in die Hauptstadt und will, dass die Fuhrleute heil ankommen. '
       + 'Lederrüstungen, sagt er, halten mehr aus als Fuhrleute.',
   },
@@ -152,16 +157,8 @@ export const TAGESBONUS_SIEGEL = 3;
 export const ZETTEL_JE_TAG = 3;
 export const TAUSCH_JE_TAG = 1;
 
-/** Gold eines Zettels: dieser Anteil vom Gold eines Laufs im Dungeon (Lieferung: LIEFER_AUFSCHLAG) */
+/** Gold eines Zettels: dieser Anteil vom Gold eines Laufs im Dungeon (Lieferung: LieferWare.gold) */
 export const GOLD_ANTEIL = 0.6;
-
-/**
- * Gold einer Lieferung: das Dreifache dessen, was ihre Zutaten auf dem billigsten Weg am Markt kosten
- * (marktKosten in systems/Handel.ts), auf jeder Ebene gleich. Wer die Zutaten kauft, behält höchstens
- * zwei Drittel davon, in ganzen Bündeln oft weniger; was die Stadt selbst macht, bringt das Ganze.
- * Vorher 15 Gold je Stück mal Ebene: bis 360 Gold für Kräuter, die am Markt 15 kosten (docs/AUFTRAGSBRETT.md).
- */
-export const LIEFER_AUFSCHLAG = 3;
 
 // ── Siegel einlösen ──
 

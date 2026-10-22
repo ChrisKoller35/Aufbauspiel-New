@@ -1,65 +1,36 @@
+// ─── Magic City – Ein Gebäude im Spielstand ─────────────────────
+// Ein Gebäude je Art; es steht sofort nach dem Bau (keine Bauzeit,
+// kein Bauplatz). Werkstätten arbeiten ihre Auftragsliste ab
+// (systems/Auftraege.ts, systems/Werkstattplan.ts, systems/ProductionSystem.ts);
+// die Stufe (tier) macht sie schneller (systems/Ausbau.ts).
+// ────────────────────────────────────────────────────────────────
+
 export interface BuildingInstance {
   id: number;
-  typeId: string;       // key into BUILDING_DEFS
-  x: number;            // grid x (top-left)
-  y: number;            // grid y (top-left)
-  built: boolean;       // false = under construction
-  buildProgress: number; // seconds of build time completed
-  assignedWorkerIds: number[];  // citizen IDs assigned as workers
-  assignedBuilderId: number | null; // citizen ID assigned as builder
+  typeId: string;       // Schlüssel in BUILDING_DEFS
+  built: boolean;       // steht; nach dem Bau immer true (alle Systeme erkennen fertige Gebäude daran)
   activeRecipeId: string | null;
-  productionTimer: number;  // seconds remaining in current cycle
-  producing: boolean;       // currently producing?
-  /** Laufender Zyklus ohne Auftrag: Vorstufe, Zulieferung oder Vorrat (systems/Werkstattplan.ts). */
-  vonSelbst?: { art: 'vorstufe' | 'zulieferung' | 'vorrat'; fuer: string } | null;
-  localInputBuffer: Record<string, number>;
-  localOutputBuffer: Record<string, number>;
-  connected: boolean;
-  waterSupplied: boolean;
+  productionTimer: number;  // Sekunden bis zum Ende des laufenden Zyklus
+  producing: boolean;       // läuft gerade ein Zyklus?
+  /** Laufender Zyklus ohne Auftrag: Vorstufe oder Zulieferung (systems/Werkstattplan.ts). */
+  vonSelbst?: { art: 'vorstufe' | 'zulieferung'; fuer: string } | null;
+  /** Ausbau-Stufe 1 bis maxStufe (systems/Ausbau.ts). */
   tier: number;
-  synergySpeedMult: number; // 1.0 = no synergy, 0.67 = x1.5 speed
-  specialistId: string | null;   // assigned specialist ID
-  upgrading: boolean;            // true = upgrade in progress
-  upgradeProgress: number;       // seconds of upgrade time completed
-  upgradeId: string | null;      // which upgrade is in progress
-  eventPaused: boolean;          // true = paused by storm event
-  pendingCraft: boolean;         // true = player triggered manual craft, start next cycle
-  auftraege: string[];           // waiting orders (recipe IDs), see systems/Auftraege.ts
-  handelTag?: number;            // Marktplatz: Tag, an dem zuletzt gehandelt wurde (systems/Handel.ts)
-  handelBuendel?: number;        // Marktplatz: an diesem Tag gehandelte Bündel
+  pendingCraft: boolean;         // ein Auftrag wartet (systems/Auftraege.ts)
+  auftraege: string[];           // wartende Aufträge (Rezept-IDs), siehe systems/Auftraege.ts
 }
 
 let nextBuildingId = 1;
 
-export function createBuildingInstance(
-  typeId: string,
-  x: number,
-  y: number,
-  preBuilt = false,
-): BuildingInstance {
+export function createBuildingInstance(typeId: string): BuildingInstance {
   return {
     id: nextBuildingId++,
     typeId,
-    x,
-    y,
-    built: preBuilt,
-    buildProgress: 0,
-    assignedWorkerIds: [],
-    assignedBuilderId: null,
+    built: true,
     activeRecipeId: null,
     productionTimer: 0,
     producing: false,
-    localInputBuffer: {},
-    localOutputBuffer: {},
-    connected: false,
-    waterSupplied: false,
     tier: 1,
-    synergySpeedMult: 1.0,
-    specialistId: null,
-    upgrading: false,
-    upgradeProgress: 0,
-    upgradeId: null,
-    eventPaused: false,
     pendingCraft: false,
     auftraege: [],
   };

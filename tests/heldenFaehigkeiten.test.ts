@@ -13,7 +13,7 @@ function lauf(helden: { klasse: string; atk?: number }[]): {
 } {
   const state = createNewGameState();
   const fighters = helden.map((h, i) =>
-    createGuildFighter(i + 1, h.klasse, `Held ${i + 1}`, { ...STARK, atk: h.atk ?? STARK.atk }));
+    createGuildFighter(h.klasse, `Held ${i + 1}`, { ...STARK, atk: h.atk ?? STARK.atk }));
   state.fighters.push(...fighters);
   const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
   expect(system.startExpedition(state, 'ruins_crypts', fighters.map(f => f.id))).toBeTruthy();

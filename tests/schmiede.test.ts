@@ -15,7 +15,7 @@ import {
 } from '../src/systems/Schmiede';
 import { musterStand, spieleRoute } from '../src/systems/Musterlauf';
 import { richteProbespielEin } from '../src/systems/Probespiel';
-import { placeStartingLayout, createStartingCitizens } from '../src/scenes/CityStartingLayout';
+import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
 import {
   HAUPTWERT, MAX_SCHMIEDE_STUFE, SCHMIEDE_MATERIALIEN, grundMenge, materialFuerRoute,
 } from '../src/data/schmiede';
@@ -33,7 +33,7 @@ const WYRM = getSet('wyrm')!;
 
 /** Ein Held mit dem ganzen Set (oder ohne Ausrüstung) */
 function held(setId: string | null = null): GuildFighter {
-  const f = createGuildFighter(0, 'berserker', setId ? `Träger ${setId}` : 'Ohne', { ...GRUND });
+  const f = createGuildFighter('berserker', setId ? `Träger ${setId}` : 'Ohne', { ...GRUND });
   if (setId) for (const id of setTeilIds(getSet(setId)!)) f.gear[ITEM_DEFS[id].gearSlot!] = id;
   return f;
 }
@@ -152,7 +152,8 @@ describe('Schmiede: Kosten und Schmieden', () => {
 
   test('die Schmiede in der Stadt spart Gold, 10 % je Ausbaustufe, nur fertig gebaut', () => {
     const state = reich();
-    const schmiede = createBuildingInstance('SMITHY', 0, 0, false);
+    const schmiede = createBuildingInstance('SMITHY');
+    schmiede.built = false;
     state.buildings.push(schmiede);
     expect(schmiedeRabatt(state)).toBe(0);
     schmiede.built = true;
@@ -361,7 +362,6 @@ describe('Schmiede: Spielstand, Probespiel und Anzeige', () => {
   test('Probespiel: das Wyrm-Set mit doppelter Klinge und Glutkern für drei Stufen', () => {
     const state = createNewGameState();
     placeStartingLayout(state);
-    createStartingCitizens(state);
     richteProbespielEin(state);
     expect(kannEinschmelzen(state, KLINGE)).toBe(true);
     expect([schmieden(state, KLINGE), schmieden(state, KLINGE), schmieden(state, KLINGE)]).toEqual([1, 2, 3]);

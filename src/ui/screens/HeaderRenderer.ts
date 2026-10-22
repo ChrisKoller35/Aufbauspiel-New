@@ -13,19 +13,23 @@ const HINWEIS_MS = 4000;
 let hinweisTimer: number | null = null;
 /** Kommt ein zweiter Hinweis so kurz nach dem ersten (z. B. ein Erfolg nach «Zettel erledigt»), steht er daneben */
 const ZUSAMMEN_MS = 600;
-let letzterHinweis = { text: '', zeit: 0 };
+let letzterHinweis = { text: '', zeit: 0, ende: 0 };
 
 /**
- * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup). Am Handy steht er an der
+ * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup), nach `dauerMs`
+ * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Am Handy steht er an der
  * Stelle des Logos (erfolge.css, .hdr-mit-hinweis): Die Kopfzeile wird nicht höher, kein Knopf rutscht weg.
+ * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist.
  */
-export function zeigeKopfHinweis(text: string): void {
+export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
   if (typeof document === 'undefined') return;
   const jetzt = Date.now();
+  let ende = jetzt + dauerMs;
   if (hinweisTimer !== null && jetzt - letzterHinweis.zeit < ZUSAMMEN_MS && !letzterHinweis.text.includes(text)) {
     text = `${letzterHinweis.text} · ${text}`;
+    ende = Math.max(ende, letzterHinweis.ende);
   }
-  letzterHinweis = { text, zeit: jetzt };
+  letzterHinweis = { text, zeit: jetzt, ende };
   const hdrs = document.querySelectorAll('.hdr');
   for (let i = 0; i < hdrs.length; i++) {
     const hdr = hdrs[i] as HTMLElement;
@@ -44,7 +48,7 @@ export function zeigeKopfHinweis(text: string): void {
     document.querySelectorAll('.hdr-note').forEach(n => n.remove());
     document.querySelectorAll('.hdr-mit-hinweis').forEach(h => h.classList.remove('hdr-mit-hinweis'));
     hinweisTimer = null;
-  }, HINWEIS_MS);
+  }, ende - jetzt);
 }
 
 beiAuftragFertig((b, recipe) => {
@@ -112,6 +116,27 @@ if (typeof document !== 'undefined') {
   });
 }
 
+/** Was die Kopfzeile aus dem Lager zeigt: Gold und die Beute der Werkstätten, dazu der Proviant. */
+const VORRAT_ZEILE: { itemId: string; zeichen: string }[] = [
+  { itemId: 'gold', zeichen: '\uD83E\uDE99' },
+  { itemId: 'iron_scrap', zeichen: '\u2699\uFE0F' },
+  { itemId: 'crystal_shard', zeichen: '\uD83D\uDC8E' },
+  { itemId: 'bread', zeichen: '\uD83C\uDF5E' },
+  { itemId: 'healing_potion', zeichen: '\uD83E\uDDEA' },
+];
+
+/**
+ * Inhalt der Vorrats-Anzeige (.res) in jeder Kopfzeile: Gold, Eisenschrott, Kristallsplitter,
+ * Brot, Heiltrank und der Tag. main.ts schreibt sie jede Sekunde neu.
+ */
+export function vorratsZeileHtml(state: GameState): string {
+  const vorrat = VORRAT_ZEILE
+    .map(({ itemId, zeichen }) => `<span>${zeichen} ${(state.globalStock[itemId] ?? 0).toLocaleString('de')}</span>`)
+    .join('\n        ');
+  return `${vorrat}
+        <span style="color:var(--mut)">Tag ${state.day}</span>`;
+}
+
 /**
  * Renders the standard header bar with logo, optional back button, and resource display.
  */
@@ -120,14 +145,6 @@ export function renderHeader(
   backTarget?: ScreenId,
   currentLabel?: string,
 ): string {
-  const gold = state.globalStock['gold'] ?? 0;
-  const wood = state.globalStock['wood'] ?? 0;
-  const stone = state.globalStock['stone'] ?? 0;
-  const bread = state.globalStock['bread'] ?? 0;
-  const grain = state.globalStock['grain'] ?? 0;
-  const iron = state.globalStock['iron_scrap'] ?? 0;
-  const gems = state.globalStock['crystal_shard'] ?? 0;
-
   const backBtn = backTarget
     ? `<button class="btn-back hdr-back" data-nav="${backTarget}">← Zurück</button>`
     : '';
@@ -150,14 +167,7 @@ export function renderHeader(
       ${note}
       <div class="hdr-space"></div>
       <div class="res">
-        <span>\uD83E\uDE99 ${gold.toLocaleString('de')}</span>
-        <span>\uD83E\uDEB5 ${wood}</span>
-        <span>\uD83E\uDEA8 ${stone}</span>
-        <span>\uD83C\uDF5E ${bread}</span>
-        <span>\uD83C\uDF3E ${grain}</span>
-        <span>\u2699\uFE0F ${iron}</span>
-        <span>\uD83D\uDC8E ${gems}</span>
-        <span style="color:var(--mut)">Tag ${state.day}</span>
+        ${vorratsZeileHtml(state)}
       </div>
       <button type="button" class="hdr-erfolge" data-nav="achievements" title="Erfolge" aria-label="${erfolgKnopfName(ungeseheneErfolge(state))}">${erfolgKnopfInhalt(ungeseheneErfolge(state))}</button>
     </div>`;

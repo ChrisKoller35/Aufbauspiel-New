@@ -104,7 +104,7 @@ export class GearSystem {
 
   /**
    * Calculate effective stats = base + gear bonuses from all 4 slots + set bonuses (DungeonSets)
-   * + Werte des Wegs (Spezialisierung, nicht von Reparaturen betroffen).
+   * + Werte des Wegs (Spezialisierung).
    * stufen: Stufen der Schmiede (Schmiede.schmiedeStufen); verbesserte Set-Teile zählen mit ihren
    * höheren Werten, ein Meisterset mit doppeltem Zwei-Teile-Bonus. Ohne sie: Grundwerte.
    */
@@ -112,20 +112,18 @@ export class GearSystem {
     const base = fighter.baseStats;
     const stats: FighterStats = { ...base, hp: base.maxHp, maxHp: base.maxHp };
 
-    // Apply gear bonuses (halved if gear needs repair)
-    const gearMult = fighter.gearNeedsRepair ? 0.5 : 1.0;
-    const add = (bonus: NonNullable<ItemDef['statBonuses']> & { critMult?: number }, mult = gearMult): void => {
-      if (bonus.atk) stats.atk += Math.floor(bonus.atk * mult);
-      if (bonus.def) stats.def += Math.floor(bonus.def * mult);
+    const add = (bonus: NonNullable<ItemDef['statBonuses']> & { critMult?: number }): void => {
+      if (bonus.atk) stats.atk += Math.floor(bonus.atk);
+      if (bonus.def) stats.def += Math.floor(bonus.def);
       if (bonus.hp) {
-        const hpBonus = Math.floor(bonus.hp * mult);
+        const hpBonus = Math.floor(bonus.hp);
         stats.maxHp += hpBonus;
         stats.hp += hpBonus;
       }
-      // Tempo-Boni sind Bruchteile (−0.1 bis +0.2): nicht abrunden, sonst wird +0.1 zu 0 und −0.05 zu −1
-      if (bonus.spd) stats.spd = Math.round((stats.spd + bonus.spd * mult) * 100) / 100;
-      if (bonus.critChance) stats.critChance += bonus.critChance * mult;
-      if (bonus.critMult) stats.critMult = Math.round((stats.critMult + bonus.critMult * mult) * 100) / 100;
+      // Tempo-Boni sind Bruchteile (−0.1 bis +0.2): Rundungsrauschen wegrunden, nicht abrunden
+      if (bonus.spd) stats.spd = Math.round((stats.spd + bonus.spd) * 100) / 100;
+      if (bonus.critChance) stats.critChance += bonus.critChance;
+      if (bonus.critMult) stats.critMult = Math.round((stats.critMult + bonus.critMult) * 100) / 100;
     };
     for (const slot of ['mainHand', 'offHand', 'armor', 'trinket'] as const) {
       const itemId = fighter.gear[slot];
@@ -134,7 +132,7 @@ export class GearSystem {
       if (werte) add(werte);
     }
     add(setBonusWerte(fighter.gear, stufen));
-    add(wegWerte(fighter), 1);
+    add(wegWerte(fighter));
 
     return stats;
   }

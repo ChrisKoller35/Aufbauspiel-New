@@ -1,49 +1,47 @@
 import { describe, it, expect } from 'vitest';
 import {
   stadtweg, aktuelleStufe, naechsteStufe, aufstiegStand, aufstiegBereit, steigeAuf, belohnungsZeilen,
-  stadtSteuerProzent, besiegteBosse, neuesKapitel, kapitelGelesen, herzsteinZeilen, setzeHerzsteinEin, herzOffen,
+  besiegteBosse, neuesKapitel, kapitelGelesen, herzsteinZeilen, setzeHerzsteinEin, herzOffen,
 } from './Stadtweg';
-import { EconomySystem } from './EconomySystem';
 import { STADTSTUFEN, HERZSTEINE, HOECHSTE_STADTSTUFE, stufeDef } from '../data/stadtstufen';
+import { kaufpreis, rabattProzent } from '../data/haendler';
 import { BUILDING_DEFS } from '../data/buildings';
 import { ENEMY_DEFS } from '../data/enemies';
+import { ITEM_DEFS } from '../data/items';
 import { ROUTE_DEFS } from '../data/routes';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance } from '../models/Building';
-import { createCitizen } from '../models/Citizen';
+import { createGuildFighter } from '../models/GuildRoster';
 
 function bauen(state: GameState, typeId: string): void {
-  const b = createBuildingInstance(typeId, 0, 0, true);
-  b.connected = true;
-  state.buildings.push(b);
+  state.buildings.push(createBuildingInstance(typeId));
 }
 
-function bewohner(state: GameState, anzahl: number): void {
-  while (state.citizens.length < anzahl) state.citizens.push(createCitizen('IDLE'));
+function helden(state: GameState, anzahl: number): void {
+  const werte = { hp: 30, maxHp: 30, atk: 5, def: 2, spd: 1, critChance: 0, critMult: 1.5 };
+  while (state.fighters.length < anzahl) state.fighters.push(createGuildFighter('guardian', `Held ${state.fighters.length + 1}`, werte));
 }
 
-/** Spielstand, der alles für den Weiler erfüllt. */
+/** Spielstand, der alles für den Weiler erfüllt: Schmiede, ein Sieg, 50 Gold für die Abgabe von 40. */
 function bereitFuerWeiler(): GameState {
   const state = createNewGameState();
-  bauen(state, 'QUARRY');
-  bauen(state, 'FARM_GRAIN');
+  bauen(state, 'SMITHY');
   state.statistics.total_victories = 1;
-  state.globalStock.wood = 50;
-  state.globalStock.gold = 10;
+  state.globalStock.gold = 50;
   return state;
 }
 
 describe('Stadtweg: Daten', () => {
-  it('sieben Stufen in Reihenfolge, Grenzen wachsen nie zurück', () => {
+  it('sieben Stufen in Reihenfolge, Werkstatt-Grenze und Rabatt wachsen nie zurück', () => {
     expect(HOECHSTE_STADTSTUFE).toBe(7);
     STADTSTUFEN.forEach((s, i) => {
       expect(s.stufe).toBe(i + 1);
       expect(s.kapitel.length).toBeGreaterThan(100);
+      expect(Object.keys(s.grenzen)).toEqual(['werkstatt']);
       if (i === 0) return;
-      const vorher = STADTSTUFEN[i - 1].grenzen;
-      expect(s.grenzen.wohnen).toBeGreaterThanOrEqual(vorher.wohnen);
-      expect(s.grenzen.werkstatt).toBeGreaterThanOrEqual(vorher.werkstatt);
-      expect(s.grenzen.handel).toBeGreaterThanOrEqual(vorher.handel);
+      const vorher = STADTSTUFEN[i - 1];
+      expect(s.grenzen.werkstatt).toBeGreaterThanOrEqual(vorher.grenzen.werkstatt);
+      expect(s.haendlerRabatt).toBeGreaterThanOrEqual(vorher.haendlerRabatt);
       expect(s.aufgaben.length).toBeGreaterThan(0);
     });
   });
@@ -60,11 +58,13 @@ describe('Stadtweg: Daten', () => {
     }
   });
 
-  it('Bewohner-Aufgaben passen ins Wohnviertel, das die Stufe davor erlaubt', () => {
-    for (const s of STADTSTUFEN) {
-      const plaetze = 6 * stufeDef(s.stufe - 1).grenzen.wohnen;
-      for (const a of s.aufgaben) {
-        if (a.art === 'bewohner') expect(a.anzahl, s.name).toBeLessThanOrEqual(plaetze);
+  it('Abgaben, Geschenke und Herzsteine verlangen nur Gold und Beute aus den Dungeons', () => {
+    const erlaubt = new Set(['gold', 'iron_scrap', 'crystal_shard']);
+    const kosten = [...STADTSTUFEN.flatMap(s => [s.abgabe, s.geschenk]), ...HERZSTEINE.map(h => h.kosten)];
+    for (const k of kosten) {
+      for (const id of Object.keys(k)) {
+        expect(ITEM_DEFS[id], id).toBeDefined();
+        expect(erlaubt.has(id), id).toBe(true);
       }
     }
   });
@@ -80,21 +80,33 @@ describe('Stadtweg: aufsteigen', () => {
     expect(neuesKapitel(state)).toBe(false);
   });
 
-  it('ältere Spielstände ohne Stadtweg beginnen am Lagerfeuer', () => {
+  it('ein Spielstand ohne Stadtweg beginnt am Lagerfeuer', () => {
     const state = createNewGameState();
     delete state.stadtweg;
     expect(aktuelleStufe(state).stufe).toBe(1);
     expect(stadtweg(state)).toEqual({ stufe: 1, herzsteine: [], gelesen: 0 });
   });
 
-  it('zeigt Aufgaben mit Fortschritt und zählt die Abgabe als Schritt', () => {
+  it('zeigt Aufgaben mit Fortschritt, dem Weg zum Bauplan und zählt die Abgabe als Schritt', () => {
     const state = createNewGameState();
     const stand = aufstiegStand(state)!;
-    expect(stand.aufgaben.map(a => a.text)).toEqual(['Steinbruch steht', 'Getreidefarm steht', 'Eine Expedition gewonnen']);
-    expect(stand.aufgaben[2]).toMatchObject({ erledigt: false, ist: 0, soll: 1 });
-    expect(stand.gesamt).toBe(4);
-    expect(stand.erledigt).toBe(1); // 80 Holz zum Start reichen für die Abgabe
+    expect(stand.aufgaben.map(a => a.text)).toEqual(['Schmiede steht', 'Eine Expedition gewonnen']);
+    expect(stand.aufgaben[0].hinweis).toContain('Bauplan beim Händler');
+    expect(stand.aufgaben[1]).toMatchObject({ erledigt: false, ist: 0, soll: 1 });
+    expect(stand.gesamt).toBe(3);
+    expect(stand.erledigt).toBe(1); // 100 Gold zum Start reichen für die Abgabe von 40
     expect(stand.bereit).toBe(false);
+  });
+
+  it('die Helden-Aufgabe zählt die Helden der Gilde', () => {
+    const state = createNewGameState();
+    state.stadtweg!.stufe = 2;
+    const zeile = () => aufstiegStand(state)!.aufgaben.find(a => a.text.includes('Helden'))!;
+    expect(zeile()).toMatchObject({ text: '2 Helden in der Gilde', erledigt: false, ist: 0, soll: 2 });
+    helden(state, 1);
+    expect(zeile()).toMatchObject({ erledigt: false, ist: 1, soll: 2 });
+    helden(state, 3);
+    expect(zeile()).toMatchObject({ erledigt: true, ist: 2, soll: 2 });
   });
 
   it('Aufstieg zahlt die Abgabe, gibt das Geschenk und ein neues Kapitel', () => {
@@ -104,24 +116,27 @@ describe('Stadtweg: aufsteigen', () => {
     const neu = steigeAuf(state);
     expect(neu?.name).toBe('Weiler');
     expect(state.stadtweg?.stufe).toBe(2);
-    expect(state.globalStock.wood).toBe(10);
-    expect(state.globalStock.gold).toBe(70);
+    expect(state.globalStock.gold).toBe(50 - 40 + 100);
     expect(neuesKapitel(state)).toBe(true);
     expect(steigeAuf(state)).toBeNull(); // Für das Dorf fehlt noch alles
   });
 
-  it('ohne genug Rohstoffe für die Abgabe kein Aufstieg', () => {
+  it('ohne genug Gold für die Abgabe kein Aufstieg', () => {
     const state = bereitFuerWeiler();
-    state.globalStock.wood = 39;
+    state.globalStock.gold = 39;
     expect(aufstiegStand(state)?.abgabeBezahlbar).toBe(false);
     expect(steigeAuf(state)).toBeNull();
     expect(state.stadtweg?.stufe).toBe(1);
   });
 
-  it('Belohnungen in Worten', () => {
-    expect(belohnungsZeilen(stufeDef(2))).toEqual(['60 Gold', 'Wohnviertel bis Stufe 2', 'Kapitel 2 der Stadtchronik']);
-    expect(belohnungsZeilen(stufeDef(4))).toContain('+10 % Steuern');
-    expect(belohnungsZeilen(stufeDef(4))).toContain('Marktplatz und Bank bis Stufe 2');
+  it('Belohnungen in Worten: Geschenk, Rabatt beim Händler, Werkstatt-Stufen, Kapitel', () => {
+    expect(belohnungsZeilen(stufeDef(2))).toEqual(['100 Gold', 'Kapitel 2 der Stadtchronik']);
+    expect(belohnungsZeilen(stufeDef(3))).toContain('Werkstätten bis Stufe 2');
+    expect(belohnungsZeilen(stufeDef(4))).toContain('10 % Rabatt beim Händler');
+    expect(belohnungsZeilen(stufeDef(5))).not.toContain('10 % Rabatt beim Händler'); // gilt schon seit Stufe 4
+    expect(belohnungsZeilen(stufeDef(5))).toContain('Werkstätten bis Stufe 3');
+    expect(belohnungsZeilen(stufeDef(7))).toContain('20 % Rabatt beim Händler');
+    for (const s of STADTSTUFEN) expect(belohnungsZeilen(s).join(' ')).not.toMatch(/Steuer|Wohnviertel|Markt|Bank/);
   });
 
   it('Bosse zählen aus der Gildenstatistik und aus dem Monsterbuch, ohne Doppelte', () => {
@@ -131,26 +146,20 @@ describe('Stadtweg: aufsteigen', () => {
     expect([...besiegteBosse(state)].sort()).toEqual(['boss_crystal_golem', 'boss_elder_treant']);
   });
 
-  it('Stadtrecht: Steuer-Bonus wächst mit den Stufen und wirkt auf die Steuern', () => {
-    const state = createNewGameState();
-    bewohner(state, 10);
-    state.satisfaction = 100;
-    const economy = new EconomySystem();
-    expect(stadtSteuerProzent(state)).toBe(0);
-    expect(economy.steuernProTag(state)).toBe(20);
-    state.stadtweg!.stufe = 4;
-    expect(stadtSteuerProzent(state)).toBe(10);
-    expect(economy.steuerRechnung(state).stadtProzent).toBe(10);
-    expect(economy.steuernProTag(state)).toBe(22);
-    state.stadtweg!.stufe = 7;
-    expect(stadtSteuerProzent(state)).toBe(50);
+  it('Stadtrecht: ab dem Marktflecken gibt der Händler Rabatt, in der Magischen Stadt mehr', () => {
+    expect(rabattProzent(1)).toBe(0);
+    expect(rabattProzent(4)).toBe(10);
+    expect(rabattProzent(7)).toBe(20);
+    expect(kaufpreis('healing_potion', 1)).toBe(10);
+    expect(kaufpreis('healing_potion', 4)).toBe(9);
+    expect(kaufpreis('healing_potion', 7)).toBe(8);
   });
 });
 
 describe('Stadtweg: das Arkane Herz', () => {
   it('Herzsteine erst ab der Grossstadt, mit besiegtem Boss und den Kosten', () => {
     const state = createNewGameState();
-    Object.assign(state.globalStock, { stone: 1000, gold: 1000 });
+    Object.assign(state.globalStock, { iron_scrap: 100, gold: 1000 });
     state.guildStats.bossesDefeatedIds = ['boss_spider_queen'];
     expect(herzOffen(state)).toBe(false);
     expect(setzeHerzsteinEin(state, 'herz_spinne')).toBe(false);
@@ -158,7 +167,7 @@ describe('Stadtweg: das Arkane Herz', () => {
     state.stadtweg!.stufe = 6;
     expect(setzeHerzsteinEin(state, 'herz_hydra')).toBe(false); // Hydra nicht besiegt
     expect(setzeHerzsteinEin(state, 'herz_spinne')).toBe(true);
-    expect(state.globalStock.stone).toBe(850);
+    expect(state.globalStock.iron_scrap).toBe(90);
     expect(state.globalStock.gold).toBe(900);
     expect(setzeHerzsteinEin(state, 'herz_spinne')).toBe(false); // nur einmal
     const zeile = herzsteinZeilen(state).find(z => z.def.id === 'herz_spinne')!;

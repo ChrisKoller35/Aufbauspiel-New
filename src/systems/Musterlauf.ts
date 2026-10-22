@@ -45,7 +45,7 @@ export function musterStand(
   const state = createNewGameState();
   state.rngSeed = startwert;
   const ids = MUSTER_TEAMS[team].helden.map((muster, i) => {
-    const held = createGuildFighter(0, muster.classId, muster.name, musterWerte(muster));
+    const held = createGuildFighter(muster.classId, muster.name, musterWerte(muster));
     held.id = 100 + i;
     held.level = muster.stufe;
     held.xp = totalXpForLevel(muster.stufe);
