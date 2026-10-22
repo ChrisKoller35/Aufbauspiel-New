@@ -220,6 +220,21 @@ describe('Erfolge: ältere Spielstände holen nach, was ihre Daten hergeben', ()
     expect(state.statistics.total_buildings_built).toBe(25);
   });
 
+  test('kaputte oder fehlende Werte machen keinen Zähler kaputt', () => {
+    const state = createNewGameState();
+    state.statistics.total_victories = NaN;
+    state.statistics.saal_sterne = NaN;
+    state.rangliste = { pokale: { gold: 1 } } as unknown as GameState['rangliste'];
+    expect(() => erfolgePruefen(state)).not.toThrow();
+    expect(state.statistics.total_victories).toBe(0);
+    expect(state.statistics.saal_sterne).toBe(0);
+    expect(state.statistics.rangliste_pokale).toBe(1);
+    for (const [key, wert] of Object.entries(state.statistics)) expect(Number.isFinite(wert), key).toBe(true);
+    state.statistics.total_victories = 1;
+    erfolgePruefen(state);
+    expect(state.achievements).toContain('first_victory');
+  });
+
   test('ein neues Spiel bekommt nichts geschenkt', () => {
     const state = createNewGameState();
     erfolgePruefen(state);

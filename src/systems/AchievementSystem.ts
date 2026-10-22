@@ -74,8 +74,10 @@ export function saalSterne(state: GameState): number {
  */
 export function kennzahlenAktualisieren(state: GameState): void {
   const stats = state.statistics ?? (state.statistics = {});
+  // Nur gültige Zahlen: Ein NaN aus einem kaputten Spielstand bliebe sonst für immer stehen
+  const zahl = (wert: number | undefined): number => (Number.isFinite(wert) ? wert! : 0);
   const hoechstens = (key: string, wert: number): void => {
-    stats[key] = Math.max(stats[key] ?? 0, wert);
+    stats[key] = Math.max(zahl(stats[key]), zahl(wert));
   };
 
   const helden = state.fighters ?? [];
@@ -110,7 +112,7 @@ export function kennzahlenAktualisieren(state: GameState): void {
   hoechstens('zettel_erledigt', brett?.erledigt ?? 0);
   hoechstens('saal_prunkstuecke', (brett?.kette?.fertig ?? []).filter(id => kapitel.has(id)).length);
   hoechstens('saal_sterne', saalSterne(state));
-  hoechstens('rangliste_pokale', (pokale ? pokale.gold + pokale.silber + pokale.bronze : 0)
+  hoechstens('rangliste_pokale', zahl(pokale?.gold) + zahl(pokale?.silber) + zahl(pokale?.bronze)
     + (state.rangliste?.offen ?? []).filter(w => w.pokal).length);
   hoechstens('schmiede_hoechste_stufe', Math.min(MAX_SCHMIEDE_STUFE, Math.max(0, ...stufen)));
 
