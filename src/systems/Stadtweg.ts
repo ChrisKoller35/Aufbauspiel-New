@@ -5,7 +5,7 @@
 // ────────────────────────────────────────────────────────────────
 
 import {
-  STADTSTUFEN, HERZSTEINE, HOECHSTE_STADTSTUFE, HERZ_AB_STUFE,
+  HERZSTEINE, HOECHSTE_STADTSTUFE, HERZ_AB_STUFE,
   StadtAufgabe, StadtStufeDef, HerzsteinDef, stufeDef, stadtStufeVon,
 } from '../data/stadtstufen';
 import { ENEMY_DEFS } from '../data/enemies';
@@ -52,7 +52,7 @@ export function besiegteBosse(state: GameState): Set<string> {
 export interface AufgabenZeile {
   text: string;
   erledigt: boolean;
-  /** Fortschritt bei Zählaufgaben (z. B. 7 von 10 Bewohnern). */
+  /** Fortschritt bei Zählaufgaben (z. B. 2 von 3 Helden). */
   ist?: number;
   soll?: number;
   /** Kleiner Hinweis, wie man hinkommt (z. B. was ein Gebäude noch sperrt). */
@@ -74,8 +74,8 @@ function aufgabenZeile(state: GameState, a: StadtAufgabe): AufgabenZeile {
         hinweis: gesperrt.length ? `noch gesperrt: ${gesperrt.join(', ')}` : undefined,
       };
     }
-    case 'bewohner':
-      return zaehl(`${a.anzahl} Bewohner`, state.citizens.length, a.anzahl);
+    case 'helden':
+      return zaehl(`${a.anzahl} Helden in der Gilde`, state.fighters.length, a.anzahl);
     case 'siege':
       return zaehl(a.anzahl === 1 ? 'Eine Expedition gewonnen' : `${a.anzahl} Expeditionen gewonnen`,
         state.statistics?.total_victories ?? 0, a.anzahl);
@@ -99,7 +99,7 @@ export function hatGenug(state: GameState, kosten: Record<string, number>): bool
   return Object.entries(kosten).every(([res, qty]) => (state.globalStock[res] ?? 0) >= qty);
 }
 
-/** «40 Holz · 30 Stein» mit dem, was im Lager liegt. */
+/** «80 Gold · 10 Eisenschrott» mit dem, was im Lager liegt. */
 export function abgabeZeilen(state: GameState, kosten: Record<string, number>): { text: string; genug: boolean }[] {
   return Object.entries(kosten).map(([res, qty]) => {
     const da = Math.floor(state.globalStock[res] ?? 0);
@@ -138,10 +138,8 @@ export function belohnungsZeilen(def: StadtStufeDef): string[] {
   const zeilen: string[] = [];
   const vorher = stufeDef(def.stufe - 1);
   for (const [res, qty] of Object.entries(def.geschenk)) zeilen.push(`${qty} ${itemName(res)}`);
-  if (def.steuerProzent > 0) zeilen.push(`+${def.steuerProzent} % Steuern`);
-  if (def.grenzen.wohnen > vorher.grenzen.wohnen) zeilen.push(`Wohnviertel bis Stufe ${def.grenzen.wohnen}`);
+  if (def.haendlerRabatt > vorher.haendlerRabatt) zeilen.push(`${def.haendlerRabatt} % Rabatt beim Händler`);
   if (def.grenzen.werkstatt > vorher.grenzen.werkstatt) zeilen.push(`Werkstätten bis Stufe ${def.grenzen.werkstatt}`);
-  if (def.grenzen.handel > vorher.grenzen.handel) zeilen.push(`Marktplatz und Bank bis Stufe ${def.grenzen.handel}`);
   zeilen.push(...(def.extra ?? []));
   zeilen.push(`Kapitel ${def.stufe} der Stadtchronik`);
   return zeilen;
@@ -159,12 +157,6 @@ export function steigeAuf(state: GameState): StadtStufeDef | null {
   }
   stadtweg(state).stufe = stand.ziel.stufe;
   return stand.ziel;
-}
-
-/** Steuer-Bonus aller erreichten Stadtstufen in Prozent. */
-export function stadtSteuerProzent(state: GameState): number {
-  const stufe = stadtStufeVon(state);
-  return STADTSTUFEN.filter(s => s.stufe <= stufe).reduce((sum, s) => sum + s.steuerProzent, 0);
 }
 
 // ── Stadtchronik ────────────────────────────────────────────────

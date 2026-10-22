@@ -2,9 +2,10 @@
 // Ein Musterspiel spielt mit den Systemen des Spiels (Expeditionen, Beute, Gildenrang,
 // Auftragsbrett, Rangliste, Schmiede, Ausbau, Stadtweg, Tageswechsel), bis jeder Erfolg
 // freigeschaltet ist. Abgekürzt wird nur, was Zeit kostet: Die drei Helden sind sehr stark
-// (ihre Stärke ist eine Frage der Eichung, nicht der Regeln), und Rohstoffe für Bauten,
-// Ausbauten und Abgaben kommen dazu, als hätten die Werkstätten sie hergestellt. Dazu die
-// Obergrenzen, die die Daten setzen (z. B. höchstens 30 neue Bewohner).
+// (ihre Stärke ist eine Frage der Eichung, nicht der Regeln), und Gold und Beute für Bauten,
+// Ausbauten und Abgaben kommen dazu, als hätten die Dungeons sie gebracht; Baupläne des
+// Händlers liegen im Lager, als wären sie gekauft. Dazu die Obergrenzen, die die Daten setzen
+// (z. B. vier Werkstätten, Werkstatt-Stufe 3).
 // ────────────────────────────────────────────────────────────────
 
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -13,6 +14,7 @@ import { createGuildFighter } from '../src/models/GuildRoster';
 import { createBuildingInstance } from '../src/models/Building';
 import { ACHIEVEMENT_DEFS, SAAL_SOCKEL } from '../src/data/achievements';
 import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../src/data/buildings';
+import { BAUPLAN_PREISE } from '../src/data/haendler';
 import { CLASS_DEFS } from '../src/data/classes';
 import { STARTING_CLASSES } from '../src/data/classUnlocks';
 import { DUNGEON_GRAPH, ROUTE_DEFS, getRouteBauplan } from '../src/data/routes';
@@ -25,12 +27,10 @@ import { ENEMY_DEFS } from '../src/data/enemies';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
-import { EconomySystem } from '../src/systems/EconomySystem';
-import { PeopleSystem } from '../src/systems/PeopleSystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { besitz, getrageneSets, setBeute } from '../src/systems/DungeonSets';
 import { materialFuerTeil, schmiedeBeute, schmiedeFehlt, schmiedeKosten, schmiedeStufe, schmieden } from '../src/systems/Schmiede';
-import { ausbauen, ausbauInfo, maxStufe, PLAETZE_PRO_STUFE, wohnKapazitaet } from '../src/systems/Ausbau';
+import { ausbauen, ausbauInfo, maxStufe, MAX_STUFE_WERKSTATT } from '../src/systems/Ausbau';
 import { brettStand, istSpielbar, laufendesKapitel, liefern, saalKapitel, splitterEinloesen } from '../src/systems/Auftragsbrett';
 import { belohnungenAbholen, TAG_MS } from '../src/systems/Rangliste';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
@@ -39,7 +39,7 @@ import { aufstiegStand, setzeHerzsteinEin, steigeAuf } from '../src/systems/Stad
 import { kannWegWaehlen, waehleWeg } from '../src/systems/Spezialisierung';
 import { erfolgePruefen, saalSterne } from '../src/systems/AchievementSystem';
 import { bossTrophaeen, saalGlanz } from '../src/systems/Trophaeensaal';
-import { createStartingCitizens, placeStartingLayout, STARTING_BUILDING_TYPES } from '../src/scenes/CityStartingLayout';
+import { placeStartingLayout, STARTING_BUILDING_TYPES } from '../src/scenes/CityStartingLayout';
 
 /** Montag, 19. Oktober 2026, 9 Uhr: Auftragsbrett (Tage) und Rangliste (Wochen) gehen nach dieser Uhr */
 const START = new Date(2026, 9, 19, 9, 0).getTime();
@@ -68,7 +68,7 @@ const NEUBAUTEN = BUILD_MENU_ORDER.filter(id => !STARTING_BUILDING_TYPES.include
 /** Gebäude, die zum Start stehen oder gebaut werden können */
 const ALLE_BAUTEN = [...new Set([...STARTING_BUILDING_TYPES, ...BUILD_MENU_ORDER])];
 
-/** Rohstoffe, als hätten die Werkstätten sie hergestellt */
+/** Gold und Beute, als hätten die Dungeons sie gebracht */
 function nachfuellen(state: GameState, kosten: Record<string, number>): void {
   for (const [id, n] of Object.entries(kosten)) state.globalStock[id] = Math.max(state.globalStock[id] ?? 0, n);
 }
@@ -101,18 +101,20 @@ function expedition(state: GameState, system: ExpeditionSystem, routeId: string,
   erfolgePruefen(state, { hinweis: false });
 }
 
-/** Bauen wie BuildingsScreen.executeBuy: jede Art einmal, wenn nichts sie mehr sperrt (Gildenrang, Bauplan, Vorgänger) */
+/**
+ * Bauen wie im Gebäude-Menü: jede Art einmal, wenn nichts sie mehr sperrt (Gildenrang, Bauplan).
+ * Einen Bauplan, den der Händler führt, hat die Gilde gekauft; Boss-Baupläne bringt expedition().
+ */
 function bauen(state: GameState): void {
   for (const typeId of NEUBAUTEN) {
     const def = BUILDING_DEFS[typeId];
+    const bauplan = def.freischaltung.bauplan;
+    if (bauplan && bauplan in BAUPLAN_PREISE && !dasGebaeude(state, typeId)) nachfuellen(state, { [bauplan]: 1 });
     if (dasGebaeude(state, typeId) || freischaltHinweise(state, typeId).length > 0) continue;
     nachfuellen(state, def.buildCost);
     for (const [id, n] of Object.entries(def.buildCost)) state.globalStock[id] -= n;
-    if (def.freischaltung.bauplan) state.globalStock[def.freischaltung.bauplan] -= 1;
-    const b = createBuildingInstance(typeId, 0, 0, true);
-    if (def.recipes.length > 0) b.activeRecipeId = def.recipes[0];
-    b.connected = true;
-    state.buildings.push(b);
+    if (bauplan) state.globalStock[bauplan] -= 1;
+    state.buildings.push(createBuildingInstance(typeId));
     state.statistics.total_buildings_built = (state.statistics.total_buildings_built ?? 0) + 1;
   }
 }
@@ -215,17 +217,15 @@ function fehlendeErfolge(state: GameState): string[] {
 /**
  * Das Musterspiel: an jedem Tag (echte Tage, für Auftragsbrett und Rangliste) erst die Stadt
  * (bauen, ausbauen, aufsteigen), dann Helden, Sets, Schmiede, Zettel, sechs Expeditionen
- * und fünf Tageswechsel im Spiel (ein Spieltag dauert 30 Sekunden).
+ * und fünf Tageswechsel im Spiel (ein Spieltag dauert 30 Sekunden; main.ts zählt den Tag hoch
+ * und prüft die Erfolge).
  */
 function musterspiel(): { state: GameState; expeditionen: number; tage: number } {
   const state = createNewGameState();
   state.rngSeed = 4711;
   placeStartingLayout(state);
-  createStartingCitizens(state);
   const gear = new GearSystem();
   const system = new ExpeditionSystem(gear, new ProvisionSystem());
-  const economy = new EconomySystem();
-  const people = new PeopleSystem();
   const trupp = STARTING_CLASSES.map(klasse => {
     const held = createGuildFighter(0, klasse, CLASS_DEFS[klasse].name, { ...STARK });
     state.fighters.push(held);
@@ -255,9 +255,8 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
       expeditionen++;
     }
     for (let i = 0; i < 5; i++) {
-      nachfuellen(state, { bread: 10 });
-      economy.dayTick(state);
-      people.dayTick(state);
+      state.day++;
+      erfolgePruefen(state);
     }
   }
   erfolgePruefen(state);
@@ -280,28 +279,6 @@ describe('Erfolge: mit den echten Regeln erreichbar', () => {
     expect(saalSterne(state)).toBe(glanz.sterne);
     expect(glanz.max).toBe(3 * SAAL_SOCKEL);
   }, 30_000);
-
-  test('Wachsende Stadt: höchstens 30 neue Bewohner, darum 25 statt 50', () => {
-    const state = createNewGameState();
-    placeStartingLayout(state);
-    createStartingCitizens(state);
-    state.stadtweg = { stufe: HOECHSTE_STADTSTUFE, herzsteine: [], gelesen: HOECHSTE_STADTSTUFE };
-    ausbauenWasGeht(state);
-    // Ein Wohnviertel, jede Art nur einmal: Plätze auf der höchsten Stufe minus die Bewohner vom Start
-    expect(NEUBAUTEN.some(id => BUILDING_DEFS[id].housing)).toBe(false);
-    const plaetze = wohnKapazitaet(state);
-    expect(plaetze).toBe(maxStufe('HOUSE_T1') * PLAETZE_PRO_STUFE);
-    const people = new PeopleSystem();
-    for (let i = 0; i < 100; i++) {
-      nachfuellen(state, { bread: 10 });
-      people.dayTick(state);
-    }
-    const geboren = state.statistics.total_citizens_born ?? 0;
-    expect(geboren).toBe(plaetze - 6);
-    const ziel = ACHIEVEMENT_DEFS.find(d => d.zaehler === 'total_citizens_born')!.ziel;
-    expect(ziel).toBeLessThanOrEqual(geboren);
-    expect(50).toBeGreaterThan(geboren);
-  });
 });
 
 describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
@@ -311,12 +288,13 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
    */
   function grenzen(): Record<string, number> {
     const helden = Object.keys(CLASS_DEFS).length;
+    const werkstaetten = ALLE_BAUTEN.filter(id => BUILDING_DEFS[id].manualCraft);
     return {
       total_buildings_built: NEUBAUTEN.length + ALLE_BAUTEN.reduce((s, id) => s + maxStufe(id) - 1, 0),
       total_upgrades: ALLE_BAUTEN.reduce((s, id) => s + maxStufe(id) - 1, 0),
-      gebaeude_auf_hoechststufe: ALLE_BAUTEN.filter(id => maxStufe(id) > 1).length,
-      hoechste_wohnstufe: maxStufe('HOUSE_T1'),
-      total_citizens_born: maxStufe('HOUSE_T1') * PLAETZE_PRO_STUFE - 6,
+      werkstaetten: werkstaetten.length,
+      werkstatt_hoechste_stufe: Math.max(...werkstaetten.map(maxStufe)),
+      bauplaene: ALLE_BAUTEN.filter(id => BUILDING_DEFS[id].freischaltung.bauplan).length,
       stadtstufe: HOECHSTE_STADTSTUFE,
       total_days_survived: Infinity,
       gildenrang: GUILD_RANK_DEFS.length,
@@ -353,6 +331,13 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       const grenze = (Array.isArray(d.zaehler) ? d.zaehler : [d.zaehler]).reduce((s, k) => s + g[k], 0);
       expect(d.ziel, d.id).toBeLessThanOrEqual(grenze);
     }
+  });
+
+  test('die vier Werkstätten lassen sich bis Stufe 3 ausbauen, Gildenhaus und Händler sind keine', () => {
+    expect(ALLE_BAUTEN.filter(id => BUILDING_DEFS[id].manualCraft)).toHaveLength(4);
+    expect(grenzen().werkstatt_hoechste_stufe).toBe(MAX_STUFE_WERKSTATT);
+    expect(BUILDING_DEFS.GUILD_HALL.manualCraft).toBeFalsy();
+    expect(BUILDING_DEFS.HAENDLER.manualCraft).toBeFalsy();
   });
 
   test('die Sockel des Saals sind die Kapitel der Kette', () => {

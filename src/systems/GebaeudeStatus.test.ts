@@ -1,179 +1,189 @@
 import { describe, it, expect } from 'vitest';
-import { getGebaeudeStatus, freischaltHinweise } from './GebaeudeStatus';
-import { engpassFuerGebaeude, engpaesseDerStadt } from './EngpassSystem';
+import { getGebaeudeStatus, freischaltHinweise, nachschub, nachschubText } from './GebaeudeStatus';
+import { engpassFuerGebaeude, engpassFuerInstanz, engpaesseDerStadt } from './EngpassSystem';
 import { auftragGeben } from './Auftraege';
+import { ProductionSystem } from './ProductionSystem';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
-import { createCitizen } from '../models/Citizen';
+import { placeStartingLayout } from '../scenes/CityStartingLayout';
 
-function bauen(state: GameState, typeId: string, recipeId?: string): BuildingInstance {
-  const b = createBuildingInstance(typeId, 0, 0, true);
-  b.connected = true;
-  if (recipeId) b.activeRecipeId = recipeId;
+function bauen(state: GameState, typeId: string): BuildingInstance {
+  const b = createBuildingInstance(typeId);
   state.buildings.push(b);
   return b;
 }
 
-function arbeiter(state: GameState, b: BuildingInstance): void {
-  const c = createCitizen('WORKER');
-  c.assignedBuildingId = b.id;
-  b.assignedWorkerIds.push(c.id);
-  state.citizens.push(c);
+/** Neues Spiel wie in main.ts: Gildenhaus und Händler stehen, 100 Gold. */
+function startStadt(): GameState {
+  const state = createNewGameState();
+  placeStartingLayout(state);
+  return state;
 }
 
-describe('GebaeudeStatus', () => {
-  it('ohne Gebäude und ohne Voraussetzung: Bauplatz mit Kosten', () => {
-    const state = createNewGameState();
-    const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
-    expect(s.zustand).toBe('bauplatz');
+describe('GebaeudeStatus: Freischaltung', () => {
+  it('ohne Bauplan gesperrt, mit Hinweis auf den Händler', () => {
+    const state = startStadt();
+    const s = getGebaeudeStatus(state, 'SMITHY');
+    expect(s.zustand).toBe('gesperrt');
     expect(s.anzahl).toBe(0);
     expect(s.stufe).toBe(0);
+    expect(s.hinweise).toEqual(['Bauplan beim Händler (50 Gold)']);
   });
 
-  it('fehlende Voraussetzung: gesperrt mit Hinweis', () => {
-    const state = createNewGameState();
-    const s = getGebaeudeStatus(state, 'MILL_WIND');
-    expect(s.zustand).toBe('gesperrt');
-    expect(s.hinweise?.length).toBeGreaterThan(0);
-  });
-
-  it('Schmiede braucht die Eisenmine, die Eisenmine den Steinbruch', () => {
-    const state = createNewGameState();
-    expect(freischaltHinweise(state, 'IRON_MINE').join(' ')).toContain('Steinbruch');
-    bauen(state, 'QUARRY');
-    expect(freischaltHinweise(state, 'IRON_MINE')).toEqual([]);
-    expect(freischaltHinweise(state, 'SMITHY').join(' ')).toContain('Eisenmine');
-    bauen(state, 'IRON_MINE');
+  it('mit Bauplan im Lager: Bauplatz mit Kosten', () => {
+    const state = startStadt();
+    state.globalStock.bauplan_schmiede = 1;
     expect(freischaltHinweise(state, 'SMITHY')).toEqual([]);
+    const s = getGebaeudeStatus(state, 'SMITHY');
+    expect(s.zustand).toBe('bauplatz');
+    expect(s.text).toBe('50 Gold');
   });
 
-  it('fehlender Bauplan zählt als Sperre', () => {
-    const state = createNewGameState();
-    state.guildStats.rank = 5;
-    for (const id of ['IRON_MINE', 'GUILD_HALL', 'WAREHOUSE', 'MARKETPLACE']) bauen(state, id);
-    expect(freischaltHinweise(state, 'BANK').some(h => h.includes('braucht'))).toBe(true);
-    state.globalStock['bauplan_bank'] = 1;
-    expect(freischaltHinweise(state, 'BANK')).toEqual([]);
+  it('Arkanschmiede braucht Gildenrang 2 und den Bauplan vom Händler oder Kristallgolem', () => {
+    const state = startStadt();
+    expect(freischaltHinweise(state, 'ARCANE_SMITHY')).toEqual([
+      'braucht Gildenrang 2', 'Bauplan beim Händler (150 Gold) oder vom Kristallgolem',
+    ]);
+    state.guildStats.rank = 2;
+    state.globalStock.bauplan_arkanschmiede = 1;
+    expect(freischaltHinweise(state, 'ARCANE_SMITHY')).toEqual([]);
   });
 
-  it('Holzfäller mit Arbeiter läuft und zeigt Ertrag pro Tag', () => {
-    const state = createNewGameState();
-    arbeiter(state, bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1'));
-    const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
-    expect(s.zustand).toBe('laeuft');
-    // Wie die Zeile «Pro Tag»: 2 Holz alle 10 s, wie im Rezept
-    expect(s.text).toBe('+6 Holz / Tag');
-    expect(s.stufe).toBe(1);
-  });
-
-  it('Holzfäller ohne Arbeiter wartet', () => {
-    const state = createNewGameState();
-    bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
-    const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
-    expect(s.zustand).toBe('wartet');
-    expect(s.grund?.art).toBe('kein-arbeiter');
-  });
-
-  it('Stufe 2 mit nur einem Arbeiter: läuft, nennt aber die freien Plätze', () => {
-    const state = createNewGameState();
-    const huette = bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
-    huette.tier = 2;
-    arbeiter(state, huette);
-    const s = getGebaeudeStatus(state, 'LUMBER_CAMP');
-    expect(s.zustand).toBe('laeuft');
-    expect(s.stufe).toBe(2);
-    expect(s.text).toContain('1/2 Arbeiter');
-  });
-
-  it('Wohnviertel: wächst mit Platz und Brot, sonst voll oder kein Brot', () => {
-    const state = createNewGameState();
-    const viertel = bauen(state, 'HOUSE_T1');
-    state.globalStock.bread = 3;
-    for (let i = 0; i < 4; i++) state.citizens.push(createCitizen('IDLE'));
-    expect(getGebaeudeStatus(state, 'HOUSE_T1').zustand).toBe('laeuft');
-
-    state.globalStock.bread = 0;
-    const ohneBrot = getGebaeudeStatus(state, 'HOUSE_T1');
-    expect(ohneBrot.zustand).toBe('wartet');
-    expect(ohneBrot.grund?.art).toBe('kein-brot');
-
-    state.globalStock.bread = 3;
-    for (let i = 0; i < 2; i++) state.citizens.push(createCitizen('IDLE'));
-    const voll = getGebaeudeStatus(state, 'HOUSE_T1');
-    expect(voll.zustand).toBe('bereit');
-    expect(voll.grund?.art).toBe('voll');
-
-    viertel.tier = 2;
-    expect(getGebaeudeStatus(state, 'HOUSE_T1').zustand).toBe('laeuft');
-  });
-
-  it('Marktplatz ohne Arbeiter wartet, mit Arbeiter zeigt er den Steuer-Bonus und den Handel', () => {
-    const state = createNewGameState();
-    const markt = bauen(state, 'MARKETPLACE');
-    expect(getGebaeudeStatus(state, 'MARKETPLACE').zustand).toBe('wartet');
-    arbeiter(state, markt);
-    const s = getGebaeudeStatus(state, 'MARKETPLACE');
-    expect(s.zustand).toBe('bereit');
-    expect(s.text).toBe('+25 % Steuern · Handel: noch 3 Bündel');
+  it('Gildenhaus und Händler stehen von Anfang an: Helden in der Gilde, «Kauft und verkauft.»', () => {
+    const state = startStadt();
+    expect(getGebaeudeStatus(state, 'HAENDLER')).toMatchObject({ zustand: 'offen', text: 'Kauft und verkauft.', anzahl: 1, stufe: 1 });
+    expect(getGebaeudeStatus(state, 'GUILD_HALL')).toMatchObject({ zustand: 'bereit', text: '0 Helden in der Gilde' });
+    expect(engpassFuerGebaeude(state, 'HAENDLER')).toBeNull();
+    expect(engpassFuerGebaeude(state, 'GUILD_HALL')).toBeNull();
   });
 });
 
-describe('EngpassSystem', () => {
-  it('fehlende Zutat nennt Vorrat, Bedarf und das Liefergebäude', () => {
-    const state = createNewGameState();
-    const schmiede = bauen(state, 'SMITHY', 'RCP_IRON_SWORD');
-    arbeiter(state, schmiede);
-    state.globalStock['iron_scrap'] = 0;
-    expect(engpassFuerGebaeude(state, 'SMITHY')).toBeNull(); // ohne Auftrag fehlt nichts
-    auftragGeben(schmiede, 'RCP_IRON_SWORD');
-    const satz = engpassFuerGebaeude(state, 'SMITHY');
-    expect(satz).toContain('0 im Lager, 2 pro Auftrag');
-    expect(satz).toContain('Baue Eisenmine');
-  });
-
-  it('steht das Liefergebäude schon, rät der Satz zum Ausbau', () => {
-    const state = createNewGameState();
-    const schmiede = bauen(state, 'SMITHY', 'RCP_IRON_SWORD');
-    arbeiter(state, schmiede);
-    auftragGeben(schmiede, 'RCP_IRON_SWORD');
-    const mine = bauen(state, 'IRON_MINE', 'RCP_IRON_SCRAP_1');
-    state.globalStock['iron_scrap'] = 0;
-    // Ohne Arbeiter liefert die Mine nicht: das steht da statt des Ausbau-Rats
-    expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('Eisenmine kann gerade nicht liefern: kein Arbeiter.');
-    arbeiter(state, mine);
-    // Am Lagerfeuer erlaubt die Stadt noch keinen Ausbau: der Satz nennt die nötige Stadtstufe
-    expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('erst die Stadtstufe «Dorf»');
-    state.stadtweg!.stufe = 3;
-    expect(engpassFuerGebaeude(state, 'SMITHY')).toContain('baue Eisenmine aus');
-  });
-
-  it('Schmiede mit genug Zutaten wartet nur auf den Auftrag: kein Engpass', () => {
-    const state = createNewGameState();
-    arbeiter(state, bauen(state, 'SMITHY', 'RCP_IRON_SWORD'));
-    state.globalStock['iron_scrap'] = 10;
-    state.globalStock['wood'] = 10;
-    expect(getGebaeudeStatus(state, 'SMITHY').zustand).toBe('bereit');
+describe('GebaeudeStatus: Werkstätten', () => {
+  it('ohne Auftrag ist die Schmiede bereit, kein Engpass', () => {
+    const state = startStadt();
+    bauen(state, 'SMITHY');
+    expect(getGebaeudeStatus(state, 'SMITHY')).toMatchObject({ zustand: 'bereit', text: 'bereit · Auftrag geben', stufe: 1 });
     expect(engpassFuerGebaeude(state, 'SMITHY')).toBeNull();
   });
 
-  it('Engpässe der Stadt: wartende Gebäude zuerst, dann der nächste Bauplatz', () => {
-    const state = createNewGameState();
-    bauen(state, 'LUMBER_CAMP', 'RCP_WOOD_1');
+  it('mit Auftrag und Zutaten läuft sie und zeigt den Fortschritt auf ihrer Stufe', () => {
+    const state = startStadt();
+    const schmiede = bauen(state, 'SMITHY');
+    schmiede.tier = 2;
+    state.globalStock.iron_scrap = 4;
+    auftragGeben(schmiede, 'RCP_IRON_SWORD');
+    expect(getGebaeudeStatus(state, 'SMITHY')).toMatchObject({ zustand: 'laeuft', text: 'Eisenschwert schmieden', fortschritt: 0, stufe: 2 });
+    const production = new ProductionSystem();
+    for (let i = 0; i < 1 + 15; i++) production.update(state, 1);
+    const s = getGebaeudeStatus(state, 'SMITHY');
+    expect(s.zustand).toBe('laeuft');
+    expect(s.fortschritt).toBeCloseTo(15 / 45);
+  });
+
+  it('fehlt Beute, nennt der Engpass Vorrat, Bedarf und die Expedition', () => {
+    const state = startStadt();
+    const schmiede = bauen(state, 'SMITHY');
+    state.globalStock.iron_scrap = 1;
+    auftragGeben(schmiede, 'RCP_IRON_SWORD');
+    const s = getGebaeudeStatus(state, 'SMITHY');
+    expect(s.zustand).toBe('wartet');
+    expect(s.text).toBe('fehlt: Eisenschrott 1/2');
+    expect(s.grund).toEqual({ art: 'zutaten', item: 'iron_scrap', vorrat: 1, bedarf: 2 });
+    expect(engpassFuerGebaeude(state, 'SMITHY'))
+      .toBe('Eisenschrott: 1 im Lager, 2 pro Auftrag. Eisenschrott gibt es als Beute in den Dungeons: schick die Helden auf Expedition.');
+    expect(engpassFuerInstanz(state, schmiede)).toBe(engpassFuerGebaeude(state, 'SMITHY'));
+  });
+
+  it('fehlt Gold, sagt der Engpass, woher Gold kommt', () => {
+    const state = startStadt();
+    const schmiede = bauen(state, 'SMITHY');
+    state.globalStock.iron_scrap = 10;
+    state.globalStock.gold = 5;
+    auftragGeben(schmiede, 'RCP_IRON_SWORD');
+    expect(getGebaeudeStatus(state, 'SMITHY').text).toBe('fehlt: Gold 5/10');
+    expect(engpassFuerGebaeude(state, 'SMITHY'))
+      .toBe('Gold: 5 im Lager, 10 pro Auftrag. Gold bringen Expeditionen, das Auftragsbrett im Gildenhaus und der Händler, der Beute ankauft.');
+  });
+
+  it('fehlt der Kanone die Komponente, hängt es an der Arkanschmiede: Bauplan fehlt', () => {
+    const state = startStadt();
+    const krieg = bauen(state, 'WAR_MACHINE_WORKSHOP');
+    Object.assign(state.globalStock, { iron_scrap: 20, crystal_shard: 20, magitech_component: 0 });
+    auftragGeben(krieg, 'RCP_WAR_CANNON');
+    expect(nachschub(state, 'magitech_component')).toEqual({ kommt: false, item: 'magitech_component', von: 'ARCANE_SMITHY' });
+    expect(nachschubText('magitech_component', nachschub(state, 'magitech_component'))).toBe('Arkanschmiede fehlt');
+    expect(engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP')).toBe(
+      'Magitech-Komponente: 0 im Lager, 2 pro Auftrag. Arkanschmiede ist noch gesperrt. '
+      + 'Bauplan fehlt: Bauplan beim Händler (150 Gold) oder vom Kristallgolem, braucht Gildenrang 2.',
+    );
+    // Mit Bauplan und Rang ist sie baubar
+    state.guildStats.rank = 2;
+    state.globalStock.bauplan_arkanschmiede = 1;
+    expect(engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP'))
+      .toBe('Magitech-Komponente: 0 im Lager, 2 pro Auftrag. Arkanschmiede fehlt noch. Bauen kostet 80 Gold · 5 Eisenschrott · 3 Kristallsplitter.');
+  });
+
+  it('steht die Arkanschmiede, liefert sie zu: die Kanone wartet auf die Komponente, kein Engpass', () => {
+    const state = startStadt();
+    const krieg = bauen(state, 'WAR_MACHINE_WORKSHOP');
+    bauen(state, 'ARCANE_SMITHY');
+    Object.assign(state.globalStock, { iron_scrap: 20, crystal_shard: 20, magitech_component: 0 });
+    auftragGeben(krieg, 'RCP_WAR_CANNON');
+    expect(nachschub(state, 'magitech_component')).toEqual({ kommt: true, item: 'magitech_component', von: 'ARCANE_SMITHY' });
+    expect(getGebaeudeStatus(state, 'ARCANE_SMITHY').text).toBe('Magitech-Komponente für Kriegsmaschinen-Werkstatt');
+    const s = getGebaeudeStatus(state, 'WAR_MACHINE_WORKSHOP');
+    expect(s.zustand).toBe('wartet');
+    expect(s.text).toBe('wartet auf Magitech-Komponente (Arkanschmiede)');
+    expect(engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP')).toBeNull();
+    // Fehlt der Arkanschmiede dafür die Beute, hängt es daran; die Kanone selbst braucht noch mehr Eisen
+    state.globalStock.iron_scrap = 0;
+    expect(nachschubText('magitech_component', nachschub(state, 'magitech_component')))
+      .toBe('dafür fehlt Eisenschrott (Beute aus den Dungeons)');
+    expect(engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP'))
+      .toBe('Eisenschrott: 0 im Lager, 5 pro Auftrag. Eisenschrott gibt es als Beute in den Dungeons: schick die Helden auf Expedition.');
+  });
+
+  it('ist die Arkanschmiede mit anderem beschäftigt, rät der Engpass zu ihrem Ausbau', () => {
+    const state = startStadt();
+    const krieg = bauen(state, 'WAR_MACHINE_WORKSHOP');
+    const arkan = bauen(state, 'ARCANE_SMITHY');
+    Object.assign(state.globalStock, { iron_scrap: 20, crystal_shard: 20, magitech_component: 1 });
+    auftragGeben(arkan, 'RCP_ARCANE_BLADE'); // 300 s, verbraucht die eine Komponente
+    new ProductionSystem().update(state, 1);
+    expect(getGebaeudeStatus(state, 'ARCANE_SMITHY').text).toBe('Arkanklinge schmieden');
+    auftragGeben(krieg, 'RCP_WAR_CANNON');
+    expect(getGebaeudeStatus(state, 'WAR_MACHINE_WORKSHOP').text).toBe('fehlt: Magitech-Komponente 0/2');
+    const satz = engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP');
+    expect(satz).toContain('Arkanschmiede stellt sie her');
+    expect(satz).toContain('Stadtstufe «Dorf»');
+    state.stadtweg!.stufe = 3;
+    expect(engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP')).toContain('baue Arkanschmiede aus');
+  });
+});
+
+describe('Engpässe der Stadt', () => {
+  it('neues Spiel: zuerst der Bauplan der Schmiede beim Händler', () => {
+    const state = startStadt();
     const liste = engpaesseDerStadt(state);
-    expect(liste.length).toBeGreaterThan(0);
-    expect(liste[0].typeId).toBe('LUMBER_CAMP');
-    expect(liste[0].satz).toContain('Holzfällerhütte');
-    expect(liste.some(e => getGebaeudeStatus(state, e.typeId).zustand === 'bauplatz')).toBe(true);
+    expect(liste[0]).toEqual({ typeId: 'SMITHY', satz: 'Schmiede ist noch gesperrt. Bauplan fehlt: Bauplan beim Händler (50 Gold).' });
     expect(liste.length).toBeLessThanOrEqual(3);
   });
 
-  it('volles Wohnviertel wird als Engpass genannt', () => {
-    const state = createNewGameState();
-    bauen(state, 'HOUSE_T1');
-    state.globalStock.bread = 5;
-    for (let i = 0; i < 6; i++) state.citizens.push(createCitizen('IDLE'));
-    const satz = engpaesseDerStadt(state).find(e => e.typeId === 'HOUSE_T1')?.satz ?? '';
-    expect(satz).toContain('voll');
-    expect(satz).toContain('6/6');
+  it('wartende Werkstätten zuerst, dann der nächste Bau', () => {
+    const state = startStadt();
+    const schmiede = bauen(state, 'SMITHY');
+    state.globalStock.iron_scrap = 0;
+    auftragGeben(schmiede, 'RCP_IRON_SWORD');
+    const liste = engpaesseDerStadt(state, 10);
+    expect(liste[0].typeId).toBe('SMITHY');
+    expect(liste[0].satz).toContain('schick die Helden auf Expedition');
+    expect(liste[1].typeId).toBe('HERB_GARDEN');
+    expect(liste[1].satz).toContain('Bauplan beim Händler (50 Gold)');
+  });
+
+  it('alles gebaut und nichts bestellt: keine Engpässe', () => {
+    const state = startStadt();
+    for (const id of ['SMITHY', 'HERB_GARDEN', 'ARCANE_SMITHY', 'WAR_MACHINE_WORKSHOP']) bauen(state, id);
+    expect(engpaesseDerStadt(state)).toEqual([]);
   });
 });

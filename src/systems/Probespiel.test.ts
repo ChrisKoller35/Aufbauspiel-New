@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { createNewGameState, GameState } from '../models/GameState';
-import { placeStartingLayout, createStartingCitizens } from '../scenes/CityStartingLayout';
+import { placeStartingLayout } from '../scenes/CityStartingLayout';
 import { ProbeStufe, istProbespiel, probespielNeu, probespielStufe, richteProbespielEin } from './Probespiel';
 import { SaveSystem, nutzeProbespiel } from './SaveSystem';
 import { istSchmiedbar, schmieden, schmiedeStufe } from './Schmiede';
@@ -8,14 +8,13 @@ import { ITEM_DEFS } from '../data/items';
 import { MUSTER_SETS, MUSTER_TEAMS } from '../data/musterteams';
 import { ROUTE_DEFS, isRouteAvailable, getRouteLockReasons } from '../data/routes';
 import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
-import { BuildingUpgradeSystem } from './BuildingUpgradeSystem';
+import { heldenJeExpedition } from './Ausbau';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 
 /** Neues Spiel wie in main.ts, dann zum Probespiel gemacht (mit `stufe` wie ?probe=sterne oder ?probe=mond). */
 function probespiel(stufe: ProbeStufe = 'neu'): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
-  createStartingCitizens(state);
   richteProbespielEin(state, stufe);
   return state;
 }
@@ -60,7 +59,7 @@ describe('Probespiel', () => {
     expect(state.stadtweg?.stufe).toBe(7);
     expect(state.fighters.map(f => f.classId)).toEqual(MUSTER_TEAMS.gut.helden.map(h => h.classId));
     expect(new Set(state.fighters.map(f => f.id)).size).toBe(4);
-    expect(new BuildingUpgradeSystem().getPartySlots(state)).toBe(4);
+    expect(heldenJeExpedition(state)).toBe(4);
     expect(state.guildStats.guildHallT2).toBe(true);
     for (const f of state.fighters) {
       expect(f.level).toBe(12);
@@ -71,13 +70,17 @@ describe('Probespiel', () => {
     }
   });
 
-  it('Helden sind wie im Heldenhaus keine Bewohner: alle sechs Bewohner bleiben frei für die Arbeit', () => {
+  it('Vorräte zum Bauen und Ausbauen: Gold, Eisenschrott und Kristallsplitter, dazu Proviant', () => {
     const state = probespiel();
-    expect(state.citizens).toHaveLength(6);
-    for (const c of state.citizens) {
-      expect(c.status).toBe('IDLE');
-      expect(c.fighterId).toBeNull();
-    }
+    expect(state.globalStock.gold).toBeGreaterThanOrEqual(3000);
+    expect(state.globalStock.iron_scrap).toBeGreaterThanOrEqual(150);
+    expect(state.globalStock.crystal_shard).toBeGreaterThanOrEqual(30);
+    expect(state.globalStock.bread).toBeGreaterThanOrEqual(30);
+    expect(state.globalStock.healing_potion).toBeGreaterThanOrEqual(10);
+    expect(state.globalStock.power_bread).toBe(5);
+    expect(state.globalStock.wood).toBeUndefined();
+    expect(state.globalStock.stone).toBeUndefined();
+    expect(state.buildings.map(b => b.typeId)).toEqual(['GUILD_HALL', 'HAENDLER']);
   });
 
   it('alle Dungeons bis zum Vulkankern sind offen, darüber wartet der Drachenhort', () => {
@@ -101,7 +104,7 @@ describe('Probespiel', () => {
   it('?probe=sterne: Team «Stark» mit seinen Wegen in Dungeon-Sets auf +3 vor der offenen Sternenschmiede', () => {
     const state = probespiel('sterne');
     expect(state.fighters.map(f => f.name)).toEqual(MUSTER_TEAMS.stark.helden.map(h => h.name));
-    expect(new BuildingUpgradeSystem().getPartySlots(state)).toBe(4);
+    expect(heldenJeExpedition(state)).toBe(4);
     for (const f of state.fighters) {
       expect(f.level).toBe(15);
       expect(f.spezialisierung).toBe(MUSTER_TEAMS.stark.helden.find(h => h.name === f.name)!.weg);

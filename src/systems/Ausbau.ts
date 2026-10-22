@@ -1,43 +1,38 @@
 // ─── Magic City – Ausbau-Stufen ─────────────────────────────────
-// Ein Gebäude je Art: statt ein zweites zu bauen, baut man aus.
-// Stufe N einer Werkstatt hat N Arbeitsplätze und arbeitet so schnell,
-// wie Plätze besetzt sind (genau wie früher N Gebäude mit N Arbeitern,
-// darum bleiben Bewohner die knappe Währung). Das Wohnviertel bekommt
-// je Stufe PLAETZE_PRO_STUFE Plätze, Marktplatz und Bank wirken je
-// besetztem Arbeitsplatz, das Gildenhaus Stufe 2 ist der bestehende
-// Ausbau GUILD_HALL_T2 (4 Helden je Expedition). Der Ausbau ist sofort
-// fertig. Wie weit ausgebaut werden darf, gibt die Stadtstufe vor
+// Ein Gebäude je Art: statt ein zweites zu bauen, baut man aus. Eine
+// Werkstatt auf Stufe N arbeitet N-mal so schnell; der Ausbau kostet
+// Baukosten × Zielstufe und ist sofort fertig. Das Gildenhaus Stufe 2
+// ist der bestehende Ausbau GUILD_HALL_T2 (4 Helden je Expedition).
+// Wie weit eine Werkstatt ausgebaut werden darf, gibt die Stadtstufe vor
 // (data/stadtstufen.ts, wie das Rathaus bei Clash of Clans).
-// Reine Funktionen; Anzeige: BuildingsScreen. Regeln: docs/AUSBAU.md.
+// Reine Funktionen; Anzeige: BuildingsScreen. Regeln: docs/GILDENSTADT.md.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../data/buildings';
 import { RECIPE_DEFS, RecipeDef } from '../data/recipes';
 import { BUILDING_UPGRADE_DEFS } from '../data/buildingUpgrades';
-import { buendelProTag } from '../data/handel';
 import { GrenzArt, stadtStufeFuerAusbau, stadtStufeVon, stufeDef } from '../data/stadtstufen';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 
 export const MAX_STUFE_WERKSTATT = 3;
-export const MAX_STUFE_WOHNEN = 6;
-export const MAX_STUFE_HANDEL = 3;
-export const PLAETZE_PRO_STUFE = 6;
 
 const GILDE_T2 = BUILDING_UPGRADE_DEFS.GUILD_HALL_T2;
 
-/** Höchste Stufe einer Gebäude-Art; 1 = nicht ausbaubar (keine Wirkung vorhanden). */
+/** Werkstatt = Gebäude mit Rezepten (Schmiede, Kräuterküche, Arkanschmiede, Kriegsmaschinen). */
+export function istWerkstatt(typeId: string): boolean {
+  return (BUILDING_DEFS[typeId]?.recipes.length ?? 0) > 0;
+}
+
+/** Höchste Stufe einer Gebäude-Art; 1 = nicht ausbaubar (Händler). */
 export function maxStufe(typeId: string): number {
-  const def = BUILDING_DEFS[typeId];
-  if (!def) return 1;
-  if (def.housing) return MAX_STUFE_WOHNEN;
-  if (def.recipes.length > 0) return MAX_STUFE_WERKSTATT;
+  if (!BUILDING_DEFS[typeId]) return 1;
+  if (istWerkstatt(typeId)) return MAX_STUFE_WERKSTATT;
   if (typeId === 'GUILD_HALL') return GILDE_T2.toTier;
-  if (typeId === 'MARKETPLACE' || typeId === 'BANK') return MAX_STUFE_HANDEL;
   return 1;
 }
 
-/** Stufe eines Gebäudes, immer zwischen 1 und maxStufe (alte Spielstände können abweichen). */
+/** Stufe eines Gebäudes, immer zwischen 1 und maxStufe. */
 export function stufeVon(b: BuildingInstance): number {
   const tier = Number.isFinite(b.tier) ? Math.floor(b.tier) : 1;
   return Math.min(maxStufe(b.typeId), Math.max(1, tier));
@@ -47,12 +42,7 @@ export function stufeVon(b: BuildingInstance): number {
 
 /** Welche Grenze der Stadtstufe für eine Gebäude-Art gilt (null = keine). */
 export function grenzArt(typeId: string): GrenzArt | null {
-  const def = BUILDING_DEFS[typeId];
-  if (!def) return null;
-  if (def.housing) return 'wohnen';
-  if (def.recipes.length > 0) return 'werkstatt';
-  if (typeId === 'MARKETPLACE' || typeId === 'BANK') return 'handel';
-  return null;
+  return istWerkstatt(typeId) ? 'werkstatt' : null;
 }
 
 /** Höchste Stufe, die die Stadtstufe gerade erlaubt (nie über maxStufe). */
@@ -70,30 +60,16 @@ export function fehlendeStadtstufe(state: GameState, b: BuildingInstance): strin
   return stadtStufeFuerAusbau(art, naechste)?.name ?? null;
 }
 
-// ── Arbeitsplätze und Tempo ─────────────────────────────────────
+// ── Tempo ───────────────────────────────────────────────────────
 
-/** Arbeitsplätze eines Gebäudes: Grundwert × Stufe. */
-export function arbeitsplaetze(b: BuildingInstance): number {
-  const slots = BUILDING_DEFS[b.typeId]?.workerSlots ?? 0;
-  return slots > 0 ? slots * stufeVon(b) : 0;
-}
-
-/** Besetzte Arbeitsplätze (nie mehr als vorhanden). */
-export function besetzt(b: BuildingInstance): number {
-  return Math.min(arbeitsplaetze(b), b.assignedWorkerIds?.length ?? 0);
-}
-
-/** Werkstätten arbeiten so vielfach schnell, wie Plätze besetzt sind. */
+/** Eine Werkstatt auf Stufe N arbeitet N-mal so schnell. */
 export function tempoFaktor(b: BuildingInstance): number {
-  const def = BUILDING_DEFS[b.typeId];
-  if (!def || def.recipes.length === 0) return 1;
-  return def.workerSlots > 0 ? Math.max(1, besetzt(b)) : stufeVon(b);
+  return istWerkstatt(b.typeId) ? stufeVon(b) : 1;
 }
 
-/** Dauer eines Produktionszyklus in Sekunden, mit Besetzung und Synergie. */
+/** Dauer eines Produktionszyklus in Sekunden auf der Stufe des Gebäudes. */
 export function zyklusSekunden(b: BuildingInstance, recipe: RecipeDef): number {
-  const synergie = b.synergySpeedMult > 0 ? b.synergySpeedMult : 1;
-  return (recipe.cycleTimeSec * synergie) / tempoFaktor(b);
+  return recipe.cycleTimeSec / tempoFaktor(b);
 }
 
 /** Zyklusdauer des aktiven Rezepts, 0 wenn keines gewählt ist. */
@@ -102,71 +78,42 @@ export function aktiveZyklusSekunden(b: BuildingInstance): number {
   return recipe ? zyklusSekunden(b, recipe) : 0;
 }
 
-/** Wirkung eines Gebäudes ohne Rezepte (Marktplatz, Bank) = besetzte Plätze, 0 wenn es nicht wirkt. */
-export function wirkungsStufe(state: GameState, typeId: string): number {
-  const def = BUILDING_DEFS[typeId];
-  if (!def) return 0;
-  let summe = 0;
-  for (const b of state.buildings) {
-    if (!b || b.typeId !== typeId || !b.built) continue;
-    if (def.requiresConnectivity && !b.connected) continue;
-    summe += def.workerSlots > 0 ? besetzt(b) : stufeVon(b);
-  }
-  return summe;
-}
-
-// ── Wohnen ──────────────────────────────────────────────────────
-
-export function kapazitaetAufStufe(typeId: string, stufe: number): number {
-  const housing = BUILDING_DEFS[typeId]?.housing;
-  if (!housing) return 0;
-  return housing.capacity + PLAETZE_PRO_STUFE * (stufe - 1);
-}
-
-export function hausKapazitaet(b: BuildingInstance): number {
-  return kapazitaetAufStufe(b.typeId, stufeVon(b));
-}
-
-/** Plätze für Bewohner in der ganzen Stadt (fertige, angebundene Wohngebäude). */
-export function wohnKapazitaet(state: GameState): number {
-  let capacity = 0;
-  for (const b of state.buildings) {
-    if (!b || !b.built) continue;
-    const def = BUILDING_DEFS[b.typeId];
-    if (!def?.housing) continue;
-    if (def.requiresConnectivity && !b.connected) continue;
-    capacity += hausKapazitaet(b);
-  }
-  return capacity;
+/** Helden je Expedition: 3, mit dem Gildenhaus auf Stufe 2 vier (GUILD_HALL_T2). */
+export function heldenJeExpedition(state: GameState): number {
+  const grund = BUILDING_DEFS.GUILD_HALL.expeditions?.partySlots ?? 3;
+  const gilde = state.buildings.find(b => b && b.typeId === 'GUILD_HALL' && b.built);
+  if (!gilde || stufeVon(gilde) < GILDE_T2.toTier) return grund;
+  return GILDE_T2.changes.partySlots ?? grund;
 }
 
 // ── Ausbauen ────────────────────────────────────────────────────
 
-/** Kosten für eine Stufe: Baukosten × Stufe; Wohnviertel ab Stufe 3 zusätzlich Stein; Gildenhaus wie GUILD_HALL_T2. */
+/**
+ * Beute je Ausbau-Stufe über der ersten (docs/GILDENSTADT.md, Spalte «Ausbau»: Schmiede 10 / 20
+ * Eisenschrott, Kräuterküche 5 / 10 Grüne Kräuter, Arkanschmiede 5 / 10 Kristallsplitter,
+ * Kriegsmaschinen 10 / 20 Eisenschrott): Stufe 2 einmal, Stufe 3 zweimal.
+ */
+const AUSBAU_BEUTE: Record<string, Record<string, number>> = {
+  SMITHY: { iron_scrap: 10 },
+  HERB_GARDEN: { herb_green: 5 },
+  ARCANE_SMITHY: { crystal_shard: 5 },
+  WAR_MACHINE_WORKSHOP: { iron_scrap: 10 },
+};
+
+/** Kosten für eine Stufe: Gold der Baukosten × Zielstufe plus Beute (AUSBAU_BEUTE); Gildenhaus wie GUILD_HALL_T2. */
 export function ausbauKosten(typeId: string, zielStufe: number): Record<string, number> {
   const def = BUILDING_DEFS[typeId];
   if (!def) return {};
   if (typeId === 'GUILD_HALL') return { ...GILDE_T2.cost };
-  const kosten: Record<string, number> = {};
-  for (const [res, qty] of Object.entries(def.buildCost)) kosten[res] = qty * zielStufe;
-  if (def.housing && zielStufe >= 3) kosten.stone = (kosten.stone ?? 0) + 5 * (zielStufe - 2);
+  const kosten: Record<string, number> = { gold: (def.buildCost.gold ?? 0) * zielStufe };
+  for (const [res, qty] of Object.entries(AUSBAU_BEUTE[typeId] ?? {})) kosten[res] = qty * (zielStufe - 1);
   return kosten;
 }
 
 /** Was die Stufe bringt, in Spielersprache. */
 export function ausbauWirkung(typeId: string, stufe: number): string {
-  const def = BUILDING_DEFS[typeId];
-  if (!def) return '';
-  if (def.housing) return `${kapazitaetAufStufe(typeId, stufe)} Plätze für Bewohner`;
-  if (def.recipes.length > 0) {
-    return stufe === 1 ? '1 Arbeitsplatz' : `${stufe} Arbeitsplätze: mit ${stufe} Arbeitern ${stufe}-mal so schnell`;
-  }
+  if (istWerkstatt(typeId)) return stufe === 1 ? 'arbeitet in gewohntem Tempo' : `arbeitet ${stufe}-mal so schnell`;
   if (typeId === 'GUILD_HALL') return GILDE_T2.description;
-  const plaetze = stufe === 1 ? '1 Arbeitsplatz' : `${stufe} Arbeitsplätze`;
-  if (typeId === 'MARKETPLACE') {
-    return `bis +${marktBonusProzent(stufe)} % Steuern und ${buendelProTag(stufe)} Bündel Handel pro Tag (${plaetze})`;
-  }
-  if (typeId === 'BANK') return `bis +${bankGoldProTag(stufe)} Gold / Tag (${plaetze})`;
   return '';
 }
 
@@ -179,16 +126,6 @@ export function investiert(typeId: string, stufe: number): Record<string, number
     for (const [res, qty] of Object.entries(ausbauKosten(typeId, s))) summe[res] = (summe[res] ?? 0) + qty;
   }
   return summe;
-}
-
-/** Steuer-Bonus des Marktplatzes nach besetzten Plätzen: 25 / 40 / 50 %. */
-export function marktBonusProzent(besetztePlaetze: number): number {
-  return [0, 25, 40, 50][Math.max(0, Math.min(3, besetztePlaetze))];
-}
-
-/** Gold der Bank pro Tag nach besetzten Plätzen. */
-export function bankGoldProTag(besetztePlaetze: number): number {
-  return 10 * Math.max(0, Math.min(MAX_STUFE_HANDEL, besetztePlaetze));
 }
 
 export interface AusbauInfo {
@@ -243,62 +180,27 @@ export function ausbauen(state: GameState, b: BuildingInstance): boolean {
 
 // ── Gebäude entfernen und verschmelzen ──────────────────────────
 
-/** Zutaten eines laufenden Zyklus zurückgeben (sie werden beim Start abgezogen). */
+/** Zutaten eines laufenden Zyklus ins Lager zurückgeben (sie werden beim Start abgezogen). */
 export function erstatteLaufendenZyklus(state: GameState, b: BuildingInstance): void {
   const recipe = b.producing && b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
   if (!recipe) return;
   for (const [item, qty] of Object.entries(recipe.inputs)) {
-    if (b.connected) state.globalStock[item] = (state.globalStock[item] ?? 0) + qty;
-    else b.localInputBuffer[item] = (b.localInputBuffer[item] ?? 0) + qty;
+    state.globalStock[item] = (state.globalStock[item] ?? 0) + qty;
   }
 }
 
-/** Entfernt Gebäude sauber: Waren ins Lager, Arbeiter frei, Kartenfelder und Spezialisten gelöst. */
+/** Entfernt Gebäude sauber: Zutaten des laufenden Zyklus zurück ins Lager. */
 export function entferneGebaeude(state: GameState, ids: Set<number>): void {
   if (ids.size === 0) return;
   for (const b of state.buildings) {
-    if (!b || !ids.has(b.id)) continue;
-    erstatteLaufendenZyklus(state, b);
-    for (const buffer of [b.localInputBuffer, b.localOutputBuffer]) {
-      for (const [item, qty] of Object.entries(buffer ?? {})) {
-        if (qty > 0) state.globalStock[item] = (state.globalStock[item] ?? 0) + qty;
-      }
-    }
+    if (b && ids.has(b.id)) erstatteLaufendenZyklus(state, b);
   }
   state.buildings = state.buildings.filter(b => b && !ids.has(b.id));
-
-  for (const row of state.grid ?? []) {
-    for (let x = 0; x < row.length; x++) {
-      const tile = row[x];
-      if (tile?.buildingId != null && ids.has(tile.buildingId)) row[x] = null;
-    }
-  }
-  for (const citizen of state.citizens ?? []) {
-    if (citizen.assignedBuildingId != null && ids.has(citizen.assignedBuildingId)
-        && (citizen.status === 'WORKER' || citizen.status === 'BUILDER')) {
-      citizen.status = 'IDLE';
-      citizen.assignedBuildingId = null;
-    }
-  }
-  for (const spec of state.specialists ?? []) {
-    if (spec.assignedBuildingId != null && ids.has(spec.assignedBuildingId)) spec.assignedBuildingId = null;
-  }
-  if (state.activeEvent?.pausedBuildingId != null && ids.has(state.activeEvent.pausedBuildingId)) {
-    state.activeEvent.pausedBuildingId = undefined;
-  }
-}
-
-/** Wohnviertel-Stufe, die mindestens `bewohner` Plätze bietet (gedeckelt). */
-function stufeFuerBewohner(typeId: string, bewohner: number): number {
-  let stufe = 1;
-  while (stufe < maxStufe(typeId) && kapazitaetAufStufe(typeId, stufe) < bewohner) stufe++;
-  return stufe;
 }
 
 /**
- * Alte Spielstände: mehrere Gebäude derselben Art werden zu einem verschmolzen.
- * Die Stufe entspricht der bisherigen Anzahl (bis maxStufe), beim Wohnviertel mindestens
- * so hoch, dass alle Bewohner Platz haben. Arbeiter ziehen mit, so weit Plätze da sind.
+ * Mehrere Gebäude derselben Art werden zu einem verschmolzen (ein Gebäude je Art):
+ * Die Stufe entspricht der bisherigen Anzahl (bis maxStufe), ein fertiges bleibt bevorzugt.
  * Gibt zurück, wie viele Gebäude wegfielen.
  */
 export function vereinigeDoppelte(state: GameState): number {
@@ -312,29 +214,9 @@ export function vereinigeDoppelte(state: GameState): number {
   const weg = new Set<number>();
   for (const [typeId, alle] of nachTyp) {
     if (alle.length < 2) continue;
-    const def = BUILDING_DEFS[typeId];
-    const behalten = alle.find(b => b.built && b.assignedWorkerIds.length > 0) ?? alle.find(b => b.built) ?? alle[0];
-    let stufe = Math.max(stufeVon(behalten), alle.length);
-    if (def.housing) stufe = Math.max(stufe, stufeFuerBewohner(typeId, state.citizens.length));
-    behalten.tier = Math.min(maxStufe(typeId), stufe);
-
-    for (const b of alle) {
-      if (b === behalten) continue;
-      weg.add(b.id);
-      // Arbeiter ziehen in das behaltene Gebäude um, so lange dort Platz ist
-      for (const citizenId of b.assignedWorkerIds) {
-        if (behalten.assignedWorkerIds.length >= arbeitsplaetze(behalten)) break;
-        const citizen = state.citizens.find(c => c.id === citizenId);
-        if (!citizen) continue;
-        citizen.assignedBuildingId = behalten.id;
-        behalten.assignedWorkerIds.push(citizenId);
-      }
-      b.assignedWorkerIds = b.assignedWorkerIds.filter(id => !behalten.assignedWorkerIds.includes(id));
-      for (const spec of state.specialists ?? []) {
-        if (spec.assignedBuildingId === b.id) spec.assignedBuildingId = behalten.id;
-      }
-      if (state.activeEvent?.pausedBuildingId === b.id) state.activeEvent.pausedBuildingId = behalten.id;
-    }
+    const behalten = alle.find(b => b.built) ?? alle[0];
+    behalten.tier = Math.min(maxStufe(typeId), Math.max(stufeVon(behalten), alle.length));
+    for (const b of alle) if (b !== behalten) weg.add(b.id);
   }
   entferneGebaeude(state, weg);
   return weg.size;

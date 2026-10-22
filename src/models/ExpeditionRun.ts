@@ -247,8 +247,6 @@ export interface ExpeditionRun {
   pendingMerchant?: boolean;
   /** Feature #16: Anzahl der Käufe beim aktuellen Händler */
   merchantPurchases?: number;
-  /** Feature #17: Im Survivor-Raum gefundener Spezialist */
-  specialistFound?: string;
   /** Feature #18: Großmeister-Prüfung aktiv */
   isGrandmasterTrial?: boolean;
   /** Tracks which party units have used their one ability this expedition (unit.id → used) */

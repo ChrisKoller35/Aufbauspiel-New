@@ -1,9 +1,10 @@
 // ─── Magic City – Auftragsliste der Werkstätten ─────────────────
-// Werkstätten (def.manualCraft: Schmiede, Arkanschmiede, Kriegsmaschinen-
-// Werkstatt, Kräutergarten, Windmühle, Bäckerei) arbeiten eine
-// Warteschlange ab: bis MAX_AUFTRAEGE Aufträge (laufender plus wartende).
-// Zutaten werden erst beim Start eines Auftrags abgezogen (ProductionSystem),
-// Abbrechen des laufenden gibt sie zurück. Wartende Aufträge stehen in
+// Werkstätten (def.manualCraft: Schmiede, Kräuterküche, Arkanschmiede,
+// Kriegsmaschinen-Werkstatt) arbeiten eine Warteschlange ab: bis
+// MAX_AUFTRAEGE Aufträge (laufender plus wartende). Zutaten (Gold und
+// Beute aus dem Lager, globalStock) werden erst beim Start eines Auftrags
+// abgezogen (ProductionSystem), Abbrechen des laufenden gibt sie zurück.
+// Wartende Aufträge stehen in
 // b.auftraege; b.activeRecipeId zeigt den laufenden bzw. nächsten und
 // b.pendingCraft ist gesetzt, solange einer wartet. Was eine Werkstatt
 // ohne Auftrag von selbst macht (b.vonSelbst), plant systems/Werkstattplan.ts.
@@ -33,7 +34,7 @@ export function auftragsListe(b: BuildingInstance): string[] {
   return laeuftAuftrag(b) ? [b.activeRecipeId!, ...wartend] : [...wartend];
 }
 
-/** Rezept dieser Werkstatt, das die Ware herstellt (Kräuter im Kräutergarten), oder null. */
+/** Rezept dieser Werkstatt, das die Ware herstellt (Magitech-Komponente in der Arkanschmiede), oder null. */
 export function rezeptFuer(b: BuildingInstance, item: string): RecipeDef | null {
   for (const id of BUILDING_DEFS[b.typeId]?.recipes ?? []) {
     const recipe = RECIPE_DEFS[id];
@@ -91,18 +92,15 @@ export function auftragGestartet(b: BuildingInstance): void {
 }
 
 /**
- * Restzeit aller Aufträge in Sekunden (wartende mit heutiger Besetzung geschätzt).
+ * Restzeit aller Aufträge in Sekunden (wartende auf der heutigen Stufe geschätzt).
  * Mit `state` zählen auch die Vorstufen mit, die die Werkstatt dafür noch machen muss
- * (fehlen für drei Heiltränke neun Kräuter, kommen neun Mal «Kräuter ziehen» dazu).
+ * (fehlt für die Arkanklinge die Magitech-Komponente, kommt einmal «Komponente herstellen» dazu).
  */
 export function restzeitSekunden(b: BuildingInstance, state?: GameState): number {
   let summe = b.producing ? Math.max(0, b.productionTimer) : 0;
   const lager: Record<string, number> = {};
   const vorrat = (item: string): number => {
-    if (!(item in lager)) {
-      lager[item] = !state ? Infinity
-        : b.connected ? (state.globalStock[item] ?? 0) : (b.localInputBuffer[item] ?? 0);
-    }
+    if (!(item in lager)) lager[item] = state ? (state.globalStock[item] ?? 0) : Infinity;
     return lager[item];
   };
   // Was gerade entsteht, liegt danach im Lager (z. B. das Kraut der laufenden Vorstufe)

@@ -6,24 +6,17 @@ import {
 } from './Auftraege';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
-import { createCitizen } from '../models/Citizen';
 
-const SWORD = 'RCP_IRON_SWORD';   // 2 Eisen + 1 Holz, 90 s
-const SHIELD = 'RCP_IRON_SHIELD'; // 2 Eisen + 1 Holz, 90 s
+const SWORD = 'RCP_IRON_SWORD';   // 2 Eisenschrott + 10 Gold, 90 s
+const SHIELD = 'RCP_IRON_SHIELD'; // 2 Eisenschrott + 10 Gold, 90 s
 
 function setupSmithy(): { state: GameState; smithy: BuildingInstance } {
   const state = createNewGameState();
   state.buildings = [];
-  const smithy = createBuildingInstance('SMITHY', 5, 5, true);
-  smithy.connected = true;
-  smithy.activeRecipeId = SWORD;
-  const worker = createCitizen('WORKER');
-  worker.assignedBuildingId = smithy.id;
-  smithy.assignedWorkerIds.push(worker.id);
-  state.citizens.push(worker);
+  const smithy = createBuildingInstance('SMITHY');
   state.buildings.push(smithy);
   state.globalStock.iron_scrap = 10;
-  state.globalStock.wood = 10;
+  state.globalStock.gold = 100;
   state.globalStock.iron_sword = 0;
   state.globalStock.iron_shield = 0;
   return { state, smithy };
@@ -61,6 +54,7 @@ describe('Auftragsliste', () => {
     expect(smithy.producing).toBe(true);
     expect(auftragsListe(smithy)).toEqual([SHIELD, SWORD]);
     expect(state.globalStock.iron_scrap).toBe(8);
+    expect(state.globalStock.gold).toBe(90);
     expect(restzeitSekunden(smithy)).toBe(180);
 
     for (let i = 0; i < 90; i++) production.update(state, 1);
@@ -77,6 +71,7 @@ describe('Auftragsliste', () => {
     for (let i = 0; i < 100; i++) production.update(state, 1);
     expect(state.globalStock.iron_sword).toBe(1);
     expect(state.globalStock.iron_scrap).toBe(6);
+    expect(state.globalStock.gold).toBe(80);
     abmelden();
   });
 
@@ -84,8 +79,15 @@ describe('Auftragsliste', () => {
     const { smithy } = setupSmithy();
     for (let i = 0; i < MAX_AUFTRAEGE; i++) expect(auftragGeben(smithy, SWORD)).toBe(true);
     expect(auftragGeben(smithy, SWORD)).toBe(false);
-    expect(auftragGeben(smithy, 'RCP_BREAD_1')).toBe(false); // nicht in dieser Werkstatt
+    expect(auftragGeben(smithy, 'RCP_HEALING_POTION')).toBe(false); // nicht in dieser Werkstatt
     expect(auftragsListe(smithy)).toHaveLength(MAX_AUFTRAEGE);
+  });
+
+  it('Gildenhaus und Händler nehmen keine Aufträge an', () => {
+    const gilde = createBuildingInstance('GUILD_HALL');
+    const haendler = createBuildingInstance('HAENDLER');
+    expect(auftragGeben(gilde, SWORD)).toBe(false);
+    expect(auftragGeben(haendler, SWORD)).toBe(false);
   });
 
   it('Abbrechen: laufender gibt Zutaten zurück, wartender kostet nichts', () => {
@@ -105,12 +107,28 @@ describe('Auftragsliste', () => {
     // Laufenden abbrechen: Zutaten zurück, der nächste rückt nach
     expect(auftragAbbrechen(state, smithy, 0)).toBe(true);
     expect(state.globalStock.iron_scrap).toBe(10);
-    expect(state.globalStock.wood).toBe(10);
+    expect(state.globalStock.gold).toBe(100);
     expect(smithy.producing).toBe(false);
     expect(auftragsListe(smithy)).toEqual([SWORD]);
     expect(smithy.pendingCraft).toBe(true);
 
     expect(auftragAbbrechen(state, smithy, 5)).toBe(false);
+  });
+
+  it('Restzeit zählt Vorstufen mit, die noch fehlen (Magitech-Komponente für die Arkanklinge)', () => {
+    const state = createNewGameState();
+    const arkan = createBuildingInstance('ARCANE_SMITHY');
+    state.buildings = [arkan];
+    Object.assign(state.globalStock, { iron_scrap: 20, crystal_shard: 20, magitech_component: 0 });
+    auftragGeben(arkan, 'RCP_ARCANE_BLADE'); // 300 s, braucht 1 Komponente (180 s)
+    expect(restzeitSekunden(arkan)).toBe(300);
+    expect(restzeitSekunden(arkan, state)).toBe(300 + 180);
+    state.globalStock.magitech_component = 1;
+    expect(restzeitSekunden(arkan, state)).toBe(300);
+    // Stufe 2: alles doppelt so schnell
+    arkan.tier = 2;
+    state.globalStock.magitech_component = 0;
+    expect(restzeitSekunden(arkan, state)).toBe(240);
   });
 
   it('Speichern und Laden behält die Auftragsliste', () => {
@@ -127,18 +145,5 @@ describe('Auftragsliste', () => {
     const b = loaded.buildings.find(x => x.typeId === 'SMITHY')!;
     expect(auftragsListe(b)).toEqual([SHIELD, SWORD, SHIELD]);
     expect(b.producing).toBe(true);
-  });
-
-  it('alter Spielstand (Version 21): erteilter Auftrag wird zur Liste', () => {
-    const { state, smithy } = setupSmithy();
-    smithy.pendingCraft = true;
-    delete (smithy as Partial<BuildingInstance>).auftraege;
-    state.saveVersion = 21;
-    localStorage.setItem('magic_city_save', JSON.stringify(state));
-
-    const loaded = new SaveSystem().load()!;
-    const b = loaded.buildings.find(x => x.typeId === 'SMITHY')!;
-    expect(loaded.saveVersion).toBe(23);
-    expect(b.auftraege).toEqual([SWORD]);
   });
 });

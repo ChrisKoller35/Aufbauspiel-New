@@ -218,7 +218,7 @@ export function getLogLineColor(line: string): string {
   // Boss enrage
   if (line.includes('ENRAGE'))  return UI_STR_COLORS.DAMAGE;
   // Heals
-  if (line.includes('heals') || line.includes('heilt') || line.includes('Party heilt') || line.includes('+15% HP'))
+  if (line.includes('heals') || line.includes('heilt') || line.includes('+15% HP'))
     return UI_STR_COLORS.HEAL;
   // Buffs
   if (line.includes('[Vorbereitung]'))             return UI_STR_COLORS.GOLD;

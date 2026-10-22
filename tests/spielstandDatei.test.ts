@@ -2,9 +2,9 @@
 // Was das Spiel selbst speichert, muss sich herunterladen und wieder laden
 // lassen (docs/SPIELSTAND.md): ein neues Spiel, das Probespiel «Gut» (?probe)
 // und «Stark» (?probe=sterne), ein lange gespieltes Spiel (Tage, Expeditionen,
-// Gildenhaus, Rangliste mit Wochenwertung, Schmiede, Geschichten, Wege) und ein
-// Stand mitten in einer Expedition. Ändert jemand die Form eines gespeicherten
-// Felds, schlägt dieser Test an: dann die Form in SaveSystem.ts nachführen.
+// Gildenhaus, Rangliste mit Wochenwertung, Schmiede, Geschichten, Wege, Werkstätten)
+// und ein Stand mitten in einer Expedition. Ändert jemand die Form eines gespeicherten
+// Felds, schlägt dieser Test an: dann die Form in SpielstandSchema.ts nachführen.
 // ────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
@@ -14,19 +14,13 @@ import { CLASS_DEFS } from '../src/data/classes';
 import { BUILDING_DEFS } from '../src/data/buildings';
 import { BuildingInstance, createBuildingInstance } from '../src/models/Building';
 import { wegeDerKlasse } from '../src/data/spezialisierungen';
-import { placeStartingLayout, createStartingCitizens } from '../src/scenes/CityStartingLayout';
-import { SaveSystem, hebeSperreNachLadenAuf, pruefeSpielstandText } from '../src/systems/SaveSystem';
+import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
+import { CURRENT_VERSION, SaveSystem, hebeSperreNachLadenAuf, pruefeSpielstandText } from '../src/systems/SaveSystem';
 import { richteProbespielEin } from '../src/systems/Probespiel';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { ProductionSystem } from '../src/systems/ProductionSystem';
-import { PeopleSystem } from '../src/systems/PeopleSystem';
-import { SatisfactionSystem } from '../src/systems/SatisfactionSystem';
-import { EconomySystem } from '../src/systems/EconomySystem';
-import { ConnectivitySystem } from '../src/systems/ConnectivitySystem';
-import { loeseHeldenBindungen } from '../src/systems/HeldenBindung';
-import { TAG_SEKUNDEN } from '../src/systems/GebaeudeStatus';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { setBeute } from '../src/systems/DungeonSets';
 import { schmieden } from '../src/systems/Schmiede';
@@ -36,10 +30,13 @@ import { belohnungenAbholen, ranglisteStand } from '../src/systems/Rangliste';
 import { kannWegWaehlen, waehleWeg } from '../src/systems/Spezialisierung';
 import { spieleRoute } from '../src/systems/Musterlauf';
 import { auftragGeben } from '../src/systems/Auftraege';
+import { erfolgePruefen } from '../src/systems/AchievementSystem';
 
 /** Montag, 2. November 2026, 10:00 (Ortszeit) */
 const MONTAG = new Date(2026, 10, 2, 10, 0).getTime();
 const TAG = 86_400_000;
+/** Länge eines Spieltags in Sekunden (DAY_TICK_INTERVAL in main.ts) */
+const TAG_SEKUNDEN = 30;
 
 function speicher(): Storage {
   const data = new Map<string, string>();
@@ -57,27 +54,18 @@ function speicher(): Storage {
 function neuesSpiel(probe?: 'gut' | 'sterne'): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
-  createStartingCitizens(state);
   if (probe) richteProbespielEin(state, probe === 'sterne' ? 'sterne' : 'neu');
   return state;
 }
 
-/** Die Spielschleife aus main.ts: Stadt-Takt jede Sekunde, Tageswechsel alle TAG_SEKUNDEN. */
+/** Die Spielschleife aus main.ts: Werkstätten jede Sekunde, Tageswechsel alle TAG_SEKUNDEN. */
 function spieleSekunden(state: GameState, sekunden: number): void {
-  const verbindung = new ConnectivitySystem();
   const produktion = new ProductionSystem();
-  const leute = new PeopleSystem();
-  const zufriedenheit = new SatisfactionSystem();
-  const wirtschaft = new EconomySystem();
   for (let sekunde = 1; sekunde <= sekunden; sekunde++) {
-    verbindung.update(state);
     produktion.update(state, 1);
-    leute.cityTick(state, 1);
-    zufriedenheit.update(state);
     if (sekunde % TAG_SEKUNDEN === 0) {
-      wirtschaft.dayTick(state);
-      leute.dayTick(state);
-      loeseHeldenBindungen(state);
+      state.day++;
+      erfolgePruefen(state);
     }
   }
 }
@@ -86,16 +74,15 @@ function spieleTage(state: GameState, tage: number): void {
   spieleSekunden(state, tage * TAG_SEKUNDEN);
 }
 
-/** Bauen wie im Gebäude-Menü (BuildingsScreen.handleBuild), hier ohne Kosten. */
+/** Bauen wie im Gebäude-Menü, hier ohne Kosten und Bauplan. */
 function baue(state: GameState, typeId: string): BuildingInstance {
-  const b = createBuildingInstance(typeId, 0, 0, true);
+  const b = createBuildingInstance(typeId);
   if (BUILDING_DEFS[typeId].recipes.length > 0) b.activeRecipeId = BUILDING_DEFS[typeId].recipes[0];
-  b.connected = true;
   state.buildings.push(b);
   return b;
 }
 
-/** Anheuern wie im Heldenhaus (HeroesScreen.handleHire): Helden sind keine Bewohner. */
+/** Anheuern wie im Heldenhaus (HeroesScreen.handleHire). */
 function heuereAn(state: GameState, classId: string): void {
   const def = CLASS_DEFS[classId];
   state.fighters.push({
@@ -133,6 +120,7 @@ function bestehtUndLaedt(state: GameState): void {
   const text = dateiVon(state);
   const pruefung = pruefeSpielstandText(text);
   expect(pruefung).toMatchObject({ ok: true, zusammenfassung: { tag: state.day, helden: state.fighters.length } });
+  expect(JSON.parse(text).saveVersion).toBe(CURRENT_VERSION);
 
   vi.stubGlobal('localStorage', speicher());
   const saveSystem = new SaveSystem();
@@ -177,14 +165,15 @@ describe('echte Spielstände bestehen die Prüfung der Datei', () => {
     bestehtUndLaedt(state);
   });
 
-  it('ein lange gespieltes Spiel: drei Wochen Rangliste, Gildenhaus, Schmiede, Geschichten und Wege', () => {
+  it('ein lange gespieltes Spiel: drei Wochen Rangliste, Gildenhaus, Schmiede, Geschichten, Wege und Werkstätten', () => {
     const state = neuesSpiel('gut');
     for (const held of state.fighters) {
       if (kannWegWaehlen(held)) waehleWeg(held, wegeDerKlasse(held.classId)[0].id);
     }
     schmieden(state, 'set_wyrm_klinge');
-    for (const typeId of ['WELL', 'FARM_GRAIN', 'MILL_WIND', 'BAKERY']) baue(state, typeId);
-    const garten = baue(state, 'HERB_GARDEN');
+    for (const typeId of ['SMITHY', 'HERB_GARDEN']) baue(state, typeId);
+    const arkan = baue(state, 'ARCANE_SMITHY');
+    const kriegsmaschinen = baue(state, 'WAR_MACHINE_WORKSHOP');
     for (let woche = 0; woche < 3; woche++) {
       for (const [i, routeId] of ['forest_medium', 'cave_spider', 'ocean_depths', 'volcano_core', 'drachenhort'].entries()) {
         vi.setSystemTime(MONTAG + woche * 7 * TAG + i * TAG);
@@ -200,22 +189,23 @@ describe('echte Spielstände bestehen die Prüfung der Datei', () => {
     vi.setSystemTime(MONTAG + 22 * TAG);
     ranglisteStand(state, Date.now());
     belohnungenAbholen(state, Date.now());
-    // Die Kräuter sind aufgebraucht, dann ein Heiltrank-Auftrag: Der Kräutergarten zieht sie
-    // zuerst von selbst (b.vonSelbst), der Auftrag wartet in b.auftraege
-    state.globalStock.herb_green = 0;
-    expect(auftragGeben(garten, 'RCP_HEALING_POTION')).toBe(true);
-    for (let sekunde = 0; sekunde < 60 && !garten.vonSelbst; sekunde++) spieleSekunden(state, 1);
+    // Eine Kanone ohne Magitech-Komponenten im Lager: Die Arkanschmiede liefert sie von selbst zu
+    // (b.vonSelbst), der Auftrag wartet in b.auftraege der Kriegsmaschinen-Werkstatt
+    Object.assign(state.globalStock, { iron_scrap: 60, crystal_shard: 40, magitech_component: 0 });
+    expect(auftragGeben(kriegsmaschinen, 'RCP_WAR_CANNON')).toBe(true);
+    for (let sekunde = 0; sekunde < 60 && !arkan.vonSelbst; sekunde++) spieleSekunden(state, 1);
 
-    // Alle Felder aus PR #29 sind da und gefüllt, sonst prüft dieser Test sie nicht
+    // Alle Felder sind da und gefüllt, sonst prüft dieser Test sie nicht
     expect(state.geschichten?.erlebt.length).toBeGreaterThan(0);
     expect(Object.keys(state.bezwungen ?? {}).length).toBeGreaterThan(0);
     expect(state.rangliste?.verlauf.length).toBeGreaterThan(0);
     expect(Object.keys(state.schmiede?.stufen ?? {})).toContain('set_wyrm_klinge');
     expect(state.auftragsbrett?.gesehen).toBeTruthy();
     expect(Object.keys(state.trophaeen?.siege ?? {}).length).toBeGreaterThan(0);
-    expect(garten.vonSelbst).toEqual({ art: 'vorstufe', fuer: 'RCP_HEALING_POTION' });
-    expect(garten.auftraege?.length).toBeGreaterThan(0);
+    expect(arkan.vonSelbst).toEqual({ art: 'zulieferung', fuer: 'WAR_MACHINE_WORKSHOP' });
+    expect(kriegsmaschinen.auftraege?.length).toBeGreaterThan(0);
     expect(state.fighters.some(f => f.wegBilanz && Object.keys(f.wegBilanz).length > 0)).toBe(true);
+    expect(state.achievements.length).toBeGreaterThan(0);
     // Was das Spiel schreibt, enthält kein Zeichen, das die Prüfung ablehnt (< > ")
     expect(JSON.stringify(state)).not.toMatch(/\\"|[<>]/);
 

@@ -1,11 +1,11 @@
 /**
  * Erfolge für Magic City, in Gruppen.
  * Jede Bedingung liest nur state.statistics. Werte, die niemand von selbst
- * zählt (Stadtstufe, Helden, Sets, Monsterbuch, Auftragsbrett, Trophäensaal …),
- * schreibt kennzahlenAktualisieren() in systems/AchievementSystem.ts dort hinein.
- * Die IDs der ersten zwölf Erfolge stehen in alten Spielständen
- * (state.achievements) und dürfen sich nicht ändern. Liste: docs/ERFOLGE.md.
- * Jedes Ziel ist mit den echten Regeln erreichbar: tests/erfolgeErreichbar.test.ts.
+ * zählt (Stadtstufe, Werkstätten, Baupläne, Helden, Sets, Monsterbuch, Auftragsbrett,
+ * Trophäensaal …), schreibt kennzahlenAktualisieren() in systems/AchievementSystem.ts
+ * dort hinein. Die IDs stehen in Spielständen (state.achievements) und bleiben fest.
+ * Liste: docs/ERFOLGE.md. Jedes Ziel ist mit den echten Regeln erreichbar:
+ * tests/erfolgeErreichbar.test.ts.
  */
 
 import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
@@ -53,15 +53,13 @@ const SAAL_STERNE = 3 * SAAL_SOCKEL;
 const SAAL_HALBER_GLANZ = Math.ceil(SAAL_STERNE / 2);
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
-  // ── Stadt ──
+  // ── Stadt (die Gildenstadt: Händler, Baupläne und vier Werkstätten, docs/GILDENSTADT.md) ──
+  erfolg('bauplan_1', 'Stadt', '📜', 'Erster Bauplan', 'Besorge dir deinen ersten Bauplan, beim Händler oder von einem Boss.', 'bauplaene', 1),
   erfolg('first_building', 'Stadt', '🏗️', 'Grundsteinlegung', 'Errichte dein erstes Gebäude.', 'total_buildings_built', 1),
-  erfolg('mass_builder', 'Stadt', '🏛️', 'Baumeister', 'Baue 20 Mal (Neubauten und Ausbauten zählen).', 'total_buildings_built', 20),
-  erfolg('ausbau_10', 'Stadt', '🔨', 'Ausbauer', 'Baue Gebäude 10 Mal aus.', 'total_upgrades', 10),
-  erfolg('gebaeude_max', 'Stadt', '🏰', 'Ganz oben', 'Baue ein Gebäude bis zu seiner Höchststufe aus.', 'gebaeude_auf_hoechststufe', 1),
-  erfolg('wohnviertel_6', 'Stadt', '🏘️', 'Volles Viertel', 'Baue das Wohnviertel auf Stufe 6 aus.', 'hoechste_wohnstufe', 6),
-  // Früher «bewohner_50»: Ein volles Wohnviertel hat 36 Plätze, 6 Bewohner sind schon da, also ziehen
-  // höchstens 30 ein. Die alte ID kann in keinem Spielstand stehen und wird übersprungen.
-  erfolg('bewohner_25', 'Stadt', '👶', 'Wachsende Stadt', '25 neue Bewohner ziehen ein.', 'total_citizens_born', 25),
+  erfolg('werkstaetten_4', 'Stadt', '🏘️', 'Gildenstadt', 'Alle vier Werkstätten stehen: Schmiede, Kräuterküche, Arkanschmiede und Kriegsmaschinen-Werkstatt.', 'werkstaetten', 4),
+  erfolg('mass_builder', 'Stadt', '🏛️', 'Baumeister', 'Baue 10 Mal (Neubauten und Ausbauten zählen).', 'total_buildings_built', 10),
+  erfolg('ausbau_5', 'Stadt', '🔨', 'Ausbauer', 'Baue Werkstätten 5 Mal aus.', 'total_upgrades', 5),
+  erfolg('werkstatt_3', 'Stadt', '🏰', 'Meisterwerkstatt', 'Baue eine Werkstatt auf Stufe 3 aus.', 'werkstatt_hoechste_stufe', 3),
   erfolg('stadtstufe_3', 'Stadt', '🛖', 'Dorf', 'Erreiche die Stadtstufe «Dorf» (3).', 'stadtstufe', 3),
   erfolg('stadtstufe_5', 'Stadt', '🏙️', 'Stadtrecht', 'Erreiche die Stadtstufe «Stadt» (5).', 'stadtstufe', 5),
   erfolg('stadtstufe_7', 'Stadt', '✨', 'Magische Stadt', 'Erreiche die Stadtstufe «Magische Stadt» (7).', 'stadtstufe', 7),

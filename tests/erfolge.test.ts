@@ -12,7 +12,6 @@ import { ENEMY_DEFS } from '../src/data/enemies';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
-import { EconomySystem } from '../src/systems/EconomySystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { GuildRankSystem, rangFreischaltungen } from '../src/systems/GuildRankSystem';
 import {
@@ -30,9 +29,13 @@ const ALTE_IDS = [
 /** Schlüssel, die kennzahlenAktualisieren() schreibt (alle anderen muss das Spiel selbst zählen) */
 const KENNZAHLEN = [
   'stadtstufe', 'helden_anzahl', 'helden_mit_weg', 'helden_meister', 'ganze_sets',
-  'monsterbuch_entdeckt', 'gildenrang', 'hoechste_wohnstufe', 'gebaeude_auf_hoechststufe',
+  'monsterbuch_entdeckt', 'gildenrang', 'werkstaetten', 'werkstatt_hoechste_stufe', 'bauplaene',
   'zettel_erledigt', 'saal_prunkstuecke', 'saal_sterne', 'rangliste_pokale', 'schmiede_hoechste_stufe',
+  'total_days_survived',
 ];
+
+/** Die vier Werkstätten der Gildenstadt */
+const WERKSTAETTEN = ['SMITHY', 'HERB_GARDEN', 'ARCANE_SMITHY', 'WAR_MACHINE_WORKSHOP'];
 
 const GRUND = { hp: 100, maxHp: 100, atk: 10, def: 0, spd: 1, critChance: 0, critMult: 1.5 };
 const STARK = { hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1 };
@@ -105,23 +108,42 @@ describe('Erfolge: Liste', () => {
     }
   });
 
-  test('«Wachsende Stadt» heisst jetzt bewohner_25; die alte ID bewohner_50 stört keinen Spielstand', () => {
-    expect(ACHIEVEMENT_DEFS.some(d => d.id === 'bewohner_50')).toBe(false);
-    expect(ACHIEVEMENT_DEFS.find(d => d.id === 'bewohner_25')).toMatchObject({ zaehler: 'total_citizens_born', ziel: 25 });
-
+  test('Erfolge der alten Stadt (Bewohner, Wohnviertel) gibt es nicht mehr; unbekannte IDs stören keinen Spielstand', () => {
+    for (const d of ACHIEVEMENT_DEFS) expect(`${d.id} ${d.name} ${d.description}`, d.id).not.toMatch(/bewohner|Bewohner|wohn|Wohn|Holz|Markt|Bank|Zufrieden/);
     const state = createNewGameState();
-    state.achievements = ['bewohner_50', 'first_building'];
-    state.statistics.total_citizens_born = 24;
+    state.achievements = ['bewohner_25', 'first_building'];
     expect(() => erfolgePruefen(state)).not.toThrow();
     expect(freigeschalteteErfolge(state)).toBe(1);
     expect(ungeseheneErfolge(state)).toBe(1);
     expect(ungeseheneErfolgIds(state)).toEqual(['first_building']);
     expect(renderHeader(state)).toMatch(/<span class="hdr-erfolge-neu">1<\/span>/);
-    expect(state.achievements).not.toContain('bewohner_25');
+  });
 
-    state.statistics.total_citizens_born = 25;
+  test('Gildenstadt: der erste Bauplan, alle vier Werkstätten und eine Werkstatt auf Stufe 3', () => {
+    const state = createNewGameState();
     erfolgePruefen(state);
-    expect(state.achievements).toContain('bewohner_25');
+    expect(state.statistics).toMatchObject({ bauplaene: 0, werkstaetten: 0, werkstatt_hoechste_stufe: 0 });
+
+    state.globalStock.bauplan_schmiede = 1; // beim Händler gekauft
+    erfolgePruefen(state);
+    expect(state.statistics.bauplaene).toBe(1);
+    expect(state.achievements).toContain('bauplan_1');
+
+    // Verbaut zählt der Bauplan weiter, ein Boss-Bauplan ebenso (state.erhalteneBauplaene)
+    state.globalStock.bauplan_schmiede = 0;
+    state.buildings.push(createBuildingInstance('SMITHY'));
+    state.erhalteneBauplaene.push('bauplan_arkanschmiede');
+    erfolgePruefen(state);
+    expect(state.statistics).toMatchObject({ bauplaene: 2, werkstaetten: 1, werkstatt_hoechste_stufe: 1 });
+    expect(state.achievements).not.toContain('werkstaetten_4');
+
+    for (const typeId of WERKSTAETTEN.slice(1)) state.buildings.push(createBuildingInstance(typeId));
+    state.buildings[0].tier = 3;
+    erfolgePruefen(state);
+    expect(state.statistics).toMatchObject({ bauplaene: 4, werkstaetten: 4, werkstatt_hoechste_stufe: 3 });
+    expect(state.achievements).toEqual(expect.arrayContaining(['werkstaetten_4', 'werkstatt_3']));
+    // Gildenhaus und Händler sind keine Werkstätten
+    expect(state.statistics.werkstaetten).toBe(4);
   });
 });
 
@@ -143,18 +165,18 @@ describe('Erfolge: Reparaturen', () => {
     expect(new AchievementSystem().checkAchievements(state.statistics, [])).toContain('army_builder');
   });
 
-  test('der Tageswechsel zählt Tage und trägt neue Erfolge genau einmal ein', () => {
+  test('der Tageswechsel (state.day, dann erfolgePruefen) zählt Tage und trägt neue Erfolge genau einmal ein', () => {
     const state = createNewGameState();
-    const economy = new EconomySystem();
     state.stadtweg = { stufe: 3, herzsteine: [], gelesen: 3 };
-    economy.dayTick(state);
+    const tageswechsel = () => { state.day++; erfolgePruefen(state); };
+    tageswechsel();
     expect(state.statistics.total_days_survived).toBe(1);
     expect(state.achievements.filter(id => id === 'stadtstufe_3')).toHaveLength(1);
-    economy.dayTick(state);
+    tageswechsel();
     expect(state.statistics.total_days_survived).toBe(2);
     expect(state.achievements.filter(id => id === 'stadtstufe_3')).toHaveLength(1);
 
-    for (let i = 0; i < 98; i++) economy.dayTick(state);
+    for (let i = 0; i < 98; i++) tageswechsel();
     expect(state.statistics.total_days_survived).toBe(100);
     expect(state.achievements.filter(id => id === 'survivor_100')).toHaveLength(1);
     expect(new Set(state.achievements).size).toBe(state.achievements.length);
@@ -203,15 +225,16 @@ describe('Erfolge: ältere Spielstände holen nach, was ihre Daten hergeben', ()
 
   test('Ausbauten aus den Stufen der Gebäude; was schon gezählt ist, bleibt', () => {
     const state = createNewGameState();
-    const haus = createBuildingInstance('HOUSE_T1', 0, 0, true);
-    haus.tier = 6;
-    const huette = createBuildingInstance('LUMBER_CAMP', 0, 0, true);
-    huette.tier = 3;
-    state.buildings.push(haus, huette);
+    const schmiede = createBuildingInstance('SMITHY');
+    schmiede.tier = 3;
+    const kueche = createBuildingInstance('HERB_GARDEN');
+    kueche.tier = 2;
+    state.buildings.push(schmiede, kueche);
     erfolgePruefen(state);
-    expect(state.statistics.total_upgrades).toBe(7);
-    expect(state.statistics.total_buildings_built).toBe(7);
-    expect(state.achievements).toContain('wohnviertel_6');
+    expect(state.statistics.total_upgrades).toBe(3);
+    expect(state.statistics.total_buildings_built).toBe(3);
+    expect(state.achievements).toContain('werkstatt_3');
+    expect(state.achievements).not.toContain('ausbau_5');
 
     state.statistics.total_upgrades = 20;
     state.statistics.total_buildings_built = 25;
@@ -270,7 +293,8 @@ describe('Erfolge: Ende einer Expedition', () => {
     // Der Tageswechsel meldet nichts davon noch einmal
     const spaeter: string[][] = [];
     const ab = beiNeuenErfolgen(ids => spaeter.push(ids));
-    new EconomySystem().dayTick(state);
+    state.day++;
+    erfolgePruefen(state);
     ab();
     expect(spaeter.flat()).not.toContain('gildenrang_3');
     expect(new Set(state.achievements).size).toBe(state.achievements.length);
@@ -408,7 +432,7 @@ describe('Gildenrang: Texte aus den echten Regeln', () => {
     const [dungeons, danach, gebaeude] = aufstieg.unlocks;
     expect(dungeons).toBe(`Neue Dungeons (${dungeonsVon(2).length}), gleich offen: ${offen.map(r => r.name).join(', ')}`);
     expect(danach).toBe(`Nach Bosssiegen: ${spaeter.map(r => r.name).join(', ')}`);
-    expect(gebaeude).toBe('Neue Gebäude: Arkanschmiede, Marktplatz (je mit Bauplan)');
+    expect(gebaeude).toBe('Neues Gebäude: Arkanschmiede (mit Bauplan)');
     // Was gleich offen heisst, ist es auch
     for (const r of offen) expect(getRouteLockReasons(r, state), r.id).toEqual([]);
     for (const r of spaeter) expect(getRouteLockReasons(r, state).every(g => g.startsWith('Besiege')), r.id).toBe(true);

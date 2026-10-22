@@ -69,12 +69,6 @@ export class ExpeditionSystem {
 
     if (fighters.length === 0) return null;
 
-    // Mark citizens as on expedition
-    for (const fighter of fighters) {
-      const citizen = state.citizens.find(c => c.fighterId === fighter.id);
-      if (citizen) citizen.status = 'ON_EXPEDITION';
-    }
-
     // Build party combat units (mit den Stufen der Schmiede)
     const stufen = schmiedeStufen(state);
     const party: CombatUnit[] = fighters.map(f => this.combatEngine.fighterToCombatUnit(f, stufen));
@@ -681,11 +675,6 @@ export class ExpeditionSystem {
     if (run.warMachineItemId) {
       state.globalStock[run.warMachineItemId] = (state.globalStock[run.warMachineItemId] ?? 0) + 1;
     }
-    for (const unit of run.party) {
-      const citizen = state.citizens.find(c => c.fighterId === unit.id);
-      if (citizen && citizen.status === 'ON_EXPEDITION') citizen.status = 'IDLE';
-    }
-
     state.activeExpedition = null;
     return true;
   }
