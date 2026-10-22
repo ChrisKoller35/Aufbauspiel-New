@@ -23,6 +23,8 @@ describe('Händler: kaufen', () => {
     expect(kaufen(state, 'healing_potion')).toEqual({ ok: true, text: '1× Heiltrank gekauft für 10 Gold.' });
     expect(state.globalStock.healing_potion).toBe(3);
     expect(state.globalStock.gold).toBe(70);
+    // Zwei Käufe (5 Brot, 1 Heiltrank) für den Erfolg «Erster Kauf»
+    expect(state.statistics.total_haendler_kaeufe).toBe(2);
   });
 
   it('Grundausrüstung für 25 Gold, auch wenn noch keine im Lager liegt', () => {
@@ -38,6 +40,7 @@ describe('Händler: kaufen', () => {
     expect(kaufen(state, 'iron_sword', 2)).toEqual({ ok: false, text: 'Zu wenig Gold: 2× Eisenschwert kostet 50 Gold, du hast 30.' });
     expect(state.globalStock.gold).toBe(30);
     expect(state.globalStock.iron_sword).toBe(0);
+    expect(state.statistics.total_haendler_kaeufe).toBeUndefined();
   });
 
   it('Waren, die der Händler nicht führt, und unsinnige Mengen', () => {
@@ -70,6 +73,7 @@ describe('Händler: Baupläne', () => {
     });
     expect(state.globalStock.bauplan_schmiede).toBe(1);
     expect(state.globalStock.gold).toBe(50);
+    expect(state.statistics.total_haendler_kaeufe).toBe(1);
     expect(bauplanGekauft(state, 'SMITHY')).toBe(true);
     expect(bauplanKaufen(state, 'SMITHY')).toEqual({ ok: false, text: 'Den Bauplan: Schmiede hast du schon.' });
     expect(state.globalStock.gold).toBe(50);
@@ -115,6 +119,8 @@ describe('Händler: verkaufen', () => {
     expect(state.globalStock.gold).toBe(110);
     // Brot: Grundwert 3, halber Wert 1,5 → 1 Gold
     expect(verkaufen(state, 'bread', 5)).toEqual({ ok: true, text: '5× Brot verkauft für 5 Gold.' });
+    // Verkaufen ist kein Kauf
+    expect(state.statistics.total_haendler_kaeufe).toBeUndefined();
   });
 
   it('kauft keine Baupläne, Set-Teile und kein Dungeon-Material', () => {

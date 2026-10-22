@@ -263,7 +263,7 @@ export class ExpeditionSystem {
         this.encounterProcessor.processMerchant(run, room);
         break;
       case 'survivor':
-        this.encounterProcessor.processSurvivor(run, room, rng);
+        this.encounterProcessor.processSurvivor(run);
         break;
       case 'fortification':
         this.combatEngine.processFortificationCombat(run, room, rng);

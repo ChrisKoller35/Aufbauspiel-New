@@ -1046,12 +1046,10 @@ function handleHire(classId: string, cost: number, container: HTMLElement, btn: 
   const maxId = gameState.fighters.reduce((m, f) => Math.max(m, f.id), 0);
   const newFighter: GuildFighter = {
     id: maxId + 1,
-    citizenId: 0,
     classId: classDef.id,
     name: classDef.name,
     baseStats: { ...classDef.baseStats },
     gear: { mainHand: null, offHand: null, armor: null, trinket: null },
-    gearNeedsRepair: false,
     xp: 0,
     level: 1,
   };

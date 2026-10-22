@@ -44,7 +44,7 @@ export interface GameState {
   // Time
   day: number;
   cityTickAccumulator: number;    // accumulates delta for 1.0s city tick
-  dayTickAccumulator: number;     // accumulates delta for 60.0s day tick
+  dayTickAccumulator: number;     // Zeit seit dem letzten Tageswechsel (TAG_SEKUNDEN in systems/Tag.ts)
 
   // Save
   saveVersion: number;

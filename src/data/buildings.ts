@@ -1,8 +1,8 @@
 // ─── Magic City – Die sechs Gebäude der Gildenstadt ─────────────
 // Gildenhaus und Händler stehen von Anfang an, die vier Werkstätten
 // baut man mit einem Bauplan (Händler oder Boss) für Gold und Beute aus
-// den Dungeons. Kein Bauplatz, keine Bauzeit, keine Arbeiter: Ein Bau
-// steht sofort, und eine Werkstatt auf Stufe N arbeitet N-mal so schnell
+// den Dungeons. Kein Bauplatz, keine Bauzeit: Ein Bau steht sofort,
+// und eine Werkstatt auf Stufe N arbeitet N-mal so schnell
 // (systems/Ausbau.ts). Preise der Baupläne: data/haendler.ts.
 // Regeln und Zahlen: docs/GILDENSTADT.md.
 // ────────────────────────────────────────────────────────────────
@@ -24,8 +24,14 @@ export interface BuildingDef {
   name: string;
   tier: number;
   category: 'hub' | 'utility' | 'refine';
-  /** Was der Bau kostet (Schlüssel wie in globalStock). Ausbau: buildCost × Zielstufe (systems/Ausbau.ts). */
+  /** Was der Bau kostet (Schlüssel wie in globalStock). Ausbau: Gold × Zielstufe plus ausbauBeute (systems/Ausbau.ts). */
   buildCost: Record<string, number>;
+  /**
+   * Beute je Ausbau-Stufe über der ersten (Stufe 2 einmal, Stufe 3 zweimal), nur Werkstätten:
+   * Schmiede 10 / 20 Eisenschrott, Kräuterküche 5 / 10 Grüne Kräuter, Arkanschmiede 5 / 10
+   * Kristallsplitter, Kriegsmaschinen 10 / 20 Eisenschrott (docs/GILDENSTADT.md, Spalte «Ausbau»).
+   */
+  ausbauBeute?: Record<string, number>;
   recipes: string[];
   expeditions: { partySlots: number; maxActiveRuns: number } | null;
   tags: string[];
@@ -66,6 +72,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     tier: 1,
     category: 'refine',
     buildCost: { gold: 50 },
+    ausbauBeute: { iron_scrap: 10 },
     recipes: ['RCP_IRON_SWORD', 'RCP_IRON_SHIELD', 'RCP_LEATHER_ARMOR', 'RCP_STEEL_SWORD', 'RCP_LONGBOW', 'RCP_CRYSTAL_STAFF', 'RCP_STEEL_ARMOR', 'RCP_CRYSTAL_PENDANT'],
     expeditions: null,
     tags: ['craft', 'gear'],
@@ -79,6 +86,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     tier: 1,
     category: 'refine',
     buildCost: { gold: 40 },
+    ausbauBeute: { herb_green: 5 },
     recipes: ['RCP_HEALING_POTION', 'RCP_POWER_BREAD', 'RCP_STRENGTH_POTION', 'RCP_MANA_POTION', 'RCP_ANTIDOTE', 'RCP_TITAN_BREW', 'RCP_SPEED_POTION'],
     expeditions: null,
     tags: ['craft', 'herb'],
@@ -92,6 +100,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     tier: 2,
     category: 'refine',
     buildCost: { gold: 80, iron_scrap: 5, crystal_shard: 3 },
+    ausbauBeute: { crystal_shard: 5 },
     recipes: ['RCP_MAGITECH_COMPONENT', 'RCP_ARCANE_BLADE', 'RCP_MAGITECH_SHIELD', 'RCP_ARCANE_PENDANT'],
     expeditions: null,
     tags: ['craft', 'gear', 'arcane'],
@@ -105,6 +114,7 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     tier: 3,
     category: 'refine',
     buildCost: { gold: 100, iron_scrap: 20, crystal_shard: 5 },
+    ausbauBeute: { iron_scrap: 10 },
     recipes: ['RCP_WAR_CATAPULT', 'RCP_WAR_CANNON'],
     expeditions: null,
     tags: ['craft', 'war'],

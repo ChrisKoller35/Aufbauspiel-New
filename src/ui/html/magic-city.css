@@ -568,27 +568,30 @@ svg.pk-kanten.pk-kanten-txt { z-index: 2; }
 .pk-karte.z-bauplatz .pk-st { color: var(--gl); }
 .pk-karte.z-bauplatz .pk-st::before { content: 'Bauen: '; color: var(--gold); }
 
-/* Lagerhaus: ein Balken über die ganze Breite */
-.pk-karte.pk-lager {
+/* Beute aus den Dungeons (Reihe oben): ein Balken über die ganze Breite mit den fünf Gruppen als Chips */
+.pk-karte.pk-breit {
   flex: 1 1 0; width: 0; min-width: 460px; flex-direction: row; align-items: center; gap: 14px;
-  padding-right: 12px; border-color: var(--gd); background: linear-gradient(90deg, rgba(40,32,12,.9), rgba(17,24,40,.8));
+  padding-right: 12px; background: linear-gradient(90deg, rgba(30,22,52,.9), rgba(17,24,40,.8));
 }
-.pk-lager .pk-img { width: 110px; height: 78px; }
-.pk-lager-txt { flex: none; width: 150px; }
-.pk-lager-txt .pk-nm { padding-left: 0; font-size: 0.72rem; color: var(--gl); }
-.pk-lager-txt .pk-st { padding-left: 0; }
+.pk-breit .pk-img { width: 110px; height: 78px; }
+.pk-breit-txt { flex: none; width: 150px; }
+.pk-breit-txt .pk-nm { padding-left: 0; font-size: 0.72rem; color: #c4b5fd; }
+.pk-breit-txt .pk-st { padding-left: 0; }
 .pk-chips { display: flex; flex-wrap: wrap; gap: 6px; flex: 1; }
 .pk-chip {
   font-size: 0.74rem; color: var(--mut); background: rgba(6,8,16,.6); border: 1px solid var(--bdr);
-  border-radius: 3px; padding: 2px 7px; white-space: nowrap;
+  border-radius: 3px; padding: 4px 8px; white-space: nowrap; cursor: help;
 }
 .pk-chip b { color: var(--txt); font-weight: 600; }
+.pk-chip:focus-visible { outline: 2px solid var(--gold); outline-offset: 1px; }
 
-/* Beute aus den Dungeons (Reihe oben) */
 .pk-quelle { border-color: #3c2d63; }
 .pk-quelle .pk-st { color: #c4b5fd; }
 .pk-quelle.z-wartet { border-color: #3c2d63; }
 .pk-quelle.z-wartet .pk-st { color: #c4b5fd; }
+/* Händler: immer offen, kauft und verkauft */
+.pk-karte.z-offen { border-color: #1f5f6b; }
+.pk-karte.z-offen .pk-st { color: #7dd3fc; }
 
 /* Ziele: Bauen, Expeditionen */
 .pk-ziel {
@@ -631,7 +634,8 @@ svg.pk-kanten.pk-kanten-txt { z-index: 2; }
   .nur-touch { display: inline; }
   .pk-eng-item { min-height: 44px; }
   .btab { min-height: 44px; }
-  .pk-karte:hover { transform: none; }
+  .btn-craft, .ws-cancel { min-height: 44px; }
+  .pk-karte:hover, .acard:hover { transform: none; }
 }
 
 /* Schmal (Handy): Raster ohne Linien, jede Karte sagt, wohin sie liefert */
@@ -647,8 +651,8 @@ svg.pk-kanten.pk-kanten-txt { z-index: 2; }
 .pk[data-modus="kompakt"] .pk-kopf small { margin-top: 0; }
 .pk[data-modus="kompakt"] .pk-row { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; width: 100%; }
 .pk[data-modus="kompakt"] .pk-karte, .pk[data-modus="kompakt"] .pk-ziel { width: auto; }
-.pk[data-modus="kompakt"] .pk-karte.pk-lager { grid-column: 1 / -1; width: auto; min-width: 0; flex-wrap: wrap; padding: 0 0 10px; }
-.pk[data-modus="kompakt"] .pk-lager .pk-chips { flex-basis: 100%; padding: 0 10px; }
+.pk[data-modus="kompakt"] .pk-karte.pk-breit { grid-column: 1 / -1; width: auto; min-width: 0; flex-wrap: wrap; padding: 0 0 10px; }
+.pk[data-modus="kompakt"] .pk-breit .pk-chips { flex-basis: 100%; padding: 0 10px; }
 .pk[data-modus="kompakt"] .pk-fluss { display: block; font-size: 0.72rem; color: var(--gl); padding: 0 8px 6px; line-height: 1.25; }
 @media (max-width: 700px) {
   .bmain { padding: 10px 10px 14px; }
@@ -666,7 +670,9 @@ text.pk-kl {
 }
 text.pk-kl.an { fill: var(--gl); }
 
-/* ── Gebäude-Fenster: Angaben, Wachstum, Vorrat, Ausbau ── */
+/* ── Gebäude-Fenster und Bau-Dialog: Bild, Angaben, Ausbau, Knöpfe ── */
+.bm-bild { text-align: center; margin-bottom: 8px; }
+.bm-bild img { width: 64px; height: 64px; object-fit: contain; }
 .bm-stufe {
   margin-left: 8px; padding: 2px 8px; font-size: 0.66rem; font-family: 'Cinzel', serif; vertical-align: middle;
   border: 1px solid var(--gd); border-radius: 3px; color: var(--gl); letter-spacing: .5px;
@@ -675,19 +681,54 @@ text.pk-kl.an { fill: var(--gl); }
 .bm-zeile { display: flex; flex-wrap: wrap; justify-content: space-between; padding: 4px 0; border-bottom: 1px solid var(--s3); font-size: 0.9rem; }
 .bm-zeile span { color: var(--mut); }
 .bm-zeile b { font-weight: normal; color: var(--txt); }
-.bm-zeile b.gut, .bm-wachs.gut span { color: #9be0a5; }
-.bm-zeile b.schlecht, .bm-wachs.schlecht span { color: #f0c674; }
-.bm-zeile small { width: 100%; font-size: 0.72rem; color: var(--mut); line-height: 1.3; margin-top: 2px; }
-.bm-wachs { margin: 4px 0 10px; font-size: 0.85rem; }
-.bm-wachs .pk-bar { margin: 6px 0 0; }
-.bm-vorrat { margin: 4px 0 10px; }
-.bm-info { font-size: 0.78rem; color: var(--mut); line-height: 1.3; }
+.bm-zeile b.gut { color: #9be0a5; }
+.bm-zeile b.schlecht { color: #f0c674; }
+.bm-info { font-size: 0.78rem; color: var(--mut); line-height: 1.3; margin-bottom: 8px; }
 .bm-ausbau { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--s3); }
 .bm-ausbau-w { font-size: 0.88rem; margin: 2px 0 6px; }
 .bm-ausbau .btn-ausbau { margin-top: 8px; }
 .bm-ausbau .btn-ausbau[disabled] { opacity: .45; cursor: not-allowed; }
+.bm-actions { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
+/* Knöpfe der Fenster: mindestens 44 px hoch (Handy) */
+.fk-btn {
+  min-height: 44px; padding: 8px 16px; border-radius: 4px; cursor: pointer; font: inherit; font-size: 0.85rem;
+  background: transparent; border: 1px solid var(--bdr); color: var(--txt);
+}
+.fk-btn:hover { border-color: var(--gold); }
+.fk-btn.ok { background: var(--grn); border-color: var(--grn); color: #fff; }
+.fk-btn.ok:hover { filter: brightness(1.2); }
+.fk-btn.gold { border-color: var(--gd); color: var(--gold); }
+.fk-btn.rot { background: var(--red); border-color: var(--red); color: #fff; }
 
-/* ── Aufbau-Reiter (Freischalt-Baum) ── */
+/* ── Händler-Fenster: Kaufen, Baupläne, Verkaufen (HaendlerFenster.ts) ── */
+.hf-kopf { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.hf-gold { font-size: 0.9rem; color: var(--gl); white-space: nowrap; }
+.hf-rabatt { font-size: 0.78rem; color: #9be0a5; }
+.hf-meldung { margin: 4px 0 8px; padding: 6px 10px; border-radius: 4px; font-size: 0.82rem; line-height: 1.3; background: var(--s2); }
+.hf-meldung.gut { color: #9be0a5; border: 1px solid rgba(34,197,94,.4); }
+.hf-meldung.schlecht { color: #f0c674; border: 1px solid rgba(122,90,20,.6); }
+.hf-abschnitt { margin-top: 12px; padding-top: 8px; border-top: 1px solid var(--s3); }
+.hf-abschnitt .lbl { display: block; margin-bottom: 4px; }
+.hf-ware { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 6px 0; border-bottom: 1px solid var(--s3); }
+.hf-name { flex: 1 1 9rem; min-width: 0; font-size: 0.9rem; color: var(--txt); }
+.hf-name small { display: block; font-size: 0.72rem; color: var(--mut); line-height: 1.3; }
+.hf-name .hf-hinweis { color: #f0c674; }
+.hf-preis { font-size: 0.82rem; color: var(--gl); white-space: nowrap; }
+.hf-ok { font-size: 0.82rem; color: #9be0a5; white-space: nowrap; }
+.hf-btn {
+  min-height: 44px; min-width: 56px; background: var(--s2); border: 1px solid var(--bdr); border-radius: 4px; color: var(--txt);
+  padding: 6px 10px; font: inherit; font-size: 0.8rem; white-space: nowrap; cursor: pointer;
+}
+.hf-kaufen:not(:disabled) { border-color: var(--gd); color: var(--gl); }
+.hf-verkaufen:not(:disabled) { border-color: var(--grn); color: #9be0a5; }
+.hf-btn:not(:disabled):hover { background: var(--s3); }
+.hf-btn:disabled { opacity: 0.45; cursor: not-allowed; }
+@media (max-width: 700px) {
+  .hf-name { flex-basis: 100%; }
+  .hf-btn { flex: 1 1 0; }
+}
+
+/* ── Aufbau-Reiter (die sechs Gebäude als Kacheln) ── */
 .aufbau { display: flex; flex-direction: column; gap: 12px; }
 .aufbau-legend { display: flex; gap: 14px; align-items: center; font-size: 0.75rem; color: var(--mut); }
 .aufbau-legend .lg::before {
@@ -696,26 +737,18 @@ text.pk-kl.an { fill: var(--gl); }
 }
 .aufbau-legend .lg.gebaut::before { background: var(--grn); border-color: #22c55e; }
 .aufbau-legend .lg.baubar::before { background: var(--gd); border-color: var(--gold); }
+.aufbau-legend .lg.bauplan::before { background: transparent; border-color: var(--gold); border-style: dashed; }
 .aufbau-legend .lg.gesperrt::before { background: var(--s3); border-color: var(--bdr); }
+.aufbau-legend { flex-wrap: wrap; }
 .aufbau-rang { margin-left: auto; font-family: 'Cinzel', serif; color: var(--gold); }
-.aufbau-scroll { overflow: auto; padding: 4px 4px 12px; }
-.aufbau-heads { position: relative; height: 22px; margin-bottom: 6px; }
-.aufbau-head {
-  position: absolute; top: 0; text-align: center;
-  font-family: 'Cinzel', serif; font-size: 0.65rem; letter-spacing: 2px; color: var(--mut);
-}
-.aufbau-tree { position: relative; }
-.alink {
-  position: absolute; height: 2px; margin-top: -1px; z-index: 0;
-  transform-origin: 0 50%; background: var(--bdr);
-}
-.alink.done { background: var(--gd); }
+.aufbau-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
 .acard {
-  position: absolute; z-index: 1; overflow: hidden; cursor: pointer;
+  position: relative; min-height: 92px; overflow: hidden; cursor: pointer;
   display: flex; flex-direction: column; justify-content: flex-end; gap: 2px; padding: 6px 8px;
   background-color: var(--s2); background-size: cover; background-position: center;
   border: 1px solid var(--bdr); border-radius: 8px; transition: .2s;
 }
+.acard:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
 .acard::before {
   content: ''; position: absolute; inset: 0; z-index: 0;
   background: linear-gradient(to top, rgba(6,8,16,.92) 0%, rgba(6,8,16,.4) 60%, transparent 100%);
@@ -728,6 +761,9 @@ text.pk-kl.an { fill: var(--gl); }
 .acard.baubar { border-color: var(--gold); box-shadow: 0 0 10px rgba(200,162,39,.35); }
 .acard.baubar:hover { transform: translateY(-2px); }
 .acard.empfohlen { border-width: 2px; box-shadow: 0 0 16px rgba(200,162,39,.7); }
+.acard.bauplan { border-color: var(--gold); border-style: dashed; }
+.acard.bauplan .acard-st { color: var(--gl); }
+.acard.bauplan:hover { transform: translateY(-2px); }
 .acard.gesperrt { filter: grayscale(1); border-style: dashed; }
 .acard.gesperrt::before { background: rgba(6,8,16,.72); }
 .acard.gesperrt .acard-nm { color: var(--mut); }
@@ -773,9 +809,7 @@ text.pk-kl.an { fill: var(--gl); }
 .ws-msg { font-size: 0.75rem; color: var(--mut); }
 .ws-warn { color: #f87171; }
 .ws-list { display: flex; flex-direction: column; gap: 6px; }
-.ws-rcp { background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; padding: 8px 10px; cursor: pointer; transition: .2s; }
-.ws-rcp:hover { border-color: var(--pur); }
-.ws-rcp.on { border-color: var(--gold); background: var(--s3); cursor: default; }
+.ws-rcp { background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; padding: 8px 10px; }
 .ws-rcp.hl { box-shadow: 0 0 0 2px var(--pur); }
 .ws-rcp .cingr { margin-bottom: 0; }
 .ws-rcp-hd { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
@@ -788,7 +822,6 @@ text.pk-kl.an { fill: var(--gl); }
 .ws-auf.on { border-color: var(--gold); }
 .ws-cancel { margin-left: auto; background: transparent; border: 1px solid var(--bdr); color: #f87171; border-radius: 4px; padding: 0 7px; cursor: pointer; }
 .ws-cancel:hover { border-color: #f87171; }
-.ws-rcp.ws-rcp-auf { cursor: default; }
 .ws-rcp-auf .ws-add { width: auto; margin: 0 0 0 6px; padding: 3px 9px; font-size: 0.65rem; white-space: nowrap; flex: none; }
 .craft-lauf { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin-bottom: 9px; }
 /* Von selbst (systems/Werkstattplan.ts): fehlende Zutat, die eine Werkstatt der Stadt macht, und der Zyklus dafür */
@@ -1696,6 +1729,8 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   font-family: inherit; font-size: 0.8rem; color: var(--txt); line-height: 1.25;
   overflow-wrap: anywhere; hyphens: auto;
 }
+/* Halbsatz zur Wirkung unter dem Namen («+8 Leben vor einem Kampf») */
+.pr .prw { display: block; font-size: 0.72rem; opacity: 0.75; }
 .pr .prbtn { flex-shrink: 0; }
 .pr .prov-qty {
   flex-shrink: 0; min-width: 2ch; text-align: center;

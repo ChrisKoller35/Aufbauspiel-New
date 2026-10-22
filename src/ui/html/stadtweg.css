@@ -164,8 +164,6 @@
 .sw-flamme { transform-box: fill-box; transform-origin: 50% 100%; animation: sw-feuer .9s ease-in-out infinite alternate; }
 .sw-flamme2 { animation-duration: .6s; }
 @keyframes sw-feuer { from { transform: scale(1.05, .85); opacity: .85; } to { transform: scale(.95, 1.12); opacity: 1; } }
-.sw-fluegel { transform-box: fill-box; transform-origin: center; animation: sw-drehen 14s linear infinite; }
-@keyframes sw-drehen { to { transform: rotate(360deg); } }
 .sw-rauch { transform-box: fill-box; transform-origin: center; animation: sw-rauch 4s ease-out infinite; }
 @keyframes sw-rauch { 0% { opacity: 0; transform: none; } 15% { opacity: .35; } 100% { opacity: 0; transform: translate(10px, -34px) scale(2.2); } }
 .sw-stern { animation: sw-funkeln 3.2s ease-in-out infinite; }
@@ -184,7 +182,7 @@
 @keyframes sw-neu { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: none; } }
 
 @media (prefers-reduced-motion: reduce) {
-  .sw-banner.bereit, .sw-auf:not(:disabled), .sw-flamme, .sw-fluegel, .sw-rauch, .sw-stern, .sw-flacker, .sw-aura,
+  .sw-banner.bereit, .sw-auf:not(:disabled), .sw-flamme, .sw-rauch, .sw-stern, .sw-flacker, .sw-aura,
   .sw-funke, .sw-pfad, .sw-fahne, .sw-neu, .sw-fest-titel, .sw-brief, .sw-toast { animation: none; }
   .sw-funke { opacity: .8; }
 }

@@ -4,7 +4,7 @@
 // freigeschaltet ist. Abgekürzt wird nur, was Zeit kostet: Die drei Helden sind sehr stark
 // (ihre Stärke ist eine Frage der Eichung, nicht der Regeln), und Gold und Beute für Bauten,
 // Ausbauten und Abgaben kommen dazu, als hätten die Dungeons sie gebracht; Baupläne des
-// Händlers liegen im Lager, als wären sie gekauft. Dazu die Obergrenzen, die die Daten setzen
+// Händlers kauft die Gilde bei ihm (systems/Haendler.ts). Dazu die Obergrenzen, die die Daten setzen
 // (z. B. vier Werkstätten, Werkstatt-Stufe 3).
 // ────────────────────────────────────────────────────────────────
 
@@ -14,7 +14,8 @@ import { createGuildFighter } from '../src/models/GuildRoster';
 import { createBuildingInstance } from '../src/models/Building';
 import { ACHIEVEMENT_DEFS, SAAL_SOCKEL } from '../src/data/achievements';
 import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../src/data/buildings';
-import { BAUPLAN_PREISE } from '../src/data/haendler';
+import { BAUPLAN_PREISE, bauplanPreis } from '../src/data/haendler';
+import { stadtStufeVon } from '../src/data/stadtstufen';
 import { CLASS_DEFS } from '../src/data/classes';
 import { STARTING_CLASSES } from '../src/data/classUnlocks';
 import { DUNGEON_GRAPH, ROUTE_DEFS, getRouteBauplan } from '../src/data/routes';
@@ -35,6 +36,7 @@ import { brettStand, istSpielbar, laufendesKapitel, liefern, saalKapitel, splitt
 import { belohnungenAbholen, TAG_MS } from '../src/systems/Rangliste';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
 import { dasGebaeude, freischaltHinweise } from '../src/systems/GebaeudeStatus';
+import { bauplanKaufen } from '../src/systems/Haendler';
 import { aufstiegStand, setzeHerzsteinEin, steigeAuf } from '../src/systems/Stadtweg';
 import { kannWegWaehlen, waehleWeg } from '../src/systems/Spezialisierung';
 import { erfolgePruefen, saalSterne } from '../src/systems/AchievementSystem';
@@ -103,13 +105,17 @@ function expedition(state: GameState, system: ExpeditionSystem, routeId: string,
 
 /**
  * Bauen wie im Gebäude-Menü: jede Art einmal, wenn nichts sie mehr sperrt (Gildenrang, Bauplan).
- * Einen Bauplan, den der Händler führt, hat die Gilde gekauft; Boss-Baupläne bringt expedition().
+ * Einen Bauplan, den der Händler führt, kauft die Gilde bei ihm (Erfolg «Erster Kauf»);
+ * Boss-Baupläne bringt expedition().
  */
 function bauen(state: GameState): void {
   for (const typeId of NEUBAUTEN) {
     const def = BUILDING_DEFS[typeId];
     const bauplan = def.freischaltung.bauplan;
-    if (bauplan && bauplan in BAUPLAN_PREISE && !dasGebaeude(state, typeId)) nachfuellen(state, { [bauplan]: 1 });
+    if (bauplan && bauplan in BAUPLAN_PREISE && !dasGebaeude(state, typeId) && !(state.globalStock[bauplan] ?? 0)) {
+      nachfuellen(state, { gold: bauplanPreis(bauplan, stadtStufeVon(state)) });
+      expect(bauplanKaufen(state, typeId).ok, typeId).toBe(true);
+    }
     if (dasGebaeude(state, typeId) || freischaltHinweise(state, typeId).length > 0) continue;
     nachfuellen(state, def.buildCost);
     for (const [id, n] of Object.entries(def.buildCost)) state.globalStock[id] -= n;
@@ -145,7 +151,7 @@ function stadtweg(state: GameState): void {
 function anheuern(state: GameState): void {
   for (const klasse of [...STARTING_CLASSES, ...state.classesUnlocked]) {
     if (state.fighters.some(f => f.classId === klasse)) continue;
-    state.fighters.push(createGuildFighter(0, klasse, CLASS_DEFS[klasse].name, { ...CLASS_DEFS[klasse].baseStats }));
+    state.fighters.push(createGuildFighter(klasse, CLASS_DEFS[klasse].name, { ...CLASS_DEFS[klasse].baseStats }));
   }
   for (const held of state.fighters) {
     if (kannWegWaehlen(held)) waehleWeg(held, wegeDerKlasse(held.classId)[0].id);
@@ -227,7 +233,7 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
   const gear = new GearSystem();
   const system = new ExpeditionSystem(gear, new ProvisionSystem());
   const trupp = STARTING_CLASSES.map(klasse => {
-    const held = createGuildFighter(0, klasse, CLASS_DEFS[klasse].name, { ...STARK });
+    const held = createGuildFighter(klasse, CLASS_DEFS[klasse].name, { ...STARK });
     state.fighters.push(held);
     return held.id;
   });
@@ -295,6 +301,7 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       werkstaetten: werkstaetten.length,
       werkstatt_hoechste_stufe: Math.max(...werkstaetten.map(maxStufe)),
       bauplaene: ALLE_BAUTEN.filter(id => BUILDING_DEFS[id].freischaltung.bauplan).length,
+      total_haendler_kaeufe: Infinity,
       stadtstufe: HOECHSTE_STADTSTUFE,
       total_days_survived: Infinity,
       gildenrang: GUILD_RANK_DEFS.length,

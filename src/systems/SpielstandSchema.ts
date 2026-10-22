@@ -33,7 +33,7 @@ const TEXTE = liste(TEXT);
 /** models/Building.ts */
 const GEBAEUDE = objekt({
   id: ZAHL, typeId: TEXT, built: JA_NEIN, activeRecipeId: oderNull(TEXT), productionTimer: ZAHL, producing: JA_NEIN,
-  vonSelbst: oderNull(objekt({ art: einerVon('vorstufe', 'zulieferung', 'vorrat'), fuer: TEXT }, ['art', 'fuer'])),
+  vonSelbst: oderNull(objekt({ art: einerVon('vorstufe', 'zulieferung'), fuer: TEXT }, ['art', 'fuer'])),
   tier: ZAHL, pendingCraft: JA_NEIN, auftraege: TEXTE,
 }, ['id', 'typeId']);
 
@@ -42,7 +42,7 @@ const HELD = objekt({
   id: ZAHL, classId: TEXT, name: TEXT,
   baseStats: objekt({ hp: ZAHL, maxHp: ZAHL, atk: ZAHL, def: ZAHL, spd: ZAHL, critChance: ZAHL, critMult: ZAHL }, ['maxHp']),
   gear: tabelle(oderNull(TEXT)), // mainHand, offHand, armor, trinket
-  gearNeedsRepair: JA_NEIN, xp: ZAHL, level: ZAHL, spezialisierung: TEXT, wegBilanz: ZAEHLER,
+  xp: ZAHL, level: ZAHL, spezialisierung: TEXT, wegBilanz: ZAEHLER,
 }, ['id', 'baseStats', 'gear']);
 
 const BESTENLISTE_EINTRAG = objekt({

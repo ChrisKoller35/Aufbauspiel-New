@@ -84,7 +84,8 @@ function bauplaeneErworben(state: GameState): Set<string> {
  * Werkstätten und ihre Stufen, Baupläne, Auftragsbrett, Trophäensaal, Pokale und
  * Schmiede. Es zählt jeweils der höchste je erreichte Wert, damit kein Fortschrittsbalken
  * zurückfällt (z. B. wenn ein Held die Gilde verlässt). Tage, Siege, Bosse und Gegner
- * kommen aus dem Spielstand selbst (Tag, Gildenstatistik und Bestenliste).
+ * kommen aus dem Spielstand selbst (Tag, Gildenstatistik und Bestenliste). Käufe beim Händler
+ * (total_haendler_kaeufe) zählt systems/Haendler.ts bei jedem Kauf; hier wird nur gelesen.
  */
 export function kennzahlenAktualisieren(state: GameState): void {
   const stats = state.statistics ?? (state.statistics = {});

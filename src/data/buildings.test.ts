@@ -42,6 +42,24 @@ describe('Die sechs Gebäude der Gildenstadt', () => {
     }
   });
 
+  it('jede Werkstatt hat Ausbau-Beute aus den Dungeons nach der Tabelle, Gildenhaus und Händler keine', () => {
+    expect(BUILDING_DEFS.SMITHY.ausbauBeute).toEqual({ iron_scrap: 10 });
+    expect(BUILDING_DEFS.HERB_GARDEN.ausbauBeute).toEqual({ herb_green: 5 });
+    expect(BUILDING_DEFS.ARCANE_SMITHY.ausbauBeute).toEqual({ crystal_shard: 5 });
+    expect(BUILDING_DEFS.WAR_MACHINE_WORKSHOP.ausbauBeute).toEqual({ iron_scrap: 10 });
+    for (const def of Object.values(BUILDING_DEFS)) {
+      if (def.recipes.length === 0) {
+        expect(def.ausbauBeute, def.id).toBeUndefined();
+        continue;
+      }
+      for (const [res, qty] of Object.entries(def.ausbauBeute ?? {})) {
+        expect(ITEM_DEFS[res], `${def.id}: ${res}`).toBeDefined();
+        expect(['iron_scrap', 'crystal_shard', 'herb_green'], `${def.id} verlangt ${res}`).toContain(res);
+        expect(qty, `${def.id}: ${res}`).toBeGreaterThan(0);
+      }
+    }
+  });
+
   it('jede Werkstatt braucht einen Bauplan, der als Item existiert und beim Händler zu haben ist', () => {
     for (const def of Object.values(BUILDING_DEFS)) {
       if (def.recipes.length === 0) continue;

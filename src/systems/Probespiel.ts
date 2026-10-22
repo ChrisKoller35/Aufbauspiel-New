@@ -94,10 +94,10 @@ export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu')
   if (gildenhaus) gildenhaus.tier = Math.max(gildenhaus.tier, BUILDING_UPGRADE_DEFS.GUILD_HALL_T2.toTier);
   state.guildStats.guildHallT2 = true;
 
-  // Wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire): citizenId 0, es gibt keine Bewohner.
+  // Helden wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire), schon auf Stufe und ausgerüstet
   const team = oben ? MUSTER_TEAMS.stark : MUSTER_TEAMS.gut;
   for (const muster of team.helden) {
-    const fighter = createGuildFighter(0, muster.classId, muster.name, musterWerte(muster));
+    const fighter = createGuildFighter(muster.classId, muster.name, musterWerte(muster));
     fighter.level = muster.stufe;
     fighter.xp = totalXpForLevel(muster.stufe);
     fighter.gear = { ...((oben && MUSTER_SETS[oben.sets].gear[muster.name]) || muster.gear) };

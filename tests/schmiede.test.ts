@@ -33,7 +33,7 @@ const WYRM = getSet('wyrm')!;
 
 /** Ein Held mit dem ganzen Set (oder ohne Ausrüstung) */
 function held(setId: string | null = null): GuildFighter {
-  const f = createGuildFighter(0, 'berserker', setId ? `Träger ${setId}` : 'Ohne', { ...GRUND });
+  const f = createGuildFighter('berserker', setId ? `Träger ${setId}` : 'Ohne', { ...GRUND });
   if (setId) for (const id of setTeilIds(getSet(setId)!)) f.gear[ITEM_DEFS[id].gearSlot!] = id;
   return f;
 }

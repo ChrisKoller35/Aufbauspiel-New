@@ -19,7 +19,7 @@ function bauen(state: GameState, typeId: string): void {
 
 function helden(state: GameState, anzahl: number): void {
   const werte = { hp: 30, maxHp: 30, atk: 5, def: 2, spd: 1, critChance: 0, critMult: 1.5 };
-  while (state.fighters.length < anzahl) state.fighters.push(createGuildFighter(0, 'guardian', `Held ${state.fighters.length + 1}`, werte));
+  while (state.fighters.length < anzahl) state.fighters.push(createGuildFighter('guardian', `Held ${state.fighters.length + 1}`, werte));
 }
 
 /** Spielstand, der alles für den Weiler erfüllt: Schmiede, ein Sieg, 50 Gold für die Abgabe von 40. */

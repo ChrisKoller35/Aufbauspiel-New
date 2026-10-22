@@ -1,7 +1,17 @@
 import { describe, it, expect } from 'vitest';
-import { modusFuer, flussText, erklaerung } from './ProduktionTab';
+import { modusFuer } from './MindmapLinien';
+import { flussText, erklaerung, zielWert } from './MindmapTexte';
+import { bauplanSchritt, bauplanKaufenText } from './AufbauTab';
 import { createNewGameState } from '../../models/GameState';
 import { createBuildingInstance } from '../../models/Building';
+import { placeStartingLayout } from '../../scenes/CityStartingLayout';
+
+/** Neues Spiel: Gildenhaus und Händler stehen, 100 Gold. */
+function stadt() {
+  const state = createNewGameState();
+  placeStartingLayout(state);
+  return state;
+}
 
 describe('Mindmap: Darstellung je Breite', () => {
   it('genug Platz: normal', () => {
@@ -19,24 +29,60 @@ describe('Mindmap: Darstellung je Breite', () => {
 
 describe('Mindmap: Texte', () => {
   it('Karten nennen im Raster, wohin sie liefern', () => {
-    expect(flussText('LUMBER_CAMP')).toBe('→ Lagerhaus: Holz');
-    expect(flussText('WELL')).toContain('Kräutergarten');
-    // Das Lagerhaus beliefert zu viele Ziele für eine Zeile
-    expect(flussText('WAREHOUSE')).toBe('');
+    expect(flussText('SMITHY')).toBe('→ Gildenhaus: Ausrüstung');
+    expect(flussText('HAENDLER')).toContain('Baupläne');
+    // Der Beute-Balken beliefert zu viele Ziele für eine Zeile
+    expect(flussText('q:beute')).toBe('');
   });
 
   it('Erklärung: Bauplatz nennt Kosten und, wenn empfohlen, den Grund', () => {
-    const state = createNewGameState();
-    const huette = createBuildingInstance('LUMBER_CAMP', 0, 0, true);
-    state.buildings.push(huette);
-    const e = erklaerung(state, 'QUARRY');
-    expect(e.titel).toBe('Steinbruch');
-    expect(e.zeilen.join(' ')).toContain('Klick: bauen');
+    const state = stadt();
+    state.globalStock.bauplan_schmiede = 1;
+    const e = erklaerung(state, 'SMITHY');
+    expect(e.titel).toBe('Schmiede');
+    expect(e.zeilen.join(' ')).toContain('Klick: bauen für 50 Gold');
     expect(e.zeilen.join(' ')).toContain('Lohnt sich als Nächstes');
   });
 
-  it('Erklärung: gesperrtes Gebäude nennt den Grund', () => {
-    const state = createNewGameState();
-    expect(erklaerung(state, 'MILL_WIND').zeilen.join(' ')).toContain('Noch gesperrt');
+  it('Erklärung: fehlt nur der Bauplan des Händlers, steht «Bauplan kaufen (N Gold)»', () => {
+    const state = stadt();
+    expect(bauplanSchritt(state, 'SMITHY')).toEqual({ preis: 50 });
+    expect(bauplanKaufenText(50)).toBe('Bauplan kaufen (50 Gold)');
+    expect(erklaerung(state, 'SMITHY').zeilen.join(' ')).toContain('Klick: Bauplan kaufen (50 Gold) beim Händler.');
+    // Mit Rabatt der Stadtstufe
+    state.stadtweg!.stufe = 7;
+    expect(bauplanSchritt(state, 'HERB_GARDEN')).toEqual({ preis: 40 });
+    // Liegt der Bauplan im Lager oder steht das Gebäude, gibt es den Schritt nicht mehr
+    state.globalStock.bauplan_kraeuterkueche = 1;
+    expect(bauplanSchritt(state, 'HERB_GARDEN')).toBeNull();
+    state.buildings.push(createBuildingInstance('SMITHY'));
+    expect(bauplanSchritt(state, 'SMITHY')).toBeNull();
+  });
+
+  it('Erklärung: gesperrtes Gebäude (Gildenrang) nennt den Grund, kein Kauf-Knopf', () => {
+    const state = stadt();
+    expect(bauplanSchritt(state, 'ARCANE_SMITHY')).toBeNull();
+    const text = erklaerung(state, 'ARCANE_SMITHY').zeilen.join(' ');
+    expect(text).toContain('Noch gesperrt');
+    expect(text).toContain('Gildenrang 2');
+  });
+
+  it('Erklärung: Beute-Gruppe nennt den Vorrat, Händler den Laden', () => {
+    const state = stadt();
+    state.globalStock.iron_scrap = 7;
+    const e = erklaerung(state, 'beute:eisen');
+    expect(e.titel).toBe('Eisenschrott');
+    expect(e.zeilen.join(' ')).toContain('Im Lager: 7.');
+    expect(erklaerung(state, 'HAENDLER').zeilen.join(' ')).toContain('kaufen und verkaufen');
+  });
+
+  it('Ziel «Bauen»: ohne Bauplatz steht der nächste Bauplan, sonst «sammle Gold und Eisenschrott»', () => {
+    const state = stadt();
+    expect(zielWert(state, 'bauen')).toBe('Bauplan kaufen (50 Gold)');
+    state.globalStock.bauplan_schmiede = 1;
+    expect(zielWert(state, 'bauen')).toBe('1 baubar');
+    state.globalStock.gold = 0;
+    for (const id of ['SMITHY', 'HERB_GARDEN', 'ARCANE_SMITHY', 'WAR_MACHINE_WORKSHOP']) state.buildings.push(createBuildingInstance(id));
+    expect(zielWert(state, 'bauen')).toBe('sammle Gold und Eisenschrott');
   });
 });

@@ -59,9 +59,9 @@ const WERTE = { hp: 50, maxHp: 50, atk: 8, def: 4, spd: 1, critChance: 0, critMu
 function standMitHelden(): GameState {
   const state = createNewGameState();
   bauen(state, 'SMITHY');
-  const held = createGuildFighter(0, 'guardian', 'Brom', WERTE);
+  const held = createGuildFighter('guardian', 'Brom', WERTE);
   held.level = 4;
-  state.fighters.push(held, createGuildFighter(0, 'ranger', 'Lia', { ...WERTE, hp: 30, maxHp: 30 }));
+  state.fighters.push(held, createGuildFighter('ranger', 'Lia', { ...WERTE, hp: 30, maxHp: 30 }));
   state.day = 12;
   state.stadtweg = { stufe: 3, herzsteine: [], gelesen: 0 };
   state.saveVersion = CURRENT_VERSION;
@@ -112,7 +112,7 @@ describe('SaveSystem', () => {
     saveSystem.load();
 
     expect(createBuildingInstance('HERB_GARDEN').id).toBe(8);
-    expect(createGuildFighter(0, 'cleric', 'Neu', WERTE).id).toBe(43);
+    expect(createGuildFighter('cleric', 'Neu', WERTE).id).toBe(43);
   });
 
   it('ein Stand aus der Zeit vor der Gildenstadt (Version 23) lädt wie kein Stand, nichts wird geschrieben', () => {

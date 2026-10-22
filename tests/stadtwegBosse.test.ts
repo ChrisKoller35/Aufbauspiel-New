@@ -23,7 +23,7 @@ function spieleRoute(state: GameState, system: ExpeditionSystem, routeId: string
 
 test('ein Boss aus einer gewonnenen Expedition zählt für die Stadtstufe', () => {
   const state = createNewGameState();
-  const held = createGuildFighter(1, 'guardian', 'Testheld', {
+  const held = createGuildFighter('guardian', 'Testheld', {
     hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1,
   });
   state.fighters.push(held);

@@ -28,7 +28,8 @@ describe('Ausbau: Stufen und Kosten', () => {
     expect(maxStufe('GIBT_ES_NICHT')).toBe(1);
   });
 
-  it('Ausbau kostet Gold der Baukosten mal Stufe plus Beute nach der Tabelle in docs/GILDENSTADT.md', () => {
+  it('Ausbau kostet Gold der Baukosten mal Stufe plus die Beute aus BuildingDef.ausbauBeute (docs/GILDENSTADT.md)', () => {
+    expect(BUILDING_DEFS.SMITHY.ausbauBeute).toEqual({ iron_scrap: 10 });
     expect(ausbauKosten('SMITHY', 2)).toEqual({ gold: 100, iron_scrap: 10 });
     expect(ausbauKosten('SMITHY', 3)).toEqual({ gold: 150, iron_scrap: 20 });
     expect(ausbauKosten('HERB_GARDEN', 2)).toEqual({ gold: 80, herb_green: 5 });

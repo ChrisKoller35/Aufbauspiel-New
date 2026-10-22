@@ -18,6 +18,7 @@ import {
   AchievementSystem, beiNeuenErfolgen, erfolgePruefen, freigeschalteteErfolge, kennzahlenAktualisieren,
   ungeseheneErfolge, ungeseheneErfolgIds,
 } from '../src/systems/AchievementSystem';
+import { bauplanKaufen, kaufen, verkaufen } from '../src/systems/Haendler';
 import { erfolgHinweis, renderHeader } from '../src/ui/screens/HeaderRenderer';
 import { erfolgeGeoeffnet } from '../src/ui/screens/AchievementsScreen';
 
@@ -145,6 +146,23 @@ describe('Erfolge: Liste', () => {
     // Gildenhaus und Händler sind keine Werkstätten
     expect(state.statistics.werkstaetten).toBe(4);
   });
+
+  test('Gildenstadt: der erste Kauf beim Händler, Ware oder Bauplan; Verkaufen zählt nicht', () => {
+    const state = createNewGameState();
+    state.globalStock.gold = 200;
+    expect(verkaufen(state, 'bread', 1).ok).toBe(true);
+    erfolgePruefen(state);
+    expect(state.achievements).not.toContain('haendler_1');
+
+    expect(kaufen(state, 'bread', 2).ok).toBe(true);
+    expect(erfolgePruefen(state)).toEqual(['haendler_1']);
+    expect(state.statistics.total_haendler_kaeufe).toBe(1);
+
+    const bauplan = createNewGameState();
+    bauplan.globalStock.gold = 200;
+    expect(bauplanKaufen(bauplan, 'SMITHY').ok).toBe(true);
+    expect(erfolgePruefen(bauplan)).toEqual(expect.arrayContaining(['haendler_1', 'bauplan_1']));
+  });
 });
 
 describe('Erfolge: Reparaturen', () => {
@@ -159,7 +177,7 @@ describe('Erfolge: Reparaturen', () => {
 
   test('«Armeeführer» zählt die Helden in der Gilde', () => {
     const state = createNewGameState();
-    for (let i = 0; i < 10; i++) state.fighters.push(createGuildFighter(0, 'guardian', `H${i}`, GRUND));
+    for (let i = 0; i < 10; i++) state.fighters.push(createGuildFighter('guardian', `H${i}`, GRUND));
     kennzahlenAktualisieren(state);
     expect(state.statistics.helden_anzahl).toBe(10);
     expect(new AchievementSystem().checkAchievements(state.statistics, [])).toContain('army_builder');
@@ -184,7 +202,7 @@ describe('Erfolge: Reparaturen', () => {
 
   test('Kennzahlen fallen nicht zurück, wenn ein Held die Gilde verlässt', () => {
     const state = createNewGameState();
-    state.fighters.push(createGuildFighter(0, 'guardian', 'A', GRUND), createGuildFighter(0, 'guardian', 'B', GRUND));
+    state.fighters.push(createGuildFighter('guardian', 'A', GRUND), createGuildFighter('guardian', 'B', GRUND));
     kennzahlenAktualisieren(state);
     state.fighters.pop();
     kennzahlenAktualisieren(state);
@@ -269,7 +287,7 @@ describe('Erfolge: ältere Spielstände holen nach, was ihre Daten hergeben', ()
 describe('Erfolge: Ende einer Expedition', () => {
   test('Gildenrang, Kette und Monsterbuch zählen sofort, in der Bilanz und ohne Hinweis in der Kopfzeile', () => {
     const state = createNewGameState();
-    const held = createGuildFighter(1, 'guardian', 'Testheld', STARK);
+    const held = createGuildFighter('guardian', 'Testheld', STARK);
     state.fighters.push(held);
     const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
     const gemeldet: { ids: string[]; hinweis: boolean }[] = [];
@@ -304,7 +322,7 @@ describe('Erfolge: Ende einer Expedition', () => {
     const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
     const nachEinerExpedition = (vorher: (s: GameState) => void) => {
       const state = createNewGameState();
-      const held = createGuildFighter(1, 'guardian', 'Testheld', STARK);
+      const held = createGuildFighter('guardian', 'Testheld', STARK);
       state.fighters.push(held);
       vorher(state);
       const run = spieleRoute(state, system, 'forest_short', held.id);

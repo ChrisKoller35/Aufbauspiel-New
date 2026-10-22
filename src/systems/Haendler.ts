@@ -2,8 +2,9 @@
 // Zustandslogik auf dem Spielstand: Waren und Baupläne kaufen (Preis
 // mit Rabatt der Stadtstufe, data/haendler.ts), Beute verkaufen (halber
 // Grundwert). Jede Funktion gibt zurück, ob es geklappt hat, und einen
-// Satz in Spielersprache, den das Händler-Fenster (BuildingsScreen)
-// nur noch anzeigt. Regeln und Zahlen: docs/GILDENSTADT.md.
+// Satz in Spielersprache, den das Händler-Fenster (ui/screens/
+// HaendlerFenster.ts) nur noch anzeigt. Käufe zählen in
+// statistics.total_haendler_kaeufe (Erfolg «Erster Kauf»). Regeln und Zahlen: docs/GILDENSTADT.md.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../data/buildings';
@@ -34,6 +35,12 @@ function ganzeMenge(menge: number): boolean {
   return Number.isInteger(menge) && menge >= 1;
 }
 
+/** Jeder Kauf (Ware oder Bauplan) zählt für den Erfolg «Erster Kauf» (data/achievements.ts). */
+function zaehleKauf(state: GameState): void {
+  const stats = state.statistics ?? (state.statistics = {});
+  stats.total_haendler_kaeufe = (stats.total_haendler_kaeufe ?? 0) + 1;
+}
+
 // ── Kaufen ──────────────────────────────────────────────────────
 
 /** Kauft `menge` Stück einer Ware (HAENDLER_WAREN) zum Preis der Stadtstufe. */
@@ -47,6 +54,7 @@ export function kaufen(state: GameState, itemId: string, menge = 1): HaendlerErg
   }
   bezahle(state, preis);
   state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + menge;
+  zaehleKauf(state);
   return { ok: true, text: `${menge}× ${name(itemId)} gekauft für ${preis} Gold.` };
 }
 
@@ -78,6 +86,7 @@ export function bauplanKaufen(state: GameState, typeId: string): HaendlerErgebni
   }
   bezahle(state, preis);
   state.globalStock[bauplan] = 1;
+  zaehleKauf(state);
   return { ok: true, text: `${name(bauplan)} gekauft für ${preis} Gold. Jetzt kannst du ${gebaeude} bauen.` };
 }
 

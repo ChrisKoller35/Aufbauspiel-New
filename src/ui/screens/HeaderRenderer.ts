@@ -112,6 +112,27 @@ if (typeof document !== 'undefined') {
   });
 }
 
+/** Was die Kopfzeile aus dem Lager zeigt: Gold und die Beute der Werkstätten, dazu der Proviant. */
+const VORRAT_ZEILE: { itemId: string; zeichen: string }[] = [
+  { itemId: 'gold', zeichen: '\uD83E\uDE99' },
+  { itemId: 'iron_scrap', zeichen: '\u2699\uFE0F' },
+  { itemId: 'crystal_shard', zeichen: '\uD83D\uDC8E' },
+  { itemId: 'bread', zeichen: '\uD83C\uDF5E' },
+  { itemId: 'healing_potion', zeichen: '\uD83E\uDDEA' },
+];
+
+/**
+ * Inhalt der Vorrats-Anzeige (.res) in jeder Kopfzeile: Gold, Eisenschrott, Kristallsplitter,
+ * Brot, Heiltrank und der Tag. main.ts schreibt sie jede Sekunde neu.
+ */
+export function vorratsZeileHtml(state: GameState): string {
+  const vorrat = VORRAT_ZEILE
+    .map(({ itemId, zeichen }) => `<span>${zeichen} ${(state.globalStock[itemId] ?? 0).toLocaleString('de')}</span>`)
+    .join('\n        ');
+  return `${vorrat}
+        <span style="color:var(--mut)">Tag ${state.day}</span>`;
+}
+
 /**
  * Renders the standard header bar with logo, optional back button, and resource display.
  */
@@ -120,14 +141,6 @@ export function renderHeader(
   backTarget?: ScreenId,
   currentLabel?: string,
 ): string {
-  const gold = state.globalStock['gold'] ?? 0;
-  const wood = state.globalStock['wood'] ?? 0;
-  const stone = state.globalStock['stone'] ?? 0;
-  const bread = state.globalStock['bread'] ?? 0;
-  const grain = state.globalStock['grain'] ?? 0;
-  const iron = state.globalStock['iron_scrap'] ?? 0;
-  const gems = state.globalStock['crystal_shard'] ?? 0;
-
   const backBtn = backTarget
     ? `<button class="btn-back hdr-back" data-nav="${backTarget}">← Zurück</button>`
     : '';
@@ -150,14 +163,7 @@ export function renderHeader(
       ${note}
       <div class="hdr-space"></div>
       <div class="res">
-        <span>\uD83E\uDE99 ${gold.toLocaleString('de')}</span>
-        <span>\uD83E\uDEB5 ${wood}</span>
-        <span>\uD83E\uDEA8 ${stone}</span>
-        <span>\uD83C\uDF5E ${bread}</span>
-        <span>\uD83C\uDF3E ${grain}</span>
-        <span>\u2699\uFE0F ${iron}</span>
-        <span>\uD83D\uDC8E ${gems}</span>
-        <span style="color:var(--mut)">Tag ${state.day}</span>
+        ${vorratsZeileHtml(state)}
       </div>
       <button type="button" class="hdr-erfolge" data-nav="achievements" title="Erfolge" aria-label="${erfolgKnopfName(ungeseheneErfolge(state))}">${erfolgKnopfInhalt(ungeseheneErfolge(state))}</button>
     </div>`;

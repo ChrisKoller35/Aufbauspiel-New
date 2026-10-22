@@ -63,7 +63,6 @@ describe('Probespiel', () => {
     expect(state.guildStats.guildHallT2).toBe(true);
     for (const f of state.fighters) {
       expect(f.level).toBe(12);
-      expect(f.citizenId).toBe(0);
       for (const itemId of Object.values(f.gear)) {
         if (itemId) expect(ITEM_DEFS[itemId], itemId).toBeTruthy();
       }
@@ -78,8 +77,7 @@ describe('Probespiel', () => {
     expect(state.globalStock.bread).toBeGreaterThanOrEqual(30);
     expect(state.globalStock.healing_potion).toBeGreaterThanOrEqual(10);
     expect(state.globalStock.power_bread).toBe(5);
-    expect(state.globalStock.wood).toBeUndefined();
-    expect(state.globalStock.stone).toBeUndefined();
+    for (const itemId of Object.keys(state.globalStock)) expect(ITEM_DEFS[itemId], itemId).toBeTruthy();
     expect(state.buildings.map(b => b.typeId)).toEqual(['GUILD_HALL', 'HAENDLER']);
   });
 

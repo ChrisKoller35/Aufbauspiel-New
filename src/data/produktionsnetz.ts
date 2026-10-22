@@ -1,8 +1,8 @@
 // ─── Magic City – Produktionsnetz der Gildenstadt ───────────────
 // Reine Daten für den Reiter «Stadt»: eine Mindmap in drei Reihen.
-// Oben die Beute aus den Dungeons als breiter Balken (wie früher das
-// Lagerhaus): Eisenschrott, Kristallsplitter, Grüne Kräuter, Seltene
-// Kräuter und Dungeon-Material, jede Gruppe mit ihrem Vorrat. Darunter
+// Oben die Beute aus den Dungeons als breiter Balken: Eisenschrott,
+// Kristallsplitter, Grüne Kräuter, Seltene Kräuter und Dungeon-Material,
+// jede Gruppe mit ihrem Vorrat. Darunter
 // die vier Werkstätten und der Händler, zuunterst das Gildenhaus mit
 // den Zielen Expeditionen und Bauen. Jedes Gebäude kommt genau einmal
 // vor (ein Gebäude je Art, Ausbau statt Mehrfachbau).

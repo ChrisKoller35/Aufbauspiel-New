@@ -525,7 +525,7 @@ describe('Siegel einlösen', () => {
 describe('Trophäensaal', () => {
   /** Ein Held, der jeden Kampf gewinnt (wie in expeditionProgress.test.ts) */
   function mitHeld(state: GameState): { system: ExpeditionSystem; heroId: number } {
-    const hero = createGuildFighter(1, 'guardian', 'Testheld', {
+    const hero = createGuildFighter('guardian', 'Testheld', {
       hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1,
     });
     state.fighters.push(hero);

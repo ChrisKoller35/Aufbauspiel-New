@@ -9,15 +9,13 @@ import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteComplet
 import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
-import { BuildingUpgradeSystem } from '../../systems/BuildingUpgradeSystem';
+import { heldenJeExpedition } from '../../systems/Ausbau';
 import { setFuerRoute, DungeonSetDef } from '../../data/dungeonSets';
 import { setKurzinfo } from '../components/SetAnzeige';
 import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
 import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
-
-const buildingUpgradeSystem = new BuildingUpgradeSystem();
 
 // ── Module state ──
 
@@ -210,7 +208,7 @@ function buildTeamHTML(): string {
   const recLevel = route ? route.recommendedLevel : '';
 
   // Slots (2x2 grid, 3 slots / 4 with Guild Hall T2) — styled like hero cards
-  const maxSlots = buildingUpgradeSystem.getPartySlots(gameState);
+  const maxSlots = heldenJeExpedition(gameState);
   let slotsHTML = '';
   for (let i = 0; i < maxSlots; i++) {
     const hero = selectedHeroes[i];
@@ -270,9 +268,8 @@ function buildTeamHTML(): string {
     if (!def) return '';
     const qty = provisions[itemId] ?? 0;
     const stock = gameState.globalStock[itemId] ?? 0;
-    // Was der Vorrat im Dungeon bewirkt, als Halbsatz (ITEM_DEFS[id].wirkungText, docs/GILDENSTADT.md «Tränke mit Wirkung»)
-    const wirkung = (def as { wirkungText?: string }).wirkungText;
-    const wirkungHtml = wirkung ? `<br><span style="font-size:0.72rem;opacity:0.75">${wirkung}</span>` : '';
+    // Was der Vorrat im Dungeon bewirkt, als Halbsatz (docs/GILDENSTADT.md «Tränke mit Wirkung»)
+    const wirkungHtml = def.wirkungText ? `<br><span class="prw">${def.wirkungText}</span>` : '';
     return `
       <div class="pr" data-prov="${itemId}">
         <span class="prn">${def.name} (${stock})${wirkungHtml}</span>
@@ -329,7 +326,7 @@ function bindTeamEvents(el: HTMLElement): void {
     const heroEl = target.closest<HTMLElement>('.hsm[data-hero-id]');
     if (heroEl) {
       const heroId = Number(heroEl.dataset.heroId);
-      if (selectedHeroes.length < buildingUpgradeSystem.getPartySlots(gameState)) {
+      if (selectedHeroes.length < heldenJeExpedition(gameState)) {
         const fighter = gameState.fighters.find(f => f.id === heroId);
         if (fighter && !selectedHeroes.some(h => h.id === heroId)) {
           selectedHeroes.push(fighter);

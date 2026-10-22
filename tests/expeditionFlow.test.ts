@@ -8,7 +8,7 @@ import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 /** State with one overpowered hero so every combat is won. */
 function setup(): { state: GameState; system: ExpeditionSystem; heroId: number } {
   const state = createNewGameState();
-  const hero = createGuildFighter(1, 'guardian', 'Testheld', {
+  const hero = createGuildFighter('guardian', 'Testheld', {
     hp: 9999, maxHp: 9999, atk: 999, def: 999, spd: 99, critChance: 0, critMult: 1,
   });
   state.fighters.push(hero);

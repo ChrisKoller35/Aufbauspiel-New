@@ -6,12 +6,12 @@ import { createNewGameState } from '../src/models/GameState';
 
 test('Tempo der Ausrüstung zählt mit Bruchteilen', () => {
   const gear = new GearSystem();
-  const wache = createGuildFighter(1, 'guardian', 'Brom', { ...CLASS_DEFS.guardian.baseStats });
+  const wache = createGuildFighter('guardian', 'Brom', { ...CLASS_DEFS.guardian.baseStats });
   // 0,8 − 0,05 (Aetherschild) + 0,1 (Aetherkristall-Herz); früher −1 durch Abrunden
   wache.gear = { mainHand: 'soulbreaker', offHand: 'aether_guardian_shield', armor: null, trinket: 'aether_heart' };
   expect(gear.getEffectiveStats(wache).spd).toBe(0.85);
 
-  const jaegerin = createGuildFighter(2, 'ranger', 'Lia', { ...CLASS_DEFS.ranger.baseStats });
+  const jaegerin = createGuildFighter('ranger', 'Lia', { ...CLASS_DEFS.ranger.baseStats });
   // 1,2 + 0,2 (Bogen der Ewigen Jagd); früher fiel der Bonus weg
   jaegerin.gear = { mainHand: 'eternal_hunter_bow', offHand: null, armor: null, trinket: null };
   expect(gear.getEffectiveStats(jaegerin).spd).toBe(1.4);
@@ -20,7 +20,7 @@ test('Tempo der Ausrüstung zählt mit Bruchteilen', () => {
 test('neue Einhandwaffe ersetzt die Waffe, der Schild bleibt', () => {
   const gear = new GearSystem();
   const state = createNewGameState();
-  const wache = createGuildFighter(1, 'guardian', 'Brom', { ...CLASS_DEFS.guardian.baseStats });
+  const wache = createGuildFighter('guardian', 'Brom', { ...CLASS_DEFS.guardian.baseStats });
   wache.gear = { mainHand: 'soulbreaker', offHand: 'aether_guardian_shield', armor: null, trinket: null };
   state.fighters = [wache];
   state.globalStock.iron_sword = 1;
@@ -31,7 +31,7 @@ test('neue Einhandwaffe ersetzt die Waffe, der Schild bleibt', () => {
 
 test('zweite Einhandwaffe: ohne Wahl in die freie Nebenhand, sonst in die angetippte Hand', () => {
   const gear = new GearSystem();
-  const sina = createGuildFighter(1, 'assassin', 'Sina', { ...CLASS_DEFS.assassin.baseStats });
+  const sina = createGuildFighter('assassin', 'Sina', { ...CLASS_DEFS.assassin.baseStats });
   sina.gear = { mainHand: 'steel_sword', offHand: null, armor: null, trinket: null };
   expect(gear.resolveEquipSlot(sina, 'iron_sword')).toBe('offHand');
   expect(gear.resolveEquipSlot(sina, 'iron_sword', 'mainHand')).toBe('mainHand');

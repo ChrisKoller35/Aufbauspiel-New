@@ -25,7 +25,7 @@ function playRoute(routeId: string, seed: number, schwach = false): ExpeditionRu
     const klasse = CLASS_DEFS[h.classId].baseStats;
     const hp = schwach ? Math.floor(h.hp / 2) : h.hp;
     const atk = schwach ? Math.floor(h.atk / 2) : h.atk;
-    const held = createGuildFighter(i + 1, h.classId, `Held ${i + 1}`, {
+    const held = createGuildFighter(h.classId, `Held ${i + 1}`, {
       hp, maxHp: hp, atk, def: h.def,
       spd: klasse.spd, critChance: klasse.critChance, critMult: klasse.critMult,
     });

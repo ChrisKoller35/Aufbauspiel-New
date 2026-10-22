@@ -1,6 +1,6 @@
 // ─── Magic City – Ein Gebäude im Spielstand ─────────────────────
-// Ein Gebäude je Art; es steht sofort (keine Bauzeit, kein Bauplatz,
-// keine Arbeiter). Werkstätten arbeiten ihre Auftragsliste ab
+// Ein Gebäude je Art; es steht sofort nach dem Bau (keine Bauzeit,
+// kein Bauplatz). Werkstätten arbeiten ihre Auftragsliste ab
 // (systems/Auftraege.ts, systems/Werkstattplan.ts, systems/ProductionSystem.ts);
 // die Stufe (tier) macht sie schneller (systems/Ausbau.ts).
 // ────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ export interface BuildingInstance {
   productionTimer: number;  // Sekunden bis zum Ende des laufenden Zyklus
   producing: boolean;       // läuft gerade ein Zyklus?
   /** Laufender Zyklus ohne Auftrag: Vorstufe oder Zulieferung (systems/Werkstattplan.ts). */
-  vonSelbst?: { art: 'vorstufe' | 'zulieferung' | 'vorrat'; fuer: string } | null;
+  vonSelbst?: { art: 'vorstufe' | 'zulieferung'; fuer: string } | null;
   /** Ausbau-Stufe 1 bis maxStufe (systems/Ausbau.ts). */
   tier: number;
   pendingCraft: boolean;         // ein Auftrag wartet (systems/Auftraege.ts)

@@ -161,7 +161,7 @@ export class EncounterProcessor {
     run.combatLog.push('   Heiltrankh: 15 Gold | Brot: 8 Gold | Kraft-Brot: 25 Gold');
   }
 
-  processSurvivor(run: ExpeditionRun, _room: EncounterRoom, _rng: SeededRNG): void {
+  processSurvivor(run: ExpeditionRun): void {
     // 3 XP für jedes lebende Party-Mitglied
     const aliveParty = run.party.filter(u => u.hp > 0);
     if (!run.xpEarned) run.xpEarned = {};

@@ -29,8 +29,10 @@ der einzige der das spielt»). Umsetzung: Variante 1 «Gildenstadt» (Thread «M
 | Arkanschmiede `ARCANE_SMITHY` | zu bauen | Bauplan (Kristallgolem, erster Sieg, oder Händler 150 Gold), Gildenrang 2 | 80 Gold, 5 Eisenschrott, 3 Kristallsplitter | 160 / 240 Gold + 5 / 10 Kristallsplitter | Magitech-Komponente, Arkanklinge, Magitech-Schild, Arkan-Amulett |
 | Kriegsmaschinen-Werkstatt `WAR_MACHINE_WORKSHOP` | zu bauen | Bauplan (Gefallener Ritter oder Händler 250 Gold), Gildenrang 4 | 100 Gold, 20 Eisenschrott, 5 Kristallsplitter | 200 / 300 Gold + 10 / 20 Eisenschrott | Katapult, Kanone |
 
-Ausbau-Kosten = Baukosten × Zielstufe (wie bisher `ausbauKosten`), die Stadtstufe begrenzt die Werkstatt-Stufe
-(`grenzen.werkstatt` 1/1/2/2/3/3/3). Eine Werkstatt auf Stufe N arbeitet N-mal so schnell (kein Arbeiter mehr nötig).
+Ausbau-Kosten (`ausbauKosten` in `systems/Ausbau.ts`) = Gold der Baukosten × Zielstufe plus die Beute je Stufe über
+der ersten aus `BuildingDef.ausbauBeute` (`data/buildings.ts`: Schmiede 10 Eisenschrott, Kräuterküche 5 Grüne Kräuter,
+Arkanschmiede 5 Kristallsplitter, Kriegsmaschinen 10 Eisenschrott; Stufe 2 einmal, Stufe 3 zweimal, also die Spalte
+«Ausbau» oben). Die Stadtstufe begrenzt die Werkstatt-Stufe (`grenzen.werkstatt` 1/1/2/2/3/3/3). Eine Werkstatt auf Stufe N arbeitet N-mal so schnell (kein Arbeiter mehr nötig).
 
 **Weg:** Farm, Brunnen, Windmühle, Bäckerei, Holzfällerhütte, Steinbruch, Lagerhaus, Wohnviertel, Eisenmine, Strasse,
 Dungeon-Lager, Schatztruhe, Marktplatz, Bank. Rohstoffe Holz, Stein, Getreide, Mehl, Wasser. Bewohner, Zufriedenheit,

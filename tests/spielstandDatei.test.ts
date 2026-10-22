@@ -30,13 +30,11 @@ import { belohnungenAbholen, ranglisteStand } from '../src/systems/Rangliste';
 import { kannWegWaehlen, waehleWeg } from '../src/systems/Spezialisierung';
 import { spieleRoute } from '../src/systems/Musterlauf';
 import { auftragGeben } from '../src/systems/Auftraege';
-import { erfolgePruefen } from '../src/systems/AchievementSystem';
+import { TAG_SEKUNDEN, neuerTag } from '../src/systems/Tag';
 
 /** Montag, 2. November 2026, 10:00 (Ortszeit) */
 const MONTAG = new Date(2026, 10, 2, 10, 0).getTime();
 const TAG = 86_400_000;
-/** Länge eines Spieltags in Sekunden (DAY_TICK_INTERVAL in main.ts) */
-const TAG_SEKUNDEN = 30;
 
 function speicher(): Storage {
   const data = new Map<string, string>();
@@ -58,15 +56,12 @@ function neuesSpiel(probe?: 'gut' | 'sterne'): GameState {
   return state;
 }
 
-/** Die Spielschleife aus main.ts: Werkstätten jede Sekunde, Tageswechsel alle TAG_SEKUNDEN. */
+/** Die Spielschleife aus main.ts: Werkstätten jede Sekunde, Tageswechsel alle TAG_SEKUNDEN (systems/Tag.ts). */
 function spieleSekunden(state: GameState, sekunden: number): void {
   const produktion = new ProductionSystem();
   for (let sekunde = 1; sekunde <= sekunden; sekunde++) {
     produktion.update(state, 1);
-    if (sekunde % TAG_SEKUNDEN === 0) {
-      state.day++;
-      erfolgePruefen(state);
-    }
+    if (sekunde % TAG_SEKUNDEN === 0) neuerTag(state);
   }
 }
 
@@ -86,9 +81,9 @@ function baue(state: GameState, typeId: string): BuildingInstance {
 function heuereAn(state: GameState, classId: string): void {
   const def = CLASS_DEFS[classId];
   state.fighters.push({
-    id: state.fighters.reduce((m, f) => Math.max(m, f.id), 0) + 1, citizenId: 0, classId, name: def.name,
+    id: state.fighters.reduce((m, f) => Math.max(m, f.id), 0) + 1, classId, name: def.name,
     baseStats: { ...def.baseStats }, gear: { mainHand: null, offHand: null, armor: null, trinket: null },
-    gearNeedsRepair: false, xp: 0, level: 1,
+    xp: 0, level: 1,
   });
 }
 
