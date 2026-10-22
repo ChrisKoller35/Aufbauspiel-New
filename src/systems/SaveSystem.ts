@@ -6,6 +6,7 @@ import { resetFighterIdCounter } from '../models/GuildRoster';
 import { BUILDING_DEFS } from '../data/buildings';
 import { CLASS_DEFS } from '../data/classes';
 import { entferneGebaeude, vereinigeDoppelte } from './Ausbau';
+import { stadtStufeVon } from '../data/stadtstufen';
 
 /** Speicherplatz aller SaveSystem-Instanzen; das Probespiel hat einen eigenen (nutzeProbespiel) */
 let saveKey = 'magic_city_save';
@@ -50,6 +51,83 @@ function entferneTreppe(state: GameState): void {
     delete lauf.treppe;
   }
   console.log('Endlose Treppe aus dem Spielstand entfernt.');
+}
+
+/** Was ein Spielstand enthält, wie es das Fenster «Spielstand» zeigt. */
+export interface SpielstandZusammenfassung {
+  tag: number;
+  stadtstufe: number;
+  helden: number;
+  hoechsteHeldenstufe: number;
+}
+
+export type SpielstandPruefung =
+  | { ok: true; zusammenfassung: SpielstandZusammenfassung }
+  | { ok: false; grund: string };
+
+/** true, solange das Probespiel seinen eigenen Speicherplatz nutzt (nutzeProbespiel). */
+export function probespielAktiv(): boolean {
+  return saveKey === 'magic_city_probe';
+}
+
+export function fasseSpielstandZusammen(state: Pick<GameState, 'day' | 'fighters' | 'stadtweg'>): SpielstandZusammenfassung {
+  const stufen = (state.fighters ?? []).map(f => Number(f.level) || 1);
+  return {
+    tag: Number(state.day) || 1,
+    stadtstufe: stadtStufeVon(state),
+    helden: stufen.length,
+    hoechsteHeldenstufe: stufen.length > 0 ? Math.max(...stufen) : 0,
+  };
+}
+
+/**
+ * Prüft den Text einer Spielstand-Datei, ohne etwas zu schreiben. Abgelehnt werden
+ * unlesbares JSON, Dateien ohne die Pflichtfelder und Stände einer neueren Version.
+ * Ältere Versionen sind erlaubt, load() hebt sie an.
+ */
+export function pruefeSpielstandText(text: string): SpielstandPruefung {
+  let daten: unknown;
+  try {
+    daten = JSON.parse(text);
+  } catch {
+    return { ok: false, grund: 'Die Datei lässt sich nicht lesen.' };
+  }
+  const s = daten as Partial<GameState> | null;
+  if (!s || typeof s !== 'object' || Array.isArray(s) || !s.grid || !Array.isArray(s.buildings)
+      || !s.globalStock || typeof s.globalStock !== 'object'
+      || !Array.isArray(s.citizens) || !Array.isArray(s.fighters)) {
+    return { ok: false, grund: 'Das ist keine Magic-City-Datei.' };
+  }
+  if (typeof s.saveVersion === 'number' && s.saveVersion > CURRENT_VERSION) {
+    return { ok: false, grund: 'Diese Datei ist von einer neueren Version des Spiels.' };
+  }
+  return { ok: true, zusammenfassung: fasseSpielstandZusammen(s as GameState) };
+}
+
+/** Dateiname zum Herunterladen, z. B. magic-city-tag-12-2026-10-22.json. */
+export function spielstandDateiname(tag: number, datum = new Date()): string {
+  const zwei = (n: number) => String(n).padStart(2, '0');
+  const jjjjmmtt = `${datum.getFullYear()}-${zwei(datum.getMonth() + 1)}-${zwei(datum.getDate())}`;
+  return `magic-city-${probespielAktiv() ? 'probespiel' : 'tag'}-${tag}-${jjjjmmtt}.json`;
+}
+
+/**
+ * Zustände alter Spielstände, die das heutige Spiel nie mehr setzt und nie mehr löst
+ * (docs/SPIELSTAND.md): Unwetter-Pause (Stadt-Ereignisse laufen nicht mehr), Reparatur-
+ * Merker der Ausrüstung (Reparieren gibt es nicht mehr) und Gebäude im Bau (Bauen ist
+ * sofort fertig). Läuft bei jedem Laden, braucht deshalb keine neue SaveVersion.
+ */
+export function loeseAlteZustaende(state: GameState): void {
+  state.activeEvent = null;
+  for (const b of state.buildings ?? []) {
+    b.eventPaused = false;
+    if (b.built === false) {
+      b.built = true;
+      b.buildProgress = 0;
+      b.assignedBuilderId = null;
+    }
+  }
+  for (const f of state.fighters ?? []) f.gearNeedsRepair = false;
 }
 
 export class SaveSystem {
@@ -149,6 +227,7 @@ export class SaveSystem {
         this.migrate(state);
       }
       this.ensureNewFields(state);
+      loeseAlteZustaende(state);
 
       // Always remove deprecated items
       delete state.globalStock['war_hammer'];
@@ -189,6 +268,7 @@ export class SaveSystem {
         this.migrate(state);
       }
       this.ensureNewFields(state);
+      loeseAlteZustaende(state);
 
       const maxBuildingId = state.buildings.reduce((max, b) => Math.max(max, b.id), 0);
       const maxCitizenId = state.citizens.reduce((max, c) => Math.max(max, c.id), 0);
@@ -219,57 +299,28 @@ export class SaveSystem {
     );
   }
 
-  /** Download save as JSON file */
-  exportSave(): void {
-    const json = localStorage.getItem(saveKey);
-    if (!json) {
-      console.warn('No save to export');
-      return;
-    }
-    const blob = new Blob([json], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    const date = new Date().toISOString().slice(0, 10);
-    a.download = `magic_city_save_${date}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    console.log('Save exported.');
+  /** Der gespeicherte Spielstand als Text (zum Herunterladen), null wenn keiner da ist. */
+  spielstandText(): string | null {
+    return localStorage.getItem(saveKey);
   }
 
-  /** Import save from JSON file, returns true on success */
-  importSave(): Promise<boolean> {
-    return new Promise((resolve) => {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = '.json';
-      input.onchange = () => {
-        const file = input.files?.[0];
-        if (!file) { resolve(false); return; }
-        const reader = new FileReader();
-        reader.onload = () => {
-          try {
-            const json = reader.result as string;
-            const parsed = JSON.parse(json) as GameState;
-            // Sanity check
-            if (!parsed.grid || !Array.isArray(parsed.buildings) || !parsed.globalStock
-                || !Array.isArray(parsed.citizens) || !Array.isArray(parsed.fighters)) {
-              console.error('Invalid save file');
-              resolve(false);
-              return;
-            }
-            localStorage.setItem(saveKey, json);
-            console.log('Save imported. Day:', parsed.day);
-            resolve(true);
-          } catch (e) {
-            console.error('Import failed:', e);
-            resolve(false);
-          }
-        };
-        reader.readAsText(file);
-      };
-      input.click();
-    });
+  /**
+   * Schreibt den Text einer Spielstand-Datei auf den Speicherplatz, wenn er die Prüfung
+   * besteht; der bisherige Stand bleibt als Sicherung. Danach muss das Spiel sofort neu
+   * laden (location.reload), sonst überschreibt das laufende Spiel den geladenen Stand.
+   */
+  schreibeSpielstandText(text: string): SpielstandPruefung {
+    const pruefung = pruefeSpielstandText(text);
+    if (!pruefung.ok) return pruefung;
+    try {
+      const bisher = localStorage.getItem(saveKey);
+      if (bisher) localStorage.setItem(backupKey, bisher);
+      localStorage.setItem(saveKey, text);
+    } catch (e) {
+      console.error('Spielstand laden fehlgeschlagen:', e);
+      return { ok: false, grund: 'Der Browser hat keinen Platz, um den Spielstand zu speichern.' };
+    }
+    return pruefung;
   }
 
   /**

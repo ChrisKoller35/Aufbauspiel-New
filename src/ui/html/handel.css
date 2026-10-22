@@ -1,0 +1,22 @@
+/* ============================================================
+   Magic City – Handel am Marktplatz (Gebäude-Fenster)
+   Je Ware: Name und Vorrat, «verkaufen», «kaufen».
+   Ist das Fenster schmal (Handy), rutschen die Knöpfe unter den Namen.
+   ============================================================ */
+
+.hd { margin-top: 12px; padding-top: 10px; border-top: 1px solid var(--s3); }
+.hd .lbl { display: block; margin-bottom: 4px; }
+.hd-ware {
+  display: flex; flex-wrap: wrap; gap: 6px; align-items: center;
+  padding: 5px 0; border-bottom: 1px solid var(--s3);
+}
+.hd-name { flex: 1 1 8rem; min-width: 0; font-size: 0.9rem; color: var(--txt); }
+.hd-name small { display: block; font-size: 0.72rem; color: var(--mut); }
+.hd-btn {
+  flex: 1 0 auto; background: var(--s2); border: 1px solid var(--bdr); border-radius: 4px; color: var(--txt);
+  padding: 6px 8px; font: inherit; font-size: 0.78rem; white-space: nowrap; cursor: pointer;
+}
+.hd-verkaufen:not(:disabled) { border-color: var(--grn); color: #9be0a5; }
+.hd-kaufen:not(:disabled) { border-color: var(--gd); color: var(--gl); }
+.hd-btn:not(:disabled):hover { background: var(--s3); }
+.hd-btn:disabled { opacity: 0.45; cursor: not-allowed; }

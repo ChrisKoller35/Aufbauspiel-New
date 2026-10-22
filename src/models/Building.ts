@@ -25,6 +25,8 @@ export interface BuildingInstance {
   eventPaused: boolean;          // true = paused by storm event
   pendingCraft: boolean;         // true = player triggered manual craft, start next cycle
   auftraege: string[];           // waiting orders (recipe IDs), see systems/Auftraege.ts
+  handelTag?: number;            // Marktplatz: Tag, an dem zuletzt gehandelt wurde (systems/Handel.ts)
+  handelBuendel?: number;        // Marktplatz: an diesem Tag gehandelte Bündel
 }
 
 let nextBuildingId = 1;
