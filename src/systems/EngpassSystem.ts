@@ -4,9 +4,8 @@
 // Beute (Expedition), fehlt Gold, Bauplan fehlt (Händler oder Boss).
 // ────────────────────────────────────────────────────────────────
 
-import { BUILDING_DEFS, bauplanHinweis } from '../data/buildings';
+import { BUILDING_DEFS } from '../data/buildings';
 import { netzGebaeudeIds } from '../data/produktionsnetz';
-import { stadtStufeVon } from '../data/stadtstufen';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 import {
@@ -30,19 +29,29 @@ function ausbauHinweis(state: GameState, typeId: string): string {
   return `${name} stellt sie her und läuft schon auf höchster Stufe, es braucht Zeit.`;
 }
 
-/** Ein Gebäude fehlt noch: Bauplan fehlt (Händler oder Boss) oder es ist baubar. */
+/** «a», «a und b», «a, b und c» */
+function mitUnd(teile: string[]): string {
+  return teile.length < 2 ? teile.join('') : `${teile.slice(0, -1).join(', ')} und ${teile[teile.length - 1]}`;
+}
+
+/**
+ * Ein Gebäude fehlt noch, kurz und ohne Doppelung: «Schmiede: Bauplan fehlt – beim Händler (40 Gold).»,
+ * «Arkanschmiede braucht Gildenrang 2.», «… braucht Gildenrang 2 und den Bauplan – beim Händler (150 Gold)
+ * oder vom Kristallgolem.» oder, baubar, «Schmiede fehlt noch. Bauen kostet 50 Gold.»
+ * Die Hinweise kommen aus GebaeudeStatus (Bauplan-Preis schon mit Rabatt der Stadtstufe).
+ */
 function fehltSatz(state: GameState, typeId: string): string {
   const name = gebaeudeName(typeId);
   const status = getGebaeudeStatus(state, typeId);
-  if (status.zustand === 'gesperrt') {
-    const hinweise = status.hinweise ?? [];
-    const bauplan = bauplanHinweis(typeId, stadtStufeVon(state));
-    const bauplanFehlt = bauplan && hinweise.some(h => h.startsWith('Bauplan'));
-    const rest = hinweise.filter(h => !h.startsWith('Bauplan'));
-    const teile = [bauplanFehlt ? `Bauplan fehlt: ${bauplan}` : '', ...rest].filter(Boolean);
-    return `${name} ist noch gesperrt. ${teile.join(', ')}.`;
+  if (status.zustand !== 'gesperrt') {
+    return `${name} fehlt noch. Bauen kostet ${kostenText(BUILDING_DEFS[typeId]?.buildCost ?? {})}.`;
   }
-  return `${name} fehlt noch. Bauen kostet ${kostenText(BUILDING_DEFS[typeId]?.buildCost ?? {})}.`;
+  const hinweise = status.hinweise ?? [];
+  // «Bauplan beim Händler (40 Gold) oder vom Kristallgolem» → «beim Händler (40 Gold) oder vom Kristallgolem»
+  const bauplan = hinweise.find(h => h.startsWith('Bauplan '))?.slice('Bauplan '.length);
+  const rest = hinweise.filter(h => !h.startsWith('Bauplan ')).map(h => h.replace(/^braucht /, ''));
+  if (rest.length === 0) return `${name}: Bauplan fehlt – ${bauplan ?? 'ohne Quelle'}.`;
+  return `${name} braucht ${mitUnd(bauplan ? [...rest, `den Bauplan – ${bauplan}`] : rest)}.`;
 }
 
 /** Woher Gold und Beute kommen, wenn keine Werkstatt sie macht. */
@@ -63,7 +72,7 @@ function lieferHinweis(state: GameState, item: string): string {
   return dafuer + ausbauHinweis(state, n.von);
 }
 
-export function grundSatz(state: GameState, grund: WarteGrund): string | null {
+function grundSatz(state: GameState, grund: WarteGrund): string | null {
   switch (grund.art) {
     case 'auftrag': return null; // Der Spieler entscheidet selbst, wann er herstellt
     case 'zulieferung': return null; // Die Zutat entsteht gerade in der liefernden Werkstatt
@@ -102,8 +111,8 @@ export interface Engpass {
 
 /**
  * Die wichtigsten Engpässe der Stadt, höchstens `max`:
- * zuerst gebaute Werkstätten, die warten, dann der empfohlene nächste Bau (Empfehlung.ts),
- * dann das erste gesperrte Gebäude.
+ * zuerst gebaute Werkstätten, die warten, dann der empfohlene nächste Schritt (Empfehlung.ts:
+ * ein Held, typeId leer, oder ein Bau), dann das erste gesperrte Gebäude.
  */
 export function engpaesseDerStadt(state: GameState, max = 3): Engpass[] {
   const ids = netzGebaeudeIds();
@@ -118,7 +127,8 @@ export function engpaesseDerStadt(state: GameState, max = 3): Engpass[] {
   }
   // Der nächste Bau ist derselbe, den die Mindmap als «Als Nächstes» hervorhebt
   const naechster = naechsterBau(state);
-  if (naechster) nimm(naechster.typeId, fehltSatz(state, naechster.typeId));
+  if (naechster?.schritt === 'held') nimm('', `${naechster.text}: ${naechster.warum}`);
+  else if (naechster) nimm(naechster.typeId, fehltSatz(state, naechster.typeId));
   const gesperrt = status.find(x => x.s.zustand === 'gesperrt');
   if (gesperrt) nimm(gesperrt.typeId, fehltSatz(state, gesperrt.typeId));
 

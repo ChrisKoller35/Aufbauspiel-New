@@ -8,6 +8,7 @@ import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { ranglisteKurz } from './Rangliste';
 import { brettKurz } from './Auftragsbrett';
+import { vereinigeDoppelte } from './Ausbau';
 import { SPIELSTAND, istMagicCityStand, nurSichereTexte } from './SpielstandSchema';
 
 /** Speicherplatz aller SaveSystem-Instanzen; das Probespiel hat einen eigenen (nutzeProbespiel) */
@@ -270,9 +271,13 @@ export class SaveSystem {
     }
   }
 
-  /** Was bei jedem Laden mit dem gelesenen Stand geschieht (load, probeLaden): fehlende Felder anlegen. */
+  /**
+   * Was bei jedem Laden mit dem gelesenen Stand geschieht (load, probeLaden): fehlende Felder
+   * anlegen, doppelte Gebäude einer Art zu einem verschmelzen (ein Gebäude je Art, systems/Ausbau.ts).
+   */
   private bereiteVor(state: GameState): GameState {
     if (!Array.isArray(state.erhalteneBauplaene)) state.erhalteneBauplaene = [];
+    vereinigeDoppelte(state);
     return state;
   }
 

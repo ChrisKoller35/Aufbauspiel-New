@@ -13,19 +13,23 @@ const HINWEIS_MS = 4000;
 let hinweisTimer: number | null = null;
 /** Kommt ein zweiter Hinweis so kurz nach dem ersten (z. B. ein Erfolg nach «Zettel erledigt»), steht er daneben */
 const ZUSAMMEN_MS = 600;
-let letzterHinweis = { text: '', zeit: 0 };
+let letzterHinweis = { text: '', zeit: 0, ende: 0 };
 
 /**
- * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup). Am Handy steht er an der
+ * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup), nach `dauerMs`
+ * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Am Handy steht er an der
  * Stelle des Logos (erfolge.css, .hdr-mit-hinweis): Die Kopfzeile wird nicht höher, kein Knopf rutscht weg.
+ * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist.
  */
-export function zeigeKopfHinweis(text: string): void {
+export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
   if (typeof document === 'undefined') return;
   const jetzt = Date.now();
+  let ende = jetzt + dauerMs;
   if (hinweisTimer !== null && jetzt - letzterHinweis.zeit < ZUSAMMEN_MS && !letzterHinweis.text.includes(text)) {
     text = `${letzterHinweis.text} · ${text}`;
+    ende = Math.max(ende, letzterHinweis.ende);
   }
-  letzterHinweis = { text, zeit: jetzt };
+  letzterHinweis = { text, zeit: jetzt, ende };
   const hdrs = document.querySelectorAll('.hdr');
   for (let i = 0; i < hdrs.length; i++) {
     const hdr = hdrs[i] as HTMLElement;
@@ -44,7 +48,7 @@ export function zeigeKopfHinweis(text: string): void {
     document.querySelectorAll('.hdr-note').forEach(n => n.remove());
     document.querySelectorAll('.hdr-mit-hinweis').forEach(h => h.classList.remove('hdr-mit-hinweis'));
     hinweisTimer = null;
-  }, HINWEIS_MS);
+  }, ende - jetzt);
 }
 
 beiAuftragFertig((b, recipe) => {

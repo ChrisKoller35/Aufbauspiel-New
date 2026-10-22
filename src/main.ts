@@ -180,7 +180,8 @@ document.addEventListener('DOMContentLoaded', () => {
   initScreenStyles();
 
   // Ein alter Stand wurde beim Start verworfen: das einmal sagen, jetzt, wo es eine Kopfzeile gibt
-  if (alterStandVerworfenBeimStart()) zeigeKopfHinweis(VOR_GILDENSTADT);
+  // (10 Sekunden: der Satz ist lang, und wer ihn verpasst, findet ihn nur noch im Fenster «Spielstand»)
+  if (alterStandVerworfenBeimStart()) zeigeKopfHinweis(VOR_GILDENSTADT, 10_000);
   hebeSperreNachLadenAuf();
 
   // ─── Keyboard Shortcuts ──────────────────────────────────────
@@ -188,7 +189,9 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
-    // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben)
+    // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben).
+    // Ist ein Fenster offen (Händler, Gebäude, Stadtweg, Spielstand), fängt dessen Hörer in der
+    // Capture-Phase die Taste vorher ab (FensterHilfen.fensterTaste): Escape schliesst dann nur das Fenster.
     switch (e.key.toUpperCase()) {
       case 'K': navigateTo('bestiarium'); break;
       case 'A': navigateTo('achievements'); break;

@@ -21,6 +21,7 @@ import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
+import { anheuerKosten } from '../../systems/Empfehlung';
 import { xpProgress, xpForNextLevel, totalXpForLevel, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 
 const gearSystem = new GearSystem();
@@ -569,12 +570,9 @@ function renderHireTab(): string {
       : '<div class="empty-msg">Alle freigeschalteten Klassen bereits rekrutiert. Weitere Klassen werden durch Expeditionen freigeschaltet.</div>';
   }
 
-  // Cost scales with how many heroes you already own
-  const owned = state.fighters.length;
-  const cards = available.map(c => {
-    const cost = 50 + owned * 30;
-    return renderHireCard(c, cost);
-  }).join('');
+  // Der zweite Held kostet 50, jeder weitere 30 mehr (systems/Empfehlung.ts)
+  const cost = anheuerKosten(state.fighters.length);
+  const cards = available.map(c => renderHireCard(c, cost)).join('');
 
   return `<div class="hcards">${cards}</div>`;
 }
@@ -818,9 +816,8 @@ export function renderHeroesScreen(container: HTMLElement): void {
   for (let i = 0; i < hireBtns.length; i++) {
     hireBtns[i].addEventListener('click', () => {
       const classId = hireBtns[i].getAttribute('data-class-id') ?? '';
-      const cost = Number(hireBtns[i].getAttribute('data-cost'));
       const btn = hireBtns[i] as HTMLElement;
-      handleHire(classId, cost, container, btn);
+      handleHire(classId, container, btn);
     });
   }
 
@@ -1015,9 +1012,10 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
   }, 600);
 }
 
-function handleHire(classId: string, cost: number, container: HTMLElement, btn: HTMLElement): void {
+function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): void {
   if (!gameState) return;
   const gold = gameState.globalStock['gold'] ?? 0;
+  const cost = anheuerKosten(gameState.fighters.length);
 
   // Not enough gold — show error feedback on button
   if (gold < cost) {

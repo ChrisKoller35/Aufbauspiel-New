@@ -6,6 +6,8 @@ import { ProductionSystem } from './ProductionSystem';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
 import { placeStartingLayout } from '../scenes/CityStartingLayout';
+import { createGuildFighter } from '../models/GuildRoster';
+import { CLASS_DEFS } from '../data/classes';
 
 function bauen(state: GameState, typeId: string): BuildingInstance {
   const b = createBuildingInstance(typeId);
@@ -13,10 +15,11 @@ function bauen(state: GameState, typeId: string): BuildingInstance {
   return b;
 }
 
-/** Neues Spiel wie in main.ts: Gildenhaus und Händler stehen, 100 Gold. */
+/** Neues Spiel wie in main.ts (Gildenhaus, Händler, Guardian, 100 Gold), dazu ein zweiter Held, damit die Empfehlung Gebäude nennt. */
 function startStadt(): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
+  state.fighters.push(createGuildFighter('ranger', CLASS_DEFS.ranger.name, CLASS_DEFS.ranger.baseStats));
   return state;
 }
 
@@ -44,15 +47,27 @@ describe('GebaeudeStatus: Freischaltung', () => {
     expect(freischaltHinweise(state, 'ARCANE_SMITHY')).toEqual([
       'braucht Gildenrang 2', 'Bauplan beim Händler (150 Gold) oder vom Kristallgolem',
     ]);
-    state.guildStats.rank = 2;
+    expect(engpassFuerGebaeude(state, 'ARCANE_SMITHY'))
+      .toBe('Arkanschmiede braucht Gildenrang 2 und den Bauplan – beim Händler (150 Gold) oder vom Kristallgolem.');
     state.globalStock.bauplan_arkanschmiede = 1;
+    expect(engpassFuerGebaeude(state, 'ARCANE_SMITHY')).toBe('Arkanschmiede braucht Gildenrang 2.');
+    state.guildStats.rank = 2;
     expect(freischaltHinweise(state, 'ARCANE_SMITHY')).toEqual([]);
+  });
+
+  it('der Bauplan-Preis steht überall mit dem Rabatt der Stadtstufe (Stufe 7: 20 %)', () => {
+    const state = startStadt();
+    state.stadtweg!.stufe = 7;
+    expect(freischaltHinweise(state, 'SMITHY')).toEqual(['Bauplan beim Händler (40 Gold)']);
+    expect(getGebaeudeStatus(state, 'SMITHY').hinweise).toEqual(['Bauplan beim Händler (40 Gold)']);
+    expect(engpassFuerGebaeude(state, 'SMITHY')).toBe('Schmiede: Bauplan fehlt – beim Händler (40 Gold).');
+    expect(freischaltHinweise(state, 'ARCANE_SMITHY')[1]).toBe('Bauplan beim Händler (120 Gold) oder vom Kristallgolem');
   });
 
   it('Gildenhaus und Händler stehen von Anfang an: Helden in der Gilde, «Kauft und verkauft.»', () => {
     const state = startStadt();
     expect(getGebaeudeStatus(state, 'HAENDLER')).toMatchObject({ zustand: 'offen', text: 'Kauft und verkauft.', anzahl: 1, stufe: 1 });
-    expect(getGebaeudeStatus(state, 'GUILD_HALL')).toMatchObject({ zustand: 'bereit', text: '0 Helden in der Gilde' });
+    expect(getGebaeudeStatus(state, 'GUILD_HALL')).toMatchObject({ zustand: 'bereit', text: '2 Helden in der Gilde' });
     expect(engpassFuerGebaeude(state, 'HAENDLER')).toBeNull();
     expect(engpassFuerGebaeude(state, 'GUILD_HALL')).toBeNull();
   });
@@ -113,8 +128,8 @@ describe('GebaeudeStatus: Werkstätten', () => {
     expect(nachschub(state, 'magitech_component')).toEqual({ kommt: false, item: 'magitech_component', von: 'ARCANE_SMITHY' });
     expect(nachschubText('magitech_component', nachschub(state, 'magitech_component'))).toBe('Arkanschmiede fehlt');
     expect(engpassFuerGebaeude(state, 'WAR_MACHINE_WORKSHOP')).toBe(
-      'Magitech-Komponente: 0 im Lager, 2 pro Auftrag. Arkanschmiede ist noch gesperrt. '
-      + 'Bauplan fehlt: Bauplan beim Händler (150 Gold) oder vom Kristallgolem, braucht Gildenrang 2.',
+      'Magitech-Komponente: 0 im Lager, 2 pro Auftrag. '
+      + 'Arkanschmiede braucht Gildenrang 2 und den Bauplan – beim Händler (150 Gold) oder vom Kristallgolem.',
     );
     // Mit Bauplan und Rang ist sie baubar
     state.guildStats.rank = 2;
@@ -162,10 +177,14 @@ describe('GebaeudeStatus: Werkstätten', () => {
 });
 
 describe('Engpässe der Stadt', () => {
-  it('neues Spiel: zuerst der Bauplan der Schmiede beim Händler', () => {
+  it('neues Spiel: zuerst ein zweiter Held, dann der Bauplan der Schmiede beim Händler', () => {
+    const neu = createNewGameState();
+    placeStartingLayout(neu);
+    expect(engpaesseDerStadt(neu)[0].satz).toMatch(/^Held anheuern \(50 Gold\): /);
+    expect(engpaesseDerStadt(neu)[1]).toEqual({ typeId: 'SMITHY', satz: 'Schmiede: Bauplan fehlt – beim Händler (50 Gold).' });
     const state = startStadt();
     const liste = engpaesseDerStadt(state);
-    expect(liste[0]).toEqual({ typeId: 'SMITHY', satz: 'Schmiede ist noch gesperrt. Bauplan fehlt: Bauplan beim Händler (50 Gold).' });
+    expect(liste[0]).toEqual({ typeId: 'SMITHY', satz: 'Schmiede: Bauplan fehlt – beim Händler (50 Gold).' });
     expect(liste.length).toBeLessThanOrEqual(3);
   });
 
@@ -178,7 +197,7 @@ describe('Engpässe der Stadt', () => {
     expect(liste[0].typeId).toBe('SMITHY');
     expect(liste[0].satz).toContain('schick die Helden auf Expedition');
     expect(liste[1].typeId).toBe('HERB_GARDEN');
-    expect(liste[1].satz).toContain('Bauplan beim Händler (50 Gold)');
+    expect(liste[1].satz).toBe('Kräuterküche: Bauplan fehlt – beim Händler (50 Gold).');
   });
 
   it('alles gebaut und nichts bestellt: keine Engpässe', () => {

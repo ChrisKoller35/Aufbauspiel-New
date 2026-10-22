@@ -3,6 +3,40 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag Gildenstadt (22.10.2026)
+
+Christophs Wunsch vom 22.10.2026: keine Rohstoff-Stadt mehr, sondern ein Händler für die Start-Items, Baupläne für die
+nützlichen Gebäude, und Herstellen nur noch aus Dungeon-Material und Gold. Umgesetzt als Variante 1 «Gildenstadt»
+(`docs/GILDENSTADT.md`, mit Abschnitt «Umsetzung» zu den Entscheidungen). Spielstände vor Version 24 werden nicht
+übernommen (`docs/SPIELSTAND.md`).
+
+**Weg:** Farm, Brunnen, Windmühle, Bäckerei, Holzfällerhütte, Steinbruch, Lagerhaus, Wohnviertel, Eisenmine, Strasse,
+Dungeon-Lager, Schatztruhe, Marktplatz, Bank; Holz, Stein, Getreide, Mehl, Wasser; Bewohner, Zufriedenheit, Steuern,
+Arbeiter, Raster, Stadt-Ereignisse, Synergien, Spezialisten, Talismane, Verschleiss, Tagesbilanz, Markt-Handel in
+Bündeln, NPC-Rettung, Helden-Bürger-Bindung, Bauzeit, Migration alter Spielstände. Gelöscht: `src/data/{cityEvents,
+handel, npcs, specialists, synergies, talismans}.ts`, `src/models/Citizen.ts`, `src/systems/{BuildingUpgradeSystem,
+CityEventSystem, ConnectivitySystem, EconomySystem, FighterSynergySystem, GearMaintenanceSystem, GridSystem, Handel,
+HeldenBindung, NpcRescueSystem, PeopleSystem, SatisfactionSystem, Tagesbilanz, TalismanSystem}.ts`,
+`src/ui/html/{handel,tagesbilanz}.css`, `tests/{handel,startwirtschaft,tagesbilanz,tagesbilanzSimulation}.test.ts`,
+`docs/HANDEL.md`, `docs/TAGESBILANZ.md`.
+
+**Neu:** sechs Gebäude (Gildenhaus und Händler von Anfang an; Schmiede, Kräuterküche, Arkanschmiede,
+Kriegsmaschinen-Werkstatt mit Bauplan), Händler mit Waren, Bauplänen, Rabatt nach Stadtstufe und Ankauf
+(`docs/HAENDLER.md`), Rezepte nur aus Gold und Beute, Werkstätten N-mal so schnell je Stufe ohne Arbeiter, acht
+Vorräte mit echter Wirkung im Dungeon (Krafttrank, Manatrank, Gegengift, Titan-Gebräu, Schnelligkeitstrank, Kraft-Brot),
+Stadtweg mit Helden-Aufgaben und Händler-Rabatt, Mindmap «Stadt» in drei Reihen, Aufbau-Raster, Erfolge «Erster Kauf»,
+«Erster Bauplan», «Gildenstadt», «Meisterwerkstatt», Spieltag in `Tag.ts`, Spielstand-Schema in eigener Datei.
+Dateien: `src/data/haendler.ts`, `src/systems/{Haendler,Tag,SpielstandSchema}.ts`,
+`src/ui/screens/{HaendlerFenster,GebaeudeFenster,WerkstattAnzeige,CraftingTab,MindmapLinien,MindmapTexte,
+MindmapTipp,ExpeditionFlow}.ts`, `src/ui/components/{DruckWaechter,ExpeditionsDialog}.ts`, `tests/traenke.test.ts`,
+`src/systems/{Haendler,Tag}.test.ts`, `docs/GILDENSTADT.md`, `docs/HAENDLER.md`; umgebaut `buildings.ts`,
+`recipes.ts`, `items.ts`, `stadtstufen.ts`, `produktionsnetz.ts`, `achievements.ts`, `GameState.ts`, `Building.ts`,
+`Ausbau.ts`, `Werkstattplan.ts`, `Auftragsbrett.ts`, `SaveSystem.ts`, `Stadtweg.ts`, `ExpeditionSystem.ts`,
+`StadtSilhouette.ts`, `main.ts`. Anleitungen nachgezogen: `AUSBAU.md`, `WERKSTAETTEN.md`, `STADTWEG.md`,
+`AUFTRAGSBRETT.md`, `SPIELSTAND.md`, `ERFOLGE.md`, `BALANCING.md`.
+
+Die Nachträge darunter beschreiben die Stadt vor dem Umbau und bleiben als Rückblick.
+
 ## Nachtrag 22.10.2026: Bot-Nacht übernommen, Erfolge sofort, Knopf «Neues Spiel»
 
 Die vier Bot-Aufträge der Nacht (Erfolge #34, Spielstand sichern #35, Marktplatz-Handel #36, Tagesbilanz #37) sind
@@ -12,8 +46,8 @@ hält den Stand vor dem Laden einer Datei auf einem eigenen Platz und holt ihn z
 Knopf «Neues Spiel» mit Nachfrage und Rückweg; der Markt verkauft das Brot der Bewohner nicht; die Tagesbilanz rechnet
 nach den Werkstatt-Regeln und mit der Dauer eines Zyklus. Der Leertakt ist weg: Zyklen laufen mit Übertrag ohne
 Lücke, ein 10-s-Rezept liefert alle 10 s, Holz auf Stufe 3 bringt 18 statt 12 am Tag, und Anzeigen und Tagesbilanz
-sind nachgezogen (`docs/TAGESBILANZ.md`, `docs/WERKSTAETTEN.md`).
-Anleitungen: `docs/ERFOLGE.md`, `docs/SPIELSTAND.md`, `docs/HANDEL.md`, `docs/TAGESBILANZ.md`.
+sind nachgezogen (`docs/WERKSTAETTEN.md`; `TAGESBILANZ.md` und `HANDEL.md` gibt es seit der Gildenstadt nicht mehr).
+Anleitungen: `docs/ERFOLGE.md`, `docs/SPIELSTAND.md`.
 
 ## Nachtrag 21.10.2026 (abends): Wege geeicht, Werkstätten auf Auftrag, Gildenhaus
 

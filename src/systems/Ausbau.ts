@@ -21,7 +21,7 @@ export const MAX_STUFE_WERKSTATT = 3;
 const GILDE_T2 = BUILDING_UPGRADE_DEFS.GUILD_HALL_T2;
 
 /** Werkstatt = Gebäude mit Rezepten (Schmiede, Kräuterküche, Arkanschmiede, Kriegsmaschinen). */
-export function istWerkstatt(typeId: string): boolean {
+function istWerkstatt(typeId: string): boolean {
   return (BUILDING_DEFS[typeId]?.recipes.length ?? 0) > 0;
 }
 
@@ -109,17 +109,6 @@ export function ausbauWirkung(typeId: string, stufe: number): string {
   return '';
 }
 
-/** Alles, was bis zu dieser Stufe bezahlt wurde (Bau plus Ausbauten), z. B. für die Rückerstattung. */
-export function investiert(typeId: string, stufe: number): Record<string, number> {
-  const def = BUILDING_DEFS[typeId];
-  if (!def) return {};
-  const summe: Record<string, number> = { ...def.buildCost };
-  for (let s = 2; s <= stufe; s++) {
-    for (const [res, qty] of Object.entries(ausbauKosten(typeId, s))) summe[res] = (summe[res] ?? 0) + qty;
-  }
-  return summe;
-}
-
 export interface AusbauInfo {
   stufe: number;
   maxStufe: number;
@@ -155,14 +144,17 @@ export function kannAusbauen(state: GameState, b: BuildingInstance): boolean {
   return info.naechste !== null && info.bezahlbar;
 }
 
-/** Bezahlt die nächste Stufe und hebt das Gebäude sofort an. */
+/** Bezahlt die nächste Stufe und hebt das Gebäude sofort an; ein laufender Zyklus wird anteilig kürzer. */
 export function ausbauen(state: GameState, b: BuildingInstance): boolean {
   if (!kannAusbauen(state, b)) return false;
   const info = ausbauInfo(state, b);
   for (const [res, qty] of Object.entries(info.kosten)) {
     state.globalStock[res] = (state.globalStock[res] ?? 0) - qty;
   }
+  const tempoVorher = tempoFaktor(b);
   b.tier = info.naechste!;
+  // Der Rest des laufenden Zyklus (ProductionSystem zählt productionTimer herunter) im neuen Tempo
+  if (b.producing) b.productionTimer *= tempoVorher / tempoFaktor(b);
   if (b.typeId === 'GUILD_HALL' && b.tier >= GILDE_T2.toTier) state.guildStats.guildHallT2 = true;
   // Ein Ausbau zählt wie ein Bau (Erfolg «Baumeister» bleibt erreichbar)
   state.statistics['total_buildings_built'] = (state.statistics['total_buildings_built'] ?? 0) + 1;
@@ -170,9 +162,9 @@ export function ausbauen(state: GameState, b: BuildingInstance): boolean {
   return true;
 }
 
-// ── Gebäude entfernen und verschmelzen ──────────────────────────
+// ── Laufenden Zyklus erstatten und Doppelte verschmelzen ─────────
 
-/** Zutaten eines laufenden Zyklus ins Lager zurückgeben (sie werden beim Start abgezogen). */
+/** Zutaten eines laufenden Zyklus ins Lager zurückgeben (sie werden beim Start abgezogen): Auftrag abbrechen. */
 export function erstatteLaufendenZyklus(state: GameState, b: BuildingInstance): void {
   const recipe = b.producing && b.activeRecipeId ? RECIPE_DEFS[b.activeRecipeId] : undefined;
   if (!recipe) return;
@@ -181,18 +173,10 @@ export function erstatteLaufendenZyklus(state: GameState, b: BuildingInstance): 
   }
 }
 
-/** Entfernt Gebäude sauber: Zutaten des laufenden Zyklus zurück ins Lager. */
-export function entferneGebaeude(state: GameState, ids: Set<number>): void {
-  if (ids.size === 0) return;
-  for (const b of state.buildings) {
-    if (b && ids.has(b.id)) erstatteLaufendenZyklus(state, b);
-  }
-  state.buildings = state.buildings.filter(b => b && !ids.has(b.id));
-}
-
 /**
- * Mehrere Gebäude derselben Art werden zu einem verschmolzen (ein Gebäude je Art):
- * Die Stufe entspricht der bisherigen Anzahl (bis maxStufe), ein fertiges bleibt bevorzugt.
+ * Mehrere Gebäude derselben Art werden zu einem verschmolzen (ein Gebäude je Art, Schutz beim
+ * Laden: SaveSystem.bereiteVor): Die Stufe entspricht der bisherigen Anzahl (bis maxStufe), ein
+ * fertiges bleibt bevorzugt, die Zutaten laufender Zyklen der anderen gehen ins Lager zurück.
  * Gibt zurück, wie viele Gebäude wegfielen.
  */
 export function vereinigeDoppelte(state: GameState): number {
@@ -210,6 +194,8 @@ export function vereinigeDoppelte(state: GameState): number {
     behalten.tier = Math.min(maxStufe(typeId), Math.max(stufeVon(behalten), alle.length));
     for (const b of alle) if (b !== behalten) weg.add(b.id);
   }
-  entferneGebaeude(state, weg);
+  if (weg.size === 0) return 0;
+  for (const b of state.buildings) if (b && weg.has(b.id)) erstatteLaufendenZyklus(state, b);
+  state.buildings = state.buildings.filter(b => b && !weg.has(b.id));
   return weg.size;
 }

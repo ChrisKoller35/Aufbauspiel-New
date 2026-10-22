@@ -112,12 +112,14 @@ export interface LieferWare {
 /**
  * Waren aus den Werkstätten. Am Brett hängt nur eine Ware, die die Stadt herstellen kann
  * (die Werkstatt steht und ihre Zutaten kommen), oder die schon im Lager liegt. Der Lohn ist
- * fest und liegt über dem, was die Zutaten (Beute und Gold) wert sind; beim Händler gekauft
- * (Heiltrank 10, Schwert 25) lohnt sich keine Lieferung (tests/auftragsbrett.test.ts).
+ * fest und liegt über dem, was die Zutaten (Beute und Gold) wert sind, aber nie über dem, was
+ * die Ware beim Händler mit dem höchsten Rabatt kostet (Stadtstufe 7, 20 %: Heiltrank 8, Schwert
+ * 20): Kaufen und abgeben bringt kein Gold, der eigentliche Lohn sind die Siegel
+ * (tests/auftragsbrett.test.ts). Kraft-Brot führt der Händler nicht.
  */
 export const LIEFER_WAREN: LieferWare[] = [
   {
-    itemId: 'healing_potion', menge: 3, gold: 45, von: 'hauptmann', titel: 'Tränke für die Nachtwache',
+    itemId: 'healing_potion', menge: 3, gold: 24, von: 'hauptmann', titel: 'Tränke für die Nachtwache',
     text: 'Die Nachtwache will Heiltränke im Wachhaus haben, nicht weil etwas passiert, sondern damit nichts passiert. '
       + 'Gebt der Kräuterküche den Auftrag, drei Grüne Kräuter je Trank.',
   },
@@ -127,17 +129,17 @@ export const LIEFER_WAREN: LieferWare[] = [
       + 'sie braucht Kraft-Brot. Die Kräuterküche backt es aus Brot und Grünen Kräutern, wenn ihr es bestellt.',
   },
   {
-    itemId: 'iron_sword', menge: 2, gold: 60, von: 'hauptmann', titel: 'Schwerter für die Rekruten',
+    itemId: 'iron_sword', menge: 2, gold: 40, von: 'hauptmann', titel: 'Schwerter für die Rekruten',
     text: 'Die Stadtwache hat neue Leute und alte Schwerter, und die alten Schwerter sind aus Holz. '
       + 'Die Schmiede kann helfen, wenn die Gilde sie beauftragt.',
   },
   {
-    itemId: 'iron_shield', menge: 2, gold: 60, von: 'glaser', titel: 'Schilde vor die Fenster',
+    itemId: 'iron_shield', menge: 2, gold: 40, von: 'glaser', titel: 'Schilde vor die Fenster',
     text: 'Der Glaser hat neue Fenster ins Gildenhaus gesetzt und will sie schützen, bevor der nächste Sturm kommt. '
       + 'Zwei Eisenschilde, sagt er. Mehr Fenster hat er noch nicht.',
   },
   {
-    itemId: 'leather_armor', menge: 2, gold: 50, von: 'haendler', titel: 'Rüstung für die Fuhrleute',
+    itemId: 'leather_armor', menge: 2, gold: 40, von: 'haendler', titel: 'Rüstung für die Fuhrleute',
     text: 'Der Händler schickt eine Karawane in die Hauptstadt und will, dass die Fuhrleute heil ankommen. '
       + 'Lederrüstungen, sagt er, halten mehr aus als Fuhrleute.',
   },

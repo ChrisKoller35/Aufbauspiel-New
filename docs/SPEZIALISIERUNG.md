@@ -85,7 +85,7 @@ treffen. Bosse greifen oft mit Fähigkeiten an; nur auf Grundangriffe wären bei
 |---|---|
 | `src/data/spezialisierungen.ts` | Die Wege (`SPEZIALISIERUNGEN`), `WEG_AB_STUFE`, `MEISTER_AB_STUFE`, Texte und Zahlen |
 | `src/systems/Spezialisierung.ts` | Regeln: wählen, Meister, Werte und Kampfeffekte des Wegs |
-| `src/systems/GearSystem.ts` | Bringt Werte und Effekte des Wegs mit der Ausrüstung in den Kampf (ohne Abzug durch Reparaturen) |
+| `src/systems/GearSystem.ts` | Bringt Werte und Effekte des Wegs mit der Ausrüstung in den Kampf |
 | `src/systems/Kampfeffekte.ts` | Wirkung im Kampf: Kampfbeginn, Treffer, getroffen werden, Zielwahl, Rundenende. Zählt, was jeder Weg bewirkt (`wegZaehlen`, `wegAnteileZaehlen` für Schaden aus Angriff und Verteidigung), und hält die Zustände jeder Runde fest (`wegZustandDerRunde`) |
 | `src/systems/CombatEngine.ts` | Ruft die Wirkung an diesen Stellen auf, legt die Zustände in jede Runde (`CombatRoundSnapshot.wegZustand`) |
 | `src/systems/ExpeditionFinalizer.ts` | Gibt die Bilanz der Expedition an den Bericht und zählt sie am Helden zusammen (`wegBilanzDazu`) |

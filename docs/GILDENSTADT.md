@@ -125,8 +125,11 @@ Schmiede» und «Dorfbäckerei» bleibt (die Bäckerin ist eine Figur, kein Geb�
 ## Gold
 
 Quellen: Dungeon-Beute, mutige Wahlen der Geschichten, Fund-Räume, Auftragsbrett (Zettel und Lieferungen),
-Ruhmestruhe der Rangliste, Geschenke der Stadtstufen, Ankauf beim Händler. Keine Steuern, keine Bank. Startgold 100
-bleibt (Held 50, Bauplan Schmiede 50, oder Heiltränke).
+Ruhmestruhe der Rangliste, Geschenke der Stadtstufen, Ankauf beim Händler. Keine Steuern, keine Bank. Jedes neue
+Spiel beginnt mit einem Helden (Guardian, Stufe 1) und 100 Gold: Der zweite Held kostet 50, jeder weitere 30 mehr
+(`anheuerKosten` in `src/systems/Empfehlung.ts`: 50 + (n − 1) · 30), der Bauplan der Schmiede 50. Mit weniger als
+zwei Helden empfiehlt die Stadt zuerst «Held anheuern (50 Gold)»: Allein verliert ein Held den Waldpfad, und ohne
+Expedition gibt es kein Gold (`HELDEN_VOR_DEM_BAU`).
 
 ## Spielstände
 
@@ -154,3 +157,83 @@ Terrain-Kacheln) verschwinden aus `GameState`. Probespiel-Vorrat ohne Holz/Stein
 `npx tsc --noEmit`, `npm test`, `npm run validate-refs`, `npm run build`, Playwright-Rundgang am PC und Handy
 (Hauptmenü → Gebäude: Händler kaufen, Bauplan kaufen, Schmiede bauen, Auftrag geben → Expedition mit Krafttrank →
 Rückkehr, Stadtweg-Aufstieg), `npm run dungeon-eichung` unverändert (Dungeons nicht angefasst).
+
+## Umsetzung (22.10.2026)
+
+Code und Tests stehen (Branch `claude/magic-city-bestandsaufnahme-gmzay8`, `npx tsc --noEmit` 0 Fehler, `npx vitest
+run` grün, `npm run validate-refs` sauber, `npm run build` grün; Playwright-Rundgang offen). Was abweichend von der
+Spezifikation oben entschieden wurde, mit den Annahmen der Umbau-Agenten:
+
+- **Ausbau-Beute:** Reines «Gold der Baukosten × Zielstufe» hätte die Tabelle verfehlt (Schmiede und Kräuterküche nur
+  Gold, Arkanschmiede Stufe 2 wäre 10 Eisen + 6 Kristall statt 5 Kristall). Darum `BuildingDef.ausbauBeute` in
+  `data/buildings.ts`, aus dem `ausbauKosten` liest (zuerst als Konstante `AUSBAU_BEUTE` in `Ausbau.ts`, dann in die
+  Daten verschoben); der Absatz nach der Gebäude-Tabelle beschreibt den Stand.
+- **Kräuterküche ohne Von-selbst-Satz:** `VON_SELBST_SATZ` (`Werkstattplan.ts`) hat nur noch Arkanschmiede und
+  Kriegsmaschinen-Werkstatt. Die Kräuterküche stellt keine Zutat mehr selbst her (kein Kräuter-Rezept) und beliefert
+  niemanden; ein Satz für sie hätte nichts zu sagen.
+- **Händler-Rabatt auch für Baupläne:** `bauplanPreis(bauplan, stadtstufe)` rechnet den Rabatt mit, wie `kaufpreis`;
+  der Gildenrang sperrt nur das Bauen, nicht den Kauf (Hinweis im Fenster). Rundung `Math.round`, mindestens 1 Gold.
+  `haendlerRabatt` ist der Wert der Stufe (0/0/0/10/10/10/20), nicht zusammengezählt wie früher `steuerProzent`.
+  `getFreischaltHinweise` nennt den Grundpreis (kennt die Stadtstufe nicht); Engpass-Satz und Empfehlung den Preis mit
+  Rabatt.
+- **Ankauf:** erlaubt ist alles mit `baseValue > 0` ausser Gold, Bauplänen, Set-Teilen (`setVonItem` oder Tag `set`)
+  und Dungeon-Material (`mat_*` oder Tag `schmiede`), also auch Kristallsplitter (10 Gold) und Kriegsmaschinen
+  (25 / 27 Gold).
+- **Aufbau-Reiter als Raster statt Baum:** Alle `freischaltung.braucht`-Listen sind leer (nur Bauplan und Gildenrang
+  sperren, wie in der Tabelle oben); ein Baum wäre eine Spalte «Stufe 1». Wer eine Kette will, trägt sie in
+  `buildings.ts` ein.
+- **Gildenhaus-Kachel öffnet das Gebäude-Fenster** (Helden in der Gilde, Helden je Expedition, Ausbau Stufe 2, Knopf
+  «ZUM GILDENHAUS»), nicht direkt den Gildenhaus-Bildschirm: Der Ausbau `GUILD_HALL_T2` wäre sonst nirgends
+  erreichbar. `heldenJeExpedition(state)` in `Ausbau.ts` ersetzt `BuildingUpgradeSystem.getPartySlots`.
+- **Hinweis bei altem Spielstand in der Kopfzeile:** Statt des Satzes im Fenster «Spielstand» zeigt `main.ts` nach dem
+  Start einmal `VOR_GILDENSTADT` («Dieser Spielstand stammt aus der Zeit vor der Gildenstadt und kann nicht geladen
+  werden.») über `zeigeKopfHinweis(text, 10_000)`: 10 Sekunden statt der üblichen 4, weil der Satz lang ist; trifft
+  er mit einem Erfolgs-Hinweis zusammen, stehen beide nebeneinander, bis der längere abgelaufen ist. Das Fenster
+  «Spielstand» zeigt denselben Satz für alte Dateien und bietet einen «Stand vor dem Laden» aus dieser Zeit nicht an.
+- **Spielstand: keine Migration, Backup-Slot nur noch geschrieben.** `migrate()`, `loeseAlteZustaende`,
+  `removeUnknownBuildings` und die Migrationen der alten Felder sind weg; `load()` liefert bei Version < 24 `null`
+  und setzt ein Flag (`alterStandVerworfenBeimStart`). Der alte Stand bleibt im Speicher, bis das neue Spiel speichert
+  (dann liegt er auf dem Backup-Platz). `loadBackup`, `hasBackup`, `hasSave`, `canSave`, `getSaveSize` hatten keine
+  Aufrufer und sind gestrichen; die Sicherung wird weiter geschrieben, aber nur noch von Hand gelesen. Das Schema liegt
+  in `SpielstandSchema.ts` (Pflichtfelder `buildings`, `globalStock`, `fighters`, `day`; `HELD` ohne `citizenId` und
+  `gearNeedsRepair`). Stände mit Version > 24 lädt der Start weiterhin, nur Dateien werden abgewiesen.
+- **Erfolge:** gestrichen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10` und alle Bewohner/Holz/Markt/
+  Bank/Zufriedenheit-Erfolge; neu `haendler_1` «Erster Kauf» (Zähler `total_haendler_kaeufe`, den `Haendler.kaufen` und
+  `bauplanKaufen` hochzählen, Verkaufen nicht), `bauplan_1`, `werkstaetten_4`, `werkstatt_3`, `ausbau_5`; `mass_builder`
+  auf 10 gesenkt (höchstens 4 Neubauten und 9 Ausbauten). Liste: `docs/ERFOLGE.md`.
+- **Tränke:** `run.trankWirkungen` hat `{ itemId, stat: 'atk' | 'spd' | 'maxHp', wert, bisRaum?, helden }`; fehlt
+  `bisRaum`, gilt die Wirkung bis zum Ende. Die Raum-Dauer zählt den aktuellen Raum mit (Kraft-Brot in Raum 0 wirkt in
+  0, 1, 2). Ein Trank, der schon bis zum Ende wirkt, wird nicht noch einmal verbraucht («… wirkt schon bis zum Ende des
+  Dungeons – der Vorrat bleibt.»); ein Raum-Trank nachgetrunken setzt die Dauer neu, stapelt nicht. Manatrank setzt
+  `currentCooldown` aller Fähigkeiten auf 0 und gibt die Vorschau-Fähigkeit frei. Das Gratis-Kraft-Brot beim Aufbruch
+  ist weg (1 Brot + 1 Heiltrank bleiben). Protokollzeilen beim Ablauf: Essen «… ist verdaut.», Tränke «… ist
+  verflogen.». Tests: `tests/traenke.test.ts`.
+- **Beutetabellen:** Die Einträge für Holz, Stein und Getreide wurden gewichtsneutral zu Eisenschrott (Wald, Höhle,
+  Ruinen, Vulkan, Belagerung) bzw. Gold (Sumpf) umgewidmet; Eisenschrott fällt darum schon auf dem Waldpfad.
+- **Spieltag:** `src/systems/Tag.ts` (`TAG_SEKUNDEN` 30, `STADT_TAKT_SEKUNDEN` 1, `neuerTag` zählt `day`, setzt
+  `total_days_survived = day - 1` und prüft die Erfolge), weil `EconomySystem.dayTick` weg ist.
+- **Start mit einem Helden (Probespiel-Befund, 22.10.2026):** `placeStartingLayout` stellt neben Gildenhaus und
+  Händler einen Guardian (Stufe 1, ohne Ausrüstung) in die Gilde; `anheuerKosten(n)` = 50 + (n − 1) · 30, der zweite
+  Held kostet also 50. Vorher begann ein Spiel ohne Helden, und wer die 100 Gold in Bauplan und Schmiede steckte,
+  sass ohne Expedition und Gold fest (siehe «Gold»). `Empfehlung.naechsterBau` liefert mit weniger als zwei Helden
+  den Schritt `held` («Held anheuern (N Gold)», `typeId` leer); Mindmap (Ziel «Bauen & Ausbauen», Engpass-Leiste)
+  und Aufbau-Reiter zeigen den Text und führen per Klick zu den Helden.
+- **Lieferlohn unter dem Händlerpreis:** `LIEFER_WAREN.gold` 24 (3 Heiltränke) / 40 (3 Kraft-Brote) / 40 (2
+  Eisenschwerter) / 40 (2 Eisenschilde) / 40 (2 Lederrüstungen), nie über dem Händlerpreis bei 20 % Rabatt; vorher
+  (45/40/60/60/50) liess sich beim Händler kaufen und mit Gewinn abgeben. Die Siegel bleiben der eigentliche Lohn
+  (`docs/AUFTRAGSBRETT.md`).
+- **Kein Abreissen:** Der Knopf im Gebäude-Fenster ist weg (es gibt jedes Gebäude einmal und keinen Bauplatz, der
+  Bauplan käme nicht zurück); `Ausbau.entferneGebaeude` bleibt für `vereinigeDoppelte`.
+- **Fenster und Tasten:** Händler-Fenster, Gebäude-Fenster und Bau-Dialog schliessen mit Escape
+  (`bindeFensterTasten` in `ui/components/FensterHilfen.ts`, Capture-Phase vor dem `keydown` in `main.ts`, das sonst
+  zum Hauptmenü springt); Tab bleibt im Fenster. Ein Ausbau speichert sofort (`mc:speichern`) wie Bau und Händler.
+- **Ausbau während eines Zyklus:** `ausbauen` kürzt den Rest des laufenden Zyklus im Verhältnis der Tempi
+  (`productionTimer *= alt / neu`), die neue Stufe wirkt also sofort, nicht erst beim nächsten Auftrag.
+- **Sonstiges:** `vereinigeDoppelte` wird beim Laden aufgerufen (`SaveSystem.bereiteVor`, damit auch im Probe-Laden
+  des Fensters «Spielstand»): mehrere Gebäude derselben Art werden zu einem. `BuildingInstance.built` bleibt
+  (immer true nach dem Bau), ebenso `BuildingDef.tier` und `expeditions`. `rescuedNpcs` und `LIEFER_AUFSCHLAG` sind
+  weg (tot). Der Reiter heisst «STADT», die Bezeichner (`ProduktionTab.ts`, `produktion`) bleiben. Die Verkaufen-Liste
+  im Händler-Fenster ist nach Namen sortiert, die Baupläne in der Reihenfolge von `BAUPLAN_PREISE`. Die Silhouette
+  zeigt das Gildenhaus ab dem Dorf als Halle (vorher Zelte), den Händler ab Stufe 1 als Stand, die Händlerhalle im
+  Marktflecken. `tools/validateRefs.ts` Check 4: Händler-Baupläne (`BAUPLAN_PREISE`) brauchen keine Beutetabelle,
+  Boss-Baupläne (`BAUPLAN_BOSS`) genau eine als `ersterSiegBauplan`.

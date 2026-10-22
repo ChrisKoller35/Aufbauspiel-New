@@ -14,6 +14,8 @@ import { DUNGEON_GRAPH, ROUTE_DEFS } from '../src/data/routes';
 import { ENEMY_DEFS } from '../src/data/enemies';
 import { ITEM_DEFS } from '../src/data/items';
 import { setFuerRoute, setTeilIds } from '../src/data/dungeonSets';
+import { kaufpreis } from '../src/data/haendler';
+import { HOECHSTE_STADTSTUFE } from '../src/data/stadtstufen';
 import {
   AUFTRAGGEBER, AUFTRAGS_VORLAGEN, EINLOESE_ANGEBOTE, FERNE_DUNGEONS, GOLD_ANTEIL, LIEFER_WAREN, MATERIAL_PREIS,
   SAAL_EINLEITUNG, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL,
@@ -357,8 +359,8 @@ describe('Auftragsbrett: Fortschritt nach der Expedition', () => {
     expect(brettKurz(state, MITTAG).abgeben).toBe(false);
   });
 
-  test('Lieferung: fester Lohn je Ware, mehr als ein Zettel für den leichtesten Dungeon', () => {
-    const erwartet: Record<string, number> = { healing_potion: 45, power_bread: 40, iron_sword: 60, iron_shield: 60, leather_armor: 50 };
+  test('Lieferung: fester Lohn je Ware, mehr als ein Zettel für den leichtesten Dungeon, nie über dem Händlerpreis', () => {
+    const erwartet: Record<string, number> = { healing_potion: 24, power_bread: 40, iron_sword: 40, iron_shield: 40, leather_armor: 40 };
     expect(LIEFER_WAREN.map(w => w.itemId).sort()).toEqual(Object.keys(erwartet).sort());
     const leichtesterDungeon = Math.min(...DUNGEON_GRAPH.map(n => Math.max(5, Math.round(goldJeLauf(n.routeId) * GOLD_ANTEIL / 5) * 5)));
     for (const w of LIEFER_WAREN) {
@@ -367,7 +369,11 @@ describe('Auftragsbrett: Fortschritt nach der Expedition', () => {
       // Nicht langweilig: so viele Siegel wie ein Sieg, mehr Gold als ein Zettel für den leichtesten Dungeon
       expect(SIEGEL_JE_ART.lieferung).toBe(SIEGEL_JE_ART.sieg);
       expect(w.gold, w.itemId).toBeGreaterThan(leichtesterDungeon);
+      // Lohn ≤ Händlerpreis bei 20 % Rabatt (Stadtstufe 7): beim Händler kaufen und abgeben bringt kein Gold
+      const haendler = kaufpreis(w.itemId, HOECHSTE_STADTSTUFE) * w.menge;
+      if (haendler > 0) expect(w.gold, w.itemId).toBeLessThanOrEqual(haendler);
     }
+    expect(kaufpreis('power_bread')).toBe(0); // Kraft-Brot führt der Händler nicht
     expect(lieferGold('steel_sword')).toBe(0);
   });
 

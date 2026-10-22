@@ -29,8 +29,8 @@ und was bei neuen Dungeons zu tun ist.
   | Lieferung | 2 oder 3 Stück einer Ware abgeben | Knopf «Abgeben» am Brett, die Ware geht aus dem Lager |
 
   Waren am Brett: Heiltrank, Kraft-Brot, Eisenschwert, Eisenschild, Lederrüstung, nur solche, die die Stadt
-  herstellen kann (die Werkstatt steht und ihre Zutaten kommen) oder die schon im Lager liegen. Ihr Gold
-  richtet sich nach dem, was ihre Zutaten am Markt kosten (siehe [Lieferung](#lieferung)).
+  herstellen kann (eine Werkstatt mit dem Rezept steht) oder die schon im Lager liegen. Ihr Gold ist ein fester
+  Lohn je Ware (siehe [Lieferung](#lieferung)).
 - **Tagesbonus.** Sind alle drei Zettel erledigt, gibt es 3 Siegel dazu, einmal am Tag.
 - **Tauschen.** Einmal am Tag hängt ein offener Zettel gegen einen anderen für denselben Platz.
 - **Kette «Der Saal der Gilde».** Hinter dem Gildenhaus steht ein Saal mit einem leeren Sockel je Boss.
@@ -61,8 +61,8 @@ Alles in `src/data/auftragsbrett.ts`.
   ein voller Tag etwa 10 Siegel.
 - **Gold je Zettel:** 60 % des Golds, das ein ganzer Lauf im Dungeon ungefähr bringt (feste Gold-Beute
   aller Gegner und Funde, auf 5 gerundet). **Material:** die Menge eines Siegs dort (Schmiede).
-- **Lieferung:** das Dreifache dessen, was die Zutaten auf dem billigsten Weg am Markt kosten, auf 5 gerundet,
-  auf jeder Ebene gleich (25 bis 60 Gold); kein Material. Warum: [Lieferung](#lieferung).
+- **Lieferung:** ein fester Lohn je Ware (`LieferWare.gold`, 24 bis 40 Gold, unter dem Händlerpreis), auf jeder
+  Ebene gleich; kein Material. Warum: [Lieferung](#lieferung).
 - **Kapitel der Kette:** 3 + Ebene/2 (aufgerundet) Siegel, das Gold eines ganzen Laufs, das Material von
   zwei Siegen; das letzte Kapitel 15 Siegel dazu.
 - **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 14 (Ebene 9
@@ -96,51 +96,40 @@ Alles in `src/data/auftragsbrett.ts`.
 
 ### Lieferung
 
-Gold = 3 × was die Zutaten auf dem billigsten Weg am Markt kosten (`LIEFER_AUFSCHLAG` in
-`src/data/auftragsbrett.ts`, `marktKosten` in `src/systems/Handel.ts`, Preise in [HANDEL.md](HANDEL.md)),
-auf 5 gerundet. Dazu 2 Siegel wie bisher.
+Seit der Gildenstadt (22.10.2026, `docs/GILDENSTADT.md`) ist der Lohn einer Lieferung ein **fester Betrag je
+Ware** (`LieferWare.gold` in `src/data/auftragsbrett.ts`, gelesen von `lieferGold` in
+`src/systems/Auftragsbrett.ts`), auf jeder Ebene gleich. Dazu 2 Siegel wie bisher.
 
-| Ware | Zutaten auf dem billigsten Weg | kosten am Markt | in ganzen Bündeln | Gold jetzt | Gold vorher, Ebene 1 … 8 |
-|---|---|---:|---:|---:|---:|
-| 3 Heiltränke | 9 Grüne Kräuter | 13,50 | 15 | 40 | 45 … 360 |
-| 3 Kraft-Brote | 6 Getreide (gemahlen) + 3 Grüne Kräuter | 8,10 | 21 | 25 | 45 … 360 |
-| 2 Eisenschwerter | 4 Eisenschrott + 2 Holz | 19,20 | 51 | 60 | 30 … 240 |
-| 2 Eisenschilde | 4 Eisenschrott + 2 Holz | 19,20 | 51 | 60 | 30 … 240 |
-| 2 Lederrüstungen | 2 Eisenschrott + 4 Holz | 11,40 | 51 | 35 | 30 … 240 |
+| Ware | Zutaten in der Werkstatt | Gold |
+|---|---|---:|
+| 3 Heiltränke | 9 Grüne Kräuter (Kräuterküche) | 24 |
+| 3 Kraft-Brote | 3 Brot + 3 Grüne Kräuter (Kräuterküche) | 40 |
+| 2 Eisenschwerter | 4 Eisenschrott + 20 Gold (Schmiede) | 40 |
+| 2 Eisenschilde | 4 Eisenschrott + 20 Gold (Schmiede) | 40 |
+| 2 Lederrüstungen | 2 Eisenschrott + 30 Gold (Schmiede) | 40 |
 
-**Warum.** Vorher zahlte eine Lieferung 15 Gold je Stück mal die Ebene des höchsten spielbaren Dungeons. Seit
-man am Marktplatz Waren kaufen kann, war das zu billig zu haben: 9 Kräuter für 15 Gold, gebraut zu 3 Heiltränken,
-brachten bis 360 Gold, jeden Tag. Jetzt zahlt die Gilde das Dreifache der Zutaten:
+**Warum fest.** Die Zutaten sind Beute aus den Dungeons und Gold; einen Markt, an dem man sie kaufen könnte, gibt
+es nicht mehr, also auch keinen Marktpreis, aus dem sich der Lohn rechnen liesse (das frühere `marktKosten` ist
+weg). Der Lohn liegt über dem, was die Zutaten wert sind, und 3 Heiltränke sind auf jeder Ebene dieselbe Arbeit;
+die Ebene gibt es bei den Dungeon-Zetteln, wo der Dungeon mit ihr schwerer wird.
 
-- **Zukaufen lohnt kaum.** In ganzen Bündeln bleiben 25 Gold (Heiltränke), 9 (Schwerter, Schilde) oder 4
-  (Kraft-Brot), bei Lederrüstungen legt man 16 drauf. Wer zukauft, tut es wegen der Siegel oder weil es schnell
-  gehen soll, nicht wegen des Golds.
-- **Selbst machen lohnt sich.** Was die Stadt selbst herstellt, bringt das ganze Gold: das Neunfache dessen, was
-  die Zutaten beim Verkauf am Markt bringen (9 Kräuter: 4,50 Gold verkauft, 40 Gold als Heiltränke geliefert).
-- **Gleiche Arbeit, gleiches Gold.** 3 Heiltränke sind auf jeder Ebene dieselbe Arbeit. Die Ebene gibt es bei
-  den Dungeon-Zetteln, wo der Dungeon mit ihr schwerer wird.
-
-**Verworfen.** «Gekaufte Ware zählt nicht» geht nicht sauber: Im Lager ist ein Kraut ein Kraut, und einem Trank
-sieht man nicht an, ob seine Kräuter gekauft waren. Eine Sperre «heute gekauft, heute keine Lieferung» wäre schwer
-zu verstehen und träfe auch, wer nur Holz für einen Bau kauft. Ebene × Stück mit dem Marktpreis als Deckel gäbe
-fast überall den Deckel, also dasselbe wie jetzt, nur schwerer zu erklären. Der Aufschlag 3 ist derselbe wie
-am Markt zwischen Verkauf und Kauf. Mit 5 lohnte Zukaufen deutlich (Heiltränke +55, Schwerter +44 Gold je
-Lieferung), mit 2 brächte Kraft-Brot nur noch 15 Gold, so wenig wie der kleinste Dungeon-Zettel.
+**Zukaufen beim Händler** (`docs/HAENDLER.md`) lohnt sich nicht: Der Lohn liegt nie über dem, was die Ware beim
+Händler mit dem höchsten Rabatt kostet (Stadtstufe 7, 20 %: 3 Heiltränke 24 Gold, 2 Eisenschwerter, Schilde oder
+Lederrüstungen 40 Gold). Wer zukauft und abgibt, hat am Ende gleich viel oder weniger Gold und nur die Siegel; wer
+selbst herstellt, verdient den Lohn. Vorher (45/60/60/50 Gold) war der Zettel eine Gold-Schleife ohne Dungeon. Der
+Test in `tests/auftragsbrett.test.ts` prüft «Lohn ≤ Händlerpreis bei 20 % Rabatt». Kraft-Brot verkauft der Händler
+nicht.
 
 **Langweilig wird der Zettel nicht.**
 
 - 2 Siegel wie ein Sieg, ohne Expedition: die günstigsten Siegel am Brett. Und ohne ihn gibt es keinen
   Tagesbonus (3 Siegel).
-- Am Anfang zahlt er etwa so viel Gold wie ein Dungeon-Zettel oder mehr (Ebene 1: 15, Ebene 2: 30 bis 55 Gold;
-  Lieferung 25 bis 60).
-- Er stellt eine Frage: selbst machen (dauert, bringt das ganze Gold) oder zukaufen (schnell, kostet einen grossen
-  Teil davon). Bei Eisensachen spart der Markt Tage, denn Eisenschrott ist knapp (knapp 1 am Tag je Arbeiter).
+- Am Anfang zahlt er etwa so viel Gold wie ein Dungeon-Zettel (Ebene 1: 15, Ebene 2: 30 bis 55 Gold; Lieferung
+  24 bis 40).
 - Aber: Ab Ebene 3 bringt ein Dungeon-Zettel meist mehr Gold (Ebene 3: 50 bis 140, Ebene 8: 490); dort holt
-  man die Lieferung wegen der Siegel und des Tagesbonus. Mehr Gold weiter oben hiesse wieder: zukaufen und
-  Gewinn machen.
+  man die Lieferung wegen der Siegel und des Tagesbonus.
 
-Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er hängt. Ab dem nächsten Tag gilt
-die neue Regel; der Spielstand braucht dafür nichts Neues.
+Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er hängt.
 
 ## Fester Zufall und Spielstand
 
@@ -175,11 +164,10 @@ die neue Regel; der Spielstand braucht dafür nichts Neues.
   mindestens eine passende Vorlage (der Test prüft das).
 - **Kapiteltext und erster Sieg:** Erzählt `text` etwas aus dem Schluss der Geschichte des Dungeons (was die
   Gilde erst nach dem ersten Sieg weiss), braucht das Kapitel `vorSieg`, einen Text ohne dieses Wissen.
-- **Neue Ware:** in `LIEFER_WAREN`; sie hängt nur am Brett, wenn eine Werkstatt sie herstellt
-  (`nachschub` in `src/systems/GebaeudeStatus.ts`) oder sie im Lager liegt. Ihr Gold kommt von selbst aus den
-  Marktpreisen ihrer Zutaten. Braucht sie etwas, das es nur in Dungeons gibt (Kristallsplitter, seltene Kräuter),
-  hat sie keinen Preis: Sie hängt dann nie am Brett, und der Test schlägt fehl, bis sie eine eigene Regel fürs
-  Gold hat.
+- **Neue Ware:** in `LIEFER_WAREN` mit festem `gold`; sie hängt nur am Brett, wenn eine stehende Werkstatt ein
+  Rezept mit ihr als Ausgabe hat (`lieferbareWaren`) oder sie in der verlangten Menge im Lager liegt. Der Lohn
+  liegt über dem Wert der Zutaten (Beute und Gold), aber nicht über dem Händlerpreis der Ware bei 20 % Rabatt; der
+  Test prüft beides und dass jede Ware ein Rezept hat.
 - **Texte:** Stimme des Stadtschreibers wie in `docs/GESCHICHTEN.md`: trocken, mit Einsatz, keine
   Zufalls-Witze, Schweizer «ss».
 
@@ -188,8 +176,8 @@ die neue Regel; der Spielstand braucht dafür nichts Neues.
 `tests/auftragsbrett.test.ts`: Kapitel für jeden Boss in Kartenreihenfolge, Texte ganz ausgefüllt und
 ohne «ß», Kapiteltexte vor dem ersten Sieg, 600 Spielstände mit gültigen und abwechslungsreichen Zetteln
 (keine Karawane in die Tiefsee), Tageswechsel, zurückgestellte Uhr und eine Expedition über Mitternacht,
-Tauschen, Fortschritt jeder Art (ohne Gefallene auch mit «Wiedergeburt»), Tagesbonus, Lieferung (Gold je Ware
-nach den Marktpreisen, auf allen Ebenen gleich, keine Ware ohne Preis am Brett), die Kette bis
+Tauschen, Fortschritt jeder Art (ohne Gefallene auch mit «Wiedergeburt»), Tagesbonus, Lieferung (fester Lohn je
+Ware, auf allen Ebenen gleich, nur Waren mit Werkstatt oder im Lager am Brett), die Kette bis
 zum vollen Saal, Einlösen und Einschmelzen, Trophäen aus älteren Spielständen (ein echter Lauf durch
 `finalizeExpeditionProgress`), Glanz und Gildenbuch.
 

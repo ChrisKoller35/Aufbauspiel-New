@@ -8,7 +8,8 @@
 // angebunden (Callbacks). Linien und Grösse: MindmapLinien.ts, Texte:
 // MindmapTexte.ts, Erklärung beim Darüberfahren oder langen Drücken:
 // MindmapTipp.ts. Das empfohlene nächste Gebäude ist golden markiert
-// (systems/Empfehlung.ts).
+// (systems/Empfehlung.ts); empfiehlt sie keinen Bau, sondern einen
+// Helden (typeId leer), führen Engpass-Zeile und Ziel «Bauen» zu den Helden.
 // ────────────────────────────────────────────────────────────────
 
 import { NETZ_REIHEN, NetzKnoten, netzKnoten, BEUTE_GRUPPEN } from '../../data/produktionsnetz';
@@ -281,9 +282,11 @@ export function bindProduktionTab(panel: HTMLElement, state: GameState, cb: Prod
     versteckeTipp(panel);
     const target = e.target as HTMLElement;
     const mitTyp = target.closest('[data-type-id]') as HTMLElement | null;
-    if (mitTyp?.dataset.typeId) {
+    if (mitTyp) {
       const typeId = mitTyp.dataset.typeId;
-      if (getGebaeudeStatus(state, typeId).anzahl > 0) cb.oeffneGebaeude(typeId);
+      // Engpass ohne Gebäude (Held anheuern): zu den Helden
+      if (!typeId) cb.wechseln('heroes');
+      else if (getGebaeudeStatus(state, typeId).anzahl > 0) cb.oeffneGebaeude(typeId);
       else cb.kaufen(typeId);
       return;
     }
@@ -292,6 +295,8 @@ export function bindProduktionTab(panel: HTMLElement, state: GameState, cb: Prod
       return;
     }
     const ziel = target.closest('.pk-ziel[data-ziel]') as HTMLElement | null;
-    if (ziel) cb.wechseln(ziel.dataset.ziel === 'bauen' ? 'aufbau' : 'expeditions');
+    if (!ziel) return;
+    if (ziel.dataset.ziel !== 'bauen') cb.wechseln('expeditions');
+    else cb.wechseln(naechsterBau(state)?.typeId === '' ? 'heroes' : 'aufbau');
   });
 }

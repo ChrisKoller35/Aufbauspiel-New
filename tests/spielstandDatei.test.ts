@@ -77,8 +77,9 @@ function baue(state: GameState, typeId: string): BuildingInstance {
   return b;
 }
 
-/** Anheuern wie im Heldenhaus (HeroesScreen.handleHire). */
+/** Anheuern wie im Heldenhaus (HeroesScreen.handleHire): je Klasse ein Held. */
 function heuereAn(state: GameState, classId: string): void {
+  if (state.fighters.some(f => f.classId === classId)) return;
   const def = CLASS_DEFS[classId];
   state.fighters.push({
     id: state.fighters.reduce((m, f) => Math.max(m, f.id), 0) + 1, classId, name: def.name,
@@ -150,8 +151,8 @@ describe('echte Spielstände bestehen die Prüfung der Datei', () => {
   it('ein Spiel ohne Probespiel nach 40 Tagen mit zwei angeheuerten Helden und ersten Expeditionen', () => {
     const state = neuesSpiel();
     spieleTage(state, 20);
-    heuereAn(state, 'guardian');
-    heuereAn(state, 'ranger');
+    heuereAn(state, 'ranger'); // zum Start-Guardian
+    heuereAn(state, 'cleric');
     for (let i = 0; i < 4; i++) expedition(state, 'forest_short');
     spieleTage(state, 20);
 

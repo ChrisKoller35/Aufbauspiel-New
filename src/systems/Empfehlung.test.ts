@@ -1,8 +1,10 @@
 import { describe, it, expect } from 'vitest';
-import { naechsterBau } from './Empfehlung';
+import { HELDEN_VOR_DEM_BAU, anheuerKosten, naechsterBau } from './Empfehlung';
 import { engpaesseDerStadt } from './EngpassSystem';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance } from '../models/Building';
+import { createGuildFighter } from '../models/GuildRoster';
+import { CLASS_DEFS } from '../data/classes';
 import { BAU_REIHENFOLGE, ERKLAERUNG } from '../data/gebaeudeErklaerungen';
 import { BEUTE_GRUPPEN, netzGebaeudeIds, NETZ_REIHEN } from '../data/produktionsnetz';
 import { BUILDING_DEFS } from '../data/buildings';
@@ -12,28 +14,61 @@ function bauen(state: GameState, typeId: string): void {
   state.buildings.push(createBuildingInstance(typeId));
 }
 
-/** Neues Spiel mit den Startgebäuden (Gildenhaus, Händler) und 100 Gold. */
-function startStadt(): GameState {
+/** Neues Spiel mit den Startgebäuden (Gildenhaus, Händler), dem Start-Guardian und 100 Gold. */
+function neuesSpiel(): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
   return state;
 }
 
+/** So viele Helden, dass die Empfehlung Gebäude nennt (ein Ranger zum Start-Guardian). */
+function zweiHelden(state: GameState): GameState {
+  while (state.fighters.length < HELDEN_VOR_DEM_BAU) {
+    state.fighters.push(createGuildFighter('ranger', CLASS_DEFS.ranger.name, CLASS_DEFS.ranger.baseStats));
+  }
+  return state;
+}
+
+/** Neues Spiel mit zwei Helden, bereit für den ersten Bau. */
+function startStadt(): GameState {
+  return zweiHelden(neuesSpiel());
+}
+
 describe('Empfehlung: nächster Schritt', () => {
-  it('neues Spiel: zuerst den Bauplan der Schmiede kaufen, das Startgold reicht', () => {
+  it('neues Spiel mit einem Helden: zuerst einen Helden anheuern (50 Gold), das Startgold reicht', () => {
+    const state = neuesSpiel();
+    expect(state.fighters).toHaveLength(1);
+    const e = naechsterBau(state);
+    expect(e).toMatchObject({ typeId: '', schritt: 'held', text: 'Held anheuern (50 Gold)', bezahlbar: true });
+    expect(e?.warum).toContain('Waldpfad');
+    state.globalStock.gold = 49;
+    expect(naechsterBau(state)?.bezahlbar).toBe(false);
+    // Die Engpass-Leiste nennt den Helden zuerst, ohne Gebäude-Art
+    expect(engpaesseDerStadt(state)[0]).toMatchObject({ typeId: '' });
+    expect(engpaesseDerStadt(state)[0].satz).toMatch(/^Held anheuern \(50 Gold\): /);
+  });
+
+  it('Anheuern: der erste Held kommt mit der Stadt, der zweite kostet 50, der dritte 80', () => {
+    expect(anheuerKosten(0)).toBe(50);
+    expect(anheuerKosten(1)).toBe(50);
+    expect(anheuerKosten(2)).toBe(80);
+    expect(anheuerKosten(3)).toBe(110);
+  });
+
+  it('mit zwei Helden: zuerst den Bauplan der Schmiede kaufen, das Startgold reicht', () => {
     const e = naechsterBau(startStadt());
-    expect(e).toMatchObject({ typeId: 'SMITHY', schritt: 'bauplan', bezahlbar: true });
+    expect(e).toMatchObject({ typeId: 'SMITHY', schritt: 'bauplan', text: 'Bauplan Schmiede kaufen (50 Gold)', bezahlbar: true });
     expect(e?.warum).toContain('Ausrüstung');
   });
 
   it('Gildenhaus und Händler werden nie empfohlen, auch ohne Startgebäude', () => {
-    expect(naechsterBau(createNewGameState())?.typeId).toBe('SMITHY');
+    expect(naechsterBau(zweiHelden(createNewGameState()))?.typeId).toBe('SMITHY');
   });
 
   it('liegt der Bauplan im Lager, heisst der Schritt bauen', () => {
     const state = startStadt();
     state.globalStock.bauplan_schmiede = 1;
-    expect(naechsterBau(state)).toMatchObject({ typeId: 'SMITHY', schritt: 'bauen', bezahlbar: true });
+    expect(naechsterBau(state)).toMatchObject({ typeId: 'SMITHY', schritt: 'bauen', text: 'Schmiede bauen (50 Gold)', bezahlbar: true });
     state.globalStock.gold = 49;
     expect(naechsterBau(state)?.bezahlbar).toBe(false);
   });

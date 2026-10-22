@@ -18,7 +18,7 @@ Erzählt wird sie von Ottokar, dem Stadtschreiber, der auch die Stadtchronik fü
   «📜 Beute aus der Geschichte: +60 Gold», bei Gegnern, die nach dem Rundenlimit noch stehen, dass sie liegen bleibt.
   Wer vorher umkehrt oder fällt, lässt sie ebenfalls liegen. So lässt sich die Beute nicht mitnehmen und die Gefahr auslassen.
 - **Heiltränke und Luftkristalle** aus der Geschichte kommen in den Proviant und lassen sich gleich einsetzen;
-  was übrig bleibt, geht nach dem Lauf ins Lager. Alles andere (Kräuter, Kristalle, Talismane …) kommt in die Beute.
+  was übrig bleibt, geht nach dem Lauf ins Lager. Alles andere (Kräuter, Kristalle, Talisman-Fragmente …) kommt in die Beute.
 - **Die Dungeons über dem Vulkankern** haben schon feste Wahl-Räume (Drachenhort: Hort-Gold, Himmelsarchiv: verbotene
   Bücher, Sternenschmiede: Sternenfeuer, Sternenschlund: gefangene Sterne, Mondhof: Pfandzettel, Morgentor: die
   Sonnenuhr). Dort erzählt die Geschichte über diese Räume, ohne zusätzliche Entscheidungen.

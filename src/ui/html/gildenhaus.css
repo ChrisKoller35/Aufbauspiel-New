@@ -87,6 +87,7 @@
   background: #3b2a16; color: #f2e7ca; border: 1px solid #2a1a0a; border-radius: 5px;
   padding: 8px 12px; min-height: 40px; transition: .2s;
 }
+@media (pointer: coarse) { .gh-knopf { min-height: 44px; } }
 .gh-knopf:hover { background: #57401f; }
 .gh-knopf-leise { background: transparent; color: #5b3d14; border-color: rgba(91, 61, 20, .5); }
 .gh-knopf-leise:hover { background: rgba(91, 61, 20, .12); }

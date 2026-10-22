@@ -1,102 +1,92 @@
-# Ausbau-Stufen, Mindmap und Wohnviertel (18.10.2026)
+# Ausbau-Stufen und Mindmap (18.10.2026, Gildenstadt 22.10.2026)
 
-Christophs Wunsch vom 18.10.2026 (Projekt-Chat): alle Rohstoff-Gebäude führen zum Lagerhaus, die Werkstätten
-kommen danach, die Ansicht wird eine Mindmap in Reihen, Gebäude werden nicht mehrfach gebaut, sondern
-freigeschaltet und ausgebaut, und die Wohnhäuser brauchen in dieser Ansicht einen besseren Sinn.
-Umgesetzt im Thread «Magic City: Bestandsaufnahme und Bot-Aufgaben». Code: `src/systems/Ausbau.ts`
-(Regeln), `src/data/produktionsnetz.ts` (Knoten und Linien der Mindmap), `src/ui/screens/ProduktionTab.ts`
-(Zeichnen), `src/systems/EconomySystem.ts` (Steuern).
+Christophs Wunsch vom 18.10.2026 (Projekt-Chat): Gebäude werden nicht mehrfach gebaut, sondern freigeschaltet und
+ausgebaut, und die Ansicht wird eine Mindmap in Reihen. Seit der Gildenstadt (22.10.2026, `docs/GILDENSTADT.md`)
+gibt es nur noch sechs Gebäude; Rohstoff-Gebäude, Wohnviertel, Markt und Bank sind weg. Code: `src/systems/Ausbau.ts`
+(Regeln), `src/data/produktionsnetz.ts` (Knoten und Linien der Mindmap), `src/ui/screens/ProduktionTab.ts` mit
+`MindmapLinien.ts`, `MindmapTexte.ts`, `MindmapTipp.ts` (Zeichnen), `src/ui/screens/AufbauTab.ts` (Reiter «Aufbau»),
+`src/ui/screens/GebaeudeFenster.ts` (Fenster mit Ausbau). Tests: `src/systems/Ausbau.test.ts`,
+`src/data/buildings.test.ts`, `tests/produktionsnetz.test.ts`.
 
-**Nachtrag (spät am 18.10.2026):** Wie weit Wohnviertel, Werkstätten, Marktplatz und Bank ausgebaut werden
-dürfen, bestimmt jetzt die Stadtstufe (Tabelle in `docs/STADTWEG.md`). Die Höchststufen unten gelten weiter,
-man erreicht sie nur nach und nach.
+Wie weit eine Werkstatt ausgebaut werden darf, bestimmt die Stadtstufe (Tabelle in `docs/STADTWEG.md`).
 
 ## Ein Gebäude je Art
 
-- Jedes Gebäude gibt es **genau einmal**. Bauen schaltet es frei (Kosten wie bisher), danach wird es im
-  Gebäude-Fenster **ausgebaut** (Knopf «Ausbauen auf Stufe N»). Der Ausbau ist sofort fertig.
-- Kosten einer Stufe = **Baukosten × Zielstufe** (Stufe 2 der Holzfällerhütte: 20 Holz, Stufe 3: 30 Holz).
-  Wohnviertel ab Stufe 3 zusätzlich 5 Stein je Stufe über 2. Gildenhaus Stufe 2 kostet fest
-  60 Holz, 20 Stein, 3 Kristallsplitter, 80 Gold und braucht Gildenrang 3 (bestehender Ausbau `GUILD_HALL_T2`).
-- Abreissen gibt die Hälfte von allem zurück, was Bau und Ausbau gekostet haben. Startgebäude bleiben stehen.
+- Jedes Gebäude gibt es **genau einmal**. Gildenhaus und Händler stehen von Anfang an; die vier Werkstätten baut man
+  mit einem Bauplan (Händler oder Boss) für Gold und Beute, der Bau steht sofort (keine Bauzeit, kein Bauplatz).
+  Danach wird im Gebäude-Fenster **ausgebaut** (Knopf «Ausbauen auf Stufe N»), auch das ist sofort fertig.
+- **Kosten einer Stufe** (`ausbauKosten`): Gold der Baukosten × Zielstufe, plus die Beute aus
+  `BuildingDef.ausbauBeute` je Stufe über der ersten (Stufe 2 einmal, Stufe 3 zweimal).
+- Gildenhaus Stufe 2 ist der bestehende Ausbau `GUILD_HALL_T2` (`src/data/buildingUpgrades.ts`): 80 Gold,
+  3 Kristallsplitter, braucht Gildenrang 3, bringt 4 statt 3 Helden je Expedition (`heldenJeExpedition`).
+- Abreissen gibt es nicht: Es gibt jedes Gebäude einmal und keinen Bauplatz, und der verbrauchte Bauplan käme nicht
+  zurück (Boss-Baupläne fallen nur einmal). `entferneGebaeude` in `Ausbau.ts` dient nur noch `vereinigeDoppelte`.
 - Ein Ausbau zählt für den Erfolg «Baumeister» wie ein Bau (`total_buildings_built`), zusätzlich `total_upgrades`.
 
-| Gebäude | Stufen | Was eine Stufe bringt |
-|---|---|---|
-| Alle Werkstätten (Holzfällerhütte, Steinbruch, Farm, Eisenmine, Mühle, Bäckerei, Kräutergarten, Schmiede, Arkanschmiede, Kriegsmaschinen) | 1–3 | **Stufe N = N Arbeitsplätze.** Das Gebäude arbeitet so vielfach schnell, wie Plätze besetzt sind. Stufe 3 mit einem Arbeiter ist so schnell wie Stufe 1. |
-| Wohnviertel (früher «Wohnhaus») | 1–6 | 6 Plätze für Bewohner je Stufe (6 … 36). |
-| Gildenhaus | 1–2 | Stufe 2: 4 statt 3 Helden je Expedition. |
-| Marktplatz | 1–3 | je besetztem Arbeitsplatz +25 / +40 / +50 % Steuern und 3 / 6 / 10 Bündel Handel pro Tag (Waren gegen Gold, [HANDEL.md](HANDEL.md)). |
-| Bank | 1–3 | je besetztem Arbeitsplatz +10 Gold pro Tag. |
-| Brunnen, Lagerhaus | 1 | keine Stufen. |
+| Gebäude | Bau | Stufe 2 | Stufe 3 | Was eine Stufe bringt |
+|---|---|---|---|---|
+| Schmiede | 50 Gold | 100 Gold + 10 Eisenschrott | 150 Gold + 20 Eisenschrott | arbeitet N-mal so schnell |
+| Kräuterküche | 40 Gold | 80 Gold + 5 Grüne Kräuter | 120 Gold + 10 Grüne Kräuter | arbeitet N-mal so schnell |
+| Arkanschmiede | 80 Gold, 5 Eisenschrott, 3 Kristallsplitter | 160 Gold + 5 Kristallsplitter | 240 Gold + 10 Kristallsplitter | arbeitet N-mal so schnell |
+| Kriegsmaschinen-Werkstatt | 100 Gold, 20 Eisenschrott, 5 Kristallsplitter | 200 Gold + 10 Eisenschrott | 300 Gold + 20 Eisenschrott | arbeitet N-mal so schnell |
+| Gildenhaus | steht | 80 Gold, 3 Kristallsplitter (Gildenrang 3) | – | 4 Helden je Expedition |
+| Händler | steht | – | – | kein Ausbau |
 
-Warum Arbeitsplätze statt freiem Tempo: Bewohner bleiben die knappe Währung. Früher brauchten drei
-Holzfällerhütten drei Arbeiter, jetzt braucht eine Hütte Stufe 3 ebenfalls drei. Sonst wäre Brot und damit
-die halbe Produktionskette wertlos.
+**Tempo** (`tempoFaktor`, `zyklusSekunden`): Eine Werkstatt auf Stufe N arbeitet N-mal so schnell, ohne Arbeiter
+(Eisenschwert 90 s, auf Stufe 2 45 s, auf Stufe 3 30 s). Zyklen laufen ohne Leertakt: Ist einer fertig, beginnt der
+nächste im selben Stadt-Takt, und die Zeit über das Ende hinaus zählt für ihn mit (`ProductionSystem.update`). Ein
+Ausbau während eines Zyklus kürzt dessen Rest im Verhältnis der Tempi (`ausbauen`: 60 s Rest auf Stufe 1 sind nach
+dem Ausbau auf Stufe 2 noch 30 s); gespeichert wird sofort (`mc:speichern`).
 
-## Wohnviertel statt Wohnhäuser
+## Mindmap (Reiter «Stadt»)
 
-- **Steuern zahlen die Bewohner, nicht die Häuser:** 2 Gold je Bewohner und Tag × Zufriedenheit (0–100 %)
-  × Helden-Bonus (1.05 ab drei aktiven Helden) × (1 + Marktplatz-Prozent), plus das feste Gold der Bank.
-  Brot → Bewohner → Arbeit und Gold ist damit eine echte Kette; die Mindmap zeigt sie (Bäckerei → Wohnviertel
-  → Marktplatz → Bank).
-- Das Wohnviertel zeigt im Fenster: Bewohner / Plätze, wer arbeitet und wer frei ist, Zufriedenheit, Brot,
-  Steuern pro Tag mit Rechnung, und ob die Stadt wächst (Balken bis zum Tageswechsel).
-- **Brot ist täglicher Verbrauch** (seit 21.10.2026, PR #32): Beim Tageswechsel essen die Bewohner 1 Brot je
-  volle 8 Bewohner, mindestens 1 (6 = 1, 16 = 2, 36 = 4), erst danach wächst die Stadt (ein neuer Bewohner kostet
-  1 Brot, das nach dem Essen übrig sein muss). Ohne Brot gibt es −20 statt +10 Zufriedenheit, niemand zieht aus.
-  Das Startbrot (10) reicht ohne Brotkette 10 Tage. Die Brotkette backt auf Stufe 1 knapp 2, auf Stufe 2 knapp 3,7
-  und auf Stufe 3 etwa 5 Brot pro Tag; der Verbrauch ist so gewählt, dass sie auf der Stufe, die eine Stadtstufe
-  erlaubt, das volle Wohnviertel satt macht (`tests/startwirtschaft.test.ts`). Seit 21.10.2026 backt die Bäckerei
-  nicht mehr ohne Pause, sondern hält von selbst Brot für 3 Tage bereit, vor ihren Aufträgen (`docs/WERKSTAETTEN.md`). Mit 1 Brot je angefangene
-  6 Bewohner fehlte im Weiler, im Marktflecken und in der Grossstadt jeden Tag Brot, ohne dass man etwas
-  ausbauen konnte.
-- Überbelegung kostet 5 Zufriedenheit je Bewohner zu viel, höchstens 30 (vorher ohne Deckel).
-- Start: 6 Bewohner, Wohnviertel Stufe 1 mit 6 Plätzen (vorher ein Haus für 4 → Start mit Überbelegung,
-  Zufriedenheit 30 %, 2 Gold pro Tag; jetzt 50 % und ca. 6 Gold pro Tag).
+Drei Reihen von oben nach unten, Linien aus den echten Kartenpositionen (SVG, golden wenn beide Enden stehen):
 
-## Mindmap (Reiter «Produktion»)
+1. **Beute:** ein breiter Balken «Beute aus den Dungeons» mit fünf Gruppen und ihrem Vorrat (`BEUTE_GRUPPEN`):
+   Eisenschrott, Kristallsplitter, Grüne Kräuter, Seltene Kräuter, Dungeon-Material. Klick auf eine Gruppe erklärt,
+   wofür sie ist («für die fünf Tränke mit Wirkung»); Klick auf den Balken führt zu den Expeditionen.
+2. **Werkstätten und Händler:** Schmiede, Arkanschmiede, Kriegsmaschinen-Werkstatt, Kräuterküche, Händler. Die
+   Arkanschmiede liefert Bauteile zur Kriegsmaschinen-Werkstatt direkt daneben.
+3. **Gilde:** Gildenhaus, «Expeditionen» (Helden, Tränke, Proviant, Kriegsmaschinen) und «Bauen & Ausbauen»
+   (Baupläne vom Händler). Das Dungeon-Material geht in die Set-Schmiede im Gildenhaus; diese Linie würde zwei
+   Reihen überspringen und steht darum nur in der Erklärung.
 
-Vier Reihen von oben nach unten, Linien aus den echten Kartenpositionen (SVG, golden wenn beide Enden
-stehen, gestrichelt = Wasser-Versorgung):
+Linien führen eine Reihe tiefer oder zur Karte direkt daneben, der breite Balken schickt seine Linien senkrecht
+nach unten; `tests/produktionsnetz.test.ts` prüft, dass sich nichts kreuzt.
 
-1. **Gewinnen:** Holzfällerhütte, Steinbruch, Getreidefarm, Eisenmine, Kristalle und Kräuter aus den Dungeons.
-2. **Lager:** Lagerhaus als Balken über die ganze Breite mit den wichtigsten Vorräten, daneben «Bauen & Ausbauen».
-3. **Werkstätten:** Schmiede, Arkanschmiede, Kriegsmaschinen-Werkstatt, Kräutergarten, Brunnen, Bäckerei, Windmühle.
-   Seit 21.10.2026 steht der Brunnen zwischen den beiden Gebäuden, die er mit Wasser versorgt, und die Mühle liefert
-   von rechts in die Bäckerei: nur kurze Linien, keine kreuzt eine andere (`docs/WERKSTAETTEN.md`).
-4. **Stadt:** Gildenhaus, «Expeditionen», Wohnviertel, Marktplatz, Bank.
+Über der Karte stehen bis zu drei **Engpässe** der Stadt als Knöpfe (`src/systems/EngpassSystem.ts`): zuerst
+Werkstätten, die auf Beute oder Gold warten («Eisenschrott gibt es als Beute in den Dungeons: schick die Helden auf
+Expedition.», «Gold bringen Expeditionen, das Auftragsbrett im Gildenhaus und der Händler, der Beute ankauft.»), dann
+der nächste Bau, dann das erste gesperrte Gebäude («Arkanschmiede ist noch gesperrt. Bauplan fehlt: Bauplan beim
+Händler (150 Gold) oder vom Kristallgolem, braucht Gildenrang 2.»). Jedes Gebäude kommt genau einmal vor, auf der
+Karte steht die Stufe. Klick: gebaut → Fenster mit Werkstatt und Ausbau; Händler → Händler-Fenster; baubar →
+Bau-Dialog; nur der Bauplan fehlt → Händler-Fenster, Abschnitt «Baupläne»; gesperrt → Bau-Dialog mit Grund.
 
-Über der Karte stehen bis zu drei **Engpässe** der Stadt als Knöpfe (klick öffnet das Gebäude). Jedes
-Gebäude kommt genau einmal vor, auf der Karte steht die Stufe. Klick: gebaut → Fenster mit Werkstatt und
-Ausbau; Bauplatz oder gesperrt → Bau-Dialog mit Grund; Dungeon-Zutaten → Expeditionen.
-Der Reiter «Wohnen» ist weg (alles steht im Fenster des Wohnviertels), «Crafting» und «Aufbau» bleiben.
+Die Mindmap passt sich der Breite an: genug Platz → normal, etwas zu schmal → als Ganzes verkleinert mit Linien,
+Handy → Raster ohne Linien, jede Karte sagt dann selbst, wohin sie liefert. Beim Darüberfahren mit der Maus (am
+Handy: lange drücken) erklärt ein Kasten in einem Satz, wofür das Gebäude gut ist, wie es gerade steht und was ein
+Klick macht (Texte: `src/data/gebaeudeErklaerungen.ts`). Das Gebäude, das sich als Nächstes lohnt, ist golden
+umrandet («Als Nächstes», auch im Aufbau-Reiter und in der Engpass-Leiste): das erste in der Reihenfolge Schmiede,
+Kräuterküche, Arkanschmiede, Kriegsmaschinen-Werkstatt, das baubar ist oder nur noch seinen Bauplan beim Händler
+braucht (`src/systems/Empfehlung.ts`). Mit weniger als zwei Helden empfiehlt die Stadt zuerst «Held anheuern
+(50 Gold)» (Schritt `held`, `typeId` leer): Das Ziel «Bauen & Ausbauen», die Engpass-Leiste und ein Knopf im
+Aufbau-Reiter zeigen den Satz und führen per Klick zu den Helden; in einem neuen Spiel mit zwei Helden heisst es
+«Schmiede: Bauplan kaufen (50 Gold)». Gebäude, denen der Gildenrang fehlt, werden übersprungen. Karten sind mit
+Tastatur bedienbar (Tab, Enter). Händler-Fenster, Gebäude-Fenster und Bau-Dialog schliessen mit Escape
+(`bindeFensterTasten`, `src/ui/components/FensterHilfen.ts`); der Beute-Balken sagt bei leerem Lager «noch nichts im
+Lager».
 
-**Nachtrag 18.10. abends (Bonus-Aufgabe):** Die Mindmap passt sich der Breite an: genug Platz → normal,
-etwas zu schmal (ab ca. 72 % der vollen Breite, z. B. 1024 px) → als Ganzes verkleinert mit Linien, noch schmaler
-(Handy) → Raster ohne Linien, jede Karte sagt dann selbst, wohin sie liefert («→ Lagerhaus: Holz»).
-Beim Darüberfahren mit der Maus (am Handy: lange drücken) erklärt ein Kasten in einem Satz, wofür das Gebäude gut
-ist, wie es gerade steht und was ein Klick macht (Texte: `src/data/gebaeudeErklaerungen.ts`). Das Gebäude, das sich
-als Nächstes lohnt, ist golden umrandet («Als Nächstes», auch im Aufbau-Reiter und in der Engpass-Leiste);
-Reihenfolge mit Begründung in derselben Datei, Auswahl in `src/systems/Empfehlung.ts` (erstes baubares in der
-Reihenfolge: Steinbruch, Getreidefarm, Eisenmine, Brunnen, Mühle, Schmiede, Bäckerei, Kräutergarten, Marktplatz,
-Arkanschmiede, Bank, Kriegsmaschinen). Karten sind mit Tastatur bedienbar (Tab, Enter).
+## Reiter «Aufbau»
 
-## Freischaltung geändert
+Ein Raster der sechs Gebäude in der Reihenfolge `BUILD_MENU_ORDER`, je Kachel: gebaut (mit Stufe), baubar,
+«Bauplan kaufen (N Gold)» (Klick öffnet das Händler-Fenster) oder gesperrt mit den Hinweisen aus
+`freischaltHinweise` («Bauplan beim Händler (150 Gold) oder vom Kristallgolem», «braucht Gildenrang 2»). Kein Baum:
+keine Werkstatt setzt eine andere voraus (`freischaltung.braucht` ist überall leer), nur Bauplan und Gildenrang
+sperren. Wer eine Kette will, trägt sie in `src/data/buildings.ts` ein; `getFreischaltStufe` rechnet sie aus.
 
-Damit die Reihenfolge zum Warenfluss passt: **Eisenmine braucht den Steinbruch, Schmiede braucht die Eisenmine**
-(vorher: Schmiede brauchte Holzfäller und Steinbruch, die Eisenmine brauchte die Schmiede).
+## Alte Spielstände
 
-## Alte Spielstände (SaveVersion 21)
-
-Mehrere Gebäude derselben Art werden beim Laden zu **einem** verschmolzen: Stufe = bisherige Anzahl (höchstens
-die Höchststufe), beim Wohnviertel mindestens so hoch, dass alle Bewohner Platz haben. Arbeiter ziehen mit,
-so weit Plätze da sind, der Rest wird frei; Waren aus Puffern gehen ins Lager, Spezialisten und ein
-Unwetter-Stopp hängen am behaltenen Gebäude. Test: `src/systems/SaveSystem.test.ts`, `src/systems/Ausbau.test.ts`.
-
-## Vorläufig (Balancing, Manager-Issue #23)
-
-- Markt (+25/40/50 %) und Bank (+10 Gold je Platz, Baukosten 50 Holz, 40 Stein, 150 Gold; vorher gratis) sind
-  erste Werte. Das Handelsfenster am Marktplatz (Waren gegen Gold) gibt es inzwischen; Preise, Tagesmengen
-  und warum keine Kette Gewinn bringt: [HANDEL.md](HANDEL.md).
-- Ausbau-Kosten «× Stufe» sind bewusst einfach; ob Stufe 3 zu billig ist, zeigt das Spielen.
+Spielstände aus der Zeit vor der Gildenstadt (SaveVersion unter 24) werden nicht geladen (`docs/SPIELSTAND.md`).
+`vereinigeDoppelte` in `Ausbau.ts` läuft beim Laden (`SaveSystem.bereiteVor`, also auch im Probe-Laden des
+Fensters «Spielstand») als Schutz «ein Gebäude je Art»: Mehrere Gebäude derselben Art werden zu einem verschmolzen,
+Stufe = bisherige Anzahl (höchstens die Höchststufe), Zutaten eines laufenden Zyklus gehen zurück ins Lager.

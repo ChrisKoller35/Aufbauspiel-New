@@ -10,7 +10,7 @@ import type { GameState } from '../models/GameState';
 
 type Form = (wert: unknown) => boolean;
 
-export function istObjekt(wert: unknown): wert is Record<string, unknown> {
+function istObjekt(wert: unknown): wert is Record<string, unknown> {
   return typeof wert === 'object' && wert !== null && !Array.isArray(wert);
 }
 

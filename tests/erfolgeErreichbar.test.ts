@@ -232,9 +232,11 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
   placeStartingLayout(state);
   const gear = new GearSystem();
   const system = new ExpeditionSystem(gear, new ProvisionSystem());
+  // Der Start-Guardian (placeStartingLayout) bleibt, die zwei anderen Startklassen kommen dazu; alle stark
   const trupp = STARTING_CLASSES.map(klasse => {
-    const held = createGuildFighter(klasse, CLASS_DEFS[klasse].name, { ...STARK });
-    state.fighters.push(held);
+    const held = state.fighters.find(f => f.classId === klasse) ?? createGuildFighter(klasse, CLASS_DEFS[klasse].name, STARK);
+    held.baseStats = { ...STARK };
+    if (!state.fighters.includes(held)) state.fighters.push(held);
     return held.id;
   });
 

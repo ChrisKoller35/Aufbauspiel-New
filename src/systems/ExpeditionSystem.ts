@@ -26,7 +26,7 @@ export const MERCHANT_PRICES: Record<string, number> = {
 export const MERCHANT_MAX_PURCHASES = 2;
 
 /** «+3 Angriff», «+0,2 Tempo», «+10 maximale Leben»: der Wert einer Trank-Wirkung in Spielersprache */
-export function trankWertText(wirkung: Pick<TrankWirkung, 'stat' | 'wert'>): string {
+function trankWertText(wirkung: Pick<TrankWirkung, 'stat' | 'wert'>): string {
   const name = { atk: 'Angriff', spd: 'Tempo', maxHp: 'maximale Leben' }[wirkung.stat];
   return `${wirkung.wert > 0 ? '+' : ''}${String(wirkung.wert).replace('.', ',')} ${name}`;
 }

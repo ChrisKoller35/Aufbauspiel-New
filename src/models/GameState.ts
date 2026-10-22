@@ -142,7 +142,7 @@ export function createNewGameState(): GameState {
       crystal_shard: 0,
       talisman_fragment: 0,
     },
-    fighters: [],
+    fighters: [], // der erste Held (Guardian) kommt mit den Startgebäuden (scenes/CityStartingLayout.ts)
     activeExpedition: null,
     day: 1,
     cityTickAccumulator: 0,

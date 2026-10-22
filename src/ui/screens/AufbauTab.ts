@@ -4,7 +4,9 @@
 // Händler, oder gesperrt mit den Hinweisen aus freischaltHinweise
 // (Bauplan beim Händler oder vom Boss, Gildenrang). Klick auf eine
 // Kachel öffnet das Gebäude-Fenster, den Bau-Dialog oder, wenn nur der
-// Bauplan fehlt, das Händler-Fenster.
+// Bauplan fehlt, das Händler-Fenster. Empfiehlt systems/Empfehlung.ts
+// keinen Bau, sondern einen Helden (typeId leer), steht der Schritt als
+// Knopf über dem Raster und führt zu den Helden.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS, BUILD_MENU_ORDER, bauplanHinweis } from '../../data/buildings';
@@ -24,9 +26,10 @@ type KachelStatus = 'gebaut' | 'baubar' | 'bauplan' | 'gesperrt';
 export function bauplanSchritt(state: GameState, typeId: string): { preis: number } | null {
   const bauplan = BUILDING_DEFS[typeId]?.freischaltung.bauplan;
   if (!bauplan || bauplanPreis(bauplan) <= 0 || dasGebaeude(state, typeId)) return null;
+  const stufe = stadtStufeVon(state);
   const hinweise = freischaltHinweise(state, typeId);
-  if (hinweise.length !== 1 || hinweise[0] !== bauplanHinweis(typeId)) return null;
-  return { preis: bauplanPreis(bauplan, stadtStufeVon(state)) };
+  if (hinweise.length !== 1 || hinweise[0] !== bauplanHinweis(typeId, stufe)) return null;
+  return { preis: bauplanPreis(bauplan, stufe) };
 }
 
 /** «Bauplan kaufen (50 Gold)» */
@@ -59,6 +62,13 @@ function kachel(state: GameState, typeId: string, built: Set<string>, empfohlen:
       </div>`;
 }
 
+/** Empfiehlt die Stadt keinen Bau, sondern einen Schritt ohne Gebäude (Held anheuern): Knopf mit Grund. */
+function naechsterSchrittHTML(state: GameState): string {
+  const e = naechsterBau(state);
+  if (!e || e.typeId) return '';
+  return `<button type="button" class="aufbau-tipp" data-ziel="heroes"><b>Als Nächstes: ${e.text}</b> ${e.warum}</button>`;
+}
+
 export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) => string): string {
   const built = getBuiltTypeIds(state);
   const empfohlen = naechsterBau(state)?.typeId;
@@ -78,6 +88,7 @@ export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) =
       </div>
       <p class="craft-hint">Gildenhaus und Händler stehen von Anfang an. Die vier Werkstätten brauchen einen Bauplan
         (Händler oder Boss) und Gold und Beute aus den Dungeons; danach lassen sie sich bis Stufe 3 ausbauen.</p>
+      ${naechsterSchrittHTML(state)}
       <div class="aufbau-grid">${cards}</div>
     </div>`;
 }
@@ -87,9 +98,12 @@ export interface AufbauCallbacks {
   oeffne: (typeId: string) => void;
   /** Nur der Bauplan fehlt: Händler-Fenster, Abschnitt Baupläne. */
   bauplanKaufen: (typeId: string) => void;
+  /** Empfohlener Schritt ohne Gebäude (Held anheuern): Helden-Bildschirm. */
+  zuDenHelden: () => void;
 }
 
 export function bindAufbauTab(panel: HTMLElement, cb: AufbauCallbacks): void {
+  panel.querySelector('.aufbau-tipp')?.addEventListener('click', () => cb.zuDenHelden());
   const waehle = (card: HTMLElement) => {
     const typeId = card.dataset.btype;
     if (!typeId) return;

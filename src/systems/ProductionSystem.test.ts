@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { ProductionSystem } from './ProductionSystem';
 import { auftragGeben } from './Auftraege';
+import { ausbauen } from './Ausbau';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
 
@@ -69,6 +70,19 @@ describe('ProductionSystem – Ausbau-Stufen', () => {
       laufe(state, 1 + 2 * sekunden);
       expect(state.globalStock.iron_sword, `Stufe ${stufe}`).toBe(2);
     }
+  });
+
+  it('Ausbau während eines Zyklus: der Rest läuft im neuen Tempo weiter', () => {
+    const { state, schmiede: b } = schmiede({ iron_scrap: 100, gold: 1000 });
+    state.stadtweg = { stufe: 7, herzsteine: [], gelesen: 0 };
+    auftragGeben(b, SCHWERT);
+    laufe(state, 31); // Takt 1 beginnt (90 s), dann 30 s
+    expect(b.productionTimer).toBe(60);
+    expect(ausbauen(state, b)).toBe(true); // Stufe 2: aus 60 s Rest werden 30
+    laufe(state, 29);
+    expect(state.globalStock.iron_sword).toBe(0);
+    laufe(state, 1);
+    expect(state.globalStock.iron_sword).toBe(1);
   });
 
   it('Stufe 1 bleibt beim Tempo des Rezepts', () => {

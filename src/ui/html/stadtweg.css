@@ -55,6 +55,7 @@
   background: rgba(6,8,16,.7); border: 1px solid var(--bdr); color: var(--txt); font-size: 1rem; cursor: pointer;
 }
 .sw-zu:hover { color: var(--gl); border-color: var(--gd); }
+@media (pointer: coarse) { .sw-zu { width: 44px; height: 44px; } }
 .sw-bild { position: relative; height: 240px; overflow: hidden; }
 .sw-bild-titel { position: absolute; top: 16px; left: 22px; display: flex; flex-direction: column; gap: 2px;
   text-shadow: 0 2px 10px rgba(0,0,0,.9); pointer-events: none; }

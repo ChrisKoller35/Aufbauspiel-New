@@ -147,10 +147,11 @@ export function bauplanHinweis(typeId: string, stadtstufe = 1): string | null {
 
 /**
  * Fehlende Bedingungen als kurze Hinweise, z. B. «braucht Gildenrang 2» oder
- * «Bauplan beim Händler (50 Gold)». Leer = frei. `bauplaene` sind die Bauplan-Items im Lager.
+ * «Bauplan beim Händler (50 Gold)». Leer = frei. `bauplaene` sind die Bauplan-Items im Lager,
+ * `stadtstufe` gibt den Rabatt auf den Bauplan-Preis (data/haendler.ts).
  */
 export function getFreischaltHinweise(
-  typeId: string, builtTypeIds: Iterable<string>, gildenrang: number, bauplaene: Iterable<string>,
+  typeId: string, builtTypeIds: Iterable<string>, gildenrang: number, bauplaene: Iterable<string>, stadtstufe = 1,
 ): string[] {
   const def = BUILDING_DEFS[typeId];
   if (!def) return [];
@@ -163,7 +164,7 @@ export function getFreischaltHinweise(
   const rang = def.freischaltung.gildenrang;
   if (rang && gildenrang < rang) hinweise.push(`braucht Gildenrang ${rang}`);
   const bauplan = def.freischaltung.bauplan;
-  if (bauplan && !new Set(bauplaene).has(bauplan)) hinweise.push(bauplanHinweis(typeId) ?? 'braucht einen Bauplan');
+  if (bauplan && !new Set(bauplaene).has(bauplan)) hinweise.push(bauplanHinweis(typeId, stadtstufe) ?? 'braucht einen Bauplan');
   return hinweise;
 }
 

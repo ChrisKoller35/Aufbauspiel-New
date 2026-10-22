@@ -6,7 +6,10 @@
 // Stadtmauer (Stadt), Kriegsmaschinen-Werkstatt und Burg (Grossstadt);
 // ab der Grossstadt wächst das Arkane Herz, in der Magischen Stadt
 // leuchtet es und ein Pfad glüht über den Berg hinauf zu den Dungeons ganz oben.
-// Wird im Hauptmenü (klein) und im Stadtweg-Fenster (gross) gezeigt.
+// Wird im Hauptmenü (klein) und im Stadtweg-Fenster (gross) gezeigt. Das
+// kleine Bild passt sich der Breite des Banners an («meet»): am Handy sieht
+// man die ganze Stadt, am PC den Ausschnitt um den Dorfplatz; Himmel und
+// Boden reichen über den Ausschnitt hinaus, damit kein Rand leer bleibt.
 // ────────────────────────────────────────────────────────────────
 
 const G = 214; // Bodenlinie
@@ -297,9 +300,13 @@ export function stadtSilhouette(
     .filter(t => stufe >= t.ab && (t.bis === undefined || stufe <= t.bis))
     .map(t => (opts.neu && t.ab === stufe ? `<g class="sw-neu">${t.svg(s)}</g>` : t.svg(s)))
     .join('');
-  // Klein (Banner im Hauptmenü): Ausschnitt um den Dorfplatz, damit die Häuser grösser wirken
+  // Klein (Banner im Hauptmenü): Ausschnitt um den Dorfplatz, damit die Häuser grösser wirken. «meet»
+  // statt «slice»: Ist der Banner breiter als der Ausschnitt (Handy, eine Spalte), zeigt er links und
+  // rechts mehr Stadt statt oben die Dächer abzuschneiden; nichts wird verzerrt. Das grosse Bild füllt
+  // sein Feld («slice», am Handy mit Rand links und rechts).
   const viewBox = opts.klein ? '170 56 460 184' : '0 0 800 240';
-  return `<svg class="sw-svg" viewBox="${viewBox}" preserveAspectRatio="xMidYMax slice" role="img" aria-label="Die Stadt auf Stufe ${stufe}">
+  const passung = opts.klein ? 'xMidYMax meet' : 'xMidYMax slice';
+  return `<svg class="sw-svg" viewBox="${viewBox}" preserveAspectRatio="${passung}" role="img" aria-label="Die Stadt auf Stufe ${stufe}">
   <defs>
     <linearGradient id="${s.id('himmel')}" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="#070a1c"/><stop offset=".6" stop-color="#141838"/><stop offset="1" stop-color="${stufe >= 7 ? '#3b2766' : '#2a2350'}"/>
@@ -307,12 +314,14 @@ export function stadtSilhouette(
     <radialGradient id="${s.id('aura')}"><stop offset="0" stop-color="#a855f7" stop-opacity=".55"/><stop offset=".55" stop-color="#7c3aed" stop-opacity=".18"/><stop offset="1" stop-color="#7c3aed" stop-opacity="0"/></radialGradient>
     <linearGradient id="${s.id('kristall')}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#f5f3ff"/><stop offset=".35" stop-color="#c084fc"/><stop offset=".75" stop-color="#7c3aed"/><stop offset="1" stop-color="#22d3ee"/></linearGradient>
   </defs>
+  <rect x="-400" y="-400" width="1600" height="400" fill="#070a1c"/>
+  <rect x="-400" width="400" height="240" fill="url(#${s.id('himmel')})"/><rect x="800" width="400" height="240" fill="url(#${s.id('himmel')})"/>
   <rect width="800" height="240" fill="url(#${s.id('himmel')})"/>
   ${sterne}
   <circle cx="566" cy="74" r="32" fill="#efe3c0" opacity=".08"/><circle cx="566" cy="74" r="14" fill="#efe3c0" opacity=".9"/>
   ${berg(s)}
   <path d="M0 ${G - 18} Q120 ${G - 34} 240 ${G - 16} T520 ${G - 14} T800 ${G - 22} V${G} H0 Z" fill="#0e1228"/>
   ${teile}
-  <rect y="${G}" width="800" height="${240 - G}" fill="#080b17"/><rect y="${G}" width="800" height="1" fill="#1f2547"/>
+  <rect x="-400" y="${G}" width="1600" height="${240 - G + 400}" fill="#080b17"/><rect x="-400" y="${G}" width="1600" height="1" fill="#1f2547"/>
 </svg>`;
 }

@@ -130,6 +130,9 @@ describe('Freischaltung der Gebäude', () => {
       'Bauplan beim Händler (250 Gold) oder vom Gefallenen Ritter',
     ]);
     expect(getFreischaltHinweise('GUILD_HALL', [], 1, [])).toEqual([]);
+    // Mit Stadtstufe steht der Bauplan-Preis mit Rabatt (Stufe 4: 10 %, Stufe 7: 20 %)
+    expect(getFreischaltHinweise('SMITHY', ['GUILD_HALL'], 1, [], 7)).toEqual(['Bauplan beim Händler (40 Gold)']);
+    expect(getFreischaltHinweise('ARCANE_SMITHY', [], 2, [], 4)).toEqual(['Bauplan beim Händler (135 Gold) oder vom Kristallgolem']);
     expect(getFreischaltStatus('GUILD_HALL', ['GUILD_HALL'], 1, [])).toBe('gebaut');
     expect(getFreischaltStatus('HERB_GARDEN', ['GUILD_HALL'], 1, ['bauplan_kraeuterkueche'])).toBe('baubar');
     expect(getFreischaltStatus('HERB_GARDEN', ['GUILD_HALL'], 1, [])).toBe('gesperrt');

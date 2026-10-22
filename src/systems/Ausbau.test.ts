@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import {
-  maxStufe, ausbauKosten, ausbauInfo, ausbauen, zyklusSekunden, tempoFaktor, investiert, vereinigeDoppelte,
-  erlaubteStufe, fehlendeStadtstufe, ausbauWirkung, heldenJeExpedition, entferneGebaeude, erstatteLaufendenZyklus,
+  maxStufe, ausbauKosten, ausbauInfo, ausbauen, zyklusSekunden, tempoFaktor, vereinigeDoppelte,
+  erlaubteStufe, fehlendeStadtstufe, ausbauWirkung, heldenJeExpedition, erstatteLaufendenZyklus,
 } from './Ausbau';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance, BuildingInstance } from '../models/Building';
@@ -9,7 +9,6 @@ import { RECIPE_DEFS } from '../data/recipes';
 import { BUILDING_DEFS } from '../data/buildings';
 
 const SCHWERT = RECIPE_DEFS.RCP_IRON_SWORD; // 2 Eisenschrott + 10 Gold, 90 s
-const SCHMIEDE_GOLD = BUILDING_DEFS.SMITHY.buildCost.gold;
 
 function bauen(state: GameState, typeId: string): BuildingInstance {
   const b = createBuildingInstance(typeId);
@@ -41,12 +40,6 @@ describe('Ausbau: Stufen und Kosten', () => {
     expect(ausbauKosten('GUILD_HALL', 2)).toEqual({ gold: 80, crystal_shard: 3 });
   });
 
-  it('investiert summiert Bau und alle Ausbauten', () => {
-    expect(investiert('SMITHY', 1)).toEqual({ gold: SCHMIEDE_GOLD });
-    expect(investiert('SMITHY', 3)).toEqual({ gold: SCHMIEDE_GOLD * 6, iron_scrap: 30 });
-    expect(investiert('ARCANE_SMITHY', 2)).toEqual({ gold: 240, iron_scrap: 5, crystal_shard: 8 });
-  });
-
   it('Wirkung in Spielersprache: Werkstatt N-mal so schnell, Gildenhaus vier Helden', () => {
     expect(ausbauWirkung('SMITHY', 1)).toBe('arbeitet in gewohntem Tempo');
     expect(ausbauWirkung('SMITHY', 2)).toBe('arbeitet 2-mal so schnell');
@@ -75,6 +68,25 @@ describe('Ausbau: ausbauen', () => {
     expect(zyklusSekunden(schmiede, SCHWERT)).toBe(45);
     expect(state.statistics.total_buildings_built).toBe(1);
     expect(state.statistics.total_upgrades).toBe(1);
+  });
+
+  it('ein laufender Zyklus wird beim Ausbau anteilig kürzer (Rest × alte Stufe / neue Stufe)', () => {
+    const state = createNewGameState();
+    state.stadtweg = { stufe: 7, herzsteine: [], gelesen: 0 };
+    Object.assign(state.globalStock, { gold: 1000, iron_scrap: 100 });
+    const schmiede = bauen(state, 'SMITHY');
+    schmiede.producing = true;
+    schmiede.activeRecipeId = SCHWERT.id;
+    schmiede.productionTimer = 60;
+    expect(ausbauen(state, schmiede)).toBe(true);
+    expect(schmiede.productionTimer).toBe(30);
+    expect(ausbauen(state, schmiede)).toBe(true);
+    expect(schmiede.productionTimer).toBe(20);
+    // Ohne laufenden Zyklus bleibt der Zähler, wie er ist
+    const kueche = bauen(state, 'HERB_GARDEN');
+    state.globalStock.herb_green = 50;
+    expect(ausbauen(state, kueche)).toBe(true);
+    expect(kueche.productionTimer).toBe(0);
   });
 
   it('ohne Gold oder Beute kein Ausbau', () => {
@@ -169,8 +181,8 @@ describe('Ausbau: Grenzen der Stadtstufe', () => {
   });
 });
 
-describe('Gebäude entfernen und verschmelzen', () => {
-  it('entferneGebaeude gibt die Zutaten des laufenden Zyklus ins Lager zurück', () => {
+describe('Laufenden Zyklus erstatten und Doppelte verschmelzen', () => {
+  it('erstatteLaufendenZyklus gibt die Zutaten des laufenden Zyklus ins Lager zurück (Auftrag abbrechen)', () => {
     const state = createNewGameState();
     const schmiede = bauen(state, 'SMITHY');
     schmiede.producing = true;
@@ -180,18 +192,22 @@ describe('Gebäude entfernen und verschmelzen', () => {
     erstatteLaufendenZyklus(state, schmiede);
     expect(state.globalStock.iron_scrap).toBe(2);
     expect(state.globalStock.gold).toBe(10);
-    entferneGebaeude(state, new Set([schmiede.id]));
-    expect(state.buildings).toHaveLength(0);
-    expect(state.globalStock.iron_scrap).toBe(4);
+    schmiede.producing = false;
+    erstatteLaufendenZyklus(state, schmiede);
+    expect(state.globalStock.iron_scrap).toBe(2);
   });
 
-  it('drei Schmieden werden eine Schmiede Stufe 3', () => {
+  it('drei Schmieden werden eine Schmiede Stufe 3, laufende Zyklen der anderen gehen ins Lager zurück', () => {
     const state = createNewGameState();
-    [1, 2, 3].map(() => bauen(state, 'SMITHY'));
+    const [, zweite] = [1, 2, 3].map(() => bauen(state, 'SMITHY'));
+    zweite.producing = true;
+    zweite.activeRecipeId = SCHWERT.id;
+    state.globalStock.iron_scrap = 0;
     expect(vereinigeDoppelte(state)).toBe(2);
     const rest = state.buildings.filter(b => b.typeId === 'SMITHY');
     expect(rest).toHaveLength(1);
     expect(rest[0].tier).toBe(3);
+    expect(state.globalStock.iron_scrap).toBe(2);
   });
 
   it('fünf Schmieden: höchstens Stufe 3; zwei Händler bleiben auf Stufe 1', () => {

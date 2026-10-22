@@ -4,7 +4,8 @@
 // liegt und der Händler ankauft, 1× / alle). Preise mit dem Rabatt der
 // Stadtstufe. Regeln und Sätze kommen aus systems/Haendler.ts; das
 // Fenster zeigt nur deren Text und zeichnet sich danach neu. Nach jedem
-// Kauf oder Verkauf wird gespeichert (mc:speichern, main.ts).
+// Kauf oder Verkauf wird gespeichert (mc:speichern, main.ts). Escape
+// schliesst das Fenster (FensterHilfen.ts).
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../../data/buildings';
@@ -15,7 +16,7 @@ import { GameState } from '../../models/GameState';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { getGildenrang, itemName } from '../../systems/GebaeudeStatus';
 import { HaendlerErgebnis, bauplanGekauft, bauplanKaufen, kaufen, verkaeufliches, verkaufen } from '../../systems/Haendler';
-import { hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { wirdGedrueckt } from '../components/DruckWaechter';
 
 export type HaendlerAbschnitt = 'kaufen' | 'bauplaene' | 'verkaufen';
@@ -101,7 +102,7 @@ function renderVerkaufen(state: GameState): string {
         ${knopf('hf-verkaufen', `data-verkauf="${v.itemId}" data-menge="1"`, '1×', true)}
         ${knopf('hf-verkaufen', `data-verkauf="${v.itemId}" data-menge="alle"`, `alle (${v.preis * v.menge} Gold)`, true)}
       </div>`).join('');
-  const inhalt = zeilen || '<p class="ws-msg">Nichts im Lager, was der Händler ankauft. Er nimmt Ausrüstung, Beute und Proviant zum halben Wert.</p>';
+  const inhalt = zeilen || '<p class="ws-msg">Nichts im Lager, was der Händler ankauft. Er nimmt Ausrüstung, Beute und Proviant zum halben Wert – Baupläne, Set-Teile und Dungeon-Material nicht (das gehört in die Set-Schmiede).</p>';
   return `<div class="hf-abschnitt" data-hf="verkaufen"><span class="lbl">VERKAUFEN</span>${inhalt}</div>`;
 }
 
@@ -129,7 +130,7 @@ export function showHaendlerFenster(root: HTMLElement, state: GameState, opt: Ha
     <div class="modal modal-ws hf">
       <div class="bm-bild"><img src="assets/sprites/final/${def.spriteKey}.png" alt="" onerror="this.style.display='none'"></div>
       <h3 class="bm-title">${def.name}</h3>
-      <p class="bm-info">Stückpreise, kein Limit. Beute, die niemand trägt, nimmt er zum halben Wert; Baupläne und Set-Teile nicht.</p>
+      <p class="bm-info">Stückpreise, kein Limit. Er nimmt Ausrüstung, Beute und Proviant zum halben Wert – Baupläne, Set-Teile und Dungeon-Material nicht (das gehört in die Set-Schmiede).</p>
       <div class="bm-body">${renderBody(state, meldung)}</div>
       <div class="bm-actions"><button class="fk-btn btn-close-modal">SCHLIESSEN</button></div>
     </div>`;
@@ -153,9 +154,11 @@ export function showHaendlerFenster(root: HTMLElement, state: GameState, opt: Ha
 
   const close = () => {
     window.clearInterval(timer);
+    tastenLoesen();
     ov.remove();
     opt.beimSchliessen();
   };
+  const tastenLoesen = bindeFensterTasten(ov, ov.querySelector('.modal'), close);
 
   /** Ergebnis anzeigen; nach einem Kauf oder Verkauf Erfolge prüfen und speichern. */
   const fertig = (r: HaendlerErgebnis) => {

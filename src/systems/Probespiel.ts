@@ -94,7 +94,9 @@ export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu')
   if (gildenhaus) gildenhaus.tier = Math.max(gildenhaus.tier, BUILDING_UPGRADE_DEFS.GUILD_HALL_T2.toTier);
   state.guildStats.guildHallT2 = true;
 
-  // Helden wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire), schon auf Stufe und ausgerüstet
+  // Helden wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire), schon auf Stufe und ausgerüstet;
+  // der Guardian der neuen Stadt (CityStartingLayout) weicht dem Musterteam
+  state.fighters = [];
   const team = oben ? MUSTER_TEAMS.stark : MUSTER_TEAMS.gut;
   for (const muster of team.helden) {
     const fighter = createGuildFighter(muster.classId, muster.name, musterWerte(muster));

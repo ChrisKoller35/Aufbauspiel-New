@@ -137,6 +137,15 @@ describe('SaveSystem', () => {
     expect(alterStandVerworfenBeimStart()).toBe(true);
   });
 
+  it('zwei Gebäude derselben Art (Schmiede) werden beim Laden zu einem verschmolzen', () => {
+    const state = standMitHelden();
+    bauen(state, 'SMITHY');
+    writeRawSave(state);
+    const loaded = new SaveSystem().load()!;
+    expect(loaded.buildings.filter(b => b.typeId === 'SMITHY')).toHaveLength(1);
+    expect(loaded.buildings.find(b => b.typeId === 'SMITHY')!.tier).toBe(2);
+  });
+
   it('fehlt die Liste der erhaltenen Baupläne, legt das Laden sie an', () => {
     const state = standMitHelden();
     delete (state as Partial<GameState>).erhalteneBauplaene;

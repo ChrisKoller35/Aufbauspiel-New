@@ -45,7 +45,7 @@ export interface NetzKante {
 export const SELTENE_KRAEUTER = ['herb_fire_root', 'herb_shimmer_shroom', 'herb_swamp_blossom', 'herb_bone_dust', 'herb_moonwort'];
 
 /** Die Dungeon-Materialien der Set-Schmiede (eins je Gebiet, data/schmiede.ts). */
-export const DUNGEON_MATERIAL = SCHMIEDE_MATERIALIEN.map(m => m.id);
+const DUNGEON_MATERIAL = SCHMIEDE_MATERIALIEN.map(m => m.id);
 
 export interface BeuteGruppe {
   id: string;
@@ -65,7 +65,7 @@ export const BEUTE_GRUPPEN: BeuteGruppe[] = [
 ];
 
 /** ID des Beute-Balkens (erste Reihe). */
-export const BEUTE_KNOTEN = 'q:beute';
+const BEUTE_KNOTEN = 'q:beute';
 
 export const NETZ_REIHEN: NetzReihe[] = [
   {
@@ -138,9 +138,4 @@ export function netzKnoten(id: string): NetzKnoten | undefined {
     if (k) return k;
   }
   return undefined;
-}
-
-/** Die Beute-Gruppe, zu der eine Ware gehört (Eisenschrott → beute:eisen), oder undefined. */
-export function beuteGruppeVon(itemId: string): BeuteGruppe | undefined {
-  return BEUTE_GRUPPEN.find(g => g.items.includes(itemId));
 }

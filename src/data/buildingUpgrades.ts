@@ -37,13 +37,3 @@ export const BUILDING_UPGRADE_DEFS: Record<string, BuildingUpgradeDef> = {
     },
   },
 };
-
-/** Find available upgrade for a building type + tier. */
-export function getAvailableUpgrade(
-  buildingTypeId: string,
-  currentTier: number,
-): BuildingUpgradeDef | null {
-  return Object.values(BUILDING_UPGRADE_DEFS).find(
-    u => u.buildingTypeId === buildingTypeId && u.fromTier === currentTier,
-  ) ?? null;
-}

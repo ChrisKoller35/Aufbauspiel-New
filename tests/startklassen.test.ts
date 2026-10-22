@@ -5,6 +5,8 @@ import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { CLASS_DEFS } from '../src/data/classes';
+import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
+import { anheuerKosten } from '../src/systems/Empfehlung';
 
 const STARTKLASSEN = ['guardian', 'ranger', 'cleric'];
 
@@ -42,4 +44,18 @@ test('drei Starthelden auf Stufe 1 gewinnen die kurze Waldexpedition meistens', 
     if (playRoute(state, system, 'forest_short', heroIds).status === 'victory') siege++;
   }
   expect(siege).toBeGreaterThanOrEqual(8);
+});
+
+test('ein neues Spiel beginnt mit einem Guardian wie beim Anheuern; der zweite Held kostet 50, der dritte 80', () => {
+  const state = createNewGameState();
+  placeStartingLayout(state);
+  expect(state.fighters).toHaveLength(1);
+  const held = state.fighters[0];
+  expect(held).toMatchObject({ classId: 'guardian', name: CLASS_DEFS.guardian.name, level: 1, xp: 0, baseStats: CLASS_DEFS.guardian.baseStats });
+  expect(Object.values(held.gear).every(slot => slot === null)).toBe(true);
+  expect(anheuerKosten(state.fighters.length)).toBe(50);
+  expect(anheuerKosten(2)).toBe(80);
+  // Ein zweiter Aufruf legt keinen zweiten Guardian an
+  placeStartingLayout(state);
+  expect(state.fighters).toHaveLength(1);
 });

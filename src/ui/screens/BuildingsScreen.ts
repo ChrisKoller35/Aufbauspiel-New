@@ -7,6 +7,7 @@
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../../data/buildings';
+import { ERKLAERUNG } from '../../data/gebaeudeErklaerungen';
 import { RECIPE_DEFS } from '../../data/recipes';
 import { GameState } from '../../models/GameState';
 import { createBuildingInstance } from '../../models/Building';
@@ -19,8 +20,8 @@ import { showBuildingModal, renderCostDetail } from './GebaeudeFenster';
 import { showHaendlerFenster, HaendlerAbschnitt } from './HaendlerFenster';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { freischaltHinweise, dasGebaeude } from '../../systems/GebaeudeStatus';
-import { ausbauWirkung, maxStufe } from '../../systems/Ausbau';
-import { hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { maxStufe } from '../../systems/Ausbau';
+import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { bindDruckWaechter, wirdGedrueckt } from '../components/DruckWaechter';
 
 /** Kartenbild je Gebäude-Art. */
@@ -208,6 +209,7 @@ function bindEvents(root: HTMLElement, state: GameState): void {
     bindAufbauTab(aufbau, {
       oeffne: typeId => oeffneGebaeude(root, typeId, state),
       bauplanKaufen: () => oeffneHaendler(root, state, 'bauplaene'),
+      zuDenHelden: () => navigateTo('heroes'),
     });
   }
 
@@ -240,7 +242,7 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   const unlocked = hinweise.length === 0;
   const bauplan = bauplanSchritt(state, typeId);
   const recipeNames = def.recipes.map(id => RECIPE_DEFS[id]?.name).filter(Boolean);
-  const wirkung = ausbauWirkung(typeId, 1);
+  const erklaerung = ERKLAERUNG[typeId];
   const max = maxStufe(typeId);
 
   const ov = document.createElement('div');
@@ -248,9 +250,9 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   ov.innerHTML = `
     <div class="modal">
       <h3>${def.name} bauen?</h3>
+      ${erklaerung ? `<p class="bm-info">${erklaerung}</p>` : ''}
       <p><strong>Kosten:</strong></p>
       <div class="cingr">${renderCostDetail(def.buildCost, state)}</div>
-      ${wirkung ? `<p><strong>Bringt:</strong> ${wirkung}</p>` : ''}
       ${recipeNames.length > 0 ? `<p><strong>Rezepte:</strong> ${recipeNames.join(', ')}</p>` : ''}
       ${max > 1 ? `<p class="bm-info">Es gibt jedes Gebäude nur einmal. Danach lässt es sich bis Stufe ${max} ausbauen.</p>` : ''}
       ${!unlocked ? `<p class="ws-warn"><strong>🔒 Gesperrt:</strong> ${hinweise.join(', ')}</p>`
@@ -263,18 +265,24 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
     </div>`;
   root.appendChild(ov);
 
+  const close = () => {
+    tastenLoesen();
+    ov.remove();
+  };
+  const tastenLoesen = bindeFensterTasten(ov, ov.querySelector('.modal'), close);
+
   // Der Hintergrund schliesst nur bei einem einfachen Klick, der dort begann
   const hintergrund = hintergrundKlick(ov);
   ov.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if ((target === ov && hintergrund(e)) || target.classList.contains('btn-close-modal')) {
-      ov.remove();
+      close();
       schluckeZweitenKlick();
     } else if (target.classList.contains('btn-bauplan')) {
-      ov.remove();
+      close();
       oeffneHaendler(root, state, 'bauplaene');
     } else if (target.classList.contains('btn-confirm-buy')) {
-      ov.remove();
+      close();
       executeBuy(root, typeId, state);
     }
   });

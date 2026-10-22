@@ -42,6 +42,8 @@ export function zielWert(state: GameState, wert: 'bauen' | 'expeditionen'): stri
   if (ausbaubar) teile.push(`${ausbaubar} ausbaubar`);
   if (teile.length) return teile.join(' · ');
   const e = naechsterBau(state);
+  // Kein Gebäude: der empfohlene Schritt selbst («Held anheuern (50 Gold)», Klick geht zu den Helden)
+  if (e && !e.typeId) return e.text;
   const bauplan = e?.schritt === 'bauplan' ? bauplanSchritt(state, e.typeId) : null;
   return bauplan ? bauplanKaufenText(bauplan.preis) : 'sammle Gold und Eisenschrott';
 }
@@ -76,9 +78,10 @@ export function stufeText(s: GebaeudeStatus): string {
   return s.anzahl > 0 && maxStufe(s.typeId) > 1 ? `Stufe ${s.stufe}` : '';
 }
 
+/** Zweite Zeile des Beute-Balkens: «12 im Lager», bei leerem Lager «noch nichts im Lager». */
 export function quellenText(state: GameState, items: string[]): string {
   const vorrat = quellenVorrat(state, items);
-  return vorrat > 0 ? `${vorrat} im Lager` : 'Beute aus den Dungeons';
+  return vorrat > 0 ? `${vorrat} im Lager` : 'noch nichts im Lager';
 }
 
 // ── Erklärung ───────────────────────────────────────────────────
@@ -96,11 +99,13 @@ export function erklaerung(state: GameState, knotenId: string): { titel: string;
   const k = netzKnoten(knotenId);
   if (!k) return { titel: knotenId, zeilen };
   if (k.art === 'quelle') {
-    zeilen.push(`Im Lager: ${quellenText(state, k.items)}.`, 'Klick: zu den Expeditionen.');
+    zeilen.push(`Im Lager: ${quellenVorrat(state, k.items)}.`, 'Klick: zu den Expeditionen.');
     return { titel: k.titel, zeilen };
   }
   if (k.art === 'ziel') {
-    zeilen.push(k.wert === 'bauen' ? 'Klick: zum Reiter «Aufbau».' : 'Klick: zu den Expeditionen.');
+    const e = k.wert === 'bauen' ? naechsterBau(state) : null;
+    if (e && !e.typeId) zeilen.push(`${e.text}: ${e.warum}`, 'Klick: zu den Helden.');
+    else zeilen.push(k.wert === 'bauen' ? 'Klick: zum Reiter «Aufbau».' : 'Klick: zu den Expeditionen.');
     return { titel: k.titel, zeilen };
   }
   zeilen.push(...gebaeudeZeilen(state, k.typeId));

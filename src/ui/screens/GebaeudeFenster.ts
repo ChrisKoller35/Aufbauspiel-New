@@ -4,24 +4,23 @@
 // Gildenhaus: Helden in der Gilde, Helden je Expedition, Ausbau auf
 // Stufe 2 und der Weg zum Gildenhaus-Bildschirm. Der Händler hat sein
 // eigenes Fenster (HaendlerFenster.ts). Das Fenster führt sich laufend
-// nach: ganz neu, wenn sich etwas ändert, sonst nur die Balken.
+// nach: ganz neu, wenn sich etwas ändert, sonst nur die Balken. Escape
+// schliesst es (FensterHilfen.ts). Abreissen gibt es nicht: Jedes
+// Gebäude steht genau einmal, und der Bauplan käme nicht zurück.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS, BuildingDef } from '../../data/buildings';
 import { RECIPE_DEFS } from '../../data/recipes';
 import { GameState } from '../../models/GameState';
 import { BuildingInstance } from '../../models/Building';
-import { STARTING_BUILDING_TYPES } from '../../scenes/CityStartingLayout';
 import { navigateTo } from '../ScreenRouter';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { itemName, cycleProgress, einzelStatus, grundText } from '../../systems/GebaeudeStatus';
 import { engpassFuerInstanz } from '../../systems/EngpassSystem';
-import {
-  ausbauInfo, ausbauen, maxStufe, stufeVon, entferneGebaeude, investiert, heldenJeExpedition,
-} from '../../systems/Ausbau';
+import { ausbauInfo, ausbauen, maxStufe, stufeVon, heldenJeExpedition } from '../../systems/Ausbau';
 import { auftragGeben, auftragAbbrechen, hatAuftragsliste } from '../../systems/Auftraege';
 import { laufendVonSelbst, vonSelbstSatz } from '../../systems/Werkstattplan';
-import { hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { wirdGedrueckt } from '../components/DruckWaechter';
 import { renderWorkshop, restzeitText, ruheText, auftragWartetText } from './WerkstattAnzeige';
 
@@ -114,24 +113,6 @@ function modalSignature(b: BuildingInstance, def: BuildingDef, state: GameState)
   ]);
 }
 
-// ── Abreissen ───────────────────────────────────────────────────
-
-/** Startgebäude (Gildenhaus, Händler) bleiben stehen. */
-function istStartgebaeude(b: BuildingInstance): boolean {
-  return STARTING_BUILDING_TYPES.includes(b.typeId);
-}
-
-function executeDemolish(state: GameState, b: BuildingInstance): void {
-  if (!BUILDING_DEFS[b.typeId] || !state.buildings.includes(b) || istStartgebaeude(b)) return;
-  // Die Hälfte von allem, was Bau und Ausbau gekostet haben, kommt zurück
-  for (const [res, qty] of Object.entries(investiert(b.typeId, stufeVon(b)))) {
-    const refund = Math.floor(qty / 2);
-    if (refund > 0) state.globalStock[res] = (state.globalStock[res] ?? 0) + refund;
-  }
-  // Zutaten des laufenden Zyklus gehen ins Lager zurück
-  entferneGebaeude(state, new Set([b.id]));
-}
-
 // ── Das Fenster ─────────────────────────────────────────────────
 
 export interface GebaeudeFensterOptionen {
@@ -146,9 +127,6 @@ export function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, st
   if (!def) return;
   root.querySelector('.ov')?.remove();
 
-  const istStart = istStartgebaeude(bInst);
-  let confirmDemolish = false;
-
   const renderBody = (): string => {
     const eng = engpassFuerInstanz(state, bInst);
     return `
@@ -161,9 +139,6 @@ export function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, st
     const stufen = stufenText(bInst);
     return `${def.name}${stufen ? ` <span class="bm-stufe">${stufen}</span>` : ''}`;
   };
-  const renderDemolishBtn = (): string => istStart
-    ? '<span class="ws-msg">Startgebäude – kann nicht abgerissen werden</span>'
-    : `<button class="fk-btn rot btn-demolish">${confirmDemolish ? 'WIRKLICH ABREISSEN?' : '🗑 ABREISSEN'}</button>`;
 
   const ov = document.createElement('div');
   ov.className = 'ov on';
@@ -174,7 +149,6 @@ export function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, st
       <div class="bm-body">${renderBody()}</div>
       <div class="bm-actions">
         ${def.expeditions ? '<button class="fk-btn gold btn-gildenhaus">ZUM GILDENHAUS</button>' : ''}
-        <span class="bm-demolish">${renderDemolishBtn()}</span>
         <button class="fk-btn btn-close-modal">SCHLIESSEN</button>
       </div>
     </div>`;
@@ -192,27 +166,18 @@ export function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, st
 
   const close = () => {
     live.stop();
+    tastenLoesen();
     ov.remove();
     opt.beimSchliessen();
   };
+  const tastenLoesen = bindeFensterTasten(ov, ov.querySelector('.modal'), close);
 
-  bindKlicks(ov, state, bInst, {
-    close, refreshBody,
-    demolish: () => {
-      if (!confirmDemolish) {
-        confirmDemolish = true;
-        (ov.querySelector('.bm-demolish') as HTMLElement).innerHTML = renderDemolishBtn();
-        return;
-      }
-      executeDemolish(state, bInst);
-      close();
-    },
-  });
+  bindKlicks(ov, state, bInst, { close, refreshBody });
 }
 
 /**
  * Laufend nachführen: ganz neu, wenn sich etwas ändert (modalSignature), sonst nur die Balken
- * und die Restzeit. Endet von selbst, wenn das Fenster weg ist oder das Gebäude abgerissen wurde.
+ * und die Restzeit. Endet von selbst, wenn das Fenster weg ist.
  * `merke` hält nach einem Neuzeichnen von Hand den Stand fest, `stop` beendet das Nachführen.
  */
 function nachfuehren(
@@ -220,7 +185,7 @@ function nachfuehren(
 ): { stop: () => void; merke: () => void } {
   let lastSig = modalSignature(bInst, def, state);
   const timer = window.setInterval(() => {
-    if (!ov.isConnected || !state.buildings.includes(bInst)) {
+    if (!ov.isConnected) {
       window.clearInterval(timer);
       return;
     }
@@ -245,7 +210,6 @@ function nachfuehren(
 interface FensterAktionen {
   close: () => void;
   refreshBody: () => void;
-  demolish: () => void;
 }
 
 function bindKlicks(ov: HTMLElement, state: GameState, bInst: BuildingInstance, a: FensterAktionen): void {
@@ -266,11 +230,10 @@ function bindKlicks(ov: HTMLElement, state: GameState, bInst: BuildingInstance, 
     } else if (target.classList.contains('btn-gildenhaus')) {
       a.close();
       navigateTo('gildenhaus');
-    } else if (target.classList.contains('btn-demolish')) {
-      a.demolish();
     } else if (target.classList.contains('btn-ausbau')) {
       if (ausbauen(state, bInst)) {
         erfolgePruefen(state); // Ausbau-Erfolge gleich zählen
+        window.dispatchEvent(new Event('mc:speichern')); // wie Bau und Händler: sofort sichern
         a.refreshBody();
       }
     } else if (target.closest('[data-ws-add]')) {
