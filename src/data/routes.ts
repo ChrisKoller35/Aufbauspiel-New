@@ -1,7 +1,7 @@
 import { EncounterChoice, EncounterType } from '../models/ExpeditionRun';
 import type { GameState } from '../models/GameState';
 import { ENEMY_DEFS } from './enemies';
-import { GUILD_RANK_DEFS } from './guildRanks';
+import { rangFuerEbene } from './guildRanks';
 import { LOOT_TABLE_DEFS } from './lootTables';
 
 export interface EncounterTemplate {
@@ -851,7 +851,7 @@ export function isRouteCompleted(routeId: string, state: RouteProgress): boolean
 export function getRouteLockReasons(route: RouteDef, state: RouteProgress): string[] {
   const reasons: string[] = [];
   // Ebenen über dem höchsten Gildenrang (Drachenhort, Himmelsarchiv …) brauchen den höchsten Rang
-  const rang = Math.min(route.tier, GUILD_RANK_DEFS.length);
+  const rang = rangFuerEbene(route.tier);
   if ((state.guildStats?.rank ?? 1) < rang) reasons.push(`Gildenrang ${rang} benötigt`);
   const defeated = state.guildStats?.bossesDefeatedIds ?? [];
   const missing = (route.unlockCondition?.bossesDefeated ?? []).filter(b => !defeated.includes(b));

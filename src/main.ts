@@ -12,7 +12,7 @@ import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/A
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
 import { renderGildenhausScreen, initGildenhausScreen } from './ui/screens/GildenhausScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
-import { navigateTo, initScreenStyles, ScreenId } from './ui/ScreenRouter';
+import { navigateTo, initScreenStyles, ScreenId, setzeNavigationsSperre } from './ui/ScreenRouter';
 import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from './systems/ExpeditionSystem';
 import { EncounterChoice } from './models/ExpeditionRun';
 import { ITEM_DEFS } from './data/items';
@@ -25,6 +25,7 @@ import { loeseHeldenBindungen } from './systems/HeldenBindung';
 import { SatisfactionSystem } from './systems/SatisfactionSystem';
 import { ConnectivitySystem } from './systems/ConnectivitySystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from './systems/ExpeditionFinalizer';
+import { erfolgName, erfolgePruefen } from './systems/AchievementSystem';
 import { ranglistenZeilen } from './ui/components/RanglistenBilanzAnzeige';
 import { auftragsZeilen } from './ui/components/AuftragsBilanzAnzeige';
 import { setBeute, setTeilHinweise } from './systems/DungeonSets';
@@ -92,6 +93,10 @@ document.addEventListener('DOMContentLoaded', () => {
     console.warn('Unterbrochene Expedition abgebrochen, Proviant zurück ins Lager.');
     saveSystem.save(state);
   }
+
+  // Während einer Expedition kein Bildschirmwechsel: Der Kampf läuft am Router vorbei und
+  // wäre sonst versteckt, ohne Weg zurück (Tasten K, A, G, Escape und alle Knöpfe)
+  setzeNavigationsSperre(() => state.activeExpedition != null);
 
   // Every run starts at full HP (GearSystem), so stored HP is display-only:
   // heal heroes wounded by older saves.
@@ -491,6 +496,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
       if (neuerBauplan) state.erhalteneBauplaene.push(neuerBauplan);
+      // Erfolge, die erst mit der Beute im Lager zählen (ganzes Set: Stern im Trophäensaal), auch in die Bilanz
+      progress.newAchievements.push(...erfolgePruefen(state, { hinweis: false }).map(erfolgName));
 
       // Save
       saveSystem.save(state);
@@ -531,11 +538,12 @@ document.addEventListener('DOMContentLoaded', () => {
       if (wirkung) body += `<div class="weg-wirkung-zeile">${wirkung}</div>`;
     }
     if (rankUp) {
+      // Was der Rang öffnet (rangFreischaltungen): Dungeons, Gebäude, Ausbau, Titel
       body += line(`${rankUp.title}!`, '#c8a227');
-      for (const u of rankUp.unlocks) body += line(`Freigeschaltet: ${u}`, '#9ca3af');
+      for (const u of rankUp.unlocks) body += line(u, '#9ca3af');
     }
     for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
-    for (const a of newAchievements) body += line(`Erfolg: ${a}`, '#4ade80');
+    for (const a of newAchievements) body += line(`🏅 Erfolg: ${a}`, '#4ade80');
     for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
     for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
     if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
@@ -551,15 +559,12 @@ document.addEventListener('DOMContentLoaded', () => {
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
+    // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben)
     switch (e.key.toUpperCase()) {
       case 'K': navigateTo('bestiarium'); break;
       case 'A': navigateTo('achievements'); break;
-      case 'G': if (!state.activeExpedition) navigateTo('gildenhaus'); break;
-      case 'ESCAPE':
-        // If combat is active, don't allow ESC to navigate away
-        if (state.activeExpedition) return;
-        navigateTo('main');
-        break;
+      case 'G': navigateTo('gildenhaus'); break;
+      case 'ESCAPE': navigateTo('main'); break;
     }
 
     if (e.key === 'F5') {

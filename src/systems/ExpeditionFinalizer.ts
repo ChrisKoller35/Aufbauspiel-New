@@ -1,8 +1,9 @@
 // ─── ExpeditionFinalizer ────────────────────────────────────────
 // Progress awarded when an expedition ends (victory/defeat/retreat):
 // hero XP, score + scoreboard, rangliste (fame of the week, summit ranking),
-// statistics, guild rank, defeated bosses, class unlocks, bestiarium, achievements,
-// Auftragsbrett (Zettel und Kette) and the trophy count of the Trophäensaal.
+// statistics, guild rank, defeated bosses, class unlocks, bestiarium,
+// Auftragsbrett (Zettel und Kette), the trophy count of the Trophäensaal and
+// last the achievements (erfolgePruefen: rank, Monsterbuch, Kette count at once).
 // Loot, provisions and fighter release stay in main.ts (UI flow).
 // ──────────────────────────────────────────────────────────────────
 
@@ -11,12 +12,11 @@ import { ExpeditionRun, WegWirkung } from '../models/ExpeditionRun';
 import { ScoreboardEntry } from '../models/ScoreboardEntry';
 import { ENEMY_DEFS } from '../data/enemies';
 import { CLASS_DEFS } from '../data/classes';
-import { ACHIEVEMENT_DEFS } from '../data/achievements';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GuildRankSystem } from './GuildRankSystem';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { BestiariumSystem } from './BestiariumSystem';
-import { AchievementSystem } from './AchievementSystem';
+import { erfolgName, erfolgePruefen } from './AchievementSystem';
 import { awardXP } from './HeroProgression';
 import { wegBilanzDazu } from './Spezialisierung';
 import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
@@ -45,7 +45,6 @@ export interface ExpeditionProgress {
 const guildRankSystem = new GuildRankSystem();
 const classUnlockSystem = new ClassUnlockSystem();
 const bestiariumSystem = new BestiariumSystem();
-const achievementSystem = new AchievementSystem();
 
 /**
  * Apply all progress of a finished run to the game state.
@@ -125,14 +124,16 @@ export function finalizeExpeditionProgress(
 
   const newClasses = classUnlockSystem.checkUnlocks(state).map(id => CLASS_DEFS[id]?.name ?? id);
 
-  // ── Bestiarium + achievements ──
+  // ── Bestiarium ──
   bestiariumSystem.processExpeditionEnd(state, run);
-  const newAchievementIds = achievementSystem.checkAchievements(stats, state.achievements);
-  state.achievements.push(...newAchievementIds);
-  const newAchievements = newAchievementIds.map(id => ACHIEVEMENT_DEFS.find(d => d.id === id)?.name ?? id);
 
   // ── Auftragsbrett: zählt Siege, Jagd und Set-Teile (der Set-Wurf ist schon gefallen) ──
   const auftraege = auftraegeNachExpedition(state, run, entry.timestamp);
+
+  // ── Erfolge zuletzt, damit Rang, Monsterbuch, Kette und Trophäen schon mitzählen. Ohne Hinweis in
+  //    der Kopfzeile: Die Bilanz nennt sie (main.ts), und der Tageswechsel findet sie nicht noch einmal ──
+  if (rangliste.platzNachher === 1) stats.gipfel_spitze = 1;
+  const newAchievements = erfolgePruefen(state, { hinweis: false }).map(erfolgName);
 
   return { entry, xp, rankUp, newClasses, newAchievements, rangliste, auftraege, neueTrophaee };
 }
