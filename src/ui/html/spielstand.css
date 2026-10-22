@@ -50,8 +50,9 @@
   color: var(--txt); font-family: 'Cinzel', serif; font-size: 0.9rem; letter-spacing: 1px; transition: .2s;
 }
 .ss-knopf:hover, .ss-knopf:focus-visible { border-color: var(--gold); color: var(--gold); }
-.ss-ersetzen, .ss-zurueck-ja { background: #3a1414; border-color: var(--red); }
-.ss-ersetzen:hover, .ss-ersetzen:focus-visible, .ss-zurueck-ja:hover, .ss-zurueck-ja:focus-visible { border-color: #f87171; color: #fecaca; }
+.ss-ersetzen, .ss-zurueck-ja, .ss-neu-ja { background: #3a1414; border-color: var(--red); }
+.ss-ersetzen:hover, .ss-ersetzen:focus-visible, .ss-zurueck-ja:hover, .ss-zurueck-ja:focus-visible,
+.ss-neu-ja:hover, .ss-neu-ja:focus-visible { border-color: #f87171; color: #fecaca; }
 /* Nach dem Schreiben bis zum Neuladen gesperrt */
 .ss-knopf:disabled, .ss-knopf:disabled:hover { cursor: default; opacity: .45; border-color: var(--bdr); color: var(--txt); }
 

@@ -23,6 +23,8 @@ let backupKey = 'magic_city_save_backup';
  */
 let vorLadenKey = 'magic_city_save_vor_laden';
 let vorLadenZeitKey = 'magic_city_save_vor_laden_zeit';
+/** «neu», wenn der Stand dort liegt, weil ein neues Spiel begonnen hat (sonst fehlt der Platz) */
+let vorLadenGrundKey = 'magic_city_save_vor_laden_grund';
 const CURRENT_VERSION = 23;
 const SAVE_SIZE_WARNING_BYTES = 4 * 1024 * 1024; // 4 MB
 
@@ -44,6 +46,7 @@ export function nutzeProbespiel(aktiv = true): void {
   backupKey = `${platz}_backup`;
   vorLadenKey = `${platz}_vor_laden`;
   vorLadenZeitKey = `${platz}_vor_laden_zeit`;
+  vorLadenGrundKey = `${platz}_vor_laden_grund`;
 }
 
 /** Nur für Tests: hebt die Sperre nach dem Schreiben auf, wie es im Spiel das Neuladen der Seite tut. */
@@ -288,8 +291,10 @@ export function pruefeSpielstandText(text: string): SpielstandPruefung {
 /** Datum des Stands vor dem Laden und was er enthält (Fenster «Spielstand»). */
 export interface StandVorLaden {
   zusammenfassung: SpielstandZusammenfassung;
-  /** Wann er beim Laden einer Datei weggelegt wurde (ms), null wenn unbekannt */
+  /** Wann er weggelegt wurde (ms), null wenn unbekannt */
   gesichertAm: number | null;
+  /** Warum: eine Datei wurde geladen oder ein neues Spiel begonnen */
+  grund: 'laden' | 'neu';
 }
 
 /**
@@ -541,12 +546,30 @@ export class SaveSystem {
     const bisher = localStorage.getItem(saveKey);
     const geschrieben = schreibeZusammen({
       // Ohne bisherigen Stand bleibt ein älterer Stand vor dem Laden liegen
-      ...(bisher ? { [vorLadenKey]: bisher, [vorLadenZeitKey]: String(Date.now()) } : {}),
+      ...(bisher ? { [vorLadenKey]: bisher, [vorLadenZeitKey]: String(Date.now()), [vorLadenGrundKey]: null } : {}),
       [saveKey]: text,
     });
     if (!geschrieben) return { ok: false, grund: KEIN_PLATZ };
     neuLadenAusstehend = true;
     return pruefung;
+  }
+
+  /**
+   * Neues Spiel: Der jetzige Stand kommt auf den Platz «vor dem Laden» (Grund «neu»), Spielstand
+   * und Sicherung werden leer, und main.ts legt beim Neuladen eine neue Stadt an. Danach speichert
+   * nichts mehr, bis die Seite neu lädt: Das Spiel muss sofort location.reload() aufrufen.
+   */
+  neuesSpiel(): SchreibErgebnis {
+    if (neuLadenAusstehend) return { ok: false, grund: STARTET_NEU };
+    const bisher = localStorage.getItem(saveKey);
+    const geschrieben = schreibeZusammen({
+      ...(bisher ? { [vorLadenKey]: bisher, [vorLadenZeitKey]: String(Date.now()), [vorLadenGrundKey]: 'neu' } : {}),
+      [saveKey]: null,
+      [backupKey]: null,
+    });
+    if (!geschrieben) return { ok: false, grund: KEIN_PLATZ };
+    neuLadenAusstehend = true;
+    return { ok: true };
   }
 
   /** Der Stand vor dem letzten Laden einer Datei, null wenn keiner da ist (oder er sich nicht lesen lässt). */
@@ -557,7 +580,8 @@ export class SaveSystem {
       const s: unknown = JSON.parse(text);
       if (!istMagicCityStand(s)) return null;
       const zeit = Number(localStorage.getItem(vorLadenZeitKey));
-      return { zusammenfassung: fasseSpielstandZusammen(s), gesichertAm: zeit > 0 ? zeit : null };
+      const grund = localStorage.getItem(vorLadenGrundKey) === 'neu' ? 'neu' : 'laden';
+      return { zusammenfassung: fasseSpielstandZusammen(s), gesichertAm: zeit > 0 ? zeit : null, grund };
     } catch {
       return null;
     }
@@ -577,6 +601,7 @@ export class SaveSystem {
       [saveKey]: vorLaden,
       [vorLadenKey]: jetzt,
       [vorLadenZeitKey]: jetzt ? String(Date.now()) : null,
+      [vorLadenGrundKey]: null,
     });
     if (!geschrieben) return { ok: false, grund: KEIN_PLATZ };
     neuLadenAusstehend = true;

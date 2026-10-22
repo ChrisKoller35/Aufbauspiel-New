@@ -47,11 +47,16 @@ Code: `src/ui/components/SpielstandFenster.ts`, Stile: `src/ui/html/spielstand.c
   zweites Schreiben meldet «Das Spiel startet gerade neu.», alle Knöpfe im Fenster sind gesperrt.
   Sonst überschriebe das laufende Spiel den geladenen Stand (alle 60 s, F5) oder ein zweiter Klick
   schriebe nochmals. Im Probespiel wird nur der Probespiel-Speicherplatz ersetzt.
-- **Stand vor dem Laden:** steht unten im Fenster, sobald es ihn gibt: Tag, Stadtstufe, Helden und
-  wann er gesichert wurde. **Zurückholen** fragt nach und tauscht ihn dann mit dem jetzigen Stand,
+- **Neues Spiel:** fragt nach («Fängt von vorn an: Tag 1, die Startstadt, keine Helden.» und dass
+  der jetzige Stand gesichert bleibt). Erst **Neu anfangen** schreibt: Das Spiel speichert den
+  laufenden Stand, legt ihn auf den Platz «vor dem Laden» (mit Grund «neu»), leert Spielstand und
+  Sicherung und lädt die Seite neu; `main.ts` findet keinen Stand und legt die Startstadt an. Gleiche
+  Sperre wie beim Laden. Im Probespiel entspricht das `?probe=neu`, nur mit Rückweg.
+- **Stand vor dem Laden** (nach «Neues Spiel»: **Stand vor dem Neustart**): steht unten im Fenster,
+  sobald es ihn gibt: Tag, Stadtstufe, Helden und wann er gesichert wurde. **Zurückholen** fragt nach und tauscht ihn dann mit dem jetzigen Stand,
   danach lädt die Seite neu (gleiche Sperre wie oben). Der jetzige liegt danach auf dem Platz
   «vor dem Laden», das Zurückholen lässt sich also selbst wieder zurückholen. Erst das nächste Laden
-  einer Datei ersetzt ihn.
+  einer Datei oder das nächste «Neues Spiel» ersetzt ihn.
 - **Fehler** stehen in einem Satz im Fenster:
   - «Die Datei lässt sich nicht lesen.» (kein JSON)
   - «Das ist keine Magic-City-Datei.» (Pflichtfeld fehlt oder hat die falsche Art, `saveVersion` keine ganze Zahl ab 0)

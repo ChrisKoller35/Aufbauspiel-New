@@ -2,7 +2,8 @@
 // Zeigt, was gespeichert ist, lädt den Spielstand als Datei herunter
 // und lädt einen Spielstand aus einer Datei (mit Bestätigung im Fenster,
 // danach lädt das Spiel neu). Der Stand von vor dem Laden lässt sich
-// zurückholen (er tauscht mit dem jetzigen). Geöffnet aus dem Hauptmenü.
+// zurückholen (er tauscht mit dem jetzigen). «Neues Spiel» legt den jetzigen
+// Stand auf denselben Platz und fängt von vorn an. Geöffnet aus dem Hauptmenü.
 // Was aus einer Datei kommt, steht nur als Text im Fenster (textContent).
 // Logik: systems/SaveSystem.ts. Stile: ui/html/spielstand.css.
 // Doku: docs/SPIELSTAND.md
@@ -137,11 +138,12 @@ function ersetzen(ov: HTMLElement): void {
   startetNeu(ov, 'datei');
 }
 
-/** Abschnitt «Stand vor dem Laden»: was drin ist, wann er weggelegt wurde, Knopf zum Zurückholen. */
+/** Abschnitt «Stand vor dem Laden» (oder «vor dem Neustart»): was drin ist, wann er weggelegt wurde, Knopf zum Zurückholen. */
 function vorherAbschnitt(vorher: StandVorLaden): HTMLElement {
+  const titel = vorher.grund === 'neu' ? 'Stand vor dem Neustart' : 'Stand vor dem Laden';
   const abschnitt = element('section', 'ss-vorher');
-  abschnitt.setAttribute('aria-label', 'Stand vor dem Laden');
-  abschnitt.append(standZeile('Stand vor dem Laden', vorher.zusammenfassung));
+  abschnitt.setAttribute('aria-label', titel);
+  abschnitt.append(standZeile(titel, vorher.zusammenfassung));
   if (vorher.gesichertAm !== null) {
     abschnitt.append(element('p', 'ss-erklaerung', `Gesichert am ${datumText(vorher.gesichertAm)}.`));
   }
@@ -169,6 +171,29 @@ function zurueckholen(ov: HTMLElement): void {
     return;
   }
   startetNeu(ov, 'vorher');
+}
+
+/** Fragt nach, bevor ein neues Spiel beginnt; der jetzige Stand bleibt zum Zurückholen. */
+function frageNeuesSpiel(ov: HTMLElement, state: GameState): void {
+  const bestaetigen = element('div', 'ss-bestaetigen');
+  bestaetigen.append(
+    element('p', 'ss-warnung', 'Fängt von vorn an: Tag 1, die Startstadt, keine Helden.'),
+    element('p', 'ss-erklaerung', `Dein jetziger Stand (${standText(fasseSpielstandZusammen(state))}) bleibt hier gesichert. `
+      + 'Du kannst ihn zurückholen, bis du wieder eine Datei lädst oder noch einmal neu anfängst.'),
+    knopfReihe(knopf('ss-neu-ja', 'Neu anfangen'), knopf('ss-abbrechen', 'Abbrechen')),
+  );
+  zeigeMeldung(ov, 'datei', bestaetigen);
+}
+
+function neuesSpiel(ov: HTMLElement): void {
+  // Den laufenden Stand zuerst speichern: Er kommt auf den Platz «vor dem Laden»
+  window.dispatchEvent(new Event('mc:speichern'));
+  const ergebnis = new SaveSystem().neuesSpiel();
+  if (!ergebnis.ok) {
+    zeigeFehler(ov, 'datei', ergebnis.grund);
+    return;
+  }
+  startetNeu(ov, 'datei');
 }
 
 /**
@@ -218,6 +243,7 @@ export function oeffneSpielstand(state: GameState): void {
       <div class="ss-knoepfe">
         <button type="button" class="ss-knopf ss-herunterladen">Herunterladen</button>
         <button type="button" class="ss-knopf ss-laden">Datei laden</button>
+        <button type="button" class="ss-knopf ss-neu">Neues Spiel</button>
       </div>
       <input type="file" class="ss-datei" accept=".json,application/json" hidden>
       <div class="ss-meldung ss-meldung-datei" aria-live="polite"></div>
@@ -255,6 +281,8 @@ export function oeffneSpielstand(state: GameState): void {
     if (ziel.closest('.ss-zu')) schliesseMitKlick();
     else if (ziel.closest('.ss-herunterladen')) herunterladen(ov, state);
     else if (ziel.closest('.ss-laden')) eingabe.click();
+    else if (ziel.closest('.ss-neu-ja')) neuesSpiel(ov);
+    else if (ziel.closest('.ss-neu')) frageNeuesSpiel(ov, state);
     else if (ziel.closest('.ss-ersetzen')) ersetzen(ov);
     else if (ziel.closest('.ss-zurueck-ja')) zurueckholen(ov);
     else if (ziel.closest('.ss-zurueck')) frageZurueckholen(ov);

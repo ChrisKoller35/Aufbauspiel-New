@@ -402,6 +402,34 @@ describe('SaveSystem – Stand vor dem Laden', () => {
     expect(saveSystem.standVorLaden()?.zusammenfassung.tag).toBe(1);
   });
 
+  it('Neues Spiel legt den jetzigen Stand weg, leert den Speicherplatz und lässt sich zurückholen', () => {
+    const saveSystem = dateiGeladen(); // Tag 12 läuft, Tag 1 liegt «vor dem Laden»
+    expect(saveSystem.neuesSpiel()).toEqual({ ok: true });
+    expect(saveSystem.save(createNewGameState())).toBe(false); // gesperrt bis zum Neuladen
+    expect(saveSystem.neuesSpiel()).toEqual({ ok: false, grund: 'Das Spiel startet gerade neu.' });
+    hebeSperreNachLadenAuf();
+
+    expect(saveSystem.load()).toBeNull(); // main.ts legt eine neue Stadt an
+    expect(saveSystem.hasBackup()).toBe(false);
+    const vorher = saveSystem.standVorLaden()!;
+    expect(vorher.zusammenfassung.tag).toBe(12);
+    expect(vorher.grund).toBe('neu');
+
+    saveSystem.save(createNewGameState());
+    expect(saveSystem.holeStandVorLadenZurueck()).toEqual({ ok: true });
+    hebeSperreNachLadenAuf();
+    expect(saveSystem.load()!.day).toBe(12);
+    expect(saveSystem.standVorLaden()).toMatchObject({ grund: 'laden', zusammenfassung: { tag: 1 } });
+  });
+
+  it('Neues Spiel ohne gespeicherten Stand legt nichts weg', () => {
+    const saveSystem = new SaveSystem();
+    expect(saveSystem.neuesSpiel()).toEqual({ ok: true });
+    hebeSperreNachLadenAuf();
+    expect(saveSystem.load()).toBeNull();
+    expect(saveSystem.standVorLaden()).toBeNull();
+  });
+
   it('ohne Stand vor dem Laden gibt es nichts zurückzuholen', () => {
     const saveSystem = new SaveSystem();
     saveSystem.save(createNewGameState());
