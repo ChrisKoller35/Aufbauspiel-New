@@ -9,6 +9,7 @@ import { GameState } from '../../models/GameState';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { DUNGEON_SETS, DungeonSetDef, SET_TEIL_NAMEN, setTeilIds, teilArtVonItem } from '../../data/dungeonSets';
 import { MAX_SCHMIEDE_STUFE, PROZENT_JE_STUFE, RABATT_JE_SCHMIEDE_STUFE } from '../../data/schmiede';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { besitz, istMeisterset } from '../../systems/DungeonSets';
 import {
   einschmelzen, einschmelzenErtrag, kannEinschmelzen, materialFuerTeil, schmieden, schmiedeFehlt,
@@ -209,6 +210,7 @@ export function bindSchmiedeTab(el: HTMLElement, state: GameState, neuZeichnen: 
       const meister = !!set && setTeilIds(set).every(id => schmiedeStufe(state, id) >= MAX_SCHMIEDE_STUFE);
       zuletzt = { itemId, art: 'geschmiedet', text: meister && stufe >= MAX_SCHMIEDE_STUFE ? MEISTER_SATZ : SCHMIED_SAETZE[stufe] };
       einschmelzenFrage = null;
+      erfolgePruefen(state); // Schmiede-Erfolge gleich zählen, nicht erst beim Tageswechsel
       speichernUndZeichnen(itemId);
     });
   });

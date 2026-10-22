@@ -11,6 +11,9 @@ import { beiNeuenErfolgen, erfolgName, ungeseheneErfolge } from '../../systems/A
 
 const HINWEIS_MS = 4000;
 let hinweisTimer: number | null = null;
+/** Kommt ein zweiter Hinweis so kurz nach dem ersten (z. B. ein Erfolg nach «Zettel erledigt»), steht er daneben */
+const ZUSAMMEN_MS = 600;
+let letzterHinweis = { text: '', zeit: 0 };
 
 /**
  * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup). Am Handy steht er an der
@@ -18,6 +21,11 @@ let hinweisTimer: number | null = null;
  */
 export function zeigeKopfHinweis(text: string): void {
   if (typeof document === 'undefined') return;
+  const jetzt = Date.now();
+  if (hinweisTimer !== null && jetzt - letzterHinweis.zeit < ZUSAMMEN_MS && !letzterHinweis.text.includes(text)) {
+    text = `${letzterHinweis.text} · ${text}`;
+  }
+  letzterHinweis = { text, zeit: jetzt };
   const hdrs = document.querySelectorAll('.hdr');
   for (let i = 0; i < hdrs.length; i++) {
     const hdr = hdrs[i] as HTMLElement;

@@ -20,6 +20,7 @@ import { waehleWeg } from '../../systems/Spezialisierung';
 import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { xpProgress, xpForNextLevel, totalXpForLevel, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 
 const gearSystem = new GearSystem();
@@ -924,6 +925,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
     const wegId = (e.currentTarget as HTMLElement).dataset.wegJa ?? '';
     wegFrage = null;
     if (!waehleWeg(fighter, wegId)) return;
+    if (gameState) erfolgePruefen(gameState); // Wege-Erfolge gleich zählen
     window.dispatchEvent(new CustomEvent('mc:speichern'));
     renderHeroesScreen(container); // die Heldenkarte zeigt jetzt den Weg
     zumWeg();
@@ -950,6 +952,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       if (!gearSystem.equip(gameState, fighter, itemId, auswahl.platz)) return;
       const slot = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
       auswahl = slot ? { art: 'slot', slot } : null;
+      erfolgePruefen(gameState); // ein ganzes Set angelegt: gleich zählen, nicht erst beim Tageswechsel
     }
     neuZeichnen();
   });
@@ -1054,6 +1057,7 @@ function handleHire(classId: string, cost: number, container: HTMLElement, btn: 
   };
 
   gameState.fighters.push(newFighter);
+  erfolgePruefen(gameState); // Helden-Erfolge gleich zählen
 
   // Show success feedback, then re-render
   btn.textContent = '\u2713 Rekrutiert!';

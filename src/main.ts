@@ -604,6 +604,8 @@ document.addEventListener('DOMContentLoaded', () => {
       economySystem.dayTick(state);
       peopleSystem.dayTick(state);
       loeseHeldenBindungen(state);
+      // Noch einmal nach dem ganzen Tageswechsel: Die Stadt wächst erst in peopleSystem.dayTick
+      erfolgePruefen(state);
     }
 
     // Update resource display in header

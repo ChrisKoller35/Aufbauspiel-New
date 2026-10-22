@@ -13,6 +13,7 @@ import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { setTeilIds } from '../../data/dungeonSets';
 import { EINLOESE_ANGEBOTE, MATERIAL_PREIS, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL } from '../../data/auftragsbrett';
 import { renderHeader, zeigeKopfHinweis } from './HeaderRenderer';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { escapeAttr } from '../components/SchmiedeAnzeige';
 import {
   belohnungText, brettGesehen, brettStand, einloesbareMaterialien, einloesbareSets, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText,
@@ -355,11 +356,13 @@ export function renderGildenhausScreen(container: HTMLElement): void {
       if (ergebnis) {
         const bonus = ergebnis.tagesbonus > 0 ? ` · Tagesbonus +${ergebnis.tagesbonus} Siegel` : '';
         zeigeKopfHinweis(`📜 ${ergebnis.meldung.titel} erledigt: ${belohnungText(ergebnis.meldung.belohnung!)}${bonus}`);
+        erfolgePruefen(state); // Zettel-Erfolge gleich zählen
         speichern();
       }
     } else if (d.ghTeil) {
       if (setTeilEinloesen(state, d.ghTeil, jetzt)) {
         zeigeKopfHinweis(`✦ ${ITEM_DEFS[d.ghTeil]?.name ?? d.ghTeil} liegt im Lager`);
+        erfolgePruefen(state); // ein Set kann damit komplett sein (Glanz des Saals)
         speichern();
       }
     } else if (d.ghMaterial) {

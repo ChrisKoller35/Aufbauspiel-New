@@ -16,7 +16,9 @@ import { STARTING_BUILDING_TYPES } from '../../scenes/CityStartingLayout';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { renderAufbauTab, bindAufbauTab } from './AufbauTab';
-import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab, ProduktionZiel } from './ProduktionTab';
+import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab, ProduktionZiel, reichtText } from './ProduktionTab';
+import { reichtTageFuer, tagesBilanz } from '../../systems/Tagesbilanz';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import {
   freischaltHinweise, itemName, stockFor, canAffordRecipe, cycleProgress, produktionsHindernis, WarteGrund,
   dasGebaeude, wachstum, tagFortschritt, wohnKapazitaet, einzelStatus, grundText, gebaeudeName, nachschub, nachschubText,
@@ -365,7 +367,7 @@ function itemIcon(key: string): string {
     healing_potion: '⚗️', iron_scrap: '⚙️',
     iron_sword: '⚔️', iron_shield: '🛡️',
     leather_armor: '🧥', crystal_shard: '💎',
-    power_bread: '🍞', steel_sword: '⚔️',
+    power_bread: '🥖', steel_sword: '⚔️',
     longbow: '🏹', crystal_staff: '🪄',
     steel_armor: '🛡️',
   };
@@ -671,6 +673,7 @@ function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
 
   // Track statistics
   state.statistics['total_buildings_built'] = (state.statistics['total_buildings_built'] ?? 0) + 1;
+  erfolgePruefen(state); // «Baumeister» gleich zählen, nicht erst beim Tageswechsel
 
   // Re-render; der aktive Reiter bleibt (currentTab)
   reRenderBuildingsScreen(root, state);
@@ -905,10 +908,17 @@ function infoZeilen(state: GameState, b: BuildingInstance, def: BuildingDef): In
     // Wie die Bäckerei rechnet (systems/Werkstattplan.ts): essen und, solange Platz ist, 1 für den nächsten Bewohner
     const essen = brotProTag(bewohner);
     const brot = brotBedarfProTag(state);
-    const reicht = Math.floor((state.globalStock.bread ?? 0) / Math.max(1, brot));
-    zeilen.push({ label: 'Brot pro Tag', wert: `−${brot}`, cls: reicht >= 1 ? undefined : 'schlecht',
+    // Wie lange der Vorrat reicht, mit dem, was die Bäckerei nachbackt (wie die Zeile «Pro Tag»)
+    const vorrat = state.globalStock.bread ?? 0;
+    const tage = reichtTageFuer(state, tagesBilanz(state), 'bread');
+    const baeckerei = state.buildings.some(g => g.typeId === 'BAKERY' && g.built);
+    const reichtSatz = tage === null
+      ? 'Die Bäckerei backt nach, was gegessen wird, bis der Vorrat für 3 Tage reicht.'
+      : `Der Vorrat ${reichtText(vorrat, tage).replace(/^leer$/, 'ist leer')}`
+        + `${baeckerei ? ', auch mit dem, was die Bäckerei nachbackt' : ''}.`;
+    zeilen.push({ label: 'Brot pro Tag', wert: `−${brot}`, cls: tage !== null && tage < 1 ? 'schlecht' : undefined,
       klein: `${essen} essen die Bewohner (1 je ${BEWOHNER_JE_BROT}, mindestens 1)${brot > essen ? ', 1 kostet der nächste Bewohner' : ''}. `
-        + `Der Vorrat reicht ${reicht === 1 ? '1 Tag' : `${reicht} Tage`}, die Bäckerei backt nach, bis es 3 Tage sind.` });
+        + reichtSatz });
     zeilen.push({ label: 'Steuern pro Tag', wert: `${r.gesamt} Gold`, cls: 'gut', klein: rechnung });
     return zeilen;
   }
@@ -1194,7 +1204,10 @@ function showBuildingModal(root: HTMLElement, bInst: BuildingInstance, state: Ga
     }
 
     if (target.classList.contains('btn-ausbau')) {
-      if (ausbauen(state, bInst)) refreshBody();
+      if (ausbauen(state, bInst)) {
+        erfolgePruefen(state); // Ausbau-Erfolge gleich zählen
+        refreshBody();
+      }
       return;
     }
 

@@ -21,9 +21,15 @@ haben («Siegreich» 🏆), nur 🏅 trägt keiner selbst.
   Spielstand schon erfüllt, kommt hier dazu, mit Hinweis wie am Tageswechsel («🏅 8 neue Erfolge»).
 - **Beim Öffnen des Erfolge-Bildschirms.**
 
+- **Gleich nach der Tat**, mit Hinweis in der Kopfzeile: Gebäude bauen oder ausbauen, Held anwerben,
+  Weg wählen, Gegenstand anlegen (ein ganzes Set), Stadt aufsteigen (Stadtweg), in der Schmiede
+  verbessern, Zettel liefern und Set-Teil einlösen (Gildenhaus). Beim Tageswechsel prüft `main.ts`
+  zum Schluss noch einmal, denn die Stadt wächst erst in `PeopleSystem.dayTick`. Kommen zwei
+  Hinweise fast gleichzeitig («📜 Zettel erledigt» und der Erfolg dazu), stehen sie nebeneinander.
+
 Jeder Erfolg wird genau einmal gemeldet: `erfolgePruefen()` trägt ihn in `state.achievements` ein
-und meldet ihn den Hörern (`beiNeuenErfolgen`). Stadtstufe und angelegte Sets zählen beim nächsten
-Tageswechsel (höchstens 30 Sekunden) oder beim Öffnen des Bildschirms.
+und meldet ihn den Hörern (`beiNeuenErfolgen`). Pokale der Rangliste zählen am Ende der Expedition
+oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
 
 ## Angeschaut, gespeichert, offen
 

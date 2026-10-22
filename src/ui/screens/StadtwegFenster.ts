@@ -16,6 +16,7 @@ import { kostenText } from '../../systems/GebaeudeStatus';
 import { stadtSilhouette } from './StadtSilhouette';
 import { SaveSystem } from '../../systems/SaveSystem';
 import { navigateTo } from '../ScreenRouter';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { fensterTaste, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gipfelDungeons, isRouteAvailable, isRouteCompleted, getRouteLockReasons } from '../../data/routes';
 
@@ -350,6 +351,7 @@ export function oeffneStadtweg(state: GameState): void {
       const neu = steigeAuf(state);
       if (neu) {
         zeichneFest(ov, state, neu);
+        erfolgePruefen(state); // Stadtstufe gleich zählen, nicht erst beim Tageswechsel
         speichern(state);
       }
       return;
