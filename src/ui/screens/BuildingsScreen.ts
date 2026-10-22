@@ -35,7 +35,7 @@ import {
 } from '../../systems/Auftraege';
 import { laufendVonSelbst, vonSelbstSatz, fehlendeZutaten, vorratVorAuftraegen } from '../../systems/Werkstattplan';
 import { BUENDEL, HANDELSWAREN, VERKAUFSPREIS, kaufpreis } from '../../data/handel';
-import { HandelsArt, handelHeute, handle, kannHandeln, marktGesperrt, tagesmenge } from '../../systems/Handel';
+import { HandelsArt, handelHeute, handelZu, handle, kannHandeln, marktGesperrt, tagesmenge, vorbehalten } from '../../systems/Handel';
 import '../html/handel.css';
 
 /** Map building typeId to card background image. */
@@ -968,24 +968,35 @@ function renderVorrat(state: GameState): string {
   return `<span class="lbl">VORRAT</span><div class="pk-chips bm-vorrat">${vorratChips(state)}</div>`;
 }
 
-function handelKnopf(state: GameState, ware: string, art: HandelsArt): string {
+/**
+ * Ein Knopf; geht er nicht, steht der Grund sichtbar darunter (am Handy gibt es keine Titel).
+ * Was den ganzen Markt sperrt (`zu`), steht einmal über den Waren und hier nicht noch einmal.
+ */
+function handelKnopf(state: GameState, ware: string, art: HandelsArt, zu: string): string {
   const p = kannHandeln(state, ware, art);
   const text = art === 'verkaufen' ? `${BUENDEL} verkaufen +${VERKAUFSPREIS[ware]} Gold` : `${BUENDEL} kaufen −${kaufpreis(ware)} Gold`;
   const titel = p.ok ? `${BUENDEL} ${itemName(ware)} ${art}` : p.grund;
-  return `<button class="hd-btn hd-${art}" data-handel-ware="${ware}" data-handel-art="${art}" title="${titel}"${p.ok ? '' : ' disabled'}>${text}</button>`;
+  const grund = p.ok || p.grund === zu ? '' : `<small class="hd-grund">${p.grund}</small>`;
+  return `<span class="hd-zelle"><button class="hd-btn hd-${art}" data-handel-ware="${ware}" data-handel-art="${art}" title="${titel}"${p.ok ? '' : ' disabled'}>${text}</button>${grund}</span>`;
 }
 
-/** Marktplatz: je Ware Vorrat, verkaufen und kaufen. */
+/** Marktplatz: dein Gold (am Handy deckt das Fenster die Kopfzeile zu), je Ware Vorrat, verkaufen und kaufen. */
 function renderHandel(state: GameState): string {
+  const zu = handelZu(state);
+  const gold = Math.floor(state.globalStock.gold ?? 0) || 0;
   return `
     <div class="hd">
-      <span class="lbl">HANDEL</span>
-      ${HANDELSWAREN.map(ware => `
+      <div class="hd-kopf"><span class="lbl">HANDEL</span><span class="hd-gold">🪙 ${gold.toLocaleString('de')} Gold</span></div>
+      ${zu ? `<p class="hd-zu">${zu}</p>` : ''}
+      ${HANDELSWAREN.map(ware => {
+        const fuer = vorbehalten(state, ware);
+        return `
       <div class="hd-ware">
-        <span class="hd-name">${itemName(ware)} <small>${Math.floor(state.globalStock[ware] ?? 0)} im Lager</small></span>
-        ${handelKnopf(state, ware, 'verkaufen')}
-        ${handelKnopf(state, ware, 'kaufen')}
-      </div>`).join('')}
+        <span class="hd-name">${itemName(ware)} <small>${Math.floor(state.globalStock[ware] ?? 0)} im Lager${fuer > 0 ? `, ${fuer} für die Bewohner` : ''}</small></span>
+        ${handelKnopf(state, ware, 'verkaufen', zu)}
+        ${handelKnopf(state, ware, 'kaufen', zu)}
+      </div>`;
+      }).join('')}
     </div>`;
 }
 

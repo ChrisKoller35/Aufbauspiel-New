@@ -26,7 +26,7 @@ man erreicht sie nur nach und nach.
 | Alle Werkstätten (Holzfällerhütte, Steinbruch, Farm, Eisenmine, Mühle, Bäckerei, Kräutergarten, Schmiede, Arkanschmiede, Kriegsmaschinen) | 1–3 | **Stufe N = N Arbeitsplätze.** Das Gebäude arbeitet so vielfach schnell, wie Plätze besetzt sind. Stufe 3 mit einem Arbeiter ist so schnell wie Stufe 1. |
 | Wohnviertel (früher «Wohnhaus») | 1–6 | 6 Plätze für Bewohner je Stufe (6 … 36). |
 | Gildenhaus | 1–2 | Stufe 2: 4 statt 3 Helden je Expedition. |
-| Marktplatz | 1–3 | je besetztem Arbeitsplatz +25 / +40 / +50 % Steuern. |
+| Marktplatz | 1–3 | je besetztem Arbeitsplatz +25 / +40 / +50 % Steuern und 3 / 6 / 10 Bündel Handel pro Tag (Waren gegen Gold, [HANDEL.md](HANDEL.md)). |
 | Bank | 1–3 | je besetztem Arbeitsplatz +10 Gold pro Tag. |
 | Brunnen, Lagerhaus | 1 | keine Stufen. |
 
@@ -97,5 +97,6 @@ Unwetter-Stopp hängen am behaltenen Gebäude. Test: `src/systems/SaveSystem.tes
 ## Vorläufig (Balancing, Manager-Issue #23)
 
 - Markt (+25/40/50 %) und Bank (+10 Gold je Platz, Baukosten 50 Holz, 40 Stein, 150 Gold; vorher gratis) sind
-  erste Werte. Idee für später: der Marktplatz bekommt ein Handelsfenster (Waren gegen Gold).
+  erste Werte. Das Handelsfenster am Marktplatz (Waren gegen Gold) gibt es inzwischen; Preise, Tagesmengen
+  und warum keine Kette Gewinn bringt: [HANDEL.md](HANDEL.md).
 - Ausbau-Kosten «× Stufe» sind bewusst einfach; ob Stufe 3 zu billig ist, zeigt das Spielen.

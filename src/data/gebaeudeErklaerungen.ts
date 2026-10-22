@@ -24,7 +24,7 @@ export const ERKLAERUNG: Record<string, string> = {
   GUILD_HALL: 'Hier wohnen und trainieren deine Helden. Von hier starten die Expeditionen.',
   'z:expeditionen': 'Helden, Ausrüstung und Tränke ziehen in die Dungeons und bringen Gold und Beute zurück.',
   HOUSE_T1: 'Hier wohnen deine Bewohner. Sie arbeiten in den Werkstätten, zahlen jeden Tag Steuern und essen 1 Brot je 8 Bewohner (mindestens 1).',
-  MARKETPLACE: 'Mit Arbeitern bringt der Marktplatz mehr Steuern ein.',
+  MARKETPLACE: 'Mit Arbeitern bringt der Marktplatz mehr Steuern ein, und du kannst hier Waren verkaufen und zukaufen. Je mehr Arbeiter, desto mehr Handel pro Tag.',
   BANK: 'Mit Arbeitern bringt die Bank jeden Tag zusätzlich Gold.',
 };
 
@@ -39,7 +39,7 @@ export const BAU_REIHENFOLGE: { typeId: string; warum: string }[] = [
   { typeId: 'SMITHY', warum: 'Bessere Ausrüstung macht deine Helden stärker.' },
   { typeId: 'BAKERY', warum: 'Brot bringt neue Bewohner, und Bewohner sind deine Arbeiter.' },
   { typeId: 'HERB_GARDEN', warum: 'Heiltränke halten deine Helden auf Expeditionen am Leben.' },
-  { typeId: 'MARKETPLACE', warum: 'Der Marktplatz erhöht die Steuern.' },
+  { typeId: 'MARKETPLACE', warum: 'Der Marktplatz erhöht die Steuern, und dort verkaufst du übrige Waren und kaufst fehlende zu.' },
   { typeId: 'ARCANE_SMITHY', warum: 'Die Arkanschmiede macht die stärkste Ausrüstung.' },
   { typeId: 'BANK', warum: 'Die Bank bringt jeden Tag zusätzlich Gold.' },
   { typeId: 'WAR_MACHINE_WORKSHOP', warum: 'Kriegsmaschinen helfen in schweren Dungeons.' },
