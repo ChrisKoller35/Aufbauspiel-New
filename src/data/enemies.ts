@@ -618,7 +618,9 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
 
   // ── Der Mondhof (Ebene 9, im Mondlicht über den Sternen) ──
   // Die Wachen des Schlunds mal 1,15 bei Leben und Angriff, etwas mehr Verteidigung; alle tragen
-  // Bilder anderer Gegner, bis es eigene gibt (docs/NEUE-DUNGEONS.md). Zahlen sind Startwerte vor der Eichung.
+  // Bilder anderer Gegner, bis es eigene gibt (docs/NEUE-DUNGEONS.md). Geeicht am 22.10.2026: Die Wachen
+  // blieben, Argentis hat weniger Angriff und Leben als im Entwurf (52 → 44, 2665 → 2500), weil jeder Lauf
+  // bis zu ihm kam und dort fiel (docs/NEUE-DUNGEONS.md, «Im Mondlicht»).
   silberschreiber: {
     id: 'silberschreiber', name: 'Silberschreiber', role: 'support',
     hp: 290, atk: 26, def: 6, spd: 1.4, critChance: 0.1, critMult: 1.6,
@@ -654,7 +656,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_argentis: {
     id: 'boss_argentis', name: 'Argentis, der Mondvogt', role: 'boss',
-    hp: 2665, atk: 52, def: 15, spd: 0.95, critChance: 0.13, critMult: 2.0,
+    hp: 2500, atk: 44, def: 15, spd: 0.95, critChance: 0.13, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -666,11 +668,14 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
 
   // ── Das Morgentor (Ebene 10, über dem Mondhof) ──
-  // Die Wachen des Schlunds mal 1,32 bei Leben und Angriff (×1,15 über dem Mondhof), mehr Verteidigung;
-  // alle tragen Bilder anderer Gegner, bis es eigene gibt (docs/NEUE-DUNGEONS.md). Zahlen sind Startwerte vor der Eichung.
+  // Die Wachen des Schlunds mal 1,32 beim Angriff (×1,15 über dem Mondhof), mehr Verteidigung; bei den Leben
+  // seit der Eichung (22.10.2026) nur noch mal 1,12 (Entwurf ×1,32, dann ×0,85). Sunna hat mehr Angriff und
+  // weniger Leben als im Entwurf (59 → 77, 3060 → 2600): Mit 59 konnte sie Brom im Pfand des Mondvogts nicht
+  // töten, und viele Läufe endeten als Patt am Rundenlimit (docs/NEUE-DUNGEONS.md, «Im Mondlicht»).
+  // Alle tragen Bilder anderer Gegner, bis es eigene gibt.
   lichtkuester: {
     id: 'lichtkuester', name: 'Lichtküster', role: 'support',
-    hp: 335, atk: 30, def: 8, spd: 1.3, critChance: 0.1, critMult: 1.6,
+    hp: 285, atk: 30, def: 8, spd: 1.3, critChance: 0.1, critMult: 1.6,
     skills: [
       { id: 'weihrauch', name: 'Weihrauch', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
       { id: 'morgensegen', name: 'Morgensegen', cooldown: 4, effectType: 'heal', power: 120, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 120' },
@@ -679,7 +684,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   torhueter: {
     id: 'torhueter', name: 'Torhüter aus Messing', role: 'melee',
-    hp: 705, atk: 34, def: 23, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    hp: 599, atk: 34, def: 23, spd: 0.6, critChance: 0.05, critMult: 1.5,
     skills: [
       { id: 'torschlag', name: 'Torschlag', cooldown: 4, effectType: 'aoe', power: 1.0, target: 'all_players', description: '1.0× Schaden auf alle' },
     ],
@@ -687,7 +692,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   daemmerfalke: {
     id: 'daemmerfalke', name: 'Dämmerfalke', role: 'ranged',
-    hp: 465, atk: 44, def: 11, spd: 1.3, critChance: 0.22, critMult: 1.9,
+    hp: 395, atk: 44, def: 11, spd: 1.3, critChance: 0.22, critMult: 1.9,
     skills: [
       { id: 'sturzflug', name: 'Sturzflug', cooldown: 3, effectType: 'damage', power: 2.0, target: 'player', description: '2.0× Schaden auf 1 Ziel' },
     ],
@@ -695,7 +700,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   morgenhahn: {
     id: 'morgenhahn', name: 'Morgenhahn', role: 'melee',
-    hp: 315, atk: 37, def: 8, spd: 1.6, critChance: 0.18, critMult: 1.8,
+    hp: 268, atk: 37, def: 8, spd: 1.6, critChance: 0.18, critMult: 1.8,
     skills: [
       { id: 'hackschlag', name: 'Hackschlag', cooldown: 2, effectType: 'damage', power: 1.5, target: 'player', description: '1.5× Schaden auf 1 Ziel' },
       { id: 'kraehen', name: 'Krähen', cooldown: 4, effectType: 'buff', power: 6, target: 'self', description: '+6 ATK für 3 Runden' },
@@ -704,7 +709,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_sunna: {
     id: 'boss_sunna', name: 'Sunna, die Tagwächterin', role: 'boss',
-    hp: 3060, atk: 59, def: 17, spd: 1.0, critChance: 0.14, critMult: 2.0,
+    hp: 2600, atk: 77, def: 17, spd: 1.0, critChance: 0.14, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [

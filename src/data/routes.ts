@@ -453,7 +453,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['zollgeist', 'mondwache'] },
       { type: 'combat', enemies: ['mondkalb', 'silberschreiber'] },
       { type: 'find', wahl: {
-        a: { label: 'Den Angriff verpfänden (+5 Mondsilber, wenn ihr siegt, −10% Angriff bis zum Ende)', flavorText: 'Der Zettel ist in Silber geschrieben und sehr klein. Das Kleingedruckte ist noch kleiner.', effect: 'item', value: 5, itemId: 'mat_mondsilber', nachSieg: true, kostetAngriff: 10 },
+        a: { label: 'Den Angriff verpfänden (+5 Mondsilber, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Der Zettel ist in Silber geschrieben und sehr klein. Das Kleingedruckte ist noch kleiner.', effect: 'item', value: 5, itemId: 'mat_mondsilber', nachSieg: true, kostetAngriff: 8 },
         b: { label: 'Den kleinen Zettel nehmen (+1 Mondsilber)', flavorText: 'Der Schreiber reisst ihn ab, ohne hinzusehen. Er ist Beamter.', effect: 'item', value: 1, itemId: 'mat_mondsilber' },
       } },
       { type: 'combat', enemies: ['mondwache', 'zollgeist', 'silberschreiber'] },
@@ -462,7 +462,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'rest', healPercent: 15 },
       { type: 'combat', enemies: ['mondkalb', 'mondkalb', 'silberschreiber'] },
       { type: 'find', wahl: {
-        a: { label: 'Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −10% Angriff bis zum Ende)', flavorText: 'Unter eurer Unterschrift steht schon eine zweite: die des Vogts. Er hat sie vorsichtshalber vorher hingesetzt.', effect: 'kein', value: 0, setTeil: true, kostetAngriff: 10 },
+        a: { label: 'Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Unter eurer Unterschrift steht schon eine zweite: die des Vogts. Er hat sie vorsichtshalber vorher hingesetzt.', effect: 'kein', value: 0, setTeil: true, kostetAngriff: 8 },
         b: { label: 'Nur die Quittung (+2 Mondsilber)', flavorText: 'Für einen Blick ins Buch gibt es zwei Münzen. Der Vogt nennt das Lesegebühr, rückwärts.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
       } },
       { type: 'combat', enemies: ['zollgeist', 'zollgeist', 'mondwache'] },
@@ -471,7 +471,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['mondwache', 'silberschreiber', 'mondkalb'] },
       { type: 'combat', enemies: ['zollgeist', 'mondkalb', 'silberschreiber'] },
       { type: 'find', wahl: {
-        a: { label: 'Alles verpfänden (+9 Mondsilber, wenn ihr siegt, −10% Angriff bis zum Ende)', flavorText: 'Die Truhe ist voll. Jeder Barren trägt ein Schild mit einem Namen. Einer heisst wie ihr.', effect: 'item', value: 9, itemId: 'mat_mondsilber', nachSieg: true, kostetAngriff: 10 },
+        a: { label: 'Alles verpfänden (+9 Mondsilber, wenn ihr siegt, −8% Angriff bis zum Ende)', flavorText: 'Die Truhe ist voll. Jeder Barren trägt ein Schild mit einem Namen. Einer heisst wie ihr.', effect: 'item', value: 9, itemId: 'mat_mondsilber', nachSieg: true, kostetAngriff: 8 },
         b: { label: 'Das Kleingeld (+2 Mondsilber)', flavorText: 'Zwei Barren liegen ohne Schild daneben. Der Vogt hat sie vergessen. Der Vogt vergisst nichts.', effect: 'item', value: 2, itemId: 'mat_mondsilber' },
       } },
       { type: 'boss', enemies: ['boss_argentis'] },

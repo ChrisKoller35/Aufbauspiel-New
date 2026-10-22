@@ -107,9 +107,15 @@ export interface MusterSet {
   gear: Record<string, GuildFighter['gear']>;
   /** Stufe aller getragenen Set-Teile in der Schmiede (docs/SCHMIEDE.md) */
   schmiede?: number;
+  /** Abweichende Stufe einzelner Teile (Teil → Stufe), etwa das neue Set einer Ebene erst auf +2 */
+  stufen?: Record<string, number>;
   /** Die Eichung misst diese Ausrüstung erst in Dungeons ab dieser Ebene */
   abEbene?: number;
 }
+
+/** Alle drei Teile eines Sets auf derselben Stufe (für `MusterSet.stufen`) */
+const teileAuf = (setId: string, arten: string[], stufe: number): Record<string, number> =>
+  Object.fromEntries(arten.map(art => [`set_${setId}_${art}`, stufe]));
 
 const SETS_STERNE: Record<string, GuildFighter['gear']> = {
   ...SETS_HORT,
@@ -128,17 +134,43 @@ const SETS_PFAND: Record<string, GuildFighter['gear']> = {
   Brom: { mainHand: 'amtsstab_des_mondvogts', offHand: 'set_pfand_schild', armor: 'set_pfand_platte', trinket: 'set_pfand_amulett' },
 };
 
+/** Der Lohn des Morgentors: Sina in Sunnas Morgengabe (der Burst-Build gegen Sunna, docs/DUNGEON-SETS.md) */
+const SETS_MORGEN: Record<string, GuildFighter['gear']> = {
+  ...SETS_PFAND,
+  Sina: { mainHand: 'set_morgen_dolch', offHand: null, armor: 'set_morgen_leder', trinket: 'set_morgen_talisman' },
+};
+
 /**
  * Für die Dungeons zwischen den Sternen (Ebene 7 und 8) dazu die Schmiede: Wer dort ankommt,
  * hat seine Sets aus den Dungeons darunter verbessert, und wer weiter will, trägt dazu
  * Korrunds Meisterstücke (Grimm, statt des Hort-Sets). Im Mondlicht (ab Ebene 9) trägt Lia das
  * Set aus dem Sternenschlund, über dem Mondhof (ab Ebene 10) Brom das Pfand des Mondvogts.
+ * Die Stufen dazwischen (`schlund2`, `pfand2`, `pfand3`, `morgen0`) zeigen, was das neue Set
+ * einer Ebene ausmacht, bevor es ganz hochgeschmiedet ist (docs/NEUE-DUNGEONS.md, «Im Mondlicht»).
  */
-export const MUSTER_SETS: Record<'ebene4' | 'hort' | 'sterne3' | 'sterne5' | 'mond5' | 'pfand5', MusterSet> = {
+export const MUSTER_SETS: Record<
+  'ebene4' | 'hort' | 'sterne3' | 'sterne5' | 'mond5' | 'schlund2' | 'pfand2' | 'pfand3' | 'pfand5' | 'morgen0', MusterSet
+> = {
   ebene4: { name: 'Sets aus Ebene 4', gear: SETS_EBENE_4 },
   hort: { name: 'Ebene 4, Grimm mit dem Hort-Set', gear: SETS_HORT },
   sterne3: { name: 'Ebene 4 und Hort-Set, alle Teile auf +3', gear: SETS_HORT, schmiede: 3, abEbene: 7 },
   sterne5: { name: 'Dazu Grimm mit Korrunds Meisterstücken, alle Teile auf +5', gear: SETS_STERNE, schmiede: 5, abEbene: 7 },
   mond5: { name: 'Dazu Lia mit dem Schlund-Set, alle Teile auf +5', gear: SETS_MOND, schmiede: 5, abEbene: 9 },
+  schlund2: {
+    name: 'Wie mond5, Lias Schlund-Set erst auf +2', gear: SETS_MOND, schmiede: 5, abEbene: 9,
+    stufen: teileAuf('schlund', ['bogen', 'leder', 'ring'], 2),
+  },
+  pfand2: {
+    name: 'Dazu Brom im Pfand des Mondvogts mit dem Amtsstab, das Pfand-Set auf +2, die übrigen auf +5', gear: SETS_PFAND,
+    schmiede: 5, abEbene: 9, stufen: teileAuf('pfand', ['schild', 'platte', 'amulett'], 2),
+  },
+  pfand3: {
+    name: 'Dazu Brom im Pfand des Mondvogts mit dem Amtsstab, das Pfand-Set auf +3, die übrigen auf +5', gear: SETS_PFAND,
+    schmiede: 5, abEbene: 10, stufen: teileAuf('pfand', ['schild', 'platte', 'amulett'], 3),
+  },
   pfand5: { name: 'Dazu Brom im Pfand des Mondvogts mit dem Amtsstab, alle Teile auf +5', gear: SETS_PFAND, schmiede: 5, abEbene: 10 },
+  morgen0: {
+    name: 'Dazu Sina in Sunnas Morgengabe ohne Stufen, die übrigen auf +5', gear: SETS_MORGEN,
+    schmiede: 5, abEbene: 10, stufen: teileAuf('morgen', ['dolch', 'leder', 'talisman'], 0),
+  },
 };

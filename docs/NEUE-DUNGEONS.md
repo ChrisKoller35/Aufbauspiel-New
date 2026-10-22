@@ -12,7 +12,7 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 6 | Das Himmelsarchiv | Himmel | 16 | Der Oberarchivar | Verbotene Bücher: seltene Funde, kosten aber Leben | Klinge der tausend Schatten |
 | 7 | Die Sternenschmiede | Sterne | 16 | Korrund, der Sternenschmied | Sternenfeuer: Wer die Waffen in die Essen hält, hat bis zum Ende +10 % Angriff (die ganze Gruppe), verliert aber 5 bis 10 % Leben | Korrunds Hammer |
 | 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt 3 bis 5 Sternenstahl, aber erst mit dem Sieg über Nyxar | Der letzte Stern |
-| 9 | Der Mondhof | Mond | 16 | Argentis, der Mondvogt | Pfandzettel: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Zettel unterschreiben; jeder kostet bis zum Ende 10 % Angriff und bringt erst mit dem Sieg über Argentis Mondsilber (5, dann 9) oder einen Set-Teil mehr. Wer am letzten Kontrollpunkt umkehrt, lässt alle Pfandzettel liegen | Amtsstab des Mondvogts |
+| 9 | Der Mondhof | Mond | 16 | Argentis, der Mondvogt | Pfandzettel: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Zettel unterschreiben; jeder kostet bis zum Ende 8 % Angriff und bringt erst mit dem Sieg über Argentis Mondsilber (5, dann 9) oder einen Set-Teil mehr. Wer am letzten Kontrollpunkt umkehrt, lässt alle Pfandzettel liegen | Amtsstab des Mondvogts |
 | 10 | Das Morgentor | Mond | 16 | Sunna, die Tagwächterin | Die Sonnenuhr: Dreimal (Raum 2, 8, 14) kann die Gruppe sie vorstellen; jedes Mal kommt Sunnas Wut-Runde 2 Runden früher (ab Runde 10, dreimal gewählt ab Runde 4), und erst mit dem Sieg kommen Mondsilber (6, dann 10) oder ein Set-Teil mehr. Ihre Werte ändern sich nie, nur ihre Geduld; die Kampf-Vorschau zeigt «Wut ab Runde X». Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen | Der Morgenstern |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
@@ -132,7 +132,11 @@ Meuchlerin; `docs/SPEZIALISIERUNG.md`). An Rastplätzen rasten sie immer, bei de
 
 Fähigkeiten vor dem Kampf nutzen sie nicht, echte Spieler gewinnen also etwas öfter. Zwischen den Sternen
 tragen sie zusätzlich Sets mit Stufen aus der Schmiede (`MUSTER_SETS.sterne3` und `sterne5`; `abEbene` misst
-diese Ausrüstung erst ab Ebene 7).
+diese Ausrüstung erst ab Ebene 7), im Mondlicht die Sets der Ebene darunter (`mond5`, `pfand5` und die Stufen
+dazwischen). Die zweite Tabelle des Werkzeugs zählt seit dem Mond auch die Läufe, die am Rundenlimit des
+Bosskampfs enden (20 Runden ohne Sieger: kein Sieg, keine Niederlage), und die Siege, bei denen der Boss seine
+Wut-Runde nicht mehr erlebt. `npm run dungeon-eichung -- 1000 mondhof,morgentor stark` misst nur diese Dungeons
+mit diesem Team.
 
 Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
 eingerechnet (20 % Mindestschaden, stärkere Startklassen), Siege von 200 Läufen:
@@ -225,41 +229,108 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
 
 ### Im Mondlicht (Ebene 9 und 10)
 
-**Ziele (Entwurf):** Team «Stark» in Korrunds Meisterstücken und dem Schlund-Set auf +5 (`MUSTER_SETS.mond5`)
-soll den Mondhof vorsichtig in 60 bis 70 % der Läufe schaffen, klug etwa in der Hälfte, mit allen drei
-Pfandzetteln selten; die Pfandzettel sind der Preis für Mondsilber und einen Set-Teil mehr. Dazu zwei neue
-Messgrössen: Läufe, die am Rundenlimit des Bosskampfs enden (unter 5 %), und Siege vor der Wut-Runde (Argentis
-wütet ab Runde 10). Mit dem Pfand des Mondvogts auf +5 (`MUSTER_SETS.pfand5`) misst die Eichung erst ab Ebene 10.
-Das Morgentor soll dasselbe Team mit dem Pfand des Mondvogts auf +5 (`pfand5`) vorsichtig in 60 bis 70 %
-schaffen, klug in 35 bis 50 %, gierig (Sunna wütet ab Runde 4) höchstens in 5 %; ohne Pfand-Set (`mond5`)
-höchstens 15 % vorsichtig und 0 % gierig, damit das Set der Ebene darunter der Schlüssel bleibt. Lohn: Sina in
-Sunnas Morgengabe ohne Stufen mindestens 90 % vorsichtig und, als Burst-Build, mindestens 40 % gierig,
-deutlich mehr als jedes andere Team gierig; so zeigt sich, dass die Sonnenuhr vom Build abhängt.
+**Ziele (Entwurf, 22.10.2026):** Team «Stark» in Korrunds Meisterstücken und dem Schlund-Set auf +5
+(`MUSTER_SETS.mond5`) soll den Mondhof vorsichtig in 60 bis 70 % der Läufe schaffen, klug in 35 bis 50 %, mit
+allen drei Pfandzetteln höchstens in 10 %; ohne Schlund-Set (Lia Abyss +5, `sterne5`) höchstens 20 %, so bleibt
+das Schlund-Set der Schlüssel; mit dem Schlund-Set erst auf +2 etwa 40 / 20 / 0 %. Lohn: Brom im Pfand des
+Mondvogts ohne Stufen mindestens 90 % vorsichtig, auf +2 100 / 100 / etwa 40 %. Das Morgentor soll dasselbe Team
+mit dem Pfand des Mondvogts auf +5 (`pfand5`) vorsichtig in 60 bis 70 % schaffen, klug in 35 bis 50 %, gierig
+(Sunna wütet ab Runde 4) höchstens in 5 %; Pfand-Set erst auf +3 (der Eintritt) 15 bis 25 % vorsichtig; ohne
+Pfand-Set (`mond5`) höchstens 15 % vorsichtig und 0 % gierig. Lohn: Sina in Sunnas Morgengabe ohne Stufen
+mindestens 90 % vorsichtig und, als Burst-Build, mindestens 40 % gierig, deutlich mehr als jedes andere Team.
+Für beide: unter 5 % der Läufe am Rundenlimit des Bosskampfs; die Siege vor der Wut-Runde werden gezählt.
+Bei Zielkonflikten gilt die Reihenfolge des Entwurfs: das Schlüssel-Set bleibt der Schlüssel, dann die
+Siegquoten, zuletzt der Reiz der Gier.
 
-**Noch nicht geeicht (22.10.2026).** Der Mondhof steht mit den Startwerten des Entwurfs; ein Probelauf mit
-`spieleRoute` (50 Läufe je Spielweise, Team «Stark») gab: mit `sterne5` (ohne Schlund-Set) 0 / 0 / 0 Siege,
-mit `mond5` 1 / 0 / 0 Siege, keine Läufe am Rundenlimit, keine Fehler; jeder Lauf kommt bis zu Argentis und
-fällt dort (im Mittel 16 Räume). Zum Vergleich der Sternenschlund mit `sterne5` vorsichtig: 47 von 50. Der
-Mondhof ist also zurzeit viel zu schwer; die Eichung (Argentis und die Mondwachen schwächer, oder die Gegner
-davor) ist der nächste Schritt, nicht Teil des Baus.
+**Geeicht am 22.10.2026**, Team «Stark» mit Wegen, 1000 Läufe je Zeile (`npm run dungeon-eichung -- 1000
+mondhof,morgentor stark`; Zeilen mit 300 Läufen sind gekennzeichnet), Siege vorsichtig / klug / gierig:
 
-**Morgentor, noch nicht geeicht (22.10.2026).** Startwerte des Entwurfs; Probelauf mit `spieleRoute`
-(50 Läufe je Spielweise, Team «Stark», Siege vorsichtig / klug / gierig):
-
-| Ausrüstung | Siege | am Rundenlimit | Siege vor der Wut | Niederlagen |
+| Mondhof, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
 |---|---|---|---|---|
-| `mond5` (ohne Pfand-Set) | 0 / 0 / 0 % | 0 / 0 / 0 % | – | 100 / 100 / 100 % |
-| `pfand5` (Brom im Pfand-Set mit Amtsstab) | 88 / 68 / 12 % | 12 / 32 / 72 % | 1 von 44 / 0 / 0 | 0 / 0 / 16 % |
-| `pfand5`, Sina in Sunnas Morgengabe ohne Stufen | 100 / 100 / 100 % | 0 / 0 / 0 % | 49 von 50 / 0 / 0 | 0 / 0 / 0 % |
+| `sterne5`: Lia Abyss +5, ohne Schlund-Set | höchstens 20 % vorsichtig | 0 / 0 / 0 % | 0 % | – |
+| `schlund2`: Lias Schlund-Set erst auf +2 | etwa 40 / 20 / 0 % | 1 / 0 / 0 % | 0 % | 0 von 14 |
+| Lias Schlund-Set auf +3 (300 Läufe) | – | 4 / 0 / 0 % | 0 % | 0 von 12 |
+| Lias Schlund-Set auf +4 (300 Läufe) | – | 34 / 3 / 0 % | 0 % | 6 von 101 |
+| `mond5`: alles auf +5 | 60–70 / 35–50 / höchstens 10 % | 74 / 28 / 2 % | 0 / 0 / 0 % | 295 von 741 / 20 von 279 / 0 von 19 |
+| Brom im Pfand-Set ohne Stufen, übrige +5 (300 Läufe) | mindestens 90 % vorsichtig | 100 / 100 / 100 % | 0 % | 300 von 300 / 275 von 300 / 168 von 300 |
+| `pfand2`: Broms Pfand-Set auf +2, übrige +5 | 100 / 100 / etwa 40 % | 100 / 100 / 100 % | 0 % | 1000 von 1000 / 903 von 1000 / 547 von 1000 |
 
-Keine Fehler, keine Endlosschleife, jeder Lauf kommt bis zu Sunna (ohne Pfand-Set 84 %, die übrigen fallen
-davor). Was auffällt: Mit dem Pfand-Set stirbt fast niemand, aber viele Läufe enden am Rundenlimit (20 Runden
-ohne Sieger, der Dungeon zählt als geschafft, die Morgengabe bleibt liegen), gierig fast drei von vier; Sunnas
-Morgentau (260 alle 6 Runden) gegen Mondwall und Amtsstab ist ein Patt. Das Ziel «unter 5 % am Rundenlimit»
-ist weit verfehlt, die Stellschraube ist der Morgentau (notfalls 200, Entscheid 9) vor ihrem Angriff. Die
-Sonnenuhr wirkt wie gedacht: ohne Burst-Build kostet sie den Sieg (88 → 12 %), mit Sina im Morgengabe-Set
-kostet sie nichts (100 % gierig, alle Siege zwischen Runde 4 und 10). Das Set ist in dieser Rechnung eher zu
-stark (100 % vorsichtig, 49 von 50 vor Runde 10). Die Eichung ist der nächste Schritt, nicht Teil des Baus.
+| Morgentor, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
+|---|---|---|---|---|
+| `mond5`: ohne Pfand-Set | höchstens 15 % vorsichtig, 0 % gierig | 0 / 0 / 0 % | 0 % | – |
+| `pfand2`: Broms Pfand-Set auf +2, übrige +5 | – | 61 / 31 / 0 % | 0 % | 315 von 605 / 0 von 310 / – |
+| `pfand3`: Broms Pfand-Set auf +3, übrige +5 | 15–25 % vorsichtig | 62 / 38 / 0 % | 0 % | 314 von 623 / 0 von 380 / – |
+| `pfand5`: alles auf +5 | 60–70 / 35–50 / höchstens 5 % | 69 / 50 / 1 % | 1 / 0 / 0 % | 315 von 694 / 0 von 500 / 0 von 13 |
+| `morgen0`: Sina in Sunnas Morgengabe ohne Stufen, übrige +5 | mindestens 90 % vorsichtig, mindestens 40 % gierig | 100 / 100 / 98 % | 0 % | 998 von 1000 / 86 von 999 / 0 von 981 |
+
+Was die Zahlen vorher waren (Startwerte des Entwurfs, 100 Läufe): Mondhof `mond5` 3 / 0 / 0 %, `sterne5` 0 %,
+jeder Lauf kam bis zu Argentis und fiel dort; Morgentor `mond5` 0 %, `pfand5` 87 / 68 / 10 % mit 13 / 32 / 76 %
+der Läufe am Rundenlimit, `pfand3` 94 / 71 / 5 %, Sina in der Morgengabe 100 / 100 / 100 %.
+
+**Was geändert wurde und warum:**
+
+- **Argentis** hat 44 statt 52 Angriff und 2500 statt 2665 Leben. Die Wachen des Mondhofs blieben, wie sie
+  waren (das Team kommt mit etwa der Hälfte seiner Leben bei Argentis an, Niederlagen vor ihm gibt es keine);
+  sie zuerst zu schwächen, wie der Entwurf es vorsah, hilft vor allem der Ausrüstung ohne Schlund-Set (Lia
+  Abyss +5 kommt dann mit mehr Leben an) und macht das Schlund-Set weniger zum Schlüssel, ohne den Bosskampf zu
+  lösen. Der Bosskampf ist ein Wettlauf gegen die Wut-Runde: Wer Argentis nicht bis etwa Runde 12 bis 13 fällt,
+  stirbt, darum zählt jedes Prozent Angriff doppelt. Weniger Angriff (statt weniger Leben) macht die Kante
+  flacher, weil das Team seine Wut ein paar Runden überlebt; mit weniger Leben allein (2300) blieb es bei
+  34 / 0 / 0 %.
+- **Pfandzettel kosten 8 statt 10 % Angriff** (`kostetAngriff`, Entscheid 9: «notfalls 8»). Mit 10 % wären es
+  76 / 23 / 0 % (300 Läufe): Die klugen Läufe unterschreiben im Mittel 1,3 Zettel, und jeder Zettel kostet an
+  dieser Kante etwa 20 Punkte Siege. Mit 8 % liegt klug bei 28 %, gierig (drei Zettel, −24 %) bei 2 %.
+- **Das Morgentor:** Die Wachen haben 15 % weniger Leben (Lichtküster 285, Torhüter 599, Dämmerfalke 395,
+  Morgenhahn 268; der Angriff blieb), Sunna hat 77 statt 59 Angriff und 2600 statt 3060 Leben, ihr Morgentau
+  bleibt bei 260. Der Grund für den Angriff: Mit 59 konnte Sunna Brom im Pfand des Mondvogts nicht töten
+  (Verteidigung 79 auf +5, dazu Mondwall und Reflexion, also nur der Mindestschaden von 20 %), und Brom allein
+  konnte sie nicht töten (44 je Treffer gegen 260 Morgentau alle 6 Runden). Sobald Lia, Sina und Grimm nach der
+  Wut fielen, stand der Kampf, bis das Rundenlimit kam: 76 % aller gierigen Läufe mit `pfand5`. Der Morgentau
+  war nicht die Stellschraube: Mit 200 statt 260 blieben es 75 %, auch seltener (alle 8 Runden) 76 %. Mit
+  Angriff 77 fällt Brom allein nach einigen Runden, das Rundenlimit ist aus den Zahlen verschwunden (1 %), und
+  Sunnas Leben sind dafür gesenkt, bis `pfand5` vorsichtig im Ziel lag. Mit Morgentau 200 wären es 74 / 52 / 2 %
+  statt 69 / 50 / 1 %; weil das keinen Unterschied macht, der den Eingriff rechtfertigt, blieb die Zahl des
+  Entwurfs.
+- **Nicht geändert:** die Set-Werte (Mondwall 15, Sonnenstich 0,6 / 0,05 / 60), `bossWutFrueher` (2 je Raum),
+  die Wut-Runden (Argentis und Sunna ab Runde 10) und die Mahnung.
+
+**Was nicht erreicht wurde, und warum:**
+
+- **Mondhof klug 28 % statt 35 bis 50 %, vorsichtig 74 statt 60 bis 70 %.** Beide zusammen gehen mit diesem
+  Boss nicht: Zwischen 0 und −13 % Angriff fällt die Siegquote um gut 45 Punkte, weil der Kampf ein Wettlauf
+  gegen die Wut ist. Argentis stärker (vorsichtig 68 %) brächte klug auf etwa 22 %, Argentis schwächer
+  (vorsichtig 85 %) klug auf 35 %. Gemessen wurde auch: Mahnung weg, Wut erst ab Runde 12, Wut nur ×1,3,
+  Wachen stärker oder schwächer, Argentis mit sehr wenig Angriff und sehr viel Leben (36 / 2900: 98 / 65 / 8 %,
+  aber 4 % am Rundenlimit). Nichts davon macht die Kante flach genug, ohne ein anderes Ziel zu reissen. Die
+  Mitte (74 / 28) weicht von beiden Zielen am wenigsten ab.
+- **Lias Schlund-Set auf +2: 1 % statt etwa 40 %.** Aus demselben Grund: Drei Stufen auf Lias drei Teilen
+  sind etwa 10 % des Schadens der Gruppe, und das ist an dieser Kante der Unterschied zwischen 74 und 1 %
+  (+3: 4 %, +4: 34 %). Das Schlund-Set ist damit noch mehr der Schlüssel, als der Entwurf wollte: Es muss auf +5.
+- **Lohn im Mondhof gierig 100 % statt etwa 40 %.** Brom im Pfand des Mondvogts ist für Argentis unverwundbar
+  (Mindestschaden gegen Verteidigung 79, dazu Mondwall für alle), und Argentis heilt sich nicht; das Team
+  gewinnt auch mit drei Zetteln, nur später (gierig 547 von 1000 Siegen vor der Wut, vorsichtig alle). Gier
+  lohnt sich im Mondhof also genau für das Team, das ihn mit dem Pfand-Set schon sicher hat, wie beim
+  Sternenstahl im Schlund. Ein Argentis, der dieses Team bedroht, wäre für `mond5` unschaffbar; die Siegquoten
+  gehen dem Gier-Reiz vor. Wie stark das Set ist, zeigt die volle Tabelle (`npm run dungeon-eichung -- 200
+  mondhof,morgentor`): Sogar «Frisch» (Stufe 10) schafft den Mondhof mit Brom im Pfand-Set auf +2 in
+  100 / 100 / 93 % der Läufe, und «Gut» (Stufe 12) das Morgentor mit Sina in der Morgengabe in 100 / 92 / 41 %,
+  während «Gut» mit `mond5` im Mondhof bei 1 % und mit `pfand5` am Morgentor bei 2 % bleibt. Die beiden
+  Lohn-Sets sind damit die stärksten Sprünge des Spiels; ob sie so stark bleiben sollen, ist eine Frage für die
+  Gegenprüfung, nicht für die Eichung der Gegner.
+- **Morgentor, Pfand-Set auf +3: 62 % statt 15 bis 25 %.** Zwei Stufen auf Broms drei Teilen ändern an Sunnas
+  Treffern fast nichts (Mindestschaden); der Unterschied zu +5 ist das Meisterset (doppelter Zwei-Teile-Bonus)
+  und 10 % Werte, zusammen 7 Punkte vorsichtig, 12 Punkte klug. Ein Eintritt bei 15 bis 25 % bräuchte eine
+  Sunna, die gegen Brom auf +3 trifft und gegen Brom auf +5 nicht, das gibt die Schadensformel nicht her. Der
+  Schlüssel ist das Pfand-Set selbst (ohne: 0 %), nicht seine Stufe; schon auf +2 sind es 61 %.
+- **Morgentor gierig mit der Morgengabe 98 %, nicht «mindestens 40 %»:** erreicht, aber die Sonnenuhr kostet
+  diesen Build gar nichts mehr (vorsichtig 100 %, gierig 98 %, Siege zwischen Runde 4 und 10). Der Beweis, dass
+  die Sonnenuhr vom Build abhängt, steht: `pfand5` gierig 1 %, `morgen0` gierig 98 %.
+
+**Geschichten-Eichung:** `npm run geschichten-eichung -- 100 mondhof` und `-- 100 morgentor` haben nichts zu
+messen, weil beide Geschichten keine eigenen Entscheidungen haben (`wahlen: []`); sie erzählen über die festen
+Wahl-Räume der Route (Pfandzettel, Sonnenuhr), und die misst die Dungeon-Eichung als Spielweise. Was die Wahl
+kostet, steht oben: jeder Pfandzettel etwa 20 Punkte Siege, jedes Vorstellen der Sonnenuhr für `pfand5` etwa
+20 bis 50 Punkte (vorsichtig 69, klug mit im Mittel zwei Stunden 50, gierig 1 %), für den Burst-Build nichts.
 
 ## Entschieden
 

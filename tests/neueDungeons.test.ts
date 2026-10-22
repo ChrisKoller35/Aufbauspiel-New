@@ -15,7 +15,7 @@ import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { setBeute } from '../src/systems/DungeonSets';
 import { setVonItem } from '../src/data/dungeonSets';
-import { musterStand, siegeVon, spieleRoute } from '../src/systems/Musterlauf';
+import { messeLaeufe, musterStand, siegeVon, spieleRoute } from '../src/systems/Musterlauf';
 
 const NEUE = Object.values(ROUTE_DEFS).filter(r => r.gebiet);
 const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
@@ -305,38 +305,38 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(run.loot.mat_sternenstahl ?? 0).toBe(ohneWahl);
   });
 
-  it('Pfandzettel: wer verpfändet, schlägt bis zum Ende 10 % schwächer zu, und das Mondsilber kommt erst mit Argentis', () => {
+  it('Pfandzettel: wer verpfändet, schlägt bis zum Ende 8 % schwächer zu, und das Mondsilber kommt erst mit Argentis', () => {
     const { state, ids } = musterStand('stark', 7919, 'mond5');
     const run = bisZurWahl(state, system.startExpedition(state, 'mondhof', ids)!);
-    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 5, nachSieg: true, kostetAngriff: 10 });
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 5, nachSieg: true, kostetAngriff: 8 });
     expect(run.pendingChoice!.optionB).toMatchObject({ effect: 'item', itemId: 'mat_mondsilber', value: 1 });
     const start = run.party.map(u => ({ atk: u.atk, hp: u.hp }));
     const boss = run.rooms.length - 1;
 
     system.resolveChoice(run, 0);
-    expect(run.gruppenAngriff).toBe(-10);
+    expect(run.gruppenAngriff).toBe(-8);
     run.party.forEach((u, i) => {
-      expect(u.atk, u.name).toBe(Math.round(start[i].atk * 90 / 100));
+      expect(u.atk, u.name).toBe(Math.round(start[i].atk * 92 / 100));
       expect(u.hp, u.name).toBe(start[i].hp);
     });
     expect(run.loot.mat_mondsilber ?? 0).toBe(0);
     expect(run.geschichtsBeute).toEqual([{ raum: boss, gold: 0, dinge: { mat_mondsilber: 5 } }]);
-    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 10% schwächer zu.');
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 8% schwächer zu.');
 
-    // Das Pfandbuch (Raum 8) verspricht ein Set-Teil, wieder gegen 10 % Angriff, gerechnet auf den Angriff vor dem ersten Mal
+    // Das Pfandbuch (Raum 8) verspricht ein Set-Teil, wieder gegen 8 % Angriff, gerechnet auf den Angriff vor dem ersten Mal
     bisZurWahl(state, run);
     expect(run.pendingChoice!.roomIndex).toBe(8);
-    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'kein', setTeil: true, kostetAngriff: 10 });
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'kein', setTeil: true, kostetAngriff: 8 });
     system.resolveChoice(run, 0);
     expect(run.setTeilVersprochen).toBe(true);
-    expect(run.gruppenAngriff).toBe(-20);
-    run.party.forEach((u, i) => expect(Math.abs(u.atk - start[i].atk * 0.8), u.name).toBeLessThanOrEqual(1));
-    expect(run.combatLog).toContain('>> Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −10% Angriff bis zum Ende): 🌙 +1 Set-Teil, wenn ihr siegt.');
-    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 20% schwächer zu.');
+    expect(run.gruppenAngriff).toBe(-16);
+    run.party.forEach((u, i) => expect(Math.abs(u.atk - start[i].atk * 0.84), u.name).toBeLessThanOrEqual(1));
+    expect(run.combatLog).toContain('>> Das Pfandbuch unterschreiben (+1 Set-Teil, wenn ihr siegt, −8% Angriff bis zum Ende): 🌙 +1 Set-Teil, wenn ihr siegt.');
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe schlägt bis zum Ende des Dungeons 16% schwächer zu.');
 
     bisZurWahl(state, run);
     system.resolveChoice(run, 0);
-    expect(run.gruppenAngriff).toBe(-30);
+    expect(run.gruppenAngriff).toBe(-24);
     expect(run.geschichtsBeute).toEqual([{ raum: boss, gold: 0, dinge: { mat_mondsilber: 14 } }]);
     // Argentis bleibt, wie er ist: keine Hort-Gier im Mondhof
     expect(run.gier ?? 0).toBe(0);
@@ -351,7 +351,7 @@ describe('Dungeons über dem Vulkankern', () => {
     grimm.effektBoni = { 'zorn:atk': 12, 'schmiedetakt:atk': 9 };
     grimm.atk += 21;
     system.resolveChoice(run, 0);
-    expect(grimm.atk).toBe(Math.round(eigener * 90 / 100) + 21);
+    expect(grimm.atk).toBe(Math.round(eigener * 92 / 100) + 21);
   });
 
   it('wer den kleinen Zettel nimmt, hat das Mondsilber sofort, und der Angriff bleibt, wie er ist', () => {
@@ -623,23 +623,45 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(vier).toBeLessThan(siegeVon('sternenschlund', 'stark', 'vorsichtig', 30, 'sterne5'));
   });
 
-  it('der Mondhof läuft in jeder Spielweise zu Ende (noch nicht geeicht, darum keine Siegquote)', () => {
+  it('der Mondhof läuft in jeder Spielweise zu Ende', () => {
     for (const spielweise of ['vorsichtig', 'klug', 'gierig'] as const) {
       for (let i = 1; i <= 3; i++) {
         const { state, ids } = musterStand('stark', i * 7919, 'mond5');
         const run = spieleRoute(state, ids, 'mondhof', spielweise);
         expect(run.status).not.toBe('exploring');
         expect(run.rooms.filter(r => r.completed).length).toBeGreaterThan(0);
-        // Gierig unterschreibt alle drei Pfandzettel: 30 % schwächer, nichts kommt vor dem Boss
+        // Gierig unterschreibt alle drei Pfandzettel: 24 % schwächer, nichts kommt vor dem Boss
         if (spielweise === 'gierig' && run.rooms.filter(r => r.completed).length >= 15) {
-          expect(run.gruppenAngriff).toBe(-30);
+          expect(run.gruppenAngriff).toBe(-24);
           expect(run.setTeilVersprochen).toBe(true);
         }
       }
     }
   });
 
-  it('das Morgentor läuft in jeder Spielweise zu Ende (noch nicht geeicht, darum keine Siegquote)', () => {
+  // Grobe Eichung im Mondlicht (genaue Zahlen: npm run dungeon-eichung, docs/NEUE-DUNGEONS.md «Im Mondlicht»)
+  it('Eichung grob Mondhof: das Schlund-Set ist der Schlüssel, Pfandzettel kosten Siege, das Pfand-Set macht Argentis leicht', () => {
+    const mond = messeLaeufe('mondhof', 'stark', 'vorsichtig', 20, 'mond5');
+    expect(mond.siege).toBeGreaterThanOrEqual(10);
+    expect(mond.rundenlimit).toBe(0);
+    expect(messeLaeufe('mondhof', 'stark', 'vorsichtig', 10, 'sterne5').siege).toBeLessThanOrEqual(1);
+    expect(messeLaeufe('mondhof', 'stark', 'gierig', 20, 'mond5').siege).toBeLessThanOrEqual(3);
+    expect(messeLaeufe('mondhof', 'stark', 'vorsichtig', 10, 'pfand2').siege).toBeGreaterThanOrEqual(9);
+  });
+
+  it('Eichung grob Morgentor: das Pfand-Set ist der Schlüssel, die Sonnenuhr kostet den Sieg, Sunnas Morgengabe nicht', () => {
+    const pfand = messeLaeufe('morgentor', 'stark', 'vorsichtig', 20, 'pfand5');
+    expect(pfand.siege).toBeGreaterThanOrEqual(10);
+    expect(pfand.rundenlimit).toBeLessThanOrEqual(1);
+    expect(messeLaeufe('morgentor', 'stark', 'vorsichtig', 10, 'mond5').siege).toBeLessThanOrEqual(1);
+    expect(messeLaeufe('morgentor', 'stark', 'gierig', 20, 'pfand5').siege).toBeLessThanOrEqual(2);
+    const morgen = messeLaeufe('morgentor', 'stark', 'gierig', 10, 'morgen0');
+    expect(morgen.siege).toBeGreaterThanOrEqual(8);
+    // Der Burst-Build schlägt Sunna meist, bevor sie wütet, wenn er die Uhr nicht vorstellt
+    expect(messeLaeufe('morgentor', 'stark', 'vorsichtig', 10, 'morgen0').siegeVorWut).toBeGreaterThanOrEqual(8);
+  });
+
+  it('das Morgentor läuft in jeder Spielweise zu Ende', () => {
     for (const spielweise of ['vorsichtig', 'klug', 'gierig'] as const) {
       for (let i = 1; i <= 3; i++) {
         const { state, ids } = musterStand('stark', i * 7919, 'pfand5');

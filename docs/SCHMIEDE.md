@@ -15,7 +15,7 @@ neuer Dungeon für sie braucht.
   Gebiet seines Dungeons. Ein Sieg bringt die **Grundmenge** der Ebene (2 + Ebene: Ebene 1 bringt 3,
   Ebene 4 bringt 6, Ebene 8 bringt 10, Ebene 9 bringt 11, Ebene 10 bringt 12). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
   Sternenstahl dazu, aber erst mit dem Sieg, und Nyxar bleibt stark. Im Mondhof bringen die Pfandzettel aus
-  Raum 2 und 14 zusammen 14 Mondsilber dazu, auch erst mit dem Sieg, und jeder kostet bis zum Ende 10 %
+  Raum 2 und 14 zusammen 14 Mondsilber dazu, auch erst mit dem Sieg, und jeder kostet bis zum Ende 8 %
   Angriff. Am Morgentor bringt die Sonnenuhr aus Raum 2 und 14 zusammen 16 Mondsilber, auch erst mit dem Sieg,
   und jedes Vorstellen holt Sunnas Wut-Runde 2 Runden näher. Niederlage oder Rückzug bringen die
   Hälfte der Grundmenge, anteilig zu den geschafften Räumen. Das Material liegt in der Truhe mit dem
@@ -80,6 +80,10 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
   `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Ein Set aus den Sternen auf +5 kostet 810 bis 900
   Sternenstahl, 13'000 bis 15'000 Gold (ohne Rabatt der Schmiede in der Stadt) und 63 Kristallsplitter:
   das lange Ziel ganz oben.
+- **Im Mondlicht zählt die Stufe des Schlüssel-Sets:** Den Mondhof schafft «Stark» mit dem Schlund-Set auf
+  +2 fast nie (1 %), auf +4 jeden dritten Lauf, auf +5 drei von vier (vorsichtig, 1000 bzw. 300 Läufe,
+  `docs/NEUE-DUNGEONS.md`, «Im Mondlicht»). Am Morgentor ist es das Pfand des Mondvogts selbst, nicht seine
+  Stufe: auf +2 61 %, auf +3 62 %, auf +5 69 %.
 
 ## Material je Gebiet
 
@@ -136,6 +140,6 @@ dazu, bringt ein Sieg schon mehr Material, wie bei den Punkten: Schwer ×1,5, Al
 - **Ruhmestruhe** der Rangliste mit Material: wäre ein schöner Preis, noch nicht eingebaut.
 - **Gewöhnliche Ausrüstung einschmelzen:** Bisher nur Set-Teile. Alte T1- bis T3-Stücke stapeln sich.
 - **Eichung mit Stufen:** erledigt für die Dungeons zwischen den Sternen (Musterteams mit Sets auf +3 und +5,
-  `MUSTER_SETS.sterne3` und `sterne5`). Die Dungeons darunter misst die Eichung weiter ohne Stufen. Für
-  Mondhof und Morgentor stehen `mond5` und `pfand5` bereit, gemessen sind sie noch nicht
-  (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht»).
+  `MUSTER_SETS.sterne3` und `sterne5`) und im Mondlicht (`mond5`, `pfand5` und die Stufen dazwischen
+  `schlund2`, `pfand2`, `pfand3`, `morgen0`; `docs/NEUE-DUNGEONS.md`, «Im Mondlicht»). Die Dungeons darunter
+  misst die Eichung weiter ohne Stufen.
