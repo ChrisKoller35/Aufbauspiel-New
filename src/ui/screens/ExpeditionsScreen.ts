@@ -270,9 +270,12 @@ function buildTeamHTML(): string {
     if (!def) return '';
     const qty = provisions[itemId] ?? 0;
     const stock = gameState.globalStock[itemId] ?? 0;
+    // Was der Vorrat im Dungeon bewirkt, als Halbsatz (ITEM_DEFS[id].wirkungText, docs/GILDENSTADT.md «Tränke mit Wirkung»)
+    const wirkung = (def as { wirkungText?: string }).wirkungText;
+    const wirkungHtml = wirkung ? `<br><span style="font-size:0.72rem;opacity:0.75">${wirkung}</span>` : '';
     return `
       <div class="pr" data-prov="${itemId}">
-        <span class="prn">${def.name} (${stock})</span>
+        <span class="prn">${def.name} (${stock})${wirkungHtml}</span>
         <button class="prbtn" data-prov-action="dec" data-prov-id="${itemId}">−</button>
         <span class="prov-qty">${qty}</span>
         <button class="prbtn" data-prov-action="inc" data-prov-id="${itemId}">+</button>

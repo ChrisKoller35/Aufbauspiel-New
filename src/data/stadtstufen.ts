@@ -2,18 +2,20 @@
 // Sieben Stadtstufen vom Lagerfeuer bis zur Magischen Stadt. Jede hat
 // Aufgaben, eine Abgabe, Belohnungen und ein Kapitel der Stadtchronik
 // (erzählt von Stadtschreiber Ottokar). Wie das Rathaus bei Clash of
-// Clans gibt die Stadtstufe vor, wie weit Gebäude ausgebaut werden
-// dürfen. Ab Stufe 6 liegt das Arkane Herz frei: fünf Herzsteine von
+// Clans gibt die Stadtstufe vor, wie weit die Werkstätten ausgebaut
+// werden dürfen, und ab Stufe 4 gibt der Händler Rabatt (Stadtrecht).
+// Ab Stufe 6 liegt das Arkane Herz frei: fünf Herzsteine von
 // Dungeon-Bossen wecken es. Danach geht es auf der Dungeon-Karte immer
 // weiter nach oben (Endgame, docs/NEUE-DUNGEONS.md).
-// Logik: systems/Stadtweg.ts. Regeln und Zahlen: docs/STADTWEG.md.
+// Logik: systems/Stadtweg.ts. Regeln und Zahlen: docs/STADTWEG.md,
+// docs/GILDENSTADT.md.
 // ────────────────────────────────────────────────────────────────
 
 import type { GameState } from '../models/GameState';
 
 export type StadtAufgabe =
   | { art: 'gebaeude'; typeId: string }
-  | { art: 'bewohner'; anzahl: number }
+  | { art: 'helden'; anzahl: number }
   | { art: 'siege'; anzahl: number }
   | { art: 'bosse'; anzahl: number }
   | { art: 'gildenrang'; rang: number }
@@ -21,9 +23,7 @@ export type StadtAufgabe =
 
 /** Höchste Ausbau-Stufe, die eine Stadtstufe erlaubt, je Gebäude-Art. */
 export interface AusbauGrenzen {
-  wohnen: number;
   werkstatt: number;
-  handel: number;
 }
 
 export type GrenzArt = keyof AusbauGrenzen;
@@ -44,8 +44,8 @@ export interface StadtStufeDef {
   abgabe: Record<string, number>;
   /** Kommt beim Aufstieg ins Lager. */
   geschenk: Record<string, number>;
-  /** Zusätzliche Steuern in Prozent ab dieser Stufe (zählt mit den früheren zusammen). */
-  steuerProzent: number;
+  /** Rabatt beim Händler in Prozent auf dieser Stufe (gilt, nicht zusammengezählt; data/haendler.ts). */
+  haendlerRabatt: number;
   grenzen: AusbauGrenzen;
   /** Weitere Belohnungen in Worten. */
   extra?: string[];
@@ -64,8 +64,8 @@ export const STADTSTUFEN: StadtStufeDef[] = [
     aufgaben: [],
     abgabe: {},
     geschenk: {},
-    steuerProzent: 0,
-    grenzen: { wohnen: 1, werkstatt: 1, handel: 1 },
+    haendlerRabatt: 0,
+    grenzen: { werkstatt: 1 },
   },
   {
     stufe: 2,
@@ -73,18 +73,17 @@ export const STADTSTUFEN: StadtStufeDef[] = [
     geschlecht: 'm',
     zeile: 'Ein Weiler. Die Ziege ist beeindruckt.',
     kapitelTitel: 'Die Steinplatte',
-    kapitel: 'Wir haben jetzt Wände. Echte Wände, mit Dächern obendrauf. Beim Graben für den Steinbruch stiess Jorinde '
+    kapitel: 'Wir haben jetzt Wände. Echte Wände, mit Dächern obendrauf. Beim Graben für die Schmiede stiess Jorinde '
       + 'auf eine Steinplatte mit alter Schrift: «Das Herz schläft unter dem Platz, bis die Stadt wieder eine Stadt ist.» '
       + 'Welches Herz? Welcher Platz? Ich habe die Platte poliert und neben mein Bett gestellt. Das nennt man Archivarbeit.',
     aufgaben: [
-      { art: 'gebaeude', typeId: 'QUARRY' },
-      { art: 'gebaeude', typeId: 'FARM_GRAIN' },
+      { art: 'gebaeude', typeId: 'SMITHY' },
       { art: 'siege', anzahl: 1 },
     ],
-    abgabe: { wood: 40 },
-    geschenk: { gold: 60 },
-    steuerProzent: 0,
-    grenzen: { wohnen: 2, werkstatt: 1, handel: 1 },
+    abgabe: { gold: 40 },
+    geschenk: { gold: 100 },
+    haendlerRabatt: 0,
+    grenzen: { werkstatt: 1 },
   },
   {
     stufe: 3,
@@ -96,15 +95,14 @@ export const STADTSTUFEN: StadtStufeDef[] = [
       + 'Woche brummt nachts der Boden unter dem Dorfplatz, leise und gleichmässig, wie eine sehr grosse Katze. '
       + 'Die Bäckerin sagt, das sei ihr Ofen. Ihr Ofen steht drei Strassen weiter.',
     aufgaben: [
-      { art: 'gebaeude', typeId: 'BAKERY' },
-      { art: 'gebaeude', typeId: 'IRON_MINE' },
-      { art: 'bewohner', anzahl: 10 },
+      { art: 'gebaeude', typeId: 'HERB_GARDEN' },
+      { art: 'helden', anzahl: 2 },
       { art: 'siege', anzahl: 3 },
     ],
-    abgabe: { wood: 80, stone: 30, gold: 50 },
-    geschenk: { gold: 120 },
-    steuerProzent: 0,
-    grenzen: { wohnen: 3, werkstatt: 2, handel: 1 },
+    abgabe: { gold: 80, iron_scrap: 10 },
+    geschenk: { gold: 150 },
+    haendlerRabatt: 0,
+    grenzen: { werkstatt: 2 },
   },
   {
     stufe: 4,
@@ -116,14 +114,14 @@ export const STADTSTUFEN: StadtStufeDef[] = [
       + 'Berg über dem Dungeon. Oben ist sie leer, nur ein Satz steht da, in krakeliger Schrift: «Hier geht es weiter. '
       + 'Wohin, wissen wir noch nicht.» Ich habe drei Gold dafür bezahlt. Der Händler wollte zwei.',
     aufgaben: [
-      { art: 'gebaeude', typeId: 'SMITHY' },
-      { art: 'gebaeude', typeId: 'MARKETPLACE' },
-      { art: 'bewohner', anzahl: 16 },
+      { art: 'gildenrang', rang: 2 },
+      { art: 'bosse', anzahl: 2 },
+      { art: 'helden', anzahl: 3 },
     ],
-    abgabe: { wood: 120, stone: 60, gold: 150, iron_scrap: 10 },
-    geschenk: {},
-    steuerProzent: 10,
-    grenzen: { wohnen: 4, werkstatt: 2, handel: 2 },
+    abgabe: { gold: 150, iron_scrap: 20, crystal_shard: 5 },
+    geschenk: { gold: 100 },
+    haendlerRabatt: 10,
+    grenzen: { werkstatt: 2 },
   },
   {
     stufe: 5,
@@ -137,12 +135,12 @@ export const STADTSTUFEN: StadtStufeDef[] = [
     aufgaben: [
       { art: 'gebaeude', typeId: 'ARCANE_SMITHY' },
       { art: 'bosse', anzahl: 3 },
-      { art: 'bewohner', anzahl: 22 },
+      { art: 'gildenrang', rang: 3 },
     ],
-    abgabe: { stone: 200, gold: 250, iron_scrap: 20, crystal_shard: 5 },
+    abgabe: { gold: 250, iron_scrap: 20, crystal_shard: 5 },
     geschenk: { gold: 200 },
-    steuerProzent: 10,
-    grenzen: { wohnen: 5, werkstatt: 3, handel: 2 },
+    haendlerRabatt: 10,
+    grenzen: { werkstatt: 3 },
   },
   {
     stufe: 6,
@@ -154,15 +152,15 @@ export const STADTSTUFEN: StadtStufeDef[] = [
       + 'liegt jetzt ein Kristall frei, gross wie ein Ochsenkarren, und er schlägt wie ein Herz. Langsam. Er will fünf '
       + 'Herzsteine, sagt er, von fünf alten Ungeheuern aus dem Dungeon. Ich habe eine Liste angelegt. Mit Kästchen zum Abhaken.',
     aufgaben: [
-      { art: 'gebaeude', typeId: 'BANK' },
+      { art: 'gebaeude', typeId: 'WAR_MACHINE_WORKSHOP' },
       { art: 'gildenrang', rang: 4 },
       { art: 'bosse', anzahl: 5 },
-      { art: 'bewohner', anzahl: 28 },
+      { art: 'helden', anzahl: 4 },
     ],
-    abgabe: { stone: 300, gold: 400, iron_scrap: 40, crystal_shard: 10 },
+    abgabe: { gold: 400, iron_scrap: 40, crystal_shard: 10 },
     geschenk: { gold: 300 },
-    steuerProzent: 10,
-    grenzen: { wohnen: 6, werkstatt: 3, handel: 3 },
+    haendlerRabatt: 10,
+    grenzen: { werkstatt: 3 },
     extra: ['Das Arkane Herz liegt frei: setze fünf Herzsteine ein'],
   },
   {
@@ -178,8 +176,8 @@ export const STADTSTUFEN: StadtStufeDef[] = [
     aufgaben: [{ art: 'herz' }],
     abgabe: {},
     geschenk: { gold: 500 },
-    steuerProzent: 20,
-    grenzen: { wohnen: 6, werkstatt: 3, handel: 3 },
+    haendlerRabatt: 20,
+    grenzen: { werkstatt: 3 },
   },
 ];
 
@@ -201,12 +199,12 @@ export interface HerzsteinDef {
 export const HERZSTEINE: HerzsteinDef[] = [
   {
     id: 'herz_spinne', name: 'Herzstein der Spinnenkönigin', bossId: 'boss_spider_queen',
-    kosten: { stone: 150, gold: 100 },
+    kosten: { gold: 100, iron_scrap: 10 },
     text: 'Klebt ein bisschen. Ich habe nicht gefragt, warum.',
   },
   {
     id: 'herz_hydra', name: 'Herzstein der Sumpfhydra', bossId: 'boss_swamp_hydra',
-    kosten: { wood: 200, gold: 150, crystal_shard: 3 },
+    kosten: { gold: 150, iron_scrap: 20, crystal_shard: 3 },
     text: 'Riecht nach Sumpf. Das Herz hat sich trotzdem bedankt.',
   },
   {
@@ -232,7 +230,7 @@ export function stufeDef(stufe: number): StadtStufeDef {
   return STADTSTUFEN[i];
 }
 
-/** Stadtstufe eines Spielstands; ältere Spielstände ohne Stadtweg stehen auf 1. */
+/** Stadtstufe eines Spielstands; Spielstände ohne Stadtweg stehen auf 1. */
 export function stadtStufeVon(state: Pick<GameState, 'stadtweg'>): number {
   const stufe = Number(state.stadtweg?.stufe);
   return Number.isFinite(stufe) ? Math.min(HOECHSTE_STADTSTUFE, Math.max(1, Math.floor(stufe))) : 1;

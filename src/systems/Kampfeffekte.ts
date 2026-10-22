@@ -59,8 +59,12 @@ function lebendig(units: CombatUnit[]): CombatUnit[] {
   return units.filter(u => u.hp > 0);
 }
 
-/** Setzt einen Bonus auf Angriff, Verteidigung oder Tempo, den ein Effekt gerade gibt (ersetzt den alten Wert) */
-function setzeBonus(unit: CombatUnit, quelle: string, stat: 'atk' | 'def' | 'spd', wert: number): void {
+/**
+ * Setzt einen Bonus auf Angriff, Verteidigung oder Tempo, den ein Effekt gerade gibt (ersetzt den alten Wert).
+ * Auch für die Tränke der Expedition (ExpeditionSystem.useProvision, Quelle 'trank'), damit sie wie Zorn
+ * und Schmiedetakt flach bleiben und das Sternenfeuer sie nicht mitskaliert.
+ */
+export function setzeBonus(unit: CombatUnit, quelle: string, stat: 'atk' | 'def' | 'spd', wert: number): void {
   const boni = unit.effektBoni ?? (unit.effektBoni = {});
   const schluessel = `${quelle}:${stat}`;
   const alt = boni[schluessel] ?? 0;

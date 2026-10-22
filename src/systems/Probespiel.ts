@@ -41,12 +41,13 @@ const STUFEN: Record<Exclude<ProbeStufe, 'neu'>, { bisEbene: number; sets: 'ster
 };
 
 /**
- * Vorräte für ein paar Aufstiege und etwas zum Bauen, dazu zum Ausprobieren der Schmiede
- * das Set des Magma-Wyrms (eine Klinge doppelt, zum Einschmelzen) und Glutkern für drei Stufen.
+ * Vorräte für ein paar Aufstiege und etwas zum Bauen (Gold, Eisenschrott und Kristallsplitter
+ * bezahlen die Werkstätten und ihren Ausbau), dazu zum Ausprobieren der Schmiede das Set des
+ * Magma-Wyrms (eine Klinge doppelt, zum Einschmelzen) und Glutkern für drei Stufen.
  */
 const PROBE_VORRAT: Record<string, number> = {
-  gold: 3000, wood: 400, stone: 250, bread: 30, healing_potion: 10, power_bread: 5,
-  set_wyrm_klinge: 2, set_wyrm_platte: 1, set_wyrm_amulett: 1, mat_glutkern: 60, crystal_shard: 10,
+  gold: 3000, iron_scrap: 150, crystal_shard: 30, bread: 30, healing_potion: 10, power_bread: 5,
+  set_wyrm_klinge: 2, set_wyrm_platte: 1, set_wyrm_amulett: 1, mat_glutkern: 60,
 };
 
 /** Ist die Seite mit ?probe geöffnet? */
@@ -70,7 +71,7 @@ export function probespielStufe(search: string): ProbeStufe {
 }
 
 /**
- * Macht aus einem neuen Spiel (Startgebäude und Bewohner schon gesetzt) das
+ * Macht aus einem neuen Spiel (Startgebäude schon gesetzt) das
  * Probespiel: Stadtstufe 7 mit allen Herzsteinen und gelesenen Kapiteln, die
  * vier Helden des Musterteams «Gut» (Gildenhaus ausgebaut, damit alle vier mitgehen),
  * dazu Vorräte und ein Set für die Schmiede.
@@ -93,8 +94,7 @@ export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu')
   if (gildenhaus) gildenhaus.tier = Math.max(gildenhaus.tier, BUILDING_UPGRADE_DEFS.GUILD_HALL_T2.toTier);
   state.guildStats.guildHallT2 = true;
 
-  // Wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire): Helden sind keine
-  // Bewohner (citizenId 0), alle Bewohner bleiben Arbeiter.
+  // Wie beim Anheuern im Heldenhaus (HeroesScreen.handleHire): citizenId 0, es gibt keine Bewohner.
   const team = oben ? MUSTER_TEAMS.stark : MUSTER_TEAMS.gut;
   for (const muster of team.helden) {
     const fighter = createGuildFighter(0, muster.classId, muster.name, musterWerte(muster));

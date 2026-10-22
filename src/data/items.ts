@@ -22,8 +22,12 @@ export interface ItemDef {
     spd?: number;
     critChance?: number;
   };
+  /** Vorräte: so viele Leben bekommt jeder lebende Held sofort. */
   healAmount?: number;
+  /** Vorräte: flacher Bonus für die Gruppe; durationRooms = Räume (99 = bis zum Ende des Dungeons). */
   buffEffect?: { stat: string; value: number; durationRooms: number };
+  /** Vorräte (PROVISION_ITEMS): die Wirkung als Halbsatz für die Anzeige («+3 Angriff bis zum Ende des Dungeons»). */
+  wirkungText?: string;
   tags: string[];
   productionSource?: 'expedition_only';
   tier?: number;
@@ -41,47 +45,34 @@ export interface ItemDef {
 }
 
 export const ITEM_DEFS: Record<string, ItemDef> = {
-  // --- Resources ---
-  wood: {
-    id: 'wood', name: 'Holz', type: 'resource',
-    stackSize: 100, baseValue: 1, tags: ['resource'],
-  },
-  stone: {
-    id: 'stone', name: 'Stein', type: 'resource',
-    stackSize: 100, baseValue: 2, tags: ['resource'],
-  },
-  grain: {
-    id: 'grain', name: 'Getreide', type: 'resource',
-    stackSize: 100, baseValue: 1, tags: ['resource', 'food'],
-  },
-  flour: {
-    id: 'flour', name: 'Mehl', type: 'resource',
-    stackSize: 100, baseValue: 2, tags: ['resource', 'food'],
-  },
+  // --- Beute aus den Dungeons, die die Werkstätten brauchen ---
   iron_scrap: {
     id: 'iron_scrap', name: 'Eisenschrott', type: 'resource',
     stackSize: 100, baseValue: 4, tags: ['resource', 'material'],
   },
   herb_green: {
     id: 'herb_green', name: 'Grüne Kräuter', type: 'resource',
-    stackSize: 100, baseValue: 2, tags: ['resource', 'herb', 'provision'],
+    stackSize: 100, baseValue: 2, tags: ['resource', 'herb'],
   },
 
-  // --- Consumables / Provisions ---
+  // --- Vorräte (vor einem Kampf genutzt, wirken auf die ganze lebende Gruppe; docs/GILDENSTADT.md) ---
   bread: {
     id: 'bread', name: 'Brot', type: 'consumable',
     stackSize: 100, baseValue: 3, healAmount: 8,
+    wirkungText: '+8 Leben, sofort',
     tags: ['consumable', 'food', 'provision'],
   },
   healing_potion: {
     id: 'healing_potion', name: 'Heiltrank', type: 'consumable',
     stackSize: 100, baseValue: 8, healAmount: 15,
+    wirkungText: '+15 Leben, sofort',
     tags: ['consumable', 'provision'],
   },
   power_bread: {
     id: 'power_bread', name: 'Kraft-Brot', type: 'consumable',
     stackSize: 100, baseValue: 6,
     buffEffect: { stat: 'atk', value: 2, durationRooms: 3 },
+    wirkungText: '+2 Angriff für die nächsten 3 Räume',
     tags: ['consumable', 'food', 'provision', 'buff'],
   },
 
@@ -390,35 +381,36 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['special', 'treasure'],
   },
 
-  // --- Baupläne (garantierter Boss-Drop beim ersten Sieg, schalten Gebäude frei) ---
+  // --- Baupläne: schalten Gebäude frei, beim Händler zu kaufen (data/haendler.ts), zwei davon auch
+  //     als garantierte Beute beim ersten Sieg über einen Boss (LootTableDef.ersterSiegBauplan) ---
   // Nicht verkaufbar (baseValue 0), nicht ausrüstbar (kein gearSlot). Wird beim Bau verbraucht.
+  bauplan_schmiede: {
+    id: 'bauplan_schmiede', name: 'Bauplan: Schmiede', type: 'special',
+    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
+    bauplanFuer: 'SMITHY',
+    tags: ['special', 'bauplan'],
+    flavorText: 'Esse, Amboss, Wasserbottich. Der Händler hat die Masse selbst nachgemessen, sagt er.',
+  },
+  bauplan_kraeuterkueche: {
+    id: 'bauplan_kraeuterkueche', name: 'Bauplan: Kräuterküche', type: 'special',
+    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
+    bauplanFuer: 'HERB_GARDEN',
+    tags: ['special', 'bauplan'],
+    flavorText: 'Ein Herd, drei Kessel und ein Regal für alles, was im Dungeon wächst. Am Rand ein Rezept gegen Kater.',
+  },
   bauplan_arkanschmiede: {
     id: 'bauplan_arkanschmiede', name: 'Bauplan: Arkanschmiede', type: 'special',
-    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
+    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
     bauplanFuer: 'ARCANE_SMITHY',
     tags: ['special', 'bauplan'],
     flavorText: 'Im Kern des Golems eingeschlossen: Runen, Maße und ein Funken Kristallglut.',
   },
-  bauplan_marktplatz: {
-    id: 'bauplan_marktplatz', name: 'Bauplan: Marktplatz', type: 'special',
-    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
-    bauplanFuer: 'MARKETPLACE',
-    tags: ['special', 'bauplan'],
-    flavorText: 'Zwischen den Wurzeln des Treants verborgen. Händler haben sich hier einst getroffen.',
-  },
   bauplan_kriegsmaschinen: {
     id: 'bauplan_kriegsmaschinen', name: 'Bauplan: Kriegsmaschinen-Werkstatt', type: 'special',
-    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
+    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
     bauplanFuer: 'WAR_MACHINE_WORKSHOP',
     tags: ['special', 'bauplan'],
     flavorText: 'Der Ritter trug die Pläne der alten Belagerungsgeräte bis ins Grab.',
-  },
-  bauplan_bank: {
-    id: 'bauplan_bank', name: 'Bauplan: Bank', type: 'special',
-    stackSize: 1, baseValue: 0, productionSource: 'expedition_only', spriteKey: 'ITEM_BAUPLAN',
-    bauplanFuer: 'BANK',
-    tags: ['special', 'bauplan'],
-    flavorText: 'Der Lich hortete nicht nur Seelen. Auch seine Schatzkammer war gut geplant.',
   },
 
   // --- Gold (tracked separately in globalStock but defined here for completeness) ---
@@ -460,13 +452,6 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['material', 'rare', 'magitech'],
   },
 
-  // --- Water (produced by well proximity) ---
-  water: {
-    id: 'water', name: 'Wasser', type: 'resource',
-    stackSize: 100, baseValue: 1,
-    tags: ['resource'],
-  },
-
   // --- Herbs (expedition drops) ---
   herb_fire_root: {
     id: 'herb_fire_root', name: 'Glutwurzel', type: 'resource',
@@ -499,33 +484,38 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['resource', 'herb', 'rare'],
   },
 
-  // --- Potions (alchemie crafting) ---
+  // --- Tränke der Kräuterküche (Wirkung: ExpeditionSystem.useProvision, docs/GILDENSTADT.md) ---
   potion_strength: {
     id: 'potion_strength', name: 'Krafttrank', type: 'consumable',
     stackSize: 100, baseValue: 12,
     buffEffect: { stat: 'atk', value: 3, durationRooms: 99 },
+    wirkungText: '+3 Angriff bis zum Ende des Dungeons',
     tags: ['consumable', 'provision', 'potion'],
   },
   potion_mana: {
     id: 'potion_mana', name: 'Manatrank', type: 'consumable',
     stackSize: 100, baseValue: 15,
+    wirkungText: 'alle Fähigkeiten sofort wieder bereit',
     tags: ['consumable', 'provision', 'potion', 'cooldown_reset'],
   },
   potion_antidote: {
     id: 'potion_antidote', name: 'Gegengift', type: 'consumable',
-    stackSize: 100, baseValue: 10,
+    stackSize: 100, baseValue: 10, healAmount: 5,
+    wirkungText: 'heilt Gift, dazu +5 Leben',
     tags: ['consumable', 'provision', 'potion', 'cleanse'],
   },
   potion_titan: {
     id: 'potion_titan', name: 'Titan-Gebräu', type: 'consumable',
     stackSize: 100, baseValue: 14,
     buffEffect: { stat: 'hp', value: 10, durationRooms: 99 },
+    wirkungText: '+10 höchste Leben (und +10 Leben) bis zum Ende des Dungeons',
     tags: ['consumable', 'provision', 'potion'],
   },
   potion_speed: {
     id: 'potion_speed', name: 'Schnelligkeitstrank', type: 'consumable',
     stackSize: 100, baseValue: 16,
     buffEffect: { stat: 'spd', value: 0.2, durationRooms: 2 },
+    wirkungText: '+0,2 Tempo für die nächsten 2 Räume',
     tags: ['consumable', 'provision', 'potion'],
   },
 
@@ -720,7 +710,8 @@ export function isBauplan(itemId: string): boolean {
   return ITEM_DEFS[itemId]?.tags.includes('bauplan') ?? false;
 }
 
+/** Vorräte für Expeditionen in Anzeige-Reihenfolge; jeder hat ein wirkungText. */
 export const PROVISION_ITEMS = [
-  'bread', 'healing_potion', 'power_bread', 'herb_green',
+  'bread', 'healing_potion', 'power_bread',
   'potion_strength', 'potion_mana', 'potion_antidote', 'potion_titan', 'potion_speed',
 ];

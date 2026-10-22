@@ -1,5 +1,5 @@
 import { GameState } from '../models/GameState';
-import { ExpeditionRun, CombatUnit, EncounterRoom, EncounterChoice } from '../models/ExpeditionRun';
+import { ExpeditionRun, CombatUnit, EncounterRoom, EncounterChoice, TrankWirkung } from '../models/ExpeditionRun';
 import { GuildFighter } from '../models/GuildRoster';
 import { ROUTE_DEFS } from '../data/routes';
 import { ITEM_DEFS } from '../data/items';
@@ -11,7 +11,7 @@ import { DIFFICULTY_DEFS } from '../data/difficulty';
 import { MODIFIER_DEFS } from '../data/modifiers';
 import { CombatEngine, bossWut, wutAbRunde } from './CombatEngine';
 import { EncounterProcessor } from './EncounterProcessor';
-import { expeditionsBeginn } from './Kampfeffekte';
+import { expeditionsBeginn, setzeBonus } from './Kampfeffekte';
 import { beuteNachBoss, chronikNachWahl, geschichteWirkt, geschichtsBeuteNachKampf, geschichtsWahlStellen, wirkungZeile } from './Geschichten';
 import { schmiedeStufen } from './Schmiede';
 
@@ -24,6 +24,12 @@ export const MERCHANT_PRICES: Record<string, number> = {
 
 /** Max. Käufe pro Händler */
 export const MERCHANT_MAX_PURCHASES = 2;
+
+/** «+3 Angriff», «+0,2 Tempo», «+10 maximale Leben»: der Wert einer Trank-Wirkung in Spielersprache */
+export function trankWertText(wirkung: Pick<TrankWirkung, 'stat' | 'wert'>): string {
+  const name = { atk: 'Angriff', spd: 'Tempo', maxHp: 'maximale Leben' }[wirkung.stat];
+  return `${wirkung.wert > 0 ? '+' : ''}${String(wirkung.wert).replace('.', ',')} ${name}`;
+}
 
 /**
  * Expedition orchestrator: start/advance/finalize expeditions.
@@ -139,10 +145,10 @@ export class ExpeditionSystem {
       // Legacy auto-fill
       provisions = this.provisionSystem.loadProvisions(state, 4, []);
     }
-    // Guaranteed safety net (gifted: consumed or lost, never returned to stock)
+    // Wegzehrung der Gilde: ein Brot und ein Heiltrank (gifted: verbraucht oder verloren, nie zurück ins Lager).
+    // Kraft-Brot gibt es nicht mehr geschenkt, es kommt aus der Kräuterküche (docs/GILDENSTADT.md).
     provisions.push({ itemId: 'healing_potion', qty: 1, gifted: true });
     provisions.push({ itemId: 'bread', qty: 1, gifted: true });
-    provisions.push({ itemId: 'power_bread', qty: 1, gifted: true });
 
     const rng = new SeededRNG(state.rngSeed++);
 
@@ -327,12 +333,14 @@ export class ExpeditionSystem {
     this.naechsterRaum(run);
   }
 
-  /** In den nächsten Raum; nach dem letzten ist die Expedition gewonnen. */
+  /** In den nächsten Raum; nach dem letzten ist die Expedition gewonnen. Beim Betreten laufen Tränke ab. */
   private naechsterRaum(run: ExpeditionRun): void {
     run.currentRoom++;
     if (run.currentRoom >= run.rooms.length) {
       run.status = 'victory';
+      return;
     }
+    this.traenkeVerdauen(run);
   }
 
   // ─── Feature #11: Encounter-Auswahl ─────────────────────────────
@@ -682,38 +690,123 @@ export class ExpeditionSystem {
     return true;
   }
 
+  // ─── Tränke mit Wirkung (docs/GILDENSTADT.md) ─────────────────
+
   /**
-   * Use a provision item during expedition. Applies healing effect and decrements qty.
+   * Vorrat vor einem Kampf nutzen. Jede Wirkung gilt für alle lebenden Helden, nie für die Kriegsmaschine.
+   * Brot und Heiltrank heilen sofort, Manatrank macht alle Fähigkeiten wieder bereit, Gegengift nimmt das
+   * Gift weg und heilt 5. Kraft-Brot und Schnelligkeitstrank geben einen flachen Bonus für die nächsten
+   * Räume (dieser Raum zählt mit), Krafttrank und Titan-Gebräu bis zum Ende des Dungeons.
+   * Ein Trank, der schon bis zum Ende wirkt, wird nicht noch einmal getrunken: der Vorrat bleibt. Ein
+   * Trank mit Raum-Dauer darf nachgetrunken werden, dann läuft die Dauer neu; stapeln tut er nie.
    */
   useProvision(state: GameState, index: number): void {
     const run = state.activeExpedition;
     if (!run || run.status !== 'exploring') return;
-    const used = this.provisionSystem.useProvision(run.provisions, index);
-    if (!used) return;
+    const slot = run.provisions[index];
+    if (!slot || slot.qty <= 0) return;
+    const itemDef = ITEM_DEFS[slot.itemId];
+    const name = itemDef?.name ?? slot.itemId;
 
-    // Apply effect based on item
-    const itemDef = ITEM_DEFS[used.itemId];
-    const itemTags: string[] = Array.isArray((itemDef as any)?.tags) ? (itemDef as any).tags : [];
-
-    // Air restoration (emergency_air, air_crystal)
-    if (itemTags.includes('air_restore') && run.airShield !== undefined) {
-      const airRestore = 40;
-      run.airShield = Math.min(run.airShieldMax ?? 100, run.airShield + airRestore);
-      run.combatLog.push(`💨 ${itemDef?.name ?? used.itemId}! Luftschild +${airRestore} Luft.`);
-    } else if (itemDef && 'healAmount' in itemDef) {
-      const heal = (itemDef as { healAmount: number }).healAmount;
-      for (const unit of run.party) {
-        if (unit.hp > 0) {
-          unit.hp = Math.min(unit.maxHp, unit.hp + heal);
-        }
-      }
-      run.combatLog.push(`>> ${itemDef.name} eingesetzt! Party heilt ${heal} HP.`);
-    } else {
-      run.combatLog.push(`>> ${itemDef?.name ?? used.itemId} eingesetzt!`);
+    const bestehend = run.trankWirkungen?.find(w => w.itemId === slot.itemId);
+    if (bestehend && bestehend.bisRaum === undefined) {
+      run.combatLog.push(`>> ${name} wirkt schon bis zum Ende des Dungeons – der Vorrat bleibt.`);
+      return;
     }
 
-    // Remove empty provision slots
+    const used = this.provisionSystem.useProvision(run.provisions, index);
+    if (!used) return;
+    const tags = itemDef?.tags ?? [];
+    const trinker = run.party.filter(u => u.hp > 0 && !u.isWarMachine);
+
+    if (tags.includes('air_restore') && run.airShield !== undefined) {
+      // Luft (Notluft, Luftkristall) auf Unterwasser-Routen
+      const airRestore = 40;
+      run.airShield = Math.min(run.airShieldMax ?? 100, run.airShield + airRestore);
+      run.combatLog.push(`💨 ${name}! Luftschild +${airRestore} Luft.`);
+    } else if (itemDef?.buffEffect) {
+      this.trankTrinken(run, slot.itemId, itemDef.buffEffect, bestehend, trinker);
+    } else if (tags.includes('cooldown_reset')) {
+      for (const unit of trinker) {
+        for (const skill of unit.skills) skill.currentCooldown = 0;
+        delete run.abilitiesUsed[unit.id];
+      }
+      run.combatLog.push(`>> ${name}: Alle Fähigkeiten sind wieder bereit.`);
+    } else if (tags.includes('cleanse')) {
+      const heal = 5;
+      for (const unit of trinker) {
+        unit.gift = undefined;
+        unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+      }
+      run.combatLog.push(`>> ${name}: Das Gift ist weg, die Gruppe heilt ${heal} Leben.`);
+    } else if (itemDef?.healAmount) {
+      const heal = itemDef.healAmount;
+      for (const unit of trinker) unit.hp = Math.min(unit.maxHp, unit.hp + heal);
+      run.combatLog.push(`>> ${name}: Die Gruppe heilt ${heal} Leben.`);
+    } else {
+      run.combatLog.push(`>> ${name} eingesetzt!`);
+    }
+
+    // Leere Vorratsplätze weg
     run.provisions = run.provisions.filter(p => p.qty > 0);
+  }
+
+  /**
+   * Trank oder Kraft-Brot mit Dauer: Bonus auf Angriff, Tempo oder maximale Leben für alle Trinker, die
+   * ihn noch nicht haben, und die Dauer neu setzen. Reicht die Dauer ohnehin bis zum letzten Raum (in
+   * items.ts steht dafür 99), gilt der Trank bis zum Ende des Dungeons und wird nicht nachgetrunken.
+   */
+  private trankTrinken(
+    run: ExpeditionRun,
+    itemId: string,
+    buff: { stat: string; value: number; durationRooms: number },
+    bestehend: TrankWirkung | undefined,
+    trinker: CombatUnit[],
+  ): void {
+    const stat: TrankWirkung['stat'] = buff.stat === 'hp' ? 'maxHp' : buff.stat === 'spd' ? 'spd' : 'atk';
+    const bisZumEnde = run.currentRoom + buff.durationRooms >= run.rooms.length;
+    const wirkung: TrankWirkung = bestehend ?? { itemId, stat, wert: buff.value, helden: [] };
+    if (!bestehend) (run.trankWirkungen ??= []).push(wirkung);
+    wirkung.bisRaum = bisZumEnde ? undefined : run.currentRoom + buff.durationRooms;
+    for (const unit of trinker) {
+      if (wirkung.helden.includes(unit.id)) continue; // hat ihn schon: stapelt nicht
+      wirkung.helden.push(unit.id);
+      this.trankBonus(unit, wirkung, 1);
+    }
+    const name = ITEM_DEFS[itemId]?.name ?? itemId;
+    const dauer = bisZumEnde
+      ? 'bis zum Ende des Dungeons'
+      : buff.durationRooms === 1 ? 'für diesen Raum' : `für die nächsten ${buff.durationRooms} Räume`;
+    run.combatLog.push(`>> ${name}: ${trankWertText(wirkung)} ${dauer}.`);
+  }
+
+  /** Gibt (richtung 1) oder nimmt (richtung -1) einem Helden den Bonus einer Trank-Wirkung */
+  private trankBonus(unit: CombatUnit, wirkung: TrankWirkung, richtung: 1 | -1): void {
+    if (wirkung.stat === 'maxHp') {
+      unit.maxHp += wirkung.wert * richtung;
+      unit.hp = richtung > 0 ? unit.hp + wirkung.wert : Math.min(unit.hp, unit.maxHp);
+      return;
+    }
+    const alt = unit.effektBoni?.[`trank:${wirkung.stat}`] ?? 0;
+    setzeBonus(unit, 'trank', wirkung.stat, Math.round((alt + wirkung.wert * richtung) * 100) / 100);
+  }
+
+  /** Beim Betreten eines Raums: Wirkungen, deren Dauer um ist, zurücknehmen («Kraft-Brot ist verdaut.») */
+  private traenkeVerdauen(run: ExpeditionRun): void {
+    if (!run.trankWirkungen?.length) return;
+    const bleiben: TrankWirkung[] = [];
+    for (const wirkung of run.trankWirkungen) {
+      if (wirkung.bisRaum === undefined || run.currentRoom < wirkung.bisRaum) {
+        bleiben.push(wirkung);
+        continue;
+      }
+      for (const unit of run.party) {
+        if (wirkung.helden.includes(unit.id)) this.trankBonus(unit, wirkung, -1);
+      }
+      const def = ITEM_DEFS[wirkung.itemId];
+      run.combatLog.push(`>> ${def?.name ?? wirkung.itemId} ist ${def?.tags.includes('food') ? 'verdaut' : 'verflogen'}.`);
+    }
+    run.trankWirkungen = bleiben;
   }
 
   // ─── Pre-Combat Ability Use ────────────────────────────────────
