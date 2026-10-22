@@ -22,6 +22,8 @@ import { naechsterBau } from '../../systems/Empfehlung';
 import { BUILDING_DEFS } from '../../data/buildings';
 import { engpaesseDerStadt } from '../../systems/EngpassSystem';
 import { maxStufe, kannAusbauen } from '../../systems/Ausbau';
+import { tagesBilanz, reichtTage, TagesBilanz, BilanzPosten } from '../../systems/Tagesbilanz';
+import '../html/tagesbilanz.css';
 
 export type ProduktionZiel = 'expeditions' | 'heroes' | 'aufbau';
 
@@ -106,10 +108,68 @@ function stufeText(s: GebaeudeStatus): string {
   return s.anzahl > 0 && maxStufe(s.typeId) > 1 ? `Stufe ${s.stufe}` : '';
 }
 
-function chips(state: GameState): string {
-  return LAGER_CHIPS.map(item =>
-    `<span class="pk-chip" data-item="${item}"><b>${Math.floor(state.globalStock[item] ?? 0)}</b> ${itemName(item)}</span>`,
-  ).join('');
+function chips(state: GameState, bilanz: TagesBilanz): string {
+  return LAGER_CHIPS.map(item => {
+    const zahl = bilanzZahl(bilanz.waren[item]?.bilanz ?? 0);
+    const klein = zahl ? ` <small class="tb-klein${zahl.startsWith('−') ? ' minus' : ''}">${zahl}</small>` : '';
+    return `<span class="pk-chip" data-item="${item}"><b>${Math.floor(state.globalStock[item] ?? 0)}</b> ${itemName(item)}${klein}</span>`;
+  }).join('');
+}
+
+// ── Tagesbilanz (systems/Tagesbilanz.ts) ────────────────────────
+
+const WAREN_SYMBOL: Record<string, string> = {
+  gold: '💰', wood: '🪵', stone: '🪨', grain: '🌾', flour: '🫓', bread: '🍞',
+  iron_scrap: '⚙️', crystal_shard: '💎', herb_green: '🌿', healing_potion: '⚗️', power_bread: '🍞',
+};
+
+/** «+12», «−1,4» (eine Nachkommastelle), leer bei 0. */
+export function bilanzZahl(n: number): string {
+  const r = Math.round(n * 10) / 10;
+  if (r === 0) return '';
+  return `${r > 0 ? '+' : '−'}${String(Math.abs(r)).replace('.', ',')}`;
+}
+
+function tageText(tage: number): string {
+  return `reicht ${tage} ${tage === 1 ? 'Tag' : 'Tage'}`;
+}
+
+/** Waren in fester Reihenfolge: Gold, die Vorräte des Lagers, dann der Rest. */
+function bilanzWaren(bilanz: TagesBilanz): string[] {
+  const rest = Object.keys(bilanz.waren).filter(i => !LAGER_CHIPS.includes(i)).sort();
+  return ['gold', ...LAGER_CHIPS.filter(i => bilanz.waren[i]), ...rest];
+}
+
+function bilanzWert(bilanz: TagesBilanz, item: string): number {
+  return item === 'gold' ? bilanz.gold.gesamt : bilanz.waren[item]?.bilanz ?? 0;
+}
+
+/** Zeile «Pro Tag:» mit einem Chip je Ware, deren Bilanz nicht 0 ist. */
+export function bilanzZeileHTML(state: GameState, bilanz: TagesBilanz): string {
+  const chipsHTML = bilanzWaren(bilanz).map(item => {
+    const wert = bilanzWert(bilanz, item);
+    const zahl = bilanzZahl(wert);
+    if (!zahl) return '';
+    const tage = reichtTage(state.globalStock[item] ?? 0, wert);
+    const reicht = tage === null ? '' : ` <small>· ${tageText(tage)}</small>`;
+    const symbol = WAREN_SYMBOL[item] ?? itemName(item);
+    return `<span class="tb-chip${wert < 0 ? ' minus' : ''}" data-bilanz="${item}" tabindex="0" `
+      + `aria-label="${itemName(item)} pro Tag">${symbol} ${zahl}${reicht}</span>`;
+  }).join('');
+  return `<b class="tb-titel">Pro Tag:</b>${chipsHTML || '<span class="tb-leer">noch nichts</span>'}`;
+}
+
+/** Erklärung zu einem Chip der Tagesbilanz: die Posten. */
+export function bilanzTipp(state: GameState, item: string): { titel: string; zeilen: string[] } {
+  const bilanz = tagesBilanz(state);
+  const posten: BilanzPosten[] = item === 'gold'
+    ? [{ quelle: 'Steuern', menge: bilanz.gold.steuern }, { quelle: 'Bank', menge: bilanz.gold.bank }]
+    : bilanz.waren[item]?.posten ?? [];
+  const zeilen = posten.filter(p => bilanzZahl(p.menge)).map(p => `${p.quelle} ${bilanzZahl(p.menge)}`);
+  const wert = bilanzWert(bilanz, item);
+  const tage = reichtTage(state.globalStock[item] ?? 0, wert);
+  if (tage !== null) zeilen.push(`Im Lager ${Math.floor(state.globalStock[item] ?? 0)}, ${tageText(tage)}.`);
+  return { titel: `${item === 'gold' ? 'Gold' : itemName(item)} pro Tag: ${bilanzZahl(wert) || '0'}`, zeilen };
 }
 
 function kartenKlasse(s: GebaeudeStatus, lager: boolean, empfohlen: boolean): string {
@@ -121,7 +181,9 @@ function fluss(id: string): string {
   return text ? `<div class="pk-fluss">${text}</div>` : '';
 }
 
-function gebaeudeKarte(state: GameState, typeId: string, bild: Bild, breit: boolean, empfohlen: string | null): string {
+function gebaeudeKarte(
+  state: GameState, typeId: string, bild: Bild, breit: boolean, empfohlen: string | null, bilanz: TagesBilanz,
+): string {
   const s = getGebaeudeStatus(state, typeId);
   const stufe = stufeText(s);
   const knopf = `tabindex="0" role="button" aria-label="${gebaeudeName(typeId)}"`;
@@ -133,7 +195,7 @@ function gebaeudeKarte(state: GameState, typeId: string, bild: Bild, breit: bool
           <div class="pk-nm">${gebaeudeName(typeId)}</div>
           <div class="pk-st">${s.text}</div>
         </div>
-        <div class="pk-chips">${chips(state)}</div>
+        <div class="pk-chips">${chips(state, bilanz)}</div>
       </div>`;
   }
   return `
@@ -172,8 +234,8 @@ function zielKarte(state: GameState, k: Extract<NetzKnoten, { art: 'ziel' }>): s
     </div>`;
 }
 
-function knotenHTML(state: GameState, k: NetzKnoten, bild: Bild, empfohlen: string | null): string {
-  if (k.art === 'gebaeude') return gebaeudeKarte(state, k.typeId, bild, !!k.breit, empfohlen);
+function knotenHTML(state: GameState, k: NetzKnoten, bild: Bild, empfohlen: string | null, bilanz: TagesBilanz): string {
+  if (k.art === 'gebaeude') return gebaeudeKarte(state, k.typeId, bild, !!k.breit, empfohlen, bilanz);
   if (k.art === 'quelle') return quellenKarte(state, k);
   return zielKarte(state, k);
 }
@@ -196,10 +258,11 @@ const SVG_DEFS = `
 
 export function renderProduktionTab(state: GameState, bild: Bild): string {
   const empfohlen = naechsterBau(state)?.typeId ?? null;
+  const bilanz = tagesBilanz(state);
   const reihen = NETZ_REIHEN.map(r => `
     <section class="pk-reihe" data-reihe="${r.id}">
       <div class="pk-kopf"><h3>${r.titel}</h3><small>${r.untertitel}</small></div>
-      <div class="pk-row">${r.knoten.map(k => knotenHTML(state, k, bild, empfohlen)).join('')}</div>
+      <div class="pk-row">${r.knoten.map(k => knotenHTML(state, k, bild, empfohlen, bilanz)).join('')}</div>
     </section>`).join('');
   return `
     <div class="pk">
@@ -210,6 +273,7 @@ export function renderProduktionTab(state: GameState, bild: Bild): string {
           <span class="nur-touch">Lange drücken zeigt kurz, wofür ein Gebäude gut ist.</span>
           Golden umrandet: das Gebäude, das sich als Nächstes lohnt.</p>
         <div class="pk-engpaesse">${engpaesseHTML(state)}</div>
+        <div class="tb-zeile">${bilanzZeileHTML(state, bilanz)}</div>
       </div>
       <div class="pk-rahmen">
         <div class="pk-netz">
@@ -365,14 +429,16 @@ function setText(el: Element | null, text: string): void {
   if (el && el.textContent !== text) el.textContent = text;
 }
 
-function aktualisiereKarte(karte: HTMLElement, s: GebaeudeStatus, state: GameState, empfohlen: string | null): void {
+function aktualisiereKarte(
+  karte: HTMLElement, s: GebaeudeStatus, state: GameState, empfohlen: string | null, bilanz: TagesBilanz,
+): void {
   const lager = karte.classList.contains('pk-lager');
   const cls = kartenKlasse(s, lager, !lager && empfohlen === s.typeId);
   if (karte.className !== cls) karte.className = cls;
   setText(karte.querySelector('.pk-st'), s.text);
   if (lager) {
     const chipsEl = karte.querySelector('.pk-chips');
-    const neu = chips(state);
+    const neu = chips(state, bilanz);
     if (chipsEl && chipsEl.innerHTML !== neu) chipsEl.innerHTML = neu;
     return;
   }
@@ -393,8 +459,9 @@ function aktualisiereKarte(karte: HTMLElement, s: GebaeudeStatus, state: GameSta
 
 export function aktualisiereProduktionTab(panel: HTMLElement, state: GameState): void {
   const empfohlen = naechsterBau(state)?.typeId ?? null;
+  const bilanz = tagesBilanz(state);
   panel.querySelectorAll<HTMLElement>('.pk-karte[data-type-id]').forEach(karte => {
-    aktualisiereKarte(karte, getGebaeudeStatus(state, karte.dataset.typeId!), state, empfohlen);
+    aktualisiereKarte(karte, getGebaeudeStatus(state, karte.dataset.typeId!), state, empfohlen, bilanz);
   });
   panel.querySelectorAll<HTMLElement>('.pk-quelle[data-quelle]').forEach(karte => {
     const k = netzKnoten(karte.dataset.quelle!);
@@ -410,6 +477,11 @@ export function aktualisiereProduktionTab(panel: HTMLElement, state: GameState):
   if (eng) {
     const neu = engpaesseHTML(state);
     if (eng.innerHTML !== neu) eng.innerHTML = neu;
+  }
+  const zeile = panel.querySelector('.tb-zeile');
+  if (zeile) {
+    const neu = bilanzZeileHTML(state, bilanz);
+    if (zeile.innerHTML !== neu) zeile.innerHTML = neu;
   }
   zeichneKanten(panel, state);
 }
@@ -451,8 +523,9 @@ function escape(t: string): string {
 function zeigeTipp(panel: HTMLElement, el: HTMLElement, state: GameState): void {
   const tip = panel.querySelector('.pk-tip') as HTMLElement | null;
   const id = el.dataset.knoten;
-  if (!tip || !id) return;
-  const e = erklaerung(state, id);
+  const ware = el.dataset.bilanz;
+  if (!tip || (!id && !ware)) return;
+  const e = ware ? bilanzTipp(state, ware) : erklaerung(state, id!);
   tip.innerHTML = `<b>${escape(e.titel)}</b>${e.zeilen.map(z => `<span>${escape(z)}</span>`).join('')}`;
   tip.hidden = false;
   // Unter die Karte, sonst darüber; immer ganz im Fenster
@@ -472,6 +545,9 @@ function versteckeTipp(panel: HTMLElement): void {
 
 // ── Klicks ──────────────────────────────────────────────────────
 
+/** Kästen mit Erklärung: Karten der Mindmap und Chips der Tagesbilanz. */
+const TIPP_ZIEL = '[data-knoten], [data-bilanz]';
+
 /** Langes Drücken (Touch) zeigt die Erklärung statt zu öffnen. */
 const LANG_DRUECKEN_MS = 450;
 
@@ -485,15 +561,15 @@ export function bindProduktionTab(panel: HTMLElement, state: GameState, cb: Prod
 
   panel.addEventListener('pointerover', (e) => {
     if (e.pointerType === 'touch') return;
-    const el = (e.target as HTMLElement).closest('[data-knoten]') as HTMLElement | null;
+    const el = (e.target as HTMLElement).closest(TIPP_ZIEL) as HTMLElement | null;
     if (el && !el.contains(e.relatedTarget as Node | null)) zeigeTipp(panel, el, state);
   });
   panel.addEventListener('pointerout', (e) => {
-    const el = (e.target as HTMLElement).closest('[data-knoten]') as HTMLElement | null;
+    const el = (e.target as HTMLElement).closest(TIPP_ZIEL) as HTMLElement | null;
     if (el && !el.contains(e.relatedTarget as Node | null)) versteckeTipp(panel);
   });
   panel.addEventListener('focusin', (e) => {
-    const el = (e.target as HTMLElement).closest('[data-knoten]') as HTMLElement | null;
+    const el = (e.target as HTMLElement).closest(TIPP_ZIEL) as HTMLElement | null;
     if (el) zeigeTipp(panel, el, state);
   });
   panel.addEventListener('focusout', () => versteckeTipp(panel));
@@ -504,7 +580,7 @@ export function bindProduktionTab(panel: HTMLElement, state: GameState, cb: Prod
     klickSchlucken = false;
     versteckeTipp(panel);
     if (e.pointerType !== 'touch') return;
-    const el = (e.target as HTMLElement).closest('[data-knoten]') as HTMLElement | null;
+    const el = (e.target as HTMLElement).closest(TIPP_ZIEL) as HTMLElement | null;
     if (!el) return;
     stopDruck();
     druckTimer = window.setTimeout(() => {
@@ -516,12 +592,12 @@ export function bindProduktionTab(panel: HTMLElement, state: GameState, cb: Prod
   panel.addEventListener('pointerup', stopDruck);
   panel.addEventListener('pointercancel', stopDruck);
   panel.addEventListener('contextmenu', (e) => {
-    if ((e.target as HTMLElement).closest('[data-knoten]')) e.preventDefault();
+    if ((e.target as HTMLElement).closest(TIPP_ZIEL)) e.preventDefault();
   });
 
   panel.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter' && e.key !== ' ') return;
-    const el = (e.target as HTMLElement).closest('[data-knoten]') as HTMLElement | null;
+    const el = (e.target as HTMLElement).closest(TIPP_ZIEL) as HTMLElement | null;
     if (!el) return;
     e.preventDefault();
     el.click();

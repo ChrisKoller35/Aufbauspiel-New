@@ -7,6 +7,7 @@ import { brotProTag } from '../src/systems/PeopleSystem';
 import { EconomySystem } from '../src/systems/EconomySystem';
 import { tagesBilanz, reichtTage } from '../src/systems/Tagesbilanz';
 import { auftragGeben } from '../src/systems/Auftraege';
+import { bilanzZahl, bilanzZeileHTML, bilanzTipp } from '../src/ui/screens/ProduktionTab';
 
 /** Leere Stadt mit `bewohner` Bewohnern (ohne Startgebäude). */
 function stadt(bewohner = 0): GameState {
@@ -135,5 +136,34 @@ describe('Tagesbilanz: Werkstätten und Gold', () => {
     expect(reichtTage(10, -1.5)).toBe(6);
     expect(reichtTage(0, -1)).toBe(0);
     expect(reichtTage(10, 2)).toBeNull();
+  });
+});
+
+describe('Tagesbilanz: Anzeige im Reiter «Produktion»', () => {
+  it('Zahlen mit einer Nachkommastelle, Komma und echtem Minus', () => {
+    expect(bilanzZahl(12)).toBe('+12');
+    expect(bilanzZahl(-1.43)).toBe('−1,4');
+    expect(bilanzZahl(0.04)).toBe('');
+  });
+
+  it('Zeile «Pro Tag:»: Chip je Ware, rot mit «reicht» bei minus', () => {
+    const state = stadt(13);
+    baue(state, 'LUMBER_CAMP');
+    state.globalStock.bread = 9;
+    const html = bilanzZeileHTML(state, tagesBilanz(state));
+    expect(html).toContain('Pro Tag:');
+    expect(html).toContain('🪵 +6');
+    expect(html).toMatch(/class="tb-chip minus" data-bilanz="bread"/);
+    expect(html).toContain(`reicht ${Math.floor(9 / brotProTag(state.citizens.length))} Tage`);
+    // Ohne Bilanz kein Chip
+    expect(html).not.toContain('data-bilanz="stone"');
+  });
+
+  it('Erklärung des Chips nennt die Posten', () => {
+    const state = stadt();
+    brotkette(state);
+    const tipp = bilanzTipp(state, 'bread');
+    expect(tipp.zeilen[0]).toBe('Bäckerei +2,1');
+    expect(tipp.zeilen[1]).toBe(`Bewohner ${bilanzZahl(-brotProTag(state.citizens.length))}`);
   });
 });
