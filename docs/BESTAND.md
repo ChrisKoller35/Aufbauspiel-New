@@ -3,6 +3,26 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 22.10.2026: Bot-Nacht übernommen, Erfolge sofort, Knopf «Neues Spiel»
+
+Die vier Bot-Aufträge der Nacht (Erfolge #34, Spielstand sichern #35, Marktplatz-Handel #36, Tagesbilanz #37) sind
+auf master und in PR #29 nachgebessert: Erfolge sind alle erreichbar (ein Musterspiel mit den echten Regeln schafft
+alle 37) und zählen gleich nach der Tat, 🏅 in der Kopfzeile (🏆 bleibt dem Trophäensaal); das Fenster «💾 Spielstand»
+hält den Stand vor dem Laden einer Datei auf einem eigenen Platz und holt ihn zurück, prüft Dateien streng und hat den
+Knopf «Neues Spiel» mit Nachfrage und Rückweg; der Markt verkauft das Brot der Bewohner nicht; die Tagesbilanz rechnet
+nach den Werkstatt-Regeln und mit der echten Dauer eines Zyklus. Offen: Die Produktion braucht je Zyklus eine Sekunde
+Leertakt (10-s-Rezept alle 11 s), die Anzeigen rechnen das mit; ob er wegkommt, ist Christophs Entscheidung.
+Anleitungen: `docs/ERFOLGE.md`, `docs/SPIELSTAND.md`, `docs/HANDEL.md`, `docs/TAGESBILANZ.md`.
+
+## Nachtrag 21.10.2026 (abends): Wege geeicht, Werkstätten auf Auftrag, Gildenhaus
+
+Alle 20 Wege der Helden bringen etwa gleich viel (+2,5 % auf Stufe 12, +4 % als Meister) und zeigen im Kampf, im
+Bericht und im Heldenfenster, was sie bewirken (`docs/SPEZIALISIERUNG.md`). Die sechs Werkstätten arbeiten nur noch auf
+Auftrag («+ AUFTRAG» im Reiter «Crafting»), fehlende Zutaten holt die Stadt selbst, die Bäckerei hält zuerst Brot für
+3 Tage; der Brunnen steht in der Mindmap zwischen Kräutergarten und Bäckerei (`docs/WERKSTAETTEN.md`). Neu im Hauptmenü
+die Kachel «Gildenhaus» mit Auftragsbrett (drei Zettel am Tag, Kette «Der Saal der Gilde», Siegel einlösen) und
+Trophäensaal mit einem Sockel je Boss (`docs/AUFTRAGSBRETT.md`).
+
 ## Nachtrag 21.10.2026: Zwei Dungeons zwischen den Sternen
 
 Über dem Himmelsarchiv geht die Karte in einem violetten Sternenfeld weiter: die Sternenschmiede (Ebene 7,
