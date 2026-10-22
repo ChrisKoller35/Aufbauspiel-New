@@ -1,27 +1,47 @@
 import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { SaveSystem, nutzeProbespiel, pruefeSpielstandText, spielstandDateiname } from './SaveSystem';
+import { SaveSystem, hebeSperreNachLadenAuf, nutzeProbespiel, pruefeSpielstandText, spielstandDateiname } from './SaveSystem';
 import { createNewGameState, GameState } from '../models/GameState';
-import { createBuildingInstance } from '../models/Building';
+import { createBuildingInstance, resetBuildingIdCounter } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
 import { createGuildFighter } from '../models/GuildRoster';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { BUILDING_DEFS } from '../data/buildings';
+import { brettKurz } from './Auftragsbrett';
 
 const SAVE_KEY = 'magic_city_save';
 
-/** Minimal in-memory localStorage for the node test environment. */
-function createMemoryStorage(): Storage {
+/**
+ * Minimal in-memory localStorage for the node test environment. With `grenze` (characters of all
+ * values together) setItem throws a QuotaExceededError like a full browser storage.
+ */
+function createMemoryStorage(grenze = Infinity): Storage {
   const data = new Map<string, string>();
+  const belegt = () => [...data.values()].reduce((summe, v) => summe + v.length, 0);
   return {
     get length() { return data.size; },
     clear: () => data.clear(),
     getItem: (key: string) => data.get(key) ?? null,
     key: (index: number) => [...data.keys()][index] ?? null,
     removeItem: (key: string) => { data.delete(key); },
-    setItem: (key: string, value: string) => { data.set(key, String(value)); },
+    setItem: (key: string, value: string) => {
+      if (belegt() - (data.get(key)?.length ?? 0) + String(value).length > grenze) {
+        throw Object.assign(new Error('The quota has been exceeded.'), { name: 'QuotaExceededError' });
+      }
+      data.set(key, String(value));
+    },
   };
+}
+
+/** Alle Plätze im Speicher, die mit `vorne` beginnen (zum Vergleichen vorher/nachher). */
+function plaetze(vorne: string): Record<string, string> {
+  const alle: Record<string, string> = {};
+  for (let i = 0; i < localStorage.length; i++) {
+    const key = localStorage.key(i)!;
+    if (key.startsWith(vorne)) alle[key] = localStorage.getItem(key)!;
+  }
+  return alle;
 }
 
 function placeBuilding(state: GameState, typeId: string, x: number, y: number) {
@@ -38,6 +58,18 @@ function placeBuilding(state: GameState, typeId: string, x: number, y: number) {
 /** Stores a raw (old-format) state as save without going through save(). */
 function writeRawSave(state: GameState): void {
   localStorage.setItem(SAVE_KEY, JSON.stringify(state));
+}
+
+/** Stand von Tag 12 mit Holzfällerhütte, zwei Helden und Stadtstufe 3. */
+function standMitHelden(): GameState {
+  const state = createNewGameState();
+  placeBuilding(state, 'LUMBER_CAMP', 5, 5);
+  const held = createGuildFighter(0, 'guardian', 'Brom', { hp: 50, maxHp: 50, atk: 8, def: 4, spd: 1, critChance: 0, critMult: 1.5 });
+  held.level = 4;
+  state.fighters.push(held, createGuildFighter(0, 'ranger', 'Lia', { hp: 30, maxHp: 30, atk: 9, def: 1, spd: 1, critChance: 0, critMult: 1.5 }));
+  state.day = 12;
+  state.stadtweg = { stufe: 3, herzsteine: [], gelesen: 0 };
+  return state;
 }
 
 describe('SaveSystem', () => {
@@ -221,19 +253,9 @@ describe('SaveSystem – Spielstand herunterladen und laden', () => {
   beforeEach(() => {
     vi.stubGlobal('localStorage', createMemoryStorage());
     vi.spyOn(console, 'log').mockImplementation(() => {});
+    hebeSperreNachLadenAuf(); // jeder Test ist eine frisch geladene Seite
   });
   afterEach(() => nutzeProbespiel(false));
-
-  function standMitHelden(): GameState {
-    const state = createNewGameState();
-    placeBuilding(state, 'LUMBER_CAMP', 5, 5);
-    const held = createGuildFighter(0, 'guardian', 'Brom', { hp: 50, maxHp: 50, atk: 8, def: 4, spd: 1, critChance: 0, critMult: 1.5 });
-    held.level = 4;
-    state.fighters.push(held, createGuildFighter(0, 'ranger', 'Lia', { hp: 30, maxHp: 30, atk: 9, def: 1, spd: 1, critChance: 0, critMult: 1.5 }));
-    state.day = 12;
-    state.stadtweg = { stufe: 3, herzsteine: [], gelesen: 0 };
-    return state;
-  }
 
   it('herunterladen und wieder laden ergibt denselben Spielstand', () => {
     const saveSystem = new SaveSystem();
@@ -247,8 +269,8 @@ describe('SaveSystem – Spielstand herunterladen und laden', () => {
 
     expect(ergebnis).toEqual({ ok: true, zusammenfassung: { tag: 12, stadtstufe: 3, helden: 2, hoechsteHeldenstufe: 4 } });
     expect(saveSystem.load()).toEqual(state);
-    // Der bisherige Stand bleibt als Sicherung
-    expect(saveSystem.loadBackup()?.day).toBe(1);
+    // Der bisherige Stand liegt auf dem Platz vor dem Laden
+    expect(saveSystem.standVorLaden()?.zusammenfassung.tag).toBe(1);
   });
 
   it('lehnt kaputtes JSON, fremde Dateien und neuere Versionen mit Grund ab', () => {
@@ -314,5 +336,221 @@ describe('SaveSystem – Spielstand herunterladen und laden', () => {
     expect(geladen.buildings.every(b => b.built && !b.eventPaused)).toBe(true);
     expect(geladen.fighters[0].gearNeedsRepair).toBe(false);
     expect(schwertBonus(geladen.fighters[0])).toBe(vollerBonus);
+  });
+});
+
+describe('SaveSystem – Stand vor dem Laden', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    hebeSperreNachLadenAuf();
+  });
+  afterEach(() => nutzeProbespiel(false));
+
+  /** Bisheriger Stand von Tag 1, dann eine Datei von Tag 12 geladen und die Seite neu geladen. */
+  function dateiGeladen(): SaveSystem {
+    const saveSystem = new SaveSystem();
+    saveSystem.save(createNewGameState());
+    expect(saveSystem.schreibeSpielstandText(JSON.stringify(standMitHelden())).ok).toBe(true);
+    hebeSperreNachLadenAuf(); // location.reload()
+    return saveSystem;
+  }
+
+  it('bleibt, auch wenn das Spiel danach oft speichert und gleich beim Start neue Zettel würfelt', () => {
+    const saveSystem = dateiGeladen();
+    const state = saveSystem.load()!;
+    // main.ts: neue Zettel am Auftragsbrett gleich beim Start speichern, dann alle 60 s, F5, nach Expeditionen
+    brettKurz(state, Date.now());
+    for (let i = 0; i < 5; i++) expect(saveSystem.save(state)).toBe(true);
+
+    const vorLaden = saveSystem.standVorLaden()!;
+    expect(vorLaden.zusammenfassung).toEqual({ tag: 1, stadtstufe: 1, helden: 0, hoechsteHeldenstufe: 0 });
+    expect(vorLaden.gesichertAm).toBeGreaterThan(0);
+    // Die Sicherung, die save() bei jedem Speichern schreibt, ist längst der geladene Stand
+    expect(JSON.parse(localStorage.getItem('magic_city_save_backup')!).day).toBe(12);
+  });
+
+  it('nach dem Schreiben speichert und schreibt nichts mehr, bis die Seite neu lädt', () => {
+    const saveSystem = new SaveSystem();
+    const laufend = createNewGameState();
+    saveSystem.save(laufend);
+    const datei = JSON.stringify(standMitHelden());
+    expect(saveSystem.schreibeSpielstandText(datei).ok).toBe(true);
+    const nachDemLaden = plaetze('magic_city');
+
+    laufend.day = 99;
+    expect(saveSystem.save(laufend)).toBe(false); // Speichern alle 60 s bis zum Neuladen
+    expect(saveSystem.schreibeSpielstandText(datei)).toEqual({ ok: false, grund: 'Das Spiel startet gerade neu.' }); // Doppelklick
+    expect(saveSystem.holeStandVorLadenZurueck()).toEqual({ ok: false, grund: 'Das Spiel startet gerade neu.' });
+
+    expect(plaetze('magic_city')).toEqual(nachDemLaden);
+    expect(saveSystem.standVorLaden()?.zusammenfassung.tag).toBe(1);
+  });
+
+  it('Zurückholen tauscht die beiden Stände und lässt sich selbst wieder zurückholen', () => {
+    const saveSystem = dateiGeladen();
+
+    expect(saveSystem.holeStandVorLadenZurueck()).toEqual({ ok: true });
+    expect(saveSystem.save(createNewGameState())).toBe(false); // gesperrt bis zum Neuladen
+    hebeSperreNachLadenAuf();
+    expect(saveSystem.load()!.day).toBe(1);
+    expect(saveSystem.standVorLaden()?.zusammenfassung.tag).toBe(12);
+
+    expect(saveSystem.holeStandVorLadenZurueck()).toEqual({ ok: true });
+    hebeSperreNachLadenAuf();
+    expect(saveSystem.load()!.day).toBe(12);
+    expect(saveSystem.standVorLaden()?.zusammenfassung.tag).toBe(1);
+  });
+
+  it('ohne Stand vor dem Laden gibt es nichts zurückzuholen', () => {
+    const saveSystem = new SaveSystem();
+    saveSystem.save(createNewGameState());
+
+    expect(saveSystem.standVorLaden()).toBeNull();
+    expect(saveSystem.holeStandVorLadenZurueck()).toEqual({ ok: false, grund: 'Es gibt keinen Stand vor dem Laden.' });
+  });
+
+  it('das Probespiel hat einen eigenen Platz vor dem Laden und lässt den richtigen Spielstand in Ruhe', () => {
+    dateiGeladen();
+    const richtig = plaetze('magic_city_save');
+    expect(Object.keys(richtig).sort()).toEqual(['magic_city_save', 'magic_city_save_vor_laden', 'magic_city_save_vor_laden_zeit']);
+
+    nutzeProbespiel();
+    const probe = new SaveSystem();
+    probe.save(createNewGameState());
+    expect(probe.standVorLaden()).toBeNull();
+    expect(probe.schreibeSpielstandText(JSON.stringify(standMitHelden())).ok).toBe(true);
+    hebeSperreNachLadenAuf();
+    expect(probe.standVorLaden()?.zusammenfassung.tag).toBe(1);
+    expect(probe.holeStandVorLadenZurueck().ok).toBe(true);
+
+    expect(plaetze('magic_city_save')).toEqual(richtig);
+    expect(JSON.parse(localStorage.getItem('magic_city_probe')!).day).toBe(1);
+    expect(JSON.parse(localStorage.getItem('magic_city_probe_vor_laden')!).day).toBe(12);
+  });
+
+  it('ist der Speicher voll, bleibt alles, wie es war, und das Spiel speichert weiter', () => {
+    const bisher = JSON.stringify({ ...createNewGameState(), day: 5 });
+    const aelter = JSON.stringify({ ...createNewGameState(), day: 2 });
+    const gross = JSON.stringify({ ...standMitHelden(), polster: 'p'.repeat(3 * bisher.length) });
+    vi.stubGlobal('localStorage', createMemoryStorage(bisher.length * 3 + 100));
+    localStorage.setItem('magic_city_save', bisher);
+    localStorage.setItem('magic_city_save_vor_laden', aelter);
+    localStorage.setItem('magic_city_save_vor_laden_zeit', '1000');
+    const vorher = plaetze('magic_city');
+    const saveSystem = new SaveSystem();
+
+    expect(saveSystem.schreibeSpielstandText(gross)).toEqual({ ok: false, grund: 'Der Browser hat keinen Platz, um den Spielstand zu speichern.' });
+
+    expect(plaetze('magic_city')).toEqual(vorher);
+    expect(saveSystem.save(createNewGameState())).toBe(true); // keine Sperre nach einem Fehler
+  });
+});
+
+describe('pruefeSpielstandText – nur Dateien, mit denen das Spiel auch startet', () => {
+  const BESCHAEDIGT = { ok: false, grund: 'Die Datei ist beschädigt.' };
+  const KEINE_DATEI = { ok: false, grund: 'Das ist keine Magic-City-Datei.' };
+
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+    vi.spyOn(console, 'warn').mockImplementation(() => {});
+    hebeSperreNachLadenAuf();
+  });
+
+  /** Ein Stand wie frisch heruntergeladen (aktuelle Version), den `aendern` verdirbt. */
+  function datei(aendern: (s: Record<string, any>) => void = () => {}): string {
+    const saveSystem = new SaveSystem();
+    const state = standMitHelden();
+    state.buildings[0].vonSelbst = { art: 'vorrat', fuer: 'wood' };
+    state.fighters[0].wegBilanz = { schaden: 12 };
+    saveSystem.save(state);
+    const s = JSON.parse(saveSystem.spielstandText()!);
+    localStorage.clear();
+    aendern(s);
+    return JSON.stringify(s);
+  }
+
+  it('ein echter Stand besteht, ohne dass etwas gespeichert wird oder sich die ID-Zähler ändern', () => {
+    const text = datei();
+    resetBuildingIdCounter(500);
+    expect(pruefeSpielstandText(text)).toEqual({ ok: true, zusammenfassung: { tag: 12, stadtstufe: 3, helden: 2, hoechsteHeldenstufe: 4 } });
+    expect(localStorage.length).toBe(0);
+    expect(createBuildingInstance('WELL', 0, 0).id).toBe(500);
+  });
+
+  it('Helden, Gebäude und Bewohner müssen Objekte mit einer Zahl als id sein (sonst startet das Spiel nicht)', () => {
+    expect(pruefeSpielstandText(datei(s => { s.fighters = [{}]; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.fighters = [null]; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.buildings = [null]; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.buildings[0].id = '1'; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.citizens = [{ status: 'IDLE' }]; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { delete s.fighters[0].gear; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.fighters[0].baseStats = { hp: 5 }; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.fighters[1].level = '7'; }))).toEqual(BESCHAEDIGT);
+  });
+
+  it('die neuen Felder (Gildenhaus, Rangliste, Schmiede …) dürfen fehlen, aber nicht falsch geformt sein', () => {
+    const neu = ['geschichten', 'bezwungen', 'rangliste', 'schmiede', 'auftragsbrett', 'trophaeen'];
+    expect(pruefeSpielstandText(datei(s => {
+      for (const feld of neu) delete s[feld];
+      delete s.buildings[0].vonSelbst;
+      delete s.fighters[0].wegBilanz;
+    })).ok).toBe(true);
+
+    const falsch: Record<string, (s: Record<string, any>) => void> = {
+      geschichten: s => { s.geschichten = { gelesen: [] }; },
+      bezwungen: s => { s.bezwungen = ['forest_short']; },
+      rangliste: s => { s.rangliste = { runde: 0 }; },
+      schmiede: s => { s.schmiede = { stufen: [3] }; },
+      auftragsbrett: s => { s.auftragsbrett = {}; },
+      trophaeen: s => { s.trophaeen = { siege: null }; },
+      vonSelbst: s => { s.buildings[0].vonSelbst = { art: 'immer', fuer: 'wood' }; },
+      wegBilanz: s => { s.fighters[0].wegBilanz = { schaden: 'viel' }; },
+    };
+    for (const [feld, aendern] of Object.entries(falsch)) {
+      expect(pruefeSpielstandText(datei(aendern)), feld).toEqual(BESCHAEDIGT);
+    }
+  });
+
+  it('das Probe-Laden fängt ab, was erst beim Laden scheitern würde', () => {
+    // Fehlt die Arbeiterliste, scheitert loeseHeldenBindungen (main.ts): Das Spiel begänne still von vorn
+    expect(pruefeSpielstandText(datei(s => { delete s.buildings[0].assignedWorkerIds; }))).toEqual(BESCHAEDIGT);
+    // Eine unterbrochene Expedition ohne Proviant lässt sich beim Start nicht abbrechen
+    expect(pruefeSpielstandText(datei(s => { s.activeExpedition = {}; }))).toEqual(BESCHAEDIGT);
+    // Unbekannte Gebäude-Art: alte Stände bereinigt migrate, ein aktueller bliebe stehen
+    expect(pruefeSpielstandText(datei(s => { s.buildings[0].typeId = 'BANK_V2'; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { s.buildings[0].typeId = 'BANK_V2'; s.saveVersion = 19; })).ok).toBe(true);
+  });
+
+  it('Tag und Version müssen Zahlen sein', () => {
+    expect(pruefeSpielstandText(datei(s => { s.day = '12'; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei(s => { delete s.day; }))).toEqual(BESCHAEDIGT);
+    expect(pruefeSpielstandText(datei().replace('"day":12', '"day":1e999'))).toEqual(BESCHAEDIGT);
+    for (const version of ['23', 'abc', 1.5, -1, true]) {
+      expect(pruefeSpielstandText(datei(s => { s.saveVersion = version; })), String(version)).toEqual(KEINE_DATEI);
+    }
+    // Sehr alte Stände haben keine Version: load() hebt sie an
+    expect(pruefeSpielstandText(datei(s => { delete s.saveVersion; })).ok).toBe(true);
+  });
+
+  it('Texte mit < > oder " werden abgelehnt, sie würden im Spiel zu HTML', () => {
+    const html: Record<string, (s: Record<string, any>) => void> = {
+      Tag: s => { s.day = '<img src=x onerror="alert(1)">'; },
+      Heldenname: s => { s.fighters[0].name = '<img src=x onerror=alert(1)>Brom'; },
+      'Gegenstand im Lager': s => { s.globalStock['x" onmouseover="alert(1)'] = 1; },
+      'von selbst für': s => { s.buildings[0].vonSelbst.fuer = 'wood"><b>'; },
+      'unbekanntes Feld': s => { s.notiz = '<script>alert(1)</script>'; },
+    };
+    for (const [wo, aendern] of Object.entries(html)) {
+      expect(pruefeSpielstandText(datei(aendern)), wo).toEqual(BESCHAEDIGT);
+    }
+  });
+
+  it('wirft nie, auch nicht bei seltsamen Dateien', () => {
+    for (const text of ['[]', '42', '"text"', '{"grid":[],"buildings":[],"globalStock":[],"citizens":[],"fighters":[]}']) {
+      expect(pruefeSpielstandText(text), text).toEqual(KEINE_DATEI);
+    }
+    expect(pruefeSpielstandText(datei(s => { s.grid = [[{ buildingId: 'a' }]]; }))).toEqual(BESCHAEDIGT);
   });
 });
