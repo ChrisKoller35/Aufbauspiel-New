@@ -1,5 +1,5 @@
-import { describe, it, expect, beforeEach, vi } from 'vitest';
-import { SaveSystem } from './SaveSystem';
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
+import { SaveSystem, nutzeProbespiel, pruefeSpielstandText, spielstandDateiname } from './SaveSystem';
 import { createNewGameState, GameState } from '../models/GameState';
 import { createBuildingInstance } from '../models/Building';
 import { createCitizen } from '../models/Citizen';
@@ -214,5 +214,105 @@ describe('SaveSystem – die endlose Treppe ist weg', () => {
 
     expect(zweimal.globalStock['gold']).toBe(140);
     expect(zweimal.globalStock['wood']).toBe(15);
+  });
+});
+
+describe('SaveSystem – Spielstand herunterladen und laden', () => {
+  beforeEach(() => {
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    vi.spyOn(console, 'log').mockImplementation(() => {});
+  });
+  afterEach(() => nutzeProbespiel(false));
+
+  function standMitHelden(): GameState {
+    const state = createNewGameState();
+    placeBuilding(state, 'LUMBER_CAMP', 5, 5);
+    const held = createGuildFighter(0, 'guardian', 'Brom', { hp: 50, maxHp: 50, atk: 8, def: 4, spd: 1, critChance: 0, critMult: 1.5 });
+    held.level = 4;
+    state.fighters.push(held, createGuildFighter(0, 'ranger', 'Lia', { hp: 30, maxHp: 30, atk: 9, def: 1, spd: 1, critChance: 0, critMult: 1.5 }));
+    state.day = 12;
+    state.stadtweg = { stufe: 3, herzsteine: [], gelesen: 0 };
+    return state;
+  }
+
+  it('herunterladen und wieder laden ergibt denselben Spielstand', () => {
+    const saveSystem = new SaveSystem();
+    const state = standMitHelden();
+    saveSystem.save(state);
+    const datei = saveSystem.spielstandText()!;
+
+    vi.stubGlobal('localStorage', createMemoryStorage());
+    saveSystem.save(createNewGameState());
+    const ergebnis = saveSystem.schreibeSpielstandText(datei);
+
+    expect(ergebnis).toEqual({ ok: true, zusammenfassung: { tag: 12, stadtstufe: 3, helden: 2, hoechsteHeldenstufe: 4 } });
+    expect(saveSystem.load()).toEqual(state);
+    // Der bisherige Stand bleibt als Sicherung
+    expect(saveSystem.loadBackup()?.day).toBe(1);
+  });
+
+  it('lehnt kaputtes JSON, fremde Dateien und neuere Versionen mit Grund ab', () => {
+    expect(pruefeSpielstandText('{ kaputt')).toEqual({ ok: false, grund: 'Die Datei lässt sich nicht lesen.' });
+    expect(pruefeSpielstandText('{"name":"Einkaufsliste","grid":[]}')).toEqual({ ok: false, grund: 'Das ist keine Magic-City-Datei.' });
+    expect(pruefeSpielstandText('null')).toEqual({ ok: false, grund: 'Das ist keine Magic-City-Datei.' });
+    const neuer = { ...createNewGameState(), saveVersion: 999 };
+    expect(pruefeSpielstandText(JSON.stringify(neuer))).toEqual({ ok: false, grund: 'Diese Datei ist von einer neueren Version des Spiels.' });
+
+    // Abgelehnt wird nichts geschrieben
+    const saveSystem = new SaveSystem();
+    expect(saveSystem.schreibeSpielstandText(JSON.stringify(neuer)).ok).toBe(false);
+    expect(saveSystem.hasSave()).toBe(false);
+  });
+
+  it('nimmt einen alten Stand (Version 19) an und hebt ihn beim Laden an', () => {
+    const alt = standMitHelden();
+    alt.saveVersion = 19;
+    const saveSystem = new SaveSystem();
+
+    expect(saveSystem.schreibeSpielstandText(JSON.stringify(alt)).ok).toBe(true);
+    const geladen = saveSystem.load()!;
+
+    expect(geladen.saveVersion).toBe(23);
+    expect(geladen.day).toBe(12);
+  });
+
+  it('im Probespiel schreibt Laden unter magic_city_probe und lässt magic_city_save in Ruhe', () => {
+    localStorage.setItem(SAVE_KEY, 'richtiger Spielstand');
+    nutzeProbespiel();
+
+    expect(new SaveSystem().schreibeSpielstandText(JSON.stringify(standMitHelden())).ok).toBe(true);
+
+    expect(localStorage.getItem(SAVE_KEY)).toBe('richtiger Spielstand');
+    expect(JSON.parse(localStorage.getItem('magic_city_probe')!).day).toBe(12);
+    expect(spielstandDateiname(12, new Date(2026, 9, 2))).toBe('magic-city-probespiel-12-2026-10-02.json');
+    nutzeProbespiel(false);
+    expect(spielstandDateiname(12, new Date(2026, 9, 2))).toBe('magic-city-tag-12-2026-10-02.json');
+  });
+
+  it('ein alter Stand verliert Unwetter-Pause, Reparatur-Merker und Bau-Zustand', () => {
+    const state = createNewGameState();
+    state.saveVersion = 19;
+    const huette = placeBuilding(state, 'LUMBER_CAMP', 5, 5);
+    huette.eventPaused = true;
+    const imBau = placeBuilding(state, 'WELL', 10, 10);
+    imBau.built = false;
+    imBau.buildProgress = 3;
+    state.activeEvent = { eventId: 'storm', remainingSec: 30, pausedBuildingId: huette.id };
+    const held = createGuildFighter(0, 'guardian', 'Brom', { hp: 50, maxHp: 50, atk: 8, def: 4, spd: 1, critChance: 0, critMult: 1.5 });
+    held.gear.mainHand = 'iron_sword';
+    const schwertBonus = (f: typeof held) => new GearSystem().getEffectiveStats(f).atk - f.baseStats.atk;
+    const vollerBonus = schwertBonus(held);
+    held.gearNeedsRepair = true;
+    expect(schwertBonus(held)).toBeLessThan(vollerBonus);
+    state.fighters.push(held);
+    writeRawSave(state);
+
+    const geladen = new SaveSystem().load()!;
+
+    expect(geladen.activeEvent).toBeNull();
+    expect(geladen.buildings).toHaveLength(2);
+    expect(geladen.buildings.every(b => b.built && !b.eventPaused)).toBe(true);
+    expect(geladen.fighters[0].gearNeedsRepair).toBe(false);
+    expect(schwertBonus(geladen.fighters[0])).toBe(vollerBonus);
   });
 });
