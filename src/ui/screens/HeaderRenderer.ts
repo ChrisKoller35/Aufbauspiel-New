@@ -136,13 +136,18 @@ export function renderHeader(
   const label = currentLabel
     ? `<span class="hdr-cur">${currentLabel}</span>`
     : '';
+  // Ein laufender Hinweis bleibt stehen, wenn sich der Bildschirm neu zeichnet (z. B. gleich nach dem Bauen)
+  const note = hinweisTimer !== null && letzterHinweis.text
+    ? `<span class="hdr-note" role="status">${letzterHinweis.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`
+    : '';
 
   return `
-    <div class="hdr">
+    <div class="hdr${note ? ' hdr-mit-hinweis' : ''}">
       ${backBtn}
       <span class="hdr-logo">⚔ MAGIC CITY</span>
       ${sep}
       ${label}
+      ${note}
       <div class="hdr-space"></div>
       <div class="res">
         <span>\uD83E\uDE99 ${gold.toLocaleString('de')}</span>
