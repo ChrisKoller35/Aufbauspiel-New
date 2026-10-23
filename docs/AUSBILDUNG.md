@@ -13,7 +13,12 @@ Stile in `src/ui/html/ausbildung.css`. Tests: `tests/heldenAusbildung.test.ts`.
 - Höchststufe 15. Von Stufe N auf N+1 braucht ein Held `30 + (N − 1) · 20` XP, bis Stufe 15 zusammen 2240 XP.
 - `fighter.xp` ist die Gesamt-XP. **Auf Stufe 15 gehen keine XP mehr verloren:** Alles über 2240 ist
   «Überschuss» (`ueberschuss(fighter) = fighter.xp − 2240`). Der Spielstand braucht dafür kein neues Feld.
-- Heldenkarte und Heldenfenster zeigen auf Stufe 15 «Stufe 15 · 720 XP Überschuss» statt «MAX».
+- Auf Stufe 15 zeigt die Heldenkarte «Lv 15» und darunter «720 XP Überschuss», das Heldenfenster
+  «Stufe 15 · 720 XP Überschuss», beide statt «MAX».
+- Fehlen einem Helden in einer Spielstand-Datei Name, Stufe oder XP (das Schema verlangt sie nicht), ergänzt
+  das Laden sie (`ergaenzeHelden` in `src/systems/SaveSystem.ts`): den Namen der Klasse, die Stufe aus den XP,
+  die XP vom Beginn der Stufe. Ein Held auf Stufe 15 hat dann 0 XP Überschuss statt «NaN», und das Lehrbuch
+  gibt nie NaN weiter.
 - Der Überschuss ändert keine Werte und nicht die Stufe, also auch nicht den Meister-Stand des Wegs
   (`docs/SPEZIALISIERUNG.md`).
 
@@ -70,8 +75,14 @@ Im Reiter «Trainieren» erscheint das Lehrbuch, sobald ein Held auf Stufe 15 is
   bleibt beim Lehrer für den nächsten Schüler. Der Lehrer fällt nie unter Stufe 15.
 - **Beispiel:** Ein Ranger auf Stufe 9 lernt von einem Guardian mit 800 XP Überschuss. Die Vorschau zeigt
   «+800 XP → Stufe 9 auf 12»: 190 XP bis Stufe 10, 210 bis 11, 230 bis 12, 170 bleiben in Stufe 12.
-- Doppelklick: Der erste Klick sperrt den Knopf, danach nimmt das Lehrbuch 0,6 s lang keinen Klick an, und
-  `lehrbuchLernen` prüft selbst, ob noch Überschuss da ist. Danach wird gespeichert (`mc:speichern`).
+  Reichen die XP für keinen Aufstieg, steht dort zum Beispiel «+36 XP → bleibt auf Stufe 5 (noch 74 XP bis
+  Stufe 6)»; die Meldung nach dem Lernen sagt es gleich.
+- Doppelklick: Die Meldung erscheint unter «Lernen», und «Lernen» bleibt stehen, auch wenn die Vorschau
+  länger wird. Der erste Klick sperrt den Knopf, danach nimmt das Lehrbuch 0,6 s lang keinen Klick an, auch
+  nicht auf Lehrer und Schüler. Der zweite Klick eines Doppelklicks verpufft (`schluckeZweitenKlick`), auch
+  wenn doch etwas rückt (ein Schüler erreicht Stufe 15 und wird Lehrer). Der Fokus bleibt auf «Lernen» bzw.
+  auf der Meldung. `lehrbuchLernen` prüft selbst, ob noch Überschuss da ist. Danach wird gespeichert
+  (`mc:speichern`).
 - Erreicht ein Guardian über das Lehrbuch Stufe 5, wird der Paladin frei wie beim Training.
 
 ### Was das Lehrbuch bringt (20 echte Expeditionen)
@@ -93,9 +104,14 @@ dabei nur XP weiter, die der Meister selbst nicht mehr nutzen kann.
 Der Reiter «Anheuern» zeigt alle zehn Klassen:
 
 - **Freie Klassen** mit «Anheuern» zum Preis aus `anheuerKosten` (`src/systems/Empfehlung.ts`: der zweite
-  Held 50 Gold, jeder weitere 30 mehr). Startklassen tragen «von Anfang an».
+  Held 50 Gold, jeder weitere 30 mehr). Startklassen tragen «von Anfang an». Angeheuert wird sofort
+  gespeichert.
 - **Gesperrte Klassen** mit Rolle, Grundwerten und jeder Bedingung samt Fortschritt.
-- **Klassen, die schon in der Gilde sind**, am Ende mit «Schon in deiner Gilde».
+- **Klassen, die schon in der Gilde sind**, am Ende mit «Schon in deiner Gilde», Startklassen mit
+  «von Anfang an · ✓ Schon in deiner Gilde».
+- Die Kopfzeile nennt den Preis nur, solange es etwas anzuheuern gibt. Sonst steht dort «Alle Klassen sind
+  schon in deiner Gilde» oder, solange noch Klassen gesperrt sind, «Alle freien Klassen sind schon in
+  deiner Gilde».
 
 Den Fortschritt rechnet `fortschritt(state, classId)` in `ClassUnlockSystem.ts`. `checkUnlocks` schaltet mit
 genau dieser Rechnung frei, Anzeige und Freischaltung können also nicht auseinanderlaufen.
