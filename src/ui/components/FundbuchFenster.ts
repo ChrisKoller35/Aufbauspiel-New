@@ -75,10 +75,11 @@ function woherZeilen(f: Fundorte, stand: Fortschritt): string[] {
   for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
   for (const s of f.jedenSieg) z.push(`Jeder Sieg in ${dungeonLink(s.routeId, stand)} · ${s.menge} Stück`);
   // Zeilenform aus dem Auftrag: «‹Gegner› · 35 % je Sieg über ihn · Ø 1,4 je Sieg in ‹Dungeon›»; die Zeilen
-  // eines Dungeons stehen beisammen (Ø gilt für den ganzen Dungeon), dazu Anzahl im Dungeon und Menge
+  // eines Dungeons stehen beisammen (Ø gilt für den ganzen Dungeon), dazu Anzahl im Dungeon und Menge.
+  // Nach «Ø» ein geschütztes Leerzeichen, damit die Zahl nicht allein auf die nächste Zeile rutscht
   for (const d of f.dungeons) {
     const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg `
-      + `über ihn, ${mengeText(g.minQty, g.maxQty)} Stück · Ø ${zahlText(d.jeSieg)} je Sieg in ${dungeonLink(d.routeId, stand)}</li>`).join('');
+      + `über ihn, ${mengeText(g.minQty, g.maxQty)} Stück · Ø\u00a0${zahlText(d.jeSieg)} je Sieg in ${dungeonLink(d.routeId, stand)}</li>`).join('');
     z.push(`<ul class="fb-gegner">${gegner}</ul>`);
   }
   for (const r of f.fundRaeume) {
@@ -126,7 +127,7 @@ function regelText(f: Fundorte): string {
   const saetze: string[] = [];
   if (f.dungeons.length) {
     saetze.push('Jeder besiegte Gegner gibt Gold und einen Wurf aus seiner Beute: meist einen Gegenstand, manchmal '
-      + 'stattdessen noch mehr Gold. «Ø je Sieg» zählt die Beute aller Gegner des Dungeons zusammen.');
+      + 'stattdessen noch mehr Gold. «Ø\u00a0je Sieg» zählt die Beute aller Gegner des Dungeons zusammen.');
   }
   if (f.jedenSieg.length) {
     saetze.push('Schmiede-Material kommt nach jeder Expedition in die Truhe: nach einem Sieg die volle Menge, '
@@ -153,7 +154,7 @@ function dungeonSeite(routeId: string, stand: Fortschritt): string {
   const material = materialJeSieg(routeId);
   const schmiede = material
     ? abschnitt('Schmiede-Material', [`${itemLink(material.material.id)} · ${material.menge} Stück je Sieg`], '') : '';
-  const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø ${zahlText(b.jeSieg)} je Sieg`);
+  const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø\u00a0${zahlText(b.jeSieg)} je Sieg`);
   return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name" tabindex="-1">${esc(route.name)}</h2>
       <span class="fb-gruppe">Dungeon · Ebene ${route.tier}</span></div></header>${sperre}${schmiede}
     ${abschnitt('Beute der Gegner', zeilen, 'Hier lassen die Gegner keine Gegenstände fallen.')}`;
@@ -220,6 +221,9 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
     eintrag.scrollTop = 0;
     // Am Handy steht der Eintrag unter der Liste: dorthin springen
     if (wie !== 'start' && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
+    // Der zweite Klick eines Doppelklicks (auch Doppeltipp) träfe sonst, was jetzt an derselben Stelle liegt,
+    // etwa einen anderen Link der neuen Seite, und spränge gleich weiter
+    if (wie !== 'start') schluckeZweitenKlick();
     // Der gedrückte Knopf im Eintrag ist eben ersetzt worden, der Fokus bleibt trotzdem im Eintrag (Tastatur):
     // nach einem Sprung auf «← zurück», nach «← zurück» auf dem Link, über den man gegangen war
     if (wie === 'link') eintrag.querySelector<HTMLElement>('.fb-zurueck')?.focus({ preventScroll: true });

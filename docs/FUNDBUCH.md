@@ -33,7 +33,8 @@ aus seiner Tabelle, meist einen Gegenstand.** Gezogen wird gewichtet, die Menge 
 Die Zeile im Fenster hat die bestellte Form «‹Gegner› · P % je Sieg über ihn · Ø X je Sieg in ‹Dungeon›», dazu
 die Anzahl im Dungeon und die Menge, z. B. «Armbrustschütze (5×) · 45 % je Sieg über ihn, 2–5 Stück · Ø 24,7 je
 Sieg in Die Festung». Die Zeilen eines Dungeons stehen beisammen, ohne Strich dazwischen: Ø gilt für den ganzen
-Dungeon und steht darum in jeder seiner Zeilen gleich.
+Dungeon und steht darum in jeder seiner Zeilen gleich. Zahlen haben ein Komma; nach «Ø» und vor «%» steht ein
+geschütztes Leerzeichen, damit am Handy keine Zahl ohne ihr Zeichen auf die nächste Zeile rutscht.
 
 Weitere Quellen:
 
@@ -72,7 +73,9 @@ man ein Ziel hat.
 **Bedienung:** Am PC schliessen Escape, ✕ und ein Klick neben das Fenster; Tab bleibt im Fenster, auch vom
 Suchfeld aus. Nach einem Sprung über einen Link steht der Fokus auf «← zurück», nach «← zurück» wieder auf dem
 Link, über den man gegangen war. F5 speichert wie überall im Spiel, auch im Suchfeld (`main.ts`). Der zweite Klick
-eines Doppelklicks auf «📜 Fundbuch» geht ins Leere (`schluckeZweitenKlick`). Am Handy steht die Liste über dem
+eines Doppelklicks (am Handy eines Doppeltipps) geht ins Leere (`schluckeZweitenKlick`): auf «📜 Fundbuch», weil
+er sonst schon das offene Fenster träfe, und auf einem Link, «← zurück» oder einem Listeneintrag, weil er sonst
+auf der neuen Seite einen anderen Link träfe und gleich weiterspränge. Am Handy steht die Liste über dem
 Eintrag, das Fenster scrollt als Ganzes, ✕ bleibt dabei oben rechts stehen, und jeder Link ist mindestens
 44 × 44 px gross.
 
@@ -109,12 +112,16 @@ mehr als Eintrag oder Gruppe auftaucht und der Reiter «Aufbau» keinen «Wo?»-
   | Vulkankern | Glutwurzel | 857,1 | 809 |
 
 - **Rastplätze:** 30 000 Besuche mit dem echten `processRest` und `SeededRNG(778)`: «Kräuter sammeln» kommt in
-  1/3 der Besuche (± 2 Prozentpunkte), immer mit 2 Grünen Kräutern. Die Rastplätze im Fundbuch sind genau die
-  Räume `type: 'rest'` ohne `wahl`, bei allen anderen Einträgen steht keiner.
+  1/3 der Besuche (± 2 Prozentpunkte), immer mit 2 Grünen Kräutern. Dazu jeder Rastplatz jedes Dungeons in den
+  Räumen, die `startExpedition` baut, 60-mal mit `processRest` besucht: Kommt ein Gegenstand dort mal und mal
+  nicht, ist es die Zufallswahl. Genau diese Rastplätze nennt das Fundbuch, bei jedem Eintrag; zurzeit bietet ein
+  Rastplatz nur Grüne Kräuter an.
 - **Schmiede:** «Jeder Sieg» ist je Dungeon genau die Menge, die `schmiedeBeute` nach einem Sieg in die Truhe legt
   (Sternenstahl: Sternenschlund 10, Sternenschmiede 9; Mondsilber: Morgentor 12, Mondhof 11), und jedes solche
-  Material ist ein Eintrag. «Einschmelzen» ist `einschmelzenErtrag` jedes Set-Teils. Die Mengen unter «Wofür» sind
-  für jedes schmiedbare Set-Teil und jede Stufe +1 bis +5 genau die Material- und Splitter-Kosten von `schmiedeKosten`.
+  Material ist ein Eintrag. «Einschmelzen» nennt bei jedem Eintrag genau die Sets, deren Teile beim Einschmelzen
+  dieses Material bringen, mit der Menge von `einschmelzenErtrag` (jedes Teil eines Sets bringt gleich viel). Die
+  Mengen unter «Wofür» sind für jedes schmiedbare Set-Teil und jede Stufe +1 bis +5 genau die Material- und
+  Splitter-Kosten von `schmiedeKosten`.
 
 ## Was nicht drinsteht, und warum
 

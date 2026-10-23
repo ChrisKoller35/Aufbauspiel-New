@@ -395,11 +395,14 @@ export function fundbuchEintraege(): string[] {
 
 // ── Zahlen in Spielersprache ────────────────────────────────────
 
-/** 0,35 → «35 %», 0,004 → «0,4 %» (unter 1 % mit einer Nachkommastelle). */
+/**
+ * 0,35 → «35 %», 0,004 → «0,4 %» (unter 1 % mit einer Nachkommastelle). Vor «%» steht ein geschütztes
+ * Leerzeichen: «%» rutscht nie allein auf die nächste Zeile.
+ */
 export function prozentText(anteil: number): string {
   const p = anteil * 100;
   const text = p > 0 && p < 1 ? p.toFixed(1) : String(Math.round(p));
-  return `${text.replace('.', ',')} %`;
+  return `${text.replace('.', ',')}\u00a0%`;
 }
 
 /** 1.4 → «1,4», 0.05 → «0,05» (unter 0,1 mit zwei Nachkommastellen), 2 → «2». */

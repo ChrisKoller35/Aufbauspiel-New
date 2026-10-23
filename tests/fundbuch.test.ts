@@ -11,7 +11,8 @@ import { STADTSTUFEN } from '../src/data/stadtstufen';
 import { HAENDLER_WAREN, ankaufpreis, kaufpreis } from '../src/data/haendler';
 import { CombatEngine } from '../src/systems/CombatEngine';
 import { EncounterProcessor } from '../src/systems/EncounterProcessor';
-import { MERCHANT_PRICES } from '../src/systems/ExpeditionSystem';
+import { ExpeditionSystem, MERCHANT_PRICES } from '../src/systems/ExpeditionSystem';
+import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { musterStand, spieleRoute, gewonnen, MusterTeamName } from '../src/systems/Musterlauf';
 import { SeededRNG } from '../src/utils/RNG';
 import { GearSystem } from '../src/systems/GearSystem';
@@ -149,11 +150,33 @@ describe('Woher: Rastplätze (Grüne Kräuter)', () => {
     expect(Math.abs(angeboten / versuche - RAST_KRAEUTER.chance)).toBeLessThanOrEqual(0.02);
   });
 
-  it('nennt bei Grünen Kräutern jeden Rastplatz ohne feste Wahl, bei allen anderen Einträgen keinen', () => {
-    const erwartet = ROUTEN.flatMap(r => r.encounters.flatMap((e, i) => (e.type === 'rest' && !e.wahl ? [`${r.id} #${i + 1}`] : [])));
-    expect(erwartet.length).toBeGreaterThan(0);
-    expect(fundorte(RAST_KRAEUTER.itemId).rastplaetze.map(r => `${r.routeId} #${r.raum}`)).toEqual(erwartet);
-    for (const id of fundbuchEintraege()) if (id !== RAST_KRAEUTER.itemId) expect(fundorte(id).rastplaetze, id).toEqual([]);
+  it('nennt bei jedem Eintrag genau die Rastplätze, an denen processRest ihn zufällig anbietet', () => {
+    // Die Räume baut startExpedition wie im Spiel, jeder Rastplatz wird 60-mal mit processRest besucht. Kommt
+    // ein Gegenstand dort manchmal und manchmal nicht, ist es die Zufallswahl (eine feste Wahl käme jedes Mal).
+    const BESUCHE = 60;
+    const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
+    const processor = new EncounterProcessor();
+    const erwartet: Record<string, string[]> = {};
+    for (const route of ROUTEN) {
+      const { state, ids } = musterStand('frisch', 1);
+      const run = system.startExpedition(state, route.id, ids)!;
+      for (const room of run.rooms.filter(r => r.type === 'rest')) {
+        const angeboten: Record<string, number> = {};
+        for (let i = 0; i < BESUCHE; i++) {
+          processor.processRest(run, room, new SeededRNG(1000 + i));
+          const b = run.pendingChoice?.optionB;
+          if (b?.effect === 'item' && b.itemId) angeboten[b.itemId] = (angeboten[b.itemId] ?? 0) + 1;
+        }
+        for (const [itemId, n] of Object.entries(angeboten)) {
+          if (n < BESUCHE) (erwartet[itemId] ??= []).push(`${route.id} #${room.index + 1}`);
+        }
+      }
+    }
+    // Zurzeit bietet ein Rastplatz nur «Kräuter sammeln» als Gegenstand an
+    expect(Object.keys(erwartet)).toEqual([RAST_KRAEUTER.itemId]);
+    for (const id of fundbuchEintraege()) {
+      expect(fundorte(id).rastplaetze.map(r => `${r.routeId} #${r.raum}`), id).toEqual(erwartet[id] ?? []);
+    }
   });
 });
 
@@ -179,13 +202,23 @@ describe('Schmiede-Material (Mondsilber, Sternenstahl und die anderen zehn)', ()
     expect(fundorte('mat_mondsilber').jedenSieg.map(s => s.routeId).sort()).toEqual(['mondhof', 'morgentor']);
   });
 
-  it('Woher: Einschmelzen bringt so viel, wie die Schmiede für ein doppeltes Teil des Sets gibt', () => {
+  it('Woher: Einschmelzen nennt genau die Sets, deren Teile das Material bringen, mit der Menge der Schmiede', () => {
+    // Erwartung aus einschmelzenErtrag jedes Teils jedes Sets (das Fundbuch fragt nur das erste Teil eines Sets)
+    const erwartet: Record<string, Record<string, number>> = {};
     for (const set of DUNGEON_SETS) {
       for (const teil of setTeilIds(set)) {
         const ertrag = einschmelzenErtrag(teil);
         if (!ertrag) continue;
-        expect(fundorte(ertrag.material.id).einschmelzen.find(e => e.routeId === set.routeId)?.menge, teil).toBe(ertrag.menge);
+        const proSet = (erwartet[ertrag.material.id] ??= {});
+        expect(proSet[set.routeId] ?? ertrag.menge, `${teil} bringt so viel wie die anderen Teile seines Sets`).toBe(ertrag.menge);
+        proSet[set.routeId] = ertrag.menge;
       }
+    }
+    expect(Object.keys(erwartet).length).toBeGreaterThan(0);
+    const eintraege = fundbuchEintraege();
+    for (const id of Object.keys(erwartet)) expect(eintraege, id).toContain(id);
+    for (const id of eintraege) {
+      expect(Object.fromEntries(fundorte(id).einschmelzen.map(e => [e.routeId, e.menge])), id).toEqual(erwartet[id] ?? {});
     }
   });
 
@@ -338,9 +371,9 @@ describe('Einträge', () => {
     expect(typeof modul.oeffneFundbuch).toBe('function');
   });
 
-  it('Zahlen mit Komma', () => {
-    expect(prozentText(0.35)).toBe('35 %');
-    expect(prozentText(0.004)).toBe('0,4 %');
+  it('Zahlen mit Komma, vor «%» ein geschütztes Leerzeichen', () => {
+    expect(prozentText(0.35)).toBe('35\u00a0%');
+    expect(prozentText(0.004)).toBe('0,4\u00a0%');
     expect(zahlText(1.4)).toBe('1,4');
     expect(zahlText(2)).toBe('2');
     expect(zahlText(0.05)).toBe('0,05');
