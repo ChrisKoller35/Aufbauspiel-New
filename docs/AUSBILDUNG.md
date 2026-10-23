@@ -77,12 +77,17 @@ Im Reiter «Trainieren» erscheint das Lehrbuch, sobald ein Held auf Stufe 15 is
   «+800 XP → Stufe 9 auf 12»: 190 XP bis Stufe 10, 210 bis 11, 230 bis 12, 170 bleiben in Stufe 12.
   Reichen die XP für keinen Aufstieg, steht dort zum Beispiel «+36 XP → bleibt auf Stufe 5 (noch 74 XP bis
   Stufe 6)»; die Meldung nach dem Lernen sagt es gleich.
+- Ohne eigene Wahl nimmt das Lehrbuch den ersten Lehrer mit Überschuss und den Schüler mit den wenigsten XP.
+  Hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle: «Lernen» bleibt aus, bis
+  man den nächsten wählt, und die Vorschau sagt «Wähle den nächsten Schüler.» (sofern der Lehrer noch
+  Überschuss hat). Sonst gäbe ein zweiter Klick auf «Lernen» die XP einem Helden, den man nie gewählt hat.
 - Doppelklick: Die Meldung erscheint unter «Lernen», und «Lernen» bleibt stehen, auch wenn die Vorschau
-  länger wird. Der erste Klick sperrt den Knopf, danach nimmt das Lehrbuch 0,6 s lang keinen Klick an, auch
-  nicht auf Lehrer und Schüler. Der zweite Klick eines Doppelklicks verpufft (`schluckeZweitenKlick`), auch
-  wenn doch etwas rückt (ein Schüler erreicht Stufe 15 und wird Lehrer). Der Fokus bleibt auf «Lernen» bzw.
-  auf der Meldung. `lehrbuchLernen` prüft selbst, ob noch Überschuss da ist. Danach wird gespeichert
-  (`mc:speichern`).
+  länger wird. Der zweite Klick oder Tipp löst nichts aus: Der erste Klick sperrt den Knopf, danach nehmen
+  Lehrer, Schüler und «Lernen» 0,6 s lang keinen Klick an, und den zweiten Klick eines Maus-Doppelklicks
+  schluckt `schluckeZweitenKlick`. So lange nimmt auch kein Druck den Fokus weg oder markiert Text, wo er
+  auch landet: Der Fokus bleibt auf «Lernen» bzw. auf der Meldung, auch wenn der letzte Schüler Stufe 15
+  erreicht und das Lehrbuch zur Meldung schrumpft. `lehrbuchLernen` prüft selbst, ob noch Überschuss da
+  ist. Danach wird gespeichert (`mc:speichern`).
 - Erreicht ein Guardian über das Lehrbuch Stufe 5, wird der Paladin frei wie beim Training.
 
 ### Was das Lehrbuch bringt (20 echte Expeditionen)

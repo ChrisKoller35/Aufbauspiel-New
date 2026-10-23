@@ -37,13 +37,20 @@ function stufenText(von: number, nach: number, xp: number): string {
   return `bleibt auf Stufe ${von} (noch ${totalXpForLevel(von + 1) - xp} XP bis Stufe ${von + 1})`;
 }
 
-/** Lehrer und Schüler, wie der Spieler sie gewählt hat; sonst der erste Lehrer mit Überschuss und der schwächste Schüler */
+/**
+ * Lehrer und Schüler, wie der Spieler sie gewählt hat; sonst der erste Lehrer mit Überschuss und der
+ * schwächste Schüler. Hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle:
+ * «Lernen» bleibt aus, bis der Spieler den nächsten wählt (ein zweiter Klick gäbe die XP sonst einem
+ * Helden, den er nie gewählt hat)
+ */
 function auswahl(state: GameState): { lehrer?: GuildFighter; schueler?: GuildFighter } {
   const lehrer = state.fighters.filter(f => f.level >= MAX_HERO_LEVEL);
   const schueler = state.fighters.filter(f => f.level < MAX_HERO_LEVEL);
   return {
     lehrer: lehrer.find(f => f.id === lehrerWahl) ?? lehrer.find(f => ueberschuss(f) > 0) ?? lehrer[0],
-    schueler: schueler.find(f => f.id === schuelerWahl) ?? [...schueler].sort((a, b) => a.xp - b.xp)[0],
+    schueler: schuelerWahl === null
+      ? [...schueler].sort((a, b) => a.xp - b.xp)[0]
+      : schueler.find(f => f.id === schuelerWahl),
   };
 }
 
@@ -68,7 +75,9 @@ export function lehrbuchHtml(state: GameState): string {
   const vorschau = lehrer && schueler ? lehrbuchVorschau(lehrer, schueler) : null;
   const vorschauText = vorschau && schueler
     ? `+${vorschau.xp} XP → ${stufenText(vorschau.vonStufe, vorschau.nachStufe, schueler.xp + vorschau.xp)}`
-    : `${lehrer ? name(lehrer) : 'Der Lehrer'} hat noch keinen Überschuss. Jede Expedition auf Stufe 15 bringt welchen.`;
+    : !schueler && lehrer && ueberschuss(lehrer) > 0
+      ? 'Wähle den nächsten Schüler.'
+      : `${lehrer ? name(lehrer) : 'Der Lehrer'} hat noch keinen Überschuss. Jede Expedition auf Stufe 15 bringt welchen.`;
 
   // Die Meldung steht unter «Lernen»: Darüber verschiebt sich nichts, wenn sie kommt oder geht
   return `
@@ -94,12 +103,6 @@ export function lehrbuchHtml(state: GameState): string {
 
 /** Knöpfe des Lehrbuchs; neuZeichnen baut die ganze Heldenseite neu */
 export function bindLehrbuch(el: HTMLElement, state: GameState, neuZeichnen: () => void): void {
-  // Kurz nach dem Lernen nimmt ein zweiter Druck den Fokus nicht weg, auch nicht auf dem jetzt
-  // gesperrten «Lernen» (dort ginge er sonst an die Seite)
-  el.addEventListener('pointerdown', e => {
-    if (Date.now() < gesperrtBis) e.preventDefault();
-  }, true);
-
   // Beim Neuzeichnen bleibt die Liste, wo sie war, und der Fokus auf dem gedrückten Knopf
   const zeichnen = (fokus: string): void => {
     const fenster = document.scrollingElement;
@@ -136,8 +139,13 @@ export function bindLehrbuch(el: HTMLElement, state: GameState, neuZeichnen: () 
     const r = lehrer && schueler ? lehrbuchLernen(state, lehrer.id, schueler.id) : null;
     if (!lehrer || !schueler || !r) return zeichnen('[data-lb-lernen]');
     gesperrtBis = Date.now() + SPERRE_MS;
-    // Rückt doch etwas (ein Schüler wird Lehrer, die Vorschau wird länger), verpufft der zweite Klick
+    // Bis dahin löst ein zweiter Klick nichts aus (Maus-Doppelklick: schluckeZweitenKlick, sonst prüfen die
+    // Knöpfe gesperrtBis), und kein Druck nimmt den Fokus weg oder markiert Text, wo er auch landet: auch
+    // neben dem Lehrbuch, wenn es nach dem letzten Schüler zur Meldung schrumpft
     schluckeZweitenKlick();
+    const halte = (e: PointerEvent): void => e.preventDefault();
+    window.addEventListener('pointerdown', halte, true);
+    setTimeout(() => window.removeEventListener('pointerdown', halte, true), SPERRE_MS);
     const neueKlassen = r.neueKlassen.map(id => CLASS_DEFS[id]?.name ?? id);
     zuletzt = `${name(schueler)} lernt von ${name(lehrer)}: +${r.xp} XP, ${stufenText(r.vonStufe, r.nachStufe, schueler.xp)}.`
       + (neueKlassen.length ? ` Neu anzuheuern: ${neueKlassen.join(', ')}.` : '');

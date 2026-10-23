@@ -1,6 +1,6 @@
 /* ── Ausbildung: Lehrbuch und Klassen-Tafel (ui/components/Lehrbuch.ts, KlassenTafel.ts) ── */
 
-/* Überschuss neben «Lv 15» auf der Bildkarte */
+/* Überschuss unter «Lv 15» auf der Bildkarte */
 .hc-ueberschuss {
   font-family: 'Cinzel', serif; font-size: 0.68rem; color: var(--gl);
   text-shadow: 0 1px 4px rgba(0, 0, 0, .9);
@@ -13,9 +13,9 @@
 }
 .lb-titel { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--gold); margin-bottom: 4px; }
 .lb-text { font-size: 0.9rem; color: var(--txt); margin-bottom: 10px; }
-/* Unter «Lernen»: Darüber verschiebt sich nichts, wenn die Meldung kommt oder geht */
+/* Unter «Lernen»: Darüber verschiebt sich nichts, wenn die Meldung kommt oder geht. Lange Namen brechen um */
 .lb-meldung {
-  font-size: 0.9rem; color: #86efac; padding: 6px 10px;
+  font-size: 0.9rem; color: #86efac; padding: 6px 10px; overflow-wrap: anywhere;
   border-left: 3px solid var(--grn); background: rgba(22, 101, 52, .15);
 }
 .lb-fuss + .lb-meldung { margin-top: 10px; }

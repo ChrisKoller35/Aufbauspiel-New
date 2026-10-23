@@ -1,4 +1,4 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CLASS_DEFS } from '../src/data/classes';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter, GuildFighter } from '../src/models/GuildRoster';
@@ -324,6 +324,156 @@ describe('Lehrbuch', () => {
     schueler.xp = 0;
     expect(lehrbuchVorschau(lehrer, schueler)).toEqual({ xp: 500, vonStufe: 9, nachStufe: 9 });
     expect(lehrbuchLernen(state, lehrer.id, schueler.id)).toMatchObject({ xp: 500, vonStufe: 9, nachStufe: 9 });
+  });
+});
+
+describe('Lehrbuch im Reiter: Wahl und Sperre nach «Lernen»', () => {
+  /** Ein Knopf aus dem HTML des Lehrbuchs: klick() ruft die Hörer auf, die bindLehrbuch anhängt */
+  interface Knopf {
+    sel: string; id?: string; disabled: boolean; dataset: Record<string, string>; hoerer: (() => void)[];
+    addEventListener: (typ: string, f: () => void) => void;
+  }
+  /** window wie im Browser: Node meldet einen Hörer mit «true» (Capture) sonst nicht ab */
+  class Fenster extends EventTarget {
+    removeEventListener(typ: string, f: EventListenerOrEventListenerObject | null, o?: boolean | EventListenerOptions): void {
+      super.removeEventListener(typ, f, typeof o === 'boolean' ? { capture: o } : o);
+    }
+  }
+  let fenster: Fenster;
+  let gespeichert = 0;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    fenster = new Fenster();
+    gespeichert = 0;
+    fenster.addEventListener('mc:speichern', () => { gespeichert++; });
+    vi.stubGlobal('window', fenster);
+    // Ohne Heldenseite gibt es nach dem Neuzeichnen nichts zu scrollen und zu fokussieren
+    vi.stubGlobal('document', { scrollingElement: null, getElementById: () => null });
+  });
+  afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** Das Lehrbuch ohne Browser, frisch geladen (Wahl und Sperre stehen im Modul), neu gezeichnet wie in HeroesScreen */
+  async function lehrbuch(state: GameState) {
+    vi.resetModules();
+    const lb = await import('../src/ui/components/Lehrbuch');
+    const seite = { html: '', knoepfe: [] as Knopf[] };
+    const el = {
+      scrollTop: 0,
+      querySelectorAll: (sel: string) => seite.knoepfe.filter(k => k.sel === sel),
+      querySelector: (sel: string) => seite.knoepfe.find(k => k.sel === sel) ?? null,
+    };
+    const zeichnen = (): void => {
+      seite.html = lb.lehrbuchHtml(state);
+      seite.knoepfe = [...seite.html.matchAll(/<button[^>]*data-lb-(lehrer|schueler|lernen)(?:="(\d+)")?[^>]*>/g)]
+        .map(([tag, rolle, id]): Knopf => {
+          const hoerer: (() => void)[] = [];
+          const dataset: Record<string, string> = rolle === 'lehrer' ? { lbLehrer: id } : rolle === 'schueler' ? { lbSchueler: id } : {};
+          return {
+            sel: `[data-lb-${rolle}]`, id, disabled: tag.includes(' disabled'), dataset, hoerer,
+            addEventListener: (_typ: string, f: () => void) => { hoerer.push(f); },
+          };
+        });
+      lb.bindLehrbuch(el as unknown as HTMLElement, state, zeichnen);
+    };
+    zeichnen();
+    /** Wie ein Klick im Browser: ein gesperrter Knopf nimmt ihn nicht an */
+    const klick = (sel: string, id?: number): void => {
+      const knopf = seite.knoepfe.find(k => k.sel === sel && (id === undefined || k.id === String(id)));
+      if (!knopf) throw new Error(`Kein Knopf ${sel} ${id ?? ''}`);
+      if (!knopf.disabled) knopf.hoerer.forEach(f => f());
+    };
+    return { seite, klick };
+  }
+
+  /** Ein Druck auf die Seite: true, wenn er den Fokus nicht wegnehmen darf */
+  function druckVerhindert(): boolean {
+    const e = new Event('pointerdown', { cancelable: true });
+    fenster.dispatchEvent(e);
+    return e.defaultPrevented;
+  }
+
+  test('hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle', async () => {
+    const state = createNewGameState();
+    const guardian = meister('guardian');
+    awardXP(guardian, 3000);
+    const ranger = neuerHeld('ranger');
+    awardXP(ranger, totalXpForLevel(14) + 10);
+    const cleric = neuerHeld('cleric');
+    awardXP(cleric, totalXpForLevel(3));
+    state.fighters.push(guardian, ranger, cleric);
+    const { seite, klick } = await lehrbuch(state);
+
+    // Ohne eigene Wahl ist der schwächste Schüler gewählt
+    expect(seite.html).toContain(`class="lb-wahl gewaehlt" data-lb-schueler="${cleric.id}"`);
+    klick('[data-lb-schueler]', ranger.id);
+    expect(seite.html).toContain('+280 XP → Stufe 14 auf 15');
+
+    klick('[data-lb-lernen]');
+    expect(ranger.level).toBe(15);
+    expect(gespeichert).toBe(1);
+    expect(seite.html).toContain('Ranger lernt von Guardian: +280 XP, Stufe 14 auf 15.');
+    // Kein Schüler gewählt, «Lernen» aus, bis der Spieler wählt; auch nach der Sperre
+    expect(seite.html).toContain('Wähle den nächsten Schüler.');
+    expect(seite.html).not.toContain('lb-wahl gewaehlt" data-lb-schueler');
+    expect(seite.html).toContain('data-lb-lernen disabled');
+    expect(druckVerhindert()).toBe(true);
+    vi.advanceTimersByTime(600);
+    expect(druckVerhindert()).toBe(false);
+    klick('[data-lb-lernen]');
+    expect(cleric.xp).toBe(totalXpForLevel(3));
+
+    klick('[data-lb-schueler]', cleric.id);
+    expect(seite.html).toContain('+2160 XP → Stufe 3 auf 15');
+    expect(seite.html).not.toContain('data-lb-lernen disabled');
+  });
+
+  test('ist auch der Überschuss des Lehrers aufgebraucht, sagt die Vorschau das statt «Wähle …»', async () => {
+    const state = createNewGameState();
+    const guardian = meister('guardian');
+    awardXP(guardian, 280);
+    const ranger = neuerHeld('ranger');
+    awardXP(ranger, totalXpForLevel(14) + 10);
+    state.fighters.push(guardian, ranger, neuerHeld('cleric'));
+    const { seite, klick } = await lehrbuch(state);
+
+    klick('[data-lb-schueler]', ranger.id);
+    klick('[data-lb-lernen]');
+    expect(ranger.level).toBe(15);
+    expect(seite.html).toContain('Guardian hat noch keinen Überschuss.');
+    expect(seite.html).not.toContain('Wähle den nächsten Schüler.');
+    expect(seite.html).toContain('data-lb-lernen disabled');
+  });
+
+  test('0,6 s nach «Lernen» nimmt es keinen Klick an; ohne eigene Wahl folgt der nächste schwächste Schüler', async () => {
+    const state = createNewGameState();
+    const guardian = meister('guardian');
+    awardXP(guardian, 3000);
+    const cleric = neuerHeld('cleric');
+    awardXP(cleric, totalXpForLevel(3));
+    const assassine = neuerHeld('assassin');
+    awardXP(assassine, totalXpForLevel(6));
+    state.fighters.push(guardian, cleric, assassine);
+    const { seite, klick } = await lehrbuch(state);
+
+    klick('[data-lb-lernen]');
+    expect(cleric.level).toBe(15);
+    expect(seite.html).toContain(`class="lb-wahl gewaehlt" data-lb-schueler="${assassine.id}"`);
+    // Der zweite Klick eines Doppelklicks verschiebt nichts und wählt keinen anderen Lehrer
+    klick('[data-lb-lernen]');
+    klick('[data-lb-lehrer]', cleric.id);
+    expect(assassine.xp).toBe(totalXpForLevel(6));
+    expect(seite.html).toContain(`class="lb-wahl gewaehlt" data-lb-lehrer="${guardian.id}"`);
+
+    vi.advanceTimersByTime(600);
+    klick('[data-lb-lernen]');
+    expect(assassine.xp).toBe(totalXpForLevel(6) + 840);
+    expect(ueberschuss(guardian)).toBe(0);
+    expect(gespeichert).toBe(2);
   });
 });
 
