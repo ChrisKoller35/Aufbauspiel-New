@@ -9,9 +9,16 @@
   color: var(--txt); padding: 3px 10px; cursor: pointer; font-size: 0.75rem; transition: .2s;
 }
 .fb-oeffnen:hover, .fb-oeffnen:focus-visible { border-color: var(--gold); color: var(--gold); }
+/* Touch und Handy: Tippfläche mindestens 44 × 44 px (wie .ss-oeffnen) */
 @media (pointer: coarse), (max-width: 700px) {
   .fb-oeffnen { position: relative; min-width: 44px; }
-  .fb-oeffnen::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  .fb-oeffnen::after {
+    content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: max(100% + 2px, 44px); height: max(100% + 2px, 44px);
+  }
+}
+@media (max-width: 700px) {
+  .fb-oeffnen { margin-left: 0; }
 }
 /* Schmale Handys: Mit dem Wort passte die Leiste über dem Banner nicht mehr in eine Zeile, nur «📜» */
 @media (max-width: 480px) {

@@ -9,11 +9,22 @@
   color: var(--txt); padding: 3px 10px; cursor: pointer; font-size: 0.75rem; transition: .2s;
 }
 .ss-oeffnen:hover, .ss-oeffnen:focus-visible { border-color: var(--gold); color: var(--gold); }
-/* Touch und Handy: 44 px hohe Tippfläche, ohne dass Knopf oder Leiste wachsen (die Leiste im Hauptmenü
-   bleibt so niedrig wie am PC, magic-city.css) */
+/* Touch und Handy: Tippfläche mindestens 44 × 44 px, ohne dass Knopf oder Leiste wachsen (die Leiste im Hauptmenü
+   bleibt so niedrig wie am PC, wie .bg-btn in magic-city.css) */
 @media (pointer: coarse), (max-width: 700px) {
-  .ss-oeffnen { position: relative; }
-  .ss-oeffnen::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  .ss-oeffnen { position: relative; min-width: 44px; }
+  .ss-oeffnen::after {
+    content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: max(100% + 2px, 44px); height: max(100% + 2px, 44px);
+  }
+}
+/* Handy: Abstand gibt die Leiste vor (magic-city.css); am schmalen Handy nur «💾», sonst passt die Leiste nicht
+   in eine Zeile (aria-label «Spielstand») */
+@media (max-width: 700px) {
+  .ss-oeffnen { margin-left: 0; }
+}
+@media (max-width: 380px) {
+  .ss-wort { display: none; }
 }
 
 .ss-ov {
