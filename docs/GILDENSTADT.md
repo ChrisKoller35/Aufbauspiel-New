@@ -7,6 +7,12 @@ dem dungeon und gold für das herstellen. weil das crafting das wir haben ist co
 der einzige der das spielt»). Umsetzung: Variante 1 «Gildenstadt» (Thread «Magic City», Bestandsaufnahme im Scratchpad
 `gebaeude/befund-*.md`).
 
+**Nachtrag 23.10.2026 (Wunsch Christoph):** Keine Baupläne mehr. Jede Werkstatt wird direkt auf ihrem Feld gebaut
+(Bauplatz-Karte → Bau-Dialog), nur der Gildenrang sperrt noch (Arkanschmiede 2, Kriegsmaschinen-Werkstatt 4). Der
+frühere Bauplan-Preis steckt jetzt in den Baukosten, das Startgold ist 200. Die Mindmap im Reiter «Stadt» hat keine
+Linien und Pfeile mehr. Die Tabellen unten zeigen den neuen Stand; der Abschnitt «Umsetzung (22.10.2026)» hält fest,
+wie es damals war, mit Hinweis, wo es sich geändert hat, Einzelheiten unter «Ohne Baupläne (23.10.2026)».
+
 ## Was die Bestandsaufnahme ergab (Stand master b4e380a)
 
 - Strasse, Dungeon-Lager, Schatztruhe, Lagerhaus-Kapazität: keine Wirkung. Farm → Mühle → Bäckerei (+ Brunnen) → Brot
@@ -23,14 +29,16 @@ der einzige der das spielt»). Umsetzung: Variante 1 «Gildenstadt» (Thread «M
 | Gebäude (ID) | Steht | Freischaltung | Bau | Ausbau (Stufe 2 / 3) | Macht |
 |---|---|---|---|---|---|
 | Gildenhaus `GUILD_HALL` | von Anfang an | – | – | T2 wie bisher: 80 Gold, 3 Kristallsplitter, Gildenrang 3 → 4 Helden | Helden, Auftragsbrett, Trophäensaal, Set-Schmiede, Expeditionen |
-| Händler `HAENDLER` | von Anfang an | – | – | kein Ausbau | verkauft Proviant, Grundausrüstung und Baupläne; kauft Beute |
-| Schmiede `SMITHY` | zu bauen | Bauplan (Händler 50 Gold) | 50 Gold | 100 / 150 Gold + 10 / 20 Eisenschrott | Ausrüstung T1/T2; Gold-Rabatt in der Set-Schmiede (wie bisher) |
-| Kräuterküche `HERB_GARDEN` (Name neu, ID bleibt) | zu bauen | Bauplan (Händler 50 Gold) | 40 Gold | 80 / 120 Gold + 5 / 10 Grüne Kräuter | Heiltrank, Kraft-Brot, die fünf Tränke mit echter Wirkung |
-| Arkanschmiede `ARCANE_SMITHY` | zu bauen | Bauplan (Kristallgolem, erster Sieg, oder Händler 150 Gold), Gildenrang 2 | 80 Gold, 5 Eisenschrott, 3 Kristallsplitter | 160 / 240 Gold + 5 / 10 Kristallsplitter | Magitech-Komponente, Arkanklinge, Magitech-Schild, Arkan-Amulett |
-| Kriegsmaschinen-Werkstatt `WAR_MACHINE_WORKSHOP` | zu bauen | Bauplan (Gefallener Ritter oder Händler 250 Gold), Gildenrang 4 | 100 Gold, 20 Eisenschrott, 5 Kristallsplitter | 200 / 300 Gold + 10 / 20 Eisenschrott | Katapult, Kanone |
+| Händler `HAENDLER` | von Anfang an | – | – | kein Ausbau | verkauft Proviant und Grundausrüstung; kauft Beute |
+| Schmiede `SMITHY` | zu bauen | auf dem Feld | 100 Gold | 100 / 150 Gold + 10 / 20 Eisenschrott | Ausrüstung T1/T2; Gold-Rabatt in der Set-Schmiede (wie bisher) |
+| Kräuterküche `HERB_GARDEN` (Name neu, ID bleibt) | zu bauen | auf dem Feld | 90 Gold | 80 / 120 Gold + 5 / 10 Grüne Kräuter | Heiltrank, Kraft-Brot, die fünf Tränke mit echter Wirkung |
+| Arkanschmiede `ARCANE_SMITHY` | zu bauen | auf dem Feld, Gildenrang 2 | 230 Gold, 5 Eisenschrott, 3 Kristallsplitter | 160 / 240 Gold + 5 / 10 Kristallsplitter | Magitech-Komponente, Arkanklinge, Magitech-Schild, Arkan-Amulett |
+| Kriegsmaschinen-Werkstatt `WAR_MACHINE_WORKSHOP` | zu bauen | auf dem Feld, Gildenrang 4 | 350 Gold, 20 Eisenschrott, 5 Kristallsplitter | 200 / 300 Gold + 10 / 20 Eisenschrott | Katapult, Kanone |
 
-Ausbau-Kosten (`ausbauKosten` in `systems/Ausbau.ts`) = Gold der Baukosten × Zielstufe plus die Beute je Stufe über
-der ersten aus `BuildingDef.ausbauBeute` (`data/buildings.ts`: Schmiede 10 Eisenschrott, Kräuterküche 5 Grüne Kräuter,
+Der Bau enthält seit 23.10.2026 den früheren Bauplan (Schmiede 50 + 50, Kräuterküche 40 + 50, Arkanschmiede
+80 + 150, Kriegsmaschinen 100 + 250 Gold); der Ausbau blieb gleich. Ausbau-Kosten (`ausbauKosten` in
+`systems/Ausbau.ts`) = Ausbau-Gold (`BuildingDef.ausbauGold`: 50 / 40 / 80 / 100) × Zielstufe plus die Beute je Stufe
+über der ersten aus `BuildingDef.ausbauBeute` (`data/buildings.ts`: Schmiede 10 Eisenschrott, Kräuterküche 5 Grüne Kräuter,
 Arkanschmiede 5 Kristallsplitter, Kriegsmaschinen 10 Eisenschrott; Stufe 2 einmal, Stufe 3 zweimal, also die Spalte
 «Ausbau» oben). Die Stadtstufe begrenzt die Werkstatt-Stufe (`grenzen.werkstatt` 1/1/2/2/3/3/3). Eine Werkstatt auf Stufe N arbeitet N-mal so schnell (kein Arbeiter mehr nötig).
 
@@ -48,13 +56,12 @@ Stückpreise, kein Tageslimit. Die Stadtstufe gibt Rabatt (Stadtrecht): Stufe 4-
 | Brot | 4 Gold | +8 HP vor einem Kampf |
 | Heiltrank | 10 Gold | +15 HP |
 | Eisenschwert, Eisenschild, Lederrüstung | je 25 Gold | Grundausrüstung T1, billiger aus der Schmiede |
-| Bauplan: Schmiede | 50 Gold | |
-| Bauplan: Kräuterküche | 50 Gold | |
-| Bauplan: Arkanschmiede | 150 Gold | oder vom Kristallgolem |
-| Bauplan: Kriegsmaschinen-Werkstatt | 250 Gold | oder vom Gefallenen Ritter |
+
+Bis 22.10.2026 führte er auch die Baupläne der vier Werkstätten (50 / 50 / 150 / 250 Gold); seit 23.10.2026 gibt es
+keine Baupläne mehr (siehe «Ohne Baupläne»).
 
 **Ankauf:** Der Händler kauft Ausrüstung, Material und Proviant zum halben Grundwert (`baseValue / 2`, mindestens 1 Gold),
-keine Baupläne, keine Set-Teile (die gehören in die Set-Schmiede zum Einschmelzen), keine Dungeon-Materialien `mat_*`.
+keine Set-Teile (die gehören in die Set-Schmiede zum Einschmelzen), keine Dungeon-Materialien `mat_*`.
 Damit wird Beute, die niemand trägt (Jägerbogen, Eichenstab …), zu Gold.
 
 Der Dungeon-Händler im Sumpfdorf (`MERCHANT_PRICES`: Heiltrank 15, Brot 8, Kraft-Brot 25 Beutegold) bleibt teurer als
@@ -126,10 +133,11 @@ Schmiede» und «Dorfbäckerei» bleibt (die Bäckerin ist eine Figur, kein Geb�
 
 Quellen: Dungeon-Beute, mutige Wahlen der Geschichten, Fund-Räume, Auftragsbrett (Zettel und Lieferungen),
 Ruhmestruhe der Rangliste, Geschenke der Stadtstufen, Ankauf beim Händler. Keine Steuern, keine Bank. Jedes neue
-Spiel beginnt mit einem Helden (Guardian, Stufe 1) und 100 Gold: Der zweite Held kostet 50, jeder weitere 30 mehr
-(`anheuerKosten` in `src/systems/Empfehlung.ts`: 50 + (n − 1) · 30), der Bauplan der Schmiede 50. Mit weniger als
-zwei Helden empfiehlt die Stadt zuerst «Held anheuern (50 Gold)»: Allein verliert ein Held den Waldpfad, und ohne
-Expedition gibt es kein Gold (`HELDEN_VOR_DEM_BAU`).
+Spiel beginnt mit einem Helden (Guardian, Stufe 1) und 200 Gold (`createNewGameState`): Der zweite Held kostet 50,
+jeder weitere 30 mehr (`anheuerKosten` in `src/systems/Empfehlung.ts`: 50 + (n − 1) · 30), die Schmiede 100. Das reicht
+für den zweiten Helden, die Schmiede und 50 Gold Proviant, oder für zwei weitere Helden (bis 22.10.2026: 100 Gold,
+Schmiede 50 + Bauplan 50). Mit weniger als zwei Helden empfiehlt die Stadt zuerst «Held anheuern (50 Gold)»: Allein
+verliert ein Held den Waldpfad, und ohne Expedition gibt es kein Gold (`HELDEN_VOR_DEM_BAU` bleibt 2).
 
 ## Spielstände
 
@@ -139,15 +147,20 @@ Fenster «Spielstand» sagt es in einem Satz («Dein alter Stand stammt aus der 
 `talismanInventory`, `selectedTalisman`, `warMachineInventory`, `selectedWarMachine`, `tutorial`, `eventTickAccumulator`,
 Terrain-Kacheln) verschwinden aus `GameState`. Probespiel-Vorrat ohne Holz/Stein.
 
+Baupläne (23.10.2026): `SaveSystem.bereiteVor` ruft `tauscheBauplaeneInGold(state)` auf. Unverbaute `bauplan_*` im
+Lager werden zum alten Händlerpreis Gold (Schmiede 50, Kräuterküche 50, Arkanschmiede 150, Kriegsmaschinen 250),
+`erhalteneBauplaene` wird gelöscht. `SpielstandSchema.ts` kennt das Feld nicht mehr; die Version bleibt.
+
 ## Bildschirme
 
 - **Gebäude:** Reiter PRODUKTION wird «STADT»: Mindmap mit drei Reihen: Beute aus den Dungeons (Eisenschrott,
-  Kristallsplitter, Grüne Kräuter, Seltene Kräuter, Dungeon-Material) → Werkstätten (Schmiede, Kräuterküche,
-  Arkanschmiede, Kriegsmaschinen) und Händler → Gildenhaus/Expeditionen. Engpass-Sätze bleiben (fehlt Beute, fehlt
-  Gold, Bauplan fehlt). Reiter CRAFTING bleibt. Reiter AUFBAU: Freischalt-Baum der sechs Gebäude; gesperrt steht
-  «Bauplan beim Händler (50 Gold)» bzw. «… oder vom Kristallgolem».
-- **Händler-Fenster:** Waren mit Preis und Knopf «Kaufen» (1× / 5×), Baupläne (einmal kaufbar, danach «gekauft»),
-  Abschnitt «Verkaufen» mit dem Lager (Preis je Stück, 1× / alle).
+  Kristallsplitter, Grüne Kräuter, Seltene Kräuter, Dungeon-Material), darunter Händler und Werkstätten (Schmiede,
+  Arkanschmiede, Kriegsmaschinen, Kräuterküche), zuunterst Gildenhaus/Expeditionen; seit 23.10.2026 ohne Linien und
+  Pfeile. Engpass-Sätze bleiben (fehlt Beute, fehlt Gold, fehlt ein Gildenrang: «Arkanschmiede braucht Gildenrang 2.»,
+  baubar «Schmiede fehlt noch. Bauen kostet 100 Gold.»). Reiter CRAFTING bleibt. Reiter AUFBAU: Raster der sechs
+  Gebäude; baubar steht «Bauen: 100 Gold», gesperrt «🔒 braucht Gildenrang 2».
+- **Händler-Fenster:** Waren mit Preis und Knopf «Kaufen» (1× / 5×) und Abschnitt «Verkaufen» mit dem Lager (Preis
+  je Stück, 1× / alle). Den Abschnitt «Baupläne» gibt es seit 23.10.2026 nicht mehr.
 - **Kopfzeile:** Gold, Eisenschrott, Kristallsplitter, Brot, Heiltrank statt Gold/Holz/Stein/Brot.
 - **Hauptmenü:** Stadtweg-Banner bleibt; Zeile zur Stadt ohne Bewohner.
 - **Expeditionen:** Proviant-Auswahl bleibt, zeigt die Wirkung jedes Vorrats in einem Halbsatz.
@@ -155,7 +168,7 @@ Terrain-Kacheln) verschwinden aus `GameState`. Probespiel-Vorrat ohne Holz/Stein
 ## Prüfen
 
 `npx tsc --noEmit`, `npm test`, `npm run validate-refs`, `npm run build`, Playwright-Rundgang am PC und Handy
-(Hauptmenü → Gebäude: Händler kaufen, Bauplan kaufen, Schmiede bauen, Auftrag geben → Expedition mit Krafttrank →
+(Hauptmenü → Gebäude: Händler kaufen, Schmiede bauen, Auftrag geben → Expedition mit Krafttrank →
 Rückkehr, Stadtweg-Aufstieg), `npm run dungeon-eichung` unverändert (Dungeons nicht angefasst).
 
 ## Umsetzung (22.10.2026)
@@ -171,16 +184,15 @@ Spezifikation oben entschieden wurde, mit den Annahmen der Umbau-Agenten:
 - **Kräuterküche ohne Von-selbst-Satz:** `VON_SELBST_SATZ` (`Werkstattplan.ts`) hat nur noch Arkanschmiede und
   Kriegsmaschinen-Werkstatt. Die Kräuterküche stellt keine Zutat mehr selbst her (kein Kräuter-Rezept) und beliefert
   niemanden; ein Satz für sie hätte nichts zu sagen.
-- **Händler-Rabatt auch für Baupläne:** `bauplanPreis(bauplan, stadtstufe)` rechnet den Rabatt mit, wie `kaufpreis`;
-  der Gildenrang sperrt nur das Bauen, nicht den Kauf (Hinweis im Fenster). Rundung `Math.round`, mindestens 1 Gold.
+- **Händler-Rabatt:** `kaufpreis` rechnet den Rabatt der Stadtstufe mit, Rundung `Math.round`, mindestens 1 Gold.
   `haendlerRabatt` ist der Wert der Stufe (0/0/0/10/10/10/20), nicht zusammengezählt wie früher `steuerProzent`.
-  `getFreischaltHinweise` nennt den Grundpreis (kennt die Stadtstufe nicht); Engpass-Satz und Empfehlung den Preis mit
-  Rabatt.
-- **Ankauf:** erlaubt ist alles mit `baseValue > 0` ausser Gold, Bauplänen, Set-Teilen (`setVonItem` oder Tag `set`)
+  Bis 22.10.2026 galt er auch für die Baupläne (`bauplanPreis`); seit 23.10.2026 gibt es keine Baupläne mehr, auf die
+  Baukosten gibt es keinen Rabatt.
+- **Ankauf:** erlaubt ist alles mit `baseValue > 0` ausser Gold, Set-Teilen (`setVonItem` oder Tag `set`)
   und Dungeon-Material (`mat_*` oder Tag `schmiede`), also auch Kristallsplitter (10 Gold) und Kriegsmaschinen
   (25 / 27 Gold).
-- **Aufbau-Reiter als Raster statt Baum:** Alle `freischaltung.braucht`-Listen sind leer (nur Bauplan und Gildenrang
-  sperren, wie in der Tabelle oben); ein Baum wäre eine Spalte «Stufe 1». Wer eine Kette will, trägt sie in
+- **Aufbau-Reiter als Raster statt Baum:** Alle `freischaltung.braucht`-Listen sind leer (nur der Gildenrang sperrt,
+  wie in der Tabelle oben; bis 22.10.2026 auch der Bauplan); ein Baum wäre eine Spalte «Stufe 1». Wer eine Kette will, trägt sie in
   `buildings.ts` ein.
 - **Gildenhaus-Kachel öffnet das Gebäude-Fenster** (Helden in der Gilde, Helden je Expedition, Ausbau Stufe 2, Knopf
   «ZUM GILDENHAUS»), nicht direkt den Gildenhaus-Bildschirm: Der Ausbau `GUILD_HALL_T2` wäre sonst nirgends
@@ -199,7 +211,8 @@ Spezifikation oben entschieden wurde, mit den Annahmen der Umbau-Agenten:
   `gearNeedsRepair`). Stände mit Version > 24 lädt der Start weiterhin, nur Dateien werden abgewiesen.
 - **Erfolge:** gestrichen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10` und alle Bewohner/Holz/Markt/
   Bank/Zufriedenheit-Erfolge; neu `haendler_1` «Erster Kauf» (Zähler `total_haendler_kaeufe`, den `Haendler.kaufen` und
-  `bauplanKaufen` hochzählen, Verkaufen nicht), `bauplan_1`, `werkstaetten_4`, `werkstatt_3`, `ausbau_5`; `mass_builder`
+  bis 22.10.2026 `bauplanKaufen` hochzählen, Verkaufen nicht), `bauplan_1` (am 23.10.2026 mit den Bauplänen
+  gestrichen), `werkstaetten_4`, `werkstatt_3`, `ausbau_5`; `mass_builder`
   auf 10 gesenkt (höchstens 4 Neubauten und 9 Ausbauten). Liste: `docs/ERFOLGE.md`.
 - **Tränke:** `run.trankWirkungen` hat `{ itemId, stat: 'atk' | 'spd' | 'maxHp', wert, bisRaum?, helden }`; fehlt
   `bisRaum`, gilt die Wirkung bis zum Ende. Die Raum-Dauer zählt den aktuellen Raum mit (Kraft-Brot in Raum 0 wirkt in
@@ -215,15 +228,16 @@ Spezifikation oben entschieden wurde, mit den Annahmen der Umbau-Agenten:
 - **Start mit einem Helden (Probespiel-Befund, 22.10.2026):** `placeStartingLayout` stellt neben Gildenhaus und
   Händler einen Guardian (Stufe 1, ohne Ausrüstung) in die Gilde; `anheuerKosten(n)` = 50 + (n − 1) · 30, der zweite
   Held kostet also 50. Vorher begann ein Spiel ohne Helden, und wer die 100 Gold in Bauplan und Schmiede steckte,
-  sass ohne Expedition und Gold fest (siehe «Gold»). `Empfehlung.naechsterBau` liefert mit weniger als zwei Helden
+  sass ohne Expedition und Gold fest (siehe «Gold»; seit 23.10.2026 200 Gold, Schmiede 100). `Empfehlung.naechsterBau` liefert mit weniger als zwei Helden
   den Schritt `held` («Held anheuern (N Gold)», `typeId` leer); Mindmap (Ziel «Bauen & Ausbauen», Engpass-Leiste)
-  und Aufbau-Reiter zeigen den Text und führen per Klick zu den Helden.
+  und Aufbau-Reiter zeigen den Text und führen per Klick zu den Helden. Seit 23.10.2026 zeigt das Ziel «Bauen &
+  Ausbauen» den Helden-Schritt vor «N baubar»; den Schritt `bauplan` gibt es nicht mehr, nur `bauen` und `held`.
 - **Lieferlohn unter dem Händlerpreis:** `LIEFER_WAREN.gold` 24 (3 Heiltränke) / 40 (3 Kraft-Brote) / 40 (2
   Eisenschwerter) / 40 (2 Eisenschilde) / 40 (2 Lederrüstungen), nie über dem Händlerpreis bei 20 % Rabatt; vorher
   (45/40/60/60/50) liess sich beim Händler kaufen und mit Gewinn abgeben. Die Siegel bleiben der eigentliche Lohn
   (`docs/AUFTRAGSBRETT.md`).
-- **Kein Abreissen:** Der Knopf im Gebäude-Fenster ist weg (es gibt jedes Gebäude einmal und keinen Bauplatz, der
-  Bauplan käme nicht zurück); `Ausbau.entferneGebaeude` bleibt für `vereinigeDoppelte`.
+- **Kein Abreissen:** Der Knopf im Gebäude-Fenster ist weg (es gibt jedes Gebäude einmal, und die Baukosten kämen
+  nicht zurück); `Ausbau.entferneGebaeude` bleibt für `vereinigeDoppelte`.
 - **Fenster und Tasten:** Händler-Fenster, Gebäude-Fenster und Bau-Dialog schliessen mit Escape
   (`bindeFensterTasten` in `ui/components/FensterHilfen.ts`, Capture-Phase vor dem `keydown` in `main.ts`, das sonst
   zum Hauptmenü springt); Tab bleibt im Fenster. Ein Ausbau speichert sofort (`mc:speichern`) wie Bau und Händler.
@@ -233,7 +247,27 @@ Spezifikation oben entschieden wurde, mit den Annahmen der Umbau-Agenten:
   des Fensters «Spielstand»): mehrere Gebäude derselben Art werden zu einem. `BuildingInstance.built` bleibt
   (immer true nach dem Bau), ebenso `BuildingDef.tier` und `expeditions`. `rescuedNpcs` und `LIEFER_AUFSCHLAG` sind
   weg (tot). Der Reiter heisst «STADT», die Bezeichner (`ProduktionTab.ts`, `produktion`) bleiben. Die Verkaufen-Liste
-  im Händler-Fenster ist nach Namen sortiert, die Baupläne in der Reihenfolge von `BAUPLAN_PREISE`. Die Silhouette
+  im Händler-Fenster ist nach Namen sortiert. Die Silhouette
   zeigt das Gildenhaus ab dem Dorf als Halle (vorher Zelte), den Händler ab Stufe 1 als Stand, die Händlerhalle im
-  Marktflecken. `tools/validateRefs.ts` Check 4: Händler-Baupläne (`BAUPLAN_PREISE`) brauchen keine Beutetabelle,
-  Boss-Baupläne (`BAUPLAN_BOSS`) genau eine als `ersterSiegBauplan`.
+  Marktflecken. `tools/validateRefs.ts` hatte einen Check 4 für die Baupläne (Gebäude ↔ Beutetabellen,
+  `ersterSiegBauplan`); er ist am 23.10.2026 mit den Bauplänen weggefallen, es bleiben Check 1-3.
+
+## Ohne Baupläne (23.10.2026)
+
+Wunsch Christoph: Baupläne weg, Werkstätten direkt auf ihrem Feld freischalten, die Mindmap ohne Verbindungslinien.
+
+- **Gestrichen:** die Items `bauplan_*`, der Abschnitt «Baupläne» im Händler-Fenster, die Erst-Sieg-Baupläne der Bosse
+  (`LootTableDef.ersterSiegBauplan`, `GameState.erhalteneBauplaene`, `getRouteBauplan`), `BAUPLAN_PREISE`,
+  `BAUPLAN_BOSS`, `bauplanPreis`, `bauplanKaufen`, `bauplanGekauft`, `bauplanHinweis`, `bauplaeneImLager`,
+  `bauplanSchritt`, der Empfehlungs-Schritt `bauplan`, der Erfolg `bauplan_1` und die Kennzahl `bauplaene`.
+- **Bauen:** Kachel im Reiter «Aufbau» oder Karte in der Mindmap → Bau-Dialog → BAUEN. `freischaltHinweise` nennt nur
+  noch den fehlenden Gildenrang. Die Baukosten enthalten den früheren Bauplan-Preis (Tabelle oben); `ausbauGold` hält
+  den Ausbau auf dem alten Stand.
+- **Startgold 200** statt 100, damit der zweite Held und die Schmiede am ersten Tag gehen.
+- **Stadtweg:** Die Gebäude-Aufgabe zeigt, solange das Gebäude fehlt, «auf dem Feld bauen: 100 Gold» bzw. gesperrt
+  «noch gesperrt: braucht Gildenrang 2».
+- **Mindmap:** SVG-Linien und Pfeile weg (`NETZ_KANTEN`, `NetzKante`, `flussText`, `vorhanden`, `zeichneKanten`).
+  `MindmapLinien.ts` heisst jetzt `MindmapGroesse.ts` und passt nur noch die Breite an (`passeMindmapAn`: voll / zoom /
+  kompakt). Der Händler steht als erster in der mittleren Reihe «Händler und Werkstätten».
+  `tests/produktionsnetz.test.ts` prüft nur noch, dass jedes Gebäude einmal vorkommt und der Händler vorne steht.
+- **Alte Spielstände:** `tauscheBauplaeneInGold` (siehe «Spielstände»).

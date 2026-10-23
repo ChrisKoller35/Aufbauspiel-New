@@ -1,18 +1,16 @@
 import { describe, expect, it } from 'vitest';
 import {
-  BUILDING_DEFS, BUILD_MENU_ORDER, bauplanHinweis, bauplaeneImLager,
+  BUILDING_DEFS, BUILD_MENU_ORDER,
   getFreischaltHinweise, getFreischaltStatus, getFreischaltStufe, isBuildingUnlocked,
 } from './buildings';
 import { GUILD_RANK_DEFS } from './guildRanks';
 import { ITEM_DEFS } from './items';
 import { RECIPE_DEFS } from './recipes';
-import { LOOT_TABLE_DEFS } from './lootTables';
 import { STARTING_BUILDING_TYPES } from '../scenes/CityStartingLayout';
-import { BAUPLAN_BOSS, BAUPLAN_PREISE, HAENDLER_WAREN, ankaufpreis, bauplanPreis, istAnkaufbar, kaufpreis, rabattProzent } from './haendler';
+import { HAENDLER_WAREN, ankaufpreis, istAnkaufbar, kaufpreis, rabattProzent } from './haendler';
 import { STADTSTUFEN } from './stadtstufen';
 
 const MAX_RANG = Math.max(...GUILD_RANK_DEFS.map(r => r.rank));
-const ALLE_BAUPLAENE = Object.keys(BAUPLAN_PREISE);
 
 describe('Die sechs Gebäude der Gildenstadt', () => {
   it('es gibt genau die sechs, alle im Baumenü', () => {
@@ -26,7 +24,6 @@ describe('Die sechs Gebäude der Gildenstadt', () => {
     expect([...STARTING_BUILDING_TYPES]).toEqual(['GUILD_HALL', 'HAENDLER']);
     for (const id of STARTING_BUILDING_TYPES) {
       expect(BUILDING_DEFS[id].buildCost).toEqual({});
-      expect(BUILDING_DEFS[id].freischaltung.bauplan).toBeUndefined();
     }
   });
 
@@ -60,21 +57,12 @@ describe('Die sechs Gebäude der Gildenstadt', () => {
     }
   });
 
-  it('jede Werkstatt braucht einen Bauplan, der als Item existiert und beim Händler zu haben ist', () => {
-    for (const def of Object.values(BUILDING_DEFS)) {
-      if (def.recipes.length === 0) continue;
-      const bauplan = def.freischaltung.bauplan;
-      expect(bauplan, def.id).toBeDefined();
-      expect(ITEM_DEFS[bauplan!]?.tags, bauplan).toContain('bauplan');
-      expect(ITEM_DEFS[bauplan!]?.bauplanFuer, bauplan).toBe(def.id);
-      expect(BAUPLAN_PREISE[bauplan!], bauplan).toBeGreaterThan(0);
-    }
-  });
-
-  it('jeder Bauplan-Boss lässt diesen Bauplan beim ersten Sieg fallen', () => {
-    const vonBossen = Object.values(LOOT_TABLE_DEFS).map(t => t.ersterSiegBauplan).filter(Boolean);
-    expect([...vonBossen].sort()).toEqual(Object.keys(BAUPLAN_BOSS).sort());
-    for (const id of vonBossen) expect(BAUPLAN_PREISE[id!], id).toBeGreaterThan(0);
+  it('Baukosten enthalten den früheren Bauplan-Preis, Ausbau rechnet mit dem alten Gold weiter', () => {
+    expect(BUILDING_DEFS.SMITHY.buildCost).toEqual({ gold: 100 });
+    expect(BUILDING_DEFS.HERB_GARDEN.buildCost).toEqual({ gold: 90 });
+    expect(BUILDING_DEFS.ARCANE_SMITHY.buildCost).toEqual({ gold: 230, iron_scrap: 5, crystal_shard: 3 });
+    expect(BUILDING_DEFS.WAR_MACHINE_WORKSHOP.buildCost).toEqual({ gold: 350, iron_scrap: 20, crystal_shard: 5 });
+    expect(Object.values(BUILDING_DEFS).filter(d => d.recipes.length > 0).map(d => d.ausbauGold)).toEqual([50, 40, 80, 100]);
   });
 });
 
@@ -109,7 +97,7 @@ describe('Freischaltung der Gebäude', () => {
     while (changed) {
       changed = false;
       for (const id of Object.keys(BUILDING_DEFS)) {
-        if (!built.has(id) && isBuildingUnlocked(id, built, MAX_RANG, ALLE_BAUPLAENE)) {
+        if (!built.has(id) && isBuildingUnlocked(id, built, MAX_RANG)) {
           built.add(id);
           changed = true;
         }
@@ -119,33 +107,15 @@ describe('Freischaltung der Gebäude', () => {
     expect(unerreichbar).toEqual([]);
   });
 
-  it('liefert lesbare Hinweise und Status', () => {
-    expect(getFreischaltHinweise('SMITHY', ['GUILD_HALL'], 1, [])).toEqual(['Bauplan beim Händler (50 Gold)']);
-    expect(getFreischaltHinweise('SMITHY', ['GUILD_HALL'], 1, ['bauplan_schmiede'])).toEqual([]);
-    expect(getFreischaltHinweise('ARCANE_SMITHY', [], 1, [])).toEqual([
-      'braucht Gildenrang 2',
-      'Bauplan beim Händler (150 Gold) oder vom Kristallgolem',
-    ]);
-    expect(getFreischaltHinweise('WAR_MACHINE_WORKSHOP', [], 4, [])).toEqual([
-      'Bauplan beim Händler (250 Gold) oder vom Gefallenen Ritter',
-    ]);
-    expect(getFreischaltHinweise('GUILD_HALL', [], 1, [])).toEqual([]);
-    // Mit Stadtstufe steht der Bauplan-Preis mit Rabatt (Stufe 4: 10 %, Stufe 7: 20 %)
-    expect(getFreischaltHinweise('SMITHY', ['GUILD_HALL'], 1, [], 7)).toEqual(['Bauplan beim Händler (40 Gold)']);
-    expect(getFreischaltHinweise('ARCANE_SMITHY', [], 2, [], 4)).toEqual(['Bauplan beim Händler (135 Gold) oder vom Kristallgolem']);
-    expect(getFreischaltStatus('GUILD_HALL', ['GUILD_HALL'], 1, [])).toBe('gebaut');
-    expect(getFreischaltStatus('HERB_GARDEN', ['GUILD_HALL'], 1, ['bauplan_kraeuterkueche'])).toBe('baubar');
-    expect(getFreischaltStatus('HERB_GARDEN', ['GUILD_HALL'], 1, [])).toBe('gesperrt');
-  });
-
-  it('bauplanHinweis nennt den Preis mit Rabatt der Stadtstufe', () => {
-    expect(bauplanHinweis('SMITHY')).toBe('Bauplan beim Händler (50 Gold)');
-    expect(bauplanHinweis('SMITHY', 7)).toBe('Bauplan beim Händler (40 Gold)');
-    expect(bauplanHinweis('GUILD_HALL')).toBeNull();
-  });
-
-  it('bauplaeneImLager findet nur Baupläne mit Bestand', () => {
-    expect(bauplaeneImLager({ bauplan_schmiede: 1, bauplan_kraeuterkueche: 0, gold: 100 })).toEqual(['bauplan_schmiede']);
+  it('liefert lesbare Hinweise und Status: nur der Gildenrang sperrt, sonst baubar auf dem Feld', () => {
+    expect(getFreischaltHinweise('SMITHY', ['GUILD_HALL'], 1)).toEqual([]);
+    expect(getFreischaltHinweise('ARCANE_SMITHY', [], 1)).toEqual(['braucht Gildenrang 2']);
+    expect(getFreischaltHinweise('ARCANE_SMITHY', [], 2)).toEqual([]);
+    expect(getFreischaltHinweise('WAR_MACHINE_WORKSHOP', [], 3)).toEqual(['braucht Gildenrang 4']);
+    expect(getFreischaltHinweise('GUILD_HALL', [], 1)).toEqual([]);
+    expect(getFreischaltStatus('GUILD_HALL', ['GUILD_HALL'], 1)).toBe('gebaut');
+    expect(getFreischaltStatus('HERB_GARDEN', ['GUILD_HALL'], 1)).toBe('baubar');
+    expect(getFreischaltStatus('WAR_MACHINE_WORKSHOP', ['GUILD_HALL'], 1)).toBe('gesperrt');
   });
 });
 
@@ -163,7 +133,6 @@ describe('Der Händler', () => {
     expect(rabattProzent(1)).toBe(0);
     expect(kaufpreis('healing_potion', 4)).toBe(9);
     expect(kaufpreis('healing_potion', 7)).toBe(8);
-    expect(bauplanPreis('bauplan_kriegsmaschinen', 5)).toBe(225);
     expect(kaufpreis('crystal_shard')).toBe(0);
   });
 
@@ -175,8 +144,7 @@ describe('Der Händler', () => {
     expect(ankaufpreis('bread')).toBe(1);
   });
 
-  it('kauft keine Baupläne, keine Set-Teile, kein Dungeon-Material und kein Gold', () => {
-    for (const id of ALLE_BAUPLAENE) expect(istAnkaufbar(id), id).toBe(false);
+  it('kauft keine Set-Teile, kein Dungeon-Material und kein Gold', () => {
     expect(istAnkaufbar('gold')).toBe(false);
     expect(istAnkaufbar('set_wyrm_klinge')).toBe(false);
     expect(istAnkaufbar('mat_glutkern')).toBe(false);

@@ -32,10 +32,7 @@ export function rangFreischaltungen(rank: number, state?: GameState): string[] {
 
   const gebaeude = Object.values(BUILDING_DEFS).filter(b => b.freischaltung?.gildenrang === rank);
   if (gebaeude.length > 0) {
-    const alleMitPlan = gebaeude.every(b => b.freischaltung.bauplan);
-    const liste = gebaeude.map(b => (!alleMitPlan && b.freischaltung.bauplan ? `${b.name} (mit Bauplan)` : b.name)).join(', ');
-    const plan = alleMitPlan ? (gebaeude.length > 1 ? ' (je mit Bauplan)' : ' (mit Bauplan)') : '';
-    zeilen.push(`${gebaeude.length > 1 ? 'Neue Gebäude' : 'Neues Gebäude'}: ${liste}${plan}`);
+    zeilen.push(`${gebaeude.length > 1 ? 'Neue Gebäude' : 'Neues Gebäude'}: ${gebaeude.map(b => b.name).join(', ')}`);
   }
 
   // Das Gildenhaus wächst nur über diesen Ausbau (systems/Ausbau.ts)

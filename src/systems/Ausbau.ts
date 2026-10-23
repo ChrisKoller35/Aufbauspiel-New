@@ -1,7 +1,7 @@
 // ─── Magic City – Ausbau-Stufen ─────────────────────────────────
 // Ein Gebäude je Art: statt ein zweites zu bauen, baut man aus. Eine
 // Werkstatt auf Stufe N arbeitet N-mal so schnell; der Ausbau kostet
-// das Gold der Baukosten × Zielstufe plus Beute je Stufe
+// das Ausbau-Gold × Zielstufe plus Beute je Stufe
 // (BuildingDef.ausbauBeute) und ist sofort fertig. Das Gildenhaus Stufe 2
 // ist der bestehende Ausbau GUILD_HALL_T2 (4 Helden je Expedition).
 // Wie weit eine Werkstatt ausgebaut werden darf, gibt die Stadtstufe vor
@@ -90,14 +90,14 @@ export function heldenJeExpedition(state: GameState): number {
 // ── Ausbauen ────────────────────────────────────────────────────
 
 /**
- * Kosten für eine Stufe: Gold der Baukosten × Zielstufe plus die Beute je Stufe über der ersten
+ * Kosten für eine Stufe: Ausbau-Gold (BuildingDef.ausbauGold) × Zielstufe plus die Beute je Stufe über der ersten
  * (BuildingDef.ausbauBeute: Stufe 2 einmal, Stufe 3 zweimal); Gildenhaus wie GUILD_HALL_T2.
  */
 export function ausbauKosten(typeId: string, zielStufe: number): Record<string, number> {
   const def = BUILDING_DEFS[typeId];
   if (!def) return {};
   if (typeId === 'GUILD_HALL') return { ...GILDE_T2.cost };
-  const kosten: Record<string, number> = { gold: (def.buildCost.gold ?? 0) * zielStufe };
+  const kosten: Record<string, number> = { gold: (def.ausbauGold ?? def.buildCost.gold ?? 0) * zielStufe };
   for (const [res, qty] of Object.entries(def.ausbauBeute ?? {})) kosten[res] = qty * (zielStufe - 1);
   return kosten;
 }

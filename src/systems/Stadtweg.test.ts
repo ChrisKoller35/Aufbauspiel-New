@@ -87,14 +87,14 @@ describe('Stadtweg: aufsteigen', () => {
     expect(stadtweg(state)).toEqual({ stufe: 1, herzsteine: [], gelesen: 0 });
   });
 
-  it('zeigt Aufgaben mit Fortschritt, dem Weg zum Bauplan und zählt die Abgabe als Schritt', () => {
+  it('zeigt Aufgaben mit Fortschritt, den Baukosten und zählt die Abgabe als Schritt', () => {
     const state = createNewGameState();
     const stand = aufstiegStand(state)!;
     expect(stand.aufgaben.map(a => a.text)).toEqual(['Schmiede steht', 'Eine Expedition gewonnen']);
-    expect(stand.aufgaben[0].hinweis).toContain('Bauplan beim Händler');
+    expect(stand.aufgaben[0].hinweis).toBe('auf dem Feld bauen: 100 Gold');
     expect(stand.aufgaben[1]).toMatchObject({ erledigt: false, ist: 0, soll: 1 });
     expect(stand.gesamt).toBe(3);
-    expect(stand.erledigt).toBe(1); // 100 Gold zum Start reichen für die Abgabe von 40
+    expect(stand.erledigt).toBe(1); // 200 Gold zum Start reichen für die Abgabe von 40
     expect(stand.bereit).toBe(false);
   });
 

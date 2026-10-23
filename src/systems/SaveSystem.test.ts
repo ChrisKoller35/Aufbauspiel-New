@@ -146,11 +146,16 @@ describe('SaveSystem', () => {
     expect(loaded.buildings.find(b => b.typeId === 'SMITHY')!.tier).toBe(2);
   });
 
-  it('fehlt die Liste der erhaltenen Baupläne, legt das Laden sie an', () => {
+  it('Baupläne aus alten Ständen werden beim Laden zu Gold (Händler-Preis), die Bauplan-Liste fällt weg', () => {
     const state = standMitHelden();
-    delete (state as Partial<GameState>).erhalteneBauplaene;
+    const gold = state.globalStock.gold;
+    Object.assign(state.globalStock, { bauplan_schmiede: 1, bauplan_arkanschmiede: 1, bauplan_kraeuterkueche: 0 });
+    Object.assign(state, { erhalteneBauplaene: ['bauplan_arkanschmiede'] });
     writeRawSave(state);
-    expect(new SaveSystem().load()?.erhalteneBauplaene).toEqual([]);
+    const loaded = new SaveSystem().load()!;
+    expect(loaded.globalStock.gold).toBe(gold + 50 + 150);
+    expect(Object.keys(loaded.globalStock).filter(k => k.startsWith('bauplan_'))).toEqual([]);
+    expect('erhalteneBauplaene' in loaded).toBe(false);
   });
 });
 
@@ -409,7 +414,7 @@ describe('pruefeSpielstandText – nur Dateien, mit denen das Spiel auch startet
   });
 
   it('die neuen Felder (Gildenhaus, Rangliste, Schmiede …) dürfen fehlen, aber nicht falsch geformt sein', () => {
-    const neu = ['geschichten', 'bezwungen', 'rangliste', 'schmiede', 'auftragsbrett', 'trophaeen', 'erhalteneBauplaene'];
+    const neu = ['geschichten', 'bezwungen', 'rangliste', 'schmiede', 'auftragsbrett', 'trophaeen'];
     expect(pruefeSpielstandText(datei(s => {
       for (const feld of neu) delete s[feld];
       delete s.buildings[0].vonSelbst;
@@ -423,7 +428,6 @@ describe('pruefeSpielstandText – nur Dateien, mit denen das Spiel auch startet
       schmiede: s => { s.schmiede = { stufen: [3] }; },
       auftragsbrett: s => { s.auftragsbrett = {}; },
       trophaeen: s => { s.trophaeen = { siege: null }; },
-      erhalteneBauplaene: s => { s.erhalteneBauplaene = 'bauplan_schmiede'; },
       vonSelbst: s => { s.buildings[0].vonSelbst = { art: 'immer', fuer: 'iron_sword' }; },
       wegBilanz: s => { s.fighters[0].wegBilanz = { schaden: 'viel' }; },
     };

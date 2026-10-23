@@ -1,16 +1,11 @@
 // ─── Magic City – Produktionsnetz der Gildenstadt ───────────────
-// Reine Daten für den Reiter «Stadt»: eine Mindmap in drei Reihen.
+// Reine Daten für den Reiter «Stadt»: drei Reihen ohne Verbindungslinien.
 // Oben die Beute aus den Dungeons als breiter Balken: Eisenschrott,
 // Kristallsplitter, Grüne Kräuter, Seltene Kräuter und Dungeon-Material,
-// jede Gruppe mit ihrem Vorrat. Darunter
-// die vier Werkstätten und der Händler, zuunterst das Gildenhaus mit
-// den Zielen Expeditionen und Bauen. Jedes Gebäude kommt genau einmal
-// vor (ein Gebäude je Art, Ausbau statt Mehrfachbau).
-// Linien führen eine Reihe tiefer oder zur Karte direkt daneben; ein
-// breiter Balken schickt seine Linien senkrecht nach unten, darum
-// kreuzt sich nichts (tests/produktionsnetz.test.ts). Das Dungeon-Material
-// geht in die Set-Schmiede im Gildenhaus; diese Linie würde zwei Reihen
-// überspringen und steht darum nur in der Erklärung.
+// jede Gruppe mit ihrem Vorrat. Darunter der Händler und die vier
+// Werkstätten, zuunterst das Gildenhaus mit den Zielen Expeditionen und
+// Bauen. Jedes Gebäude kommt genau einmal vor (ein Gebäude je Art,
+// Ausbau statt Mehrfachbau); wofür es gut ist, sagt die Erklärung.
 // Darstellung: ui/screens/ProduktionTab.ts, Engpässe: systems/EngpassSystem.ts.
 // Wunsch Christoph 22.10.2026: nur noch Beute aus dem Dungeon und Gold
 // (docs/GILDENSTADT.md).
@@ -31,15 +26,6 @@ export interface NetzReihe {
   titel: string;
   untertitel: string;
   knoten: NetzKnoten[];
-}
-
-export interface NetzKante {
-  von: string;
-  nach: string;
-  /** Was fliesst (steht an der Linie). */
-  ware: string;
-  /** «versorgung» = gestrichelt, sonst Warenfluss. */
-  art?: 'ware' | 'versorgung';
 }
 
 export const SELTENE_KRAEUTER = ['herb_fire_root', 'herb_shimmer_shroom', 'herb_swamp_blossom', 'herb_bone_dust', 'herb_moonwort'];
@@ -81,14 +67,14 @@ export const NETZ_REIHEN: NetzReihe[] = [
   },
   {
     id: 'werkstaetten',
-    titel: 'Werkstätten und Händler',
+    titel: 'Händler und Werkstätten',
     untertitel: 'aus Beute und Gold wird Ausrüstung',
     knoten: [
+      { art: 'gebaeude', id: 'HAENDLER', typeId: 'HAENDLER' },
       { art: 'gebaeude', id: 'SMITHY', typeId: 'SMITHY' },
       { art: 'gebaeude', id: 'ARCANE_SMITHY', typeId: 'ARCANE_SMITHY' },
       { art: 'gebaeude', id: 'WAR_MACHINE_WORKSHOP', typeId: 'WAR_MACHINE_WORKSHOP' },
       { art: 'gebaeude', id: 'HERB_GARDEN', typeId: 'HERB_GARDEN' },
-      { art: 'gebaeude', id: 'HAENDLER', typeId: 'HAENDLER' },
     ],
   },
   {
@@ -101,26 +87,6 @@ export const NETZ_REIHEN: NetzReihe[] = [
       { art: 'ziel', id: 'z:bauen', titel: 'Bauen & Ausbauen', wert: 'bauen' },
     ],
   },
-];
-
-export const NETZ_KANTEN: NetzKante[] = [
-  // Beute → Werkstätten und Händler
-  { von: BEUTE_KNOTEN, nach: 'SMITHY', ware: 'Eisen · Kristalle' },
-  { von: BEUTE_KNOTEN, nach: 'ARCANE_SMITHY', ware: 'Eisen · Kristalle' },
-  { von: BEUTE_KNOTEN, nach: 'WAR_MACHINE_WORKSHOP', ware: 'Eisen · Kristalle' },
-  { von: BEUTE_KNOTEN, nach: 'HERB_GARDEN', ware: 'Kräuter' },
-  { von: BEUTE_KNOTEN, nach: 'HAENDLER', ware: 'Beute verkaufen' },
-  // Zwischenschritt (Nachbarn in der Werkstatt-Reihe)
-  { von: 'ARCANE_SMITHY', nach: 'WAR_MACHINE_WORKSHOP', ware: 'Bauteile' },
-  // Werkstätten und Händler → Gilde
-  { von: 'SMITHY', nach: 'GUILD_HALL', ware: 'Ausrüstung' },
-  { von: 'ARCANE_SMITHY', nach: 'GUILD_HALL', ware: 'Ausrüstung' },
-  { von: 'WAR_MACHINE_WORKSHOP', nach: 'z:expeditionen', ware: 'Kriegsmaschinen' },
-  { von: 'HERB_GARDEN', nach: 'z:expeditionen', ware: 'Tränke' },
-  { von: 'HAENDLER', nach: 'z:expeditionen', ware: 'Proviant' },
-  { von: 'HAENDLER', nach: 'z:bauen', ware: 'Baupläne' },
-  // Gilde
-  { von: 'GUILD_HALL', nach: 'z:expeditionen', ware: 'Helden' },
 ];
 
 /** Alle Gebäude-Arten des Netzes in Leserichtung (Reihe für Reihe). */

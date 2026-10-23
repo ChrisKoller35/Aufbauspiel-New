@@ -9,7 +9,6 @@
 import { GameState } from '../../models/GameState';
 import { EncounterChoice } from '../../models/ExpeditionRun';
 import { ITEM_DEFS } from '../../data/items';
-import { getRouteBauplan } from '../../data/routes';
 import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from '../../systems/ExpeditionSystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from '../../systems/ExpeditionFinalizer';
 import { erfolgName, erfolgePruefen } from '../../systems/AchievementSystem';
@@ -249,10 +248,6 @@ function finishExpedition(): void {
   // Capture loot data before clearing
   const loot = { ...run.loot };
 
-  // Bauplan: garantierter Drop beim ersten Sieg über den Routen-Boss
-  const bauplanDrop = run.bossesKilled > 0 ? getRouteBauplan(run.routeId) : null;
-  const neuerBauplan = bauplanDrop && !state.erhalteneBauplaene.includes(bauplanDrop) ? bauplanDrop : null;
-  if (neuerBauplan) loot[neuerBauplan] = (loot[neuerBauplan] ?? 0) + 1;
   const goldEarned = run.goldEarned ?? 0;
   const hasLoot = goldEarned > 0 || Object.values(loot).some(q => q > 0);
 
@@ -280,7 +275,6 @@ function finishExpedition(): void {
       state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
     }
     state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
-    if (neuerBauplan) state.erhalteneBauplaene.push(neuerBauplan);
     // Erfolge, die erst mit der Beute im Lager zählen (ganzes Set: Stern im Trophäensaal), auch in die Bilanz
     progress.newAchievements.push(...erfolgePruefen(state, { hinweis: false }).map(erfolgName));
 

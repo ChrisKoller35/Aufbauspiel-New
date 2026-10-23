@@ -101,7 +101,6 @@ export const SPIELSTAND = objekt({
   schmiede: objekt({ stufen: ZAEHLER }, ['stufen']),
   auftragsbrett: AUFTRAGSBRETT,
   trophaeen: objekt({ siege: ZAEHLER }, ['siege']),
-  erhalteneBauplaene: TEXTE,
 }, ['buildings', 'globalStock', 'fighters', 'day']);
 
 /**

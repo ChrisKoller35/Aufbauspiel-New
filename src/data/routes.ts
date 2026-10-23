@@ -876,29 +876,6 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   morgentor: 'exp_sternenschmiede',
 };
 
-// ── Baupläne (Gebäude-Freischaltung über Dungeon-Bosse) ──
-
-/**
- * Bauplan, den der Boss dieser Route beim ersten Sieg garantiert fallen lässt.
- * Quelle: LootTableDef.ersterSiegBauplan der Boss-Beutetabelle. null = kein Bauplan.
- */
-export function getRouteBauplan(routeId: string): string | null {
-  const bossId = ROUTE_DEFS[routeId]?.bossId;
-  if (!bossId) return null;
-  const lootTableId = ENEMY_DEFS[bossId]?.lootTableId;
-  return (lootTableId && LOOT_TABLE_DEFS[lootTableId]?.ersterSiegBauplan) || null;
-}
-
-/** Route, deren Boss diesen Bauplan fallen lässt, oder null. */
-export function findBauplanRoute(bauplanId: string): RouteDef | null {
-  return Object.values(ROUTE_DEFS).find(r => getRouteBauplan(r.id) === bauplanId) ?? null;
-}
-
-/** Hinweistext für die Bau-Anzeige (#25), z. B. «Bauplan: Tiefe Höhle». */
-export function getBauplanHinweis(bauplanId: string): string {
-  const route = findBauplanRoute(bauplanId);
-  return `Bauplan: ${route ? route.name : 'unbekannter Dungeon'}`;
-}
 
 // ── Freischaltung (gleiche Regel für Dungeonkarte und Expeditionsliste) ──
 

@@ -2,7 +2,7 @@
  * Erfolge für Magic City, in Gruppen.
  * Jede Bedingung liest nur state.statistics. Das Spiel zählt dort selbst Bauten, Ausbauten,
  * Expeditionen und Käufe beim Händler (systems/Haendler.ts: total_haendler_kaeufe); Werte, die
- * niemand von selbst zählt (Stadtstufe, Werkstätten, Baupläne, Helden, Sets, Monsterbuch,
+ * niemand von selbst zählt (Stadtstufe, Werkstätten, Helden, Sets, Monsterbuch,
  * Auftragsbrett, Trophäensaal …), schreibt kennzahlenAktualisieren() in
  * systems/AchievementSystem.ts dort hinein. Die IDs stehen in Spielständen (state.achievements) und bleiben fest.
  * Liste: docs/ERFOLGE.md. Jedes Ziel ist mit den echten Regeln erreichbar:
@@ -54,9 +54,8 @@ const SAAL_STERNE = 3 * SAAL_SOCKEL;
 const SAAL_HALBER_GLANZ = Math.ceil(SAAL_STERNE / 2);
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
-  // ── Stadt (die Gildenstadt: Händler, Baupläne und vier Werkstätten, docs/GILDENSTADT.md) ──
-  erfolg('haendler_1', 'Stadt', '🛒', 'Erster Kauf', 'Kaufe zum ersten Mal beim Händler ein: Proviant, Ausrüstung oder einen Bauplan.', 'total_haendler_kaeufe', 1),
-  erfolg('bauplan_1', 'Stadt', '📜', 'Erster Bauplan', 'Besorge dir deinen ersten Bauplan, beim Händler oder von einem Boss.', 'bauplaene', 1),
+  // ── Stadt (die Gildenstadt: Händler und vier Werkstätten, docs/GILDENSTADT.md) ──
+  erfolg('haendler_1', 'Stadt', '🛒', 'Erster Kauf', 'Kaufe zum ersten Mal beim Händler ein: Proviant oder Ausrüstung.', 'total_haendler_kaeufe', 1),
   erfolg('first_building', 'Stadt', '🏗️', 'Grundsteinlegung', 'Errichte dein erstes Gebäude.', 'total_buildings_built', 1),
   erfolg('werkstaetten_4', 'Stadt', '🏘️', 'Gildenstadt', 'Alle vier Werkstätten stehen: Schmiede, Kräuterküche, Arkanschmiede und Kriegsmaschinen-Werkstatt.', 'werkstaetten', 4),
   erfolg('mass_builder', 'Stadt', '🏛️', 'Baumeister', 'Baue 10 Mal (Neubauten und Ausbauten zählen).', 'total_buildings_built', 10),

@@ -1,13 +1,11 @@
 // ─── Magic City – Die sechs Gebäude der Gildenstadt ─────────────
 // Gildenhaus und Händler stehen von Anfang an, die vier Werkstätten
-// baut man mit einem Bauplan (Händler oder Boss) für Gold und Beute aus
-// den Dungeons. Kein Bauplatz, keine Bauzeit: Ein Bau steht sofort,
-// und eine Werkstatt auf Stufe N arbeitet N-mal so schnell
-// (systems/Ausbau.ts). Preise der Baupläne: data/haendler.ts.
+// schaltet man direkt auf ihrem Feld frei: Gold und Beute aus den
+// Dungeons, die späteren erst ab einem Gildenrang. Keine Baupläne,
+// keine Bauzeit: Ein Bau steht sofort, und eine Werkstatt auf Stufe N
+// arbeitet N-mal so schnell (systems/Ausbau.ts).
 // Regeln und Zahlen: docs/GILDENSTADT.md.
 // ────────────────────────────────────────────────────────────────
-
-import { BAUPLAN_PREISE, bauplanBossName, bauplanPreis } from './haendler';
 
 /** Bedingungen, bevor ein Gebäude gebaut werden darf. */
 export interface BuildingFreischaltung {
@@ -15,8 +13,6 @@ export interface BuildingFreischaltung {
   braucht: string[];
   /** Mindest-Gildenrang (GuildStats.rank). */
   gildenrang?: number;
-  /** Item-ID des Bauplans, der im Lager liegen muss (wird beim Bau verbraucht). */
-  bauplan?: string;
 }
 
 export interface BuildingDef {
@@ -24,8 +20,10 @@ export interface BuildingDef {
   name: string;
   tier: number;
   category: 'hub' | 'utility' | 'refine';
-  /** Was der Bau kostet (Schlüssel wie in globalStock). Ausbau: Gold × Zielstufe plus ausbauBeute (systems/Ausbau.ts). */
+  /** Was der Bau (das Freischalten auf dem Feld) kostet, Schlüssel wie in globalStock. */
   buildCost: Record<string, number>;
+  /** Gold je Ausbau-Stufe: Ausbau kostet ausbauGold × Zielstufe plus ausbauBeute (systems/Ausbau.ts). */
+  ausbauGold?: number;
   /**
    * Beute je Ausbau-Stufe über der ersten (Stufe 2 einmal, Stufe 3 zweimal), nur Werkstätten:
    * Schmiede 10 / 20 Eisenschrott, Kräuterküche 5 / 10 Grüne Kräuter, Arkanschmiede 5 / 10
@@ -71,13 +69,14 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     name: 'Schmiede',
     tier: 1,
     category: 'refine',
-    buildCost: { gold: 50 },
+    buildCost: { gold: 100 },
+    ausbauGold: 50,
     ausbauBeute: { iron_scrap: 10 },
     recipes: ['RCP_IRON_SWORD', 'RCP_IRON_SHIELD', 'RCP_LEATHER_ARMOR', 'RCP_STEEL_SWORD', 'RCP_LONGBOW', 'RCP_CRYSTAL_STAFF', 'RCP_STEEL_ARMOR', 'RCP_CRYSTAL_PENDANT'],
     expeditions: null,
     tags: ['craft', 'gear'],
     manualCraft: true,
-    freischaltung: { braucht: [], bauplan: 'bauplan_schmiede' },
+    freischaltung: { braucht: [] },
     spriteKey: 'SMITHY',
   },
   HERB_GARDEN: {
@@ -85,13 +84,14 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     name: 'Kräuterküche',
     tier: 1,
     category: 'refine',
-    buildCost: { gold: 40 },
+    buildCost: { gold: 90 },
+    ausbauGold: 40,
     ausbauBeute: { herb_green: 5 },
     recipes: ['RCP_HEALING_POTION', 'RCP_POWER_BREAD', 'RCP_STRENGTH_POTION', 'RCP_MANA_POTION', 'RCP_ANTIDOTE', 'RCP_TITAN_BREW', 'RCP_SPEED_POTION'],
     expeditions: null,
     tags: ['craft', 'herb'],
     manualCraft: true,
-    freischaltung: { braucht: [], bauplan: 'bauplan_kraeuterkueche' },
+    freischaltung: { braucht: [] },
     spriteKey: 'HERB_GARDEN',
   },
   ARCANE_SMITHY: {
@@ -99,13 +99,14 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     name: 'Arkanschmiede',
     tier: 2,
     category: 'refine',
-    buildCost: { gold: 80, iron_scrap: 5, crystal_shard: 3 },
+    buildCost: { gold: 230, iron_scrap: 5, crystal_shard: 3 },
+    ausbauGold: 80,
     ausbauBeute: { crystal_shard: 5 },
     recipes: ['RCP_MAGITECH_COMPONENT', 'RCP_ARCANE_BLADE', 'RCP_MAGITECH_SHIELD', 'RCP_ARCANE_PENDANT'],
     expeditions: null,
     tags: ['craft', 'gear', 'arcane'],
     manualCraft: true,
-    freischaltung: { braucht: [], gildenrang: 2, bauplan: 'bauplan_arkanschmiede' },
+    freischaltung: { braucht: [], gildenrang: 2 },
     spriteKey: 'ARCANE_SMITHY',
   },
   WAR_MACHINE_WORKSHOP: {
@@ -113,13 +114,14 @@ export const BUILDING_DEFS: Record<string, BuildingDef> = {
     name: 'Kriegsmaschinen-Werkstatt',
     tier: 3,
     category: 'refine',
-    buildCost: { gold: 100, iron_scrap: 20, crystal_shard: 5 },
+    buildCost: { gold: 350, iron_scrap: 20, crystal_shard: 5 },
+    ausbauGold: 100,
     ausbauBeute: { iron_scrap: 10 },
     recipes: ['RCP_WAR_CATAPULT', 'RCP_WAR_CANNON'],
     expeditions: null,
     tags: ['craft', 'war'],
     manualCraft: true,
-    freischaltung: { braucht: [], gildenrang: 4, bauplan: 'bauplan_kriegsmaschinen' },
+    freischaltung: { braucht: [], gildenrang: 4 },
     spriteKey: 'WAR_MACHINE_WORKSHOP',
   },
 };
@@ -134,25 +136,10 @@ export const BUILD_MENU_ORDER = [
 export type FreischaltStatus = 'gebaut' | 'baubar' | 'gesperrt';
 
 /**
- * Woher der Bauplan eines Gebäudes kommt, in Spielersprache: «Bauplan beim Händler (50 Gold)»
- * bzw. «Bauplan beim Händler (150 Gold) oder vom Kristallgolem». Mit `stadtstufe` steht der
- * Preis mit Rabatt da. null für Gebäude ohne Bauplan.
+ * Fehlende Bedingungen als kurze Hinweise, z. B. «braucht Gildenrang 2». Leer = frei:
+ * dann lässt sich das Gebäude auf seinem Feld für die Baukosten bauen.
  */
-export function bauplanHinweis(typeId: string, stadtstufe = 1): string | null {
-  const bauplan = BUILDING_DEFS[typeId]?.freischaltung.bauplan;
-  if (!bauplan || !(bauplan in BAUPLAN_PREISE)) return null;
-  const boss = bauplanBossName(bauplan);
-  return `Bauplan beim Händler (${bauplanPreis(bauplan, stadtstufe)} Gold)${boss ? ` oder vom ${boss}` : ''}`;
-}
-
-/**
- * Fehlende Bedingungen als kurze Hinweise, z. B. «braucht Gildenrang 2» oder
- * «Bauplan beim Händler (50 Gold)». Leer = frei. `bauplaene` sind die Bauplan-Items im Lager,
- * `stadtstufe` gibt den Rabatt auf den Bauplan-Preis (data/haendler.ts).
- */
-export function getFreischaltHinweise(
-  typeId: string, builtTypeIds: Iterable<string>, gildenrang: number, bauplaene: Iterable<string>, stadtstufe = 1,
-): string[] {
+export function getFreischaltHinweise(typeId: string, builtTypeIds: Iterable<string>, gildenrang: number): string[] {
   const def = BUILDING_DEFS[typeId];
   if (!def) return [];
   const built = new Set(builtTypeIds);
@@ -163,30 +150,17 @@ export function getFreischaltHinweise(
   }
   const rang = def.freischaltung.gildenrang;
   if (rang && gildenrang < rang) hinweise.push(`braucht Gildenrang ${rang}`);
-  const bauplan = def.freischaltung.bauplan;
-  if (bauplan && !new Set(bauplaene).has(bauplan)) hinweise.push(bauplanHinweis(typeId, stadtstufe) ?? 'braucht einen Bauplan');
   return hinweise;
 }
 
-export function isBuildingUnlocked(
-  typeId: string, builtTypeIds: Iterable<string>, gildenrang: number, bauplaene: Iterable<string>,
-): boolean {
-  return getFreischaltHinweise(typeId, builtTypeIds, gildenrang, bauplaene).length === 0;
+export function isBuildingUnlocked(typeId: string, builtTypeIds: Iterable<string>, gildenrang: number): boolean {
+  return getFreischaltHinweise(typeId, builtTypeIds, gildenrang).length === 0;
 }
 
-export function getFreischaltStatus(
-  typeId: string, builtTypeIds: Iterable<string>, gildenrang: number, bauplaene: Iterable<string>,
-): FreischaltStatus {
+export function getFreischaltStatus(typeId: string, builtTypeIds: Iterable<string>, gildenrang: number): FreischaltStatus {
   const built = new Set(builtTypeIds);
   if (built.has(typeId)) return 'gebaut';
-  return isBuildingUnlocked(typeId, built, gildenrang, bauplaene) ? 'baubar' : 'gesperrt';
-}
-
-/** Bauplan-Items, die im Lager liegen (für getFreischaltHinweise). */
-export function bauplaeneImLager(globalStock: Readonly<Record<string, number>>): string[] {
-  return Object.values(BUILDING_DEFS)
-    .map(def => def.freischaltung.bauplan)
-    .filter((id): id is string => !!id && (globalStock[id] ?? 0) >= 1);
+  return isBuildingUnlocked(typeId, built, gildenrang) ? 'baubar' : 'gesperrt';
 }
 
 /** Stufe im Aufbau-Baum: 0 ohne Voraussetzung, sonst 1 + höchste Stufe der Voraussetzungen. */
