@@ -1,11 +1,12 @@
 // ─── Magic City – Fundbuch ──────────────────────────────────────
 // Woher kommt ein Gegenstand, und wofür braucht man ihn? Reine Rechnung
 // über die echten Daten (Beutetabellen, Routen, Händler, Rezepte,
-// Gebäude, Stadtstufen); nichts ist abgeschrieben.
+// Gebäude, Stadtstufen, Schmiede); nichts ist abgeschrieben.
 // Beute-Regel wie CombatEngine.rollLoot: Jeder besiegte Gegner mit
-// Beutetabelle gibt Gold und genau einen Gegenstand. Gezogen wird
-// gewichtet (Chance = Gewicht / Summe aller Gewichte, auch des Eintrags
-// «gold»), die Menge gleich verteilt von minQty bis maxQty.
+// Beutetabelle gibt Gold und einen Wurf aus seiner Tabelle, meist einen
+// Gegenstand, bei einem Eintrag «gold» manchmal stattdessen mehr Gold.
+// Gezogen wird gewichtet (Chance = Gewicht / Summe aller Gewichte, auch
+// des Eintrags «gold»), die Menge gleich verteilt von minQty bis maxQty.
 // Anzeige: ui/components/FundbuchFenster.ts. Doku: docs/FUNDBUCH.md.
 // ────────────────────────────────────────────────────────────────
 
@@ -17,8 +18,11 @@ import { HAENDLER_WAREN, ankaufpreis, kaufpreis } from '../data/haendler';
 import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../data/buildings';
 import { RECIPE_DEFS } from '../data/recipes';
 import { HERZSTEINE, STADTSTUFEN } from '../data/stadtstufen';
+import { DUNGEON_SETS, setTeilIds } from '../data/dungeonSets';
+import { MATERIAL_JE_STUFE, SPLITTER_JE_STUFE, grundMenge, materialFuerRoute } from '../data/schmiede';
 import { MERCHANT_MAX_PURCHASES, MERCHANT_PRICES } from './ExpeditionSystem';
 import { ausbauKosten, maxStufe } from './Ausbau';
+import { SPLITTER, einschmelzenErtrag, istSchmiedbar, materialJeSieg } from './Schmiede';
 
 /**
  * Ein Fund-Raum ohne feste Wahl bietet neben der Truhe eine von drei zufälligen Optionen an,
@@ -26,6 +30,13 @@ import { ausbauKosten, maxStufe } from './Ausbau';
  * Nachgerechnet in tests/fundbuch.test.ts.
  */
 export const VERSTECK_CHANCE = 1 / 3;
+
+/**
+ * Ein Rastplatz ohne feste Wahl bietet neben «Rasten» eine von drei zufälligen Optionen an, eine davon
+ * ist «Kräuter sammeln» mit 2 Grünen Kräutern (EncounterProcessor.zufallsWahlRast, nextInt(0, 2)).
+ * Nachgerechnet in tests/fundbuch.test.ts.
+ */
+export const RAST_KRAEUTER = { itemId: 'herb_green', menge: 2, chance: 1 / 3 };
 
 // ── Beute der Gegner ────────────────────────────────────────────
 
@@ -125,10 +136,16 @@ export interface Fundorte {
   /** Reisender Händler im Dungeon (MERCHANT_PRICES), höchstens `max` Käufe je Händler. */
   dungeonHaendler: { preis: number; max: number } | null;
   fundRaeume: FundRaum[];
+  /** Rastplätze ohne feste Wahl, an denen «Kräuter sammeln» angeboten werden kann (RAST_KRAEUTER). */
+  rastplaetze: { routeId: string; name: string; raum: number }[];
   /** Beim ersten Sieg der Gilde über den Boss (RouteDef.ersterSiegBeute). */
   ersterSieg: { routeId: string; name: string; bossName: string }[];
   /** Rezepte einer Werkstatt, die den Gegenstand herstellen (Menge je Durchgang). */
   hergestellt: { recipeId: string; name: string; buildingId: string; gebaeude: string; menge: number }[];
+  /** Schmiede-Material: so viel legt schmiedeBeute nach jedem Sieg in die Truhe, grösste Menge zuerst. */
+  jedenSieg: { routeId: string; name: string; menge: number }[];
+  /** Schmiede-Material: so viel bringt ein doppeltes Set-Teil aus diesem Dungeon beim Einschmelzen. */
+  einschmelzen: { routeId: string; name: string; menge: number }[];
 }
 
 function gegnerFund(enemyId: string, tabelle: LootTableDef, itemId: string, anzahl: number): GegnerFund {
@@ -160,6 +177,35 @@ function fundRaeume(itemId: string): FundRaum[] {
     });
   }
   return raeume;
+}
+
+function rastplaetze(itemId: string): Fundorte['rastplaetze'] {
+  if (itemId !== RAST_KRAEUTER.itemId) return [];
+  return Object.values(ROUTE_DEFS).flatMap(route => route.encounters
+    .map((enc, i) => ({ enc, raum: i + 1 }))
+    .filter(({ enc }) => enc.type === 'rest' && !enc.wahl)
+    .map(({ raum }) => ({ routeId: route.id, name: route.name, raum })));
+}
+
+/** Schmiede-Material aus schmiedeBeute (Schwierigkeit Normal, wie im Spiel). */
+function jedenSieg(itemId: string): Fundorte['jedenSieg'] {
+  return Object.values(ROUTE_DEFS)
+    .flatMap(route => {
+      const material = materialJeSieg(route.id);
+      return material?.material.id === itemId ? [{ routeId: route.id, name: route.name, menge: material.menge }] : [];
+    })
+    .sort((a, b) => b.menge - a.menge);
+}
+
+/** Einschmelzen: Jedes Teil eines Sets bringt gleich viel (Schmiede.einschmelzenErtrag), grösste Menge zuerst. */
+function einschmelzen(itemId: string): Fundorte['einschmelzen'] {
+  return DUNGEON_SETS
+    .flatMap(set => {
+      const ertrag = einschmelzenErtrag(setTeilIds(set)[0]);
+      const route = ROUTE_DEFS[set.routeId];
+      return ertrag?.material.id === itemId && route ? [{ routeId: route.id, name: route.name, menge: ertrag.menge }] : [];
+    })
+    .sort((a, b) => b.menge - a.menge);
 }
 
 /** Alle Quellen eines Gegenstands mit Zahlen. */
@@ -199,6 +245,7 @@ export function fundorte(itemId: string): Fundorte {
     haendler: stadt > 0 ? stadt : null,
     dungeonHaendler: dungeonPreis ? { preis: dungeonPreis, max: MERCHANT_MAX_PURCHASES } : null,
     fundRaeume: fundRaeume(itemId),
+    rastplaetze: rastplaetze(itemId),
     ersterSieg,
     hergestellt: Object.values(RECIPE_DEFS)
       .filter(r => r.outputs[itemId])
@@ -206,6 +253,8 @@ export function fundorte(itemId: string): Fundorte {
         const buildingId = gebaeudeMitRezept(r.id) ?? '';
         return { recipeId: r.id, name: r.name, buildingId, gebaeude: BUILDING_DEFS[buildingId]?.name ?? '', menge: r.outputs[itemId] };
       }),
+    jedenSieg: jedenSieg(itemId),
+    einschmelzen: einschmelzen(itemId),
   };
 }
 
@@ -232,6 +281,11 @@ export interface Verwendung {
   /** Abgabe beim Aufstieg auf diese Stadtstufe. */
   abgaben: { stufe: number; name: string; menge: number }[];
   herzsteine: { name: string; menge: number }[];
+  /**
+   * Schmiede: so viel braucht ein Set-Teil für jede Stufe (Index 0 = auf +1, 0 = auf dieser Stufe nichts).
+   * routeId: Set-Teile aus diesem Dungeon; null: jedes Set-Teil (Kristallsplitter).
+   */
+  schmiede: { routeId: string | null; mengen: number[] }[];
   proviant: boolean;
   /** Gold je Stück beim Händler der Stadt (Ankauf), 0 = nimmt er nicht. */
   ankauf: number;
@@ -239,6 +293,14 @@ export interface Verwendung {
 
 function gebaeudeMitRezept(recipeId: string): string | null {
   return BUILD_MENU_ORDER.find(id => BUILDING_DEFS[id]?.recipes.includes(recipeId)) ?? null;
+}
+
+/** Wie Schmiede.schmiedeKosten: Material = Grundmenge der Set-Ebene × MATERIAL_JE_STUFE, ab +3 Kristallsplitter. */
+function schmiedeBedarf(itemId: string): Verwendung['schmiede'] {
+  if (itemId === SPLITTER) return SPLITTER_JE_STUFE.some(n => n > 0) ? [{ routeId: null, mengen: [...SPLITTER_JE_STUFE] }] : [];
+  return DUNGEON_SETS
+    .filter(set => materialFuerRoute(set.routeId)?.id === itemId && setTeilIds(set).some(istSchmiedbar))
+    .map(set => ({ routeId: set.routeId, mengen: MATERIAL_JE_STUFE.map(n => n * grundMenge(set.tier)) }));
 }
 
 export function verwendung(itemId: string): Verwendung {
@@ -269,6 +331,7 @@ export function verwendung(itemId: string): Verwendung {
   const herzsteine = HERZSTEINE.filter(h => h.kosten[itemId]).map(h => ({ name: h.name, menge: h.kosten[itemId] }));
   return {
     rezepte, bau, ausbau, abgaben, herzsteine,
+    schmiede: schmiedeBedarf(itemId),
     proviant: PROVISION_ITEMS.includes(itemId),
     ankauf: ankaufpreis(itemId),
   };
@@ -306,7 +369,10 @@ export function gruppeVon(itemId: string): FundbuchGruppe {
   return 'sonstiges';
 }
 
-/** Alle Einträge des Fundbuchs: Beute (Gegner in Routen), Fund, Händlerware; ohne Gold und Dungeon-Set-Teile. */
+/**
+ * Alle Einträge des Fundbuchs: Beute (Gegner in Routen), Schmiede-Material der Routen, Fund, Händlerware;
+ * ohne Gold und Dungeon-Set-Teile.
+ */
 export function fundbuchEintraege(): string[] {
   const ids = new Set<string>();
   for (const enemyId of gegnerInRouten()) {
@@ -314,6 +380,8 @@ export function fundbuchEintraege(): string[] {
   }
   for (const route of Object.values(ROUTE_DEFS)) {
     if (route.ersterSiegBeute) ids.add(route.ersterSiegBeute);
+    const material = materialJeSieg(route.id);
+    if (material) ids.add(material.material.id);
     for (const enc of route.encounters) {
       if (enc.wahl) {
         for (const o of [enc.wahl.a, enc.wahl.b]) if (o.effect === 'item' && o.itemId) ids.add(o.itemId);
@@ -327,11 +395,14 @@ export function fundbuchEintraege(): string[] {
 
 // ── Zahlen in Spielersprache ────────────────────────────────────
 
-/** 0,35 → «35 %», 0,004 → «0,4 %» (unter 1 % mit einer Nachkommastelle). */
+/**
+ * 0,35 → «35 %», 0,004 → «0,4 %» (unter 1 % mit einer Nachkommastelle). Vor «%» steht ein geschütztes
+ * Leerzeichen: «%» rutscht nie allein auf die nächste Zeile.
+ */
 export function prozentText(anteil: number): string {
   const p = anteil * 100;
   const text = p > 0 && p < 1 ? p.toFixed(1) : String(Math.round(p));
-  return `${text.replace('.', ',')} %`;
+  return `${text.replace('.', ',')}\u00a0%`;
 }
 
 /** 1.4 → «1,4», 0.05 → «0,05» (unter 0,1 mit zwei Nachkommastellen), 2 → «2». */
