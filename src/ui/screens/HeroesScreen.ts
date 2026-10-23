@@ -573,7 +573,7 @@ function renderTrainTab(): string {
     .join('');
 
   if (!cards) {
-    return '<div class="empty-msg">Alle Helden haben das Maximallevel erreicht!</div>';
+    return `${lehrbuchHtml(gameState)}<div class="empty-msg">Alle Helden haben das Maximallevel erreicht!</div>`;
   }
   return `${lehrbuchHtml(gameState)}<div class="hcards">${cards}</div>`;
 }
@@ -971,7 +971,8 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
   window.dispatchEvent(new Event('mc:speichern'));
 
   // Show success feedback, then re-render
-  const successText = ergebnis.levelUps > 0 ? '\u2605 Level Up!' : '\u2713 Trainiert!';
+  const successText = ergebnis.neueKlassen.length > 0 ? '\u2605 Neue Klasse frei!'
+    : ergebnis.levelUps > 0 ? '\u2605 Level Up!' : '\u2713 Trainiert!';
   btn.textContent = successText;
   btn.style.background = '#166534';
   btn.setAttribute('disabled', 'true');

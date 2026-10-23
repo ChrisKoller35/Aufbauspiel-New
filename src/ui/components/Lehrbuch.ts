@@ -47,12 +47,15 @@ function wahlKnopf(rolle: 'lehrer' | 'schueler', f: GuildFighter, gewaehlt: bool
 export function lehrbuchHtml(state: GameState): string {
   const lehrerListe = state.fighters.filter(f => f.level >= MAX_HERO_LEVEL);
   const schuelerListe = state.fighters.filter(f => f.level < MAX_HERO_LEVEL);
-  if (lehrerListe.length === 0 || schuelerListe.length === 0) return '';
+  const meldung = zuletzt;
+  zuletzt = null;
+  if (lehrerListe.length === 0 || schuelerListe.length === 0) {
+    // Der letzte Schüler hat gerade Stufe 15 erreicht: die Meldung trotzdem zeigen, nicht später veraltet
+    return meldung ? `<section class="lehrbuch"><p class="lb-meldung" role="status" tabindex="-1">${meldung}</p></section>` : '';
+  }
 
   const { lehrer, schueler } = auswahl(state);
   const vorschau = lehrer && schueler ? lehrbuchVorschau(lehrer, schueler) : null;
-  const meldung = zuletzt;
-  zuletzt = null;
   const vorschauText = vorschau
     ? `+${vorschau.xp} XP → Stufe ${vorschau.vonStufe} auf ${vorschau.nachStufe}`
     : `${lehrer ? name(lehrer) : 'Der Lehrer'} hat noch keinen Überschuss. Jede Expedition auf Stufe 15 bringt welchen.`;
