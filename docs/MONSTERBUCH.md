@@ -17,6 +17,8 @@ Nach jeder Expedition (Sieg, Niederlage, Rückzug) zählen nur Räume, die gespi
 
 - **Gesichtet**: jeder Gegner in einem gespielten Raum.
 - **Strecke**: jeder Gegner, der dort mit `hp <= 0` endet, zählt +1. Zwei Waldwölfe im selben Raum zählen +2.
+  Test «zwei Wölfe im Raum zählen 2»: Das Musterteam «stark» mit festem Startwert schafft den Waldpfad
+  jedes Mal, auch den vierten Raum mit den zwei Wölfen; nach dem Lauf stehen 3 Wölfe in der Strecke.
 
 Beispiel Rückzug nach Raum 2 im Tiefwald (Boss: Uralter Treant): Gesichtet sind die Gegner
 der Räume 1 und 2 (Waldwolf, Waldspinne, Waldbandit), der Treant nicht. Bisher stand nach so
@@ -70,8 +72,62 @@ Angaben im Detailfenster, wie das Spiel rechnet (`CombatEngine.rollLoot`):
 - **Fund**: genau ein Gegenstand je Sieg; Chance = Gewicht / Summe der Gewichte, Menge von `minQty`
   bis `maxQty`. Der Test zieht 10 000-mal mit `rollLoot` und vergleicht (höchstens 2 Prozentpunkte daneben).
 - **XP**: geteilt unter den Helden, die den Kampf überleben.
-- **Fähigkeiten** auf Deutsch: Schaden, Flächenschaden, Heilung, Stärkung, Beschwörung, Luftraub;
-  «Abklingzeit 3 Runden»; «Wut ab Runde 8: Angriff ×1,5, Tempo ×1,3».
+- **Rolle** unter dem Namen, ohne Doppel: «💀 Boss» (früher «💀 Boss · BOSS»).
+
+### Fähigkeiten und Wut, wie der Kampf sie einsetzt
+
+Die Texte im Fenster kommen aus `faehigkeitText` (`Monsterkunde.ts`) und folgen der Regel in
+`CombatEngine.processCombat`, nicht den Beschreibungen in `enemies.ts`. Die versprachen bei
+Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei Beschwörung Verstärkung.
+
+| Art | Text im Fenster | was der Kampf tut |
+|---|---|---|
+| Schaden | «Trifft einen Helden mit dem 1,5-fachen Schaden eines normalen Angriffs.» | ein Ziel, bei `all_players` alle; im Belagerungsraum nie die Kriegsmaschine |
+| Flächenschaden | «Trifft alle Helden mit dem 0,5-fachen Schaden …» | jeder lebende Held, nie die Kriegsmaschine |
+| Heilung | «Heilt den Verbündeten mit den wenigsten Leben um 24, auch sich selbst.» | Gegner mit den wenigsten Leben, um die Stärke der Fähigkeit (trifft ihn ein Held mit Wundfluch, nur halb) |
+| Heilung (kämpft immer allein, z. B. jeder Boss) | «Heilt sich um 36 Leben.» | wie oben, er ist der einzige |
+| Stärkung | «Gibt sich selbst 5 Angriff mehr, 3 Runden lang.» | Angriff, nie Abwehr |
+| Beschwörung | «Ruft niemanden herbei, sondern gibt sich selbst 3 Angriff mehr, 4 Runden lang.» | keine neuen Gegner |
+| Luftraub | «Zieht 10 Luft aus dem Luftschild, ohne Schaden.» | `luftsauger` 10, `blasenstoss` 8 (Tabelle in `processCombat`) |
+
+Bei Stärke 1 heisst es «mit dem Schaden eines normalen Angriffs» statt «mit dem 1-fachen …»
+(Säure, Dreifachbiss, Steinschlag, Magmawelle und Torschlag, alle fünf Flächenschaden).
+
+Die Art steht vor der Abklingzeit, ausser sie ist schon der Name (die «Heilung» des Waldschamanen
+zeigt nur «Abklingzeit 4 Runden»). Dahinter die Runden des Einsatzes aus `einsatzRunden`:
+«Einsatz in Runde 1, 5, 9 …». In jedem Zug geht ein Gegner seine Fähigkeiten der Reihe nach durch;
+eine mit Abklingzeit zählt eins herunter und wird übersprungen, auch im Zug, in dem sie auf 0
+fällt; die erste bereite setzt er ein, die danach zählen in diesem Zug nicht. Abklingzeit N heisst
+also: frühestens N + 1 Runden später wieder. Eine zweite Fähigkeit wartet, solange die erste vorgeht
+(Rindenwall des Treants: Runde 2, 10, 18; Neuauflage des Oberarchivars: Runde 3 und 14).
+Gerechnet ohne ausgesetzten Zug (Betäubung verschiebt alles) bis Runde 20, für Gegner aus
+Belagerungsräumen bis Runde 30 (`kampfRunden`, wie `processFortificationCombat`): Die
+Schutzbarriere des Kampfmagiers zeigt darum «Einsatz in Runde 2, 9, 17 …».
+
+**Wut**: «Wut ab Runde 8: Angriff ×1,5, Tempo ×1,3». Ziehen Wahlen unterwegs die Wut vor
+(`bossWutFrueher`, die Sonnenuhr im Morgentor: dreimal 2 Runden), steht darunter, bis auf welche
+Runde (`wutVorziehbar`, gerechnet wie `CombatEngine.wutAbRunde`): Sunna ab Runde 4 statt 10.
+Bei keinem anderen Boss rückt die Wut.
+
+**Felder, die im Kampf nicht ankommen**: `CombatEngine.enemyToCombatUnit` übernimmt zwei Felder
+aus `enemies.ts` nicht, und das Buch beschreibt, was der Kampf tut:
+
+- Die Druckwelle des Leviathans hat `drainAirAmount: 18`, nimmt im Kampf aber keine Luft. Das Buch
+  nennt bei ihr keine Luft.
+- Mauerschütze, Armbrustschütze und Kampfmagier haben `prefersWarMachineTarget`, greifen im
+  Belagerungsraum aber wie alle anderen die Helden an, nie die Kriegsmaschine. So steht es bei den
+  Fähigkeiten im Fenster («Trifft einen Helden …») und in der Notiz zu den Stadtmauern. Ihr
+  Hintergrund (`ENEMY_LORE`, unverändert) sagt noch, sie zielten auf Kriegsmaschinen; die Notiz
+  nennt das ihren Ruf.
+
+Wird eins davon im Kampf behoben, scheitert der Test «faehigkeitText sagt, was der Kampf tut», bei
+der Kriegsmaschine auch der Test der Notiz; beide zeigen, wo Fenster und Notiz nachziehen.
+
+Tests «Fähigkeiten im Fenster = Fähigkeiten im Kampf»: Für jeden erreichbaren Gegner kämpft ein
+unverwundbares Team gegen ihn (`processCombat`, für die fünf Gegner aus Belagerungsräumen auch
+`processFortificationCombat` neben einem Katapult), verglichen werden die Runden jedes Einsatzes
+und das Kampfprotokoll (Zahl der Treffer, keiner auf das Katapult, Heilmenge, Angriff und Dauer,
+Luft in beide Richtungen).
 
 ## Seiten und Prämien
 
@@ -145,3 +201,38 @@ Gerechnet mit `siegeVon(route, team, 'klug', 100)` aus `src/systems/Musterlauf.t
 Die Musterteams sind stärker als ein Spieler am Anfang (ein Guardian auf Stufe 1); sie verlieren
 auf Ebene 1 und 2 keinen Lauf. Wer früher hingeht, braucht mehr Versuche. Verlorene Läufe zählen
 aber mit: Was vor der Niederlage fällt, steht in der Strecke.
+
+## Randnotizen
+
+Je Dungeon eine, 2 bis 3 Sätze, mit einem Gegner der Seite beim Namen. Was sie über den Kampf sagen,
+stimmt mit dem Spiel, und der Test rechnet es nach: Jede Stelle mit «Runde» oder «Runden», mit
+«jede» oder «alle» und einer Zahl (Wort oder Ziffer), mit «Luft» (auch «Luftsauger») oder mit
+«Kriegsmaschine» muss in einem Eintrag einer dieser Tabellen in `tests/monsterbuch.test.ts` stehen,
+sonst scheitert er («alle 2 Runden», «jede Runde» oder «nach zwei Runden wieder bereit» ohne
+Eintrag fallen durch):
+
+| Tabelle | Beispiel aus einer Notiz | nachgerechnet |
+|---|---|---|
+| `TAKT` | «jede vierte Runde», «nur in Runde 3 und 14» | Runden jedes Einsatzes im echten Kampf; Abstand und genannte Runden passen dazu |
+| `WUT` | «ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3»; Sonnenuhr «dreimal vorgestellt … ab Runde 4» | `bossWut` und `wutAbRunde` mit den Sonnenuhren der Route |
+| `WIRKUNG` | «3 Angriff mehr für drei Runden», «10 Luft» | dieselben Zahlen in der Zeile des Kampfprotokolls beim ersten Einsatz |
+| `KRIEGSMASCHINE` | «sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden» | `processFortificationCombat` mit Katapult: Treffer auf Helden, keiner auf das Katapult |
+
+Die Morgentor-Notiz nennt die Sonnenuhr (Sunnas Wut bis Runde 4). Die Stadtmauern-Notiz stellt
+den Ruf von Mauerschütze und Armbrustschütze richtig: Ihr Hintergrund im Fenster sagt, sie zielten
+auf Kriegsmaschinen, im Kampf schiessen sie auf die Helden (siehe «Felder, die im Kampf nicht
+ankommen»).
+
+## Bildschirm
+
+- **Seitenwahl am PC**: eine Knopfleiste; die gewählte Seite ist gedrückt (`aria-pressed`, goldener Rand).
+- **Seitenwahl am Handy** (Breite bis 700 px oder Höhe bis 500 px): statt 29 Knöpfen eine Zeile mit
+  Auswahlliste und ‹ › zum Blättern (je 44 × 44 px), damit Seitentitel und erste Karten ohne
+  Scrollen im Bild stehen. `monsterbuch.css` zeigt je nach Grösse die eine oder die andere.
+- Beim Seitenwechsel wird nur das Blatt darunter neu gezeichnet: Knopf, Liste oder Pfeil behalten
+  den Fokus. Sperrt sich der Pfeil am Buchende, geht der Fokus auf die Liste.
+- **Detailfenster**: scrollt selbst, das ✕ (44 × 44) klebt oben rechts und bleibt beim Scrollen im
+  Bild. Ein langer Name («Tropfsteinfledermaus») bricht um und läuft nicht unter das ✕; bis
+  480 px Breite werden Bild und Rand kleiner.
+- Doppelklick oder Doppeltipp auf eine Karte: Der zweite Klick trifft das eben geöffnete ✕ und
+  schliesst nicht (`e.detail > 1`, wie im Spielstand-Fenster). Ein Doppelklick markiert keinen Text.

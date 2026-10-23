@@ -5,24 +5,25 @@
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createNewGameState, GameState } from '../src/models/GameState';
-import { ExpeditionRun } from '../src/models/ExpeditionRun';
+import { CombatUnit, EncounterRoom, ExpeditionRun } from '../src/models/ExpeditionRun';
 import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { SaveSystem, pruefeSpielstandText } from '../src/systems/SaveSystem';
-import { CombatEngine } from '../src/systems/CombatEngine';
+import { CombatEngine, bossWut, wutAbRunde } from '../src/systems/CombatEngine';
 import { BestiariumSystem } from '../src/systems/BestiariumSystem';
 import { SeededRNG } from '../src/utils/RNG';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from '../src/data/routes';
-import { ENEMY_DEFS } from '../src/data/enemies';
+import { ENEMY_DEFS, ENEMY_LORE } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { MONSTERBUCH_NOTIZEN } from '../src/data/monsterbuchNotizen';
 import { musterStand } from '../src/systems/Musterlauf';
 import {
-  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, erreichbareGegner, gesichtet, goldSpanne, praemieAbgeholt,
-  praemieAbholen, praemieBetrag, praemieFaellig, praemieGrundbetrag, praemien, seiten, seitenStand, siegeBis, strecke, stufe,
+  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, einsatzRunden, erreichbareGegner, faehigkeitText, gesichtet,
+  goldSpanne, kampfRunden, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, praemieGrundbetrag, praemien, seiten, seitenStand,
+  siegeBis, strecke, stufe, wutVorziehbar,
 } from '../src/systems/Monsterkunde';
 
 /** Neues Spiel wie main.ts beim ersten Start: ein Guardian. */
@@ -105,17 +106,24 @@ describe('Zählen: nur gespielte Räume', () => {
   });
 
   it('Strecke = Zahl der Gegner mit hp <= 0, zwei Wölfe im Raum zählen 2', () => {
-    const { state, ids } = neuesSpiel();
+    // Fester Startwert und ein Team, das den Waldpfad sicher schafft: Es kommt immer bis in den vierten
+    // Raum, wo zwei Waldwölfe stehen (ein einzelner Guardian mit zufälligem Startwert kam fast nie dorthin)
+    const { state, ids } = musterStand('stark', 7919);
+    expect(ROUTE_DEFS.forest_short.encounters[0].enemies).toEqual(['forest_wolf', 'forest_spider']);
+    expect(ROUTE_DEFS.forest_short.encounters[3].enemies).toEqual(['forest_wolf', 'forest_wolf']);
     const run = lauf(state, ids, 'forest_short');
-    const erwartet = besiegteImLauf(run);
-    expect(Object.keys(erwartet).length).toBeGreaterThan(0);
-    expect(strecke(state)).toEqual(erwartet);
+    expect(run.status).toBe('victory');
+    const wolfsraum = run.rooms[3];
+    expect(wolfsraum.completed).toBe(true);
+    expect(wolfsraum.enemies.map(e => [e.defId, e.hp <= 0])).toEqual([['forest_wolf', true], ['forest_wolf', true]]);
+    // Ein Wolf aus dem ersten Raum und zwei aus dem vierten: drei, nicht zwei (je Raum und Art nur einmal)
+    expect(anzahlBesiegt(state, 'forest_wolf')).toBe(3);
+    expect(strecke(state)).toEqual({ forest_wolf: 3, forest_spider: 1, forest_bandit: 1, forest_bear: 1 });
+    expect(strecke(state)).toEqual(besiegteImLauf(run));
     // Ein zweiter Lauf zählt dazu
     const run2 = lauf(state, ids, 'forest_short');
-    const zwei = besiegteImLauf(run2);
-    for (const id of new Set([...Object.keys(erwartet), ...Object.keys(zwei)])) {
-      expect(anzahlBesiegt(state, id)).toBe((erwartet[id] ?? 0) + (zwei[id] ?? 0));
-    }
+    expect(run2.status).toBe('victory');
+    expect(strecke(state)).toEqual({ forest_wolf: 6, forest_spider: 2, forest_bandit: 2, forest_bear: 2 });
     // Die Listen für Erfolge und Stadtweg bleiben Listen von IDs
     expect(state.bestiarium.defeated.every(id => typeof id === 'string')).toBe(true);
     expect(state.bestiarium.discovered.every(id => typeof id === 'string')).toBe(true);
@@ -213,6 +221,164 @@ describe('Beute im Fenster = Beute im Spiel', () => {
   });
 });
 
+/** Die Kriegsmaschine im Prüfkampf: ein Katapult, wie es eine Belagerungsroute aus dem Lager mitnimmt */
+const KATAPULT = new CombatEngine(new GearSystem()).warMachineToCombatUnit('war_catapult').name;
+
+/**
+ * Ein Kampf gegen einen Gegner im echten Kampf (CombatEngine.processCombat, mit `belagerung` in einem
+ * Belagerungsraum processFortificationCombat mit Katapult). Vier Helden, der Gegner, die Befestigung
+ * und das Katapult sind unverwundbar, die Helden ohne Effekte (niemand betäubt, weicht aus oder fängt
+ * ab), mit Luftschild.
+ */
+function pruefKampf(id: string, belagerung = false): { run: ExpeditionRun; gegner: CombatUnit } {
+  const { state, ids } = musterStand('stark', 7919);
+  const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
+  const run = system.startExpedition(state, 'forest_short', ids, 'normal', null, false, [])!;
+  run.airShield = 1000;
+  for (const held of run.party) Object.assign(held, { hp: 1e7, maxHp: 1e7, def: 1e5, atk: 0, critChance: 0, specialEffects: [] });
+  const engine = new CombatEngine(new GearSystem());
+  const gegner = engine.enemyToCombatUnit(id);
+  Object.assign(gegner, { hp: 1e7, maxHp: 1e7 });
+  const raum = { index: 0, type: ENEMY_DEFS[id].isBoss ? 'boss' : 'combat', enemies: [gegner], healPercent: 0, hazardDamage: 0, completed: false } as EncounterRoom;
+  if (belagerung) {
+    run.warMachineUnit = Object.assign(engine.warMachineToCombatUnit('war_catapult'), { hp: 1e7, maxHp: 1e7 });
+    Object.assign(raum, { type: 'fortification', fortification: { name: 'Prüfturm', hp: 1e7, maxHp: 1e7, armor: 0, spriteKey: '' } });
+    engine.processFortificationCombat(run, raum, new SeededRNG(1));
+  } else {
+    engine.processCombat(run, raum, new SeededRNG(1));
+  }
+  return { run, gegner };
+}
+
+/** Was ein Gegner im Kampf mit seinen Fähigkeiten tut: je Fähigkeit die Runden ihres Einsatzes mit den Protokollzeilen der Runde */
+function imKampf(id: string, belagerung = false): { runde: number; zeilen: string[] }[][] {
+  const { run, gegner } = pruefKampf(id, belagerung);
+  return ENEMY_DEFS[id].skills.map(sk => (run.combatRoundSnapshots ?? [])
+    .filter(runde => runde.logLines.some(z => z.startsWith(`${gegner.name} setzt ${sk.name} ein`)
+      || (sk.effectType === 'drain_air' && z.startsWith(`>> ${gegner.name} entzieht dem Luftschild`))))
+    .map(runde => ({ runde: runde.round, zeilen: runde.logLines })));
+}
+
+/** Wie oft der Gegner im Belagerungsraum die Helden und wie oft das Katapult trifft (Fähigkeiten und Grundangriffe) */
+function zieleInBelagerung(id: string): { helden: number; katapult: number } {
+  const { run, gegner } = pruefKampf(id, true);
+  const treffer = (ziel: string) => run.combatLog.filter(z => (z.startsWith(`${gegner.name} setzt `) && z.includes(`→ ${ziel} erleidet`))
+    || z.startsWith(`${gegner.name} greift ${ziel} an`)).length;
+  return { helden: run.party.reduce((summe, held) => summe + treffer(held.name), 0), katapult: treffer(KATAPULT) };
+}
+
+describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
+  it('einsatzRunden: dieselben Runden wie processCombat, für jeden erreichbaren Gegner', () => {
+    let geprueft = 0;
+    for (const id of erreichbareGegner()) {
+      const skills = ENEMY_DEFS[id].skills;
+      if (skills.length === 0) continue;
+      expect(einsatzRunden(skills), id).toEqual(imKampf(id).map(einsaetze => einsaetze.map(e => e.runde)));
+      geprueft++;
+    }
+    expect(geprueft).toBeGreaterThan(70);
+    // Wer in einem Belagerungsraum steht, kämpft dort bis zu 30 Runden (processFortificationCombat)
+    const belagert = erreichbareGegner().filter(id => kampfRunden(id) === 30);
+    expect(belagert.sort()).toEqual(['siege_crossbowman', 'siege_defender', 'siege_mage', 'wall_archer', 'wall_guard']);
+    for (const id of belagert) {
+      expect(einsatzRunden(ENEMY_DEFS[id].skills, 30), id).toEqual(imKampf(id, true).map(einsaetze => einsaetze.map(e => e.runde)));
+    }
+    expect(einsatzRunden(ENEMY_DEFS.siege_mage.skills, 30)[1]).toEqual([2, 9, 17, 24]);
+    // Abklingzeit 3 heisst: jede vierte Runde. Die zweite Fähigkeit wartet, solange die erste vorgeht.
+    expect(einsatzRunden(ENEMY_DEFS.forest_wolf.skills)).toEqual([[1, 5, 9, 13, 17]]);
+    expect(einsatzRunden(ENEMY_DEFS.boss_elder_treant.skills)).toEqual([[1, 5, 9, 13, 17], [2, 10, 18]]);
+  });
+
+  it('faehigkeitText sagt, was der Kampf tut: Zahl, Ziel, Dauer, Luft; nie Abwehr, nie die Kriegsmaschine', () => {
+    const helden = 4;
+    // Wer in einem Belagerungsraum steht, kämpft auch dort, neben dem Katapult: Der Text gilt in beiden Kämpfen
+    const kaempfe = erreichbareGegner().flatMap(id =>
+      (kampfRunden(id) === 30 ? [false, true] : [false]).map(belagerung => ({ id, belagerung })));
+    expect(kaempfe.filter(k => k.belagerung).length).toBe(5);
+    for (const { id, belagerung } of kaempfe) {
+      const kampf = imKampf(id, belagerung);
+      ENEMY_DEFS[id].skills.forEach((sk, i) => {
+        const text = faehigkeitText(id, sk);
+        const name = `${id} ${sk.name}${belagerung ? ' (Belagerung)' : ''}`;
+        expect(kampf[i].length, name).toBeGreaterThan(0);
+        // Die Zeilen der ersten Runde, in der er die Fähigkeit einsetzt
+        const zeilen = kampf[i][0].zeilen;
+        expect(text, name).not.toMatch(/Abwehr|DEF|Verstärkung/);
+        if (sk.effectType === 'damage' || sk.effectType === 'aoe') {
+          // Stärke 1 ohne «1-fachen»
+          expect(text, name).toContain(sk.power === 1
+            ? 'mit dem Schaden eines normalen Angriffs'
+            : `mit dem ${sk.power.toLocaleString('de')}-fachen Schaden`);
+          // So viele Treffer, wie der Text Ziele nennt. Die Kriegsmaschine nennt er genau dann, wenn der
+          // Kampf sie trifft (heute nie: enemyToCombatUnit übernimmt prefersWarMachineTarget nicht)
+          const treffer = zeilen.filter(z => z.startsWith(`${ENEMY_DEFS[id].name} setzt ${sk.name} ein →`) && z.includes('erleidet'));
+          const aufKatapult = treffer.filter(z => z.includes(`→ ${KATAPULT} erleidet`)).length;
+          expect(text.includes('Kriegsmaschine'), name).toBe(aufKatapult > 0);
+          expect(treffer.length, name).toBe(text.startsWith('Trifft alle Helden') ? helden : 1);
+          expect(text.startsWith('Trifft alle Helden') || text.startsWith('Trifft einen Helden'), name).toBe(true);
+        }
+        // Luft nennt der Text genau dann, wenn der Kampf Luft nimmt, und dann dieselbe Menge
+        const luft = zeilen.map(z => /(?:reißt|entzieht dem Luftschild) (\d+) Luft/.exec(z)?.[1]).find(Boolean);
+        expect(/(\d+) Luft/.exec(text)?.[1], name).toBe(luft);
+        if (sk.effectType === 'heal') {
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → heilt`) && z.endsWith(`um ${sk.power}`)), name).toBe(true);
+          expect(text, name).toContain(`um ${sk.power.toLocaleString('de')}`);
+        }
+        if (sk.effectType === 'buff') {
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → +${sk.power} ATK für 3 Runden`)), name).toBe(true);
+          expect(text, name).toBe(`Gibt sich selbst ${sk.power} Angriff mehr, 3 Runden lang.`);
+        }
+        if (sk.effectType === 'summon') {
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → Verstärkung beschworen! (+${sk.power} ATK für 4 Runden)`)), name).toBe(true);
+          expect(text, name).toBe(`Ruft niemanden herbei, sondern gibt sich selbst ${sk.power} Angriff mehr, 4 Runden lang.`);
+        }
+        if (sk.effectType === 'drain_air') expect(luft, name).toBeDefined();
+      });
+    }
+  });
+
+  it('die Beispiele aus der Prüfung: Heilung, Diamantpanzer, Brut, Luftsauger, Stärke 1', () => {
+    const text = (id: string, skillId: string) => faehigkeitText(id, ENEMY_DEFS[id].skills.find(s => s.id === skillId)!);
+    const heilung = ENEMY_DEFS.forest_shaman.skills[0];
+    expect(faehigkeitText('forest_shaman', heilung)).toBe('Heilt den Verbündeten mit den wenigsten Leben um 24, auch sich selbst.');
+    // Passt auch zu «die Moorhexe» und «das Irrlicht» (früher: «…, das kann auch er selbst sein.»)
+    const dunkleHeilung = ENEMY_DEFS.bog_witch.skills.find(s => s.name === 'Dunkle Heilung')!;
+    expect(text('bog_witch', dunkleHeilung.id)).toBe('Heilt den Verbündeten mit den wenigsten Leben um 30, auch sich selbst.');
+    // Stärke 1: der Schaden eines normalen Angriffs, nicht der «1-fache»
+    const saeure = ENEMY_DEFS.cave_slime.skills.find(s => s.name === 'Säure')!;
+    expect(saeure.power).toBe(1);
+    expect(text('cave_slime', saeure.id)).toBe('Trifft alle Helden mit dem Schaden eines normalen Angriffs.');
+    // Ein Boss kämpft allein: Seine Heilung heilt nur ihn
+    const regeneration = ENEMY_DEFS.boss_swamp_hydra.skills.find(s => s.effectType === 'heal')!;
+    expect(faehigkeitText('boss_swamp_hydra', regeneration)).toBe('Heilt sich um 36 Leben.');
+    const diamantpanzer = ENEMY_DEFS.boss_crystal_golem.skills.find(s => s.name === 'Diamantpanzer')!;
+    expect(text('boss_crystal_golem', diamantpanzer.id)).toBe('Gibt sich selbst 5 Angriff mehr, 3 Runden lang.');
+    const brut = ENEMY_DEFS.boss_spider_queen.skills.find(s => s.name === 'Brut beschwören')!;
+    expect(text('boss_spider_queen', brut.id)).toBe('Ruft niemanden herbei, sondern gibt sich selbst 3 Angriff mehr, 4 Runden lang.');
+    const luftsauger = ENEMY_DEFS.jellyfish_swarm.skills.find(s => s.effectType === 'drain_air')!;
+    expect(text('jellyfish_swarm', luftsauger.id)).toBe('Zieht 10 Luft aus dem Luftschild, ohne Schaden.');
+    expect(text('forest_wolf', 'bite')).toBe('Trifft einen Helden mit dem 1,5-fachen Schaden eines normalen Angriffs.');
+    expect(text('forest_spider', 'web')).toBe('Trifft alle Helden mit dem 0,5-fachen Schaden eines normalen Angriffs.');
+    // drainAirAmount: 18 steht in enemies.ts, kommt aber nicht im Kampf an (enemyToCombatUnit)
+    expect(ENEMY_DEFS.boss_leviathan.skills.find(s => s.id === 'druckwelle')!.drainAirAmount).toBe(18);
+    expect(text('boss_leviathan', 'druckwelle')).toBe('Trifft alle Helden mit dem 0,9-fachen Schaden eines normalen Angriffs.');
+  });
+
+  it('Sonnenuhr: Sunnas Wut kann bis Runde 4 vorrücken, bei keinem anderen Boss rückt sie', () => {
+    const sonnenuhren = ROUTE_DEFS.morgentor.encounters.flatMap(enc => enc.wahl ? [enc.wahl.a, enc.wahl.b] : [])
+      .map(option => option.bossWutFrueher ?? 0).filter(n => n > 0);
+    expect(sonnenuhren).toEqual([2, 2, 2]);
+    const frueher = sonnenuhren.reduce((a, b) => a + b, 0);
+    expect(wutVorziehbar('boss_sunna')).toEqual([
+      { routeId: 'morgentor', name: ROUTE_DEFS.morgentor.name, abRunde: wutAbRunde(bossWut('boss_sunna'), { bossWutFrueher: frueher }) },
+    ]);
+    expect(wutVorziehbar('boss_sunna')[0].abRunde).toBe(4);
+    for (const id of erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_sunna')) {
+      expect(wutVorziehbar(id), id).toEqual([]);
+    }
+  });
+});
+
 describe('Stufen und Seitenprämien', () => {
   it('Stufen nach Siegen: normal 1/10/30, Boss 1/3/10', () => {
     const state = createNewGameState();
@@ -286,6 +452,104 @@ describe('Stufen und Seitenprämien', () => {
   });
 });
 
+const ZAHLWORT: Record<string, number> = {
+  zweite: 2, dritte: 3, vierte: 4, fünfte: 5, sechste: 6, siebte: 7, achte: 8, neunte: 9, zehnte: 10,
+  zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10,
+};
+const ZAHLWOERTER = Object.keys(ZAHLWORT).join('|');
+
+/** Eine Zahl als Ziffer («3», «3.») oder als Wort («drei», «dritte»), sonst undefined */
+function zahlWert(wort: string): number | undefined {
+  return /^\d+\.?$/.test(wort) ? parseInt(wort, 10) : ZAHLWORT[wort.toLowerCase()];
+}
+
+/** Alle Zahlen eines Textes, der Grösse nach («drei Runden» und «3 Runden» geben beide 3) */
+function zahlen(text: string): number[] {
+  return [...text.matchAll(new RegExp(`\\d+(?:,\\d+)?|\\b(?:${ZAHLWOERTER})\\b`, 'gi'))]
+    .map(m => zahlWert(m[0]) ?? Number(m[0].replace(',', '.')))
+    .sort((a, b) => a - b);
+}
+
+function notizText(routeId: string): string {
+  return MONSTERBUCH_NOTIZEN.find(n => n.routeId === routeId)?.text ?? '';
+}
+
+/**
+ * Jede Takt-Angabe in Ottokars Notizen: der Text in der Notiz und die Runden, in denen der Gegner die
+ * Fähigkeit im echten Kampf einsetzt (20 Runden, ohne ausgesetzten Zug). Eine zweite oder dritte
+ * Fähigkeit wartet, solange eine frühere bereit ist (Rindenwall, Neuauflage). Abstand («jede vierte»,
+ * «alle 3», «jede Runde») und genannte Runden («nur in Runde 3 und 14») vergleicht der Test mit `runden`.
+ */
+const TAKT: { routeId: string; gegner: string; faehigkeit: string; text: string; runden: number[] }[] = [
+  { routeId: 'forest_medium', gegner: 'boss_elder_treant', faehigkeit: 'Rindenwall', text: 'zuerst in Runde 2 und danach nur alle acht Runden', runden: [2, 10, 18] },
+  { routeId: 'haunted_woods', gegner: 'cursed_wisp', faehigkeit: 'Verbündete heilen', text: 'das Irrlicht jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'haunted_woods', gegner: 'forest_shaman', faehigkeit: 'Heilung', text: 'der Schamane jede fünfte', runden: [1, 6, 11, 16] },
+  { routeId: 'ocean_shallows', gegner: 'jellyfish_swarm', faehigkeit: 'Stromtentakel', text: 'mit Stromtentakel jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'ocean_depths', gegner: 'boss_leviathan', faehigkeit: 'Tiefenstrahl', text: 'Tiefenstrahl trifft jede dritte Runde alle Helden', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'ocean_abyss', gegner: 'drowned_knight', faehigkeit: 'Rostiger Hieb', text: 'Rostiger Hieb kommt jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'swamp_long', gegner: 'bog_witch', faehigkeit: 'Dunkle Heilung', text: 'mit Dunkler Heilung jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'ruins_crypts', gegner: 'cursed_priest', faehigkeit: 'Dunkles Gebet', text: 'Priester heilt jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'ruins_depths', gegner: 'boss_shadow_lich', faehigkeit: 'Seelenraub', text: 'Seelenraub, der jede vierte Runde kommt', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'obsidian_tunnels', gegner: 'fire_bat', faehigkeit: 'Flammensturz', text: 'greift jede dritte Runde mit Flammensturz an', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'ash_wastes', gegner: 'magma_broodling', faehigkeit: 'Flammenaura', text: 'mit Flammenaura jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'magma_caverns', gegner: 'lava_elemental', faehigkeit: 'Magmawelle', text: 'Magmawelle trifft jede fünfte Runde', runden: [1, 6, 11, 16] },
+  { routeId: 'volcano_core', gegner: 'boss_magma_wyrm', faehigkeit: 'Infernoodem', text: 'Infernoodem trifft jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'himmelsarchiv', gegner: 'boss_oberarchivar', faehigkeit: 'Neuauflage', text: 'nur in Runde 3 und 14', runden: [3, 14] },
+];
+
+/**
+ * Jede Wut-Angabe: «ab Runde N» und die Faktoren, wie der Kampf sie nimmt (bossWut, wutAbRunde).
+ * `sonnenuhren`: so viele Wahlen unterwegs, welche die Wut vorziehen, sind genommen (Sonnenuhr im Morgentor).
+ */
+const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number }[] = [
+  { routeId: 'forest_medium', gegner: 'boss_elder_treant', text: 'ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3' },
+  { routeId: 'ocean_depths', gegner: 'boss_leviathan', text: 'wütet schon ab Runde 7, so früh wie von sich aus kein anderer Boss in diesem Buch: Angriff mal 1,6, Tempo mal 1,2' },
+  { routeId: 'siege_walls', gegner: 'boss_iron_commander', text: 'wütet ab Runde 9' },
+  { routeId: 'siege_fortress', gegner: 'boss_fortress_warden', text: 'wütet erst ab Runde 10' },
+  { routeId: 'ruins_crypts', gegner: 'boss_fallen_knight', text: 'ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3' },
+  { routeId: 'volcano_core', gegner: 'boss_magma_wyrm', text: 'die Wut kommt ab Runde 10' },
+  { routeId: 'drachenhort', gegner: 'boss_ignarax', text: 'Wut ab Runde 10' },
+  { routeId: 'sternenschmiede', gegner: 'boss_korrund', text: 'wütet ab Runde 10' },
+  { routeId: 'mondhof', gegner: 'boss_argentis', text: 'wütet ab Runde 10' },
+  { routeId: 'morgentor', gegner: 'boss_sunna', text: 'wütet ab Runde 10' },
+  { routeId: 'morgentor', gegner: 'boss_sunna', text: 'zieht ihre Wut um 2 Runden vor, dreimal vorgestellt wütet sie schon ab Runde 4', sonnenuhren: 3 },
+];
+
+/**
+ * Was eine Fähigkeit laut Notiz bewirkt (Angriff und Dauer einer Stärkung oder Beschwörung, Luft): Die
+ * Zeile `protokoll` steht beim ersten Einsatz im Kampfprotokoll, mit denselben Zahlen wie die Notiz.
+ */
+const WIRKUNG: { routeId: string; gegner: string; faehigkeit: string; text: string; protokoll: string }[] = [
+  { routeId: 'forest_medium', gegner: 'boss_elder_treant', faehigkeit: 'Rindenwall', text: '3 Angriff mehr für drei Runden', protokoll: '+3 ATK für 3 Runden' },
+  { routeId: 'ocean_shallows', gegner: 'jellyfish_swarm', faehigkeit: 'Luftsauger', text: 'Luftsauger zieht dazu 10 Luft aus dem Schild', protokoll: 'entzieht dem Luftschild 10 Luft' },
+  { routeId: 'cave_deep', gegner: 'boss_crystal_golem', faehigkeit: 'Diamantpanzer', text: '5 Angriff mehr für drei Runden', protokoll: '+5 ATK für 3 Runden' },
+  { routeId: 'cave_spider', gegner: 'boss_spider_queen', faehigkeit: 'Brut beschwören', text: 'vier Runden lang 3 Angriff mehr', protokoll: '+3 ATK für 4 Runden' },
+  { routeId: 'ruins_depths', gegner: 'boss_shadow_lich', faehigkeit: 'Totenerweckung', text: 'vier Runden lang 1 Angriff mehr', protokoll: '+1 ATK für 4 Runden' },
+];
+
+/**
+ * Was eine Notiz über die Kriegsmaschine sagt: Diese Gegner greifen im Belagerungsraum die Helden an und
+ * nie das Katapult. Ihr Hintergrund (ENEMY_LORE) und prefersWarMachineTarget in enemies.ts sagen anderes,
+ * aber enemyToCombatUnit übernimmt das Feld nicht; die Notiz stellt ihren Ruf richtig.
+ */
+const KRIEGSMASCHINE: { routeId: string; gegner: string[]; text: string }[] = [
+  { routeId: 'siege_walls', gegner: ['wall_archer', 'siege_crossbowman'], text: 'Mauerschütze und Armbrustschütze sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden' },
+];
+
+/**
+ * Die Stellen einer Notiz mit «Runde», mit «jede»/«alle» und einer Zahl (Wort oder Ziffer), mit «Luft…»
+ * oder «Kriegsmaschine», die kein Eintrag der Tabellen oben abdeckt. Was dort steht, rechnet der Test nach.
+ */
+function ohneEintrag(routeId: string, text: string): string[] {
+  const angabe = new RegExp(`\\bRunden?\\b|\\b(?:alle|jede)\\s+(?:\\d+|${ZAHLWOERTER})\\b|\\bLuft|Kriegsmaschine`, 'gi');
+  const bereiche = [...TAKT, ...WUT, ...WIRKUNG, ...KRIEGSMASCHINE]
+    .filter(e => e.routeId === routeId && text.includes(e.text))
+    .map(e => ({ von: text.indexOf(e.text), bis: text.indexOf(e.text) + e.text.length }));
+  return [...text.matchAll(angabe)]
+    .filter(m => !bereiche.some(b => m.index >= b.von && m.index + m[0].length <= b.bis))
+    .map(m => m[0]);
+}
+
 describe('Ottokars Randnotizen', () => {
   it('jede Route der Karte hat genau eine Notiz, keine Notiz ohne Route', () => {
     const ids = MONSTERBUCH_NOTIZEN.map(n => n.routeId);
@@ -303,6 +567,142 @@ describe('Ottokars Randnotizen', () => {
       expect(saetze, notiz.routeId).toBeGreaterThanOrEqual(2);
       expect(saetze, notiz.routeId).toBeLessThanOrEqual(3);
     }
+  });
+
+  it('jede Takt-Angabe stimmt mit dem echten Kampf (Abklingzeit N: erst N + 1 Runden später wieder)', () => {
+    for (const t of TAKT) {
+      const name = `${t.routeId} ${t.faehigkeit}`;
+      expect(notizText(t.routeId), name).toContain(t.text);
+      expect(begegnungenJeLauf(t.routeId)[t.gegner], name).toBeGreaterThan(0);
+      const i = ENEMY_DEFS[t.gegner].skills.findIndex(s => s.name === t.faehigkeit);
+      expect(i, name).toBeGreaterThanOrEqual(0);
+      expect(imKampf(t.gegner)[i].map(e => e.runde), name).toEqual(t.runden);
+      // «jede vierte», «alle acht», «alle 3», «jede Runde»: genau so weit liegen die Einsätze auseinander
+      const abstaende = [...t.text.matchAll(/\b(?:alle|jede)\s+(\d+\.?|[a-zäöü]+)/gi)]
+        .map(m => /^Runden?$/i.test(m[1]) ? 1 : zahlWert(m[1]))
+        .filter((n): n is number => n !== undefined);
+      for (const abstand of abstaende) {
+        expect(new Set(t.runden.slice(1).map((r, k) => r - t.runden[k])), name).toEqual(new Set([abstand]));
+      }
+      // «zuerst in Runde 2», «nur in Runde 3 und 14»: die ersten Einsätze, ohne Abstand alle
+      const genannt = /\bRunde\s+(\d+(?:(?:,\s*|\s+und\s+)\d+)*)/.exec(t.text)?.[1].split(/,\s*|\s+und\s+/).map(Number) ?? [];
+      if (genannt.length > 0) expect(abstaende.length > 0 ? t.runden.slice(0, genannt.length) : t.runden, name).toEqual(genannt);
+      expect(abstaende.length + genannt.length, `${name}: kein Takt im Text`).toBeGreaterThan(0);
+    }
+  });
+
+  it('jede Wut-Angabe stimmt mit dem Kampf (bossWut, mit Sonnenuhren wutAbRunde)', () => {
+    for (const w of WUT) {
+      const name = `${w.routeId}: ${w.text}`;
+      expect(notizText(w.routeId), name).toContain(w.text);
+      expect(begegnungenJeLauf(w.routeId)[w.gegner], name).toBeGreaterThan(0);
+      const wut = bossWut(w.gegner);
+      // Je Wahl der Route, welche die Wut vorzieht, die Runden; die ersten `sonnenuhren` davon sind genommen
+      const vorziehen = ROUTE_DEFS[w.routeId].encounters
+        .map(enc => Math.max(enc.wahl?.a.bossWutFrueher ?? 0, enc.wahl?.b.bossWutFrueher ?? 0))
+        .filter(n => n > 0);
+      const sonnenuhren = w.sonnenuhren ?? 0;
+      expect(vorziehen.length, name).toBeGreaterThanOrEqual(sonnenuhren);
+      const frueher = vorziehen.slice(0, sonnenuhren).reduce((a, b) => a + b, 0);
+      expect(Number(/\bab Runde (\d+)/.exec(w.text)?.[1]), name).toBe(wutAbRunde(wut, { bossWutFrueher: frueher }));
+      const faktor = (wort: string) => new RegExp(`${wort} mal (\\d+(?:,\\d+)?)`).exec(w.text)?.[1];
+      if (faktor('Angriff')) expect(faktor('Angriff'), name).toBe(wut.atkMult.toLocaleString('de'));
+      if (faktor('Tempo')) expect(faktor('Tempo'), name).toBe(wut.spdMult.toLocaleString('de'));
+      // «um 2 Runden vor»: so viel zieht jede dieser Wahlen vor; «dreimal vorgestellt»: so viele sind genommen
+      const um = /\bum (\d+) Runden vor\b/.exec(w.text)?.[1];
+      if (um) expect(new Set(vorziehen), name).toEqual(new Set([Number(um)]));
+      const mal = /\b(\S+)mal vorgestellt\b/.exec(w.text)?.[1];
+      if (mal) expect(zahlWert(mal), name).toBe(sonnenuhren);
+    }
+    // «so früh wie von sich aus kein anderer Boss in diesem Buch» (der Leviathan ab Runde 7)
+    const andere = erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_leviathan');
+    expect(Math.min(...andere.map(id => bossWut(id).afterRound))).toBeGreaterThan(bossWut('boss_leviathan').afterRound);
+  });
+
+  it('Angriff, Dauer und Luft aus den Notizen stehen so im Kampfprotokoll', () => {
+    for (const w of WIRKUNG) {
+      const name = `${w.routeId} ${w.faehigkeit}`;
+      expect(notizText(w.routeId), name).toContain(w.text);
+      expect(begegnungenJeLauf(w.routeId)[w.gegner], name).toBeGreaterThan(0);
+      const i = ENEMY_DEFS[w.gegner].skills.findIndex(s => s.name === w.faehigkeit);
+      expect(i, name).toBeGreaterThanOrEqual(0);
+      // Die Zeile des Gegners beim ersten Einsatz, mit denselben Zahlen («drei Runden» = «3 Runden»)
+      const [erster] = imKampf(w.gegner)[i];
+      expect(erster?.zeilen.some(z => z.includes(ENEMY_DEFS[w.gegner].name) && z.includes(w.protokoll)), name).toBe(true);
+      expect(zahlen(w.text), name).toEqual(zahlen(w.protokoll));
+    }
+  });
+
+  it('was eine Notiz über die Kriegsmaschine sagt, stimmt im Belagerungsraum mit Katapult', () => {
+    for (const k of KRIEGSMASCHINE) {
+      expect(notizText(k.routeId), k.routeId).toContain(k.text);
+      for (const id of k.gegner) {
+        expect(k.text, id).toContain(ENEMY_DEFS[id].name);
+        expect(ROUTE_DEFS[k.routeId].encounters.some(enc => enc.type === 'fortification' && enc.enemies?.includes(id)), id).toBe(true);
+        // 30 Runden neben dem Katapult: Fähigkeiten und Grundangriffe treffen Helden, keiner das Katapult
+        const ziele = zieleInBelagerung(id);
+        expect(ziele.katapult, id).toBe(0);
+        expect(ziele.helden, id).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('keine Angabe zu Runden, Luft oder Kriegsmaschine ohne Eintrag, den der Test nachrechnet', () => {
+    for (const notiz of MONSTERBUCH_NOTIZEN) expect(ohneEintrag(notiz.routeId, notiz.text), notiz.routeId).toEqual([]);
+    // Die Probe greift auch bei Ziffern, bei «jede Runde» und bei den Fehlern, die hier schon standen
+    const mit = (routeId: string, satz: string) => ohneEintrag(routeId, `${notizText(routeId)} ${satz}`);
+    expect(mit('volcano_core', 'Er beisst alle 2 Runden.')).toEqual(['alle 2', 'Runden']);
+    expect(mit('volcano_core', 'Er beisst jede Runde.')).toEqual(['Runde']);
+    expect(mit('ocean_shallows', 'Der Stromtentakel ist nach zwei Runden wieder bereit.')).toEqual(['Runden']);
+    expect(mit('ocean_depths', 'Seine Druckwelle zieht dazu 18 Luft aus dem Schild.')).toEqual(['Luft']);
+    expect(mit('siege_walls', 'Sie zielen bevorzugt auf die Kriegsmaschine.')).toEqual(['Kriegsmaschine']);
+  });
+});
+
+describe('Monsterbuch-Bildschirm (HTML ohne Browser)', () => {
+  it('genau die gewählte Seite ist gedrückt und ausgewählt, die Pfeile sperren am Buchende', async () => {
+    const { seitenwahlHtml } = await import('../src/ui/screens/BestiariumScreen');
+    const state = createNewGameState();
+    const alle = seiten();
+    alle.forEach((seite, i) => {
+      // seiten() baut jedes Mal neue Objekte, wie im Bildschirm
+      const html = seitenwahlHtml(state, seiten()[i]);
+      expect([...html.matchAll(/data-seite="(\w+)" aria-pressed="true"/g)].map(m => m[1])).toEqual([seite.routeId]);
+      expect([...html.matchAll(/aria-pressed="/g)].length).toBe(alle.length);
+      expect([...html.matchAll(/<option value="(\w+)" selected>/g)].map(m => m[1])).toEqual([seite.routeId]);
+      expect(html.includes('aria-label="Vorige Seite" disabled'), seite.routeId).toBe(i === 0);
+      expect(html.includes('aria-label="Nächste Seite" disabled'), seite.routeId).toBe(i === alle.length - 1);
+    });
+  });
+
+  it('Detailfenster: Fähigkeiten nach der Kampfregel, keine doppelten Bezeichnungen, Sonnenuhr bei Sunna', async () => {
+    const { detailHtml } = await import('../src/ui/screens/BestiariumScreen');
+    const state = createNewGameState();
+    Object.assign(state.bestiarium, { strecke: Object.fromEntries(erreichbareGegner().map(id => [id, 30])) });
+    for (const id of erreichbareGegner()) {
+      const html = detailHtml(state, ENEMY_DEFS[id]);
+      // Rolle unter dem Namen: keine Bezeichnung doppelt («💀 Boss · BOSS»)
+      const rolle = /<div class="ms">([^<]*)<\/div>/.exec(html)?.[1] ?? '';
+      const teile = rolle.split(' · ').map(t => t.replace(/^\P{L}+/u, '').toLowerCase());
+      expect(teile[0], id).not.toBe('');
+      expect(new Set(teile).size, `${id}: ${rolle}`).toBe(teile.length);
+      for (const sk of ENEMY_DEFS[id].skills) {
+        expect(html, id).toContain(faehigkeitText(id, sk));
+        // Die alten Texte aus enemies.ts stehen nicht mehr im Fenster (ausser einer stimmt zufällig: «Heilt sich um 150»)
+        for (const alt of [sk.description, ENEMY_LORE[id]?.skillDescriptions?.[sk.id]]) {
+          if (alt && !faehigkeitText(id, sk).includes(alt)) expect(html, `${id} ${sk.name}`).not.toContain(alt);
+        }
+        if (FAEHIGKEIT_ART[sk.effectType] === sk.name) expect(html, id).not.toContain(`${sk.name} · Abklingzeit`);
+      }
+    }
+    expect(detailHtml(state, ENEMY_DEFS.forest_shaman)).toContain('<span class="md-skill-cd">Abklingzeit 4 Runden</span>');
+    expect(detailHtml(state, ENEMY_DEFS.forest_shaman)).toContain('Einsatz in Runde 1, 6, 11 …');
+    expect(detailHtml(state, ENEMY_DEFS.boss_oberarchivar)).toContain('Einsatz in Runde 3 und 14.');
+    // Im Belagerungsraum dauert der Kampf bis zu 30 Runden: nach Runde 17 kommt die Schutzbarriere noch einmal
+    expect(detailHtml(state, ENEMY_DEFS.siege_mage)).toContain('Einsatz in Runde 2, 9, 17 …');
+    expect(detailHtml(state, ENEMY_DEFS.boss_elder_treant)).toMatch(/<div class="ms">💀 Boss<\/div>/);
+    expect(detailHtml(state, ENEMY_DEFS.boss_sunna)).toContain('Im Dungeon «Das Morgentor» können Wahlen unterwegs die Wut bis auf Runde 4 vorziehen.');
+    expect(detailHtml(state, ENEMY_DEFS.boss_leviathan)).not.toContain('vorziehen');
   });
 });
 
