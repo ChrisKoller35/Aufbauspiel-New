@@ -157,6 +157,24 @@ describe('SaveSystem', () => {
     expect(Object.keys(loaded.globalStock).filter(k => k.startsWith('bauplan_'))).toEqual([]);
     expect('erhalteneBauplaene' in loaded).toBe(false);
   });
+
+  it('Helden ohne Name, Stufe oder XP (das Schema verlangt sie nicht) bekommen sie beim Laden, ohne NaN', () => {
+    const state = standMitHelden();
+    state.fighters[1].xp = 500;
+    const meister = createGuildFighter('berserker', 'Grimm', WERTE);
+    meister.level = 15;
+    state.fighters.push(meister);
+    const datei = JSON.parse(JSON.stringify(state));
+    delete datei.fighters[0].name;
+    delete datei.fighters[1].level;
+    delete datei.fighters[2].xp;
+    expect(pruefeSpielstandText(JSON.stringify(datei)).ok).toBe(true);
+    localStorage.setItem(SAVE_KEY, JSON.stringify(datei));
+
+    const loaded = new SaveSystem().load()!;
+    // Name der Klasse wie beim Anheuern; Stufe 7 aus 500 XP (ab 480); auf Stufe 15 die 2240 XP, mit denen sie beginnt
+    expect(loaded.fighters.map(f => [f.name, f.level, f.xp])).toEqual([['Guardian', 4, 0], ['Lia', 7, 500], ['Grimm', 15, 2240]]);
+  });
 });
 
 describe('SaveSystem – Spielstand herunterladen und laden', () => {
