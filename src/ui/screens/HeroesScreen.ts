@@ -256,13 +256,15 @@ let inventarOffen = false;
 /** Weg, dessen Wahl im Heldenfenster gerade bestätigt werden soll */
 let wegFrage: string | null = null;
 /**
- * Kurz nach der Frage zum Weg nimmt «Ja, für immer» keinen Klick an, kurz nach ANLEGEN auch ABLEGEN nicht: Beide
- * stehen dann oft genau unter dem Finger. Den zweiten Klick eines Doppelklicks schluckt schon schluckeZweitenKlick;
- * ein langsamer zweiter Druck (am Handy ab etwa 350 ms, am PC nach der Doppelklick-Zeit des Systems) zählt aber
- * als eigener Klick: Er wählte sonst für immer, ohne dass die Frage gelesen ist, oder legte das Teil gleich wieder
- * ab. Gemessen wird vom ersten Klick bis zum Druck des zweiten (gedruecktUm), nicht bis das Spiel dazu kommt
+ * Kurz nach der Frage zum Weg nimmt «Ja, für immer» keinen Klick an, wo und womit auch gedrückt wird (auch Enter
+ * nicht): Die Wahl gilt für immer, die Frage soll gelesen sein. Gemessen wird bis zum Druck (gedruecktUm), nicht
+ * bis das Spiel dazu kommt
  */
-let gesperrtBis = 0;
+let wegGesperrtBis = 0;
+/**
+ * So lange nimmt «Ja, für immer» nach der Frage keinen Klick an (wegGesperrtBis), und so lange gilt ein Druck nach
+ * dem letzten als langsamer zweiter Druck (pruefeZweitenDruck)
+ */
 const SPERRE_MS = 800;
 
 const PLATZ_NAMEN: Record<EquipSlot, string> = {
@@ -735,6 +737,63 @@ function renderInventarTab(): string {
     ${html}`;
 }
 
+// ─── Langsamer zweiter Druck auf dieselbe Stelle ────────────────
+
+/**
+ * Der letzte Druck auf der Heldenseite oder im Heldenfenster, der etwas traf: wann (gedruecktUm), wo und was. Ein
+ * Klick zeichnet oft neu, öffnet oder schliesst das Fenster oder scrollt es zur Auswahl. Dann liegt unter dem Finger
+ * etwas anderes: ABLEGEN, der Link in die Schmiede, nach dem Schliessen «Lernen» oder eine Karte. Den zweiten Klick
+ * eines Doppelklicks schluckt schluckeZweitenKlick; ein langsamer zweiter Druck (am Handy ab etwa 350 ms, am PC
+ * nach der Doppelklick-Zeit des Systems) ist aber ein eigener Klick
+ */
+let letzterDruck: { um: number; x: number; y: number; ziel: string } | null = null;
+/**
+ * Bis wie weit neben dem letzten Druck noch dieselbe Stelle gilt (px). Die Maus steht still. Ein Finger verrutscht
+ * etwas, und der Browser schiebt einen Tipp knapp neben einem Knopf auf den Knopf (am Handy quer gemessen: 7 bis
+ * 9 px). Knöpfe für den Finger sind mindestens 44 px gross: Wer bewusst den nächsten drückt, trifft meist weiter weg
+ */
+const GLEICHE_STELLE_MAUS_PX = 16;
+const GLEICHE_STELLE_FINGER_PX = 40;
+
+/**
+ * Was ein Klick trifft: einen Knopf, erkannt an id und data-Attributen (nach dem Neuzeichnen ist er ein neues
+ * Element; nach ANLEGEN steht dort data-aktion="ablegen"), eine Heldenkarte oder den dunklen Rand des Fensters.
+ * Leer: Text ohne Wirkung
+ */
+function druckZiel(e: MouseEvent): string {
+  const ziel = e.target as HTMLElement;
+  if (ziel.id === 'hero-detail-ov') return 'Rand';
+  const el = ziel.closest('button, .hcard');
+  if (!el) return '';
+  const merkmale = Array.from(el.attributes).filter(a => a.name === 'id' || a.name.startsWith('data-'));
+  return [el.tagName, ...merkmale.map(a => `${a.name}=${a.value}`)].join(' ');
+}
+
+/**
+ * Prüft jeden Klick in `wurzel` (Heldenseite oder Heldenfenster), bevor ein Knopf darin ihn bekommt: Ein zweiter
+ * Druck bis SPERRE_MS nach dem letzten, auf dieselbe Stelle, wirkt nur, wenn er dasselbe trifft. Zweimal auf einen
+ * Platz tippen schliesst also die Auswahl, aber was das Neuzeichnen unter den Finger geschoben hat, löst er nicht
+ * aus. Ein Druck anderswo zählt sofort. Die Tastatur (detail 0) prüft er nicht: Ihr Fokus bleibt auf dem gedrückten
+ * Knopf oder geht an den Platz (fokussiere), ein zweites Enter trifft nichts Neues
+ */
+function pruefeZweitenDruck(wurzel: HTMLElement): void {
+  wurzel.addEventListener('click', e => {
+    if (e.detail === 0) return;
+    const ziel = druckZiel(e);
+    if (!ziel) return;
+    const um = gedruecktUm(e);
+    const naehe = (e as PointerEvent).pointerType === 'mouse' ? GLEICHE_STELLE_MAUS_PX : GLEICHE_STELLE_FINGER_PX;
+    const letzter = letzterDruck;
+    if (letzter && letzter.ziel !== ziel && um - letzter.um < SPERRE_MS
+      && Math.hypot(e.clientX - letzter.x, e.clientY - letzter.y) < naehe) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      return;
+    }
+    letzterDruck = { um, x: e.clientX, y: e.clientY, ziel };
+  }, true);
+}
+
 // ─── Main Render ────────────────────────────────────────────────
 
 export function renderHeroesScreen(container: HTMLElement): void {
@@ -779,6 +838,10 @@ export function renderHeroesScreen(container: HTMLElement): void {
   container.appendChild(el);
 
   // ─── Event Binding ──────────────────────────────────────────
+
+  // Vor allen Knöpfen der Seite: Ein langsamer zweiter Druck löst nicht aus, was der erste unter den Finger gebracht
+  // hat (nach dem Schliessen des Fensters etwa «Lernen», TRAINIEREN oder eine Karte)
+  pruefeZweitenDruck(el);
 
   if (activeTab === 'schmiede' && state) bindSchmiedeTab(el, state, () => renderHeroesScreen(container));
   if (activeTab === 'train' && state) bindLehrbuch(el, state, () => renderHeroesScreen(container));
@@ -912,6 +975,9 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   const overlay = wrapper.firstElementChild as HTMLElement;
   overlay.classList.add('on');
   container.appendChild(overlay);
+  // Als erster Hörer am Fenster, auch vor dem dunklen Rand: Ältere Browser rufen die Hörer am Ziel selbst in der
+  // Reihenfolge auf, in der sie dazukamen
+  pruefeZweitenDruck(overlay);
   if (scroll) {
     overlay.scrollTop = scroll.fenster;
     const raster = overlay.querySelector<HTMLElement>('.hdm2-inv-grid');
@@ -1000,7 +1066,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   overlay.querySelectorAll<HTMLElement>('[data-weg-waehlen]').forEach(el => {
     el.addEventListener('click', () => {
       wegFrage = el.dataset.wegWaehlen ?? null;
-      gesperrtBis = performance.now() + SPERRE_MS;
+      wegGesperrtBis = performance.now() + SPERRE_MS;
       // Fokus auf die Frage, nicht auf «Ja, für immer»: Ein zweites Enter wählt so nicht gleich für immer
       zumWeg(['.hdm2-weg-frage']);
     });
@@ -1012,8 +1078,8 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   });
   overlay.querySelector<HTMLElement>('[data-weg-ja]')?.addEventListener('click', e => {
     // Nur ein eigener Klick wählt: nie der zweite eines Doppelklicks (wie das ✕ im Monsterbuch) und keiner kurz
-    // nach der Frage (gesperrtBis, ein langsamer zweiter Druck auf «‹Weg› wählen»)
-    if (e.detail > 1 || gedruecktUm(e) < gesperrtBis) return;
+    // nach der Frage (wegGesperrtBis, etwa ein langsamer zweiter Druck auf «‹Weg› wählen»)
+    if (e.detail > 1 || gedruecktUm(e) < wegGesperrtBis) return;
     const wegId = (e.currentTarget as HTMLElement).dataset.wegJa ?? '';
     wegFrage = null;
     if (!waehleWeg(fighter, wegId)) return;
@@ -1024,7 +1090,9 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   });
 
   // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil. Dort nimmt «AUF +N» kurz
-  // keinen Klick an (schmiedeZeigeTeil), es steht oft unter dem Finger
+  // keinen Klick an (schmiedeZeigeTeil), es steht oft unter dem Finger. Der Link selbst rückt nach dem Antippen
+  // eines Platzes oft unter den Finger (das Fenster scrollt zur Auswahl): Ein langsamer zweiter Druck dorthin
+  // springt nicht, das prüft pruefeZweitenDruck
   overlay.querySelector<HTMLElement>('[data-schmiede-teil]')?.addEventListener('click', e => {
     const itemId = (e.currentTarget as HTMLElement).dataset.schmiedeTeil!;
     schmiedeZeigeTeil(itemId);
@@ -1038,11 +1106,12 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   });
 
   // Anlegen oder Ablegen. Der Fokus geht danach auf den Platz (mit dem Gegenstand oder leer), nicht zurück auf den
-  // Knopf: Der heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das Teil gleich wieder ab. Aus
-  // demselben Grund nimmt ABLEGEN kurz nach ANLEGEN keinen Klick an (ein langsamer zweiter Druck, gesperrtBis)
+  // Knopf: Der heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das Teil gleich wieder ab. Ein
+  // langsamer zweiter Druck mit Finger oder Maus auf ABLEGEN, das eben noch ANLEGEN war (oder das nach dem Antippen
+  // eines Platzes unter den Finger gescrollt ist), wirkt nicht: pruefeZweitenDruck
   const aktion = overlay.querySelector('.hdm2-aktion') as HTMLElement | null;
-  aktion?.addEventListener('click', e => {
-    if (!gameState || !auswahl || gedruecktUm(e) < gesperrtBis) return;
+  aktion?.addEventListener('click', () => {
+    if (!gameState || !auswahl) return;
     let platz: EquipSlot | undefined;
     if (auswahl.art === 'slot') {
       platz = auswahl.slot;
@@ -1054,7 +1123,6 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
       if (!gearSystem.equip(gameState, fighter, itemId, auswahl.platz)) return;
       platz = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
       auswahl = platz ? { art: 'slot', slot: platz } : null;
-      gesperrtBis = performance.now() + SPERRE_MS;
       erfolgePruefen(gameState); // ein ganzes Set angelegt: gleich zählen, nicht erst beim Tageswechsel
     }
     neuZeichnen(platz ? [`.hdm-gear-icon[data-slot="${platz}"]`] : ['#hdm2-name']);

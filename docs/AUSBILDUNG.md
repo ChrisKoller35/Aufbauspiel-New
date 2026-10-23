@@ -149,7 +149,7 @@ Spielstand), steht dort: «Die Klasse wird nach der nächsten Expedition frei.»
 
 Code: `src/ui/screens/HeroesScreen.ts`, Stile in `src/ui/html/magic-city.css` (Abschnitte «Hero Cards» und
 «Hero Detail Modal»). Tests: `tests/heldenfenster.test.ts`, mit einem kleinen DOM ohne Browser auch die
-Tastenhörer, den zweiten Klick und die Sperren.
+Tastenhörer, den zweiten Klick, den langsamen zweiten Druck, die Sperren und die Meldung des Lehrbuchs.
 
 - **Tastatur:** Über jeder Heldenkarte liegt ein unsichtbarer Knopf. Tab erreicht ihn, Enter oder Leertaste
   öffnet das Heldenfenster, mit dem Fokus zeigt die Karte innen einen goldenen Rahmen. TRAINIEREN steht
@@ -173,10 +173,19 @@ Tastenhörer, den zweiten Klick und die Sperren.
   Weg wählen, Abbrechen) und nach dem Sprung in die Schmiede schluckt das Spiel den zweiten Klick. Er träfe
   sonst, was nach dem Neuzeichnen unter dem Zeiger liegt, etwa ABLEGEN gleich nach ANLEGEN.
 - **Langsamer zweiter Druck:** Kommt er später, als der Browser einen Doppelklick zählt (am Handy ab etwa
-  350 ms, am PC nach der Doppelklick-Zeit des Systems), ist er ein eigener Klick. Darum nehmen die Knöpfe mit
-  Folgen kurz keinen Klick an, 0,8 s ab dem Druck davor: ABLEGEN nach ANLEGEN, «Ja, für immer» nach der Frage
-  zum Weg und in der Schmiede «AUF +N» nach dem Sprung aus dem Heldenfenster (dort auch «JA, EINSCHMELZEN»
-  nach der Frage und «AUF +N» nach dem Schmieden, `src/ui/screens/SchmiedeTab.ts`). Gemessen wird bis zum
+  350 ms, am PC nach der Doppelklick-Zeit des Systems), ist er ein eigener Klick. Auf der Heldenseite und im
+  Heldenfenster wirkt ein Druck bis 0,8 s nach dem letzten an derselben Stelle nur, wenn er dasselbe trifft
+  (`pruefeZweitenDruck`). Zweimal auf einen Platz tippen schliesst also die Auswahl wie bisher. Was der erste
+  Druck unter den Finger gebracht hat, löst der zweite aber nicht aus: ABLEGEN, wo eben ANLEGEN stand;
+  ABLEGEN oder den Link in die Schmiede, wenn das Fenster nach dem Antippen eines Platzes zur Auswahl scrollt
+  (am Handy quer); nach dem Schliessen des Fensters «Lernen», TRAINIEREN oder eine Karte dahinter. Ein Druck
+  anderswo zählt sofort, etwa ANLEGEN für ein zweites Teil gleich nach dem ersten oder ABLEGEN gleich nach dem
+  Antippen des Platzes. Dieselbe Stelle heisst: mit der Maus bis 16 px daneben, mit dem Finger bis 40 px (er
+  verrutscht, und der Browser schiebt einen Tipp knapp neben einem Knopf auf ihn). Die Tastatur prüft das
+  nicht; ihr Fokus bleibt auf dem gedrückten Knopf oder geht an den Platz.
+- **Kurz gesperrt, wo auch gedrückt wird:** «Ja, für immer» nimmt bis 0,8 s nach der Frage zum Weg keinen
+  Klick an, auch kein Enter. Ebenso in der Schmiede «AUF +N» nach dem Sprung aus dem Heldenfenster und nach
+  dem Schmieden, «JA, EINSCHMELZEN» nach der Frage (`src/ui/screens/SchmiedeTab.ts`). Gemessen wird bis zum
   neuen Druck, auch wenn das Spiel gerade beschäftigt ist und erst später dazu kommt
   (`src/ui/components/Druckzeit.ts`, Tests in `tests/druckzeit.test.ts`).
 

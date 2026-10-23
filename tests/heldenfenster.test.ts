@@ -5,6 +5,7 @@ import { ITEM_DEFS } from '../src/data/items';
 import { CLASS_DEFS } from '../src/data/classes';
 import { wegeDerKlasse } from '../src/data/spezialisierungen';
 import { materialFuerTeil, schmiedeStufe } from '../src/systems/Schmiede';
+import { totalXpForLevel } from '../src/systems/HeroProgression';
 import { buildInventoryHtml, initHeroesScreen, renderHeroCard } from '../src/ui/screens/HeroesScreen';
 
 // Heldenseite und Heldenfenster ohne Browser: das HTML der Karten und des Inventars (Tastatur, Vorleseprogramme),
@@ -108,16 +109,23 @@ describe('Heldenfenster: Inventar als Knöpfe', () => {
 
 // ─── Das Heldenfenster in einem kleinen DOM ─────────────────────
 // Elemente aus dem HTML (Tags, Attribute, Verschachtelung; Text fällt weg), einfache Selektoren (Tag, #id,
-// .klasse, [attr], [attr="wert"], :not(…), Nachfahren) und Hörer. Ein Klick kommt wie im Browser erst bei window
-// an (Capture: Dort schluckt schluckeZweitenKlick den zweiten eines Doppelklicks), dann am Ziel und seinen Eltern.
+// .klasse, [attr], [attr="wert"], :not(…), :disabled, Nachfahren, Listen mit Komma) und Hörer. Ein Klick kommt wie
+// im Browser erst bei window an (Capture: Dort schluckt schluckeZweitenKlick den zweiten eines Doppelklicks), dann
+// von oben bis zum Ziel bei den Hörern der Capture-Phase (pruefeZweitenDruck), dann am Ziel und seinen Eltern.
 
 /** Elemente ohne End-Tag */
 const OHNE_ENDE = new Set(['img', 'br', 'input', 'hr', 'meta', 'link', 'source', 'wbr']);
 
 interface Ereignis {
-  type: string; detail: number; timeStamp: number; target: Knoten; currentTarget: Knoten | null;
-  defaultPrevented: boolean; preventDefault: () => void; stopPropagation: () => void;
+  type: string; detail: number; timeStamp: number; clientX: number; clientY: number; pointerType: string;
+  target: Knoten; currentTarget: Knoten | null; defaultPrevented: boolean;
+  /** stopPropagation: keine weiteren Elemente; stopImmediatePropagation: auch keine weiteren Hörer hier */
+  gestoppt: boolean; ganzGestoppt: boolean;
+  preventDefault: () => void; stopPropagation: () => void; stopImmediatePropagation: () => void;
 }
+
+/** Wo gedrückt wird (wie clientX und clientY) und womit (pointerType; ohne Angabe ein Finger) */
+interface Ort { x: number; y: number; art?: 'mouse' | 'touch' }
 
 /** Die Seite (#app), in die HeroesScreen zeichnet; was nicht darin hängt, ist nicht mehr in der Seite */
 let seite: Knoten;
@@ -132,7 +140,11 @@ class Knoten {
   scrollTop = 0;
   /** Das HTML, aus dem die Kinder gebaut sind */
   html = '';
+  /** Womit scrollIntoView aufgerufen wurde */
+  gescrollt: unknown[] = [];
   private hoerer = new Map<string, ((e: Ereignis) => void)[]>();
+  /** Hörer der Capture-Phase (addEventListener mit true) */
+  private fangHoerer = new Map<string, ((e: Ereignis) => void)[]>();
   constructor(readonly tagName: string) {}
 
   get id(): string { return this.attrs.get('id') ?? ''; }
@@ -151,6 +163,9 @@ class Knoten {
     for (const [n, v] of this.attrs) if (n.startsWith('data-')) d[kamel(n.slice(5))] = v;
     return d;
   }
+  get attributes(): { name: string; value: string }[] {
+    return [...this.attrs].map(([name, value]) => ({ name, value }));
+  }
   getAttribute(n: string): string | null { return this.attrs.get(n) ?? null; }
   setAttribute(n: string, v: string): void { this.attrs.set(n, String(v)); }
   hasAttribute(n: string): boolean { return this.attrs.has(n); }
@@ -165,15 +180,19 @@ class Knoten {
   }
   getClientRects(): object[] { return [{}]; }
   focus(): void { fokus = this; }
-  scrollIntoView(): void {}
+  scrollIntoView(o?: unknown): void { this.gescrollt.push(o); }
 
-  addEventListener(typ: string, f: (e: Ereignis) => void): void {
-    this.hoerer.set(typ, [...(this.hoerer.get(typ) ?? []), f]);
+  addEventListener(typ: string, f: (e: Ereignis) => void, capture?: boolean): void {
+    const liste = capture ? this.fangHoerer : this.hoerer;
+    liste.set(typ, [...(liste.get(typ) ?? []), f]);
   }
-  /** Ruft die eigenen Hörer für ein Ereignis auf, das hier vorbeikommt */
-  rufe(e: Ereignis): void {
+  /** Ruft die eigenen Hörer für ein Ereignis auf, das hier vorbeikommt (fangen: die der Capture-Phase) */
+  rufe(e: Ereignis, fangen = false): void {
     e.currentTarget = this;
-    for (const f of this.hoerer.get(e.type) ?? []) f(e);
+    for (const f of (fangen ? this.fangHoerer : this.hoerer).get(e.type) ?? []) {
+      if (e.ganzGestoppt) return;
+      f(e);
+    }
   }
 
   appendChild(k: Knoten): Knoten {
@@ -238,21 +257,26 @@ function baue(wurzel: Knoten, html: string): void {
   }
 }
 
-/** Ein Teil eines Selektors ohne Leerzeichen: Tag, #id, .klasse, [attr], [attr="wert"], :not(…) */
+/** Ein Teil eines Selektors ohne Leerzeichen: Tag, #id, .klasse, [attr], [attr="wert"], :not(…), :disabled */
 function passtTeil(k: Knoten, teil: string): boolean {
   const tag = /^[a-z][\w-]*/i.exec(teil);
   if (tag && k.tagName !== tag[0].toLowerCase()) return false;
-  for (const m of teil.matchAll(/#([\w-]+)|\.([\w-]+)|\[([\w-]+)(?:="([^"]*)")?\]|:not\(([^)]*)\)/g)) {
+  for (const m of teil.matchAll(/#([\w-]+)|\.([\w-]+)|\[([\w-]+)(?:="([^"]*)")?\]|:not\(([^)]*)\)|(:disabled)/g)) {
     if (m[1] !== undefined && k.id !== m[1]) return false;
     if (m[2] !== undefined && !k.klassen.includes(m[2])) return false;
     if (m[3] !== undefined && (!k.attrs.has(m[3]) || (m[4] !== undefined && k.attrs.get(m[3]) !== m[4]))) return false;
     if (m[5] !== undefined && passtTeil(k, m[5])) return false;
+    if (m[6] !== undefined && !k.disabled) return false;
   }
   return true;
 }
 
-/** Selektor mit Nachfahren («#s-heroes .hcard .hcard-oeffnen»): der letzte Teil am Element, die anderen darüber */
+/**
+ * Selektor mit Nachfahren («#s-heroes .hcard .hcard-oeffnen»): der letzte Teil am Element, die anderen darüber.
+ * Eine Liste mit Komma («button, .hcard») passt, wenn einer ihrer Selektoren passt
+ */
 function passt(k: Knoten, sel: string): boolean {
+  if (sel.includes(',')) return sel.split(',').some(s => passt(k, s));
   const teile = sel.trim().split(/\s+/);
   if (!passtTeil(k, teile[teile.length - 1])) return false;
   let i = teile.length - 2;
@@ -292,13 +316,17 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     fokus = null;
     fenster.addEventListener('mc:speichern', () => { gespeichert++; });
     vi.stubGlobal('window', fenster);
-    // Klassischer Scrollbalken: 15 px schmaler als das Fenster
+    // Klassischer Scrollbalken: 15 px schmaler als das Fenster. Solange das Heldenfenster offen ist, scrollt die Seite
+    // nicht und hat keinen (magic-city.css)
     vi.stubGlobal('document', {
       createElement: (tag: string) => new Knoten(tag),
       getElementById: (id: string) => seite.querySelector(`#${id}`),
       querySelectorAll: () => [],
       addEventListener: () => {},
-      documentElement: { clientWidth: 1265, style: { setProperty: (n: string, v: string) => { htmlStil.set(n, v); } } },
+      documentElement: {
+        get clientWidth() { return seite.querySelector('#hero-detail-ov') ? fenster.innerWidth : fenster.innerWidth - 15; },
+        style: { setProperty: (n: string, v: string) => { htmlStil.set(n, v); } },
+      },
     });
     vi.stubGlobal('HTMLButtonElement', Knopf);
   });
@@ -339,26 +367,51 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     return k;
   }
 
-  function sende(ziel: Knoten, type: string, detail: number, zeit: number): void {
+  /** Wie im Browser: erst die Capture-Hörer von oben bis zum Ziel (dort zuerst), dann vom Ziel nach oben */
+  function sende(ziel: Knoten, type: string, detail: number, zeit: number, ort: Ort): void {
     const e: Ereignis = {
-      type, detail, timeStamp: zeit, target: ziel, currentTarget: null, defaultPrevented: false,
-      preventDefault() { this.defaultPrevented = true; }, stopPropagation() {},
+      type, detail, timeStamp: zeit, clientX: ort.x, clientY: ort.y, pointerType: ort.art ?? 'touch',
+      target: ziel, currentTarget: null, defaultPrevented: false, gestoppt: false, ganzGestoppt: false,
+      preventDefault() { this.defaultPrevented = true; },
+      stopPropagation() { this.gestoppt = true; },
+      stopImmediatePropagation() { this.gestoppt = this.ganzGestoppt = true; },
     };
-    for (let k: Knoten | null = ziel; k; k = k.eltern) k.rufe(e);
+    const pfad: Knoten[] = [];
+    for (let k: Knoten | null = ziel; k; k = k.eltern) pfad.push(k);
+    for (const k of [...pfad].reverse()) {
+      if (e.gestoppt) return;
+      k.rufe(e, true);
+    }
+    for (const k of pfad) {
+      if (e.gestoppt) return;
+      k.rufe(e);
+    }
+  }
+
+  /** Jeder Klick ohne Ort landet weit weg vom letzten: So prüft pruefeZweitenDruck nur, wo ein Test es will */
+  let naechsterOrt = 0;
+  function woanders(): Ort {
+    naechsterOrt += 1000;
+    return { x: naechsterOrt, y: 0 };
   }
 
   /**
-   * Ein Klick (detail 2: der zweite eines Doppelklicks), gedrückt zur Zeit gedrueckt (e.timeStamp; sonst jetzt).
-   * Gesperrte Knöpfe nehmen keinen an
+   * Ein Klick (detail 2: der zweite eines Doppelklicks; 0: Enter oder Leertaste), gedrückt zur Zeit gedrueckt
+   * (e.timeStamp; sonst jetzt) am Ort `ort`. Gesperrte Knöpfe nehmen keinen an
    */
-  function klick(sel: string | Knoten, detail = 1, gedrueckt = performance.now()): void {
+  function klick(sel: string | Knoten, detail = 1, gedrueckt = performance.now(), ort: Ort = woanders()): void {
     const ziel = typeof sel === 'string' ? el(sel) : sel;
     if (ziel.disabled) return;
-    sende(ziel, 'pointerdown', detail, gedrueckt);
+    sende(ziel, 'pointerdown', detail, gedrueckt, ort);
     fenster.dispatchEvent(new CustomEvent('mousedown', { detail, cancelable: true }));
     const e = new CustomEvent('click', { detail, cancelable: true });
     fenster.dispatchEvent(e);
-    if (!e.defaultPrevented) sende(ziel, 'click', detail, gedrueckt);
+    if (!e.defaultPrevented) sende(ziel, 'click', detail, gedrueckt, ort);
+  }
+
+  /** Ein Druck mit Finger oder Maus an einem Ort, jetzt */
+  function druck(sel: string, ort: Ort): void {
+    klick(sel, 1, performance.now(), ort);
   }
 
   /** Würde window den zweiten Klick eines Doppelklicks jetzt schlucken? */
@@ -402,6 +455,26 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     expect(fokus).toBe(el('#hero-detail-ov .hdm-gear-icon[data-slot="armor"]'));
   });
 
+  test('Enter oder Leertaste auf dem Knopf der Karte öffnet das Fenster, TRAINIEREN nicht', async () => {
+    const { state, held: f } = stand();
+    f.level = 12;
+    await heldenseite(state);
+    const knopf = `#s-heroes .hcard[data-fighter-id="${f.id}"] .hcard-oeffnen`;
+    // Die Tastatur klickt den Knopf selbst (detail 0); Maus und Finger gehen durch ihn hindurch auf die Karte
+    klick(knopf, 0);
+    expect(seite.querySelector('#hero-detail-ov')).not.toBeNull();
+    expect(fokus).toBe(el('#hdm2-name'));
+    taste('Escape');
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+    expect(fokus).toBe(el(knopf));
+
+    klick('#s-heroes .tab[data-tab="train"]');
+    const gold = state.globalStock.gold;
+    klick(`#s-heroes .btn-train[data-fighter-id="${f.id}"]`);
+    expect(state.globalStock.gold).toBeLessThan(gold);
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+  });
+
   test('ein Tastenhörer, solange das Fenster offen ist (auch nach 20× Neuzeichnen), danach keiner, wie es auch zugeht', async () => {
     const { state, held: f } = stand();
     await heldenseite(state);
@@ -417,6 +490,8 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     }
     expect(seite.querySelectorAll('#hero-detail-ov')).toHaveLength(1);
     expect(fenster.tastenHoerer.size).toBe(1);
+    // Beim Neuzeichnen misst das Fenster nicht neu: Jetzt hat die Seite keinen Scrollbalken, der Rand fiele weg
+    expect(htmlStil.get('--hdm2-balken')).toBe('15px');
 
     taste('Escape');
     expect(seite.querySelector('#hero-detail-ov')).toBeNull();
@@ -491,51 +566,179 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     expect(f.spezialisierung).toBeUndefined();
   });
 
-  test('nach ANLEGEN hat der Platz den Fokus, und ABLEGEN nimmt kurz keinen Klick an', async () => {
+  test('nach ANLEGEN hat der Platz den Fokus; ein langsamer zweiter Druck auf dieselbe Stelle legt nicht gleich wieder ab', async () => {
     const { state, held: f } = stand();
     await heldenseite(state);
     oeffne(f);
     vi.advanceTimersByTime(800);
     klick('#hdm2-inv-toggle');
+    // Auch nach 🎒 Inventar schluckt das Fenster den zweiten Klick (am PC rückt der Held dabei zur Seite)
+    expect(schlucktZweitenKlick()).toBe(true);
     klick(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${SCHWERT}"]`);
     expect(el('#hero-detail-ov .hdm2-aktion').dataset.aktion).toBe('anlegen');
 
+    const hier: Ort = { x: 480, y: 200 };
     const angelegt = performance.now();
-    klick('#hero-detail-ov .hdm2-aktion');
+    druck('#hero-detail-ov .hdm2-aktion', hier);
     expect(f.gear.mainHand).toBe(SCHWERT);
     const platz = el('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]');
     expect(fokus).toBe(platz);
     expect(schlucktZweitenKlick()).toBe(true);
-    // Ein langsamer zweiter Druck auf dieselbe Stelle trifft ABLEGEN: Er legt das Teil nicht gleich wieder ab, auch
-    // nicht, wenn das Spiel erst nach der Sperre dazu kommt
+    // Dort steht jetzt ABLEGEN. Ein langsamer zweiter Druck auf dieselbe Stelle (der Finger verrutscht etwas) legt das
+    // Teil nicht gleich wieder ab, auch nicht, wenn das Spiel erst nach 0,8 s dazu kommt
     expect(el('#hero-detail-ov .hdm2-aktion').dataset.aktion).toBe('ablegen');
     vi.advanceTimersByTime(500);
-    klick('#hero-detail-ov .hdm2-aktion');
+    druck('#hero-detail-ov .hdm2-aktion', { x: 470, y: 225 });
     expect(f.gear.mainHand).toBe(SCHWERT);
     vi.advanceTimersByTime(300);
-    klick('#hero-detail-ov .hdm2-aktion', 1, angelegt + 700);
+    klick('#hero-detail-ov .hdm2-aktion', 1, angelegt + 700, hier);
     expect(f.gear.mainHand).toBe(SCHWERT);
-    klick('#hero-detail-ov .hdm2-aktion');
+    // Nach 0,8 s zählt der Druck auch dort
+    druck('#hero-detail-ov .hdm2-aktion', hier);
     expect(f.gear.mainHand).toBeNull();
     expect(fokus).toBe(el('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]'));
   });
 
-  test('gibt der Browser die Zeit des Drucks nicht passend mit (ab 1970 oder 0), zählt die Sperre ab jetzt', async () => {
+  test('gibt der Browser die Zeit des Drucks nicht passend mit (ab 1970 oder 0), zählt jetzt', async () => {
     const { state, held: f } = stand();
     await heldenseite(state);
     oeffne(f);
     vi.advanceTimersByTime(800);
     klick('#hdm2-inv-toggle');
     klick(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${SCHWERT}"]`);
-    klick('#hero-detail-ov .hdm2-aktion');
+    const hier: Ort = { x: 480, y: 200 };
+    druck('#hero-detail-ov .hdm2-aktion', hier);
     expect(f.gear.mainHand).toBe(SCHWERT);
     vi.advanceTimersByTime(500);
-    klick('#hero-detail-ov .hdm2-aktion', 1, Date.now());
-    klick('#hero-detail-ov .hdm2-aktion', 1, 0);
+    klick('#hero-detail-ov .hdm2-aktion', 1, Date.now(), hier);
+    klick('#hero-detail-ov .hdm2-aktion', 1, 0, hier);
     expect(f.gear.mainHand).toBe(SCHWERT);
     vi.advanceTimersByTime(300);
-    klick('#hero-detail-ov .hdm2-aktion', 1, 0);
+    klick('#hero-detail-ov .hdm2-aktion', 1, 0, hier);
     expect(f.gear.mainHand).toBeNull();
+  });
+
+  test('Platz angetippt, das Fenster scrollt zur Auswahl: Ein langsamer zweiter Druck dorthin springt nicht in die Schmiede', async () => {
+    const { state, held: f } = stand();
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    // Am Handy quer liegt danach der Link unter dem Finger; der Browser schiebt den Tipp knapp daneben auf ihn (9 px)
+    const platz: Ort = { x: 153, y: 215 };
+    const daneben: Ort = { x: 153, y: 224 };
+    druck('#hero-detail-ov .hdm-gear-icon[data-slot="armor"]', platz);
+    vi.advanceTimersByTime(400);
+    druck(`#hero-detail-ov [data-schmiede-teil="${RUESTUNG}"]`, daneben);
+    expect(seite.querySelector('#hero-detail-ov')).not.toBeNull();
+    expect(el('#s-heroes .tab.active').dataset.tab).toBe('my');
+    // 0,8 s nach dem Platz zählt der Druck: Fenster zu, Reiter «Schmiede»
+    vi.advanceTimersByTime(400);
+    druck(`#hero-detail-ov [data-schmiede-teil="${RUESTUNG}"]`, daneben);
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+    expect(el('#s-heroes .tab.active').dataset.tab).toBe('schmiede');
+  });
+
+  test('Platz angetippt: ABLEGEN, das unter den Finger gescrollt ist, wirkt nicht; ein Druck auf ABLEGEN anderswo sofort', async () => {
+    const { state, held: f } = stand();
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    const platz: Ort = { x: 453, y: 117 };
+    druck('#hero-detail-ov .hdm-gear-icon[data-slot="armor"]', platz);
+    vi.advanceTimersByTime(400);
+    druck('#hero-detail-ov .hdm2-aktion', platz);
+    expect(f.gear.armor).toBe(RUESTUNG);
+    // Eine Maus steht still: 20 px daneben ist schon eine andere Stelle, mit dem Finger nicht
+    druck('#hero-detail-ov .hdm2-aktion', { x: 453, y: 137 });
+    expect(f.gear.armor).toBe(RUESTUNG);
+    druck('#hero-detail-ov .hdm2-aktion', { x: 453, y: 137, art: 'mouse' });
+    expect(f.gear.armor).toBeNull();
+  });
+
+  test('denselben Platz zweimal antippen schliesst die Auswahl, auch kurz nacheinander an derselben Stelle', async () => {
+    const { state, held: f } = stand();
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    const platz: Ort = { x: 100, y: 150 };
+    druck('#hero-detail-ov .hdm-gear-icon[data-slot="armor"]', platz);
+    expect(seite.querySelector('#hdm2-auswahl')).not.toBeNull();
+    vi.advanceTimersByTime(400);
+    druck('#hero-detail-ov .hdm-gear-icon[data-slot="armor"]', platz);
+    expect(seite.querySelector('#hdm2-auswahl')).toBeNull();
+    expect(f.gear.armor).toBe(RUESTUNG);
+  });
+
+  test('zwei Teile schnell nacheinander anlegen: ANLEGEN wirkt sofort, wenn dazwischen woanders gedrückt wurde', async () => {
+    const { state, held: f } = stand();
+    const talisman = Object.keys(ITEM_DEFS).find(id => ITEM_DEFS[id].type === 'gear' && ITEM_DEFS[id].gearSlot === 'trinket')!;
+    state.globalStock[talisman] = 1;
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    klick('#hdm2-inv-toggle');
+    const knopf: Ort = { x: 480, y: 200 };
+    klick(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${SCHWERT}"]`);
+    druck('#hero-detail-ov .hdm2-aktion', knopf);
+    expect(f.gear.mainHand).toBe(SCHWERT);
+    vi.advanceTimersByTime(250);
+    druck(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${talisman}"]`, { x: 120, y: 520 });
+    vi.advanceTimersByTime(250);
+    druck('#hero-detail-ov .hdm2-aktion', knopf);
+    expect(f.gear.trinket).toBe(talisman);
+    expect(f.gear.mainHand).toBe(SCHWERT);
+  });
+
+  test('Fenster über den dunklen Rand geschlossen: Ein langsamer zweiter Druck dorthin trifft nicht «Lernen», TRAINIEREN oder eine Karte dahinter', async () => {
+    const state = createNewGameState();
+    const lehrer = held('guardian', 'Brom', 15);
+    lehrer.xp = totalXpForLevel(15) + 600;
+    const schueler = held('ranger', 'Lia', 5);
+    schueler.xp = totalXpForLevel(5);
+    state.fighters.push(lehrer, schueler);
+    state.globalStock.gold = 100000;
+    await heldenseite(state);
+    klick('#s-heroes .tab[data-tab="train"]');
+    vi.advanceTimersByTime(800);
+    klick(`#s-heroes .hcard[data-fighter-id="${schueler.id}"]`);
+    vi.advanceTimersByTime(800);
+
+    const rand: Ort = { x: 1159, y: 296 };
+    druck('#hero-detail-ov', rand);
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+    vi.advanceTimersByTime(400);
+    const gold = state.globalStock.gold;
+    druck('#s-heroes [data-lb-lernen]', rand);
+    druck(`#s-heroes .btn-train[data-fighter-id="${schueler.id}"]`, rand);
+    druck(`#s-heroes .hcard[data-fighter-id="${schueler.id}"]`, rand);
+    expect(schueler.xp).toBe(totalXpForLevel(5));
+    expect(state.globalStock.gold).toBe(gold);
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+    // Bewusst, 0,8 s nach dem Rand: Lernen wirkt, und gleich danach TRAINIEREN anderswo
+    vi.advanceTimersByTime(400);
+    druck('#s-heroes [data-lb-lernen]', rand);
+    expect(schueler.xp).toBe(totalXpForLevel(5) + 600);
+    druck(`#s-heroes .btn-train[data-fighter-id="${schueler.id}"]`, { x: 300, y: 600 });
+    expect(state.globalStock.gold).toBeLessThan(gold);
+    expect(gespeichert).toBe(2);
+  });
+
+  test('Lehrbuch: Die Meldung nach «Lernen» wird ins Bild geholt (am Handy quer läge sie unter dem Rand)', async () => {
+    const state = createNewGameState();
+    const lehrer = held('guardian', 'Brom', 15);
+    lehrer.xp = totalXpForLevel(15) + 600;
+    const schueler = held('ranger', 'Lia', 5);
+    schueler.xp = totalXpForLevel(5);
+    state.fighters.push(lehrer, schueler);
+    await heldenseite(state);
+    klick('#s-heroes .tab[data-tab="train"]');
+    expect(seite.querySelector('#s-heroes .lb-meldung')).toBeNull();
+    klick('#s-heroes [data-lb-lernen]');
+    expect(schueler.xp).toBe(totalXpForLevel(5) + 600);
+    // Der Lehrer hat keinen Überschuss mehr, «Lernen» ist aus: Fokus und Blick gehen auf die Meldung
+    const meldung = el('#s-heroes .lb-meldung');
+    expect(meldung.gescrollt).toEqual([{ block: 'nearest' }]);
+    expect(fokus).toBe(meldung);
   });
 
   test('Sprung in die Schmiede: «AUF +N» nimmt kurz keinen Klick an, dann schon', async () => {
