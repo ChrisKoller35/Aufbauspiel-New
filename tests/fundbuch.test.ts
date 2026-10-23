@@ -1,7 +1,7 @@
 // Fundbuch (systems/Fundbuch.ts): Woher und Wofür, gegengeprüft mit den echten Daten und den
 // echten Spielfunktionen (CombatEngine.rollLoot, EncounterProcessor, Musterläufe, Schmiede).
 import { describe, it, expect, vi, afterEach } from 'vitest';
-import { ROUTE_DEFS } from '../src/data/routes';
+import { ROUTE_DEFS, isRouteAvailable } from '../src/data/routes';
 import { ENEMY_DEFS } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { ITEM_DEFS } from '../src/data/items';
@@ -377,5 +377,48 @@ describe('Einträge', () => {
     expect(zahlText(1.4)).toBe('1,4');
     expect(zahlText(2)).toBe('2');
     expect(zahlText(0.05)).toBe('0,05');
+  });
+});
+
+describe('Fenster (HTML ohne Browser)', () => {
+  it('Woher: je Dungeon eine Kopfzeile mit Link und Ø, seine Gegner darunter ohne eigenen Link', async () => {
+    const { itemSeite } = await import('../src/ui/components/FundbuchFenster');
+    const f = fundorte('iron_scrap');
+    const woher = itemSeite('iron_scrap', createNewGameState()).split('Wofür')[0];
+    const listen = [...woher.matchAll(/<ul class="fb-gegner">(.*?)<\/ul>/g)].map(m => m[1]);
+    expect(listen.length).toBe(f.dungeons.length);
+    listen.forEach((liste, i) => {
+      expect(liste, f.dungeons[i].routeId).not.toContain('data-route');
+      expect((liste.match(/<li>/g) ?? []).length, f.dungeons[i].routeId).toBe(f.dungeons[i].gegner.length);
+    });
+    // Ein Link je Dungeon-Zeile und je weiterer Quelle, nicht einer je Gegner wie in der Zeilenform
+    const links = (woher.match(/data-route="/g) ?? []).length;
+    expect(links).toBe(f.dungeons.length + f.fundRaeume.length + f.ersterSieg.length + f.jedenSieg.length + f.einschmelzen.length);
+    expect(f.dungeons.reduce((n, d) => n + d.gegner.length, 0)).toBeGreaterThan(2 * f.dungeons.length);
+  });
+
+  it('Händler der Stadt: der Preis der eigenen Stadtstufe (ab Stufe 4 mit Rabatt)', async () => {
+    const { itemSeite } = await import('../src/ui/components/FundbuchFenster');
+    const stand = createNewGameState();
+    expect(itemSeite('healing_potion', stand)).toContain(`Beim Händler der Stadt · ${kaufpreis('healing_potion', 1)} Gold`);
+    const stufe4 = { ...stand, stadtweg: { stufe: 4, herzsteine: [], gelesen: 0 } };
+    expect(kaufpreis('healing_potion', 4)).toBeLessThan(kaufpreis('healing_potion', 1));
+    expect(itemSeite('healing_potion', stufe4)).toContain(`Beim Händler der Stadt · ${kaufpreis('healing_potion', 4)} Gold`);
+  });
+
+  it('ohne Wunsch öffnet es beim ersten Eintrag, den die Gilde schon bekommen kann', async () => {
+    const { startEintrag } = await import('../src/ui/components/FundbuchFenster');
+    const stand = createNewGameState();
+    const start = startEintrag(stand)!;
+    // Die Liste beginnt mit den Schmiede-Materialien; die ersten kommen aus gesperrten Dungeons
+    const erster = fundbuchEintraege().find(id => gruppeVon(id) === Object.keys(GRUPPEN_NAMEN)[0]);
+    expect(ITEM_DEFS[erster!].name).toBe('Drachenschuppe');
+    expect(start).not.toBe(erster);
+    const f = fundorte(start);
+    const offen = (q: { routeId: string }) => isRouteAvailable(ROUTE_DEFS[q.routeId], stand);
+    expect(!!f.haendler || [...f.dungeons, ...f.fundRaeume, ...f.ersterSieg, ...f.jedenSieg, ...f.rastplaetze].some(offen), start).toBe(true);
+    // Mit Wunsch genau der; ein unbekannter Wunsch fällt auf den Start zurück
+    expect(startEintrag(stand, 'iron_scrap')).toBe('iron_scrap');
+    expect(startEintrag(stand, 'gibt_es_nicht')).toBe(start);
   });
 });

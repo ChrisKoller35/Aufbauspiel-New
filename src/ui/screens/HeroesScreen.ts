@@ -25,6 +25,7 @@ import { xpProgress, ueberschuss, MAX_HERO_LEVEL } from '../../systems/HeroProgr
 import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausbildung';
 import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
 import { klassenTafelHtml } from '../components/KlassenTafel';
+import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 
 const gearSystem = new GearSystem();
 
@@ -788,6 +789,8 @@ export function renderHeroesScreen(container: HTMLElement): void {
       inventarOffen = false;
       wegFrage = null;
       openDetailModal(fighter, container);
+      // Der zweite Klick eines Doppelklicks träfe sonst das eben geöffnete Fenster (Hintergrund, Ausrüstung)
+      schluckeZweitenKlick();
     });
   }
 
@@ -839,15 +842,24 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
   overlay.classList.add('on');
   container.appendChild(overlay);
 
-  // Close button
-  const closeBtn = overlay.querySelector('#hero-detail-close');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => overlay.remove());
-  }
+  // Escape schliesst, Tab bleibt im Fenster, und die Tasten gehen nicht an main.ts (dort wechselte Escape
+  // den Bildschirm, das Fenster bliebe im versteckten stehen). Beim Neuzeichnen löst sich der alte Hörer
+  // beim nächsten Tastendruck selbst.
+  const loeseTasten = bindeFensterTasten(overlay, overlay.querySelector<HTMLElement>('.hdm2-outer'), () => {
+    loeseTasten();
+    overlay.remove();
+  });
+  const schliessenMitKlick = (): void => {
+    loeseTasten();
+    overlay.remove();
+    schluckeZweitenKlick();
+  };
 
-  // Click overlay background to close
-  overlay.addEventListener('click', (e) => {
-    if (e.target === overlay) overlay.remove();
+  // ✕ und Hintergrund schliessen; ein Doppelklick auf den Hintergrund nur einmal
+  overlay.querySelector('#hero-detail-close')?.addEventListener('click', schliessenMitKlick);
+  const istHintergrund = hintergrundKlick(overlay);
+  overlay.addEventListener('click', e => {
+    if (istHintergrund(e)) schliessenMitKlick();
   });
 
   // Inventory panel toggle
@@ -921,6 +933,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
   // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil
   overlay.querySelector<HTMLElement>('[data-schmiede-teil]')?.addEventListener('click', e => {
     schmiedeZeigeTeil((e.currentTarget as HTMLElement).dataset.schmiedeTeil!);
+    loeseTasten();
     overlay.remove();
     activeTab = 'schmiede';
     renderHeroesScreen(container);

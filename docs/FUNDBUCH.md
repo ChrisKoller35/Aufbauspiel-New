@@ -30,17 +30,19 @@ aus seiner Tabelle, meist einen Gegenstand.** Gezogen wird gewichtet, die Menge 
 - Gegner, die in keiner Route stehen (z. B. `thorn_sprite`, `boss_bandit_chief`), erscheinen nicht.
 - Der Modifikator ist im Spiel immer `null` (`ExpeditionFlow.ts`): «Elitegarde» und die Nemesis-Beute zählen nicht.
 
-Die Zeile im Fenster hat die bestellte Form «‹Gegner› · P % je Sieg über ihn · Ø X je Sieg in ‹Dungeon›», dazu
-die Anzahl im Dungeon und die Menge, z. B. «Armbrustschütze (5×) · 45 % je Sieg über ihn, 2–5 Stück · Ø 24,7 je
-Sieg in Die Festung». Die Zeilen eines Dungeons stehen beisammen, ohne Strich dazwischen: Ø gilt für den ganzen
-Dungeon und steht darum in jeder seiner Zeilen gleich. Zahlen haben ein Komma; nach «Ø» und vor «%» steht ein
-geschütztes Leerzeichen, damit am Handy keine Zahl ohne ihr Zeichen auf die nächste Zeile rutscht.
+Im Fenster steht je Dungeon eine Kopfzeile mit Link und Ø, darunter seine Gegner mit Anzahl, Chance und Menge,
+z. B. «Die Festung · Ø 24,7 je Sieg» und darunter «Armbrustschütze (5×) · 45 % je Sieg über ihn · 2–5 Stück».
+Der Auftrag (Issue #63) wollte je Gegner eine Zeile «‹Gegner› · P % je Sieg über ihn · Ø X je Sieg in ‹Dungeon›».
+So gebaut (23.10.2026) stand der Dungeon-Link in jeder Zeile, und weil Links am Handy 44 px hoch sind, wurde
+Eisenschrott dort 9120 statt 5209 px lang (113 statt 35 Links); darum bleibt es bei der Kopfzeile je Dungeon.
+Zahlen haben ein Komma; nach «Ø» und vor «%» steht ein geschütztes Leerzeichen, damit am Handy keine Zahl ohne ihr
+Zeichen auf die nächste Zeile rutscht.
 
 Weitere Quellen:
 
 | Quelle | Anzeige | Woher die Zahl kommt |
 |---|---|---|
-| Händler der Stadt | «Beim Händler der Stadt · N Gold» | `kaufpreis(id, 1)`, Stadtstufe 1 ohne Rabatt |
+| Händler der Stadt | «Beim Händler der Stadt · N Gold» | `kaufpreis(id, stadtStufeVon(state))`: der Preis der eigenen Stadtstufe, ab Stufe 4 mit Rabatt (`fundorte` selbst rechnet mit Stufe 1) |
 | Dungeon-Händler | «Beim Dungeon-Händler · N Gold (höchstens 2 Käufe)» | `MERCHANT_PRICES`, `MERCHANT_MAX_PURCHASES` |
 | Fund-Raum ohne feste Wahl | «Versteck durchsuchen: N Stück, angeboten in etwa 33 % der Besuche» | erstes `findItems`; die Option kommt in einem von drei Fällen (`EncounterProcessor`, `nextInt(0, 2)`), nachgezählt im Test mit 30 000 Besuchen |
 | Fund-Raum mit fester Wahl | «zur Wahl: N Stück» bzw. «…, wenn der Boss fällt» | `wahl.a` / `wahl.b` mit `effect: 'item'`, `nachSieg` |
@@ -75,7 +77,8 @@ Suchfeld aus. Nach einem Sprung über einen Link steht der Fokus auf «← zurü
 Link, über den man gegangen war. F5 speichert wie überall im Spiel, auch im Suchfeld (`main.ts`). Der zweite Klick
 eines Doppelklicks (am Handy eines Doppeltipps) geht ins Leere (`schluckeZweitenKlick`): auf «📜 Fundbuch», weil
 er sonst schon das offene Fenster träfe, und auf einem Link, «← zurück» oder einem Listeneintrag, weil er sonst
-auf der neuen Seite einen anderen Link träfe und gleich weiterspränge. Am Handy steht die Liste über dem
+auf der neuen Seite einen anderen Link träfe und gleich weiterspränge. Schon sein Druck verschiebt weder den
+Fokus noch markiert er Text: Am PC bleibt der Fokus nach einem Doppelklick auf «📜 Fundbuch» im Suchfeld. Am Handy steht die Liste über dem
 Eintrag, das Fenster scrollt als Ganzes, ✕ bleibt dabei oben rechts stehen, und jeder Link ist mindestens
 44 × 44 px gross.
 

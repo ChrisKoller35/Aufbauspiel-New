@@ -1,8 +1,9 @@
 // ─── Magic City – Hilfen für Fenster über dem Spiel ─────────────
 // Gemeinsam für die Fenster «Spielstand» (SpielstandFenster.ts), «Der
 // Weg zur Magischen Stadt» (StadtwegFenster.ts), das Fundbuch
-// (FundbuchFenster.ts) und die Fenster der Gebäude-Seite
-// (HaendlerFenster.ts, GebaeudeFenster.ts, Bau-Dialog):
+// (FundbuchFenster.ts), das Heldenfenster (HeroesScreen.ts), das
+// Monsterbuch und die Fenster der Gebäude-Seite (HaendlerFenster.ts,
+// GebaeudeFenster.ts, Bau-Dialog):
 // Tasten gehen nicht an das Spiel dahinter, Tab bleibt im Fenster, und
 // der zweite Klick eines Doppelklicks löst nichts aus, was hinter dem
 // Fenster liegt.
@@ -68,8 +69,9 @@ export function bindeFensterTasten(ov: HTMLElement, fenster: HTMLElement | null,
 }
 
 /**
- * Nach dem Schliessen mit einem Klick: Der zweite Klick eines Doppelklicks (✕, Hintergrund)
- * träfe sonst, was hinter dem Fenster liegt, und öffnete zum Beispiel eine Kachel.
+ * Nach einem Klick, der ein Fenster öffnet oder schliesst: Der zweite Klick eines Doppelklicks (✕,
+ * Hintergrund) träfe sonst, was jetzt dort liegt, und öffnete zum Beispiel eine Kachel. Schon sein
+ * Druck nähme sonst den Fokus weg (etwa aus dem Suchfeld des Fundbuchs) und markierte Text.
  */
 export function schluckeZweitenKlick(): void {
   const schlucke = (e: MouseEvent) => {
@@ -80,8 +82,16 @@ export function schluckeZweitenKlick(): void {
     }
     window.removeEventListener('click', schlucke, true);
   };
+  const halte = (e: MouseEvent) => {
+    if (e.detail > 1) e.preventDefault();
+    else window.removeEventListener('mousedown', halte, true);
+  };
   window.addEventListener('click', schlucke, true);
-  setTimeout(() => window.removeEventListener('click', schlucke, true), 700);
+  window.addEventListener('mousedown', halte, true);
+  setTimeout(() => {
+    window.removeEventListener('click', schlucke, true);
+    window.removeEventListener('mousedown', halte, true);
+  }, 700);
 }
 
 /**

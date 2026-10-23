@@ -12,8 +12,8 @@ import { MONSTERBUCH_NOTIZEN } from '../../data/monsterbuchNotizen';
 import { GameState } from '../../models/GameState';
 import { BestiariumSystem } from '../../systems/BestiariumSystem';
 import {
-  FAEHIGKEIT_ART, PraemienArt, Seite, Stufe, balken, beuteChancen, einsatzRunden, faehigkeitText, fundorte, goldSpanne,
-  kampfRunden, mindestens, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, seiten, seitenStand, stufe,
+  FAEHIGKEIT_ART, PraemienArt, Seite, Stufe, balken, beuteChancen, einsatzPlan, faehigkeitText, fundorte, goldSpanne,
+  mindestens, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, seiten, seitenStand, stufe,
   wutVorziehbar,
 } from '../../systems/Monsterkunde';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
@@ -175,18 +175,25 @@ function inhaltHtml(state: GameState): string {
 
 // ─── Detailfenster ──────────────────────────────────────────────
 
-/** «Einsatz in Runde 1, 5, 9 …» bzw. «Einsatz in Runde 3 und 14» (ohne ausgesetzten Zug, bis zur letzten Kampfrunde) */
-function rundenText(runden: number[]): string {
-  if (runden.length === 0) return '';
+/**
+ * «Einsatz in Runde 1, 5, 9 …» bzw. «Einsatz in Runde 3 und 14.» (ohne ausgesetzten Zug, bis zur letzten Kampfrunde).
+ * `spaeter` sind Einsätze, die nur ein Belagerungsraum erlebt (Kampf bis Runde `bis`). Sie bekommen einen eigenen
+ * Satz, wo die Liste sonst vollständig aussieht; nach «…» geht es ohnehin weiter.
+ */
+function rundenText(runden: number[], spaeter: number[] = [], bis = 0): string {
+  const liste = (r: number[]) => r.length === 1 ? `${r[0]}` : `${r.slice(0, -1).join(', ')} und ${r[r.length - 1]}`;
   if (runden.length > 3) return `Einsatz in Runde ${runden.slice(0, 3).join(', ')} …`;
-  if (runden.length === 1) return `Einsatz in Runde ${runden[0]}.`;
-  return `Einsatz in Runde ${runden.slice(0, -1).join(', ')} und ${runden[runden.length - 1]}.`;
+  if (runden.length === 0) return spaeter.length ? `Einsatz nur in Belagerungen (bis Runde ${bis}): Runde ${liste(spaeter)}.` : '';
+  const belagerung = spaeter.length ? ` In Belagerungen (bis Runde ${bis}) auch in Runde ${liste(spaeter)}.` : '';
+  return `Einsatz in Runde ${liste(runden)}.${belagerung}`;
 }
 
 /** Fähigkeiten nach der Kampfregel (Monsterkunde.faehigkeitText), nicht nach den Texten in enemies.ts */
 function faehigkeitenHtml(enemy: EnemyDef): string {
   if (enemy.skills.length === 0) return '';
-  const runden = einsatzRunden(enemy.skills, kampfRunden(enemy.id));
+  // Wer auch in gewöhnlichen Räumen kämpft (dort nach 20 Runden Schluss), bekommt die späteren Einsätze
+  // der Belagerung als eigenen Satz, sonst verspräche «…» dort Einsätze, die nie kommen
+  const { runden, belagerung, bis } = einsatzPlan(enemy.id, enemy.skills);
   const zeilen = enemy.skills.map((sk, i) => {
     const abklingzeit = sk.cooldown === 1 ? '1 Runde' : `${sk.cooldown} Runden`;
     // Die Art nur, wenn sie nicht schon der Name ist (die «Heilung» des Waldschamanen)
@@ -195,7 +202,7 @@ function faehigkeitenHtml(enemy: EnemyDef): string {
       <div class="md-skill">
         <span class="md-skill-name">${sk.name}</span>
         <span class="md-skill-cd">${art && art !== sk.name ? `${art} · ` : ''}Abklingzeit ${abklingzeit}</span>
-        <div class="md-skill-desc">${faehigkeitText(enemy.id, sk)} ${rundenText(runden[i])}</div>
+        <div class="md-skill-desc">${faehigkeitText(enemy.id, sk)} ${rundenText(runden[i], belagerung[i], bis)}</div>
       </div>`;
   }).join('');
   return `<div class="md-section"><div class="lbl">FÄHIGKEITEN</div>${zeilen}</div>`;
@@ -356,20 +363,29 @@ export function renderBestiariumScreen(container: HTMLElement): void {
       knopf.setAttribute('aria-pressed', String(knopf.dataset.seite === gewaehlteSeite));
     });
     liste.value = gewaehlteSeite;
-    // Wird der Pfeil mit dem Fokus am Buchende gesperrt, geht der Fokus auf die Liste
+    // Wird der Pfeil mit dem Fokus am Buchende gesperrt, geht der Fokus auf den anderen Pfeil (ein Knopf:
+    // Escape führt dort wie sonst zurück, in der Auswahlliste nimmt main.ts die Tasten nicht an)
     const fokusPfeil = [zurueck, weiter].find(pfeil => pfeil === document.activeElement);
     zurueck.disabled = index === 0;
     weiter.disabled = index === alle.length - 1;
-    if (fokusPfeil?.disabled) liste.focus();
+    if (fokusPfeil?.disabled) (fokusPfeil === weiter ? zurueck : weiter).focus();
     blatt.innerHTML = seiteHtml(state, alle[index]);
   };
 
   liste.addEventListener('change', () => zeigeSeite(liste.value));
+  // main.ts überspringt Tasten in Auswahllisten; Escape auf der zugeklappten Liste führt trotzdem zurück
+  liste.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { e.preventDefault(); navigateTo('main'); }
+  });
 
-  // Ein Doppelklick markiert kein Wort: Sein zweiter Druck träfe sonst den eben gezeichneten Text
-  // (das Fenster über der Karte, die Zeile «Prämie abgeholt»). Markieren durch Ziehen geht weiter.
+  // Ein Doppelklick auf einen Knopf markiert kein Wort: Sein zweiter Druck träfe sonst den eben gezeichneten
+  // Text (das Fenster über der Karte, die Zeile «Prämie abgeholt»). Ein Doppelklick in Text (Ottokars Notiz)
+  // markiert weiter ein Wort, Markieren durch Ziehen geht immer.
+  let ersterDruckAufKnopf = false;
   el.addEventListener('mousedown', e => {
-    if (e.detail > 1 && !(e.target instanceof HTMLSelectElement)) e.preventDefault();
+    const ziel = e.target as Element;
+    if (e.detail <= 1) ersterDruckAufKnopf = !!ziel.closest('button');
+    else if (ersterDruckAufKnopf && !(ziel instanceof HTMLSelectElement)) e.preventDefault();
   });
 
   inhalt.addEventListener('click', e => {

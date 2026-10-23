@@ -21,7 +21,7 @@ import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { MONSTERBUCH_NOTIZEN } from '../src/data/monsterbuchNotizen';
 import { musterStand } from '../src/systems/Musterlauf';
 import {
-  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, einsatzRunden, erreichbareGegner, faehigkeitText, gesichtet,
+  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, einsatzPlan, einsatzRunden, erreichbareGegner, faehigkeitText, gesichtet,
   goldSpanne, kampfRunden, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, praemieGrundbetrag, praemien, seiten, seitenStand,
   siegeBis, strecke, stufe, wutVorziehbar,
 } from '../src/systems/Monsterkunde';
@@ -284,6 +284,18 @@ describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
       expect(einsatzRunden(ENEMY_DEFS[id].skills, 30), id).toEqual(imKampf(id, true).map(einsaetze => einsaetze.map(e => e.runde)));
     }
     expect(einsatzRunden(ENEMY_DEFS.siege_mage.skills, 30)[1]).toEqual([2, 9, 17, 24]);
+    // Fürs Fenster: wer auch in gewöhnlichen Räumen kämpft (dort bis Runde 20), bekommt die späteren Runden getrennt
+    for (const id of erreichbareGegner()) {
+      const skills = ENEMY_DEFS[id].skills;
+      const plan = einsatzPlan(id, skills);
+      const auchDraussen = Object.values(ROUTE_DEFS).some(route =>
+        route.encounters.some(enc => enc.type !== 'fortification' && enc.enemies?.includes(id)));
+      expect(plan.bis, id).toBe(kampfRunden(id));
+      expect(plan.runden.map((r, i) => [...r, ...plan.belagerung[i]]), id).toEqual(einsatzRunden(skills, plan.bis));
+      if (plan.bis === 30 && auchDraussen) expect(plan.runden, id).toEqual(einsatzRunden(skills, 20));
+      else expect(plan.belagerung.flat(), id).toEqual([]);
+    }
+    expect(einsatzPlan('siege_mage', ENEMY_DEFS.siege_mage.skills).belagerung[1]).toEqual([24]);
     // Abklingzeit 3 heisst: jede vierte Runde. Die zweite Fähigkeit wartet, solange die erste vorgeht.
     expect(einsatzRunden(ENEMY_DEFS.forest_wolf.skills)).toEqual([[1, 5, 9, 13, 17]]);
     expect(einsatzRunden(ENEMY_DEFS.boss_elder_treant.skills)).toEqual([[1, 5, 9, 13, 17], [2, 10, 18]]);
@@ -458,9 +470,10 @@ const ZAHLWORT: Record<string, number> = {
 };
 const ZAHLWOERTER = Object.keys(ZAHLWORT).join('|');
 
-/** Eine Zahl als Ziffer («3», «3.») oder als Wort («drei», «dritte»), sonst undefined */
+/** Eine Zahl als Ziffer («3», «3.») oder als Wort («drei», «dritte», «dritten»), sonst undefined */
 function zahlWert(wort: string): number | undefined {
-  return /^\d+\.?$/.test(wort) ? parseInt(wort, 10) : ZAHLWORT[wort.toLowerCase()];
+  const w = wort.toLowerCase();
+  return /^\d+\.?$/.test(w) ? parseInt(w, 10) : ZAHLWORT[w] ?? ZAHLWORT[w.replace(/[nrs]$/, '')];
 }
 
 /** Alle Zahlen eines Textes, der Grösse nach («drei Runden» und «3 Runden» geben beide 3) */
@@ -537,11 +550,13 @@ const KRIEGSMASCHINE: { routeId: string; gegner: string[]; text: string }[] = [
 ];
 
 /**
- * Die Stellen einer Notiz mit «Runde», mit «jede»/«alle» und einer Zahl (Wort oder Ziffer), mit «Luft…»
- * oder «Kriegsmaschine», die kein Eintrag der Tabellen oben abdeckt. Was dort steht, rechnet der Test nach.
+ * Die Stellen einer Notiz mit «Runde», «Zug» oder «Züge», mit «jede»/«jeden»/«alle» und einer Zahl (Wort
+ * oder Ziffer), mit «Luft…» oder «Kriegsmaschine», die kein Eintrag der Tabellen oben abdeckt. Was dort
+ * steht, rechnet der Test nach.
  */
 function ohneEintrag(routeId: string, text: string): string[] {
-  const angabe = new RegExp(`\\bRunden?\\b|\\b(?:alle|jede)\\s+(?:\\d+|${ZAHLWOERTER})\\b|\\bLuft|Kriegsmaschine`, 'gi');
+  const angabe = new RegExp(`\\bRunden?\\b|\\bZ(?:ug(?:e|es|s)?|üge|ügen)\\b|\\b(?:alle|jede[nrs]?)\\s+(?:\\d+|(?:${ZAHLWOERTER})[nrs]?)\\b`
+    + '|\\bLuft|Kriegsmaschine', 'gi');
   const bereiche = [...TAKT, ...WUT, ...WIRKUNG, ...KRIEGSMASCHINE]
     .filter(e => e.routeId === routeId && text.includes(e.text))
     .map(e => ({ von: text.indexOf(e.text), bis: text.indexOf(e.text) + e.text.length }));
@@ -577,8 +592,8 @@ describe('Ottokars Randnotizen', () => {
       const i = ENEMY_DEFS[t.gegner].skills.findIndex(s => s.name === t.faehigkeit);
       expect(i, name).toBeGreaterThanOrEqual(0);
       expect(imKampf(t.gegner)[i].map(e => e.runde), name).toEqual(t.runden);
-      // «jede vierte», «alle acht», «alle 3», «jede Runde»: genau so weit liegen die Einsätze auseinander
-      const abstaende = [...t.text.matchAll(/\b(?:alle|jede)\s+(\d+\.?|[a-zäöü]+)/gi)]
+      // «jede vierte», «jeden zweiten», «alle acht», «alle 3», «jede Runde»: genau so weit liegen die Einsätze auseinander
+      const abstaende = [...t.text.matchAll(/\b(?:alle|jede[nrs]?)\s+(\d+\.?|[a-zäöü]+)/gi)]
         .map(m => /^Runden?$/i.test(m[1]) ? 1 : zahlWert(m[1]))
         .filter((n): n is number => n !== undefined);
       for (const abstand of abstaende) {
@@ -656,6 +671,10 @@ describe('Ottokars Randnotizen', () => {
     expect(mit('ocean_shallows', 'Der Stromtentakel ist nach zwei Runden wieder bereit.')).toEqual(['Runden']);
     expect(mit('ocean_depths', 'Seine Druckwelle zieht dazu 18 Luft aus dem Schild.')).toEqual(['Luft']);
     expect(mit('siege_walls', 'Sie zielen bevorzugt auf die Kriegsmaschine.')).toEqual(['Kriegsmaschine']);
+    // Auch der Takt in Zügen («jeden zweiten Zug»), aber kein «Zugang» oder «Jedem das Seine»
+    expect(mit('forest_short', 'Sie beisst jeden zweiten Zug.')).toEqual(['jeden zweiten', 'Zug']);
+    expect(mit('forest_short', 'Nach drei Zügen ist sie wieder bereit.')).toEqual(['Zügen']);
+    expect(mit('forest_short', 'Der Zugang ist schmal, und jeder Gegner kämpft allein.')).toEqual([]);
   });
 });
 
@@ -698,8 +717,10 @@ describe('Monsterbuch-Bildschirm (HTML ohne Browser)', () => {
     expect(detailHtml(state, ENEMY_DEFS.forest_shaman)).toContain('<span class="md-skill-cd">Abklingzeit 4 Runden</span>');
     expect(detailHtml(state, ENEMY_DEFS.forest_shaman)).toContain('Einsatz in Runde 1, 6, 11 …');
     expect(detailHtml(state, ENEMY_DEFS.boss_oberarchivar)).toContain('Einsatz in Runde 3 und 14.');
-    // Im Belagerungsraum dauert der Kampf bis zu 30 Runden: nach Runde 17 kommt die Schutzbarriere noch einmal
-    expect(detailHtml(state, ENEMY_DEFS.siege_mage)).toContain('Einsatz in Runde 2, 9, 17 …');
+    // Im Belagerungsraum dauert der Kampf bis zu 30 Runden: nach Runde 17 kommt die Schutzbarriere noch einmal,
+    // in gewöhnlichen Räumen nicht. Wer nur in Belagerungen kämpft, zählt gleich bis 30.
+    expect(detailHtml(state, ENEMY_DEFS.siege_mage)).toContain('Einsatz in Runde 2, 9 und 17. In Belagerungen (bis Runde 30) auch in Runde 24.');
+    expect(detailHtml(state, ENEMY_DEFS.wall_archer)).not.toContain('In Belagerungen');
     expect(detailHtml(state, ENEMY_DEFS.boss_elder_treant)).toMatch(/<div class="ms">💀 Boss<\/div>/);
     expect(detailHtml(state, ENEMY_DEFS.boss_sunna)).toContain('Im Dungeon «Das Morgentor» können Wahlen unterwegs die Wut bis auf Runde 4 vorziehen.');
     expect(detailHtml(state, ENEMY_DEFS.boss_leviathan)).not.toContain('vorziehen');

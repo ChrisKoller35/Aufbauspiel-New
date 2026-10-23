@@ -84,7 +84,8 @@ Im Reiter «Trainieren» erscheint das Lehrbuch, sobald ein Held auf Stufe 15 is
   man den nächsten wählt, und die Vorschau sagt «Wähle den nächsten Schüler.» (sofern der Lehrer noch
   Überschuss hat). Sonst gäbe ein zweiter Klick auf «Lernen» die XP einem Helden, den man nie gewählt hat.
 - Doppelklick: Die Meldung erscheint unter «Lernen», und «Lernen» bleibt stehen, auch wenn die Vorschau
-  länger wird. Der zweite Klick oder Tipp löst nichts aus: Der erste Klick sperrt den Knopf, danach nehmen
+  länger wird. Erreicht der Schüler dabei Stufe 15, wechselt er zu den Lehrern; am Handy kann «Lernen»
+  dann um eine Knopfreihe rücken. Der zweite Klick oder Tipp löst nichts aus, auch dort nicht: Der erste Klick sperrt den Knopf, danach nehmen
   Lehrer, Schüler und «Lernen» 0,6 s lang keinen Klick an, und den zweiten Klick eines Maus-Doppelklicks
   schluckt `schluckeZweitenKlick`. So lange nimmt auch kein Druck den Fokus weg oder markiert Text, wo er
   auch landet: Der Fokus bleibt auf «Lernen» bzw. auf der Meldung, auch wenn der letzte Schüler Stufe 15

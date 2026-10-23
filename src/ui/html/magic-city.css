@@ -89,6 +89,15 @@ body {
 }
 .btn-hire:hover { background: var(--gd); }
 
+/* TRAINIEREN auf der Heldenkarte (Reiter Training): wie die übrigen Spielknöpfe statt Browser-Knopf */
+.btn-train {
+  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
+  font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 1px; padding: 7px 12px;
+  border-radius: 4px; cursor: pointer; margin-top: 4px; transition: .2s; width: 100%; max-width: 220px;
+}
+.btn-train:hover:not(:disabled) { filter: brightness(1.2); }
+.btn-train:disabled { cursor: default; }
+
 /* ── Scrollable Content ── */
 .content { flex: 1; overflow-y: auto; padding: 18px 22px; }
 .content::-webkit-scrollbar { width: 5px; }
@@ -1817,5 +1826,6 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 @media (pointer: coarse) {
   .prbtn { width: 44px; height: 44px; font-size: 1.1rem; }
   .btn-go, .mc-btn, .mc-co-speed, .mc-co-ability-btn, .btn-dungeon-map, .chest-collect-btn, .tab { min-height: 44px; }
+  .btn-train, .weg-knopf { min-height: 44px; }
   .btn-back { min-height: 44px; margin-top: -4px; margin-bottom: -4px; }
 }

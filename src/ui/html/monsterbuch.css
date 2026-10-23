@@ -1,6 +1,8 @@
 /* ─── Monsterbuch (ui/screens/BestiariumScreen.ts, docs/MONSTERBUCH.md) ─── */
 
-.mb { padding: 16px; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
+/* width: 100 %: In der Spalte des Routers wäre .mb sonst nur so breit wie die Karten der Seite, und die Pfeile
+   ‹ › sprängen am Handy und in flachen Fenstern beim Blättern hin und her */
+.mb { padding: 16px; width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
 .mb-kopf { font-size: 0.85rem; color: var(--mut); margin-bottom: 10px; }
 .mb-kopf b { color: var(--gold); }
 

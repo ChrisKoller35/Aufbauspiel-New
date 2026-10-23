@@ -14,6 +14,8 @@ import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { ROUTE_DEFS, getRouteLockReasons, isRouteAvailable } from '../../data/routes';
 import { BUILDING_DEFS } from '../../data/buildings';
 import { ANTEIL_OHNE_SIEG } from '../../data/schmiede';
+import { kaufpreis } from '../../data/haendler';
+import { stadtStufeVon } from '../../data/stadtstufen';
 import {
   FundbuchGruppe, Fundorte, GRUPPEN_NAMEN, RAST_KRAEUTER, VERSTECK_CHANCE, dungeonBeute, fundbuchEintraege, fundorte,
   gruppeVon, mengeText, prozentText, verwendung, zahlText,
@@ -21,7 +23,7 @@ import {
 import { materialJeSieg } from '../../systems/Schmiede';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 
-type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
+type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen' | 'stadtweg'>;
 /** link: der wievielte Link im Eintrag zum nächsten Ziel führte (bekommt beim Zurückkommen den Fokus) */
 type Ziel = { art: 'item' | 'dungeon'; id: string; link?: number };
 
@@ -49,6 +51,26 @@ function itemLink(itemId: string): string {
   return ITEM_DEFS[itemId] ? `<button type="button" class="fb-link" data-item="${esc(itemId)}">${name}</button>` : name;
 }
 
+/** Die Einträge in der Reihenfolge der Liste: nach Gruppe, in der Gruppe wie `fundbuchEintraege` */
+function listenReihe(eintraege: string[]): string[] {
+  return (Object.keys(GRUPPEN_NAMEN) as FundbuchGruppe[]).flatMap(g => eintraege.filter(id => gruppeVon(id) === g));
+}
+
+/**
+ * Der Eintrag beim Öffnen: der gewünschte, sonst der erste der Liste, den die Gilde jetzt schon bekommen kann
+ * (Händler der Stadt, eine Quelle in einem offenen Dungeon), nicht ein Material aus einem gesperrten Dungeon.
+ */
+export function startEintrag(stand: Fortschritt, itemId?: string): string | undefined {
+  const eintraege = fundbuchEintraege();
+  if (itemId && eintraege.includes(itemId)) return itemId;
+  const reihe = listenReihe(eintraege);
+  const offen = (q: { routeId: string }) => !!ROUTE_DEFS[q.routeId] && isRouteAvailable(ROUTE_DEFS[q.routeId], stand);
+  return reihe.find(id => {
+    const f = fundorte(id);
+    return !!f.haendler || [...f.dungeons, ...f.fundRaeume, ...f.ersterSieg, ...f.jedenSieg, ...f.rastplaetze].some(offen);
+  }) ?? reihe[0];
+}
+
 function dungeonLink(routeId: string, stand: Fortschritt): string {
   const route = ROUTE_DEFS[routeId];
   if (!route) return esc(routeId);
@@ -67,20 +89,21 @@ function abschnitt(titel: string, zeilen: string[], leer: string): string {
   return `<section class="fb-abschnitt"><h3>${titel}</h3>${inhalt}</section>`;
 }
 
-function woherZeilen(f: Fundorte, stand: Fortschritt): string[] {
+function woherZeilen(itemId: string, f: Fundorte, stand: Fortschritt): string[] {
   const z: string[] = [];
-  if (f.haendler) z.push(`Beim Händler der Stadt · ${f.haendler} Gold`);
+  // Preis der eigenen Stadtstufe (ab Stufe 4 mit Rabatt), nicht der Grundpreis aus fundorte
+  if (f.haendler) z.push(`Beim Händler der Stadt · ${kaufpreis(itemId, stadtStufeVon(stand))} Gold`);
   if (f.dungeonHaendler) z.push(`Beim Dungeon-Händler · ${f.dungeonHaendler.preis} Gold (höchstens ${f.dungeonHaendler.max} Käufe)`);
   for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
   for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
   for (const s of f.jedenSieg) z.push(`Jeder Sieg in ${dungeonLink(s.routeId, stand)} · ${s.menge} Stück`);
-  // Zeilenform aus dem Auftrag: «‹Gegner› · 35 % je Sieg über ihn · Ø 1,4 je Sieg in ‹Dungeon›»; die Zeilen
-  // eines Dungeons stehen beisammen (Ø gilt für den ganzen Dungeon), dazu Anzahl im Dungeon und Menge.
+  // Je Dungeon eine Kopfzeile mit Link und Ø, darunter seine Gegner ohne Link: So steht der Dungeon nur einmal
+  // da (die Zeilenform «… · Ø 1,4 je Sieg in ‹Dungeon›» je Gegner verdoppelte am Handy die Länge, docs/FUNDBUCH.md).
   // Nach «Ø» ein geschütztes Leerzeichen, damit die Zahl nicht allein auf die nächste Zeile rutscht
   for (const d of f.dungeons) {
     const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg `
-      + `über ihn, ${mengeText(g.minQty, g.maxQty)} Stück · Ø\u00a0${zahlText(d.jeSieg)} je Sieg in ${dungeonLink(d.routeId, stand)}</li>`).join('');
-    z.push(`<ul class="fb-gegner">${gegner}</ul>`);
+      + `über ihn · ${mengeText(g.minQty, g.maxQty)} Stück</li>`).join('');
+    z.push(`${dungeonLink(d.routeId, stand)} · Ø\u00a0${zahlText(d.jeSieg)} je Sieg<ul class="fb-gegner">${gegner}</ul>`);
   }
   for (const r of f.fundRaeume) {
     const wann = r.art === 'zufall'
@@ -136,13 +159,14 @@ function regelText(f: Fundorte): string {
   return saetze.length ? `<p class="fb-regel">${saetze.join(' ')}</p>` : '';
 }
 
-function itemSeite(itemId: string, stand: Fortschritt): string {
+/** Die Seite eines Gegenstands (exportiert für den Test ohne Browser) */
+export function itemSeite(itemId: string, stand: Fortschritt): string {
   const def = ITEM_DEFS[itemId];
   const f = fundorte(itemId);
   const text = def.flavorText ? `<p class="fb-text">${esc(def.flavorText)}</p>` : '';
   return `<header class="fb-kopf">${bild(itemId)}<div><h2 class="fb-name" tabindex="-1">${esc(def.name)}</h2>
       <span class="fb-gruppe">${GRUPPEN_NAMEN[gruppeVon(itemId)]}</span></div></header>${text}
-    ${abschnitt('Woher', woherZeilen(f, stand), 'Keine Quelle bekannt.')}
+    ${abschnitt('Woher', woherZeilen(itemId, f, stand), 'Keine Quelle bekannt.')}
     ${abschnitt('Wofür', wofuerZeilen(itemId, stand), 'Keine Werkstatt, kein Bau, keine Stadtstufe und keine Schmiede braucht das.')}
     ${regelText(f)}`;
 }
@@ -161,9 +185,9 @@ function dungeonSeite(routeId: string, stand: Fortschritt): string {
 }
 
 function listeHtml(eintraege: string[]): string {
-  const gruppen = Object.keys(GRUPPEN_NAMEN) as FundbuchGruppe[];
-  return gruppen.map(g => {
-    const ids = eintraege.filter(id => gruppeVon(id) === g);
+  const reihe = listenReihe(eintraege);
+  return (Object.keys(GRUPPEN_NAMEN) as FundbuchGruppe[]).map(g => {
+    const ids = reihe.filter(id => gruppeVon(id) === g);
     if (!ids.length) return '';
     const knoepfe = ids.map(id => `<li><button type="button" class="fb-eintrag-knopf" data-item="${esc(id)}"
       data-name="${esc(ITEM_DEFS[id].name.toLocaleLowerCase('de'))}">${bild(id)}<span>${esc(ITEM_DEFS[id].name)}</span></button></li>`).join('');
@@ -269,7 +293,7 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
   // Der zweite Klick eines Doppelklicks auf «📜 Fundbuch» träfe sonst schon das offene Fenster (Listeneintrag)
   schluckeZweitenKlick();
   loeseTasten = bindeFensterTasten(ov, fenster, schliesseFundbuch);
-  const start = itemId && eintraege.includes(itemId) ? itemId : ov.querySelector<HTMLElement>('.fb-eintrag-knopf')?.dataset.item;
+  const start = startEintrag(stand, itemId);
   if (start) zeige({ art: 'item', id: start }, 'start');
   ov.querySelector('.fb-eintrag-knopf.aktiv')?.scrollIntoView({ block: 'nearest' });
   if (itemId && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });

@@ -206,6 +206,12 @@ export function kampfRunden(id: string): number {
   return belagert ? BELAGERUNG_RUNDEN : KAMPF_RUNDEN;
 }
 
+/** Kämpft der Gegner auch ausserhalb von Belagerungsräumen (dort endet der Kampf nach 20 Runden)? */
+function kaempftAuchOhneBelagerung(id: string): boolean {
+  return Object.values(ROUTE_DEFS).some(route =>
+    route.encounters.some(enc => enc.type !== 'fortification' && enc.enemies?.includes(id)));
+}
+
 /**
  * In welchen Runden ein Gegner jede seiner Fähigkeiten einsetzt, solange er keinen Zug aussetzt.
  * Regel aus processCombat: In jedem Zug geht er seine Fähigkeiten der Reihe nach durch. Eine mit
@@ -231,6 +237,22 @@ export function einsatzRunden(skills: EnemySkillDef[], runden = KAMPF_RUNDEN): n
     }
   }
   return einsaetze;
+}
+
+/**
+ * Die Einsätze fürs Detailfenster. `runden` erlebt jeder Kampf des Gegners. Kämpft er in Belagerungsräumen
+ * (bis Runde `bis` = 30) und auch in gewöhnlichen (bis Runde 20), stehen die Einsätze nach Runde 20 getrennt
+ * in `belagerung`, sonst ist `belagerung` leer. Ohne ausgesetzten Zug gerechnet wie `einsatzRunden`.
+ */
+export function einsatzPlan(id: string, skills: EnemySkillDef[]): { runden: number[][]; belagerung: number[][]; bis: number } {
+  const bis = kampfRunden(id);
+  const alle = einsatzRunden(skills, bis);
+  if (bis === KAMPF_RUNDEN || !kaempftAuchOhneBelagerung(id)) return { runden: alle, belagerung: skills.map(() => []), bis };
+  return {
+    runden: alle.map(r => r.filter(runde => runde <= KAMPF_RUNDEN)),
+    belagerung: alle.map(r => r.filter(runde => runde > KAMPF_RUNDEN)),
+    bis,
+  };
 }
 
 /** Luft, die eine Luftraub-Fähigkeit nimmt: die Tabelle in processCombat, sonst ihre Stärke */

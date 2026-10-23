@@ -101,8 +101,11 @@ fällt; die erste bereite setzt er ein, die danach zählen in diesem Zug nicht. 
 also: frühestens N + 1 Runden später wieder. Eine zweite Fähigkeit wartet, solange die erste vorgeht
 (Rindenwall des Treants: Runde 2, 10, 18; Neuauflage des Oberarchivars: Runde 3 und 14).
 Gerechnet ohne ausgesetzten Zug (Betäubung verschiebt alles) bis Runde 20, für Gegner aus
-Belagerungsräumen bis Runde 30 (`kampfRunden`, wie `processFortificationCombat`): Die
-Schutzbarriere des Kampfmagiers zeigt darum «Einsatz in Runde 2, 9, 17 …».
+Belagerungsräumen bis Runde 30 (`kampfRunden`, wie `processFortificationCombat`). Alle fünf kämpfen
+auch in gewöhnlichen Räumen, wo nach Runde 20 Schluss ist; `einsatzPlan` trennt darum die späteren
+Einsätze ab. Wo die Liste sonst vollständig aussähe, bekommen sie einen eigenen Satz: Die
+Schutzbarriere des Kampfmagiers zeigt «Einsatz in Runde 2, 9 und 17. In Belagerungen (bis Runde 30)
+auch in Runde 24.» Nach «…» geht es ohnehin weiter, dort steht kein Zusatz.
 
 **Wut**: «Wut ab Runde 8: Angriff ×1,5, Tempo ×1,3». Ziehen Wahlen unterwegs die Wut vor
 (`bossWutFrueher`, die Sonnenuhr im Morgentor: dreimal 2 Runden), steht darunter, bis auf welche
@@ -206,10 +209,10 @@ aber mit: Was vor der Niederlage fällt, steht in der Strecke.
 
 Je Dungeon eine, 2 bis 3 Sätze, mit einem Gegner der Seite beim Namen. Was sie über den Kampf sagen,
 stimmt mit dem Spiel, und der Test rechnet es nach: Jede Stelle mit «Runde» oder «Runden», mit
-«jede» oder «alle» und einer Zahl (Wort oder Ziffer), mit «Luft» (auch «Luftsauger») oder mit
-«Kriegsmaschine» muss in einem Eintrag einer dieser Tabellen in `tests/monsterbuch.test.ts` stehen,
-sonst scheitert er («alle 2 Runden», «jede Runde» oder «nach zwei Runden wieder bereit» ohne
-Eintrag fallen durch):
+«Zug» oder «Zügen», mit «jede», «jeden» oder «alle» und einer Zahl (Wort oder Ziffer), mit «Luft»
+(auch «Luftsauger») oder mit «Kriegsmaschine» muss in einem Eintrag einer dieser Tabellen in
+`tests/monsterbuch.test.ts` stehen, sonst scheitert er («alle 2 Runden», «jede Runde», «jeden
+zweiten Zug» oder «nach zwei Runden wieder bereit» ohne Eintrag fallen durch; «Zugang» nicht):
 
 | Tabelle | Beispiel aus einer Notiz | nachgerechnet |
 |---|---|---|
@@ -230,9 +233,15 @@ ankommen»).
   Auswahlliste und ‹ › zum Blättern (je 44 × 44 px), damit Seitentitel und erste Karten ohne
   Scrollen im Bild stehen. `monsterbuch.css` zeigt je nach Grösse die eine oder die andere.
 - Beim Seitenwechsel wird nur das Blatt darunter neu gezeichnet: Knopf, Liste oder Pfeil behalten
-  den Fokus. Sperrt sich der Pfeil am Buchende, geht der Fokus auf die Liste.
+  den Fokus. Sperrt sich der Pfeil am Buchende, geht der Fokus auf den anderen Pfeil. Escape führt
+  auch aus der zugeklappten Liste zurück (`main.ts` nimmt dort keine Tasten an, die Liste fängt es
+  selbst ab).
+- Das Buch ist immer gleich breit (`width: 100%` bis 1200 px): Eine Seite mit kurzen Namen macht es
+  nicht schmaler, die Pfeile bleiben beim Blättern an ihrem Platz.
 - **Detailfenster**: scrollt selbst, das ✕ (44 × 44) klebt oben rechts und bleibt beim Scrollen im
   Bild. Ein langer Name («Tropfsteinfledermaus») bricht um und läuft nicht unter das ✕; bis
   480 px Breite werden Bild und Rand kleiner.
 - Doppelklick oder Doppeltipp auf eine Karte: Der zweite Klick trifft das eben geöffnete ✕ und
-  schliesst nicht (`e.detail > 1`, wie im Spielstand-Fenster). Ein Doppelklick markiert keinen Text.
+  schliesst nicht (`e.detail > 1`, wie im Spielstand-Fenster). Ein Doppelklick auf einen Knopf
+  markiert keinen Text im eben gezeichneten Fenster; ein Doppelklick in Text (Ottokars Notiz) markiert
+  wie gewohnt ein Wort.
