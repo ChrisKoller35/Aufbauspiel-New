@@ -101,11 +101,28 @@ fällt; die erste bereite setzt er ein, die danach zählen in diesem Zug nicht. 
 also: frühestens N + 1 Runden später wieder. Eine zweite Fähigkeit wartet, solange die erste vorgeht
 (Rindenwall des Treants: Runde 2, 10, 18; Neuauflage des Oberarchivars: Runde 3 und 14).
 Gerechnet ohne ausgesetzten Zug (Betäubung verschiebt alles) bis Runde 20, für Gegner aus
-Belagerungsräumen bis Runde 30 (`kampfRunden`, wie `processFortificationCombat`). Alle fünf kämpfen
-auch in gewöhnlichen Räumen, wo nach Runde 20 Schluss ist; `einsatzPlan` trennt darum die späteren
-Einsätze ab. Wo die Liste sonst vollständig aussähe, bekommen sie einen eigenen Satz: Die
-Schutzbarriere des Kampfmagiers zeigt «Einsatz in Runde 2, 9 und 17. In Belagerungen (bis Runde 30)
-auch in Runde 24.» Nach «…» geht es ohnehin weiter, dort steht kein Zusatz.
+Belagerungsräumen bis Runde 30 (`kampfRunden`, wie `processFortificationCombat`).
+
+Wo ein Gegner kämpft, sagt `kampfRaeume` (aus `ROUTE_DEFS`): im Kampf um eine Befestigung (Raum vom
+Typ `fortification`, bis Runde 30) und in gewöhnlichen Räumen (Kampf- und Bossräume, bis Runde 20).
+`einsatzPlanFuer` trennt damit die Einsätze, `rundenText` macht den Satz daraus. Beispiel
+Abklingzeit 11, Einsatz in Runde 1, 13 und 25:
+
+| Der Gegner kämpft | Satz im Fenster |
+|---|---|
+| nur in gewöhnlichen Räumen | «Einsatz in Runde 1 und 13.» |
+| nur um Befestigungen | «Einsatz in Runde 1, 13 und 25.» |
+| in beiden | «Einsatz in Runde 1 und 13. Im Kampf um eine Befestigung (bis Runde 30) auch in Runde 25.» |
+
+Kommt eine Fähigkeit eines Gegners, der in beiden kämpft, erst nach Runde 20, heisst es «Einsatz nur
+im Kampf um eine Befestigung (bis Runde 30): Runde 24.»; wer nur in gewöhnlichen Räumen kämpft, bekommt
+für sie keinen Satz. Einen Einsatz in Runde 20 erlebt jeder Kampf, er steht im ersten Satz. Nach «…»
+(mehr als drei Einsätze) geht es ohnehin weiter, dort steht kein zweiter Satz. Das Spiel nennt
+ganze Dungeons «Belagerung» (Karte, Expeditionen); darum nennt der Satz den Raum, wie er im Kampf
+erscheint («🏰 Stadtmauer», «Wehrturm», «Bergfried» …). Die fünf echten Gegner aus Belagerungsräumen
+kämpfen alle auch in gewöhnlichen Räumen: Die Schutzbarriere des Kampfmagiers zeigt «Einsatz in
+Runde 2, 9 und 17. Im Kampf um eine Befestigung (bis Runde 30) auch in Runde 24.», das Sammeln des
+Burgverteidigers «… 2, 10 und 18. … auch in Runde 26.».
 
 **Wut**: «Wut ab Runde 8: Angriff ×1,5, Tempo ×1,3». Ziehen Wahlen unterwegs die Wut vor
 (`bossWutFrueher`, die Sonnenuhr im Morgentor: dreimal 2 Runden), steht darunter, bis auf welche
@@ -130,7 +147,9 @@ Tests «Fähigkeiten im Fenster = Fähigkeiten im Kampf»: Für jeden erreichbar
 unverwundbares Team gegen ihn (`processCombat`, für die fünf Gegner aus Belagerungsräumen auch
 `processFortificationCombat` neben einem Katapult), verglichen werden die Runden jedes Einsatzes
 und das Kampfprotokoll (Zahl der Treffer, keiner auf das Katapult, Heilmenge, Angriff und Dauer,
-Luft in beide Richtungen).
+Luft in beide Richtungen). Was kein echter Gegner tut (nur um Befestigungen kämpfen, genau in
+Runde 20 oder erst nach Runde 20 einsetzen), prüft der Test «Einsätze im Fenster …» mit erfundenen
+Abklingzeiten, darunter sechs Fähigkeiten, deren letzte erst in Runde 24 an die Reihe kommt.
 
 ## Seiten und Prämien
 
@@ -207,12 +226,25 @@ aber mit: Was vor der Niederlage fällt, steht in der Strecke.
 
 ## Randnotizen
 
-Je Dungeon eine, 2 bis 3 Sätze, mit einem Gegner der Seite beim Namen. Was sie über den Kampf sagen,
-stimmt mit dem Spiel, und der Test rechnet es nach: Jede Stelle mit «Runde» oder «Runden», mit
-«Zug» oder «Zügen», mit «jede», «jeden» oder «alle» und einer Zahl (Wort oder Ziffer), mit «Luft»
-(auch «Luftsauger») oder mit «Kriegsmaschine» muss in einem Eintrag einer dieser Tabellen in
-`tests/monsterbuch.test.ts` stehen, sonst scheitert er («alle 2 Runden», «jede Runde», «jeden
-zweiten Zug» oder «nach zwei Runden wieder bereit» ohne Eintrag fallen durch; «Zugang» nicht):
+Je Dungeon eine, 2 bis 3 Sätze, mit einem Gegner der Seite beim Namen, ohne HTML-Zeichen und ohne
+Eszett. Takt, Wut, Wirkung einer Stärkung, Luft, Kriegsmaschine und wie oft ein Gegner je Lauf
+vorkommt rechnet der Test nach (Tabellen unten); Leben, Gold, Beute und Anzahlen ohne «mal» prüft er
+nicht. Jede der folgenden Stellen muss in einem Eintrag einer der Tabellen in
+`tests/monsterbuch.test.ts` stehen, sonst scheitert er (`ohneEintrag`):
+
+- «Runde», «Runden», «Zug», «Zuge», «Zuges», «Zugs», «Züge» und «Zügen», auch mit Kampf- oder
+  Spiel- davor («Kampfrunden», «Spielzug»);
+- «jede», «jedem», «jeden», «jeder», «jedes» oder «alle» mit einer Zahl dahinter, als Wort oder
+  Ziffer, auch gebeugt («jede vierte», «jedem dritten», «alle 3»);
+- «zweimal» bis «zehnmal», «3-mal», «zwei Mal»;
+- «Luft» (auch «Luftsauger») und «Kriegsmaschine».
+
+Ohne Eintrag fallen so durch: «alle 2 Runden», «jede Runde», «jeden zweiten Zug», «bei jedem
+dritten Hieb», «nach zwei Runden wieder bereit», «nach 20 Kampfrunden», «dreimal im Kampf». Nicht
+dagegen «Zugang», «zugleich», «Rückzug», «Anzug», «Atemzug», «umrunden», «jeder andere», «Jedem das
+Seine», «manchmal», «Angriff mal 1,5» und «einmal»: Das steht meist für «noch einmal» oder «nicht
+einmal», in den Notizen zählt es Begegnungen («kommen je nur einmal vor»). Einen einzelnen Einsatz
+nennt eine Notiz mit seiner Runde, und die fängt «Runde».
 
 | Tabelle | Beispiel aus einer Notiz | nachgerechnet |
 |---|---|---|
@@ -220,6 +252,12 @@ zweiten Zug» oder «nach zwei Runden wieder bereit» ohne Eintrag fallen durch;
 | `WUT` | «ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3»; Sonnenuhr «dreimal vorgestellt … ab Runde 4» | `bossWut` und `wutAbRunde` mit den Sonnenuhren der Route |
 | `WIRKUNG` | «3 Angriff mehr für drei Runden», «10 Luft» | dieselben Zahlen in der Zeile des Kampfprotokolls beim ersten Einsatz |
 | `KRIEGSMASCHINE` | «sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden» | `processFortificationCombat` mit Katapult: Treffer auf Helden, keiner auf das Katapult |
+| `JE_LAUF` | «begegnet einem hier sechsmal je Lauf», «der Blutegelschwarm dagegen zweimal», «mindestens zweimal je Lauf» | `begegnungenJeLauf`: so oft steht der Gegner in den Räumen der Route; bei «mindestens» und «keine … seltener als» keiner seltener |
+
+Ein «mal» kann einen Takt im Kampf meinen oder zählen, wie oft ein Gegner je Lauf vorkommt; darum
+braucht jedes einen Eintrag. Einen Takt mit «mal» rechnet `TAKT` nicht nach, er steht als Abstand
+(«jede vierte Runde») oder mit seinen Runden («nur in Runde 3 und 14») da. Anzahlen ohne «mal»
+(«Sechs Giftzahnspinnen je Lauf») prüft der Test nicht.
 
 Die Morgentor-Notiz nennt die Sonnenuhr (Sunnas Wut bis Runde 4). Die Stadtmauern-Notiz stellt
 den Ruf von Mauerschütze und Armbrustschütze richtig: Ihr Hintergrund im Fenster sagt, sie zielten
@@ -233,11 +271,17 @@ ankommen»).
   Auswahlliste und ‹ › zum Blättern (je 44 × 44 px), damit Seitentitel und erste Karten ohne
   Scrollen im Bild stehen. `monsterbuch.css` zeigt je nach Grösse die eine oder die andere.
 - Beim Seitenwechsel wird nur das Blatt darunter neu gezeichnet: Knopf, Liste oder Pfeil behalten
-  den Fokus. Sperrt sich der Pfeil am Buchende, geht der Fokus auf den anderen Pfeil. Escape führt
-  auch aus der zugeklappten Liste zurück (`main.ts` nimmt dort keine Tasten an, die Liste fängt es
-  selbst ab).
+  den Fokus. Sperrt sich der Pfeil am Buchende, geht der Fokus auf den anderen Pfeil, auch bei einem
+  Doppelklick: Dessen zweiter Druck trifft den eben gesperrten Pfeil, und ein Druck auf einen
+  gesperrten Knopf nimmt im Monsterbuch keinen Fokus weg (Chromium schickt ihm nur `pointerdown`,
+  kein `mousedown`). Escape führt auch aus der zugeklappten Liste zurück (`main.ts` nimmt dort keine
+  Tasten an, die Liste fängt es selbst ab).
 - Das Buch ist immer gleich breit (`width: 100%` bis 1200 px): Eine Seite mit kurzen Namen macht es
-  nicht schmaler, die Pfeile bleiben beim Blättern an ihrem Platz.
+  nicht schmaler, die Pfeile bleiben beim Blättern an ihrem Platz. Der Platz für den Scrollbalken
+  bleibt immer frei, auch auf kurzen Seiten und in der Handy-Ansicht von Chrome (`scrollbar-gutter:
+  stable`, in Chrome 5 px): Mit klassischem Balken (Chrome unter Windows und Linux, Firefox) rückten
+  Buch und Pfeile sonst auf jeder Seite, die länger ist als das Fenster, um die halbe Balkenbreite
+  (2,5 px), in schmalen Fenstern › um die ganze (5 px).
 - **Detailfenster**: scrollt selbst, das ✕ (44 × 44) klebt oben rechts und bleibt beim Scrollen im
   Bild. Ein langer Name («Tropfsteinfledermaus») bricht um und läuft nicht unter das ✕; bis
   480 px Breite werden Bild und Rand kleiner.

@@ -3,10 +3,12 @@
 // Weg zur Magischen Stadt» (StadtwegFenster.ts), das Fundbuch
 // (FundbuchFenster.ts), das Heldenfenster (HeroesScreen.ts), das
 // Monsterbuch und die Fenster der Gebäude-Seite (HaendlerFenster.ts,
-// GebaeudeFenster.ts, Bau-Dialog):
+// GebaeudeFenster.ts, Bau-Dialog), dazu «Lernen» im Lehrbuch (Lehrbuch.ts):
 // Tasten gehen nicht an das Spiel dahinter, Tab bleibt im Fenster, und
 // der zweite Klick eines Doppelklicks löst nichts aus, was hinter dem
-// Fenster liegt.
+// Fenster liegt. Sein Druck nimmt keinen Fokus weg und markiert nichts,
+// auch wenn er einen gesperrten Knopf trifft (dorthin schickt Chromium
+// nur pointerdown, kein mousedown).
 // ────────────────────────────────────────────────────────────────
 
 /**
@@ -72,6 +74,9 @@ export function bindeFensterTasten(ov: HTMLElement, fenster: HTMLElement | null,
  * Nach einem Klick, der ein Fenster öffnet oder schliesst: Der zweite Klick eines Doppelklicks (✕,
  * Hintergrund) träfe sonst, was jetzt dort liegt, und öffnete zum Beispiel eine Kachel. Schon sein
  * Druck nähme sonst den Fokus weg (etwa aus dem Suchfeld des Fundbuchs) und markierte Text.
+ * Gilt 700 ms lang, bis ein neuer einfacher Druck (detail 1) kommt. Landet ein Druck auf einem
+ * gesperrten Knopf, schickt Chromium nur pointerdown (immer mit detail 0), kein mousedown und keinen
+ * Klick: Solange das hier gilt, nimmt auch ein solcher Druck den Fokus nicht weg.
  */
 export function schluckeZweitenKlick(): void {
   const schlucke = (e: MouseEvent) => {
@@ -82,15 +87,23 @@ export function schluckeZweitenKlick(): void {
     }
     window.removeEventListener('click', schlucke, true);
   };
+  const halteBeiGesperrt = (e: PointerEvent) => {
+    if ((e.target as Element | null)?.closest?.('button:disabled')) e.preventDefault();
+  };
   const halte = (e: MouseEvent) => {
     if (e.detail > 1) e.preventDefault();
-    else window.removeEventListener('mousedown', halte, true);
+    else {
+      window.removeEventListener('mousedown', halte, true);
+      window.removeEventListener('pointerdown', halteBeiGesperrt, true);
+    }
   };
   window.addEventListener('click', schlucke, true);
   window.addEventListener('mousedown', halte, true);
+  window.addEventListener('pointerdown', halteBeiGesperrt, true);
   setTimeout(() => {
     window.removeEventListener('click', schlucke, true);
     window.removeEventListener('mousedown', halte, true);
+    window.removeEventListener('pointerdown', halteBeiGesperrt, true);
   }, 700);
 }
 
