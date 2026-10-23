@@ -70,11 +70,11 @@ function woherZeilen(itemId: string, stand: Fortschritt): string[] {
   const f = fundorte(itemId);
   const z: string[] = [];
   if (f.bauplan?.haendlerPreis) z.push(`Beim Händler der Stadt · ${f.bauplan.haendlerPreis} Gold`);
-  if (f.bauplan?.boss) z.push(`Erster Sieg über ${esc(f.bauplan.boss.name)} in ${dungeonLink(f.bauplan.boss.routeId, stand)}`);
+  if (f.bauplan?.boss) z.push(`${esc(f.bauplan.boss.name)} (Boss) in ${dungeonLink(f.bauplan.boss.routeId, stand)} · beim ersten Sieg`);
   if (f.haendler) z.push(`Beim Händler der Stadt · ${f.haendler} Gold`);
   if (f.dungeonHaendler) z.push(`Beim Dungeon-Händler · ${f.dungeonHaendler.preis} Gold (höchstens ${f.dungeonHaendler.max} Käufe)`);
   for (const h of f.hergestellt) z.push(`${gebaeudeLink(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
-  for (const e of f.ersterSieg) z.push(`Erster Sieg über ${esc(e.bossName)} in ${dungeonLink(e.routeId, stand)} · 1 Stück`);
+  for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
   for (const d of f.dungeons) {
     const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg über ihn · `
       + `${mengeText(g.minQty, g.maxQty)} Stück</li>`).join('');

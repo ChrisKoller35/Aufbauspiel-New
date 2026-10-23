@@ -16,6 +16,8 @@ import { musterStand, spieleRoute, gewonnen, MusterTeamName } from '../src/syste
 import { SeededRNG } from '../src/utils/RNG';
 import { GearSystem } from '../src/systems/GearSystem';
 import { EncounterRoom, ExpeditionRun } from '../src/models/ExpeditionRun';
+import { createNewGameState } from '../src/models/GameState';
+import { renderAufbauTab } from '../src/ui/screens/AufbauTab';
 import {
   VERSTECK_CHANCE, beuteZiehungen, chanceInTabelle, dungeonBeute, fundbuchEintraege, fundorte, gegnerDerRoute,
   gruppeVon, prozentText, verwendung, zahlText,
@@ -188,6 +190,19 @@ describe('Baupläne', () => {
       const q = fundorte(bauplan).bauplan;
       expect(q && (q.haendlerPreis !== null || q.boss !== null), `${def.name}: ${bauplan}`).toBeTruthy();
       expect(verwendung(bauplan).schaltetFrei?.buildingId).toBe(def.id);
+    }
+  });
+
+  it('der Reiter «Aufbau» nennt für gesperrte Gebäude mit Boss-Bauplan den richtigen Boss', () => {
+    const html = renderAufbauTab(createNewGameState(), () => '');
+    for (const typeId of ['ARCANE_SMITHY', 'WAR_MACHINE_WORKSHOP']) {
+      const start = html.indexOf(`data-btype="${typeId}"`);
+      expect(start).toBeGreaterThan(-1);
+      const karte = html.slice(start, html.indexOf('</div>', start));
+      const boss = fundorte(BUILDING_DEFS[typeId].freischaltung.bauplan!).bauplan!.boss!;
+      expect(karte).toContain(ENEMY_DEFS[boss.enemyId].name);
+      expect(karte).toContain(ROUTE_DEFS[boss.routeId].name);
+      expect(karte).toContain('class="acard-wo"');
     }
   });
 

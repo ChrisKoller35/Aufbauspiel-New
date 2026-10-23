@@ -11,8 +11,12 @@
 }
 .fb-oeffnen:hover, .fb-oeffnen:focus-visible { border-color: var(--gold); color: var(--gold); }
 @media (pointer: coarse), (max-width: 700px) {
-  .fb-oeffnen { position: relative; }
+  .fb-oeffnen { position: relative; min-width: 44px; }
   .fb-oeffnen::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+}
+/* Schmale Handys: die feste Leiste unten rechts passte mit dem Wort nicht mehr in 390 px, nur «📜» */
+@media (max-width: 480px) {
+  .fb-wort { display: none; }
 }
 
 /* «Wo?» auf einer Karte im Reiter «Aufbau»: Zeile im Fluss, Tippfläche 44 px über ::after */
