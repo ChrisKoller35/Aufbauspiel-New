@@ -1,0 +1,74 @@
+/* ─── Monsterbuch (ui/screens/BestiariumScreen.ts, docs/MONSTERBUCH.md) ─── */
+
+.mb { padding: 16px; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
+.mb-kopf { font-size: 0.85rem; color: var(--mut); margin-bottom: 10px; }
+.mb-kopf b { color: var(--gold); }
+
+/* Seitenwahl: bricht um, scrollt nicht waagrecht */
+.mb-seiten { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+.mb-seitenknopf {
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; color: var(--txt);
+  font: inherit; font-size: 0.75rem; padding: 6px 10px; cursor: pointer; min-height: 32px;
+}
+.mb-seitenknopf small { color: var(--mut); margin-left: 4px; }
+.mb-seitenknopf[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: var(--s3); }
+.mb-seitenknopf:focus-visible, .mb-karte:focus-visible, .mb-praemie:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+.mb-seitenkopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 8px; }
+.mb-seitenkopf h2 { font-family: 'Cinzel', serif; font-size: 1.05rem; color: var(--gold); margin: 0; letter-spacing: 1px; }
+.mb-seitenkopf h2:focus { outline: none; }
+.mb-erforscht { font-size: 0.8rem; color: var(--mut); }
+.mb-gemeistert { color: #f5c542; font-size: 0.8rem; }
+
+.mb-praemien { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; font-size: 0.78rem; color: var(--mut); }
+.mb-praemie {
+  background: #3a2f0b; border: 1px solid var(--gold); color: var(--gold); border-radius: 6px;
+  font: inherit; font-size: 0.8rem; font-weight: 600; padding: 8px 14px; cursor: pointer; min-height: 36px;
+}
+.mb-praemie:disabled { opacity: 0.5; cursor: default; }
+.mb-praemie-info { padding: 4px 0; }
+.mb-praemie-info.mb-ok { color: #86efac; }
+
+.mb-notiz {
+  background: var(--s2); border-left: 3px solid var(--gd); border-radius: 4px; padding: 8px 12px;
+  font-size: 0.8rem; line-height: 1.5; margin-bottom: 14px; font-style: italic;
+}
+.mb-notiz .mb-sig { display: block; font-style: normal; color: var(--mut); font-size: 0.72rem; margin-top: 4px; }
+.mb-notiz.mb-zu { font-style: normal; color: var(--mut); }
+
+/* Karten */
+.mb-karten { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px; }
+.mb-karte {
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 10px; color: var(--txt);
+  font: inherit; padding: 12px 8px; text-align: center; cursor: pointer; transition: border-color .2s;
+  display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 44px; min-width: 0;
+}
+.mb-karte:hover:not(:disabled) { border-color: var(--gd); }
+.mb-karte:disabled { cursor: default; opacity: 0.55; }
+.mb-gemeistert-karte { border-color: #d4a017; box-shadow: 0 0 8px rgba(212,160,23,0.45); }
+.mb-bild { position: relative; width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
+.mb-bild img { width: 100%; height: 100%; object-fit: contain; }
+.mb-unbekannt .mb-bild img { filter: brightness(0); opacity: 0.35; }
+.mb-stern { position: absolute; top: -4px; right: -6px; font-size: 0.9rem; }
+.mb-name { font-family: 'Cinzel', serif; font-size: 0.8rem; color: var(--gold); overflow-wrap: anywhere; }
+.mb-rolle, .mb-stufe { font-size: 0.7rem; color: var(--mut); }
+.mb-balken { width: 100%; display: flex; align-items: center; gap: 6px; font-size: 0.68rem; color: var(--mut); }
+.mb-balken-spur { flex: 1; height: 5px; background: var(--s3); border-radius: 3px; overflow: hidden; }
+.mb-balken-fuell { display: block; height: 100%; background: var(--gold); }
+
+/* Detailfenster */
+.mb-detail { max-width: 460px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+.mb-detail .md-stats span { white-space: nowrap; }
+.mb-klein { font-size: 0.72rem; color: var(--mut); margin-top: 2px; }
+.mb-tabelle { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-top: 4px; }
+.mb-tabelle th { text-align: left; color: var(--mut); font-weight: normal; padding: 2px 4px; }
+.mb-tabelle td { padding: 3px 4px; border-top: 1px solid var(--bdr); }
+.mb-tabelle td.mb-zahl, .mb-tabelle th.mb-zahl { text-align: right; white-space: nowrap; }
+.mb-detail .mcl { min-width: 44px; min-height: 44px; top: 2px; right: 2px; }
+
+/* Handy und Touch: Tippflächen mindestens 44 × 44 px */
+@media (pointer: coarse), (max-width: 700px) {
+  .mb { padding: 10px; }
+  .mb-seitenknopf, .mb-praemie { min-height: 44px; min-width: 44px; }
+  .mb-karten { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+}
