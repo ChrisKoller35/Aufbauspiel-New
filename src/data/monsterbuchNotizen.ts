@@ -10,16 +10,24 @@
 // prefersWarMachineTarget).
 // Der Test tests/monsterbuch.test.ts prüft: je Route der Karte genau eine
 // Notiz, keine für eine fremde Route; in jeder ein Gegner der Seite beim Namen,
-// 2 bis 3 Sätze, keins der Zeichen < > " und kein Eszett. Jede Stelle mit
-// «Runde» oder «Runden», «Zug», «Zuge», «Zuges», «Zugs», «Züge» oder «Zügen»
-// (auch mit Kampf- oder Spiel- davor: «Kampfrunden», «Spielzug»), mit «jede»,
-// «jedem», «jeden», «jeder», «jedes» oder «alle» und einer Zahl als Wort oder
-// Ziffer («jede vierte», «jedem dritten», «alle 3»), mit «zweimal» bis
-// «zehnmal», «3-mal» oder «zwei Mal» (nicht «einmal»), mit «Luft…» oder
-// «Kriegsmaschine» muss in einem Eintrag seiner Tabellen TAKT, WUT, WIRKUNG,
-// KRIEGSMASCHINE oder JE_LAUF stehen, sonst scheitert er. Jeden Eintrag rechnet
-// er am echten Kampf oder an den Räumen der Route nach. Leben, Gold, Beute und
-// Anzahlen ohne «mal» prüft er nicht (docs/MONSTERBUCH.md, «Randnotizen»).
+// 2 bis 3 Sätze, keins der Zeichen < > " und kein Eszett. Jede dieser Stellen
+// muss in einem Eintrag seiner Tabellen TAKT, WUT, WIRKUNG, KRIEGSMASCHINE oder
+// JE_LAUF stehen, sonst scheitert er:
+// - «Runde», «Runden», «Zug», «Zuge», «Zuges», «Zugs», «Züge», «Zügen», auch
+//   mit Kampf- oder Spiel- davor («Kampfrunden», «Spielzug»);
+// - «jede», «jedem», «jeden», «jeder», «jedes» oder «alle» und eine Zahl als
+//   Wort oder Ziffer («jede vierte», «jedem dritten», «alle 3»);
+// - wie oft: «einmal» (auch «noch einmal», nicht «auf einmal» und «nicht
+//   einmal»), «zweimal» bis «zehnmal», «3-mal», «zwei Mal»; «je Lauf», «pro
+//   Lauf»; «je» und eine Zahl («je drei», «je nur einmal»); «nur ein», «nur
+//   einer» …; eine Zahl vor einem Gegner der Seite («zwei Waldbanditen»,
+//   «vier Waldwölfe», «sechs Gegnerarten»);
+// - «Luft…» und «Kriegsmaschine».
+// Jeden Eintrag rechnet er am echten Kampf oder an den Räumen der Route nach,
+// dazu «mehr als von jedem anderen Gegner hier», «statt einem wie auf dem
+// kurzen Waldpfad» und «Einen Boss gibt es nicht». Leben, Abwehr, Tempo, Gold,
+// Beute, XP und die Zahl der Fähigkeiten prüft er nicht (docs/MONSTERBUCH.md,
+// «Randnotizen»).
 // ────────────────────────────────────────────────────────────────
 
 export interface MonsterbuchNotiz {

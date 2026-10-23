@@ -1,9 +1,13 @@
 /* ─── Monsterbuch (ui/screens/BestiariumScreen.ts, docs/MONSTERBUCH.md) ─── */
 
-/* Der Platz für den Scrollbalken bleibt immer frei, auch auf kurzen Seiten (in Chrome 5 px, .screen in
-   magic-city.css): Mit klassischem Balken (Chrome unter Windows und Linux, Firefox) rückten sonst Buch und Pfeile
-   um die halbe Balkenbreite, in schmalen Fenstern › um die ganze, sobald eine Seite länger als das Fenster ist */
-#s-bestiarium { scrollbar-gutter: stable; }
+/* Der Scrollbalken steht immer da, auch auf kurzen Seiten (in Chrome 5 px, .screen in magic-city.css): Mit
+   klassischem Balken (Chrome unter Windows und Linux, Firefox) rückten sonst Buch und Pfeile um die halbe
+   Balkenbreite, in schmalen Fenstern › um die ganze, sobald eine Seite länger als das Fenster ist. Wo der Balken
+   über dem Inhalt liegt oder versteckt ist (Handy), nimmt er keinen Platz. scrollbar-gutter: stable hielte ihn
+   auch dort frei und liesse neben dem Kopf einen Streifen in der Farbe der Seite stehen. Kein scrollbar-color
+   (für Firefox): Damit liesse Chrome den 5-px-Balken fallen und zeigte einen 15 px breiten. !important: Der
+   Router setzt overflow-y: auto direkt am Bildschirm (ScreenRouter.ts) */
+#s-bestiarium { overflow-y: scroll !important; }
 
 /* width: 100 %: In der Spalte des Routers wäre .mb sonst nur so breit wie die Karten der Seite, und die Pfeile
    ‹ › sprängen am Handy und in flachen Fenstern beim Blättern hin und her */

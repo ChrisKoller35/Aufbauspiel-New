@@ -16,7 +16,7 @@ import {
   mindestens, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, rundenText, seiten, seitenStand, stufe,
   wutVorziehbar,
 } from '../../systems/Monsterkunde';
-import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { bindeFensterTasten, halteFokusBeiGesperrtemKnopf, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader, vorratsZeileHtml } from './HeaderRenderer';
 
@@ -377,9 +377,7 @@ export function renderBestiariumScreen(container: HTMLElement): void {
   // Ein Druck auf einen gesperrten Knopf nimmt den Fokus nicht weg. Chromium schickt ihm pointerdown, aber kein
   // mousedown, den Wächter oben erreicht er also nicht: Der zweite Druck eines Doppelklicks auf ›, das sich am
   // Buchende eben gesperrt hat, nähme sonst ‹ den Fokus wieder (danach stünde er auf der Seite)
-  el.addEventListener('pointerdown', e => {
-    if ((e.target as Element).closest('button:disabled')) e.preventDefault();
-  });
+  el.addEventListener('pointerdown', halteFokusBeiGesperrtemKnopf);
 
   inhalt.addEventListener('click', e => {
     const ziel = e.target as HTMLElement;
