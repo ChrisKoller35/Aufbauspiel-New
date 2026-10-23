@@ -39,18 +39,27 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   bei den freigeschalteten, leuchtet kurz auf und gilt als angeschaut.
 - «Zurück» führt dorthin, woher der Spieler kam (Hauptmenü, Gildenhaus, Monsterbuch …), einen
   Schritt zurück im Verlauf (`ScreenRouter.goBack`), ohne Hin und Her zwischen zwei Bildschirmen.
-- Am Handy ist der Knopf mindestens 44 px gross. Bis 1000 px Breite (Handy hoch und quer, Tablet)
-  steht der Hinweis an der Stelle von Logo und Bildschirm-Name (`.hdr-mit-hinweis` in `erfolge.css`),
-  auf breiteren Bildschirmen daneben. Er nimmt nur den freien Platz der Zeile und steht auf höchstens
-  zwei Zeilen: Die Kopfzeile wird nicht höher, der Knopf bleibt, wo er ist.
+- Am Handy ist der Knopf mindestens 44 px gross. Der Hinweis steht in `.hdr-mitte` (Logo und
+  Bildschirm-Name) und verschiebt nichts daneben: Bis 1000 px Breite (Handy hoch und quer, Tablet,
+  schmales Fenster) liegt er über Logo und Name, die so lange unsichtbar sind, aber ihren Platz
+  behalten (`.hdr-mit-hinweis` in `erfolge.css`); auf breiteren Bildschirmen steht er daneben im freien
+  Platz. Er hat höchstens zwei Zeilen: Die Kopfzeile wird nicht höher, «← Zurück», die Vorräte und der
+  Knopf bleiben, wo sie sind.
 - Auch die Zahl am Knopf ändert die Höhe nicht. Am Handy füllt das Logo die erste Zeile zwischen
   «← Zurück» und 🏅 und zählt beim Umbrechen nicht mit; neben «← Zurück» ist es unter 375 px kleiner
-  (unter 340 px noch kleiner), notfalls endet es mit «…» (`magic-city.css`, Abschnitt Header). Am PC
-  brechen Logo, «← Zurück» und Vorräte nie um, bei Platzmangel endet der Bildschirm-Name mit «…».
-  Gemessen mit den Web-Schriften, mit 0, 9, 25 und 125 neuen Erfolgen, ohne, mit kurzem und mit
-  langem Hinweis: 79 px hoch bei 320, 360, 375 und 390 px, 65 px quer (844 × 390) und am Tablet
-  (768 × 1024), 53 px am PC (760, 1024 und 1400 px breit). Früher sprang sie bei 320 und 360 px
-  von 79 auf 121 px, sobald der Hinweis verschwand.
+  (unter 340 px noch kleiner), notfalls endet es mit «…» (`magic-city.css`, Abschnitt Header). Über
+  700 px steht alles in einer Zeile, «← Zurück», Logo und 🏅 brechen nie um. Fehlt Platz, stehen erst
+  die Vorräte auf zwei Zeilen (zwei Gruppen zu drei, `vorratsZeileHtml`), dann der Bildschirm-Name,
+  beide nicht höher als 🏅; erst wenn auch das nicht reicht, endet der Name mit «…». So ragt 🏅 auch
+  neben sehr grossen Vorräten nie hinaus. Von 701 bis 860 px ist das Logo neben «← Zurück» kleiner
+  und der Abstand etwas enger, ab 861 px ist alles wie am PC.
+  Gemessen mit den Web-Schriften auf acht Bildschirmen, mit 0, 9, 25 und 125 neuen Erfolgen, ohne,
+  mit kurzem und mit langem Hinweis: 79 px hoch von 320 bis 700 px, 65 px quer (844 × 390) und am
+  Tablet (768 × 1024, 820 × 1180, 1000 × 800), 53 px am PC (701 bis 1400 px); kein Name gekürzt.
+  Mit sehr grossen Vorräten (1.234.567 Gold, Tag 1234) bleibt es so, nur am Handy bei 320 und 360 px
+  sind es 103 px (die Vorräte brauchen dort zwei Zeilen), und bei 701 px endet «ROUTENÜBERSICHT»
+  neben 25 und mehr neuen Erfolgen mit «…». Bei 1400 px sieht die Kopfzeile aus wie vorher. Früher
+  sprang sie bei 320 und 360 px von 79 auf 121 px, sobald der Hinweis verschwand.
 
 ## Während einer Expedition
 

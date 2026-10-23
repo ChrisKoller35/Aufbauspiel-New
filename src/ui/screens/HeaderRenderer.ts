@@ -17,9 +17,9 @@ let letzterHinweis = { text: '', zeit: 0, ende: 0 };
 
 /**
  * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup), nach `dauerMs`
- * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Bis 1000 px Breite steht er an der
- * Stelle von Logo und Bildschirm-Name (erfolge.css, .hdr-mit-hinweis), überall auf höchstens zwei Zeilen:
- * Die Kopfzeile wird nicht höher, kein Knopf rutscht weg.
+ * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Er steht in .hdr-mitte, bis 1000 px
+ * Breite über Logo und Bildschirm-Name, breiter daneben (erfolge.css, .hdr-mit-hinweis), auf höchstens zwei
+ * Zeilen: Die Kopfzeile wird nicht höher, und ausserhalb von .hdr-mitte verschiebt sich nichts.
  * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist.
  */
 export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
@@ -39,7 +39,7 @@ export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
       note = document.createElement('span');
       note.className = 'hdr-note';
       note.setAttribute('role', 'status');
-      hdr.insertBefore(note, hdr.querySelector('.hdr-space'));
+      (hdr.querySelector('.hdr-mitte') ?? hdr).insertBefore(note, null);
     }
     note.textContent = text;
     hdr.classList.add('hdr-mit-hinweis');
@@ -128,14 +128,15 @@ const VORRAT_ZEILE: { itemId: string; zeichen: string }[] = [
 
 /**
  * Inhalt der Vorrats-Anzeige (.res) in jeder Kopfzeile: Gold, Eisenschrott, Kristallsplitter,
- * Brot, Heiltrank und der Tag. main.ts schreibt sie jede Sekunde neu.
+ * Brot, Heiltrank und der Tag. main.ts schreibt sie jede Sekunde neu. Zwei Gruppen zu je drei
+ * (.res-gruppe): Fehlt der Platz, steht die zweite unter der ersten, nie mehr als zwei Zeilen (magic-city.css).
  */
 export function vorratsZeileHtml(state: GameState): string {
   const vorrat = VORRAT_ZEILE
-    .map(({ itemId, zeichen }) => `<span>${zeichen} ${(state.globalStock[itemId] ?? 0).toLocaleString('de')}</span>`)
-    .join('\n        ');
-  return `${vorrat}
-        <span style="color:var(--mut)">Tag ${state.day}</span>`;
+    .map(({ itemId, zeichen }) => `<span>${zeichen} ${(state.globalStock[itemId] ?? 0).toLocaleString('de')}</span>`);
+  vorrat.push(`<span style="color:var(--mut)">Tag ${state.day}</span>`);
+  return `<span class="res-gruppe">${vorrat.slice(0, 3).join('')}</span>
+        <span class="res-gruppe">${vorrat.slice(3).join('')}</span>`;
 }
 
 /**
@@ -159,14 +160,16 @@ export function renderHeader(
     ? `<span class="hdr-note" role="status">${letzterHinweis.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`
     : '';
 
+  // .hdr-mitte füllt den Platz zwischen «← Zurück» und den Vorräten (magic-city.css, Abschnitt Header)
   return `
     <div class="hdr${note ? ' hdr-mit-hinweis' : ''}">
       ${backBtn}
-      <span class="hdr-logo">⚔ MAGIC CITY</span>
-      ${sep}
-      ${label}
-      ${note}
-      <div class="hdr-space"></div>
+      <div class="hdr-mitte">
+        <span class="hdr-logo">⚔ MAGIC CITY</span>
+        ${sep}
+        ${label}
+        ${note}
+      </div>
       <div class="res">
         ${vorratsZeileHtml(state)}
       </div>

@@ -407,18 +407,38 @@ describe('Fenster (HTML ohne Browser)', () => {
     expect(f.dungeons.reduce((n, d) => n + d.gegner.length, 0)).toBeGreaterThan(2 * f.dungeons.length);
   });
 
-  it('Zahl und Einheit bleiben zusammen: geschütztes Leerzeichen vor «Stück» und «Gold», Wortverbinder nach «–»', async () => {
-    const { itemSeite } = await import('../src/ui/components/FundbuchFenster');
+  it('Zahl und Wort bleiben auf einer Zeile, auf jeder Seite (geschütztes Leerzeichen, nach «–» ein Wortverbinder)', async () => {
+    const { itemSeite, dungeonSeite } = await import('../src/ui/components/FundbuchFenster');
     const stand = createNewGameState();
-    let stellen = 0;
-    for (const id of fundbuchEintraege()) {
-      // Nur der Text, ohne Tags und Attribute
-      const text = itemSeite(id, stand).replace(/<[^>]*>/g, '');
-      expect(text.match(/\d[ \n](Stück|Gold)/g), id).toBeNull();
-      expect(text.match(/\d–\d/g), id).toBeNull();
-      stellen += (text.match(/\d\u00a0(Stück|Gold)/g) ?? []).length;
+    // Nur der Text, ohne Tags und Attribute: jeder Gegenstand und jeder Dungeon
+    const seiten = [
+      ...fundbuchEintraege().map(id => ({ id, html: itemSeite(id, stand) })),
+      ...ROUTEN.map(r => ({ id: r.id, html: dungeonSeite(r.id, stand) })),
+    ].map(({ id, html }) => ({ id, text: html.replace(/<[^>]*>/g, '') }));
+    // Je Stelle: so steht sie da (geschützt) und so nie (Leerzeichen oder Zeilenwechsel: Dort bräche die Zeile um)
+    const STELLEN: { name: string; geschuetzt: RegExp; offen: RegExp; mindestens: number }[] = [
+      { name: 'N Stück', geschuetzt: /\d\u00a0Stück/g, offen: /\d[ \n]+Stück/g, mindestens: 1000 },
+      { name: 'N Gold', geschuetzt: /\d\u00a0Gold/g, offen: /\d[ \n]+Gold/g, mindestens: 50 },
+      { name: 'N %', geschuetzt: /\d\u00a0%/g, offen: /\d[ \n]+%/g, mindestens: 100 },
+      { name: 'Ø N', geschuetzt: /Ø\u00a0\d/g, offen: /Ø[ \n]+\d/g, mindestens: 100 },
+      { name: 'N–N', geschuetzt: /\d–\u2060\d/g, offen: /\d–[ \n]*\d/g, mindestens: 100 },
+      { name: 'Raum N', geschuetzt: /Raum\u00a0\d/g, offen: /Raum[ \n]+\d/g, mindestens: 1 },
+      { name: 'Stufe N', geschuetzt: /Stufe\u00a0\d/g, offen: /Stufe[ \n]+\d/g, mindestens: 1 },
+      { name: 'Stadtstufe N', geschuetzt: /Stadtstufe\u00a0\d/g, offen: /Stadtstufe[ \n]+\d/g, mindestens: 1 },
+      { name: 'Ebene N', geschuetzt: /Ebene\u00a0\d/g, offen: /Ebene[ \n]+\d/g, mindestens: ROUTEN.length },
+      { name: 'N je Durchgang', geschuetzt: /\d\u00a0je Durchgang/g, offen: /\d[ \n]+je Durchgang/g, mindestens: 1 },
+      { name: 'N / N', geschuetzt: /\d\u00a0\/ \d/g, offen: /\d[ \n]+\//g, mindestens: 1 },
+      { name: 'N Käufe', geschuetzt: /\d\u00a0(Kauf|Käufe)/g, offen: /\d[ \n]+(Kauf|Käufe)/g, mindestens: 1 },
+    ];
+    for (const stelle of STELLEN) {
+      let geschuetzt = 0;
+      for (const { id, text } of seiten) {
+        expect(text.match(stelle.offen), `${stelle.name} auf ${id}`).toBeNull();
+        geschuetzt += (text.match(stelle.geschuetzt) ?? []).length;
+      }
+      // Die Stelle gibt es wirklich (sonst prüfte die Zeile oben nichts)
+      expect(geschuetzt, stelle.name).toBeGreaterThanOrEqual(stelle.mindestens);
     }
-    expect(stellen).toBeGreaterThan(1000);
     expect(itemSeite('iron_scrap', stand)).toContain('2–\u20605\u00a0Stück');
   });
 

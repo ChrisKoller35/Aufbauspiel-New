@@ -187,7 +187,8 @@ export function itemSeite(itemId: string, stand: Fortschritt): string {
     ${regelText(f)}`;
 }
 
-function dungeonSeite(routeId: string, stand: Fortschritt): string {
+/** Die Seite eines Dungeons (exportiert für den Test ohne Browser) */
+export function dungeonSeite(routeId: string, stand: Fortschritt): string {
   const route = ROUTE_DEFS[routeId];
   const gruende = getRouteLockReasons(route, stand);
   const sperre = gruende.length ? `<p class="fb-sperre">🔒 ${esc(gruende.join(' · '))}</p>` : '';
