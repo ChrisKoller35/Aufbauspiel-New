@@ -97,7 +97,13 @@ let activeTab: HeroTab = 'my';
 
 // ─── Hero Card HTML ─────────────────────────────────────────────
 
-function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
+/**
+ * Karte eines Helden (Reiter «Meine Helden» und «Trainieren»). Ein Klick oder Tipp auf die Karte öffnet das
+ * Heldenfenster. Für die Tastatur liegt ein leerer Knopf über der ganzen Karte (Tab, Enter, Leertaste); Maus
+ * und Finger gehen durch ihn hindurch auf die Karte (pointer-events: none). TRAINIEREN steht neben ihm, nicht
+ * darin, denn ein Knopf darf keinen Knopf enthalten.
+ */
+export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   const classDef = CLASS_DEFS[fighter.classId];
   const className = classDef ? classDef.name : fighter.classId;
   const emoji = classDef ? emojiForClass(classDef) : '\u2694\uFE0F';
@@ -109,6 +115,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   const actionBtn = mode === 'train'
     ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}">TRAINIEREN (${trainingCost}G)</button>`
     : '';
+  const oeffnen = `<button type="button" class="hcard-oeffnen" aria-label="Heldenfenster: ${escapeAttr(fighter.name)}, ${className}, Stufe ${fighter.level}"></button>`;
 
   const hasImage = !!HERO_IMAGE_MAP[fighter.classId];
   const bgStyle = getHeroImageStyle(fighter.classId);
@@ -117,6 +124,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
     // Image card: full illustration background, name overlay at bottom
     return `
       <div class="hcard hcard-img" data-fighter-id="${fighter.id}" style="${bgStyle}">
+        ${oeffnen}
         <div class="hcard-overlay">
           <div class="hc-nm">${className}</div>
           <span class="hc-lv">Lv ${fighter.level}</span>
@@ -130,6 +138,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   // Fallback: sprite-based card (for classes without illustrations)
   return `
     <div class="hcard" data-fighter-id="${fighter.id}">
+      ${oeffnen}
       <div class="hc-ico">
         <img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite"
              onerror="this.style.display='none'">
@@ -221,14 +230,17 @@ function buildModalData(fighter: GuildFighter) {
 }
 
 function gearSlotIconHtml(slot: { label: string; emoji: string; key: string | null; slot: string }): string {
-  const gewaehlt = auswahl?.art === 'slot' && auswahl.slot === slot.slot ? ' gewaehlt' : '';
+  const istGewaehlt = auswahl?.art === 'slot' && auswahl.slot === slot.slot;
+  const gewaehlt = istGewaehlt ? ' gewaehlt' : '';
+  // Name für Vorleseprogramme: der Platz und was dort liegt (das Bild allein hat keinen Text)
+  const knopf = `type="button" data-slot="${slot.slot}" aria-pressed="${istGewaehlt}" aria-label="${slot.label}: ${slot.key ? gearName(slot.key) : 'leer'}"`;
   if (!slot.key) {
-    return `<button class="hdm-gear-icon hdm-gear-empty${gewaehlt}" data-slot="${slot.slot}" title="${slot.label}: leer"><span class="hdm-gear-emoji">${slot.emoji}</span></button>`;
+    return `<button class="hdm-gear-icon hdm-gear-empty${gewaehlt}" ${knopf} title="${slot.label}: leer"><span class="hdm-gear-emoji">${slot.emoji}</span></button>`;
   }
   const def = ITEM_DEFS[slot.key];
   const sprKey = getItemSpriteKey(slot.key);
   const titel = [gearName(slot.key), gearStatsSummary(slot.key), eigenschaftenText(slot.key), setTooltip(slot.key)].filter(Boolean).join('\n');
-  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" data-slot="${slot.slot}" title="${titel}"><img src="assets/sprites/final/${sprKey}.png" onerror="this.style.display='none'">${setAbzeichen(slot.key)}${stufeAbzeichen(stufen(), slot.key)}</button>`;
+  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" ${knopf} title="${titel}"><img src="assets/sprites/final/${sprKey}.png" alt="" onerror="this.style.display='none'">${setAbzeichen(slot.key)}${stufeAbzeichen(stufen(), slot.key)}</button>`;
 }
 
 // ─── Auswahl, Vergleich und Set-Boni im Heldenfenster ───────────
@@ -390,7 +402,12 @@ function auswahlHtml(fighter: GuildFighter): string {
     </div>`;
 }
 
-function buildInventoryHtml(fighter: GuildFighter): string {
+/**
+ * Gegenstände im Inventar des Heldenfensters, als Knöpfe (Tab, Enter). Ist das Inventar zu, sind sie gesperrt:
+ * Tab im Fenster (FensterHilfen) überspringt gesperrte Knöpfe, versteckte aber nicht. Sonst stünden versteckte
+ * Knöpfe am Anfang seiner Liste: Umschalt+Tab entkäme aus dem Fenster, und Tab am Ende bliebe hängen.
+ */
+export function buildInventoryHtml(fighter: GuildFighter, offen: boolean): string {
   if (!gameState) return '';
 
   // Collect equippable gear items from globalStock
@@ -427,16 +444,19 @@ function buildInventoryHtml(fighter: GuildFighter): string {
   // Ist ein Platz angetippt, treten Gegenstände für andere Plätze zurück
   const platz = wunschPlatz();
   return items.map(item => {
-    const gewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id ? ' gewaehlt' : '';
+    const istGewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id;
+    const gewaehlt = istGewaehlt ? ' gewaehlt' : '';
     const mit = mitGegenstand(fighter, item.id, platz);
     const passt = !mit ? ' passt-nicht' : platz && mit.gear[platz] !== item.id ? ' anderer-platz' : '';
     const titel = [gearName(item.id), gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id)].filter(Boolean).join('\n');
+    const name = `${gearName(item.id)}${item.qty > 1 ? `, ${item.qty} Stück` : ''}`;
     return `
-    <div class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}">
-      <img src="assets/sprites/final/${item.sprKey}.png" onerror="this.style.display='none'">
+    <button type="button" class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}"
+            aria-label="${name}" aria-pressed="${istGewaehlt}"${offen ? '' : ' disabled'}>
+      <img src="assets/sprites/final/${item.sprKey}.png" alt="" onerror="this.style.display='none'">
       ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}
       ${item.qty > 1 ? `<span class="hdm2-inv-qty">${item.qty}</span>` : ''}
-    </div>`;
+    </button>`;
   }).join('');
 }
 
@@ -499,23 +519,24 @@ function renderDetailModal(fighter: GuildFighter): string {
     ? `<div class="hdm2-sidebar"><div class="lbl">Hintergrund</div><p>${classDef.background.replace(/\n/g, '<br>')}</p></div>`
     : '';
 
+  // Die ID des Namens ist fest: Es gibt immer nur ein Heldenfenster. Der Name nimmt beim Öffnen den Fokus (tabindex -1)
   return `
     <div class="ov" id="hero-detail-ov">
-    <div class="hdm2-outer">
+    <div class="hdm2-outer" role="dialog" aria-modal="true" aria-labelledby="hdm2-name">
       <div class="hdm2-inv-panel" id="hdm2-inv-panel" style="display:${inventarOffen ? 'flex' : 'none'}">
         <div class="hdm2-inv-header">
           <span class="lbl">🎒 Inventar</span>
           <span class="hdm2-inv-hint">${wunschPlatz() ? `Hell: passt ${PLATZ_IN[wunschPlatz()!]}` : 'Antippen zeigt Werte und Vergleich'}</span>
         </div>
         <div class="hdm2-inv-grid">
-          ${buildInventoryHtml(fighter)}
+          ${buildInventoryHtml(fighter, inventarOffen)}
         </div>
       </div>
       <div class="hdm2">
-        <button class="mcl" id="hero-detail-close">✕</button>
-        <button class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle">🎒 Inventar</button>
+        <button type="button" class="mcl" id="hero-detail-close" aria-label="Schliessen">✕</button>
+        <button type="button" class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle" aria-expanded="${inventarOffen}">🎒 Inventar</button>
         <div class="hdm2-header">
-          <div class="hdm2-name">${escapeAttr(fighter.name)}</div>
+          <div class="hdm2-name" id="hdm2-name" tabindex="-1">${escapeAttr(fighter.name)}</div>
           <div class="hdm2-sub">${className} · Lv ${fighter.level}</div>
         </div>
         <div class="hdm2-portrait-area">
@@ -774,12 +795,12 @@ export function renderHeroesScreen(container: HTMLElement): void {
     });
   }
 
-  // Hero card click → detail modal
+  // Hero card click → detail modal (Maus und Finger auf der Karte, Tastatur über ihren Knopf .hcard-oeffnen)
   const heroCards = el.querySelectorAll('.hcard:not(.hcard-hire)');
   for (let i = 0; i < heroCards.length; i++) {
     heroCards[i].addEventListener('click', (e) => {
-      // Don't open modal if clicking a button inside the card
-      if ((e.target as HTMLElement).closest('button')) return;
+      // Don't open modal if clicking a button inside the card (TRAINIEREN)
+      if ((e.target as HTMLElement).closest('button:not(.hcard-oeffnen)')) return;
 
       const fid = Number(heroCards[i].getAttribute('data-fighter-id'));
       const fighter = gameState?.fighters.find(f => f.id === fid);
@@ -831,27 +852,68 @@ export function renderHeroesScreen(container: HTMLElement): void {
 
 // ─── Modal ──────────────────────────────────────────────────────
 
-function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
-  // Remove any existing modal
-  const existing = container.querySelector('#hero-detail-ov');
-  if (existing) existing.remove();
+/**
+ * Löst den Tastenhörer des offenen Heldenfensters (null: keins offen). Vor jedem Neuzeichnen wird er gelöst,
+ * so gibt es nie mehr als einen. Ein alter Hörer löste sich sonst erst beim nächsten Tastendruck, und am
+ * Touch-Gerät kommt keiner: Die Hörer sammelten sich und hielten die alten Fenster im Speicher.
+ */
+let loeseFensterTasten: (() => void) | null = null;
+
+/** Nimmt das Heldenfenster samt Tastenhörer aus der Seite (beim Schliessen und vor dem Neuzeichnen) */
+function entferneDetailModal(container: HTMLElement): void {
+  loeseFensterTasten?.();
+  loeseFensterTasten = null;
+  container.querySelector('#hero-detail-ov')?.remove();
+}
+
+/**
+ * Fokus auf das erste vorhandene Ziel (Selektoren), ohne zu scrollen. Gesperrte Knöpfe zählen nicht. Ein
+ * Bereich ohne Knopf (der gewählte Weg, ein Teil in der Schmiede) bekommt dafür tabindex -1: Er nimmt den
+ * Fokus, Tab überspringt ihn.
+ */
+function fokussiere(wurzel: ParentNode, ziele: string[]): void {
+  for (const sel of ziele) {
+    const ziel = wurzel.querySelector<HTMLElement>(sel);
+    if (!ziel || (ziel instanceof HTMLButtonElement && ziel.disabled)) continue;
+    if (!(ziel instanceof HTMLButtonElement) && !ziel.hasAttribute('tabindex')) ziel.tabIndex = -1;
+    ziel.focus({ preventScroll: true });
+    return;
+  }
+}
+
+/**
+ * Öffnet das Heldenfenster oder zeichnet es neu (nach jedem Antippen darin). Beim Neuzeichnen bleibt, wie weit
+ * Fenster und Inventar gescrollt sind, und der Fokus geht an `fokus` (Selektoren, das erste vorhandene Ziel
+ * gilt; meist der eben gedrückte Knopf, wie im Lehrbuch). Beim Öffnen nimmt der Name des Helden den Fokus.
+ */
+function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: string[] = ['#hdm2-name']): void {
+  const alt = container.querySelector<HTMLElement>('#hero-detail-ov');
+  const scroll = alt ? { fenster: alt.scrollTop, inventar: alt.querySelector('.hdm2-inv-grid')?.scrollTop ?? 0 } : null;
+  entferneDetailModal(container);
 
   const wrapper = document.createElement('div');
   wrapper.innerHTML = renderDetailModal(fighter);
   const overlay = wrapper.firstElementChild as HTMLElement;
   overlay.classList.add('on');
   container.appendChild(overlay);
+  if (scroll) {
+    overlay.scrollTop = scroll.fenster;
+    const raster = overlay.querySelector<HTMLElement>('.hdm2-inv-grid');
+    if (raster) raster.scrollTop = scroll.inventar;
+  }
+  fokussiere(overlay, fokus);
 
+  // Schliessen: Fokus zurück auf die Karte, die das Fenster geöffnet hat. Sie kann neu gezeichnet sein (nach der
+  // Wahl eines Wegs) oder fehlen (Reiter Trainieren, der Held ist inzwischen auf Stufe 15): dann auf den Reiter
+  const schliessen = (): void => {
+    entferneDetailModal(container);
+    fokussiere(container, [`#s-heroes .hcard[data-fighter-id="${fighter.id}"] .hcard-oeffnen`, '#s-heroes .tab.active']);
+  };
   // Escape schliesst, Tab bleibt im Fenster, und die Tasten gehen nicht an main.ts (dort wechselte Escape
-  // den Bildschirm, das Fenster bliebe im versteckten stehen). Beim Neuzeichnen löst sich der alte Hörer
-  // beim nächsten Tastendruck selbst.
-  const loeseTasten = bindeFensterTasten(overlay, overlay.querySelector<HTMLElement>('.hdm2-outer'), () => {
-    loeseTasten();
-    overlay.remove();
-  });
+  // den Bildschirm, das Fenster bliebe im versteckten stehen)
+  loeseFensterTasten = bindeFensterTasten(overlay, overlay.querySelector<HTMLElement>('.hdm2-outer'), schliessen);
   const schliessenMitKlick = (): void => {
-    loeseTasten();
-    overlay.remove();
+    schliessen();
     schluckeZweitenKlick();
   };
 
@@ -862,7 +924,8 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
     if (istHintergrund(e)) schliessenMitKlick();
   });
 
-  // Inventory panel toggle
+  // Inventar auf und zu, ohne Neuzeichnen; zu sind seine Knöpfe gesperrt (siehe buildInventoryHtml). Am PC
+  // rückt der Held dabei zur Seite: Der zweite Klick eines Doppelklicks träfe sonst einen Gegenstand
   const invToggle = overlay.querySelector('#hdm2-inv-toggle') as HTMLElement | null;
   const invPanel = overlay.querySelector('#hdm2-inv-panel') as HTMLElement | null;
   if (invToggle && invPanel) {
@@ -870,13 +933,19 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       inventarOffen = invPanel.style.display === 'none';
       invPanel.style.display = inventarOffen ? 'flex' : 'none';
       invToggle.classList.toggle('active', inventarOffen);
+      invToggle.setAttribute('aria-expanded', String(inventarOffen));
+      invPanel.querySelectorAll<HTMLButtonElement>('.hdm2-inv-slot').forEach(k => { k.disabled = !inventarOffen; });
+      schluckeZweitenKlick();
       if (inventarOffen) invPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   }
 
-  // Neu zeichnen und die Auswahl ins Bild holen (am Handy liegt das Inventar unter dem Helden)
-  const neuZeichnen = (): void => {
-    openDetailModal(fighter, container);
+  // Neu zeichnen und die Auswahl ins Bild holen (am Handy liegt das Inventar unter dem Helden). Danach schluckt
+  // das Fenster den zweiten Klick eines Doppelklicks oder Doppeltipps: Er träfe, was jetzt unter dem Zeiger liegt
+  // (nach ANLEGEN etwa ABLEGEN, und das Teil wäre gleich wieder weg)
+  const neuZeichnen = (fokus: string[]): void => {
+    openDetailModal(fighter, container, fokus);
+    schluckeZweitenKlick();
     const box = container.querySelector('#hdm2-auswahl') as HTMLElement | null;
     box?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
@@ -887,7 +956,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       const slot = el.dataset.slot as EquipSlot;
       auswahl = auswahl?.art === 'slot' && auswahl.slot === slot ? null : { art: 'slot', slot };
       if (auswahl && !fighter.gear[slot]) inventarOffen = true;
-      neuZeichnen();
+      neuZeichnen([`.hdm-gear-icon[data-slot="${slot}"]`]);
     });
   });
 
@@ -901,60 +970,72 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       auswahl = auswahl?.art === 'inventar' && auswahl.itemId === itemId
         ? (platz ? { art: 'slot', slot: platz } : null)
         : { art: 'inventar', itemId, platz: passt };
-      neuZeichnen();
+      neuZeichnen([`.hdm2-inv-slot[data-item-id="${itemId}"]`]);
     });
   });
 
-  // Weg wählen: erst antippen, dann bestätigen, denn die Wahl gilt für immer
-  const zumWeg = (): void => {
-    openDetailModal(fighter, container);
+  // Weg wählen: erst antippen, dann bestätigen, denn die Wahl gilt für immer. Auch hier schluckt das Fenster den
+  // zweiten Klick: «Ja, für immer» steht nach dem ersten oft genau unter dem Finger
+  const zumWeg = (fokus: string[]): void => {
+    openDetailModal(fighter, container, fokus);
+    schluckeZweitenKlick();
     container.querySelector('#hdm2-weg')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
   overlay.querySelectorAll<HTMLElement>('[data-weg-waehlen]').forEach(el => {
     el.addEventListener('click', () => {
       wegFrage = el.dataset.wegWaehlen ?? null;
-      zumWeg();
+      // Fokus auf die Frage, nicht auf «Ja, für immer»: Ein zweites Enter wählt so nicht gleich für immer
+      zumWeg(['.hdm2-weg-frage']);
     });
   });
   overlay.querySelector('[data-weg-nein]')?.addEventListener('click', () => {
+    const gefragt = wegFrage;
     wegFrage = null;
-    zumWeg();
+    zumWeg([`[data-weg-waehlen="${gefragt}"]`]);
   });
   overlay.querySelector<HTMLElement>('[data-weg-ja]')?.addEventListener('click', e => {
+    // Der zweite Klick eines Doppelklicks wählt nie, nur ein eigener Klick (wie das ✕ im Monsterbuch)
+    if (e.detail > 1) return;
     const wegId = (e.currentTarget as HTMLElement).dataset.wegJa ?? '';
     wegFrage = null;
     if (!waehleWeg(fighter, wegId)) return;
     if (gameState) erfolgePruefen(gameState); // Wege-Erfolge gleich zählen
     window.dispatchEvent(new CustomEvent('mc:speichern'));
     renderHeroesScreen(container); // die Heldenkarte zeigt jetzt den Weg
-    zumWeg();
+    zumWeg(['.hdm2-weg-karte.gewaehlt']);
   });
 
   // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil
   overlay.querySelector<HTMLElement>('[data-schmiede-teil]')?.addEventListener('click', e => {
-    schmiedeZeigeTeil((e.currentTarget as HTMLElement).dataset.schmiedeTeil!);
-    loeseTasten();
-    overlay.remove();
+    const itemId = (e.currentTarget as HTMLElement).dataset.schmiedeTeil!;
+    schmiedeZeigeTeil(itemId);
+    entferneDetailModal(container);
     activeTab = 'schmiede';
     renderHeroesScreen(container);
+    // Der zweite Klick eines Doppelklicks landete sonst im Reiter (markierte Text oder träfe einen Knopf)
+    schluckeZweitenKlick();
+    // Fokus auf die Zeile des Teils, nicht auf «AUF +N»: Ein zweites Enter schmiedet so nicht gleich
+    fokussiere(container, [`#s-heroes [data-teil="${itemId}"]`]);
   });
 
-  // Anlegen oder Ablegen
+  // Anlegen oder Ablegen; der Fokus bleibt auf dem Knopf (nach ANLEGEN heisst er ABLEGEN), nach ABLEGEN auf dem leeren Platz
   const aktion = overlay.querySelector('.hdm2-aktion') as HTMLElement | null;
   aktion?.addEventListener('click', () => {
     if (!gameState || !auswahl) return;
+    let platz: EquipSlot | undefined;
     if (auswahl.art === 'slot') {
+      platz = auswahl.slot;
       gearSystem.unequip(gameState, fighter, auswahl.slot);
       auswahl = null;
       inventarOffen = true;
     } else {
       const itemId = auswahl.itemId;
       if (!gearSystem.equip(gameState, fighter, itemId, auswahl.platz)) return;
-      const slot = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
-      auswahl = slot ? { art: 'slot', slot } : null;
+      platz = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
+      auswahl = platz ? { art: 'slot', slot: platz } : null;
       erfolgePruefen(gameState); // ein ganzes Set angelegt: gleich zählen, nicht erst beim Tageswechsel
     }
-    neuZeichnen();
+    neuZeichnen(['.hdm2-aktion', ...(platz ? [`.hdm-gear-icon[data-slot="${platz}"]`] : [])]);
   });
 }
 

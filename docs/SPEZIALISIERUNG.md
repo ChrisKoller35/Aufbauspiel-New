@@ -10,6 +10,10 @@ stark sie sind und wie ein neuer Weg dazukommt.
 - **Wählen.** Ein Held ab Stufe 10 ohne Weg trägt auf seiner Karte ein pulsierendes «★ Weg wählen».
   Im Heldenfenster stehen beide Wege seiner Klasse mit Wirkung und Meister-Stufe. Der Knopf fragt nach
   («Für immer Phalanx?»), erst «Ja, für immer» legt den Weg fest. Der Spielstand wird sofort gespeichert.
+  Ein Doppelklick oder Doppeltipp auf «Phalanx wählen» stellt nur die Frage, auch wenn «Ja, für immer» dann
+  genau unter dem Zeiger steht: Das Fenster schluckt den zweiten Klick, und «Ja, für immer» nimmt nur einen
+  eigenen Klick an. Mit der Tastatur steht der Fokus danach auf der Frage, ein zweites Enter wählt also nicht;
+  «Abbrechen» gibt ihn an den Knopf des Wegs zurück.
 - **Vorschau.** Helden unter Stufe 10 sehen beide Wege im Heldenfenster schon, ohne Knopf.
 - **Meister ab Stufe 15:** stärkere Zahlen (Tabelle unten), das Abzeichen auf der Karte wird golden.
 - **Im Kampf** trägt die Heldenkarte das Zeichen ihres Wegs. Löst der Weg aus, erscheint ein goldenes

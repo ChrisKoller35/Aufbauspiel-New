@@ -83,6 +83,9 @@ Im Reiter «Trainieren» erscheint das Lehrbuch, sobald ein Held auf Stufe 15 is
   Hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle: «Lernen» bleibt aus, bis
   man den nächsten wählt, und die Vorschau sagt «Wähle den nächsten Schüler.» (sofern der Lehrer noch
   Überschuss hat). Sonst gäbe ein zweiter Klick auf «Lernen» die XP einem Helden, den man nie gewählt hat.
+- Die Meldung nach «Lernen» steht unter dem Knopf. Am Handy quer liegt sie dort oft unter dem Bildrand: Die
+  Seite scrollt dann gerade so weit, dass sie ganz zu sehen ist, «Lernen» darüber auch. Steht sie schon im
+  Bild (hochkant, am PC), bewegt sich nichts.
 - Doppelklick: Die Meldung erscheint unter «Lernen», und «Lernen» bleibt stehen, auch wenn die Vorschau
   länger wird. Erreicht der Schüler dabei Stufe 15, wechselt er zu den Lehrern; am Handy kann «Lernen»
   dann um eine Knopfreihe rücken. Der zweite Klick oder Tipp löst nichts aus, auch dort nicht: Der erste Klick sperrt den Knopf, danach nehmen
@@ -141,6 +144,28 @@ genau dieser Rechnung frei, Anzeige und Freischaltung können also nicht auseina
 So sieht der Fortschritt aus: «Besiege «Uralter Treant» im Tiefwald: 0/1», «10 gewonnene Expeditionen: 4/10»,
 «Guardian auf Stufe 5: Stufe 3». Sind alle Bedingungen erfüllt, die Klasse aber noch nicht frei (älterer
 Spielstand), steht dort: «Die Klasse wird nach der nächsten Expedition frei.»
+
+## Heldenkarten und Heldenfenster bedienen
+
+Code: `src/ui/screens/HeroesScreen.ts`, Stile in `src/ui/html/magic-city.css` (Abschnitte «Hero Cards» und
+«Hero Detail Modal»). Tests: `tests/heldenfenster.test.ts`.
+
+- **Tastatur:** Über jeder Heldenkarte liegt ein unsichtbarer Knopf. Tab erreicht ihn, Enter oder Leertaste
+  öffnet das Heldenfenster, mit dem Fokus zeigt die Karte innen einen goldenen Rahmen. TRAINIEREN steht
+  daneben, nicht darin. Maus und Finger tippen wie bisher auf die Karte.
+- **Im Heldenfenster** nimmt beim Öffnen der Name des Helden den Fokus. Plätze und Gegenstände im Inventar
+  sind Knöpfe (Tab, Enter); nach jedem Antippen bleibt der Fokus auf dem Knopf, nach ANLEGEN auf ABLEGEN.
+  Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen es, und der Fokus kehrt
+  auf die Karte zurück.
+- **Scrollen:** Ist das Fenster höher als der Bildschirm (mit Auswahl, in einem flachen Fenster, am Handy),
+  scrollt es in sich, mit Mausrad und Finger. Die Seite dahinter bleibt stehen. Das ✕ bleibt beim Scrollen
+  oben rechts im Bild; am Touch-Gerät ist es 44 × 44 px gross, 🎒 Inventar und ANLEGEN/ABLEGEN 44 px hoch.
+- **Breite:** Ab 1151 px steht das Inventar links neben dem Helden, der Hintergrund rechts. Von 701 bis
+  1150 px (Tablet, Handy quer) steht das Inventar unter Held und Hintergrund, bis 700 px steht alles
+  untereinander. Das Fenster ist nie breiter als der Bildschirm.
+- **Doppelklick und Doppeltipp:** Nach jedem Antippen im Fenster (Platz, Gegenstand, ANLEGEN, 🎒 Inventar,
+  Weg wählen, Abbrechen) und nach dem Sprung in die Schmiede schluckt das Spiel den zweiten Klick. Er träfe
+  sonst, was nach dem Neuzeichnen unter dem Zeiger liegt, etwa ABLEGEN gleich nach ANLEGEN.
 
 ## Eichung nach dem Umbau (23.10.2026)
 
