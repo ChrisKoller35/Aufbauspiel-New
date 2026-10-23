@@ -114,6 +114,9 @@ export function bindLehrbuch(el: HTMLElement, state: GameState, neuZeichnen: () 
     if (fenster) fenster.scrollTop = scroll - neu.scrollTop;
     const ziel = neu.querySelector<HTMLElement>(`${fokus}:not(:disabled)`) ?? neu.querySelector<HTMLElement>('.lb-meldung');
     ziel?.focus({ preventScroll: true });
+    // Die Meldung (nur gleich nach «Lernen») steht unter dem Knopf. Am Handy quer liegt sie dort oft unter dem
+    // Bildrand: so weit scrollen, dass sie ganz zu sehen ist. Steht sie schon im Bild, bewegt sich nichts
+    neu.querySelector<HTMLElement>('.lb-meldung')?.scrollIntoView({ block: 'nearest' });
   };
 
   el.querySelectorAll<HTMLButtonElement>('[data-lb-lehrer]').forEach(knopf => {

@@ -83,6 +83,9 @@ Im Reiter «Trainieren» erscheint das Lehrbuch, sobald ein Held auf Stufe 15 is
   Hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle: «Lernen» bleibt aus, bis
   man den nächsten wählt, und die Vorschau sagt «Wähle den nächsten Schüler.» (sofern der Lehrer noch
   Überschuss hat). Sonst gäbe ein zweiter Klick auf «Lernen» die XP einem Helden, den man nie gewählt hat.
+- Die Meldung nach «Lernen» steht unter dem Knopf. Am Handy quer liegt sie dort oft unter dem Bildrand: Die
+  Seite scrollt dann gerade so weit, dass sie ganz zu sehen ist, «Lernen» darüber auch. Steht sie schon im
+  Bild (hochkant, am PC), bewegt sich nichts.
 - Doppelklick: Die Meldung erscheint unter «Lernen», und «Lernen» bleibt stehen, auch wenn die Vorschau
   länger wird. Erreicht der Schüler dabei Stufe 15, wechselt er zu den Lehrern; am Handy kann «Lernen»
   dann um eine Knopfreihe rücken. Der zweite Klick oder Tipp löst nichts aus, auch dort nicht: Der erste Klick sperrt den Knopf, danach nehmen
@@ -141,6 +144,51 @@ genau dieser Rechnung frei, Anzeige und Freischaltung können also nicht auseina
 So sieht der Fortschritt aus: «Besiege «Uralter Treant» im Tiefwald: 0/1», «10 gewonnene Expeditionen: 4/10»,
 «Guardian auf Stufe 5: Stufe 3». Sind alle Bedingungen erfüllt, die Klasse aber noch nicht frei (älterer
 Spielstand), steht dort: «Die Klasse wird nach der nächsten Expedition frei.»
+
+## Heldenkarten und Heldenfenster bedienen
+
+Code: `src/ui/screens/HeroesScreen.ts`, Stile in `src/ui/html/magic-city.css` (Abschnitte «Hero Cards» und
+«Hero Detail Modal»). Tests: `tests/heldenfenster.test.ts`, mit einem kleinen DOM ohne Browser auch die
+Tastenhörer, den zweiten Klick, den langsamen zweiten Druck, die Sperren und die Meldung des Lehrbuchs.
+
+- **Tastatur:** Über jeder Heldenkarte liegt ein unsichtbarer Knopf. Tab erreicht ihn, Enter oder Leertaste
+  öffnet das Heldenfenster, mit dem Fokus zeigt die Karte innen einen goldenen Rahmen. TRAINIEREN steht
+  daneben, nicht darin. Maus und Finger tippen wie bisher auf die Karte.
+- **Im Heldenfenster** nimmt beim Öffnen der Name des Helden den Fokus. Plätze und Gegenstände im Inventar
+  sind Knöpfe (Tab, Enter); nach jedem Antippen bleibt der Fokus auf dem Knopf. Nach ANLEGEN und ABLEGEN
+  steht er auf dem Platz: Der Knopf heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das
+  Teil sonst gleich wieder ab. Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen
+  es, und der Fokus kehrt auf die Karte zurück.
+- **Scrollen:** Ist das Fenster höher als der Bildschirm (mit Auswahl, in einem flachen Fenster, am Handy),
+  scrollt es in sich, mit Mausrad und Finger. Die Seite dahinter bleibt stehen und rückt auch nicht zur
+  Seite, wenn ihr Scrollbalken dabei verschwindet (am PC bleibt rechts ein Rand, so breit wie er). Das ✕
+  bleibt beim Scrollen oben rechts im Bild; am Touch-Gerät ist es 44 × 44 px gross, 🎒 Inventar und
+  ANLEGEN/ABLEGEN 44 px hoch.
+- **Breite:** Ab 1151 px steht das Inventar links neben dem Helden, der Hintergrund rechts. Über 700 bis
+  1150 px (Tablet, Handy quer) steht das Inventar unter Held und Hintergrund, bis 700 px steht alles
+  untereinander (die Grenze liegt bei 700,02 px, so gilt auch mit Zoom bei 700,5 px eine der Anordnungen).
+  Das Fenster ist nie breiter als der Bildschirm; wäre es breiter, begänne es am linken Rand und liesse sich
+  zur Seite scrollen.
+- **Doppelklick und Doppeltipp:** Nach jedem Antippen im Fenster (Platz, Gegenstand, ANLEGEN, 🎒 Inventar,
+  Weg wählen, Abbrechen) und nach dem Sprung in die Schmiede schluckt das Spiel den zweiten Klick. Er träfe
+  sonst, was nach dem Neuzeichnen unter dem Zeiger liegt, etwa ABLEGEN gleich nach ANLEGEN.
+- **Langsamer zweiter Druck:** Kommt er später, als der Browser einen Doppelklick zählt (am Handy ab etwa
+  350 ms, am PC nach der Doppelklick-Zeit des Systems), ist er ein eigener Klick. Auf der Heldenseite und im
+  Heldenfenster wirkt ein Druck bis 0,8 s nach dem letzten an derselben Stelle nur, wenn er dasselbe trifft
+  (`pruefeZweitenDruck`). Zweimal auf einen Platz tippen schliesst also die Auswahl wie bisher. Was der erste
+  Druck unter den Finger gebracht hat, löst der zweite aber nicht aus: ABLEGEN, wo eben ANLEGEN stand;
+  ABLEGEN oder den Link in die Schmiede, wenn das Fenster nach dem Antippen eines Platzes zur Auswahl scrollt
+  (am Handy quer); nach dem Schliessen des Fensters «Lernen», TRAINIEREN oder eine Karte dahinter. Ein Druck
+  anderswo zählt sofort, etwa ANLEGEN für ein zweites Teil gleich nach dem ersten oder ABLEGEN gleich nach dem
+  Antippen des Platzes. Der Preis gehört nicht dazu: TRAINIEREN bleibt derselbe Knopf, auch wenn er nach einem
+  Aufstieg mehr kostet, und trainiert bei jedem Druck. Dieselbe Stelle heisst: mit der Maus bis 16 px daneben, mit dem Finger bis 40 px (er
+  verrutscht, und der Browser schiebt einen Tipp knapp neben einem Knopf auf ihn). Die Tastatur prüft das
+  nicht; ihr Fokus bleibt auf dem gedrückten Knopf oder geht an den Platz.
+- **Kurz gesperrt, wo auch gedrückt wird:** «Ja, für immer» nimmt bis 0,8 s nach der Frage zum Weg keinen
+  Klick an, auch kein Enter. Ebenso in der Schmiede «AUF +N» nach dem Sprung aus dem Heldenfenster und nach
+  dem Schmieden, «JA, EINSCHMELZEN» nach der Frage (`src/ui/screens/SchmiedeTab.ts`). Gemessen wird bis zum
+  neuen Druck, auch wenn das Spiel gerade beschäftigt ist und erst später dazu kommt
+  (`src/ui/components/Druckzeit.ts`, Tests in `tests/druckzeit.test.ts`).
 
 ## Eichung nach dem Umbau (23.10.2026)
 

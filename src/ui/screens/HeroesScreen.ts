@@ -26,6 +26,7 @@ import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausb
 import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
 import { klassenTafelHtml } from '../components/KlassenTafel';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { gedruecktUm } from '../components/Druckzeit';
 
 const gearSystem = new GearSystem();
 
@@ -97,7 +98,13 @@ let activeTab: HeroTab = 'my';
 
 // ─── Hero Card HTML ─────────────────────────────────────────────
 
-function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
+/**
+ * Karte eines Helden (Reiter «Meine Helden» und «Trainieren»). Ein Klick oder Tipp auf die Karte öffnet das
+ * Heldenfenster. Für die Tastatur liegt ein leerer Knopf über der ganzen Karte (Tab, Enter, Leertaste); Maus
+ * und Finger gehen durch ihn hindurch auf die Karte (pointer-events: none). TRAINIEREN steht neben ihm, nicht
+ * darin, denn ein Knopf darf keinen Knopf enthalten.
+ */
+export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   const classDef = CLASS_DEFS[fighter.classId];
   const className = classDef ? classDef.name : fighter.classId;
   const emoji = classDef ? emojiForClass(classDef) : '\u2694\uFE0F';
@@ -109,6 +116,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   const actionBtn = mode === 'train'
     ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}">TRAINIEREN (${trainingCost}G)</button>`
     : '';
+  const oeffnen = `<button type="button" class="hcard-oeffnen" aria-label="Heldenfenster: ${escapeAttr(fighter.name)}, ${className}, Stufe ${fighter.level}"></button>`;
 
   const hasImage = !!HERO_IMAGE_MAP[fighter.classId];
   const bgStyle = getHeroImageStyle(fighter.classId);
@@ -117,6 +125,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
     // Image card: full illustration background, name overlay at bottom
     return `
       <div class="hcard hcard-img" data-fighter-id="${fighter.id}" style="${bgStyle}">
+        ${oeffnen}
         <div class="hcard-overlay">
           <div class="hc-nm">${className}</div>
           <span class="hc-lv">Lv ${fighter.level}</span>
@@ -130,6 +139,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   // Fallback: sprite-based card (for classes without illustrations)
   return `
     <div class="hcard" data-fighter-id="${fighter.id}">
+      ${oeffnen}
       <div class="hc-ico">
         <img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite"
              onerror="this.style.display='none'">
@@ -221,14 +231,17 @@ function buildModalData(fighter: GuildFighter) {
 }
 
 function gearSlotIconHtml(slot: { label: string; emoji: string; key: string | null; slot: string }): string {
-  const gewaehlt = auswahl?.art === 'slot' && auswahl.slot === slot.slot ? ' gewaehlt' : '';
+  const istGewaehlt = auswahl?.art === 'slot' && auswahl.slot === slot.slot;
+  const gewaehlt = istGewaehlt ? ' gewaehlt' : '';
+  // Name für Vorleseprogramme: der Platz und was dort liegt (das Bild allein hat keinen Text)
+  const knopf = `type="button" data-slot="${slot.slot}" aria-pressed="${istGewaehlt}" aria-label="${slot.label}: ${slot.key ? gearName(slot.key) : 'leer'}"`;
   if (!slot.key) {
-    return `<button class="hdm-gear-icon hdm-gear-empty${gewaehlt}" data-slot="${slot.slot}" title="${slot.label}: leer"><span class="hdm-gear-emoji">${slot.emoji}</span></button>`;
+    return `<button class="hdm-gear-icon hdm-gear-empty${gewaehlt}" ${knopf} title="${slot.label}: leer"><span class="hdm-gear-emoji">${slot.emoji}</span></button>`;
   }
   const def = ITEM_DEFS[slot.key];
   const sprKey = getItemSpriteKey(slot.key);
   const titel = [gearName(slot.key), gearStatsSummary(slot.key), eigenschaftenText(slot.key), setTooltip(slot.key)].filter(Boolean).join('\n');
-  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" data-slot="${slot.slot}" title="${titel}"><img src="assets/sprites/final/${sprKey}.png" onerror="this.style.display='none'">${setAbzeichen(slot.key)}${stufeAbzeichen(stufen(), slot.key)}</button>`;
+  return `<button class="hdm-gear-icon ${rarityClass(def?.tags ?? [])}${gewaehlt}" ${knopf} title="${titel}"><img src="assets/sprites/final/${sprKey}.png" alt="" onerror="this.style.display='none'">${setAbzeichen(slot.key)}${stufeAbzeichen(stufen(), slot.key)}</button>`;
 }
 
 // ─── Auswahl, Vergleich und Set-Boni im Heldenfenster ───────────
@@ -242,6 +255,17 @@ let auswahl: Auswahl | null = null;
 let inventarOffen = false;
 /** Weg, dessen Wahl im Heldenfenster gerade bestätigt werden soll */
 let wegFrage: string | null = null;
+/**
+ * Kurz nach der Frage zum Weg nimmt «Ja, für immer» keinen Klick an, wo und womit auch gedrückt wird (auch Enter
+ * nicht): Die Wahl gilt für immer, die Frage soll gelesen sein. Gemessen wird bis zum Druck (gedruecktUm), nicht
+ * bis das Spiel dazu kommt
+ */
+let wegGesperrtBis = 0;
+/**
+ * So lange nimmt «Ja, für immer» nach der Frage keinen Klick an (wegGesperrtBis), und so lange gilt ein Druck nach
+ * dem letzten als langsamer zweiter Druck (pruefeZweitenDruck)
+ */
+const SPERRE_MS = 800;
 
 const PLATZ_NAMEN: Record<EquipSlot, string> = {
   mainHand: 'Haupthand', offHand: 'Nebenhand', armor: 'Rüstung', trinket: 'Talisman',
@@ -390,7 +414,12 @@ function auswahlHtml(fighter: GuildFighter): string {
     </div>`;
 }
 
-function buildInventoryHtml(fighter: GuildFighter): string {
+/**
+ * Gegenstände im Inventar des Heldenfensters, als Knöpfe (Tab, Enter). Ist das Inventar zu, sind sie gesperrt:
+ * Tab im Fenster (FensterHilfen) überspringt gesperrte Knöpfe, versteckte aber nicht. Sonst stünden versteckte
+ * Knöpfe am Anfang seiner Liste: Umschalt+Tab entkäme aus dem Fenster, und Tab am Ende bliebe hängen.
+ */
+export function buildInventoryHtml(fighter: GuildFighter, offen: boolean): string {
   if (!gameState) return '';
 
   // Collect equippable gear items from globalStock
@@ -427,16 +456,19 @@ function buildInventoryHtml(fighter: GuildFighter): string {
   // Ist ein Platz angetippt, treten Gegenstände für andere Plätze zurück
   const platz = wunschPlatz();
   return items.map(item => {
-    const gewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id ? ' gewaehlt' : '';
+    const istGewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id;
+    const gewaehlt = istGewaehlt ? ' gewaehlt' : '';
     const mit = mitGegenstand(fighter, item.id, platz);
     const passt = !mit ? ' passt-nicht' : platz && mit.gear[platz] !== item.id ? ' anderer-platz' : '';
     const titel = [gearName(item.id), gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id)].filter(Boolean).join('\n');
+    const name = `${gearName(item.id)}${item.qty > 1 ? `, ${item.qty} Stück` : ''}`;
     return `
-    <div class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}">
-      <img src="assets/sprites/final/${item.sprKey}.png" onerror="this.style.display='none'">
+    <button type="button" class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}"
+            aria-label="${name}" aria-pressed="${istGewaehlt}"${offen ? '' : ' disabled'}>
+      <img src="assets/sprites/final/${item.sprKey}.png" alt="" onerror="this.style.display='none'">
       ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}
       ${item.qty > 1 ? `<span class="hdm2-inv-qty">${item.qty}</span>` : ''}
-    </div>`;
+    </button>`;
   }).join('');
 }
 
@@ -499,23 +531,24 @@ function renderDetailModal(fighter: GuildFighter): string {
     ? `<div class="hdm2-sidebar"><div class="lbl">Hintergrund</div><p>${classDef.background.replace(/\n/g, '<br>')}</p></div>`
     : '';
 
+  // Die ID des Namens ist fest: Es gibt immer nur ein Heldenfenster. Der Name nimmt beim Öffnen den Fokus (tabindex -1)
   return `
     <div class="ov" id="hero-detail-ov">
-    <div class="hdm2-outer">
+    <div class="hdm2-outer" role="dialog" aria-modal="true" aria-labelledby="hdm2-name">
       <div class="hdm2-inv-panel" id="hdm2-inv-panel" style="display:${inventarOffen ? 'flex' : 'none'}">
         <div class="hdm2-inv-header">
           <span class="lbl">🎒 Inventar</span>
           <span class="hdm2-inv-hint">${wunschPlatz() ? `Hell: passt ${PLATZ_IN[wunschPlatz()!]}` : 'Antippen zeigt Werte und Vergleich'}</span>
         </div>
         <div class="hdm2-inv-grid">
-          ${buildInventoryHtml(fighter)}
+          ${buildInventoryHtml(fighter, inventarOffen)}
         </div>
       </div>
       <div class="hdm2">
-        <button class="mcl" id="hero-detail-close">✕</button>
-        <button class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle">🎒 Inventar</button>
+        <button type="button" class="mcl" id="hero-detail-close" aria-label="Schliessen">✕</button>
+        <button type="button" class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle" aria-expanded="${inventarOffen}">🎒 Inventar</button>
         <div class="hdm2-header">
-          <div class="hdm2-name">${escapeAttr(fighter.name)}</div>
+          <div class="hdm2-name" id="hdm2-name" tabindex="-1">${escapeAttr(fighter.name)}</div>
           <div class="hdm2-sub">${className} · Lv ${fighter.level}</div>
         </div>
         <div class="hdm2-portrait-area">
@@ -704,6 +737,65 @@ function renderInventarTab(): string {
     ${html}`;
 }
 
+// ─── Langsamer zweiter Druck auf dieselbe Stelle ────────────────
+
+/**
+ * Der letzte Druck auf der Heldenseite oder im Heldenfenster, der etwas traf: wann (gedruecktUm), wo und was. Ein
+ * Klick zeichnet oft neu, öffnet oder schliesst das Fenster oder scrollt es zur Auswahl. Dann liegt unter dem Finger
+ * etwas anderes: ABLEGEN, der Link in die Schmiede, nach dem Schliessen «Lernen» oder eine Karte. Den zweiten Klick
+ * eines Doppelklicks schluckt schluckeZweitenKlick; ein langsamer zweiter Druck (am Handy ab etwa 350 ms, am PC
+ * nach der Doppelklick-Zeit des Systems) ist aber ein eigener Klick
+ */
+let letzterDruck: { um: number; x: number; y: number; ziel: string } | null = null;
+/**
+ * Bis wie weit neben dem letzten Druck noch dieselbe Stelle gilt (px). Die Maus steht still. Ein Finger verrutscht
+ * etwas, und der Browser schiebt einen Tipp knapp neben einem Knopf auf den Knopf (am Handy quer gemessen: 7 bis
+ * 9 px). Knöpfe für den Finger sind mindestens 44 px gross: Wer bewusst den nächsten drückt, trifft meist weiter weg
+ */
+const GLEICHE_STELLE_MAUS_PX = 16;
+const GLEICHE_STELLE_FINGER_PX = 40;
+
+/**
+ * Was ein Klick trifft: einen Knopf, erkannt an id und data-Attributen (nach dem Neuzeichnen ist er ein neues
+ * Element; nach ANLEGEN steht dort data-aktion="ablegen"), eine Heldenkarte oder den dunklen Rand des Fensters.
+ * Der Preis (data-cost) zählt nicht: Nach einem Aufstieg kostet TRAINIEREN mehr, der Knopf bleibt derselbe.
+ * Leer: Text ohne Wirkung
+ */
+function druckZiel(e: MouseEvent): string {
+  const ziel = e.target as HTMLElement;
+  if (ziel.id === 'hero-detail-ov') return 'Rand';
+  const el = ziel.closest('button, .hcard');
+  if (!el) return '';
+  const merkmale = Array.from(el.attributes)
+    .filter(a => a.name === 'id' || (a.name.startsWith('data-') && a.name !== 'data-cost'));
+  return [el.tagName, ...merkmale.map(a => `${a.name}=${a.value}`)].join(' ');
+}
+
+/**
+ * Prüft jeden Klick in `wurzel` (Heldenseite oder Heldenfenster), bevor ein Knopf darin ihn bekommt: Ein zweiter
+ * Druck bis SPERRE_MS nach dem letzten, auf dieselbe Stelle, wirkt nur, wenn er dasselbe trifft. Zweimal auf einen
+ * Platz tippen schliesst also die Auswahl, aber was das Neuzeichnen unter den Finger geschoben hat, löst er nicht
+ * aus. Ein Druck anderswo zählt sofort. Die Tastatur (detail 0) prüft er nicht: Ihr Fokus bleibt auf dem gedrückten
+ * Knopf oder geht an den Platz (fokussiere), ein zweites Enter trifft nichts Neues
+ */
+function pruefeZweitenDruck(wurzel: HTMLElement): void {
+  wurzel.addEventListener('click', e => {
+    if (e.detail === 0) return;
+    const ziel = druckZiel(e);
+    if (!ziel) return;
+    const um = gedruecktUm(e);
+    const naehe = (e as PointerEvent).pointerType === 'mouse' ? GLEICHE_STELLE_MAUS_PX : GLEICHE_STELLE_FINGER_PX;
+    const letzter = letzterDruck;
+    if (letzter && letzter.ziel !== ziel && um - letzter.um < SPERRE_MS
+      && Math.hypot(e.clientX - letzter.x, e.clientY - letzter.y) < naehe) {
+      e.stopImmediatePropagation();
+      e.preventDefault();
+      return;
+    }
+    letzterDruck = { um, x: e.clientX, y: e.clientY, ziel };
+  }, true);
+}
+
 // ─── Main Render ────────────────────────────────────────────────
 
 export function renderHeroesScreen(container: HTMLElement): void {
@@ -749,6 +841,10 @@ export function renderHeroesScreen(container: HTMLElement): void {
 
   // ─── Event Binding ──────────────────────────────────────────
 
+  // Vor allen Knöpfen der Seite: Ein langsamer zweiter Druck löst nicht aus, was der erste unter den Finger gebracht
+  // hat (nach dem Schliessen des Fensters etwa «Lernen», TRAINIEREN oder eine Karte)
+  pruefeZweitenDruck(el);
+
   if (activeTab === 'schmiede' && state) bindSchmiedeTab(el, state, () => renderHeroesScreen(container));
   if (activeTab === 'train' && state) bindLehrbuch(el, state, () => renderHeroesScreen(container));
 
@@ -774,12 +870,12 @@ export function renderHeroesScreen(container: HTMLElement): void {
     });
   }
 
-  // Hero card click → detail modal
+  // Hero card click → detail modal (Maus und Finger auf der Karte, Tastatur über ihren Knopf .hcard-oeffnen)
   const heroCards = el.querySelectorAll('.hcard:not(.hcard-hire)');
   for (let i = 0; i < heroCards.length; i++) {
     heroCards[i].addEventListener('click', (e) => {
-      // Don't open modal if clicking a button inside the card
-      if ((e.target as HTMLElement).closest('button')) return;
+      // Don't open modal if clicking a button inside the card (TRAINIEREN)
+      if ((e.target as HTMLElement).closest('button:not(.hcard-oeffnen)')) return;
 
       const fid = Number(heroCards[i].getAttribute('data-fighter-id'));
       const fighter = gameState?.fighters.find(f => f.id === fid);
@@ -831,27 +927,77 @@ export function renderHeroesScreen(container: HTMLElement): void {
 
 // ─── Modal ──────────────────────────────────────────────────────
 
-function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
-  // Remove any existing modal
-  const existing = container.querySelector('#hero-detail-ov');
-  if (existing) existing.remove();
+/**
+ * Löst den Tastenhörer des offenen Heldenfensters (null: keins offen). Vor jedem Neuzeichnen wird er gelöst,
+ * so gibt es nie mehr als einen. Ein alter Hörer löste sich sonst erst beim nächsten Tastendruck, und am
+ * Touch-Gerät kommt keiner: Die Hörer sammelten sich und hielten die alten Fenster im Speicher.
+ */
+let loeseFensterTasten: (() => void) | null = null;
+
+/** Nimmt das Heldenfenster samt Tastenhörer aus der Seite (beim Schliessen und vor dem Neuzeichnen) */
+function entferneDetailModal(container: HTMLElement): void {
+  loeseFensterTasten?.();
+  loeseFensterTasten = null;
+  container.querySelector('#hero-detail-ov')?.remove();
+}
+
+/**
+ * Fokus auf das erste vorhandene Ziel (Selektoren), ohne zu scrollen. Gesperrte Knöpfe zählen nicht. Ein
+ * Bereich ohne Knopf (der gewählte Weg, ein Teil in der Schmiede) bekommt dafür tabindex -1: Er nimmt den
+ * Fokus, Tab überspringt ihn.
+ */
+function fokussiere(wurzel: ParentNode, ziele: string[]): void {
+  for (const sel of ziele) {
+    const ziel = wurzel.querySelector<HTMLElement>(sel);
+    if (!ziel || (ziel instanceof HTMLButtonElement && ziel.disabled)) continue;
+    if (!(ziel instanceof HTMLButtonElement) && !ziel.hasAttribute('tabindex')) ziel.tabIndex = -1;
+    ziel.focus({ preventScroll: true });
+    return;
+  }
+}
+
+/**
+ * Öffnet das Heldenfenster oder zeichnet es neu (nach jedem Antippen darin). Beim Neuzeichnen bleibt, wie weit
+ * Fenster und Inventar gescrollt sind, und der Fokus geht an `fokus` (Selektoren, das erste vorhandene Ziel
+ * gilt; meist der eben gedrückte Knopf, wie im Lehrbuch). Beim Öffnen nimmt der Name des Helden den Fokus.
+ */
+function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: string[] = ['#hdm2-name']): void {
+  const alt = container.querySelector<HTMLElement>('#hero-detail-ov');
+  const scroll = alt ? { fenster: alt.scrollTop, inventar: alt.querySelector('.hdm2-inv-grid')?.scrollTop ?? 0 } : null;
+  // Beim Öffnen: Solange das Fenster offen ist, scrollt die Seite dahinter nicht (magic-city.css) und verliert
+  // ihren Scrollbalken. So breit bleibt rechts ein Rand, sonst rückte sie zur Seite (am PC 15 px, am Handy 0)
+  if (!alt) {
+    const html = document.documentElement;
+    html.style.setProperty('--hdm2-balken', `${Math.max(0, window.innerWidth - html.clientWidth)}px`);
+  }
+  entferneDetailModal(container);
 
   const wrapper = document.createElement('div');
   wrapper.innerHTML = renderDetailModal(fighter);
   const overlay = wrapper.firstElementChild as HTMLElement;
   overlay.classList.add('on');
   container.appendChild(overlay);
+  // Als erster Hörer am Fenster, auch vor dem dunklen Rand: Ältere Browser rufen die Hörer am Ziel selbst in der
+  // Reihenfolge auf, in der sie dazukamen
+  pruefeZweitenDruck(overlay);
+  if (scroll) {
+    overlay.scrollTop = scroll.fenster;
+    const raster = overlay.querySelector<HTMLElement>('.hdm2-inv-grid');
+    if (raster) raster.scrollTop = scroll.inventar;
+  }
+  fokussiere(overlay, fokus);
 
+  // Schliessen: Fokus zurück auf die Karte, die das Fenster geöffnet hat. Sie kann neu gezeichnet sein (nach der
+  // Wahl eines Wegs) oder fehlen (Reiter Trainieren, der Held ist inzwischen auf Stufe 15): dann auf den Reiter
+  const schliessen = (): void => {
+    entferneDetailModal(container);
+    fokussiere(container, [`#s-heroes .hcard[data-fighter-id="${fighter.id}"] .hcard-oeffnen`, '#s-heroes .tab.active']);
+  };
   // Escape schliesst, Tab bleibt im Fenster, und die Tasten gehen nicht an main.ts (dort wechselte Escape
-  // den Bildschirm, das Fenster bliebe im versteckten stehen). Beim Neuzeichnen löst sich der alte Hörer
-  // beim nächsten Tastendruck selbst.
-  const loeseTasten = bindeFensterTasten(overlay, overlay.querySelector<HTMLElement>('.hdm2-outer'), () => {
-    loeseTasten();
-    overlay.remove();
-  });
+  // den Bildschirm, das Fenster bliebe im versteckten stehen)
+  loeseFensterTasten = bindeFensterTasten(overlay, overlay.querySelector<HTMLElement>('.hdm2-outer'), schliessen);
   const schliessenMitKlick = (): void => {
-    loeseTasten();
-    overlay.remove();
+    schliessen();
     schluckeZweitenKlick();
   };
 
@@ -862,7 +1008,8 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
     if (istHintergrund(e)) schliessenMitKlick();
   });
 
-  // Inventory panel toggle
+  // Inventar auf und zu, ohne Neuzeichnen; zu sind seine Knöpfe gesperrt (siehe buildInventoryHtml). Am PC
+  // rückt der Held dabei zur Seite: Der zweite Klick eines Doppelklicks träfe sonst einen Gegenstand
   const invToggle = overlay.querySelector('#hdm2-inv-toggle') as HTMLElement | null;
   const invPanel = overlay.querySelector('#hdm2-inv-panel') as HTMLElement | null;
   if (invToggle && invPanel) {
@@ -870,13 +1017,19 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       inventarOffen = invPanel.style.display === 'none';
       invPanel.style.display = inventarOffen ? 'flex' : 'none';
       invToggle.classList.toggle('active', inventarOffen);
+      invToggle.setAttribute('aria-expanded', String(inventarOffen));
+      invPanel.querySelectorAll<HTMLButtonElement>('.hdm2-inv-slot').forEach(k => { k.disabled = !inventarOffen; });
+      schluckeZweitenKlick();
       if (inventarOffen) invPanel.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   }
 
-  // Neu zeichnen und die Auswahl ins Bild holen (am Handy liegt das Inventar unter dem Helden)
-  const neuZeichnen = (): void => {
-    openDetailModal(fighter, container);
+  // Neu zeichnen und die Auswahl ins Bild holen (am Handy liegt das Inventar unter dem Helden). Danach schluckt
+  // das Fenster den zweiten Klick eines Doppelklicks oder Doppeltipps: Er träfe, was jetzt unter dem Zeiger liegt
+  // (nach ANLEGEN etwa ABLEGEN, und das Teil wäre gleich wieder weg)
+  const neuZeichnen = (fokus: string[]): void => {
+    openDetailModal(fighter, container, fokus);
+    schluckeZweitenKlick();
     const box = container.querySelector('#hdm2-auswahl') as HTMLElement | null;
     box?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
@@ -887,7 +1040,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       const slot = el.dataset.slot as EquipSlot;
       auswahl = auswahl?.art === 'slot' && auswahl.slot === slot ? null : { art: 'slot', slot };
       if (auswahl && !fighter.gear[slot]) inventarOffen = true;
-      neuZeichnen();
+      neuZeichnen([`.hdm-gear-icon[data-slot="${slot}"]`]);
     });
   });
 
@@ -901,60 +1054,80 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement): void {
       auswahl = auswahl?.art === 'inventar' && auswahl.itemId === itemId
         ? (platz ? { art: 'slot', slot: platz } : null)
         : { art: 'inventar', itemId, platz: passt };
-      neuZeichnen();
+      neuZeichnen([`.hdm2-inv-slot[data-item-id="${itemId}"]`]);
     });
   });
 
-  // Weg wählen: erst antippen, dann bestätigen, denn die Wahl gilt für immer
-  const zumWeg = (): void => {
-    openDetailModal(fighter, container);
+  // Weg wählen: erst antippen, dann bestätigen, denn die Wahl gilt für immer. Auch hier schluckt das Fenster den
+  // zweiten Klick: «Ja, für immer» steht nach dem ersten oft genau unter dem Finger
+  const zumWeg = (fokus: string[]): void => {
+    openDetailModal(fighter, container, fokus);
+    schluckeZweitenKlick();
     container.querySelector('#hdm2-weg')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   };
   overlay.querySelectorAll<HTMLElement>('[data-weg-waehlen]').forEach(el => {
     el.addEventListener('click', () => {
       wegFrage = el.dataset.wegWaehlen ?? null;
-      zumWeg();
+      wegGesperrtBis = performance.now() + SPERRE_MS;
+      // Fokus auf die Frage, nicht auf «Ja, für immer»: Ein zweites Enter wählt so nicht gleich für immer
+      zumWeg(['.hdm2-weg-frage']);
     });
   });
   overlay.querySelector('[data-weg-nein]')?.addEventListener('click', () => {
+    const gefragt = wegFrage;
     wegFrage = null;
-    zumWeg();
+    zumWeg([`[data-weg-waehlen="${gefragt}"]`]);
   });
   overlay.querySelector<HTMLElement>('[data-weg-ja]')?.addEventListener('click', e => {
+    // Nur ein eigener Klick wählt: nie der zweite eines Doppelklicks (wie das ✕ im Monsterbuch) und keiner kurz
+    // nach der Frage (wegGesperrtBis, etwa ein langsamer zweiter Druck auf «‹Weg› wählen»)
+    if (e.detail > 1 || gedruecktUm(e) < wegGesperrtBis) return;
     const wegId = (e.currentTarget as HTMLElement).dataset.wegJa ?? '';
     wegFrage = null;
     if (!waehleWeg(fighter, wegId)) return;
     if (gameState) erfolgePruefen(gameState); // Wege-Erfolge gleich zählen
     window.dispatchEvent(new CustomEvent('mc:speichern'));
     renderHeroesScreen(container); // die Heldenkarte zeigt jetzt den Weg
-    zumWeg();
+    zumWeg(['.hdm2-weg-karte.gewaehlt']);
   });
 
-  // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil
+  // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil. Dort nimmt «AUF +N» kurz
+  // keinen Klick an (schmiedeZeigeTeil), es steht oft unter dem Finger. Der Link selbst rückt nach dem Antippen
+  // eines Platzes oft unter den Finger (das Fenster scrollt zur Auswahl): Ein langsamer zweiter Druck dorthin
+  // springt nicht, das prüft pruefeZweitenDruck
   overlay.querySelector<HTMLElement>('[data-schmiede-teil]')?.addEventListener('click', e => {
-    schmiedeZeigeTeil((e.currentTarget as HTMLElement).dataset.schmiedeTeil!);
-    loeseTasten();
-    overlay.remove();
+    const itemId = (e.currentTarget as HTMLElement).dataset.schmiedeTeil!;
+    schmiedeZeigeTeil(itemId);
+    entferneDetailModal(container);
     activeTab = 'schmiede';
     renderHeroesScreen(container);
+    // Der zweite Klick eines Doppelklicks landete sonst im Reiter (markierte Text oder träfe einen Knopf)
+    schluckeZweitenKlick();
+    // Fokus auf die Zeile des Teils, nicht auf «AUF +N»: Ein zweites Enter schmiedet so nicht gleich
+    fokussiere(container, [`#s-heroes [data-teil="${itemId}"]`]);
   });
 
-  // Anlegen oder Ablegen
+  // Anlegen oder Ablegen. Der Fokus geht danach auf den Platz (mit dem Gegenstand oder leer), nicht zurück auf den
+  // Knopf: Der heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das Teil gleich wieder ab. Ein
+  // langsamer zweiter Druck mit Finger oder Maus auf ABLEGEN, das eben noch ANLEGEN war (oder das nach dem Antippen
+  // eines Platzes unter den Finger gescrollt ist), wirkt nicht: pruefeZweitenDruck
   const aktion = overlay.querySelector('.hdm2-aktion') as HTMLElement | null;
   aktion?.addEventListener('click', () => {
     if (!gameState || !auswahl) return;
+    let platz: EquipSlot | undefined;
     if (auswahl.art === 'slot') {
+      platz = auswahl.slot;
       gearSystem.unequip(gameState, fighter, auswahl.slot);
       auswahl = null;
       inventarOffen = true;
     } else {
       const itemId = auswahl.itemId;
       if (!gearSystem.equip(gameState, fighter, itemId, auswahl.platz)) return;
-      const slot = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
-      auswahl = slot ? { art: 'slot', slot } : null;
+      platz = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
+      auswahl = platz ? { art: 'slot', slot: platz } : null;
       erfolgePruefen(gameState); // ein ganzes Set angelegt: gleich zählen, nicht erst beim Tageswechsel
     }
-    neuZeichnen();
+    neuZeichnen(platz ? [`.hdm-gear-icon[data-slot="${platz}"]`] : ['#hdm2-name']);
   });
 }
 

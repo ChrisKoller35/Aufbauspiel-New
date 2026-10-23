@@ -398,6 +398,13 @@ body {
   background-size: cover; background-position: center;
 }
 .hcard:hover { border-color: var(--gd); transform: translateY(-3px); }
+/* Knopf über der ganzen Karte für die Tastatur (Tab, Enter, Leertaste; HeroesScreen.renderHeroCard). Maus und
+   Finger gehen durch ihn hindurch auf die Karte. Mit dem Fokus zeigt die Karte innen einen goldenen Rahmen */
+.hcard-oeffnen {
+  position: absolute; inset: 0; z-index: 1; pointer-events: none;
+  background: none; border: none; border-radius: inherit;
+}
+.hcard-oeffnen:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
 .hc-ico { font-size: 2.4rem; margin-bottom: 10px; }
 .hc-nm { font-family: 'Cinzel', serif; font-size: 1rem; margin-bottom: 4px; letter-spacing: 1px; }
 .hc-cl { font-size: 0.8rem; color: var(--mut); margin-bottom: 10px; }
@@ -948,14 +955,36 @@ body {
 .hdm-gear-empty { border-style: dashed; opacity: .5; }
 .hdm-gear-emoji { font-size: 1.2rem; }
 
-.hdm2-outer { display: flex; gap: 18px; align-items: flex-start; justify-content: center; }
+/* Heldenfenster: Ist es höher als der Bildschirm (mit Auswahl, am Handy, im flachen Fenster), scrollt es in sich,
+   mit Mausrad und Finger. margin: auto mittet es, solange es passt; sonst beginnt es oben (bzw. links: darum
+   flex-start statt center) und ragt nie über den Rand. Die Seite dahinter scrollt nicht mit: overscroll-behavior,
+   und für ein Fenster, das nicht scrollt, die Sperre auf html. Sie nimmt der Seite den Scrollbalken; der Rand
+   --hdm2-balken (so breit wie er, HeroesScreen.openDetailModal) hält sie an ihrem Platz. scroll-padding: Was ins
+   Bild geholt wird (Tab, Auswahl), landet unter dem ✕ */
+#hero-detail-ov {
+  align-items: flex-start; justify-content: flex-start; overflow-y: auto; overscroll-behavior: contain;
+  padding: 16px 0; scroll-padding-top: 60px;
+}
+html:has(#hero-detail-ov) { overflow: hidden; padding-right: var(--hdm2-balken, 0px); }
+.hdm2-outer { display: flex; gap: 18px; align-items: flex-start; justify-content: center; margin: auto; }
+/* overflow: clip schneidet an den runden Ecken ab wie hidden, macht .hdm2 aber nicht zum Scrollbereich: Das ✕
+   klebt so am Fenster, das scrollt (hidden bleibt für Browser ohne clip) */
 .hdm2 {
   display: flex; flex-direction: column; align-items: center; position: relative;
-  background: var(--s1); border: 1px solid var(--bdr); border-radius: 12px; overflow: hidden;
+  background: var(--s1); border: 1px solid var(--bdr); border-radius: 12px; overflow: hidden; overflow: clip;
   min-width: 0; flex-shrink: 0; width: 520px; max-width: 520px;
 }
-.hdm2 .mcl { position: absolute; top: 10px; right: 12px; z-index: 5; background: rgba(0,0,0,.5); border: none; color: var(--mut); font-size: 1.1rem; cursor: pointer; border-radius: 50%; width: 28px; height: 28px; display: flex; align-items: center; justify-content: center; }
+/* ✕ oben rechts, klebt beim Scrollen im Bild (wie im Monsterbuch). Der Rand unten nimmt es aus dem Fluss, der
+   Kopf beginnt oben. --zu: Grösse, am Touch-Gerät 44 px (unten bei «Finger») */
+.hdm2 .mcl {
+  --zu: 28px; position: sticky; top: 10px; right: auto; z-index: 5; align-self: flex-end; flex-shrink: 0;
+  width: var(--zu); height: var(--zu); margin: 10px 12px calc(-10px - var(--zu)) 0;
+  background: rgba(0,0,0,.5); border: none; color: var(--mut); font-size: 1.1rem; cursor: pointer; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+}
 .hdm2 .mcl:hover { color: var(--txt); background: rgba(0,0,0,.8); }
+/* Der Name nimmt beim Öffnen den Fokus (für Vorleseprogramme und Tab), zeigt aber keinen Rahmen: er ist kein Knopf */
+.hdm2-name:focus { outline: none; }
 
 /* Inventory toggle button */
 .hdm2-inv-btn {
@@ -987,6 +1016,7 @@ body {
   aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--bdr);
   background: var(--s3); display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: .2s; position: relative; overflow: hidden;
+  color: inherit; font: inherit; /* Knopf: Schrift und Farbe wie ringsum */
 }
 .hdm2-inv-slot img { width: 85%; height: 85%; object-fit: contain; }
 .hdm2-inv-slot:hover { border-color: var(--gold); transform: scale(1.05); z-index: 1; }
@@ -1182,9 +1212,21 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .set-teil-name { font-size: 0.62rem; color: var(--mut); line-height: 1.2; overflow-wrap: anywhere; }
 .set-teil.hat .set-teil-name { color: var(--txt); }
 
+/* Heldenfenster mittelbreit (Tablet, Handy quer): Neben Held und Hintergrund ist kein Platz für das Inventar
+   (340 + 520 + 220 px und Abstände). Es steht darunter, so breit wie die beiden zusammen (520 + 18 + 220 px,
+   dazu je 8 px Rand). Reicht der Platz auch für die beiden nicht, rückt der Hintergrund unter den Helden.
+   Ab 700.02 statt 701 px: Mit Zoom kann die Breite dazwischen liegen (etwa 700.5 px), auch dann gilt eine der
+   beiden Anordnungen (bis 700 px die fürs Handy unten) */
+@media (min-width: 700.02px) and (max-width: 1150px) {
+  #hero-detail-ov .hdm2-outer { flex-wrap: wrap; max-width: 774px; padding: 0 8px; }
+  #hero-detail-ov .hdm2-sidebar { flex-grow: 1; }
+  #hero-detail-ov .hdm2-inv-panel { order: 1; flex-basis: 100%; max-width: none; }
+  #hero-detail-ov .hdm2-inv-grid { max-height: 46vh; }
+}
+
 @media (max-width: 700px) {
   /* Heldenfenster untereinander: Held, Inventar, Hintergrund; nie breiter als der Bildschirm */
-  #hero-detail-ov { align-items: flex-start; overflow-y: auto; padding: 8px 0 24px; }
+  #hero-detail-ov { padding: 8px 0 24px; }
   #hero-detail-ov .hdm2-outer { flex-direction: column; align-items: stretch; width: 100%; padding: 0 8px; gap: 10px; }
   #hero-detail-ov .hdm2 { width: 100%; max-width: none; }
   #hero-detail-ov .hdm2-portrait { width: 150px; }
@@ -1828,4 +1870,7 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   .btn-go, .mc-btn, .mc-co-speed, .mc-co-ability-btn, .btn-dungeon-map, .chest-collect-btn, .tab { min-height: 44px; }
   .btn-train, .weg-knopf { min-height: 44px; }
   .btn-back { min-height: 44px; margin-top: -4px; margin-bottom: -4px; }
+  /* Heldenfenster: ✕ 44 × 44 px; 🎒 Inventar und ANLEGEN/ABLEGEN 44 px hoch */
+  .hdm2 .mcl { --zu: 44px; }
+  .hdm2-inv-btn, .hdm2-aktion { min-height: 44px; }
 }
