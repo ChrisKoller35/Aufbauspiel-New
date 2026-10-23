@@ -69,6 +69,13 @@ Gegner (Ø je Sieg je Gegenstand), ein Klick auf einen Gegenstand seinen Eintrag
 Dungeons, die die Gilde noch nicht betreten darf (`isRouteAvailable`), stehen mit «🔒» und ihrem Namen da, damit
 man ein Ziel hat.
 
+**Bedienung:** Am PC schliessen Escape, ✕ und ein Klick neben das Fenster; Tab bleibt im Fenster, auch vom
+Suchfeld aus. Nach einem Sprung über einen Link steht der Fokus auf «← zurück», nach «← zurück» wieder auf dem
+Link, über den man gegangen war. F5 speichert wie überall im Spiel, auch im Suchfeld (`main.ts`). Der zweite Klick
+eines Doppelklicks auf «📜 Fundbuch» geht ins Leere (`schluckeZweitenKlick`). Am Handy steht die Liste über dem
+Eintrag, das Fenster scrollt als Ganzes, ✕ bleibt dabei oben rechts stehen, und jeder Link ist mindestens
+44 × 44 px gross.
+
 ## Ohne Baupläne (23.10.2026)
 
 Bis 22.10.2026 hatte das Fundbuch eine Gruppe «Baupläne» (4 Einträge, Quelle Händler und/oder Boss beim ersten

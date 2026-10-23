@@ -83,15 +83,17 @@
 }
 .fb-zurueck:hover, .fb-zurueck:focus-visible { border-color: var(--gold); color: var(--gold); }
 
-@media (pointer: coarse) {
-  .fb-link { min-height: 44px; }
+/* Finger: auch kurze Links («Brot») mindestens 44 × 44 px */
+@media (pointer: coarse), (max-width: 700px) {
+  .fb-link { min-height: 44px; min-width: 44px; justify-content: center; }
 }
-/* Handy: Liste über dem Eintrag, das ganze Fenster scrollt, die Liste hat eine eigene Höhe */
+/* Handy: Liste über dem Eintrag, das ganze Fenster scrollt, die Liste hat eine eigene Höhe. ✕ bleibt beim
+   Scrollen oben rechts stehen (Escape und Rand gibt es am Handy nicht) */
 @media (max-width: 700px) {
   .fb-ov { padding: 0; align-items: stretch; }
   .fb-fenster { height: 100%; max-height: none; border-radius: 0; border: none; overflow-y: auto; padding: 14px 14px 24px; }
+  .fb-zu { position: fixed; z-index: 2; background: rgba(6,8,16,.9); }
   .fb-spalten { display: block; flex: none; }
   .fb-liste { max-height: 38vh; }
   .fb-eintrag { overflow: visible; margin-top: 14px; padding-right: 0; scroll-margin-top: 8px; }
-  .fb-link { min-height: 44px; }
 }

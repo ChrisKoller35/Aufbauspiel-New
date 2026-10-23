@@ -22,7 +22,8 @@ import { materialJeSieg } from '../../systems/Schmiede';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 
 type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
-type Ziel = { art: 'item' | 'dungeon'; id: string };
+/** link: der wievielte Link im Eintrag zum nächsten Ziel führte (bekommt beim Zurückkommen den Fokus) */
+type Ziel = { art: 'item' | 'dungeon'; id: string; link?: number };
 
 const EMOJI: Record<FundbuchGruppe, string> = {
   material: '🪨', verbrauch: '🧪', ausruestung: '⚔️', sonstiges: '💎',
@@ -138,7 +139,7 @@ function itemSeite(itemId: string, stand: Fortschritt): string {
   const def = ITEM_DEFS[itemId];
   const f = fundorte(itemId);
   const text = def.flavorText ? `<p class="fb-text">${esc(def.flavorText)}</p>` : '';
-  return `<header class="fb-kopf">${bild(itemId)}<div><h2 class="fb-name">${esc(def.name)}</h2>
+  return `<header class="fb-kopf">${bild(itemId)}<div><h2 class="fb-name" tabindex="-1">${esc(def.name)}</h2>
       <span class="fb-gruppe">${GRUPPEN_NAMEN[gruppeVon(itemId)]}</span></div></header>${text}
     ${abschnitt('Woher', woherZeilen(f, stand), 'Keine Quelle bekannt.')}
     ${abschnitt('Wofür', wofuerZeilen(itemId, stand), 'Keine Werkstatt, kein Bau, keine Stadtstufe und keine Schmiede braucht das.')}
@@ -153,7 +154,7 @@ function dungeonSeite(routeId: string, stand: Fortschritt): string {
   const schmiede = material
     ? abschnitt('Schmiede-Material', [`${itemLink(material.material.id)} · ${material.menge} Stück je Sieg`], '') : '';
   const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø ${zahlText(b.jeSieg)} je Sieg`);
-  return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name">${esc(route.name)}</h2>
+  return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name" tabindex="-1">${esc(route.name)}</h2>
       <span class="fb-gruppe">Dungeon · Ebene ${route.tier}</span></div></header>${sperre}${schmiede}
     ${abschnitt('Beute der Gegner', zeilen, 'Hier lassen die Gegner keine Gegenstände fallen.')}`;
 }
@@ -204,9 +205,10 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
   let zurueck: Ziel | null = null;
   let aktuell: Ziel | null = null;
 
-  const zeige = (ziel: Ziel, vonLink = false, springen = true) => {
+  /** wie: aus der Liste, über einen Link im Eintrag, mit «← zurück» oder beim Öffnen */
+  const zeige = (ziel: Ziel, wie: 'liste' | 'link' | 'zurueck' | 'start') => {
     if (ziel.art === 'item' ? !ITEM_DEFS[ziel.id] : !ROUTE_DEFS[ziel.id]) return;
-    zurueck = vonLink ? aktuell : null;
+    zurueck = wie === 'link' ? aktuell : null;
     aktuell = ziel;
     const knopf = zurueck ? '<button type="button" class="fb-zurueck">← zurück</button>' : '';
     eintrag.innerHTML = knopf + (ziel.art === 'item' ? itemSeite(ziel.id, stand) : dungeonSeite(ziel.id, stand));
@@ -217,7 +219,13 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
     });
     eintrag.scrollTop = 0;
     // Am Handy steht der Eintrag unter der Liste: dorthin springen
-    if (springen && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
+    if (wie !== 'start' && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
+    // Der gedrückte Knopf im Eintrag ist eben ersetzt worden, der Fokus bleibt trotzdem im Eintrag (Tastatur):
+    // nach einem Sprung auf «← zurück», nach «← zurück» auf dem Link, über den man gegangen war
+    if (wie === 'link') eintrag.querySelector<HTMLElement>('.fb-zurueck')?.focus({ preventScroll: true });
+    if (wie === 'zurueck') {
+      (eintrag.querySelectorAll<HTMLElement>('.fb-link')[ziel.link ?? -1] ?? eintrag.querySelector<HTMLElement>('.fb-name'))?.focus();
+    }
   };
 
   suche.addEventListener('input', () => {
@@ -243,18 +251,22 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
     if (aufHintergrund(e)) { schliesseMitKlick(); return; }
     const ziel = e.target as HTMLElement;
     if (ziel.closest('.fb-zu')) { schliesseMitKlick(); return; }
-    if (ziel.closest('.fb-zurueck') && zurueck) { zeige(zurueck); return; }
+    if (ziel.closest('.fb-zurueck') && zurueck) { zeige(zurueck, 'zurueck'); return; }
     const listenKnopf = ziel.closest<HTMLElement>('.fb-eintrag-knopf');
-    if (listenKnopf?.dataset.item) { zeige({ art: 'item', id: listenKnopf.dataset.item }); return; }
+    if (listenKnopf?.dataset.item) { zeige({ art: 'item', id: listenKnopf.dataset.item }, 'liste'); return; }
     const link = ziel.closest<HTMLElement>('.fb-link');
-    if (link?.dataset.item) zeige({ art: 'item', id: link.dataset.item }, true);
-    else if (link?.dataset.route) zeige({ art: 'dungeon', id: link.dataset.route }, true);
+    if (!link || !aktuell) return;
+    aktuell.link = Array.from(eintrag.querySelectorAll('.fb-link')).indexOf(link);
+    if (link.dataset.item) zeige({ art: 'item', id: link.dataset.item }, 'link');
+    else if (link.dataset.route) zeige({ art: 'dungeon', id: link.dataset.route }, 'link');
   });
 
   document.body.appendChild(ov);
+  // Der zweite Klick eines Doppelklicks auf «📜 Fundbuch» träfe sonst schon das offene Fenster (Listeneintrag)
+  schluckeZweitenKlick();
   loeseTasten = bindeFensterTasten(ov, fenster, schliesseFundbuch);
   const start = itemId && eintraege.includes(itemId) ? itemId : ov.querySelector<HTMLElement>('.fb-eintrag-knopf')?.dataset.item;
-  if (start) zeige({ art: 'item', id: start }, false, false);
+  if (start) zeige({ art: 'item', id: start }, 'start');
   ov.querySelector('.fb-eintrag-knopf.aktiv')?.scrollIntoView({ block: 'nearest' });
   if (itemId && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
   // Am Touch-Gerät nicht gleich die Tastatur aufklappen

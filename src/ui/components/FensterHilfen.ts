@@ -1,15 +1,19 @@
 // ─── Magic City – Hilfen für Fenster über dem Spiel ─────────────
 // Gemeinsam für die Fenster «Spielstand» (SpielstandFenster.ts), «Der
-// Weg zur Magischen Stadt» (StadtwegFenster.ts) und die Fenster der
-// Gebäude-Seite (HaendlerFenster.ts, GebaeudeFenster.ts, Bau-Dialog):
+// Weg zur Magischen Stadt» (StadtwegFenster.ts), das Fundbuch
+// (FundbuchFenster.ts) und die Fenster der Gebäude-Seite
+// (HaendlerFenster.ts, GebaeudeFenster.ts, Bau-Dialog):
 // Tasten gehen nicht an das Spiel dahinter, Tab bleibt im Fenster, und
 // der zweite Klick eines Doppelklicks löst nichts aus, was hinter dem
 // Fenster liegt.
 // ────────────────────────────────────────────────────────────────
 
-/** Tab und Umschalt+Tab bleiben im Fenster (es ist modal). */
+/**
+ * Tab und Umschalt+Tab bleiben im Fenster (es ist modal). Ziele sind Knöpfe und Eingabefelder (die Suche
+ * im Fundbuch): Sonst entkäme der Fokus aus einem Eingabefeld, nach dem kein Knopf mehr kommt.
+ */
 function halteFokusImFenster(e: KeyboardEvent, fenster: HTMLElement): void {
-  const ziele = Array.from(fenster.querySelectorAll<HTMLButtonElement>('button:not([disabled])'));
+  const ziele = Array.from(fenster.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]):not([hidden])'));
   const aktiv = document.activeElement;
   const draussen = !(aktiv instanceof HTMLElement) || aktiv === fenster || !fenster.contains(aktiv);
   if (ziele.length === 0) {
