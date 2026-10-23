@@ -17,16 +17,16 @@ import { nameMitStufe, stufeAbzeichen, werteKurz } from '../components/SchmiedeA
 import { bindSchmiedeTab, schmiedeTabHtml, schmiedeTabVerlassen, schmiedeZeigeTeil } from './SchmiedeTab';
 import { wegAbzeichen, wegBereichHtml } from '../components/WegAnzeige';
 import { waehleWeg } from '../../systems/Spezialisierung';
-import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { anheuerKosten } from '../../systems/Empfehlung';
 import { xpProgress, ueberschuss, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausbildung';
+import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
+import { klassenTafelHtml } from '../components/KlassenTafel';
 
 const gearSystem = new GearSystem();
-const classUnlockSystem = new ClassUnlockSystem();
 
 // ─── State ──────────────────────────────────────────────────────
 let gameState: GameState | null = null;
@@ -559,24 +559,8 @@ function renderMyHeroes(): string {
 
 function renderHireTab(): string {
   if (!gameState) return '<div class="empty-msg">Kein Spielstand geladen.</div>';
-  const state = gameState;
-  const ownedClassIds = new Set(state.fighters.map(f => f.classId));
-  const available = Object.values(CLASS_DEFS).filter(
-    c => !ownedClassIds.has(c.id) && classUnlockSystem.isClassUnlocked(state, c.id),
-  );
-
-  if (available.length === 0) {
-    const allUnlocked = Object.values(CLASS_DEFS).every(c => classUnlockSystem.isClassUnlocked(state, c.id));
-    return allUnlocked
-      ? '<div class="empty-msg">Alle Klassen bereits rekrutiert!</div>'
-      : '<div class="empty-msg">Alle freigeschalteten Klassen bereits rekrutiert. Weitere Klassen werden durch Expeditionen freigeschaltet.</div>';
-  }
-
-  // Der zweite Held kostet 50, jeder weitere 30 mehr (systems/Empfehlung.ts)
-  const cost = anheuerKosten(state.fighters.length);
-  const cards = available.map(c => renderHireCard(c, cost)).join('');
-
-  return `<div class="hcards">${cards}</div>`;
+  // Alle Klassen: freie mit Anheuern-Karte (Preis aus anheuerKosten), gesperrte mit Bedingung und Fortschritt
+  return klassenTafelHtml(gameState, renderHireCard);
 }
 
 function renderTrainTab(): string {
@@ -591,7 +575,7 @@ function renderTrainTab(): string {
   if (!cards) {
     return '<div class="empty-msg">Alle Helden haben das Maximallevel erreicht!</div>';
   }
-  return `<div class="hcards">${cards}</div>`;
+  return `${lehrbuchHtml(gameState)}<div class="hcards">${cards}</div>`;
 }
 
 // ─── Inventar Tab ──────────────────────────────────────────────
@@ -762,6 +746,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
   // ─── Event Binding ──────────────────────────────────────────
 
   if (activeTab === 'schmiede' && state) bindSchmiedeTab(el, state, () => renderHeroesScreen(container));
+  if (activeTab === 'train' && state) bindLehrbuch(el, state, () => renderHeroesScreen(container));
 
   // Back button
   const backBtn = el.querySelector('.hdr-back') as HTMLElement | null;

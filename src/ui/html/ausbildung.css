@@ -1,0 +1,74 @@
+/* ── Ausbildung: Lehrbuch und Klassen-Tafel (ui/components/Lehrbuch.ts, KlassenTafel.ts) ── */
+
+/* Überschuss neben «Lv 15» auf der Bildkarte */
+.hc-ueberschuss {
+  font-family: 'Cinzel', serif; font-size: 0.68rem; color: var(--gl);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, .9);
+}
+
+/* ── Lehrbuch ── */
+.lehrbuch {
+  margin: 0 18px 18px; padding: 14px 16px; border: 1px solid var(--bdr2); border-radius: 10px;
+  background: linear-gradient(180deg, rgba(110, 87, 16, .12), var(--s1));
+}
+.lb-titel { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--gold); margin-bottom: 4px; }
+.lb-text { font-size: 0.9rem; color: var(--txt); margin-bottom: 10px; }
+.lb-meldung {
+  font-size: 0.9rem; color: #86efac; margin-bottom: 10px; padding: 6px 10px;
+  border-left: 3px solid var(--grn); background: rgba(22, 101, 52, .15);
+}
+.lb-meldung:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
+.lb-gruppe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.lb-lbl { font-family: 'Cinzel', serif; font-size: 0.75rem; color: var(--mut); min-width: 64px; letter-spacing: 1px; }
+.lb-wahl {
+  min-height: 44px; min-width: 44px; padding: 6px 12px; border-radius: 8px; cursor: pointer;
+  display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center;
+  background: var(--s2); border: 1px solid var(--bdr); color: var(--txt); font: inherit; text-align: left;
+  max-width: 100%;
+}
+.lb-wahl b { font-size: 0.9rem; font-weight: 600; overflow-wrap: anywhere; }
+.lb-wahl small { font-size: 0.75rem; color: var(--mut); }
+.lb-wahl:hover { border-color: var(--gd); }
+.lb-wahl.gewaehlt { border-color: var(--gold); background: var(--s3); box-shadow: 0 0 0 1px var(--gold) inset; }
+.lb-wahl:focus-visible, .lb-lernen:focus-visible { outline: 2px solid var(--gl); outline-offset: 2px; }
+.lb-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.lb-vorschau { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gl); }
+.lb-lernen {
+  min-height: 44px; min-width: 44px; padding: 8px 22px; border-radius: 8px; cursor: pointer;
+  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
+  font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1px;
+}
+.lb-lernen:disabled { opacity: .45; cursor: not-allowed; }
+
+/* ── Klassen-Tafel ── */
+.kt-kopf { margin: 0 18px 12px; font-size: 0.9rem; color: var(--mut); }
+.klassentafel .hcards { align-items: start; }
+.klassentafel .btn-hire { min-height: 44px; min-width: 44px; }
+.kt-frei { display: flex; flex-direction: column; gap: 6px; }
+.kt-hinweis { font-size: 0.8rem; color: var(--mut); }
+.kt-karte {
+  display: flex; flex-direction: column; border: 1px solid var(--bdr); border-radius: 10px;
+  background: var(--s2); overflow: hidden;
+}
+.kt-bild {
+  aspect-ratio: 4 / 3; background-size: cover; background-position: center top; background-color: var(--s3);
+  display: flex; align-items: flex-end; position: relative;
+}
+.kt-karte.gesperrt .kt-bild { filter: grayscale(1) brightness(.55); }
+.kt-name {
+  width: 100%; padding: 10px 14px; font-family: 'Cinzel', serif; font-size: 1rem; color: var(--txt);
+  background: linear-gradient(to top, rgba(6, 8, 16, .92), transparent);
+}
+.kt-info { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
+.kt-rolle { font-size: 0.85rem; color: var(--gl); }
+.kt-bedingungen { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
+.kt-bedingungen .offen { color: var(--txt); }
+.kt-bedingungen .fertig { color: #86efac; }
+.kt-karte.in-gilde { opacity: .75; }
+
+@media (max-width: 700px) {
+  .lehrbuch { margin: 0 10px 14px; padding: 12px; }
+  .lb-lbl { min-width: 100%; }
+  .lb-wahl { flex: 1 1 140px; }
+  .kt-kopf { margin: 0 10px 10px; }
+}
