@@ -13,13 +13,15 @@
 }
 .lb-titel { font-family: 'Cinzel', serif; font-size: 1rem; color: var(--gold); margin-bottom: 4px; }
 .lb-text { font-size: 0.9rem; color: var(--txt); margin-bottom: 10px; }
+/* Unter «Lernen»: Darüber verschiebt sich nichts, wenn die Meldung kommt oder geht */
 .lb-meldung {
-  font-size: 0.9rem; color: #86efac; margin-bottom: 10px; padding: 6px 10px;
+  font-size: 0.9rem; color: #86efac; padding: 6px 10px;
   border-left: 3px solid var(--grn); background: rgba(22, 101, 52, .15);
 }
+.lb-fuss + .lb-meldung { margin-top: 10px; }
 .lb-meldung:focus { outline: 2px solid var(--gold); outline-offset: 2px; }
 .lb-gruppe { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
-.lb-lbl { font-family: 'Cinzel', serif; font-size: 0.75rem; color: var(--mut); min-width: 64px; letter-spacing: 1px; }
+.lb-lbl { font-family: 'Cinzel', serif; font-size: 0.75rem; color: var(--txt); opacity: .8; min-width: 64px; letter-spacing: 1px; }
 .lb-wahl {
   min-height: 44px; min-width: 44px; padding: 6px 12px; border-radius: 8px; cursor: pointer;
   display: inline-flex; flex-direction: column; align-items: flex-start; justify-content: center;
@@ -27,25 +29,30 @@
   max-width: 100%;
 }
 .lb-wahl b { font-size: 0.9rem; font-weight: 600; overflow-wrap: anywhere; }
-.lb-wahl small { font-size: 0.75rem; color: var(--mut); }
+/* Überschuss und Stufe: heller als --mut, das auf --s3 nur 2,6 : 1 erreicht (so mindestens 7 : 1) */
+.lb-wahl small { font-size: 0.75rem; color: var(--txt); opacity: .8; }
 .lb-wahl:hover { border-color: var(--gd); }
 .lb-wahl.gewaehlt { border-color: var(--gold); background: var(--s3); box-shadow: 0 0 0 1px var(--gold) inset; }
 .lb-wahl:focus-visible, .lb-lernen:focus-visible { outline: 2px solid var(--gl); outline-offset: 2px; }
-.lb-fuss { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
-.lb-vorschau { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gl); }
+/* «Lernen» bleibt oben rechts, wie lang die Vorschau auch wird (am Handy rutschte er sonst unter den Text) */
+.lb-fuss { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; }
+.lb-vorschau {
+  flex: 1 1 auto; min-width: 0; padding-top: 11px; overflow-wrap: anywhere;
+  font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gl);
+}
 .lb-lernen {
-  min-height: 44px; min-width: 44px; padding: 8px 22px; border-radius: 8px; cursor: pointer;
+  flex: none; min-height: 44px; min-width: 44px; padding: 8px 22px; border-radius: 8px; cursor: pointer;
   background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
   font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1px;
 }
 .lb-lernen:disabled { opacity: .45; cursor: not-allowed; }
 
 /* ── Klassen-Tafel ── */
-.kt-kopf { margin: 0 18px 12px; font-size: 0.9rem; color: var(--mut); }
+.kt-kopf { margin: 0 18px 12px; font-size: 0.9rem; color: var(--txt); }
 .klassentafel .hcards { align-items: start; }
 .klassentafel .btn-hire { min-height: 44px; min-width: 44px; }
 .kt-frei { display: flex; flex-direction: column; gap: 6px; }
-.kt-hinweis { font-size: 0.8rem; color: var(--mut); }
+.kt-hinweis { font-size: 0.8rem; color: var(--txt); opacity: .8; }
 .kt-karte {
   display: flex; flex-direction: column; border: 1px solid var(--bdr); border-radius: 10px;
   background: var(--s2); overflow: hidden;
@@ -64,7 +71,8 @@
 .kt-bedingungen { list-style: none; display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; }
 .kt-bedingungen .offen { color: var(--txt); }
 .kt-bedingungen .fertig { color: #86efac; }
-.kt-karte.in-gilde { opacity: .75; }
+/* Schon in der Gilde: nur das Bild tritt zurück, die Schrift bleibt gut lesbar */
+.kt-karte.in-gilde .kt-bild { filter: brightness(.7); }
 
 @media (max-width: 700px) {
   .lehrbuch { margin: 0 10px 14px; padding: 12px; }

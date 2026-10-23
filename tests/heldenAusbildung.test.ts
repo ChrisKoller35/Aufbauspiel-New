@@ -302,6 +302,29 @@ describe('Lehrbuch', () => {
     state.fighters.push(neuerHeld('guardian'), neuerHeld('cleric'));
     expect(lehrbuchHtml(state)).toBe('');
   });
+
+  test('ohne Aufstieg: «bleibt auf Stufe 5 (noch 74 XP bis Stufe 6)» statt «Stufe 5 auf 5»', () => {
+    const { state, schueler } = klasse(36);
+    awardXP(schueler, totalXpForLevel(5));
+    // Von Stufe 5 auf 6 braucht es 110 XP, nach 36 fehlen noch 74
+    const html = lehrbuchHtml(state);
+    expect(html).toContain('+36 XP → bleibt auf Stufe 5 (noch 74 XP bis Stufe 6)');
+    expect(html).not.toContain('Stufe 5 auf 5');
+  });
+
+  test('fehlen einem Helden die XP (NaN), wandert nichts; die Vorschau fällt nie unter die Stufe', () => {
+    const { state, lehrer, schueler } = klasse(500);
+    lehrer.xp = NaN;
+    expect(lehrbuchVorschau(lehrer, schueler)).toBeNull();
+    lehrer.xp = totalXpForLevel(15) + 500;
+    schueler.xp = NaN;
+    expect(lehrbuchVorschau(lehrer, schueler)).toBeNull();
+    // Stufe 9 mit zu wenig XP (älterer Stand): 500 XP reichen nach den XP nur bis Stufe 7, awardXP senkt aber nie
+    schueler.level = 9;
+    schueler.xp = 0;
+    expect(lehrbuchVorschau(lehrer, schueler)).toEqual({ xp: 500, vonStufe: 9, nachStufe: 9 });
+    expect(lehrbuchLernen(state, lehrer.id, schueler.id)).toMatchObject({ xp: 500, vonStufe: 9, nachStufe: 9 });
+  });
 });
 
 /** Ein Lauf wie aufbrechen (ExpeditionFlow.ts), Raum für Raum wie playRoute (expeditionProgress.test.ts) */
@@ -420,6 +443,25 @@ describe('Klassen-Tafel', () => {
     expect(html).toContain('von Anfang an');
     expect(html).toContain('10 gewonnene Expeditionen: 0/10');
     expect(html).toContain(`${STARTING_CLASSES.length} von ${Object.keys(CLASS_DEFS).length} Klassen freigeschaltet`);
+    expect(html).toContain(`Anheuern kostet jetzt ${anheuerKosten(1)} Gold`);
+  });
+
+  test('Startklassen tragen «von Anfang an» auch in der Gilde; ohne freie Klasse nennt die Kopfzeile keinen Preis', () => {
+    const state = createNewGameState();
+    state.fighters.push(...STARTING_CLASSES.map(id => neuerHeld(id)));
+    const karte = (html: string, id: string) => html.split('<article').find(k => k.includes(`data-kt-klasse="${id}"`)) ?? '';
+    const alle = Object.keys(CLASS_DEFS);
+    let html = klassenTafelHtml(state, () => '');
+    for (const id of STARTING_CLASSES) expect(karte(html, id), id).toContain('von Anfang an · ✓ Schon in deiner Gilde');
+    expect(html).toContain(`${STARTING_CLASSES.length} von ${alle.length} Klassen freigeschaltet · Alle freien Klassen sind schon in deiner Gilde`);
+    expect(html).not.toContain('Anheuern kostet');
+
+    state.classesUnlocked = [...alle];
+    state.fighters.push(...alle.filter(id => !STARTING_CLASSES.includes(id)).map(id => neuerHeld(id)));
+    html = klassenTafelHtml(state, () => '');
+    expect(html).toContain(`${alle.length} von ${alle.length} Klassen freigeschaltet · Alle Klassen sind schon in deiner Gilde`);
+    expect(html).not.toContain('Anheuern kostet');
+    expect(karte(html, 'berserker')).toContain('<p class="kt-hinweis">✓ Schon in deiner Gilde</p>');
   });
 
   /** Für jede gesperrte Klasse: fortschritt «fertig» ⇔ checkUnlocks schaltet sie frei */

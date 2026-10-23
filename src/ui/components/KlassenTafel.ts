@@ -72,12 +72,16 @@ export function klassenTafelHtml(state: GameState, anheuerKarte: (c: ClassDef, k
       ${f.schritte.map(s => `<li class="${s.fertig ? 'fertig' : 'offen'}">${s.fertig ? '✓' : '○'} ${bedingungText(s)}</li>`).join('')}
     </ul>
     ${f.fertig ? '<p class="kt-hinweis">Alles erfüllt: Die Klasse wird nach der nächsten Expedition frei.</p>' : ''}`));
-  const vorhanden = klassen.filter(k => k.f.frei && inGilde.has(k.c.id)).map(({ c }) =>
-    karte(c, 'in-gilde', '<p class="kt-hinweis">✓ Schon in deiner Gilde</p>'));
+  const vorhanden = klassen.filter(k => k.f.frei && inGilde.has(k.c.id)).map(({ c, f }) =>
+    karte(c, 'in-gilde', `<p class="kt-hinweis">${f.start ? 'von Anfang an · ' : ''}✓ Schon in deiner Gilde</p>`));
+  // Der Preis nur, solange es etwas anzuheuern gibt (jede Klasse gibt es einmal in der Gilde)
+  const anheuern = frei.length > 0 ? `Anheuern kostet jetzt ${kosten} Gold`
+    : freiAnzahl === klassen.length ? 'Alle Klassen sind schon in deiner Gilde'
+    : 'Alle freien Klassen sind schon in deiner Gilde';
 
   return `
     <div class="klassentafel">
-      <p class="kt-kopf">${freiAnzahl} von ${klassen.length} Klassen freigeschaltet · Anheuern kostet jetzt ${kosten} Gold</p>
+      <p class="kt-kopf">${freiAnzahl} von ${klassen.length} Klassen freigeschaltet · ${anheuern}</p>
       <div class="hcards">${[...frei, ...gesperrt, ...vorhanden].join('')}</div>
     </div>`;
 }
