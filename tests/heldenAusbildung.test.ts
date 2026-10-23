@@ -3,8 +3,11 @@ import { CLASS_DEFS } from '../src/data/classes';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter, GuildFighter } from '../src/models/GuildRoster';
 import {
-  awardXP, totalXpForLevel, ueberschuss, LEVEL_BONUSES, MAX_HERO_LEVEL,
+  awardXP, totalXpForLevel, ueberschuss, werteAufStufe, DEFAULT_BONUS, LEVEL_BONUSES, MAX_HERO_LEVEL,
 } from '../src/systems/HeroProgression';
+import { MUSTER_TEAMS, musterWerte } from '../src/data/musterteams';
+import { musterStand } from '../src/systems/Musterlauf';
+import { richteProbespielEin } from '../src/systems/Probespiel';
 import {
   lehrbuchLernen, lehrbuchVorschau, stufeBeiXp, trainieren, trainingsKosten, trainingsXp,
 } from '../src/systems/Ausbildung';
@@ -143,18 +146,20 @@ describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
     return f;
   }
 
-  // Leben / Angriff / Verteidigung / Krit / Tempo auf Stufe 15
+  // Leben / Angriff / Verteidigung / Krit / Tempo auf Stufe 15. «nachher» mit den Klassen-Boni seit
+  // der Eichung vom 23.10.2026 (Tabelle im Abschnitt «Eichung nach dem Umbau»); die Spalte «Training
+  // nachher» weiter oben in der Doku zeigt noch die Klassen-Boni von PR #42.
   const TABELLE: Record<string, { vorher: number[]; nachher: number[] }> = {
-    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [126, 8.2, 10, 0.05, 0.8] },
-    ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 16.4, 2.4, 0.29, 1.2] },
-    cleric:      { vorher: [83, 17, 15.5, 0.05, 0.9], nachher: [97, 5.8, 5.7, 0.05, 1.18] },
-    berserker:   { vorher: [112, 21, 16, 0.12, 1.1],  nachher: [126, 14, 4.8, 0.12, 1.1] },
-    assassin:    { vorher: [82, 22, 14, 0.2, 1.4],    nachher: [82, 16.4, 1.4, 0.34, 1.4] },
-    paladin:     { vorher: [68, 18, 16.5, 0.05, 0.9], nachher: [96, 8.2, 8.1, 0.05, 0.9] },
-    bard:        { vorher: [88, 17, 15, 0.05, 1.1],   nachher: [88, 5.8, 3.8, 0.05, 1.38] },
-    witch:       { vorher: [85, 19, 14, 0.08, 1.2],   nachher: [85, 10.6, 1.4, 0.22, 1.2] },
-    necromancer: { vorher: [88, 18, 15, 0.05, 1],     nachher: [88, 9.3, 3.8, 0.05, 1] },
-    druid:       { vorher: [103, 18, 16, 0.06, 1],    nachher: [117, 8.2, 6.2, 0.06, 1.14] },
+    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [112, 12.4, 12.8, 0.05, 0.8] },
+    ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 19.2, 8, 0.29, 1.2] },
+    cleric:      { vorher: [83, 17, 15.5, 0.05, 0.9], nachher: [97, 11.4, 9.9, 0.05, 1.18] },
+    berserker:   { vorher: [112, 21, 16, 0.12, 1.1],  nachher: [126, 16.8, 10.4, 0.12, 1.1] },
+    assassin:    { vorher: [82, 22, 14, 0.2, 1.4],    nachher: [82, 19.2, 7, 0.34, 1.4] },
+    paladin:     { vorher: [68, 18, 16.5, 0.05, 0.9], nachher: [82, 12.4, 12.3, 0.05, 0.9] },
+    bard:        { vorher: [88, 17, 15, 0.05, 1.1],   nachher: [88, 11.4, 9.4, 0.05, 1.38] },
+    witch:       { vorher: [85, 19, 14, 0.08, 1.2],   nachher: [85, 14.8, 7, 0.22, 1.2] },
+    necromancer: { vorher: [88, 18, 15, 0.05, 1],     nachher: [88, 12.4, 9.4, 0.05, 1] },
+    druid:       { vorher: [103, 18, 16, 0.06, 1],    nachher: [117, 12.4, 10.4, 0.06, 1.14] },
   };
 
   test('deckt alle Klassen ab', () => {
@@ -174,6 +179,54 @@ describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
       expect(werte(neu)).toEqual(nachher);
     });
   }
+});
+
+describe('Musterteams der Eichung haben die Werte echter Helden (docs/AUSBILDUNG.md, «Eichung nach dem Umbau»)', () => {
+  // Bis zum 23.10.2026 rechnete musterWerte mit dem alten Training und lag für jeden echten Helden
+  // ausser Reichweite. Diese Tests halten Eichung, Probespiel und Spiel auf demselben Weg.
+  for (const classId of Object.keys(CLASS_DEFS)) {
+    test(`${classId}: musterWerte auf Stufe 1 bis 15 = Werte nach awardXP`, () => {
+      for (let stufe = 1; stufe <= MAX_HERO_LEVEL; stufe++) {
+        const echt = neuerHeld(classId);
+        awardXP(echt, totalXpForLevel(stufe));
+        expect(echt.level).toBe(stufe);
+        expect(musterWerte({ classId, name: 'Muster', stufe, gear: echt.gear }), `Stufe ${stufe}`).toEqual(echt.baseStats);
+      }
+    });
+  }
+
+  test('Musterlauf und Probespiel (?probe, ?probe=sterne, =mond, =morgen) starten mit genau diesen Werten', () => {
+    const echt = (classId: string, stufe: number) => {
+      const f = neuerHeld(classId);
+      awardXP(f, totalXpForLevel(stufe));
+      return f.baseStats;
+    };
+    for (const team of Object.keys(MUSTER_TEAMS) as (keyof typeof MUSTER_TEAMS)[]) {
+      const { state } = musterStand(team, 7919);
+      for (const held of state.fighters) expect(held.baseStats, `${team} ${held.name}`).toEqual(echt(held.classId, held.level));
+    }
+    for (const stufe of ['neu', 'sterne', 'mond', 'morgen'] as const) {
+      const state = createNewGameState();
+      richteProbespielEin(state, stufe);
+      expect(state.fighters.map(f => f.level)).toEqual(stufe === 'neu' ? [12, 12, 12, 12] : [15, 15, 15, 15]);
+      for (const held of state.fighters) expect(held.baseStats, `${stufe} ${held.name}`).toEqual(echt(held.classId, held.level));
+    }
+  });
+
+  test('Klassen-Boni auf dem Raster: Leben ganz, Angriff und Verteidigung auf 0,1, kein Drift beim Runden', () => {
+    const aufRaster = (wert: number, raster: number) => Math.abs(wert / raster - Math.round(wert / raster)) < 1e-9;
+    for (const [classId, bonus] of [...Object.entries(LEVEL_BONUSES), ['unbekannt', DEFAULT_BONUS] as const]) {
+      expect(aufRaster(bonus.hp ?? 0, 1), `${classId} Leben`).toBe(true);
+      expect(aufRaster(bonus.atk ?? 0, 0.1), `${classId} Angriff`).toBe(true);
+      expect(aufRaster(bonus.def ?? 0, 0.1), `${classId} Verteidigung`).toBe(true);
+      // 14 Aufstiege ergeben genau 14 × den Bonus, applyLevelBonus rundet also nichts weg und nichts dazu
+      const grund = CLASS_DEFS[classId]?.baseStats ?? CLASS_DEFS.guardian.baseStats;
+      const werte = werteAufStufe(classId, grund, MAX_HERO_LEVEL);
+      expect(werte.maxHp).toBe(grund.maxHp + 14 * (bonus.hp ?? 0));
+      expect(werte.atk).toBeCloseTo(grund.atk + 14 * (bonus.atk ?? 0), 9);
+      expect(werte.def).toBeCloseTo(grund.def + 14 * (bonus.def ?? 0), 9);
+    }
+  });
 });
 
 describe('Keine verlorenen XP auf Stufe 15', () => {
