@@ -8,6 +8,7 @@
 import '../html/monsterbuch.css';
 import { EnemyDef, ENEMY_DEFS, ENEMY_LORE } from '../../data/enemies';
 import { ITEM_DEFS } from '../../data/items';
+import { MONSTERBUCH_NOTIZEN } from '../../data/monsterbuchNotizen';
 import { GameState } from '../../models/GameState';
 import { BestiariumSystem } from '../../systems/BestiariumSystem';
 import {
@@ -103,6 +104,16 @@ function praemieHtml(state: GameState, seite: Seite, art: PraemienArt): string {
   return `<span class="mb-praemie-info">${bedingung}: +${gold} Gold</span>`;
 }
 
+/** Ottokars Randnotiz, sichtbar ab «Erforscht» (alle Gegner der Seite) */
+function notizHtml(seite: Seite, erforscht: boolean): string {
+  if (!erforscht) {
+    return '<div class="mb-notiz mb-zu">Ottokars Randnotiz steht hier, sobald alle Gegner dieser Seite erforscht sind.</div>';
+  }
+  const notiz = MONSTERBUCH_NOTIZEN.find(n => n.routeId === seite.routeId);
+  if (!notiz) return '<div class="mb-notiz mb-zu">Ottokar hat hier noch nichts notiert.</div>';
+  return `<div class="mb-notiz">${notiz.text}<span class="mb-sig">Ottokar, Stadtschreiber</span></div>`;
+}
+
 function seiteHtml(state: GameState, seite: Seite): string {
   const stand = seitenStand(state, seite);
   const gemeistert = stand.gemeistert === stand.gesamt;
@@ -118,6 +129,7 @@ function seiteHtml(state: GameState, seite: Seite): string {
         ${praemieHtml(state, seite, 'erforscht')}
         ${praemieHtml(state, seite, 'gemeistert')}
       </div>
+      ${notizHtml(seite, stand.erforscht === stand.gesamt)}
       <div class="mb-karten">${karten}</div>
     </section>`;
 }

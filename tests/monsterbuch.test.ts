@@ -18,9 +18,10 @@ import { SeededRNG } from '../src/utils/RNG';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from '../src/data/routes';
 import { ENEMY_DEFS } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
+import { MONSTERBUCH_NOTIZEN } from '../src/data/monsterbuchNotizen';
 import { musterStand } from '../src/systems/Musterlauf';
 import {
-  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, beuteChancen, erreichbareGegner, gesichtet, goldSpanne, praemieAbgeholt,
+  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, erreichbareGegner, gesichtet, goldSpanne, praemieAbgeholt,
   praemieAbholen, praemieBetrag, praemieFaellig, praemieGrundbetrag, praemien, seiten, seitenStand, siegeBis, strecke, stufe,
 } from '../src/systems/Monsterkunde';
 
@@ -281,6 +282,26 @@ describe('Stufen und Seitenprämien', () => {
       }
       expect(praemieGrundbetrag(seite.routeId)).toBe(Math.max(10, Math.round(summe / 10) * 10));
       expect(praemieBetrag(seite.routeId, 'gemeistert')).toBe(3 * praemieGrundbetrag(seite.routeId));
+    }
+  });
+});
+
+describe('Ottokars Randnotizen', () => {
+  it('jede Route der Karte hat genau eine Notiz, keine Notiz ohne Route', () => {
+    const ids = MONSTERBUCH_NOTIZEN.map(n => n.routeId);
+    expect(new Set(ids).size).toBe(ids.length);
+    for (const id of ids) expect(ROUTE_DEFS[id], id).toBeDefined();
+    for (const n of DUNGEON_GRAPH) expect(ids, n.routeId).toContain(n.routeId);
+  });
+
+  it('jede Notiz nennt einen Gegner ihrer Seite beim Namen, 2 bis 3 Sätze, keine HTML-Zeichen, kein Eszett', () => {
+    for (const notiz of MONSTERBUCH_NOTIZEN) {
+      const namen = Object.keys(begegnungenJeLauf(notiz.routeId)).map(id => ENEMY_DEFS[id].name);
+      expect(namen.some(name => notiz.text.includes(name)), notiz.routeId).toBe(true);
+      expect(notiz.text).not.toMatch(/[ß<>"]/);
+      const saetze = notiz.text.split(/[.!?](?:\s|$)/).filter(s => s.trim().length > 0).length;
+      expect(saetze, notiz.routeId).toBeGreaterThanOrEqual(2);
+      expect(saetze, notiz.routeId).toBeLessThanOrEqual(3);
     }
   });
 });
