@@ -147,8 +147,8 @@ describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
   }
 
   // Leben / Angriff / Verteidigung / Krit / Tempo auf Stufe 15. «nachher» mit den Klassen-Boni seit
-  // der Eichung vom 23.10.2026 (Tabelle im Abschnitt «Eichung nach dem Umbau»); die Spalte «Training
-  // nachher» weiter oben in der Doku zeigt noch die Klassen-Boni von PR #42.
+  // der Eichung vom 23.10.2026 (Spalte «Training nachher»; dieselben Werte im Abschnitt «Eichung nach
+  // dem Umbau», Spalte «Stufe 15 seit 23.10.»).
   const TABELLE: Record<string, { vorher: number[]; nachher: number[] }> = {
     guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [112, 12.4, 12.8, 0.05, 0.8] },
     ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 19.2, 8, 0.29, 1.2] },

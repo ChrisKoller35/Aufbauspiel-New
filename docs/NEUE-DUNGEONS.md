@@ -195,19 +195,22 @@ mehr: Ein echter Ranger auf Stufe 15 hatte 16,4 Angriff und 2,4 Verteidigung sta
 wären die obersten Dungeons kaum zu schaffen gewesen (Drachenhort «Gut» 4 / 1 / 0 %, Himmelsarchiv «Stark» 0 %,
 Mondhof `mond5` 0 %, Morgentor `pfand5` 4 / 0 / 0 %; 1000 Läufe). Jetzt tragen die Klassen-Boni den Mittelwert,
 nach einer Regel für alle Klassen (`docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»), und die Musterteams rechnen
-mit genau den Werten echter Helden (`werteAufStufe`). Die Gegner blieben, wie sie waren. Von 197 Messwerten aus
-den Eichungs-Dokus (Dungeons, Sets, Schmiede, Monsterbuch) liegen 180 höchstens 5 Punkte neben den alten. Die
-übrigen 17 weichen in beide Richtungen ab, darum hilft keine stärkere oder schwächere Regel (gemessen mit 80 bis
-105 % des Wegs zum Mittelwert):
+mit genau den Werten echter Helden (`werteAufStufe`). Die Gegner blieben, wie sie waren. Von 227 Messwerten aus
+den Eichungs-Dokus (Dungeons, Sets, Schmiede, Monsterbuch; jede Zeile der Set-Tabellen mitgezählt, nachgezählt am
+23.10.) liegen 208 höchstens 5 Punkte neben den alten; der alte Stand, mit denselben Läufen nachgemessen, trifft
+226 davon. Die übrigen 19 weichen in beide Richtungen ab, darum hilft keine stärkere oder schwächere Regel
+(gemessen mit 80 bis 105 % des Wegs zum Mittelwert):
 
-- **Leichter:** Himmelsarchiv «Gut» in Sets aus Ebene 4 38 / 25 % statt 32 / 18 % (1000 Läufe), mit allen
-  Teilen auf +1 74 statt 62 % (vorsichtig); Sternenschmiede «Stark» auf +2 42 / 57 statt 31 / 40 %, auf +3 klug
-  93 statt 82 % (100 Läufe ebenso 93 statt 81 %), ohne Wege auf +5 59 statt 42 % (klug, 100 Läufe); Morgentor
-  «Gut» in der Morgengabe gierig 51 statt 41 % (200 Läufe; auf dem alten Stand nachgemessen schon 47 %).
+- **Leichter:** Himmelsarchiv «Gut» in Sets aus Ebene 4 38 / 25 % statt 32 / 18 % (1000 Läufe; 200 Läufe klug 26
+  statt 19 %), mit allen Teilen auf +1 74 statt 62 % (vorsichtig); Sternenschmiede «Stark» auf +2 42 / 57 statt
+  31 / 40 %, auf +3 klug 93 statt 82 % (100 Läufe ebenso 93 statt 81 %), ohne Wege auf +5 59 statt 42 % (klug,
+  100 Läufe); Morgentor «Gut» in der Morgengabe gierig 51 statt 41 % (200 Läufe; auf dem alten Stand nachgemessen
+  schon 47 %, das ist der eine Wert, den auch der alte Stand verfehlt).
 - **Schwerer:** Mondhof `mond5` 66 / 20 / 1 % statt 74 / 28 / 2 % (1000 Läufe), mit Lias Schlund-Set auf +4
   vorsichtig 20 statt 34 % (300 Läufe); Himmelsarchiv «Stark» in Sets gierig 37 statt 54 % (Ebene 4) und 68
-  statt 78 % (Hort); Sternenschlund «Stark» im Hort-Set auf +5 klug 12 statt 19 %; Mondhof «Frisch» mit Brom im
-  Pfand-Set auf +2 gierig 84 statt 93 %, dabei 16 % der gierigen Läufe am Rundenlimit (vorher 8 %).
+  statt 78 % (Hort); Himmelsarchiv «Gut» im Hort-Set klug 25 statt 33 % (200 Läufe; mit 1000 Läufen 26 statt
+  30 %); Sternenschlund «Stark» im Hort-Set auf +5 klug 12 statt 19 %; Mondhof «Frisch» mit Brom im Pfand-Set
+  auf +2 gierig 84 statt 93 %, dabei 16 % der gierigen Läufe am Rundenlimit (vorher 8 %).
 - **Drachenhort «Gut»**, 200 Läufe vorsichtig 79 statt 86 %: Mit 1000 Läufen sind es 82 statt 81 %, das
   ist also das Rauschen der ersten 200 Läufe.
 
@@ -216,7 +219,13 @@ Krit wächst jetzt mit (29 und 34 % statt 15 und 20 %), Grimm hat mehr Leben und
 10,4 statt 119 / 18 / 10), Brom weniger Angriff und Verteidigung (12,4 / 12,8 statt 13 / 14), Lia und Sina etwas
 mehr Angriff und weniger Verteidigung (19,2 / 8 und 19,2 / 7 statt 19 / 9 und 19 / 8). Welcher Dungeon davon
 gewinnt, hängt an seinen Kämpfen. Einzeln nachziehen hiesse, Gegner je Dungeon zu ändern; das ist bewusst
-unterblieben und bleibt offen.
+unterblieben. Die Regel für die Helden bleibt, weil sie die beste einheitliche ist: Mit dem vollen Mittelwert
+(100 % statt 90 %) wären die Teams zu stark (Drachenhort «Gut» 95 / 77 / 3 %, Himmelsarchiv «Stark»
+74 / 56 / 2 %, 1000 Läufe).
+
+**Offen (eigener Auftrag, zu entscheiden):** die Feineichung der Gegner einzelner Dungeons nach dem Umbau, vor
+allem Mondhof klug (20 % statt 35 bis 50 %) und Himmelsarchiv «Stark» in Sets gierig (37 statt 54 % in Sets aus
+Ebene 4), dazu die Läufe am Rundenlimit im Sternenschlund (unten, «Zwischen den Sternen»).
 
 ### Zwischen den Sternen (Ebene 7 und 8)
 
@@ -268,7 +277,12 @@ mit Korrunds Set +3 1 / 0 / 0 % und +5 92 / 58 / 3 %.
   etwas mehr als vorher; in der Sternenschmiede auch, weil die Risiken dort Leben kosten (gierig auf +4 48
   statt 68 %), vorsichtig und klug sind dort gleich geblieben.
 - **Nach dem Umbau des Trainings (23.10.2026):** mit 1000 Läufen Korrunds Set auf +4 13 / 1 / 0 %, auf +5
-  89 / 61 / 5 % (vorher 16 / 2 / 0 % und 91 / 62 / 4 %); die Kante an der Meisterset-Schwelle ist dieselbe.
+  89 / 61 / 5 % (vorher 16 / 2 / 0 % und 91 / 62 / 4 %); die Kante an der Meisterset-Schwelle ist dieselbe. Mehr
+  Kämpfe gegen Nyxar dauern aber bis zum Rundenlimit: Auf +5 enden 6 / 10 / 1 % der Läufe dort (vorher
+  4 / 4 / 1 %), auf +4 vorsichtig 20 % (vorher 17 %), und klug fallen nur noch 9 von 608 Siegen vor Nyxars
+  Wut-Runde (vorher 18 von 619). Ein Ziel für das Rundenlimit hat der Sternenschlund nicht. Am Mass aus dem
+  Mondlicht («unter 5 %») lag er auf +4 schon vorher darüber, auf +5 jetzt auch (vorsichtig 6, klug 10 %). Das
+  gehört zur offenen Feineichung der Gegner (oben).
 
 ### Im Mondlicht (Ebene 9 und 10)
 
@@ -375,7 +389,8 @@ der Läufe am Rundenlimit, `pfand3` 94 / 71 / 5 %, Sina in der Morgengabe 100 / 
 - **Morgentor gierig mit der Morgengabe 98 %, nicht «mindestens 40 %»:** erreicht, aber die Sonnenuhr kostet
   diesen Build gar nichts mehr (vorsichtig 100 %, gierig 98 %, Siege zwischen Runde 4 und 10). Der Beweis, dass
   die Sonnenuhr vom Build abhängt, steht: `pfand5` gierig 1 %, `morgen0` gierig 98 %. Seit dem 23.10.: 0 und
-  99 %.
+  99 %. Die 99 % sind keine Folge des Umbaus: Der alte Stand, am 23.10. nachgemessen, ergibt ebenfalls 99 %
+  (986 von 1000).
 
 **Geschichten-Eichung:** `npm run geschichten-eichung -- 100 mondhof` und `-- 100 morgentor` haben nichts zu
 messen, weil beide Geschichten keine eigenen Entscheidungen haben (`wahlen: []`); sie erzählen über die festen

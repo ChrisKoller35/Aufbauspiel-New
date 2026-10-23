@@ -52,7 +52,7 @@ Team bringt (Messung unten, Ziel +2,5 % auf Stufe 12 und +4 % auf Stufe 15; geei
 | Waldläuferin | 🎯 Scharfschützin | Zielt auf den Gegner mit den wenigsten Leben, ihr erster Schuss in jedem Kampf trifft kritisch. Angriffe auf sie treffen mit 35 % Chance einen anderen Helden. Dazu +10 % Krit-Chance. | +15 % Krit-Chance. | 2,0 % | 3,9 % |
 | Waldläuferin | 🐾 Fährtenleserin | Wen sie trifft, der ist markiert: Alle Helden treffen ihn 50 % härter. Fallen machen dem Team nur halben Schaden. | 55 % härter. | 2,1 % | 4,2 % |
 | Kleriker | ✨ Lichtbringer | Alle 4 Runden heilt er den Verbündeten, dem es am schlechtesten geht, um 4 % von dessen vollem Leben. | Alle 3 Runden, 6 % des vollen Lebens. | 2,5 % | 4,7 % |
-| Kleriker | ⚒️ Kriegspriester | Solange er steht, hat das ganze Team +1 Verteidigung. | +2 Verteidigung. | 0,7 % | 2,6 % |
+| Kleriker | ⚒️ Kriegspriester | Solange er steht, hat das ganze Team +1 Angriff und +1 Verteidigung. | +2 Verteidigung. | 2,8 % | 4,2 % |
 | Berserker | 🔥 Zorn | Jeder eigene Treffer gibt +1 Angriff bis Kampfende, höchstens +6. | +3 Angriff je Treffer, höchstens +12. | 3,5 % | 3,7 % |
 | Berserker | 🪓 Schlächter | Jeder Treffer trifft auch alle anderen Gegner mit 50 % des Schadens. | 75 % des Schadens. | 2,4 % | 4,3 % |
 | Assassine | 🗡️ Meuchlerin | Gegner mit weniger als 50 % Leben erleiden von ihr 30 % mehr Schaden. | Schon unter 60 % Leben, 2,5-facher Schaden. | 3,0 % | 3,4 % |
@@ -72,11 +72,16 @@ Vorher (nach Manager #43 und #44, vor dieser Eichung) reichten die Wege auf Stuf
 bis 5,7 % (Meuchlerin, Schattentänzerin) und auf Stufe 15 von −0,7 % (Bärengestalt) bis 9,3 % (Kreuzritter).
 Nach der Eichung (21.10.) lagen alle 40 Werte im Band Ziel ±1: Stufe 12 von 1,7 bis 3,0 %, Stufe 15 von 3,3
 bis 5,0 %. Seit dem 23.10. haben die Musterhelden die Werte echter Helden (mehr Krit für Waldläuferin,
-Assassine und Hexe, Tempo für Kleriker, Bardin und Druidin, Angriff und Verteidigung etwas anders verteilt), und
-37 der 40 Werte liegen im Band: Stufe 12 von 0,7 bis 3,5 %, Stufe 15 von 2,6 bis 4,7 %. Der Kriegspriester fällt mit
-0,7 und 2,6 % heraus (am 21.10. 2,3 und 3,3 %; auf dem alten Stand mit denselben 400 Läufen nachgemessen 2,5
-und 3,3 %), Zorn liegt auf Stufe 12 mit 3,5 % knapp darüber. Nachgeeicht sind die Wege danach nicht; das ist
-offen.
+Assassine und Hexe, Tempo für Kleriker, Bardin und Druidin, Angriff und Verteidigung etwas anders verteilt,
+`docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»). Damit fiel der Kriegspriester aus dem Band: Mit +1 / +2
+Verteidigung allein brachte er nur noch 0,7 und 2,6 % (800 Läufe: 0,9 und 2,6 %; der alte Stand mit denselben
+Läufen 2,5 und 3,3 %). Die Schadensformel zieht 70 % der Verteidigung abgerundet ab, und bei den Zehntel-Werten
+der echten Helden spart +1 Verteidigung nicht jedem etwas, dem Kriegspriester selbst auf Stufe 12 gar nichts
+(mit Ausrüstung 16,1 statt 17 Verteidigung). Darum gibt sein Segen seit dem 23.10. dazu +1 Angriff, auch als
+Meister: 2,8 und 4,2 % (800 Läufe: 2,9 und 4,2 %). Gemessen wurde auch +2 / +3 Verteidigung ohne Angriff: 3,1
+und 4,3 %, weiter weg vom Ziel. Danach liegen 39 der 40 Werte im Band: Stufe 12 von 2,0 bis 3,1 %, Stufe 15
+von 3,1 bis 4,7 %. Nur Zorn liegt auf Stufe 12 mit 3,5 % knapp darüber (800 Läufe: 3,6 %; am 21.10. 2,8 %,
+siehe «Offen»).
 
 **Die Bärin bleibt Druidin, wenn es eng wird.** Fällt sie unter die Hälfte ihrer Leben, endet die
 Bärengestalt sofort (Kampfprotokoll «★ … wird wieder Druidin»), und mit weniger als der Hälfte nimmt sie
@@ -124,14 +129,19 @@ damit kein Weg an einem einzelnen Dungeon hängt:
   genau 3,7 %). Darum rundet jeder Lauf mit einem eigenen festen Rest, mit und ohne Weg derselbe.
 
 **Ziel** +2,5 % auf Stufe 12 und +4 % auf Stufe 15. Das Messrauschen liegt mit 400 Läufen bei etwa ±1 %. Am
-21.10. lagen alle 40 Werte in diesem Band, seit dem 23.10. 37 (Tabelle oben): Der Kriegspriester liegt
-darunter, Zorn auf Stufe 12 knapp darüber. Knapp am Rand: Bärengestalt auf Stufe 15 (3,1 %).
+21.10. lagen alle 40 Werte in diesem Band, seit dem 23.10. 39 (Tabelle oben): Zorn liegt auf Stufe 12 knapp
+darüber (3,5 %, mit 800 Läufen 3,6 %). Knapp am Rand: Bärengestalt auf Stufe 15 (3,1 %).
 
 **So wurde geeicht (21.10.2026).** Zuerst jeder Weg einzeln mit Varianten seiner Zahlen (drei Runden, bis 400
 Läufe je Messpunkt), dann die ganze Tabelle mit `npm run weg-eichung -- 400`. Regeln dabei: Der Meister ist nie
 schwächer als der Weg ab Stufe 10 und ändert immer etwas (Test «Meister-Regeln»), und im Text stehen keine
 halben Prozente. Wo das Team «gut» weniger von einem Weg hat als «stark» (Waldläuferin, Heilung, Fallen),
 liegt Stufe 12 am unteren und Stufe 15 am oberen Rand des Bands.
+
+**Nachgeeicht am 23.10.2026,** nachdem die Musterhelden die Werte echter Helden bekamen: nur der Kriegspriester
+(+1 Angriff zum Segen, oben), gemessen mit `npm run weg-eichung -- 400 cleric_kriegspriester` und mit 800
+Läufen gegengeprüft, danach die ganze Tabelle mit `npm run weg-eichung -- 400`. Die übrigen 19 Wege sind
+unverändert; ihre Werte in der Tabelle sind die Messung vom 23.10.
 
 **Musterteams mit ihren Wegen** (`npm run weg-eichung -- 400 teams`): «gut» ist im Drachenhort 8,9 % und im
 Himmelsarchiv 10,5 % stärker als ohne Wege, «stark» 15,1 % und 16,7 % (Stand 23.10.2026; am 21.10. 8,2,
@@ -169,9 +179,14 @@ Startwerte); Zahlen in `docs/NEUE-DUNGEONS.md` («Eichung»).
 
 ## Offen
 
-- **Waldläuferin auf Stufe 12 am unteren Rand.** Beide Wege bringen dem Team «gut» 1,7 %. Stärker machen
-  hebt Stufe 15 über das Band (dort 4,4 und 5,0 %). Eine Idee für später: Die Fährtenleserin markiert zuerst
-  den Gegner, den das Team gerade angreift, dann trifft ihr Bonus öfter.
+- **Zorn auf Stufe 12 knapp über dem Band** (3,5 %, mit 800 Läufen 3,6 %; Ziel 2,5 ± 1, am 21.10. 2,8 %). Er
+  stieg mit den Werten echter Helden (Grimm auf Stufe 12 117 / 14,7 / 8,6 statt 112 / 15 / 9), am Weg selbst
+  hat sich nichts geändert. Zorn ist Grimms Weg in allen drei Musterteams: Wer ihn schwächer macht, verschiebt
+  die ganze Dungeon-Eichung (`docs/NEUE-DUNGEONS.md`). Darum bleibt er, bis die Gegner ohnehin nachgeeicht
+  werden (dort «Offen»); dann Zorn ab Stufe 10 etwa mit höchstens +5 statt +6 messen.
+- **Waldläuferin auf Stufe 12 im unteren Teil des Bands.** Beide Wege bringen dem Team «gut» 2,0 und 2,1 %
+  (am 21.10. je 1,7 %), auf Stufe 15 3,9 und 4,2 % (am 21.10. 4,4 und 5,0 %). Eine Idee für später: Die
+  Fährtenleserin markiert zuerst den Gegner, den das Team gerade angreift, dann trifft ihr Bonus öfter.
 - **Bilanz der Phalanx** zählt den verteilten Schild, nicht, wie viel davon wirklich Schaden abgehalten hat.
   Genauer ginge es mit einem Zähler dort, wo ein Treffer den Schild aufbraucht (`schild` an `CombatUnit`).
 - **Echte Spieler** nutzen Fähigkeiten vor dem Kampf und andere Wege als die Musterteams. Wenn Christoph

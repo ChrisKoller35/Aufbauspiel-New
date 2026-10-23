@@ -37,27 +37,29 @@ Stile in `src/ui/html/ausbildung.css`. Tests: `tests/heldenAusbildung.test.ts`.
 ### Werte auf Stufe 15, vorher / nachher
 
 Ein Held von Stufe 1 bis 15 nur mit Training. «Vorher» ist das alte Training, «nachher» das neue; das neue
-ergibt genau dieselben Werte wie dieselbe XP aus Expeditionen. Spalten: Leben / Angriff / Verteidigung,
-dazu Krit-Chance und Tempo, wo die Klasse sie steigert. Weg-Werte kommen bei beiden gleich dazu und
-stehen nicht in der Tabelle.
+ergibt genau dieselben Werte wie dieselbe XP aus Expeditionen. «Nachher» gilt mit den Klassen-Boni seit dem
+23.10.2026; die Werte mit den Boni bis zum 22.10. stehen unten in «Eichung nach dem Umbau». Spalten: Leben /
+Angriff / Verteidigung, dazu Krit-Chance und Tempo, wo die Klasse sie steigert. Weg-Werte kommen bei beiden
+gleich dazu und stehen nicht in der Tabelle.
 
 | Klasse | Stufe 1 | Training vorher | Training nachher |
 |---|---|---|---|
-| Guardian | 70 / 4 / 3 | 98 / 18 / 17 | 126 / 8,2 / 10 |
-| Ranger | 50 / 8 / 1, Krit 15 % | 78 / 22 / 15, Krit 15 % | 78 / 16,4 / 2,4, Krit 29 % |
-| Cleric | 55 / 3 / 1,5, Tempo 0,9 | 83 / 17 / 15,5, Tempo 0,9 | 97 / 5,8 / 5,7, Tempo 1,18 |
-| Berserker | 84 / 7 / 2 | 112 / 21 / 16 | 126 / 14 / 4,8 |
-| Assassine | 54 / 8 / 0, Krit 20 % | 82 / 22 / 14, Krit 20 % | 82 / 16,4 / 1,4, Krit 34 % |
-| Paladin | 40 / 4 / 2,5 | 68 / 18 / 16,5 | 96 / 8,2 / 8,1 |
-| Barde | 60 / 3 / 1, Tempo 1,1 | 88 / 17 / 15, Tempo 1,1 | 88 / 5,8 / 3,8, Tempo 1,38 |
-| Hexe | 57 / 5 / 0, Krit 8 % | 85 / 19 / 14, Krit 8 % | 85 / 10,6 / 1,4, Krit 22 % |
-| Nekromant | 60 / 4 / 1 | 88 / 18 / 15 | 88 / 9,3 / 3,8 |
-| Druide | 75 / 4 / 2, Tempo 1,0 | 103 / 18 / 16, Tempo 1,0 | 117 / 8,2 / 6,2, Tempo 1,14 |
+| Guardian | 70 / 4 / 3 | 98 / 18 / 17 | 112 / 12,4 / 12,8 |
+| Ranger | 50 / 8 / 1, Krit 15 % | 78 / 22 / 15, Krit 15 % | 78 / 19,2 / 8, Krit 29 % |
+| Cleric | 55 / 3 / 1,5, Tempo 0,9 | 83 / 17 / 15,5, Tempo 0,9 | 97 / 11,4 / 9,9, Tempo 1,18 |
+| Berserker | 84 / 7 / 2 | 112 / 21 / 16 | 126 / 16,8 / 10,4 |
+| Assassine | 54 / 8 / 0, Krit 20 % | 82 / 22 / 14, Krit 20 % | 82 / 19,2 / 7, Krit 34 % |
+| Paladin | 40 / 4 / 2,5 | 68 / 18 / 16,5 | 82 / 12,4 / 12,3 |
+| Barde | 60 / 3 / 1, Tempo 1,1 | 88 / 17 / 15, Tempo 1,1 | 88 / 11,4 / 9,4, Tempo 1,38 |
+| Hexe | 57 / 5 / 0, Krit 8 % | 85 / 19 / 14, Krit 8 % | 85 / 14,8 / 7, Krit 22 % |
+| Nekromant | 60 / 4 / 1 | 88 / 18 / 15 | 88 / 12,4 / 9,4 |
+| Druide | 75 / 4 / 2, Tempo 1,0 | 103 / 18 / 16, Tempo 1,0 | 117 / 12,4 / 10,4, Tempo 1,14 |
 
-Vorher kaufte Gold also bessere Helden als das Spielen: Jede Klasse hatte nach reinem Training mehr
-Angriff (Ranger 22 statt 16,4, Cleric 17 statt 5,8) und mehr Verteidigung (Ranger 15 statt 2,4) als
-über Expeditionen. Dafür fehlten Krit und Tempo, und fünf Klassen hatten weniger Leben. Jetzt spart
-Training nur Zeit, die Werte sind dieselben.
+Vorher kaufte Gold also bessere Helden als das Spielen: Jede Klasse hatte nach dem alten Training mehr Angriff
+und Verteidigung, als sie heute über Expeditionen bekommt (Ranger 22 / 15 statt 19,2 / 8, Cleric 17 Angriff
+statt 11,4); mit den Boni bis zum 22.10. war der Abstand noch grösser (Ranger 16,4 / 2,4, Cleric 5,8). Dafür
+fehlten Krit und Tempo, und fünf Klassen hatten weniger Leben. Jetzt spart Training nur Zeit, die Werte sind
+dieselben.
 
 ## Lehrbuch
 
@@ -140,12 +142,16 @@ und 9. Mit echten Helden gemessen waren die obersten Dungeons kaum zu schaffen (
   jede Klasse auf Stufe 1 bis 15 gleich, dazu für den Musterlauf und jedes Probespiel (`?probe`, `?probe=sterne`,
   `=mond`, `=morgen`; `tests/heldenAusbildung.test.ts`).
 - **Die Gegner blieben, wie sie waren.**
+- **Der Kriegspriester** gibt dem Team zur Verteidigung jetzt auch +1 Angriff, als Meister ebenso
+  (`src/data/spezialisierungen.ts`). Mit Verteidigung allein fiel er mit den Werten echter Helden aus dem Band
+  der Wege (`docs/SPEZIALISIERUNG.md`).
 - **Alte Spielstände werden nicht umgerechnet.** Wer schon aufgestiegen ist, behält seine Werte, jeder neue
   Aufstieg bringt die neuen Boni. Ein Guardian, der mit den Boni bis zum 22.10. Stufe 15 erreicht hat, hat also
   126 / 8,2 / 10 statt 112 / 12,4 / 12,8, ein Ranger 78 / 16,4 / 2,4 statt 78 / 19,2 / 8. Wer mit dem alten
   Training aufgestiegen ist, behält dessen pauschale Werte (siehe «Training»).
-- Die Tabelle «Werte auf Stufe 15, vorher / nachher» weiter oben zeigt in der Spalte «Training nachher» noch die
-  Boni bis zum 22.10.; die Werte seit dem 23.10. stehen in der Tabelle hier.
+- Die Tabelle «Werte auf Stufe 15, vorher / nachher» weiter oben zeigt in der Spalte «Training nachher» die
+  Werte mit den neuen Boni (Test «Tabelle «Training vorher / nachher»»); die Werte bis zum 22.10. stehen in der
+  Tabelle hier.
 - Im Heldenfenster rundet der Anteil der Ausrüstung an Angriff und Verteidigung auf Zehntel. Mit Zehnteln in
   den Grundwerten zeigte er sonst Rundungsrauschen (ATK 24.6 +14.000000000000002).
 
@@ -168,6 +174,14 @@ Verteidigung, dazu Krit-Chance und Tempo, wo die Klasse sie steigert):
 
 Guardian und Paladin verlieren auf Stufe 15 je 14 Leben und gewinnen Angriff und Verteidigung, die übrigen
 behalten ihre Leben. Jede Klasse hat jetzt deutlich mehr Verteidigung als bis zum 22.10. (Ranger 8 statt 2,4).
+
+**Das Profil der Tanks wird flacher.** Die eine Regel rückt die Boni aller Klassen ein Stück zum pauschalen
+alten Training hin (+1 Angriff, +1 Verteidigung je Stufe), die Klassen werden sich ähnlicher. Auf Stufe 15 hat
+der Guardian (112 / 12,4 / 12,8) nur noch 2,4 Verteidigung mehr als der Berserker (126 / 16,8 / 10,4), und der
+Berserker hat 14 Leben mehr. Bis zum 22.10. waren es bei echten Helden 5,2 Verteidigung (10 gegen 4,8) bei
+gleichen Leben, in der alten Eichung 4 (14 gegen 10). Für diese Eichung bleibt das so, weil eine Regel für alle
+Klassen gelten sollte. **Offen:** die Tank-Rolle bei der nächsten Abstimmung der Klassen prüfen, etwa
+Guardian-Verteidigung 0,8 statt 0,7 je Stufe, und danach neu eichen.
 
 **Guardian und Ranger auf Stufe 1, 5, 10 und 15** (Leben / Angriff / Verteidigung):
 
@@ -194,14 +208,16 @@ vermerkt; die Gegner sind in allen drei Spalten dieselben):
 | Sternenschlund, «Stark», Korrunds Set auf +5 | 91 / 62 / 4 % | 9 / 3 / 0 % | 89 / 61 / 5 % |
 | Mondhof, «Stark», `mond5` | 74 / 28 / 2 % | 0 / 0 / 0 % | 66 / 20 / 1 % |
 | Morgentor, «Stark», `pfand5` | 69 / 50 / 1 % | 4 / 0 / 0 % | 69 / 52 / 0 % |
-| Morgentor, «Stark», `morgen0` | 100 / 100 / 98 % | 100 / 99 / 91 % | 100 / 100 / 99 % |
+| Morgentor, «Stark», `morgen0` | 100 / 100 / 98 % (nachgemessen 99 %) | 100 / 99 / 91 % | 100 / 100 / 99 % |
 
-Insgesamt: Von 174 Messwerten aus den Eichungs-Dokus, die in beiden Messungen vorkommen, lagen mit echten
-Helden und den Boni bis zum 22.10. 76 mehr als 5 Punkte neben den Doku-Werten, seit dem 23.10. sind es 15 (von
-allen 197 Werten 17). Welche das sind und in welche Richtung sie abweichen, steht in `docs/NEUE-DUNGEONS.md`,
-«Nach dem Umbau des Trainings neu gemessen»; die übrigen Dokus (Sets, Schmiede, Wege, Geschichten, Rangliste)
-sind mit Datum nachgeführt. Die Wege liegen danach zu 37 von 40 Werten im Band, der Kriegspriester darunter
-(`docs/SPEZIALISIERUNG.md`); die Geschichten blieben alle im Ziel.
+Insgesamt: Von 227 Messwerten aus den Eichungs-Dokus (alle Zeilen der Dungeon-, Set-, Schmiede- und
+Monsterbuch-Tabellen, nachgezählt am 23.10.) lagen mit echten Helden und den Boni bis zum 22.10. 85 mehr als
+5 Punkte neben den Doku-Werten, seit dem 23.10. sind es 19; der alte Stand, mit denselben Läufen nachgemessen,
+verfehlt einen. Welche das sind und in welche Richtung sie abweichen, steht in `docs/NEUE-DUNGEONS.md`, «Nach dem
+Umbau des Trainings neu gemessen»; die übrigen Dokus (Sets, Schmiede, Fundbuch, Wege, Geschichten, Rangliste)
+sind mit Datum nachgeführt. Bei den Wegen fielen der Kriegspriester (darunter) und Zorn auf Stufe 12 (knapp
+darüber) aus dem Band; mit +1 Angriff zum Segen des Kriegspriesters (oben) liegen 39 von 40 Werten im Band,
+Zorn ist offen (`docs/SPEZIALISIERUNG.md`). Die Geschichten blieben alle im Ziel.
 
 **Annahme:** Die Regel (90 % des Wegs zum Mittelwert, nächster Wert auf dem Raster) ist eine Annahme. Gemessen
 wurden Anteile von 80 bis 105 % mit verschiedenen Rundungen, gegen die Eichung bis zum 22.10. (nachgemessen auf
