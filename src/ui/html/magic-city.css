@@ -46,17 +46,42 @@ body {
   background: var(--s1); border-bottom: 1px solid var(--bdr);
   gap: 14px; flex-shrink: 0; min-height: 52px;
 }
-.hdr-logo { font-family: 'Cinzel Decorative', serif; font-size: 1rem; color: var(--gold); letter-spacing: 2px; }
+/* Die Kopfzeile bleibt gleich hoch, egal wie viele neue Erfolge 🏅 zeigt und ob ein Hinweis steht. In einer
+   Zeile (über 700 px) brechen Logo, «← Zurück» und die Vorräte nie um und werden nie schmaler: Fehlt Platz,
+   endet der Name des Bildschirms mit «…», und ein Hinweis steht auf höchstens zwei Zeilen (erfolge.css). */
+.hdr-logo { font-family: 'Cinzel Decorative', serif; font-size: 1rem; color: var(--gold); letter-spacing: 2px; white-space: nowrap; flex-shrink: 0; }
+.hdr .hdr-back { white-space: nowrap; flex-shrink: 0; }
 .hdr-sep { color: var(--bdr); margin: 0 2px; }
-.hdr-cur { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--mut); letter-spacing: 1px; }
+.hdr-cur {
+  font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--mut); letter-spacing: 1px;
+  min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
 .hdr-space { flex: 1; }
-.res { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+.res { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; flex-shrink: 0; }
 .res span { font-family: 'Cinzel', serif; font-size: 0.75rem; color: var(--gold); white-space: nowrap; }
-/* Handy: Kopfzeile in zwei Zeilen statt einer hohen Spalte */
+/* Handy: Kopfzeile in zwei Zeilen statt einer hohen Spalte. In der ersten Zeile füllt das Logo den Platz
+   zwischen «← Zurück» und 🏅 (statt .hdr-space). Es zählt beim Umbrechen nicht mit (flex-basis 0) und
+   kann 🏅 so nie in eine eigene Zeile schieben. Neben «← Zurück» ist es auf schmalen Handys kleiner, damit
+   es auch neben einer dreistelligen Zahl ganz bleibt (mit den Web-Schriften 149 px, darunter 122 und
+   100 px breit); reicht der Platz trotzdem nicht, endet es mit «…». */
 @media (max-width: 700px) {
   .hdr { flex-wrap: wrap; row-gap: 6px; padding-left: 10px; padding-right: 10px; }
-  .hdr-sep, .hdr-cur { display: none; }
+  .hdr-sep, .hdr-cur, .hdr-space { display: none; }
+  .hdr-logo { flex: 1 1 0; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .hdr .res { flex-basis: 100%; justify-content: flex-start; gap: 8px; }
+}
+@media (max-width: 374px) {
+  .hdr-back ~ .hdr-logo { font-size: 0.875rem; letter-spacing: 1px; }
+}
+@media (max-width: 339px) {
+  .hdr-back ~ .hdr-logo { font-size: 0.75rem; letter-spacing: 0.5px; }
+}
+/* Handy quer, Tablet und schmales Fenster (701 bis 1000 px): Alles steht in einer Zeile. Mit etwas weniger
+   Abstand und dem kleineren Logo neben «← Zurück» hat der Name des Bildschirms meist ganz Platz. */
+@media (min-width: 701px) and (max-width: 1000px) {
+  .hdr { gap: 10px; }
+  .res { gap: 8px; }
+  .hdr-back ~ .hdr-logo { font-size: 0.875rem; letter-spacing: 1px; }
 }
 
 /* ── Buttons ── */

@@ -39,9 +39,18 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   bei den freigeschalteten, leuchtet kurz auf und gilt als angeschaut.
 - «Zurück» führt dorthin, woher der Spieler kam (Hauptmenü, Gildenhaus, Monsterbuch …), einen
   Schritt zurück im Verlauf (`ScreenRouter.goBack`), ohne Hin und Her zwischen zwei Bildschirmen.
-- Am Handy ist der Knopf mindestens 44 px gross. Der Hinweis steht dort an der Stelle des Logos
-  (`.hdr-mit-hinweis` in `erfolge.css`), höchstens zwei Zeilen: Die Kopfzeile wird nicht höher,
-  der Knopf bleibt, wo er ist.
+- Am Handy ist der Knopf mindestens 44 px gross. Bis 1000 px Breite (Handy hoch und quer, Tablet)
+  steht der Hinweis an der Stelle von Logo und Bildschirm-Name (`.hdr-mit-hinweis` in `erfolge.css`),
+  auf breiteren Bildschirmen daneben. Er nimmt nur den freien Platz der Zeile und steht auf höchstens
+  zwei Zeilen: Die Kopfzeile wird nicht höher, der Knopf bleibt, wo er ist.
+- Auch die Zahl am Knopf ändert die Höhe nicht. Am Handy füllt das Logo die erste Zeile zwischen
+  «← Zurück» und 🏅 und zählt beim Umbrechen nicht mit; neben «← Zurück» ist es unter 375 px kleiner
+  (unter 340 px noch kleiner), notfalls endet es mit «…» (`magic-city.css`, Abschnitt Header). Am PC
+  brechen Logo, «← Zurück» und Vorräte nie um, bei Platzmangel endet der Bildschirm-Name mit «…».
+  Gemessen mit den Web-Schriften, mit 0, 9, 25 und 125 neuen Erfolgen, ohne, mit kurzem und mit
+  langem Hinweis: 79 px hoch bei 320, 360, 375 und 390 px, 65 px quer (844 × 390) und am Tablet
+  (768 × 1024), 53 px am PC (760, 1024 und 1400 px breit). Früher sprang sie bei 320 und 360 px
+  von 79 auf 121 px, sobald der Hinweis verschwand.
 
 ## Während einer Expedition
 

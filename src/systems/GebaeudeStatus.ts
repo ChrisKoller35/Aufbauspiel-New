@@ -12,6 +12,7 @@ import { ITEM_DEFS } from '../data/items';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 import { zyklusSekunden, stufeVon } from './Ausbau';
+import { anzahlText } from '../utils/Anzahl';
 import { hatAuftragsliste, rezeptFuer } from './Auftraege';
 import { planeZyklus, naechsterBedarf, zulieferBedarf, fehlendeZutaten, laufendVonSelbst, vonSelbstText } from './Werkstattplan';
 
@@ -217,7 +218,7 @@ function statusOhneRezept(state: GameState, typeId: string, b: BuildingInstance)
   const basis = { typeId, anzahl: 1, stufe: stufeVon(b), fortschritt: null };
   if (typeId === 'HAENDLER') return { ...basis, zustand: 'offen', text: 'Kauft und verkauft.' };
   if (BUILDING_DEFS[typeId]?.expeditions) {
-    return { ...basis, zustand: 'bereit', text: `${state.fighters.length} Helden in der Gilde` };
+    return { ...basis, zustand: 'bereit', text: `${anzahlText(state.fighters.length, 'Held', 'Helden')} in der Gilde` };
   }
   return { ...basis, zustand: 'bereit', text: 'gebaut' };
 }

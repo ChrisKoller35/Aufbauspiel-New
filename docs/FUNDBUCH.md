@@ -33,10 +33,20 @@ aus seiner Tabelle, meist einen Gegenstand.** Gezogen wird gewichtet, die Menge 
 Im Fenster steht je Dungeon eine Kopfzeile mit Link und Ø, darunter seine Gegner mit Anzahl, Chance und Menge,
 z. B. «Die Festung · Ø 24,7 je Sieg» und darunter «Armbrustschütze (5×) · 45 % je Sieg über ihn · 2–5 Stück».
 Der Auftrag (Issue #63) wollte je Gegner eine Zeile «‹Gegner› · P % je Sieg über ihn · Ø X je Sieg in ‹Dungeon›».
-So gebaut (23.10.2026) stand der Dungeon-Link in jeder Zeile, und weil Links am Handy 44 px hoch sind, wurde
-Eisenschrott dort 9120 statt 5209 px lang (113 statt 35 Links); darum bleibt es bei der Kopfzeile je Dungeon.
-Zahlen haben ein Komma; nach «Ø» und vor «%» steht ein geschütztes Leerzeichen, damit am Handy keine Zahl ohne ihr
-Zeichen auf die nächste Zeile rutscht.
+So gebaut (23.10.2026) stand der Dungeon-Link in jeder Zeile, und Links sind am Handy 44 px hoch. Eisenschrott bei
+390 × 844 px (Handy, Schriften geladen, nachgemessen am 23.10.2026): Der Eintrag selbst (`article.fb-eintrag`) ist
+in der Zeilenform 8620 px hoch, mit der Kopfzeile je Dungeon 5230 px. Das ganze Fenster, das am Handy als Ganzes
+scrollt (`scrollHeight` von `.fb-fenster`, mit Titel, Suchfeld und Liste über dem Eintrag), misst 9087 statt
+5697 px. Links im Eintrag: 113 statt 35 (unter «Woher» 100 statt 22, einer je Gegnerzeile bzw. je Dungeon; dazu
+13 unter «Wofür»). Darum bleibt es bei der Kopfzeile je Dungeon.
+
+Zahlen haben ein Komma. Eine Zahl bleibt am Handy mit ihrem Zeichen oder ihrer Einheit auf einer Zeile: Nach «Ø»,
+vor «%», «Stück» und «Gold», in «Raum 3», «Stufe 2», «Ebene 4», «2 je Durchgang» und «höchstens 2 Käufe»
+steht ein geschütztes Leerzeichen, nach dem Strich eines Bereichs («2–5 Stück») ein unsichtbarer Wortverbinder
+(U+2060), denn auch nach «–» bräche die Zeile sonst um. In «3 / 6 / 12 Stück» hängt «/» an der Zahl davor. Bis
+23.10.2026 brach bei 360 px an 71 von 1278 Stellen «Zahl Stück/Gold» die Zeile zwischen Zahl und Einheit um (bei
+390 px an 47); jetzt an keiner, geprüft in allen 71 Einträgen und 29 Dungeon-Seiten bei 360 × 780, 390 × 844
+und quer bei 844 × 390 px.
 
 Weitere Quellen:
 
@@ -72,8 +82,20 @@ Gegner (Ø je Sieg je Gegenstand), ein Klick auf einen Gegenstand seinen Eintrag
 Dungeons, die die Gilde noch nicht betreten darf (`isRouteAvailable`), stehen mit «🔒» und ihrem Namen da, damit
 man ein Ziel hat.
 
-**Bedienung:** Am PC schliessen Escape, ✕ und ein Klick neben das Fenster; Tab bleibt im Fenster, auch vom
-Suchfeld aus. Nach einem Sprung über einen Link steht der Fokus auf «← zurück», nach «← zurück» wieder auf dem
+**Bedienung:** Ohne Wunsch (so öffnet es das Hauptmenü) beginnt das Fundbuch beim ersten Eintrag der Liste, den
+die Gilde jetzt schon bekommen kann (`startEintrag`); mit Wunsch bei genau diesem Eintrag. Die Reihe ist die der
+Liste: die Gruppen wie oben (Materialien, Tränke und Proviant, Ausrüstung, Sonstiges), darin alphabetisch. Bekommen
+kann die Gilde, was der Händler der Stadt verkauft oder was in einem Dungeon liegt, den sie schon betreten darf
+(`isRouteAvailable`: Gildenrang und verlangte Bosse): Beute der Gegner, ein Fund-Raum, die Erstsieg-Beute, das
+Schmiede-Material je Sieg, Kräuter am Rastplatz. Nicht mit zählen Werkstätten (sie brauchen Gebäude und Zutaten),
+der Dungeon-Händler (nur im Sumpfdorf) und das Einschmelzen (es braucht ein doppeltes Set-Teil, und sein Dungeon
+bringt dasselbe Material ohnehin je Sieg), ebenso alles aus gesperrten Dungeons. Ein neues Spiel beginnt so bei
+Eisenschrott, denn Drachenschuppe und Eisblüte davor gibt es nur in gesperrten Dungeons; im Probespiel, in dem der
+Drachenhort schon offen ist, bei Drachenschuppe. Wäre nichts erreichbar, käme der erste Eintrag der Liste; im Spiel
+kommt das nicht vor, der Händler verkauft immer Brot. Die Tests dazu stehen unter «Gegenprobe».
+
+Am PC schliessen Escape, ✕ und ein Klick neben das Fenster; Tab bleibt im Fenster, auch vom Suchfeld aus.
+Nach einem Sprung über einen Link steht der Fokus auf «← zurück», nach «← zurück» wieder auf dem
 Link, über den man gegangen war. F5 speichert wie überall im Spiel, auch im Suchfeld (`main.ts`). Der zweite Klick
 eines Doppelklicks (am Handy eines Doppeltipps) geht ins Leere (`schluckeZweitenKlick`): auf «📜 Fundbuch», weil
 er sonst schon das offene Fenster träfe, und auf einem Link, «← zurück» oder einem Listeneintrag, weil er sonst
@@ -120,6 +142,18 @@ mehr als Eintrag oder Gruppe auftaucht und der Reiter «Aufbau» keinen «Wo?»-
   Räumen, die `startExpedition` baut, 60-mal mit `processRest` besucht: Kommt ein Gegenstand dort mal und mal
   nicht, ist es die Zufallswahl. Genau diese Rastplätze nennt das Fundbuch, bei jedem Eintrag; zurzeit bietet ein
   Rastplatz nur Grüne Kräuter an.
+- **Fenster (HTML ohne Browser):** Unter «Woher» hat jeder Dungeon genau eine Kopfzeile mit seinem Link und genau
+  einem «Ø»; die Gegnerzeilen darunter haben weder Link noch «Ø». In allen Einträgen steht zwischen Zahl und
+  «Stück» bzw. «Gold» ein geschütztes Leerzeichen und in Bereichen nach «–» der Wortverbinder. Der Händler der
+  Stadt nennt den Preis der eigenen Stadtstufe.
+- **Start beim Öffnen:** neues Spiel Eisenschrott; alle Dungeons offen Drachenschuppe (der erste Eintrag); alle
+  Dungeons zu (künstlich, Gildenrang 0) Brot, die erste Ware des Händlers, obwohl davor Magitech-Komponente
+  (Werkstatt) und Drachenschuppe (Einschmelzen) stehen; ein Angebot des Dungeon-Händlers ändert nichts. Jedes Mal
+  ist alles davor in der Liste nicht erreichbar. Mutationsproben in einer Kopie (letzter statt erster
+  erreichbarer, alphabetisch statt Listenreihe, Händler zählt nicht, Werkstätten oder Dungeon-Händler zählen, «Ø»
+  wieder in jeder Gegnerzeile, Händlerpreis immer Stufe 1, normales Leerzeichen vor «Stück»/«Gold», kein
+  Wortverbinder) machen je mindestens einen Test rot. «Einschmelzen zählt» bliebe grün: Mit den heutigen Daten
+  ändert es nichts, weil jeder Dungeon sein Material ohnehin je Sieg bringt.
 - **Schmiede:** «Jeder Sieg» ist je Dungeon genau die Menge, die `schmiedeBeute` nach einem Sieg in die Truhe legt
   (Sternenstahl: Sternenschlund 10, Sternenschmiede 9; Mondsilber: Morgentor 12, Mondhof 11), und jedes solche
   Material ist ein Eintrag. «Einschmelzen» nennt bei jedem Eintrag genau die Sets, deren Teile beim Einschmelzen

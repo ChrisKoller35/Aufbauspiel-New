@@ -20,17 +20,26 @@
 }
 
 /* Handy: Knopf bleibt oben rechts, die Vorräte rutschen in die zweite Zeile. Der Knopf ragt je 4 px
-   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. Ein Hinweis (zeigeKopfHinweis)
-   steht an der Stelle des Logos, auf höchstens zwei Zeilen: Die Kopfzeile wird nicht höher, der Knopf bleibt. */
+   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. */
 @media (max-width: 700px) {
   .hdr .res { order: 2; }
   .hdr-erfolge { margin-top: -4px; margin-bottom: -4px; }
+}
+
+/* Ein Hinweis (zeigeKopfHinweis) nimmt nur den freien Platz der Zeile (statt .hdr-space) und steht auf
+   höchstens zwei Zeilen: Die Kopfzeile wird nicht höher, kein Knopf rutscht weg, nichts anderes wird gekürzt.
+   Bis 1000 px Breite (Handy hoch und quer, Tablet, schmales Fenster) steht er an der Stelle von Logo und
+   Bildschirm-Name und hat so genug Platz, auf breiteren Bildschirmen wie bisher daneben. */
+.hdr .hdr-note {
+  flex: 1 1 0; min-width: 0; overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+}
+.hdr.hdr-mit-hinweis .hdr-space { display: none; }
+@media (max-width: 1000px) {
   .hdr.hdr-mit-hinweis .hdr-logo,
-  .hdr.hdr-mit-hinweis .hdr-space { display: none; }
-  .hdr .hdr-note {
-    flex: 1 1 0; min-width: 0; margin-left: 0; line-height: 1.3;
-    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
-  }
+  .hdr.hdr-mit-hinweis .hdr-sep,
+  .hdr.hdr-mit-hinweis .hdr-cur { display: none; }
+  .hdr .hdr-note { margin-left: 0; line-height: 1.3; }
 }
 
 /* ── Bildschirm ── */

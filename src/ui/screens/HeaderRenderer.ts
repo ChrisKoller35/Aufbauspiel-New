@@ -17,8 +17,9 @@ let letzterHinweis = { text: '', zeit: 0, ende: 0 };
 
 /**
  * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup), nach `dauerMs`
- * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Am Handy steht er an der
- * Stelle des Logos (erfolge.css, .hdr-mit-hinweis): Die Kopfzeile wird nicht höher, kein Knopf rutscht weg.
+ * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Bis 1000 px Breite steht er an der
+ * Stelle von Logo und Bildschirm-Name (erfolge.css, .hdr-mit-hinweis), überall auf höchstens zwei Zeilen:
+ * Die Kopfzeile wird nicht höher, kein Knopf rutscht weg.
  * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist.
  */
 export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
