@@ -245,6 +245,12 @@ describe('Einträge', () => {
     expect(gruppeVon('bauplan_schmiede')).toBe('bauplan');
   });
 
+  it('das Fenster lädt ohne Browser (greift erst beim Öffnen auf document zu)', async () => {
+    expect(typeof document).toBe('undefined');
+    const modul = await import('../src/ui/components/FundbuchFenster');
+    expect(typeof modul.oeffneFundbuch).toBe('function');
+  });
+
   it('Zahlen mit Komma', () => {
     expect(prozentText(0.35)).toBe('35 %');
     expect(prozentText(0.004)).toBe('0,4 %');
