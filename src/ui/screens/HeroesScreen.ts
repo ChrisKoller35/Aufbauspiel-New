@@ -758,6 +758,7 @@ const GLEICHE_STELLE_FINGER_PX = 40;
 /**
  * Was ein Klick trifft: einen Knopf, erkannt an id und data-Attributen (nach dem Neuzeichnen ist er ein neues
  * Element; nach ANLEGEN steht dort data-aktion="ablegen"), eine Heldenkarte oder den dunklen Rand des Fensters.
+ * Der Preis (data-cost) zählt nicht: Nach einem Aufstieg kostet TRAINIEREN mehr, der Knopf bleibt derselbe.
  * Leer: Text ohne Wirkung
  */
 function druckZiel(e: MouseEvent): string {
@@ -765,7 +766,8 @@ function druckZiel(e: MouseEvent): string {
   if (ziel.id === 'hero-detail-ov') return 'Rand';
   const el = ziel.closest('button, .hcard');
   if (!el) return '';
-  const merkmale = Array.from(el.attributes).filter(a => a.name === 'id' || a.name.startsWith('data-'));
+  const merkmale = Array.from(el.attributes)
+    .filter(a => a.name === 'id' || (a.name.startsWith('data-') && a.name !== 'data-cost'));
   return [el.tagName, ...merkmale.map(a => `${a.name}=${a.value}`)].join(' ');
 }
 

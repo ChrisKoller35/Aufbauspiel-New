@@ -689,6 +689,55 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     expect(f.gear.mainHand).toBe(SCHWERT);
   });
 
+  test('Tastatur (detail 0, im Browser immer bei 0/0): Knöpfe kurz nacheinander wirken alle', async () => {
+    const { state, held: f } = stand();
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    const taste0: Ort = { x: 0, y: 0 };
+    klick('#hdm2-inv-toggle', 0, performance.now(), taste0);
+    expect(el('#hdm2-inv-toggle').getAttribute('aria-expanded')).toBe('true');
+    klick(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${SCHWERT}"]`, 0, performance.now(), taste0);
+    expect(el('#hero-detail-ov .hdm2-aktion').dataset.aktion).toBe('anlegen');
+    klick('#hero-detail-ov .hdm2-aktion', 0, performance.now(), taste0);
+    expect(f.gear.mainHand).toBe(SCHWERT);
+  });
+
+  test('ein Druck auf Text zählt nicht als letzter Druck: Ein Knopf gleich danach an derselben Stelle wirkt', async () => {
+    const { state, held: f } = stand();
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    const hier: Ort = { x: 300, y: 40 };
+    druck('#hdm2-name', hier);
+    vi.advanceTimersByTime(300);
+    druck('#hdm2-inv-toggle', hier);
+    expect(el('#hdm2-inv-toggle').getAttribute('aria-expanded')).toBe('true');
+  });
+
+  test('TRAINIEREN immer an derselben Stelle: Auch der Druck gleich nach einem Aufstieg trainiert (der Preis zählt nicht)', async () => {
+    const state = createNewGameState();
+    const f = held('guardian', 'Brom', 1);
+    f.xp = totalXpForLevel(1);
+    state.fighters.push(f);
+    state.globalStock.gold = 100000;
+    await heldenseite(state);
+    klick('#s-heroes .tab[data-tab="train"]');
+    vi.advanceTimersByTime(800);
+    const hier: Ort = { x: 300, y: 400 };
+    let trainiert = 0;
+    for (let i = 0; i < 12; i++) {
+      const gold = state.globalStock.gold;
+      // Gesperrt ist der Knopf nur, solange er den Erfolg zeigt (600 ms); danach steht er neu da, nach einem
+      // Aufstieg mit höherem Preis
+      druck(`#s-heroes .btn-train[data-fighter-id="${f.id}"]`, hier);
+      if (state.globalStock.gold < gold) trainiert++;
+      vi.advanceTimersByTime(700);
+    }
+    expect(f.level).toBeGreaterThanOrEqual(3);
+    expect(trainiert).toBe(12);
+  });
+
   test('Fenster über den dunklen Rand geschlossen: Ein langsamer zweiter Druck dorthin trifft nicht «Lernen», TRAINIEREN oder eine Karte dahinter', async () => {
     const state = createNewGameState();
     const lehrer = held('guardian', 'Brom', 15);

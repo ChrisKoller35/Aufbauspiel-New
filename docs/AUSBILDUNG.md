@@ -180,7 +180,8 @@ Tastenhörer, den zweiten Klick, den langsamen zweiten Druck, die Sperren und di
   ABLEGEN oder den Link in die Schmiede, wenn das Fenster nach dem Antippen eines Platzes zur Auswahl scrollt
   (am Handy quer); nach dem Schliessen des Fensters «Lernen», TRAINIEREN oder eine Karte dahinter. Ein Druck
   anderswo zählt sofort, etwa ANLEGEN für ein zweites Teil gleich nach dem ersten oder ABLEGEN gleich nach dem
-  Antippen des Platzes. Dieselbe Stelle heisst: mit der Maus bis 16 px daneben, mit dem Finger bis 40 px (er
+  Antippen des Platzes. Der Preis gehört nicht dazu: TRAINIEREN bleibt derselbe Knopf, auch wenn er nach einem
+  Aufstieg mehr kostet, und trainiert bei jedem Druck. Dieselbe Stelle heisst: mit der Maus bis 16 px daneben, mit dem Finger bis 40 px (er
   verrutscht, und der Browser schiebt einen Tipp knapp neben einem Knopf auf ihn). Die Tastatur prüft das
   nicht; ihr Fokus bleibt auf dem gedrückten Knopf oder geht an den Platz.
 - **Kurz gesperrt, wo auch gedrückt wird:** «Ja, für immer» nimmt bis 0,8 s nach der Frage zum Weg keinen
