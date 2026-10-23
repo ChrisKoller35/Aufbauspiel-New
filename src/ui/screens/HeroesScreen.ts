@@ -26,6 +26,7 @@ import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausb
 import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
 import { klassenTafelHtml } from '../components/KlassenTafel';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { gedruecktUm } from '../components/Druckzeit';
 
 const gearSystem = new GearSystem();
 
@@ -254,6 +255,15 @@ let auswahl: Auswahl | null = null;
 let inventarOffen = false;
 /** Weg, dessen Wahl im Heldenfenster gerade bestätigt werden soll */
 let wegFrage: string | null = null;
+/**
+ * Kurz nach der Frage zum Weg nimmt «Ja, für immer» keinen Klick an, kurz nach ANLEGEN auch ABLEGEN nicht: Beide
+ * stehen dann oft genau unter dem Finger. Den zweiten Klick eines Doppelklicks schluckt schon schluckeZweitenKlick;
+ * ein langsamer zweiter Druck (am Handy ab etwa 350 ms, am PC nach der Doppelklick-Zeit des Systems) zählt aber
+ * als eigener Klick: Er wählte sonst für immer, ohne dass die Frage gelesen ist, oder legte das Teil gleich wieder
+ * ab. Gemessen wird vom ersten Klick bis zum Druck des zweiten (gedruecktUm), nicht bis das Spiel dazu kommt
+ */
+let gesperrtBis = 0;
+const SPERRE_MS = 800;
 
 const PLATZ_NAMEN: Record<EquipSlot, string> = {
   mainHand: 'Haupthand', offHand: 'Nebenhand', armor: 'Rüstung', trinket: 'Talisman',
@@ -889,6 +899,12 @@ function fokussiere(wurzel: ParentNode, ziele: string[]): void {
 function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: string[] = ['#hdm2-name']): void {
   const alt = container.querySelector<HTMLElement>('#hero-detail-ov');
   const scroll = alt ? { fenster: alt.scrollTop, inventar: alt.querySelector('.hdm2-inv-grid')?.scrollTop ?? 0 } : null;
+  // Beim Öffnen: Solange das Fenster offen ist, scrollt die Seite dahinter nicht (magic-city.css) und verliert
+  // ihren Scrollbalken. So breit bleibt rechts ein Rand, sonst rückte sie zur Seite (am PC 15 px, am Handy 0)
+  if (!alt) {
+    const html = document.documentElement;
+    html.style.setProperty('--hdm2-balken', `${Math.max(0, window.innerWidth - html.clientWidth)}px`);
+  }
   entferneDetailModal(container);
 
   const wrapper = document.createElement('div');
@@ -984,6 +1000,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   overlay.querySelectorAll<HTMLElement>('[data-weg-waehlen]').forEach(el => {
     el.addEventListener('click', () => {
       wegFrage = el.dataset.wegWaehlen ?? null;
+      gesperrtBis = performance.now() + SPERRE_MS;
       // Fokus auf die Frage, nicht auf «Ja, für immer»: Ein zweites Enter wählt so nicht gleich für immer
       zumWeg(['.hdm2-weg-frage']);
     });
@@ -994,8 +1011,9 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
     zumWeg([`[data-weg-waehlen="${gefragt}"]`]);
   });
   overlay.querySelector<HTMLElement>('[data-weg-ja]')?.addEventListener('click', e => {
-    // Der zweite Klick eines Doppelklicks wählt nie, nur ein eigener Klick (wie das ✕ im Monsterbuch)
-    if (e.detail > 1) return;
+    // Nur ein eigener Klick wählt: nie der zweite eines Doppelklicks (wie das ✕ im Monsterbuch) und keiner kurz
+    // nach der Frage (gesperrtBis, ein langsamer zweiter Druck auf «‹Weg› wählen»)
+    if (e.detail > 1 || gedruecktUm(e) < gesperrtBis) return;
     const wegId = (e.currentTarget as HTMLElement).dataset.wegJa ?? '';
     wegFrage = null;
     if (!waehleWeg(fighter, wegId)) return;
@@ -1005,7 +1023,8 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
     zumWeg(['.hdm2-weg-karte.gewaehlt']);
   });
 
-  // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil
+  // Set-Teil in der Schmiede zeigen: Fenster zu, Tab «Schmiede» auf, dort zum Teil. Dort nimmt «AUF +N» kurz
+  // keinen Klick an (schmiedeZeigeTeil), es steht oft unter dem Finger
   overlay.querySelector<HTMLElement>('[data-schmiede-teil]')?.addEventListener('click', e => {
     const itemId = (e.currentTarget as HTMLElement).dataset.schmiedeTeil!;
     schmiedeZeigeTeil(itemId);
@@ -1018,10 +1037,12 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
     fokussiere(container, [`#s-heroes [data-teil="${itemId}"]`]);
   });
 
-  // Anlegen oder Ablegen; der Fokus bleibt auf dem Knopf (nach ANLEGEN heisst er ABLEGEN), nach ABLEGEN auf dem leeren Platz
+  // Anlegen oder Ablegen. Der Fokus geht danach auf den Platz (mit dem Gegenstand oder leer), nicht zurück auf den
+  // Knopf: Der heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das Teil gleich wieder ab. Aus
+  // demselben Grund nimmt ABLEGEN kurz nach ANLEGEN keinen Klick an (ein langsamer zweiter Druck, gesperrtBis)
   const aktion = overlay.querySelector('.hdm2-aktion') as HTMLElement | null;
-  aktion?.addEventListener('click', () => {
-    if (!gameState || !auswahl) return;
+  aktion?.addEventListener('click', e => {
+    if (!gameState || !auswahl || gedruecktUm(e) < gesperrtBis) return;
     let platz: EquipSlot | undefined;
     if (auswahl.art === 'slot') {
       platz = auswahl.slot;
@@ -1033,9 +1054,10 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
       if (!gearSystem.equip(gameState, fighter, itemId, auswahl.platz)) return;
       platz = (Object.keys(PLATZ_NAMEN) as EquipSlot[]).find(p => fighter.gear[p] === itemId);
       auswahl = platz ? { art: 'slot', slot: platz } : null;
+      gesperrtBis = performance.now() + SPERRE_MS;
       erfolgePruefen(gameState); // ein ganzes Set angelegt: gleich zählen, nicht erst beim Tageswechsel
     }
-    neuZeichnen(['.hdm2-aktion', ...(platz ? [`.hdm-gear-icon[data-slot="${platz}"]`] : [])]);
+    neuZeichnen(platz ? [`.hdm-gear-icon[data-slot="${platz}"]`] : ['#hdm2-name']);
   });
 }
 

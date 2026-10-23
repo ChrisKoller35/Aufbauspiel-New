@@ -16,6 +16,7 @@ import {
   schmiedeKosten, schmiedeRabatt, schmiedeStufe, schmiedeStufen, verbesserteWerte,
 } from '../../systems/Schmiede';
 import { schluckeZweitenKlick } from '../components/FensterHilfen';
+import { gedruecktUm } from '../components/Druckzeit';
 import { setAbzeichen } from '../components/SetAnzeige';
 import {
   escapeAttr, materialBild, materialLeisteHtml, stufeAbzeichen, stufenKlasse, stufenPunkte, werteSprungHtml,
@@ -38,13 +39,21 @@ let zuletzt: { itemId: string; art: 'geschmiedet' | 'eingeschmolzen'; text: stri
 let einschmelzenFrage: string | null = null;
 /** Teil, zu dem der Tab beim nächsten Zeichnen scrollen soll (Link aus dem Heldenfenster) */
 let zielTeil: string | null = null;
-/** Nach dem Schmieden kurz keine weiteren Klicks: Ein schneller Doppelklick kauft sonst zwei Stufen */
+/**
+ * Kurz keine Klicks auf «AUF +N» und «JA, EINSCHMELZEN»: nach dem Schmieden (ein Doppelklick kauft sonst zwei
+ * Stufen), nach der Frage zum Einschmelzen und nach dem Sprung aus dem Heldenfenster. Dann steht oft genau
+ * dieser Knopf unter dem Zeiger, und ein langsamer zweiter Druck (am Handy ab etwa 350 ms, am PC nach der
+ * Doppelklick-Zeit des Systems) zählt als eigener Klick: Er kaufte sonst eine Stufe oder schmölze ein Teil ein,
+ * ohne dass gelesen ist, was es kostet. Gemessen wird ab da bis zum Druck (gedruecktUm), nicht bis das Spiel dazu
+ * kommt
+ */
 let gesperrtBis = 0;
-const SPERRE_MS = 600;
+const SPERRE_MS = 800;
 
-/** Beim nächsten Öffnen zu diesem Teil scrollen */
+/** Beim nächsten Öffnen zu diesem Teil scrollen (Link im Heldenfenster); «AUF +N» kurz sperren, siehe gesperrtBis */
 export function schmiedeZeigeTeil(itemId: string): void {
   zielTeil = itemId;
+  gesperrtBis = performance.now() + SPERRE_MS;
 }
 
 /** Wer den Tab verlässt, bekommt beim Zurückkommen keine alte Nachfrage zum Einschmelzen mehr */
@@ -201,12 +210,12 @@ export function bindSchmiedeTab(el: HTMLElement, state: GameState, neuZeichnen: 
     neuZeichnen();
   };
   el.querySelectorAll<HTMLButtonElement>('[data-schmieden]').forEach(knopf => {
-    knopf.addEventListener('click', () => {
-      if (Date.now() < gesperrtBis) return;
+    knopf.addEventListener('click', e => {
+      if (gedruecktUm(e) < gesperrtBis) return;
       const itemId = knopf.dataset.schmieden!;
       const stufe = schmieden(state, itemId);
       if (stufe === null) return;
-      gesperrtBis = Date.now() + SPERRE_MS;
+      gesperrtBis = performance.now() + SPERRE_MS;
       const set = DUNGEON_SETS.find(s => setTeilIds(s).includes(itemId));
       const meister = !!set && setTeilIds(set).every(id => schmiedeStufe(state, id) >= MAX_SCHMIEDE_STUFE);
       zuletzt = { itemId, art: 'geschmiedet', text: meister && stufe >= MAX_SCHMIEDE_STUFE ? MEISTER_SATZ : SCHMIED_SAETZE[stufe] };
@@ -217,11 +226,12 @@ export function bindSchmiedeTab(el: HTMLElement, state: GameState, neuZeichnen: 
   });
   // Einschmelzen: erst fragen, dann bestätigen. Der zweite Klick eines Doppelklicks oder Doppeltipps träfe nach
   // dem Neuzeichnen, was jetzt unter dem Zeiger liegt, am PC oft «JA, EINSCHMELZEN» (nach NEIN wieder
-  // «🔥 Einschmelzen»): Er wird geschluckt
+  // «🔥 Einschmelzen»): Er wird geschluckt, und ein langsamer zweiter Druck trifft «JA» kurz nicht (gesperrtBis)
   el.querySelectorAll<HTMLButtonElement>('[data-einschmelzen]').forEach(knopf => {
     knopf.addEventListener('click', () => {
       einschmelzenFrage = knopf.dataset.einschmelzen!;
       zielTeil = einschmelzenFrage;
+      gesperrtBis = performance.now() + SPERRE_MS;
       neuZeichnen();
       schluckeZweitenKlick();
     });
@@ -232,13 +242,14 @@ export function bindSchmiedeTab(el: HTMLElement, state: GameState, neuZeichnen: 
     schluckeZweitenKlick();
   });
   el.querySelector<HTMLButtonElement>('[data-einschmelzen-ja]')?.addEventListener('click', e => {
-    // Nur ein eigener Klick schmilzt ein, nie der zweite eines Doppelklicks (wie «Ja, für immer» bei den Wegen)
-    if (e.detail > 1 || Date.now() < gesperrtBis) return;
+    // Nur ein eigener Klick schmilzt ein: nie der zweite eines Doppelklicks und keiner kurz nach der Frage
+    // (gesperrtBis), wie «Ja, für immer» bei den Wegen
+    if (e.detail > 1 || gedruecktUm(e) < gesperrtBis) return;
     const itemId = (e.currentTarget as HTMLElement).dataset.einschmelzenJa!;
     einschmelzenFrage = null;
     const ertrag = einschmelzen(state, itemId);
     if (!ertrag) return neuZeichnen();
-    gesperrtBis = Date.now() + SPERRE_MS;
+    gesperrtBis = performance.now() + SPERRE_MS;
     zuletzt = { itemId, art: 'eingeschmolzen', text: `Zischt, knackt, fertig. ${ertrag.menge} ${ertrag.material.name} für die nächste Stufe.` };
     speichernUndZeichnen(itemId);
   });

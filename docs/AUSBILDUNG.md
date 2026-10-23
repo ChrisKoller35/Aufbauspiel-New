@@ -148,24 +148,37 @@ Spielstand), steht dort: «Die Klasse wird nach der nächsten Expedition frei.»
 ## Heldenkarten und Heldenfenster bedienen
 
 Code: `src/ui/screens/HeroesScreen.ts`, Stile in `src/ui/html/magic-city.css` (Abschnitte «Hero Cards» und
-«Hero Detail Modal»). Tests: `tests/heldenfenster.test.ts`.
+«Hero Detail Modal»). Tests: `tests/heldenfenster.test.ts`, mit einem kleinen DOM ohne Browser auch die
+Tastenhörer, den zweiten Klick und die Sperren.
 
 - **Tastatur:** Über jeder Heldenkarte liegt ein unsichtbarer Knopf. Tab erreicht ihn, Enter oder Leertaste
   öffnet das Heldenfenster, mit dem Fokus zeigt die Karte innen einen goldenen Rahmen. TRAINIEREN steht
   daneben, nicht darin. Maus und Finger tippen wie bisher auf die Karte.
 - **Im Heldenfenster** nimmt beim Öffnen der Name des Helden den Fokus. Plätze und Gegenstände im Inventar
-  sind Knöpfe (Tab, Enter); nach jedem Antippen bleibt der Fokus auf dem Knopf, nach ANLEGEN auf ABLEGEN.
-  Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen es, und der Fokus kehrt
-  auf die Karte zurück.
+  sind Knöpfe (Tab, Enter); nach jedem Antippen bleibt der Fokus auf dem Knopf. Nach ANLEGEN und ABLEGEN
+  steht er auf dem Platz: Der Knopf heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das
+  Teil sonst gleich wieder ab. Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen
+  es, und der Fokus kehrt auf die Karte zurück.
 - **Scrollen:** Ist das Fenster höher als der Bildschirm (mit Auswahl, in einem flachen Fenster, am Handy),
-  scrollt es in sich, mit Mausrad und Finger. Die Seite dahinter bleibt stehen. Das ✕ bleibt beim Scrollen
-  oben rechts im Bild; am Touch-Gerät ist es 44 × 44 px gross, 🎒 Inventar und ANLEGEN/ABLEGEN 44 px hoch.
-- **Breite:** Ab 1151 px steht das Inventar links neben dem Helden, der Hintergrund rechts. Von 701 bis
+  scrollt es in sich, mit Mausrad und Finger. Die Seite dahinter bleibt stehen und rückt auch nicht zur
+  Seite, wenn ihr Scrollbalken dabei verschwindet (am PC bleibt rechts ein Rand, so breit wie er). Das ✕
+  bleibt beim Scrollen oben rechts im Bild; am Touch-Gerät ist es 44 × 44 px gross, 🎒 Inventar und
+  ANLEGEN/ABLEGEN 44 px hoch.
+- **Breite:** Ab 1151 px steht das Inventar links neben dem Helden, der Hintergrund rechts. Über 700 bis
   1150 px (Tablet, Handy quer) steht das Inventar unter Held und Hintergrund, bis 700 px steht alles
-  untereinander. Das Fenster ist nie breiter als der Bildschirm.
+  untereinander (die Grenze liegt bei 700,02 px, so gilt auch mit Zoom bei 700,5 px eine der Anordnungen).
+  Das Fenster ist nie breiter als der Bildschirm; wäre es breiter, begänne es am linken Rand und liesse sich
+  zur Seite scrollen.
 - **Doppelklick und Doppeltipp:** Nach jedem Antippen im Fenster (Platz, Gegenstand, ANLEGEN, 🎒 Inventar,
   Weg wählen, Abbrechen) und nach dem Sprung in die Schmiede schluckt das Spiel den zweiten Klick. Er träfe
   sonst, was nach dem Neuzeichnen unter dem Zeiger liegt, etwa ABLEGEN gleich nach ANLEGEN.
+- **Langsamer zweiter Druck:** Kommt er später, als der Browser einen Doppelklick zählt (am Handy ab etwa
+  350 ms, am PC nach der Doppelklick-Zeit des Systems), ist er ein eigener Klick. Darum nehmen die Knöpfe mit
+  Folgen kurz keinen Klick an, 0,8 s ab dem Druck davor: ABLEGEN nach ANLEGEN, «Ja, für immer» nach der Frage
+  zum Weg und in der Schmiede «AUF +N» nach dem Sprung aus dem Heldenfenster (dort auch «JA, EINSCHMELZEN»
+  nach der Frage und «AUF +N» nach dem Schmieden, `src/ui/screens/SchmiedeTab.ts`). Gemessen wird bis zum
+  neuen Druck, auch wenn das Spiel gerade beschäftigt ist und erst später dazu kommt
+  (`src/ui/components/Druckzeit.ts`, Tests in `tests/druckzeit.test.ts`).
 
 ## Eichung nach dem Umbau (23.10.2026)
 

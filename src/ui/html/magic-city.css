@@ -956,11 +956,16 @@ body {
 .hdm-gear-emoji { font-size: 1.2rem; }
 
 /* Heldenfenster: Ist es höher als der Bildschirm (mit Auswahl, am Handy, im flachen Fenster), scrollt es in sich,
-   mit Mausrad und Finger. margin: auto mittet es, solange es passt; sonst beginnt es oben (bzw. links) und ragt
-   nie über den Rand. Die Seite dahinter scrollt nicht mit: overscroll-behavior, und für ein Fenster, das nicht
-   scrollt, die Sperre auf html. scroll-padding: Was ins Bild geholt wird (Tab, Auswahl), landet unter dem ✕ */
-#hero-detail-ov { align-items: flex-start; overflow-y: auto; overscroll-behavior: contain; padding: 16px 0; scroll-padding-top: 60px; }
-html:has(#hero-detail-ov) { overflow: hidden; }
+   mit Mausrad und Finger. margin: auto mittet es, solange es passt; sonst beginnt es oben (bzw. links: darum
+   flex-start statt center) und ragt nie über den Rand. Die Seite dahinter scrollt nicht mit: overscroll-behavior,
+   und für ein Fenster, das nicht scrollt, die Sperre auf html. Sie nimmt der Seite den Scrollbalken; der Rand
+   --hdm2-balken (so breit wie er, HeroesScreen.openDetailModal) hält sie an ihrem Platz. scroll-padding: Was ins
+   Bild geholt wird (Tab, Auswahl), landet unter dem ✕ */
+#hero-detail-ov {
+  align-items: flex-start; justify-content: flex-start; overflow-y: auto; overscroll-behavior: contain;
+  padding: 16px 0; scroll-padding-top: 60px;
+}
+html:has(#hero-detail-ov) { overflow: hidden; padding-right: var(--hdm2-balken, 0px); }
 .hdm2-outer { display: flex; gap: 18px; align-items: flex-start; justify-content: center; margin: auto; }
 /* overflow: clip schneidet an den runden Ecken ab wie hidden, macht .hdm2 aber nicht zum Scrollbereich: Das ✕
    klebt so am Fenster, das scrollt (hidden bleibt für Browser ohne clip) */
@@ -1209,8 +1214,10 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 
 /* Heldenfenster mittelbreit (Tablet, Handy quer): Neben Held und Hintergrund ist kein Platz für das Inventar
    (340 + 520 + 220 px und Abstände). Es steht darunter, so breit wie die beiden zusammen (520 + 18 + 220 px,
-   dazu je 8 px Rand). Reicht der Platz auch für die beiden nicht, rückt der Hintergrund unter den Helden */
-@media (min-width: 701px) and (max-width: 1150px) {
+   dazu je 8 px Rand). Reicht der Platz auch für die beiden nicht, rückt der Hintergrund unter den Helden.
+   Ab 700.02 statt 701 px: Mit Zoom kann die Breite dazwischen liegen (etwa 700.5 px), auch dann gilt eine der
+   beiden Anordnungen (bis 700 px die fürs Handy unten) */
+@media (min-width: 700.02px) and (max-width: 1150px) {
   #hero-detail-ov .hdm2-outer { flex-wrap: wrap; max-width: 774px; padding: 0 8px; }
   #hero-detail-ov .hdm2-sidebar { flex-grow: 1; }
   #hero-detail-ov .hdm2-inv-panel { order: 1; flex-basis: 100%; max-width: none; }
