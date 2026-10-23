@@ -1,6 +1,7 @@
 import { GameState } from '../models/GameState';
 import { ENEMY_DEFS, ENEMY_LORE, EnemyDef } from '../data/enemies';
 import { ExpeditionRun } from '../models/ExpeditionRun';
+import { zaehleSieg } from './Monsterkunde';
 
 /** +5% loot bonus when all enemies of a route are defeated in the bestiarium */
 export const BESTIARIUM_ROUTE_BONUS = 0.05;
@@ -15,17 +16,20 @@ const ROUTE_MAP: Record<string, string> = {
 
 export class BestiariumSystem {
   /**
-   * Processes a completed expedition and updates the bestiarium.
-   * Call when the expedition ends (victory/defeat/retreat).
+   * Trägt nach dem Ende einer Expedition (Sieg, Niederlage, Rückzug) ein, was die Gilde gesehen hat.
+   * Nur Räume, die gespielt wurden (`completed`, auch der Raum, in dem das Team fiel): Räume nach
+   * einem Rückzug oder einer Niederlage hat niemand gesehen. Jeder Gegner mit hp <= 0 zählt +1
+   * zur Jagdstrecke (Monsterkunde.ts), zwei Wölfe im Raum also +2.
    */
   processExpeditionEnd(state: GameState, run: ExpeditionRun): void {
     for (const room of run.rooms) {
+      if (room.completed !== true) continue;
       for (const enemy of room.enemies) {
         if (!enemy.defId) continue;
-        // Any enemy in a combat room counts as "discovered"
         this.recordDiscovered(state, enemy.defId);
-        // Any enemy with hp <= 0 counts as "defeated"
         if (enemy.hp <= 0) {
+          // Erst zählen, dann in `defeated`: sonst zählte der erste Sieg wie ein alter Eintrag doppelt
+          zaehleSieg(state, enemy.defId);
           this.recordDefeated(state, enemy.defId);
         }
       }
