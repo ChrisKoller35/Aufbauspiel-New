@@ -23,6 +23,7 @@ import { showChestReveal } from '../components/ChestRevealOverlay';
 import { schmiedeStufen } from '../../systems/Schmiede';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
+import { anzahlText } from '../../utils/Anzahl';
 
 // ─── State ──────────────────────────────────────────────────────
 let gameState: GameState | null = null;
@@ -139,7 +140,7 @@ function gipfelHtml(state: GameState, jetzt: number, gipfel: GildenStand[]): str
     let wie: string;
     if (weg) wie = `Ein Sieg <b>${escapeHtml(imDungeon(weg))}</b> bringt dich vorbei.`;
     else if (vor.hoehe > du.hoehe) wie = `Du musst höher hinauf als ${meter(vor.hoehe)}.`;
-    else wie = `Gleich hoch wie du, aber dir fehlen ${vor.sterne - du.sterne} Sterne.`;
+    else wie = `Gleich hoch wie du, aber du hast ${anzahlText(vor.sterne - du.sterne, 'Stern', 'Sterne')} weniger.`;
     ziel = `Vor dir: ${gildeHtml(vor)}${wo}. ${wie}`;
   }
 

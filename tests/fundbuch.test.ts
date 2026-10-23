@@ -381,7 +381,7 @@ describe('Einträge', () => {
 });
 
 describe('Fenster (HTML ohne Browser)', () => {
-  it('Woher: je Dungeon eine Kopfzeile mit Link und Ø, seine Gegner darunter ohne eigenen Link', async () => {
+  it('Woher: je Dungeon eine Kopfzeile mit Link und Ø, seine Gegner darunter ohne eigenen Link und ohne Ø', async () => {
     const { itemSeite } = await import('../src/ui/components/FundbuchFenster');
     const f = fundorte('iron_scrap');
     const woher = itemSeite('iron_scrap', createNewGameState()).split('Wofür')[0];
@@ -390,35 +390,135 @@ describe('Fenster (HTML ohne Browser)', () => {
     listen.forEach((liste, i) => {
       expect(liste, f.dungeons[i].routeId).not.toContain('data-route');
       expect((liste.match(/<li>/g) ?? []).length, f.dungeons[i].routeId).toBe(f.dungeons[i].gegner.length);
+      // Kein «Ø … je Sieg in ‹Dungeon›» je Gegner: Das Ø steht nur einmal, in der Kopfzeile darüber
+      expect(liste, f.dungeons[i].routeId).not.toContain('Ø');
     });
+    // Die Kopfzeile eines Dungeons: vom letzten «<li>» vor seiner Gegnerliste bis zu ihr
+    const kopfzeilen = woher.split('<ul class="fb-gegner">').slice(0, -1).map(t => t.slice(t.lastIndexOf('<li>') + '<li>'.length));
+    expect(kopfzeilen.length).toBe(f.dungeons.length);
+    kopfzeilen.forEach((kopf, i) => {
+      expect(kopf, f.dungeons[i].routeId).toContain(`data-route="${f.dungeons[i].routeId}"`);
+      expect(kopf.split('Ø').length - 1, f.dungeons[i].routeId).toBe(1);
+    });
+    expect(woher.split('Ø').length - 1).toBe(f.dungeons.length);
     // Ein Link je Dungeon-Zeile und je weiterer Quelle, nicht einer je Gegner wie in der Zeilenform
     const links = (woher.match(/data-route="/g) ?? []).length;
     expect(links).toBe(f.dungeons.length + f.fundRaeume.length + f.ersterSieg.length + f.jedenSieg.length + f.einschmelzen.length);
     expect(f.dungeons.reduce((n, d) => n + d.gegner.length, 0)).toBeGreaterThan(2 * f.dungeons.length);
   });
 
+  it('Zahl und Wort bleiben auf einer Zeile, auf jeder Seite (geschütztes Leerzeichen, nach «–» ein Wortverbinder)', async () => {
+    const { itemSeite, dungeonSeite } = await import('../src/ui/components/FundbuchFenster');
+    const stand = createNewGameState();
+    // Nur der Text, ohne Tags und Attribute: jeder Gegenstand und jeder Dungeon
+    const seiten = [
+      ...fundbuchEintraege().map(id => ({ id, html: itemSeite(id, stand) })),
+      ...ROUTEN.map(r => ({ id: r.id, html: dungeonSeite(r.id, stand) })),
+    ].map(({ id, html }) => ({ id, text: html.replace(/<[^>]*>/g, '') }));
+    // Je Stelle: so steht sie da (geschützt) und so nie (Leerzeichen oder Zeilenwechsel: Dort bräche die Zeile um)
+    const STELLEN: { name: string; geschuetzt: RegExp; offen: RegExp; mindestens: number }[] = [
+      { name: 'N Stück', geschuetzt: /\d\u00a0Stück/g, offen: /\d[ \n]+Stück/g, mindestens: 1000 },
+      { name: 'N Gold', geschuetzt: /\d\u00a0Gold/g, offen: /\d[ \n]+Gold/g, mindestens: 50 },
+      { name: 'N %', geschuetzt: /\d\u00a0%/g, offen: /\d[ \n]+%/g, mindestens: 100 },
+      { name: 'Ø N', geschuetzt: /Ø\u00a0\d/g, offen: /Ø[ \n]+\d/g, mindestens: 100 },
+      { name: 'N–N', geschuetzt: /\d–\u2060\d/g, offen: /\d–[ \n]*\d/g, mindestens: 100 },
+      { name: 'Raum N', geschuetzt: /Raum\u00a0\d/g, offen: /Raum[ \n]+\d/g, mindestens: 1 },
+      { name: 'Stufe N', geschuetzt: /Stufe\u00a0\d/g, offen: /Stufe[ \n]+\d/g, mindestens: 1 },
+      { name: 'Stadtstufe N', geschuetzt: /Stadtstufe\u00a0\d/g, offen: /Stadtstufe[ \n]+\d/g, mindestens: 1 },
+      { name: 'Ebene N', geschuetzt: /Ebene\u00a0\d/g, offen: /Ebene[ \n]+\d/g, mindestens: ROUTEN.length },
+      { name: 'N je Durchgang', geschuetzt: /\d\u00a0je Durchgang/g, offen: /\d[ \n]+je Durchgang/g, mindestens: 1 },
+      { name: 'N / N', geschuetzt: /\d\u00a0\/ \d/g, offen: /\d[ \n]+\//g, mindestens: 1 },
+      { name: 'N Käufe', geschuetzt: /\d\u00a0(Kauf|Käufe)/g, offen: /\d[ \n]+(Kauf|Käufe)/g, mindestens: 1 },
+    ];
+    for (const stelle of STELLEN) {
+      let geschuetzt = 0;
+      for (const { id, text } of seiten) {
+        expect(text.match(stelle.offen), `${stelle.name} auf ${id}`).toBeNull();
+        geschuetzt += (text.match(stelle.geschuetzt) ?? []).length;
+      }
+      // Die Stelle gibt es wirklich (sonst prüfte die Zeile oben nichts)
+      expect(geschuetzt, stelle.name).toBeGreaterThanOrEqual(stelle.mindestens);
+    }
+    expect(itemSeite('iron_scrap', stand)).toContain('2–\u20605\u00a0Stück');
+  });
+
   it('Händler der Stadt: der Preis der eigenen Stadtstufe (ab Stufe 4 mit Rabatt)', async () => {
     const { itemSeite } = await import('../src/ui/components/FundbuchFenster');
     const stand = createNewGameState();
-    expect(itemSeite('healing_potion', stand)).toContain(`Beim Händler der Stadt · ${kaufpreis('healing_potion', 1)} Gold`);
+    expect(itemSeite('healing_potion', stand)).toContain(`Beim Händler der Stadt · ${kaufpreis('healing_potion', 1)}\u00a0Gold`);
     const stufe4 = { ...stand, stadtweg: { stufe: 4, herzsteine: [], gelesen: 0 } };
     expect(kaufpreis('healing_potion', 4)).toBeLessThan(kaufpreis('healing_potion', 1));
-    expect(itemSeite('healing_potion', stufe4)).toContain(`Beim Händler der Stadt · ${kaufpreis('healing_potion', 4)} Gold`);
+    expect(itemSeite('healing_potion', stufe4)).toContain(`Beim Händler der Stadt · ${kaufpreis('healing_potion', 4)}\u00a0Gold`);
   });
 
-  it('ohne Wunsch öffnet es beim ersten Eintrag, den die Gilde schon bekommen kann', async () => {
-    const { startEintrag } = await import('../src/ui/components/FundbuchFenster');
-    const stand = createNewGameState();
-    const start = startEintrag(stand)!;
-    // Die Liste beginnt mit den Schmiede-Materialien; die ersten kommen aus gesperrten Dungeons
-    const erster = fundbuchEintraege().find(id => gruppeVon(id) === Object.keys(GRUPPEN_NAMEN)[0]);
-    expect(ITEM_DEFS[erster!].name).toBe('Drachenschuppe');
-    expect(start).not.toBe(erster);
-    const f = fundorte(start);
-    const offen = (q: { routeId: string }) => isRouteAvailable(ROUTE_DEFS[q.routeId], stand);
-    expect(!!f.haendler || [...f.dungeons, ...f.fundRaeume, ...f.ersterSieg, ...f.jedenSieg, ...f.rastplaetze].some(offen), start).toBe(true);
-    // Mit Wunsch genau der; ein unbekannter Wunsch fällt auf den Start zurück
-    expect(startEintrag(stand, 'iron_scrap')).toBe('iron_scrap');
-    expect(startEintrag(stand, 'gibt_es_nicht')).toBe(start);
+  describe('ohne Wunsch öffnet es beim ersten Eintrag der Liste, den die Gilde schon bekommen kann', () => {
+    type Stand = ReturnType<typeof createNewGameState>;
+    /** Die Reihe der Liste: Gruppen wie GRUPPEN_NAMEN, in der Gruppe wie fundbuchEintraege */
+    const reihe = () => (Object.keys(GRUPPEN_NAMEN) as (keyof typeof GRUPPEN_NAMEN)[])
+      .flatMap(g => fundbuchEintraege().filter(id => gruppeVon(id) === g));
+    /** Zählt: Händler der Stadt und Quellen in offenen Dungeons. Nicht: Werkstätten, Dungeon-Händler, Einschmelzen. */
+    const erreichbar = (id: string, stand: Stand) => {
+      const f = fundorte(id);
+      const offen = (q: { routeId: string }) => isRouteAvailable(ROUTE_DEFS[q.routeId], stand);
+      return !!f.haendler || [...f.dungeons, ...f.fundRaeume, ...f.ersterSieg, ...f.jedenSieg, ...f.rastplaetze].some(offen);
+    };
+    /** Der Start ist erreichbar, und alles davor in der Liste ist es nicht */
+    const pruefeErsten = (start: string, stand: Stand) => {
+      const i = reihe().indexOf(start);
+      expect(i, start).toBeGreaterThanOrEqual(0);
+      expect(erreichbar(start, stand), start).toBe(true);
+      for (const id of reihe().slice(0, i)) expect(erreichbar(id, stand), `${id} steht vor ${start}`).toBe(false);
+    };
+
+    it('neues Spiel: Eisenschrott (vor ihm nur Material aus gesperrten Dungeons)', async () => {
+      const { startEintrag } = await import('../src/ui/components/FundbuchFenster');
+      const stand = createNewGameState();
+      // Die Liste beginnt mit den Schmiede-Materialien Drachenschuppe und Eisblüte aus gesperrten Dungeons
+      expect(reihe().slice(0, 3)).toEqual(['mat_drachenschuppe', 'mat_eisbluete', 'iron_scrap']);
+      expect(startEintrag(stand)).toBe('iron_scrap');
+      pruefeErsten('iron_scrap', stand);
+      // Mit Wunsch genau der; ein unbekannter Wunsch fällt auf den Start zurück
+      expect(startEintrag(stand, 'mat_drachenschuppe')).toBe('mat_drachenschuppe');
+      expect(startEintrag(stand, 'gibt_es_nicht')).toBe('iron_scrap');
+    });
+
+    it('der Dungeon-Händler zählt nicht: Böte er Drachenschuppe an, bliebe es Eisenschrott', async () => {
+      const { startEintrag } = await import('../src/ui/components/FundbuchFenster');
+      // Zurzeit führt er nur Brot, Heiltrank und Kraft-Brot (die ersten beiden hat auch der Händler der Stadt)
+      expect(Object.keys(MERCHANT_PRICES).sort()).toEqual(['bread', 'healing_potion', 'power_bread']);
+      MERCHANT_PRICES.mat_drachenschuppe = 5;
+      try {
+        expect(fundorte('mat_drachenschuppe').dungeonHaendler).not.toBeNull();
+        expect(startEintrag(createNewGameState())).toBe('iron_scrap');
+      } finally {
+        delete MERCHANT_PRICES.mat_drachenschuppe;
+      }
+    });
+
+    it('alle Dungeons offen: der erste Eintrag der Liste', async () => {
+      const { startEintrag } = await import('../src/ui/components/FundbuchFenster');
+      const neu = createNewGameState();
+      const bosse = ROUTEN.flatMap(r => r.unlockCondition?.bossesDefeated ?? []);
+      const stand = { ...neu, guildStats: { ...neu.guildStats, rank: 99, bossesDefeatedIds: bosse } };
+      expect(ROUTEN.every(r => isRouteAvailable(r, stand))).toBe(true);
+      expect(startEintrag(stand)).toBe(reihe()[0]);
+      expect(ITEM_DEFS[reihe()[0]].name).toBe('Drachenschuppe');
+    });
+
+    it('Händlerware zählt: Sind alle Dungeons zu, ist es die erste Ware des Händlers in der Liste (Brot)', async () => {
+      const { startEintrag } = await import('../src/ui/components/FundbuchFenster');
+      const neu = createNewGameState();
+      // Künstlich (Gildenrang 0; im Spiel ist der Waldpfad immer offen): So entscheidet allein der Händler der Stadt.
+      // Vor Brot stehen Drachenschuppe (nur Einschmelzen) und Magitech-Komponente (Werkstatt): Die zählen nicht
+      const stand = { ...neu, guildStats: { ...neu.guildStats, rank: 0 } };
+      expect(ROUTEN.some(r => isRouteAvailable(r, stand))).toBe(false);
+      expect(fundorte('mat_drachenschuppe').einschmelzen.length).toBeGreaterThan(0);
+      expect(fundorte('magitech_component').hergestellt.length).toBeGreaterThan(0);
+      expect(reihe().indexOf('magitech_component')).toBeLessThan(reihe().indexOf('bread'));
+      const start = startEintrag(stand);
+      expect(start).toBe('bread');
+      expect(fundorte('bread').haendler).toBeGreaterThan(0);
+      pruefeErsten('bread', stand);
+    });
   });
 });

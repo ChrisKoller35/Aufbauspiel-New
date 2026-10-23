@@ -45,7 +45,7 @@ describe('GebaeudeStatus: Freischaltung', () => {
   it('Gildenhaus und Händler stehen von Anfang an: Helden in der Gilde, «Kauft und verkauft.»', () => {
     const state = startStadt();
     expect(getGebaeudeStatus(state, 'HAENDLER')).toMatchObject({ zustand: 'offen', text: 'Kauft und verkauft.', anzahl: 1, stufe: 1 });
-    expect(getGebaeudeStatus(state, 'GUILD_HALL')).toMatchObject({ zustand: 'bereit', text: '2 Helden in der Gilde' });
+    expect(getGebaeudeStatus(state, 'GUILD_HALL')).toMatchObject({ zustand: 'bereit', text: '2\u00a0Helden in der Gilde' });
     expect(engpassFuerGebaeude(state, 'HAENDLER')).toBeNull();
     expect(engpassFuerGebaeude(state, 'GUILD_HALL')).toBeNull();
   });

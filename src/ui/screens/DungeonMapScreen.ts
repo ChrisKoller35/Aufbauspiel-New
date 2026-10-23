@@ -12,6 +12,7 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS } from '../../data/items';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
+import { anzahlText } from '../../utils/Anzahl';
 import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
 import { materialZeile } from '../components/SchmiedeAnzeige';
@@ -621,7 +622,7 @@ function wappenHtml(gilden: GildenStand[], cx: number, cy: number): string {
   const xVon = (i: number): number => cx + (i - (anzahl - 1) / 2) * 25;
   const kreise = sichtbar.map((g, i) => `
     <g class="dmap-wappen${g.spieler ? ' du' : ''}">
-      <title>${g.name}: höchster Dungeon${g.spieler ? '' : ` (${g.sterne} Sterne)`}</title>
+      <title>${g.name}: höchster Dungeon${g.spieler ? '' : ` (${anzahlText(g.sterne, 'Stern', 'Sterne')})`}</title>
       <circle cx="${xVon(i)}" cy="${cy}" r="11.5" fill="rgba(10,8,5,0.88)" stroke="${g.spieler ? '#e6c060' : g.farbe ?? '#c8a227'}" stroke-width="2"/>
       <text x="${xVon(i)}" y="${cy + 0.5}" text-anchor="middle" dominant-baseline="central" font-size="13" style="user-select:none">${g.wappen}</text>
     </g>`).join('');

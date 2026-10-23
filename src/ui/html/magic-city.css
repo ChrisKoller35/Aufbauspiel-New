@@ -42,21 +42,68 @@ body {
 
 /* ── Header ── */
 .hdr {
+  --hdr-abstand: 14px;
   display: flex; align-items: center; padding: 10px 22px;
   background: var(--s1); border-bottom: 1px solid var(--bdr);
-  gap: 14px; flex-shrink: 0; min-height: 52px;
+  gap: var(--hdr-abstand); flex-shrink: 0; min-height: 52px;
 }
-.hdr-logo { font-family: 'Cinzel Decorative', serif; font-size: 1rem; color: var(--gold); letter-spacing: 2px; }
+/* Die Kopfzeile bleibt gleich hoch, egal wie viele neue Erfolge 🏅 zeigt und ob ein Hinweis steht. «← Zurück»,
+   Logo und 🏅 brechen nie um und werden nie schmaler. .hdr-mitte (Logo, Name des Bildschirms, Hinweis) füllt den
+   Platz bis zu den Vorräten; ein Hinweis steht darin und verschiebt nichts ausserhalb (erfolge.css). */
+.hdr-mitte {
+  display: flex; align-items: center; gap: inherit; align-self: stretch;
+  flex: 1 1 auto; min-width: 0; position: relative; overflow: hidden;
+}
+/* Der freie Platz hinter dem Namen, für einen Hinweis. Er zählt für die Breite von .hdr-mitte nicht mit
+   (width: 0, die margin hebt den Abstand davor auf): Ob ein Hinweis darin steht, ändert nichts daneben. */
+.hdr-platz { flex: 1 1 0; width: 0; min-width: 0; margin-left: calc(-1 * var(--hdr-abstand)); }
+.hdr-logo { font-family: 'Cinzel Decorative', serif; font-size: 1rem; color: var(--gold); letter-spacing: 2px; white-space: nowrap; flex-shrink: 0; }
+.hdr .hdr-back { white-space: nowrap; flex-shrink: 0; }
 .hdr-sep { color: var(--bdr); margin: 0 2px; }
 .hdr-cur { font-family: 'Cinzel', serif; font-size: 0.78rem; color: var(--mut); letter-spacing: 1px; }
-.hdr-space { flex: 1; }
 .res { display: flex; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
 .res span { font-family: 'Cinzel', serif; font-size: 0.75rem; color: var(--gold); white-space: nowrap; }
-/* Handy: Kopfzeile in zwei Zeilen statt einer hohen Spalte */
+/* Zwei Gruppen zu je drei Vorräten (HeaderRenderer.vorratsZeileHtml): Umbrochen wird nur zwischen ihnen */
+.res-gruppe { display: flex; gap: inherit; }
+/* Eine Zeile (über 700 px). Fehlt Platz, stehen erst die Vorräte, dann der Name des Bildschirms auf zwei Zeilen,
+   beide nicht höher als 🏅; erst wenn auch das nicht reicht, endet der Name mit «…». Die Vorräte beginnen so
+   schmal wie möglich (width: min-content, zwei Zeilen) und wachsen vor .hdr-mitte auf eine Zeile (flex-grow);
+   .hdr-mitte beginnt mit dem Namen auf einer Zeile und gibt nach (flex-shrink). So ragt 🏅 auch neben grossen
+   Vorräten nie hinaus. Zeilenhöhe 1.202 = 15 px: Eine Zeile steht genau da, wo sie mit der gewohnten Zeilenhöhe
+   stand (17 px), zwei Zeilen (30 px) sind nicht höher als 🏅 (32 px). Je 1 px padding oben und unten (durch die
+   margin ausgeglichen), damit overflow: hidden hohe Zeichen wie 🏅 in «🏅 ERFOLGE» nicht anschneidet. */
+@media (min-width: 701px) {
+  .hdr-cur {
+    min-width: 0; line-height: 1.202; padding: 1px 0; margin: -1px 0; overflow: hidden; text-overflow: ellipsis;
+    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+  }
+  .res { flex: 1000 0 auto; width: min-content; max-width: max-content; row-gap: 0; }
+}
+/* Handy: Kopfzeile in zwei Zeilen statt einer hohen Spalte. In der ersten Zeile füllt .hdr-mitte mit dem Logo
+   den Platz zwischen «← Zurück» und 🏅. Sie zählt beim Umbrechen nicht mit (flex-basis 0) und kann 🏅 so nie in
+   eine eigene Zeile schieben. Neben «← Zurück» ist das Logo auf schmalen Handys kleiner, damit es auch neben
+   einer dreistelligen Zahl ganz bleibt (mit den Web-Schriften 149 px, darunter 122 und 100 px breit); reicht
+   der Platz trotzdem nicht, endet es mit «…». */
 @media (max-width: 700px) {
   .hdr { flex-wrap: wrap; row-gap: 6px; padding-left: 10px; padding-right: 10px; }
   .hdr-sep, .hdr-cur { display: none; }
+  .hdr-mitte { flex: 1 1 0; }
+  .hdr-logo { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
   .hdr .res { flex-basis: 100%; justify-content: flex-start; gap: 8px; }
+}
+@media (max-width: 374px) {
+  .hdr-back + .hdr-mitte .hdr-logo { font-size: 0.875rem; letter-spacing: 1px; }
+}
+@media (max-width: 339px) {
+  .hdr-back + .hdr-mitte .hdr-logo { font-size: 0.75rem; letter-spacing: 0.5px; }
+}
+/* Schmales Fenster, Tablet hoch, Handy quer (701 bis 860 px): neben «← Zurück» (.hdr-zurueck) das kleinere Logo
+   und etwas weniger Abstand, damit Name und Vorräte öfter je auf eine Zeile passen. Die Kopfzeile des Hauptmenüs
+   (ohne «← Zurück» und Namen) bleibt, wie sie war. Ab 861 px wie am PC. */
+@media (min-width: 701px) and (max-width: 860px) {
+  .hdr.hdr-zurueck { --hdr-abstand: 10px; }
+  .hdr-zurueck .res { column-gap: 8px; }
+  .hdr-back + .hdr-mitte .hdr-logo { font-size: 0.875rem; letter-spacing: 1px; }
 }
 
 /* ── Buttons ── */

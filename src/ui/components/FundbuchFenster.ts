@@ -21,6 +21,7 @@ import {
   gruppeVon, mengeText, prozentText, verwendung, zahlText,
 } from '../../systems/Fundbuch';
 import { materialJeSieg } from '../../systems/Schmiede';
+import { anzahlText } from '../../utils/Anzahl';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 
 type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen' | 'stadtweg'>;
@@ -84,6 +85,20 @@ function gebaeudeName(buildingId: string): string {
   return def ? esc(def.name) : '';
 }
 
+/**
+ * 3 → «3 Stück», «2–5» → «2–5 Stück». Die Menge bleibt mit ihrer Einheit auf einer Zeile: Vor der Einheit steht wie
+ * nach «Ø» und vor «%» ein geschütztes Leerzeichen, nach dem Strich eines Bereichs ein Wortverbinder (U+2060), denn
+ * auch dort bräche die Zeile sonst um. Ebenso bei «12 Gold», «Raum 3», «Stufe 2», «Ebene 4» und «2 je Durchgang».
+ */
+function stueck(menge: number | string): string {
+  return `${String(menge).replace('–', '–\u2060')}\u00a0Stück`;
+}
+
+/** 12 → «12 Gold» (geschütztes Leerzeichen wie bei stueck) */
+function gold(betrag: number): string {
+  return `${betrag}\u00a0Gold`;
+}
+
 function abschnitt(titel: string, zeilen: string[], leer: string): string {
   const inhalt = zeilen.length ? `<ul class="fb-zeilen">${zeilen.map(z => `<li>${z}</li>`).join('')}</ul>` : `<p class="fb-leer">${leer}</p>`;
   return `<section class="fb-abschnitt"><h3>${titel}</h3>${inhalt}</section>`;
@@ -92,48 +107,49 @@ function abschnitt(titel: string, zeilen: string[], leer: string): string {
 function woherZeilen(itemId: string, f: Fundorte, stand: Fortschritt): string[] {
   const z: string[] = [];
   // Preis der eigenen Stadtstufe (ab Stufe 4 mit Rabatt), nicht der Grundpreis aus fundorte
-  if (f.haendler) z.push(`Beim Händler der Stadt · ${kaufpreis(itemId, stadtStufeVon(stand))} Gold`);
-  if (f.dungeonHaendler) z.push(`Beim Dungeon-Händler · ${f.dungeonHaendler.preis} Gold (höchstens ${f.dungeonHaendler.max} Käufe)`);
-  for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
-  for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
-  for (const s of f.jedenSieg) z.push(`Jeder Sieg in ${dungeonLink(s.routeId, stand)} · ${s.menge} Stück`);
+  if (f.haendler) z.push(`Beim Händler der Stadt · ${gold(kaufpreis(itemId, stadtStufeVon(stand)))}`);
+  if (f.dungeonHaendler) {
+    z.push(`Beim Dungeon-Händler · ${gold(f.dungeonHaendler.preis)} (höchstens ${anzahlText(f.dungeonHaendler.max, 'Kauf', 'Käufe')})`);
+  }
+  for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge}\u00a0je Durchgang`);
+  for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · ${stueck(1)} beim ersten Sieg`);
+  for (const s of f.jedenSieg) z.push(`Jeder Sieg in ${dungeonLink(s.routeId, stand)} · ${stueck(s.menge)}`);
   // Je Dungeon eine Kopfzeile mit Link und Ø, darunter seine Gegner ohne Link: So steht der Dungeon nur einmal
-  // da (die Zeilenform «… · Ø 1,4 je Sieg in ‹Dungeon›» je Gegner verdoppelte am Handy die Länge, docs/FUNDBUCH.md).
-  // Nach «Ø» ein geschütztes Leerzeichen, damit die Zahl nicht allein auf die nächste Zeile rutscht
+  // da (die Zeilenform «… · Ø 1,4 je Sieg in ‹Dungeon›» je Gegner verdoppelte am Handy die Länge, docs/FUNDBUCH.md)
   for (const d of f.dungeons) {
     const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg `
-      + `über ihn · ${mengeText(g.minQty, g.maxQty)} Stück</li>`).join('');
+      + `über ihn · ${stueck(mengeText(g.minQty, g.maxQty))}</li>`).join('');
     z.push(`${dungeonLink(d.routeId, stand)} · Ø\u00a0${zahlText(d.jeSieg)} je Sieg<ul class="fb-gegner">${gegner}</ul>`);
   }
   for (const r of f.fundRaeume) {
     const wann = r.art === 'zufall'
-      ? `Versteck durchsuchen: ${r.menge} Stück, angeboten in etwa ${prozentText(VERSTECK_CHANCE)} der Besuche`
-      : `zur Wahl: ${r.menge} Stück${r.nachSieg ? ', wenn der Boss fällt' : ''}`;
-    z.push(`${dungeonLink(r.routeId, stand)} · Fund in Raum ${r.raum} · ${wann}`);
+      ? `Versteck durchsuchen: ${stueck(r.menge)}, angeboten in etwa ${prozentText(VERSTECK_CHANCE)} der Besuche`
+      : `zur Wahl: ${stueck(r.menge)}${r.nachSieg ? ', wenn der Boss fällt' : ''}`;
+    z.push(`${dungeonLink(r.routeId, stand)} · Fund in Raum\u00a0${r.raum} · ${wann}`);
   }
   if (f.rastplaetze.length) {
     const dungeons = new Set(f.rastplaetze.map(r => r.routeId)).size;
-    const wo = dungeons === Object.keys(ROUTE_DEFS).length ? 'in jedem Dungeon' : `in ${dungeons} Dungeons`;
-    z.push(`Rastplatz ${wo} · Kräuter sammeln: ${RAST_KRAEUTER.menge} Stück, `
+    const wo = dungeons === Object.keys(ROUTE_DEFS).length ? 'in jedem Dungeon' : `in ${anzahlText(dungeons, 'Dungeon', 'Dungeons')}`;
+    z.push(`Rastplatz ${wo} · Kräuter sammeln: ${stueck(RAST_KRAEUTER.menge)}, `
       + `angeboten in etwa ${prozentText(RAST_KRAEUTER.chance)} der Besuche`);
   }
-  for (const e of f.einschmelzen) z.push(`Einschmelzen: doppeltes Set-Teil aus ${dungeonLink(e.routeId, stand)} · ${e.menge} Stück`);
+  for (const e of f.einschmelzen) z.push(`Einschmelzen: doppeltes Set-Teil aus ${dungeonLink(e.routeId, stand)} · ${stueck(e.menge)}`);
   return z;
 }
 
-/** [0, 0, 3, 6, 12] → «3 / 6 / 12 Stück für +3 bis +5» */
+/** [0, 0, 3, 6, 12] → «3 / 6 / 12 Stück für +3 bis +5» («/» bleibt bei der Zahl davor, nie am Zeilenanfang) */
 function stufenText(mengen: number[]): string {
   const ab = Math.max(0, mengen.findIndex(n => n > 0));
-  return `${mengen.slice(ab).join(' / ')} Stück für +${ab + 1} bis +${mengen.length}`;
+  return `${stueck(mengen.slice(ab).join('\u00a0/ '))} für +${ab + 1} bis +${mengen.length}`;
 }
 
 function wofuerZeilen(itemId: string, stand: Fortschritt): string[] {
   const v = verwendung(itemId);
   const z: string[] = [];
-  for (const r of v.rezepte) z.push(`${gebaeudeName(r.buildingId)} · ${esc(r.name)} · ${r.menge} je Durchgang → ${itemLink(r.ergebnis)}`);
+  for (const r of v.rezepte) z.push(`${gebaeudeName(r.buildingId)} · ${esc(r.name)} · ${r.menge}\u00a0je Durchgang → ${itemLink(r.ergebnis)}`);
   for (const b of v.bau) z.push(`Bau: ${gebaeudeName(b.buildingId)} · ${b.menge}`);
-  for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeName(a.buildingId)} auf Stufe ${a.stufe} · ${a.menge}`);
-  for (const a of v.abgaben) z.push(`Abgabe für Stadtstufe ${a.stufe} «${esc(a.name)}» · ${a.menge}`);
+  for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeName(a.buildingId)} auf Stufe\u00a0${a.stufe} · ${a.menge}`);
+  for (const a of v.abgaben) z.push(`Abgabe für Stadtstufe\u00a0${a.stufe} «${esc(a.name)}» · ${a.menge}`);
   for (const h of v.herzsteine) z.push(`${esc(h.name)} · ${h.menge}`);
   for (const s of v.schmiede) {
     const teile = s.routeId ? `Set-Teile aus ${dungeonLink(s.routeId, stand)}` : 'jedes Set-Teil';
@@ -141,7 +157,7 @@ function wofuerZeilen(itemId: string, stand: Fortschritt): string[] {
   }
   if (v.proviant) z.push('Proviant für Expeditionen');
   if (ITEM_DEFS[itemId]?.gearSlot) z.push('Ausrüstung für deine Helden');
-  if (v.ankauf > 0) z.push(`Der Händler zahlt ${v.ankauf} Gold je Stück`);
+  if (v.ankauf > 0) z.push(`Der Händler zahlt ${gold(v.ankauf)} je Stück`);
   return z;
 }
 
@@ -171,16 +187,17 @@ export function itemSeite(itemId: string, stand: Fortschritt): string {
     ${regelText(f)}`;
 }
 
-function dungeonSeite(routeId: string, stand: Fortschritt): string {
+/** Die Seite eines Dungeons (exportiert für den Test ohne Browser) */
+export function dungeonSeite(routeId: string, stand: Fortschritt): string {
   const route = ROUTE_DEFS[routeId];
   const gruende = getRouteLockReasons(route, stand);
   const sperre = gruende.length ? `<p class="fb-sperre">🔒 ${esc(gruende.join(' · '))}</p>` : '';
   const material = materialJeSieg(routeId);
   const schmiede = material
-    ? abschnitt('Schmiede-Material', [`${itemLink(material.material.id)} · ${material.menge} Stück je Sieg`], '') : '';
+    ? abschnitt('Schmiede-Material', [`${itemLink(material.material.id)} · ${stueck(material.menge)} je Sieg`], '') : '';
   const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø\u00a0${zahlText(b.jeSieg)} je Sieg`);
   return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name" tabindex="-1">${esc(route.name)}</h2>
-      <span class="fb-gruppe">Dungeon · Ebene ${route.tier}</span></div></header>${sperre}${schmiede}
+      <span class="fb-gruppe">Dungeon · Ebene\u00a0${route.tier}</span></div></header>${sperre}${schmiede}
     ${abschnitt('Beute der Gegner', zeilen, 'Hier lassen die Gegner keine Gegenstände fallen.')}`;
 }
 

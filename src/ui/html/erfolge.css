@@ -20,18 +20,55 @@
 }
 
 /* Handy: Knopf bleibt oben rechts, die Vorräte rutschen in die zweite Zeile. Der Knopf ragt je 4 px
-   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. Ein Hinweis (zeigeKopfHinweis)
-   steht an der Stelle des Logos, auf höchstens zwei Zeilen: Die Kopfzeile wird nicht höher, der Knopf bleibt. */
+   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. */
 @media (max-width: 700px) {
   .hdr .res { order: 2; }
   .hdr-erfolge { margin-top: -4px; margin-bottom: -4px; }
+}
+
+/* Ein Hinweis (zeigeKopfHinweis) steht in .hdr-platz, dem freien Platz hinter dem Bildschirm-Namen, auf höchstens
+   zwei Zeilen, und verschiebt nichts: .hdr-platz zählt für die Breite von .hdr-mitte nicht mit (magic-city.css), die
+   Kopfzeile wird nicht höher, kein Knopf rutscht weg, die Vorräte bleiben, wie sie sind.
+   Bis 1000 px Breite (Handy hoch und quer, Tablet, schmales Fenster) liegt er über Logo und Name; die beiden sind so
+   lange unsichtbar, behalten aber ihren Platz. Breiter steht er wie bisher 26 px hinter dem Namen, wenn er dort auf
+   zwei Zeilen passt: Hinweise bis 60 Zeichen brauchen höchstens 158 px, längere (.hdr-note-lang, HeaderRenderer.ts)
+   höchstens 214 px, mit dem Abstand zum Namen und etwas Reserve also 190 und 250 px Platz. Ist weniger frei (langer
+   Name, grosse Vorräte, viele neue Erfolge), liegt er auch dort über Logo und Name, zwei Hinweise nebeneinander und
+   Hinweise über 90 Zeichen (.hdr-note-sehr-lang) immer.
+   Die Abfrage dafür (@container auf .hdr-platz, nur breiter als 1000 px ein Container) kann nur den Hinweis selbst
+   ändern, nicht Logo und Name daneben: Er deckt sie darum in der Farbe der Kopfzeile zu (box-shadow, von .hdr-mitte
+   abgeschnitten). Diese Decke blendet nicht mit ein (hdr-note-darueber statt hdr-note-in), sonst schienen Logo und
+   Name 0,3 s lang durch; nur die Schrift blendet ein. */
+.hdr .hdr-note {
+  margin-left: calc(var(--hdr-abstand) + 12px); overflow: hidden;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2;
+}
+@media (max-width: 1000px) {
   .hdr.hdr-mit-hinweis .hdr-logo,
-  .hdr.hdr-mit-hinweis .hdr-space { display: none; }
-  .hdr .hdr-note {
-    flex: 1 1 0; min-width: 0; margin-left: 0; line-height: 1.3;
-    display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+  .hdr.hdr-mit-hinweis .hdr-sep,
+  .hdr.hdr-mit-hinweis .hdr-cur { visibility: hidden; }
+  .hdr .hdr-note { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3; }
+}
+@media (min-width: 1001px) {
+  .hdr-platz { container-type: inline-size; }
+  .hdr .hdr-note-sehr-lang {
+    position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3;
+    background: var(--s1); box-shadow: 0 0 0 100vmax var(--s1); animation-name: hdr-note-darueber;
   }
 }
+@container (width < 190px) {
+  .hdr .hdr-note {
+    position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3;
+    background: var(--s1); box-shadow: 0 0 0 100vmax var(--s1); animation-name: hdr-note-darueber;
+  }
+}
+@container (width < 250px) {
+  .hdr .hdr-note-lang {
+    position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3;
+    background: var(--s1); box-shadow: 0 0 0 100vmax var(--s1); animation-name: hdr-note-darueber;
+  }
+}
+@keyframes hdr-note-darueber { from { color: transparent; transform: translateY(-3px); } }
 
 /* ── Bildschirm ── */
 .erf-kopf { display: flex; flex-wrap: wrap; gap: 8px 16px; margin-bottom: 12px; font-size: 13px; opacity: 0.8; }

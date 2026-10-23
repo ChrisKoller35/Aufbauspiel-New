@@ -13,6 +13,7 @@ import { ROUTE_DEFS } from '../data/routes';
 import { GameState, StadtwegStand } from '../models/GameState';
 import { BUILDING_DEFS } from '../data/buildings';
 import { dasGebaeude, gebaeudeName, itemName, freischaltHinweise, kostenText } from './GebaeudeStatus';
+import { anzahlText } from '../utils/Anzahl';
 
 const ROEMISCH = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -78,7 +79,7 @@ function aufgabenZeile(state: GameState, a: StadtAufgabe): AufgabenZeile {
       };
     }
     case 'helden':
-      return zaehl(`${a.anzahl} Helden in der Gilde`, state.fighters.length, a.anzahl);
+      return zaehl(`${anzahlText(a.anzahl, 'Held', 'Helden')} in der Gilde`, state.fighters.length, a.anzahl);
     case 'siege':
       return zaehl(a.anzahl === 1 ? 'Eine Expedition gewonnen' : `${a.anzahl} Expeditionen gewonnen`,
         state.statistics?.total_victories ?? 0, a.anzahl);
