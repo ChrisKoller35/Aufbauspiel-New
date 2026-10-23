@@ -15,6 +15,7 @@ import {
   einschmelzen, einschmelzenErtrag, kannEinschmelzen, materialFuerTeil, schmieden, schmiedeFehlt,
   schmiedeKosten, schmiedeRabatt, schmiedeStufe, schmiedeStufen, verbesserteWerte,
 } from '../../systems/Schmiede';
+import { schluckeZweitenKlick } from '../components/FensterHilfen';
 import { setAbzeichen } from '../components/SetAnzeige';
 import {
   escapeAttr, materialBild, materialLeisteHtml, stufeAbzeichen, stufenKlasse, stufenPunkte, werteSprungHtml,
@@ -214,19 +215,25 @@ export function bindSchmiedeTab(el: HTMLElement, state: GameState, neuZeichnen: 
       speichernUndZeichnen(itemId);
     });
   });
+  // Einschmelzen: erst fragen, dann bestätigen. Der zweite Klick eines Doppelklicks oder Doppeltipps träfe nach
+  // dem Neuzeichnen, was jetzt unter dem Zeiger liegt, am PC oft «JA, EINSCHMELZEN» (nach NEIN wieder
+  // «🔥 Einschmelzen»): Er wird geschluckt
   el.querySelectorAll<HTMLButtonElement>('[data-einschmelzen]').forEach(knopf => {
     knopf.addEventListener('click', () => {
       einschmelzenFrage = knopf.dataset.einschmelzen!;
       zielTeil = einschmelzenFrage;
       neuZeichnen();
+      schluckeZweitenKlick();
     });
   });
   el.querySelector('[data-einschmelzen-nein]')?.addEventListener('click', () => {
     einschmelzenFrage = null;
     neuZeichnen();
+    schluckeZweitenKlick();
   });
   el.querySelector<HTMLButtonElement>('[data-einschmelzen-ja]')?.addEventListener('click', e => {
-    if (Date.now() < gesperrtBis) return;
+    // Nur ein eigener Klick schmilzt ein, nie der zweite eines Doppelklicks (wie «Ja, für immer» bei den Wegen)
+    if (e.detail > 1 || Date.now() < gesperrtBis) return;
     const itemId = (e.currentTarget as HTMLElement).dataset.einschmelzenJa!;
     einschmelzenFrage = null;
     const ertrag = einschmelzen(state, itemId);
