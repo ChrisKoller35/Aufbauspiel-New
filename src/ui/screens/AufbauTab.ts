@@ -1,59 +1,20 @@
 // ─── Magic City – Aufbau-Reiter ─────────────────────────────────
 // Die sechs Gebäude der Gildenstadt als Kacheln (Reihenfolge
-// BUILD_MENU_ORDER): gebaut (mit Stufe), baubar, «Bauplan kaufen» beim
-// Händler, oder gesperrt mit den Hinweisen aus freischaltHinweise
-// (Bauplan beim Händler oder vom Boss, Gildenrang). Klick auf eine
-// Kachel öffnet das Gebäude-Fenster, den Bau-Dialog oder, wenn nur der
-// Bauplan fehlt, das Händler-Fenster. Empfiehlt systems/Empfehlung.ts
+// BUILD_MENU_ORDER): gebaut (mit Stufe), baubar (mit Baukosten), oder
+// gesperrt mit den Hinweisen aus freischaltHinweise (Gildenrang). Klick
+// auf eine Kachel öffnet das Gebäude-Fenster oder den Bau-Dialog, der
+// das Gebäude direkt freischaltet. Empfiehlt systems/Empfehlung.ts
 // keinen Bau, sondern einen Helden (typeId leer), steht der Schritt als
 // Knopf über dem Raster und führt zu den Helden.
 // ────────────────────────────────────────────────────────────────
 
-import { BUILDING_DEFS, BUILD_MENU_ORDER, bauplanHinweis } from '../../data/buildings';
-import { bauplanPreis } from '../../data/haendler';
-import { stadtStufeVon } from '../../data/stadtstufen';
+import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../../data/buildings';
 import { GameState } from '../../models/GameState';
-import { freischaltHinweise, getBuiltTypeIds, getGildenrang, dasGebaeude } from '../../systems/GebaeudeStatus';
+import { freischaltHinweise, getBuiltTypeIds, getGildenrang, dasGebaeude, kostenText } from '../../systems/GebaeudeStatus';
 import { maxStufe, stufeVon } from '../../systems/Ausbau';
 import { naechsterBau } from '../../systems/Empfehlung';
-import { fundorte } from '../../systems/Fundbuch';
 
-type KachelStatus = 'gebaut' | 'baubar' | 'bauplan' | 'gesperrt';
-
-/**
- * Fehlt dem Gebäude nur noch der Bauplan, den der Händler führt? Dann der Preis mit Rabatt
- * der Stadtstufe (Knopf «Bauplan kaufen (N Gold)»), sonst null.
- */
-export function bauplanSchritt(state: GameState, typeId: string): { preis: number } | null {
-  const bauplan = BUILDING_DEFS[typeId]?.freischaltung.bauplan;
-  if (!bauplan || bauplanPreis(bauplan) <= 0 || dasGebaeude(state, typeId)) return null;
-  const stufe = stadtStufeVon(state);
-  const hinweise = freischaltHinweise(state, typeId);
-  if (hinweise.length !== 1 || hinweise[0] !== bauplanHinweis(typeId, stufe)) return null;
-  return { preis: bauplanPreis(bauplan, stufe) };
-}
-
-/** «Bauplan kaufen (50 Gold)» */
-export function bauplanKaufenText(preis: number): string {
-  return `Bauplan kaufen (${preis} Gold)`;
-}
-
-/**
- * Knopf «📜 Wo?» zum Bauplan im Fundbuch, solange das Gebäude fehlt und der Bauplan nicht im Lager
- * liegt. Bei einem Boss-Bauplan steht der Dungeon des Bosses drauf, der Boss (ENEMY_DEFS) im Titel.
- */
-function woKnopf(state: GameState, typeId: string): string {
-  const bauplan = BUILDING_DEFS[typeId]?.freischaltung.bauplan;
-  if (!bauplan || (state.globalStock[bauplan] ?? 0) >= 1) return '';
-  const quelle = fundorte(bauplan).bauplan;
-  if (!quelle) return '';
-  const wege = [
-    quelle.haendlerPreis ? `beim Händler (${quelle.haendlerPreis} Gold)` : '',
-    quelle.boss ? `vom Boss «${quelle.boss.name}» in «${quelle.boss.routeName}» (erster Sieg)` : '',
-  ].filter(Boolean).join(' oder ');
-  const text = quelle.boss ? `📜 Wo? · ${quelle.boss.routeName}` : '📜 Wo?';
-  return `<button type="button" class="acard-wo" data-bauplan="${bauplan}" title="Im Fundbuch: Bauplan ${wege}"><span>${text}</span></button>`;
-}
+type KachelStatus = 'gebaut' | 'baubar' | 'gesperrt';
 
 /** «✓ Stufe 2 von 3» bei ausbaubaren Gebäuden, sonst «✓ Gebaut». */
 function gebautLabel(state: GameState, typeId: string): string {
@@ -65,19 +26,16 @@ function gebautLabel(state: GameState, typeId: string): string {
 function kachel(state: GameState, typeId: string, built: Set<string>, empfohlen: string | undefined, imageStyle: string): string {
   const def = BUILDING_DEFS[typeId];
   const hinweise = built.has(typeId) ? [] : freischaltHinweise(state, typeId);
-  const bauplan = bauplanSchritt(state, typeId);
-  const status: KachelStatus = built.has(typeId) ? 'gebaut' : hinweise.length === 0 ? 'baubar' : bauplan ? 'bauplan' : 'gesperrt';
+  const status: KachelStatus = built.has(typeId) ? 'gebaut' : hinweise.length === 0 ? 'baubar' : 'gesperrt';
   const naechstes = typeId === empfohlen ? ' · lohnt sich als Nächstes' : '';
   const label = status === 'gebaut' ? gebautLabel(state, typeId)
-    : status === 'baubar' ? `Baubar${naechstes}`
-    : status === 'bauplan' ? `${bauplanKaufenText(bauplan!.preis)}${naechstes}`
+    : status === 'baubar' ? `Bauen: ${kostenText(def.buildCost)}${naechstes}`
     : `🔒 ${hinweise.join(', ')}`;
   return `
       <div class="acard ${status}${typeId === empfohlen ? ' empfohlen' : ''}" data-btype="${typeId}" data-status="${status}"
            role="button" tabindex="0" title="${def.name}" style="${imageStyle}">
         <span class="acard-nm">${def.name}</span>
         <span class="acard-st">${label}</span>
-        ${status === 'gebaut' ? '' : woKnopf(state, typeId)}
       </div>`;
 }
 
@@ -101,12 +59,11 @@ export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) =
       <div class="aufbau-legend">
         <span class="lg gebaut">Gebaut</span>
         <span class="lg baubar">Baubar</span>
-        <span class="lg bauplan">Bauplan beim Händler</span>
         <span class="lg gesperrt">Gesperrt</span>
         <span class="aufbau-rang">Gildenrang ${getGildenrang(state)}</span>
       </div>
-      <p class="craft-hint">Gildenhaus und Händler stehen von Anfang an. Die vier Werkstätten brauchen einen Bauplan
-        (Händler oder Boss) und Gold und Beute aus den Dungeons; danach lassen sie sich bis Stufe 3 ausbauen.</p>
+      <p class="craft-hint">Gildenhaus und Händler stehen von Anfang an. Die vier Werkstätten schaltest du direkt hier
+        frei, mit Gold und Beute aus den Dungeons (die späteren ab einem Gildenrang); danach lassen sie sich bis Stufe 3 ausbauen.</p>
       ${naechsterSchrittHTML(state)}
       <div class="aufbau-grid">${cards}</div>
     </div>`;
@@ -115,12 +72,8 @@ export function renderAufbauTab(state: GameState, imageStyle: (typeId: string) =
 export interface AufbauCallbacks {
   /** Gebaut: Fenster; baubar oder gesperrt: Bau-Dialog (zeigt den Sperrgrund). */
   oeffne: (typeId: string) => void;
-  /** Nur der Bauplan fehlt: Händler-Fenster, Abschnitt Baupläne. */
-  bauplanKaufen: (typeId: string) => void;
   /** Empfohlener Schritt ohne Gebäude (Held anheuern): Helden-Bildschirm. */
   zuDenHelden: () => void;
-  /** «Wo?» auf einer Karte: Fundbuch beim Bauplan. */
-  fundbuch: (bauplanId: string) => void;
 }
 
 export function bindAufbauTab(panel: HTMLElement, cb: AufbauCallbacks): void {
@@ -128,17 +81,8 @@ export function bindAufbauTab(panel: HTMLElement, cb: AufbauCallbacks): void {
   const waehle = (card: HTMLElement) => {
     const typeId = card.dataset.btype;
     if (!typeId) return;
-    if (card.dataset.status === 'bauplan') cb.bauplanKaufen(typeId);
-    else cb.oeffne(typeId);
+    cb.oeffne(typeId);
   };
-  // «Wo?» liegt in der Karte: Klick und Tasten nicht an die Karte geben (sonst öffnet zugleich der Kauf-Dialog)
-  panel.querySelectorAll<HTMLElement>('.acard-wo').forEach(knopf => {
-    knopf.addEventListener('click', (e) => {
-      e.stopPropagation();
-      if (knopf.dataset.bauplan) cb.fundbuch(knopf.dataset.bauplan);
-    });
-    knopf.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); });
-  });
   panel.querySelectorAll<HTMLElement>('.acard').forEach(card => {
     card.addEventListener('click', () => waehle(card));
     card.addEventListener('keydown', (e) => {

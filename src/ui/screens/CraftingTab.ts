@@ -48,7 +48,7 @@ export function renderCrafting(state: GameState): string {
   }
 
   const hint = ownedGroups.length === 0
-    ? '<p class="craft-hint">Du besitzt noch keine Werkstatt. Den Bauplan gibt es beim Händler, bauen kannst du im Reiter «Stadt» oder «Aufbau».</p>'
+    ? '<p class="craft-hint">Du besitzt noch keine Werkstatt. Bauen kannst du sie direkt im Reiter «Stadt» oder «Aufbau».</p>'
     : '<p class="craft-hint">Werkstätten arbeiten auf Auftrag: «+ Auftrag» auf einem Rezept, ein Klick auf die Karte '
       + 'öffnet die Werkstatt. Zutaten sind Gold und Beute aus den Dungeons. Gelbe Zutaten mit ↻ fehlen noch, '
       + 'kommen aber von selbst; rote musst du besorgen (Beute, Gold, oder ein Gebäude dafür fehlt).</p>';

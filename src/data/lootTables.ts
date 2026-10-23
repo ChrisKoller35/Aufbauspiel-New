@@ -9,11 +9,6 @@ export interface LootTableDef {
   id: string;
   entries: LootEntry[];
   guaranteedGold: { min: number; max: number };
-  /**
-   * Bauplan-Item, das beim ERSTEN Sieg über den Boss dieser Tabelle garantiert fällt
-   * (zusätzlich zum normalen Wurf). Merker: GameState.erhalteneBauplaene.
-   */
-  ersterSiegBauplan?: string;
 }
 
 export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
@@ -103,7 +98,6 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_golem: {
     id: 'loot_boss_golem',
-    ersterSiegBauplan: 'bauplan_arkanschmiede',
     entries: [
       { itemId: 'iron_scrap', weight: 35, minQty: 5, maxQty: 10 },
       { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 4 },
@@ -240,7 +234,6 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
   },
   loot_boss_fallen_knight: {
     id: 'loot_boss_fallen_knight',
-    ersterSiegBauplan: 'bauplan_kriegsmaschinen',
     entries: [
       { itemId: 'crystal_shard', weight: 25, minQty: 2, maxQty: 5 },
       { itemId: 'talisman_fragment', weight: 25, minQty: 2, maxQty: 4 },

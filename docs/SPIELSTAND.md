@@ -69,7 +69,7 @@ Code: `src/ui/components/SpielstandFenster.ts`, Stile: `src/ui/html/spielstand.c
   der jetzige Stand gesichert bleibt). Erst **Neu anfangen** schreibt: Das Spiel speichert den
   laufenden Stand, legt ihn auf den Platz «vor dem Laden» (mit Grund «neu»), leert Spielstand und
   Sicherung und lädt die Seite neu; `main.ts` findet keinen Stand und legt die Startstadt an (Gildenhaus und
-  Händler, ein Guardian, 100 Gold, 5 Brot, 2 Heiltränke, eine Novizenrobe). Gleiche Sperre wie beim Laden. Im Probespiel
+  Händler, ein Guardian, 200 Gold, 5 Brot, 2 Heiltränke, eine Novizenrobe). Gleiche Sperre wie beim Laden. Im Probespiel
   entspricht das `?probe=neu`, nur mit Rückweg.
 - **Stand vor dem Laden** (nach «Neues Spiel»: **Stand vor dem Neustart**): steht unten im Fenster,
   sobald es ihn gibt: Tag, Stadtstufe, Helden und wann er gesichert wurde. **Zurückholen** fragt nach und tauscht ihn
@@ -107,11 +107,12 @@ nichts, ändert keinen ID-Zähler und wirft nie. Ergebnis `{ ok: true, zusammenf
    Ein Feld darf fehlen (`load()` und die Systeme legen es an), aber was da ist, hat die Form, mit der das Spiel
    rechnet. Pflicht sind `buildings`, `globalStock`, `fighters` und `day`, bei jedem Gebäude `id` und `typeId`, bei
    jedem Helden `id`, `baseStats.maxHp` und `gear`. Auftragsbrett, Rangliste, Stadtweg, Geschichten, Schmiede,
-   Trophäen, `erhalteneBauplaene` und am Gebäude `vonSelbst`, `tier`, `pendingCraft`, `auftraege` haben ihre innere
+   Trophäen und am Gebäude `vonSelbst`, `tier`, `pendingCraft`, `auftraege` haben ihre innere
    Form. Alte Felder (Bewohner, Raster, Zufriedenheit, Ereignisse, Spezialisten, Talismane, Kriegsmaschinen-Auswahl,
    Tutorial, Kacheln) kennt das Schema nicht; stehen sie in einer Datei, werden sie weder geprüft noch gelesen.
 4. **Probe-Laden** auf dem gelesenen Stand (`SaveSystem.probeLaden`), mit derselben Logik wie beim
-   Start: fehlende Felder anlegen (`erhalteneBauplaene`), unbekannte Gebäude-Arten ablehnen, doppelte
+   Start: fehlende Felder anlegen, unverbaute Baupläne alter Stände zum alten Händlerpreis in Gold tauschen
+   (`tauscheBauplaeneInGold`, seit 23.10.2026), unbekannte Gebäude-Arten ablehnen, doppelte
    Gebäude derselben Art zu einem verschmelzen (`vereinigeDoppelte`), eine
    unterbrochene Expedition abbrechen, Leben auffüllen, dazu was das Hauptmenü liest (Rangliste,
    Auftragsbrett). Wirft ein Schritt, startet das Spiel mit diesem Stand nicht. **Kommt in `main.ts` beim

@@ -1,19 +1,18 @@
 // ─── Magic City – Texte und Werte der Mindmap ───────────────────
 // Was auf den Karten des Reiters «Stadt» steht und was die Erklärung
-// beim Darüberfahren sagt: Vorräte der Beute, Werte der Ziele, wohin
-// ein Kasten liefert, was ein Gebäude gerade tut oder wie man es
-// bekommt (bauen, Bauplan beim Händler kaufen, gesperrt). Reine
+// beim Darüberfahren sagt: Vorräte der Beute, Werte der Ziele,
+// was ein Gebäude gerade tut oder wie man es
+// bekommt (auf dem Feld bauen oder gesperrt). Reine
 // Funktionen über den Spielstand; Darstellung: ProduktionTab.ts.
 // ────────────────────────────────────────────────────────────────
 
-import { NETZ_KANTEN, netzKnoten, netzGebaeudeIds, BEUTE_GRUPPEN } from '../../data/produktionsnetz';
+import { netzKnoten, netzGebaeudeIds, BEUTE_GRUPPEN } from '../../data/produktionsnetz';
 import { ERKLAERUNG } from '../../data/gebaeudeErklaerungen';
 import { BUILDING_DEFS } from '../../data/buildings';
 import { GameState } from '../../models/GameState';
 import { getGebaeudeStatus, gebaeudeName, dasGebaeude, GebaeudeStatus, kostenText } from '../../systems/GebaeudeStatus';
 import { naechsterBau } from '../../systems/Empfehlung';
 import { maxStufe, kannAusbauen } from '../../systems/Ausbau';
-import { bauplanSchritt, bauplanKaufenText } from './AufbauTab';
 
 export function quellenVorrat(state: GameState, items: string[]): number {
   return items.reduce((sum, item) => sum + Math.floor(state.globalStock[item] ?? 0), 0);
@@ -27,6 +26,9 @@ function traenkeImLager(state: GameState): number {
 
 export function zielWert(state: GameState, wert: 'bauen' | 'expeditionen'): string {
   if (wert === 'expeditionen') return `${state.fighters.length} Helden · ${traenkeImLager(state)} Tränke`;
+  const e = naechsterBau(state);
+  // Erst ein Held, dann Gebäude: der empfohlene Schritt selbst («Held anheuern (50 Gold)», Klick geht zu den Helden)
+  if (e && !e.typeId) return e.text;
   let baubar = 0;
   let ausbaubar = 0;
   for (const typeId of netzGebaeudeIds()) {
@@ -41,37 +43,7 @@ export function zielWert(state: GameState, wert: 'bauen' | 'expeditionen'): stri
   if (baubar) teile.push(`${baubar} baubar`);
   if (ausbaubar) teile.push(`${ausbaubar} ausbaubar`);
   if (teile.length) return teile.join(' · ');
-  const e = naechsterBau(state);
-  // Kein Gebäude: der empfohlene Schritt selbst («Held anheuern (50 Gold)», Klick geht zu den Helden)
-  if (e && !e.typeId) return e.text;
-  const bauplan = e?.schritt === 'bauplan' ? bauplanSchritt(state, e.typeId) : null;
-  return bauplan ? bauplanKaufenText(bauplan.preis) : 'sammle Gold und Eisenschrott';
-}
-
-/** Steht der Knoten (gebaut, Vorrat da, Ziel immer)? Grundlage für goldene Linien. */
-export function vorhanden(state: GameState, built: Set<string>, id: string): boolean {
-  const k = netzKnoten(id);
-  if (!k) return false;
-  if (k.art === 'gebaeude') return built.has(k.typeId);
-  if (k.art === 'quelle') return quellenVorrat(state, k.items) > 0;
-  return true;
-}
-
-/** Name eines Knotens für Sätze («Händler», «Expeditionen»). */
-function knotenName(id: string): string {
-  const k = netzKnoten(id);
-  if (!k) return id;
-  return k.art === 'gebaeude' ? gebaeudeName(k.typeId) : k.titel;
-}
-
-/**
- * Wohin ein Knoten liefert, als kurzer Text für das schmale Raster ohne Linien,
- * z. B. «→ Gildenhaus: Ausrüstung». Leer bei mehr als zwei Zielen (Beute-Balken).
- */
-export function flussText(id: string): string {
-  const raus = NETZ_KANTEN.filter(k => k.von === id);
-  if (raus.length === 0 || raus.length > 2) return '';
-  return raus.map(k => `→ ${knotenName(k.nach)}: ${k.ware}`).join(' · ');
+  return 'sammle Gold und Eisenschrott';
 }
 
 export function stufeText(s: GebaeudeStatus): string {
@@ -112,7 +84,7 @@ export function erklaerung(state: GameState, knotenId: string): { titel: string;
   return { titel: gebaeudeName(k.typeId), zeilen };
 }
 
-/** Was ein Gebäude gerade tut, oder wie man es bekommt (bauen, Bauplan kaufen, gesperrt). */
+/** Was ein Gebäude gerade tut, oder wie man es bekommt (auf dem Feld bauen oder gesperrt). */
 function gebaeudeZeilen(state: GameState, typeId: string): string[] {
   const s = getGebaeudeStatus(state, typeId);
   if (s.anzahl > 0) {
@@ -120,9 +92,7 @@ function gebaeudeZeilen(state: GameState, typeId: string): string[] {
     return [`Jetzt: ${s.text}${stufeText(s) ? ` (${stufeText(s)})` : ''}.`, klick];
   }
   const zeilen: string[] = [];
-  const bauplan = s.zustand === 'gesperrt' ? bauplanSchritt(state, typeId) : null;
-  if (bauplan) zeilen.push(`Klick: ${bauplanKaufenText(bauplan.preis)} beim Händler.`);
-  else if (s.zustand === 'gesperrt') zeilen.push(`Noch gesperrt: ${(s.hinweise ?? []).join(', ')}.`);
+  if (s.zustand === 'gesperrt') zeilen.push(`Noch gesperrt: ${(s.hinweise ?? []).join(', ')}.`);
   else zeilen.push(`Klick: bauen für ${kostenText(BUILDING_DEFS[typeId]?.buildCost ?? {})}.`);
   const e = naechsterBau(state);
   if (e?.typeId === typeId && e.warum) zeilen.push(`Lohnt sich als Nächstes: ${e.warum}`);

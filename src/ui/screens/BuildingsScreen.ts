@@ -1,7 +1,7 @@
 // ─── Magic City – Gebäude-Seite ─────────────────────────────────
 // Reiter «Stadt» (Mindmap, ProduktionTab.ts), «Crafting» (CraftingTab.ts)
 // und «Aufbau» (AufbauTab.ts). Jedes Gebäude gibt es genau einmal: Bauen
-// schaltet es frei (Bauplan vom Händler oder Boss, Gold und Beute), danach
+// schaltet es direkt auf seinem Feld frei (Gold und Beute), danach
 // wird es ausgebaut (systems/Ausbau.ts). Hier: Reiter, Bau-Dialog und die
 // Fenster (GebaeudeFenster.ts, HaendlerFenster.ts) öffnen.
 // ────────────────────────────────────────────────────────────────
@@ -13,7 +13,7 @@ import { GameState } from '../../models/GameState';
 import { createBuildingInstance } from '../../models/Building';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
-import { renderAufbauTab, bindAufbauTab, bauplanSchritt, bauplanKaufenText } from './AufbauTab';
+import { renderAufbauTab, bindAufbauTab } from './AufbauTab';
 import { renderProduktionTab, aktualisiereProduktionTab, bindProduktionTab, ProduktionZiel } from './ProduktionTab';
 import { renderCrafting, aktualisiereCrafting, bindCraftingTab } from './CraftingTab';
 import { showBuildingModal, renderCostDetail } from './GebaeudeFenster';
@@ -23,7 +23,6 @@ import { freischaltHinweise, dasGebaeude } from '../../systems/GebaeudeStatus';
 import { maxStufe } from '../../systems/Ausbau';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { bindDruckWaechter, wirdGedrueckt } from '../components/DruckWaechter';
-import { oeffneFundbuch } from '../components/FundbuchFenster';
 
 /** Kartenbild je Gebäude-Art. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -209,9 +208,7 @@ function bindEvents(root: HTMLElement, state: GameState): void {
   if (aufbau) {
     bindAufbauTab(aufbau, {
       oeffne: typeId => oeffneGebaeude(root, typeId, state),
-      bauplanKaufen: () => oeffneHaendler(root, state, 'bauplaene'),
       zuDenHelden: () => navigateTo('heroes'),
-      fundbuch: bauplanId => oeffneFundbuch(state, bauplanId),
     });
   }
 
@@ -242,7 +239,6 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   const canAfford = Object.entries(def.buildCost).every(([res, qty]) => (state.globalStock[res] ?? 0) >= qty);
   const hinweise = freischaltHinweise(state, typeId);
   const unlocked = hinweise.length === 0;
-  const bauplan = bauplanSchritt(state, typeId);
   const recipeNames = def.recipes.map(id => RECIPE_DEFS[id]?.name).filter(Boolean);
   const erklaerung = ERKLAERUNG[typeId];
   const max = maxStufe(typeId);
@@ -261,7 +257,6 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
         : !canAfford ? '<p class="ws-warn">Nicht genug Gold oder Beute.</p>' : ''}
       <div class="bm-actions">
         ${unlocked && canAfford ? '<button class="fk-btn ok btn-confirm-buy">BAUEN</button>' : ''}
-        ${bauplan ? `<button class="fk-btn gold btn-bauplan">${bauplanKaufenText(bauplan.preis).toUpperCase()}</button>` : ''}
         <button class="fk-btn btn-close-modal">ABBRECHEN</button>
       </div>
     </div>`;
@@ -280,9 +275,6 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
     if ((target === ov && hintergrund(e)) || target.classList.contains('btn-close-modal')) {
       close();
       schluckeZweitenKlick();
-    } else if (target.classList.contains('btn-bauplan')) {
-      close();
-      oeffneHaendler(root, state, 'bauplaene');
     } else if (target.classList.contains('btn-confirm-buy')) {
       close();
       executeBuy(root, typeId, state);
@@ -290,20 +282,17 @@ function showBuyConfirmModal(root: HTMLElement, typeId: string, state: GameState
   });
 }
 
-/** Baut sofort (keine Bauzeit): Gold und Beute abziehen, der Bauplan wird verbraucht. */
+/** Baut sofort (keine Bauzeit): Gold und Beute abziehen. */
 function executeBuy(root: HTMLElement, typeId: string, state: GameState): void {
   const def = BUILDING_DEFS[typeId];
   if (!def || dasGebaeude(state, typeId) || freischaltHinweise(state, typeId).length) return;
   for (const [res, qty] of Object.entries(def.buildCost)) {
     if ((state.globalStock[res] ?? 0) < qty) return;
   }
-  const bauplan = def.freischaltung.bauplan;
-  if (bauplan && (state.globalStock[bauplan] ?? 0) < 1) return;
 
   for (const [res, qty] of Object.entries(def.buildCost)) {
     state.globalStock[res] = (state.globalStock[res] ?? 0) - qty;
   }
-  if (bauplan) state.globalStock[bauplan] -= 1;
   state.buildings.push(createBuildingInstance(typeId));
 
   state.statistics['total_buildings_built'] = (state.statistics['total_buildings_built'] ?? 0) + 1;

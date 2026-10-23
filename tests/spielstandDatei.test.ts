@@ -69,7 +69,7 @@ function spieleTage(state: GameState, tage: number): void {
   spieleSekunden(state, tage * TAG_SEKUNDEN);
 }
 
-/** Bauen wie im Gebäude-Menü, hier ohne Kosten und Bauplan. */
+/** Bauen wie im Gebäude-Menü, hier ohne Kosten. */
 function baue(state: GameState, typeId: string): BuildingInstance {
   const b = createBuildingInstance(typeId);
   if (BUILDING_DEFS[typeId].recipes.length > 0) b.activeRecipeId = BUILDING_DEFS[typeId].recipes[0];

@@ -75,6 +75,8 @@ Schmiede (10 / 20), Abgaben der Stadtstufen (10 bis 40), Herzsteine (10 bis 50).
 Gold kam schon vor der Gildenstadt zu rund 90 % aus den Dungeons; jetzt ganz: Beute, mutige Wahlen der Geschichten,
 Fund-Räume, Auftragsbrett (Zettel und Lieferungen), Ruhmestruhe der Rangliste, Geschenke der Stadtstufen (100 bis
 500) und der Ankauf beim Händler (halber Grundwert, `docs/HAENDLER.md`). Gold ist zugleich Zutat der
-Schmiede-Rezepte (10 bis 30) und des Katapults (60), Preis der Baupläne (50 bis 250) und der Ausbauten
-(Baukosten × Stufe). Startgold 100: ein zweiter Held (50) und der Bauplan der Schmiede (50), oder Heiltränke.
+Schmiede-Rezepte (10 bis 30) und des Katapults (60), Preis der Werkstätten (90 bis 350) und der Ausbauten
+(`ausbauGold` 40 bis 100 × Stufe). Startgold 200: ein zweiter Held (50), die Schmiede (100) und 50 Gold Proviant,
+oder zwei weitere Helden (50 + 80). Seit 23.10.2026 gibt es keine Baupläne mehr; ihr Preis (50 bis 250) steckt in den
+Baukosten, darum stieg das Startgold von 100 auf 200 (`docs/GILDENSTADT.md`, «Ohne Baupläne»).
 Erste Werte, noch nicht am Spiel gemessen; Balancing läuft über Manager-Issue #23.

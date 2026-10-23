@@ -11,9 +11,9 @@
 
 import { ENEMY_DEFS } from '../data/enemies';
 import { LOOT_TABLE_DEFS, LootTableDef } from '../data/lootTables';
-import { ROUTE_DEFS, RouteDef, findBauplanRoute } from '../data/routes';
-import { ITEM_DEFS, PROVISION_ITEMS, isBauplan } from '../data/items';
-import { BAUPLAN_PREISE, HAENDLER_WAREN, ankaufpreis, bauplanPreis, kaufpreis } from '../data/haendler';
+import { ROUTE_DEFS, RouteDef } from '../data/routes';
+import { ITEM_DEFS, PROVISION_ITEMS } from '../data/items';
+import { HAENDLER_WAREN, ankaufpreis, kaufpreis } from '../data/haendler';
 import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../data/buildings';
 import { RECIPE_DEFS } from '../data/recipes';
 import { HERZSTEINE, STADTSTUFEN } from '../data/stadtstufen';
@@ -115,19 +115,11 @@ export interface FundRaum {
   nachSieg: boolean;
 }
 
-export interface BauplanQuelle {
-  /** Gold beim Händler der Stadt (Stadtstufe 1), null wenn er ihn nicht führt. */
-  haendlerPreis: number | null;
-  /** Boss, der ihn beim ersten Sieg fallen lässt (LootTableDef.ersterSiegBauplan). */
-  boss: { enemyId: string; name: string; routeId: string; routeName: string } | null;
-}
-
 export interface Fundorte {
   /** Je Dungeon, sortiert nach Ø je Sieg (grösster zuerst), mit den Gegnern dort. */
   dungeons: DungeonFund[];
   /** Alle Gegner in Routen, die den Gegenstand fallen lassen (ohne Wiederholung). */
   gegner: GegnerFund[];
-  bauplan: BauplanQuelle | null;
   /** Händler der Stadt, Gold je Stück auf Stadtstufe 1. */
   haendler: number | null;
   /** Reisender Händler im Dungeon (MERCHANT_PRICES), höchstens `max` Käufe je Händler. */
@@ -149,17 +141,6 @@ function gegnerFund(enemyId: string, tabelle: LootTableDef, itemId: string, anza
     maxQty: Math.max(...eintraege.map(e => e.maxQty)),
     anzahl,
   };
-}
-
-function bauplanQuelle(itemId: string): BauplanQuelle | null {
-  const preis = itemId in BAUPLAN_PREISE ? bauplanPreis(itemId, 1) : 0;
-  const route = findBauplanRoute(itemId);
-  const bossId = route?.bossId;
-  const boss = route && bossId
-    ? { enemyId: bossId, name: ENEMY_DEFS[bossId]?.name ?? bossId, routeId: route.id, routeName: route.name }
-    : null;
-  if (preis <= 0 && !boss) return null;
-  return { haendlerPreis: preis > 0 ? preis : null, boss };
 }
 
 function fundRaeume(itemId: string): FundRaum[] {
@@ -215,7 +196,6 @@ export function fundorte(itemId: string): Fundorte {
   return {
     dungeons,
     gegner,
-    bauplan: isBauplan(itemId) || itemId in BAUPLAN_PREISE ? bauplanQuelle(itemId) : null,
     haendler: stadt > 0 ? stadt : null,
     dungeonHaendler: dungeonPreis ? { preis: dungeonPreis, max: MERCHANT_MAX_PURCHASES } : null,
     fundRaeume: fundRaeume(itemId),
@@ -253,8 +233,6 @@ export interface Verwendung {
   abgaben: { stufe: number; name: string; menge: number }[];
   herzsteine: { name: string; menge: number }[];
   proviant: boolean;
-  /** Gebäude, das dieser Bauplan freischaltet. */
-  schaltetFrei: { buildingId: string; gebaeude: string } | null;
   /** Gold je Stück beim Händler der Stadt (Ankauf), 0 = nimmt er nicht. */
   ankauf: number;
 }
@@ -289,11 +267,9 @@ export function verwendung(itemId: string): Verwendung {
     .filter(s => s.abgabe[itemId])
     .map(s => ({ stufe: s.stufe, name: s.name, menge: s.abgabe[itemId] }));
   const herzsteine = HERZSTEINE.filter(h => h.kosten[itemId]).map(h => ({ name: h.name, menge: h.kosten[itemId] }));
-  const frei = ITEM_DEFS[itemId]?.bauplanFuer;
   return {
     rezepte, bau, ausbau, abgaben, herzsteine,
     proviant: PROVISION_ITEMS.includes(itemId),
-    schaltetFrei: frei && BUILDING_DEFS[frei] ? { buildingId: frei, gebaeude: BUILDING_DEFS[frei].name } : null,
     ankauf: ankaufpreis(itemId),
   };
 }
@@ -306,11 +282,10 @@ function zaehltAlsEintrag(itemId: string): boolean {
   return !!def && itemId !== 'gold' && !def.tags.includes('currency') && !def.tags.includes('set');
 }
 
-export type FundbuchGruppe = 'material' | 'bauplan' | 'verbrauch' | 'ausruestung' | 'sonstiges';
+export type FundbuchGruppe = 'material' | 'verbrauch' | 'ausruestung' | 'sonstiges';
 
 export const GRUPPEN_NAMEN: Record<FundbuchGruppe, string> = {
   material: 'Materialien',
-  bauplan: 'Baupläne',
   verbrauch: 'Tränke und Proviant',
   ausruestung: 'Ausrüstung',
   sonstiges: 'Sonstiges',
@@ -323,7 +298,6 @@ export const GRUPPEN_NAMEN: Record<FundbuchGruppe, string> = {
 export function gruppeVon(itemId: string): FundbuchGruppe {
   const def = ITEM_DEFS[itemId];
   if (!def) return 'sonstiges';
-  if (def.tags.includes('bauplan')) return 'bauplan';
   if (def.type === 'resource' || def.type === 'material') return 'material';
   if (def.type === 'consumable') return 'verbrauch';
   if (def.type === 'gear') return 'ausruestung';
@@ -332,7 +306,7 @@ export function gruppeVon(itemId: string): FundbuchGruppe {
   return 'sonstiges';
 }
 
-/** Alle Einträge des Fundbuchs: Beute (Gegner in Routen), Fund, Händlerware, Bauplan; ohne Gold und Dungeon-Set-Teile. */
+/** Alle Einträge des Fundbuchs: Beute (Gegner in Routen), Fund, Händlerware; ohne Gold und Dungeon-Set-Teile. */
 export function fundbuchEintraege(): string[] {
   const ids = new Set<string>();
   for (const enemyId of gegnerInRouten()) {
@@ -348,8 +322,6 @@ export function fundbuchEintraege(): string[] {
   }
   HAENDLER_WAREN.forEach(w => ids.add(w.itemId));
   Object.keys(MERCHANT_PRICES).forEach(id => ids.add(id));
-  Object.keys(BAUPLAN_PREISE).forEach(id => ids.add(id));
-  for (const t of Object.values(LOOT_TABLE_DEFS)) if (t.ersterSiegBauplan) ids.add(t.ersterSiegBauplan);
   return [...ids].filter(zaehltAlsEintrag).sort((a, b) => ITEM_DEFS[a].name.localeCompare(ITEM_DEFS[b].name, 'de'));
 }
 

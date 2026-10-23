@@ -17,10 +17,10 @@ export const ERKLAERUNG: Record<string, string> = {
   ARCANE_SMITHY: 'Fertigt auf Auftrag magische Ausrüstung aus Eisen und Kristallsplittern. Bauteile für Kriegsmaschinen macht sie von selbst, sobald die Werkstatt welche braucht.',
   WAR_MACHINE_WORKSHOP: 'Baut auf Auftrag Katapult und Kanone, die deinen Helden in den Belagerungs-Dungeons helfen.',
   HERB_GARDEN: 'Braut auf Auftrag Heiltränke aus Grünen Kräutern, backt Kraft-Brot und macht aus seltenen Kräutern die fünf Tränke mit Wirkung: Kraft, Mana, Gegengift, Titan, Schnelligkeit.',
-  HAENDLER: 'Verkauft Brot, Heiltränke, Grundausrüstung und die Baupläne der Werkstätten. Kauft Beute, die niemand trägt, zum halben Wert. Ab Stadtstufe 4 gibt er Rabatt.',
+  HAENDLER: 'Verkauft Brot, Heiltränke und Grundausrüstung. Kauft Beute, die niemand trägt, zum halben Wert. Ab Stadtstufe 4 gibt er Rabatt.',
   GUILD_HALL: 'Hier wohnen und trainieren deine Helden, hier hängt das Auftragsbrett, hier steht die Set-Schmiede. Von hier starten die Expeditionen.',
   'z:expeditionen': 'Helden, Ausrüstung, Tränke und Kriegsmaschinen ziehen in die Dungeons und bringen Gold und Beute zurück.',
-  'z:bauen': 'Gold, Eisenschrott und Kristallsplitter bezahlen neue Werkstätten und ihren Ausbau. Die Baupläne gibt es beim Händler oder von einem Boss.',
+  'z:bauen': 'Gold, Eisenschrott und Kristallsplitter bezahlen neue Werkstätten und ihren Ausbau. Eine Werkstatt schaltest du direkt auf ihrem Feld frei, die späteren ab einem Gildenrang.',
 };
 
 /** Empfohlene Reihenfolge für neue Gebäude: zuerst, was am meisten freischaltet oder bremst. */

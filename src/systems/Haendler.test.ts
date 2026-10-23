@@ -1,7 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { kaufen, bauplanKaufen, bauplanGekauft, verkaufen, verkaeufliches } from './Haendler';
+import { kaufen, verkaufen, verkaeufliches } from './Haendler';
 import { createNewGameState, GameState } from '../models/GameState';
-import { createBuildingInstance } from '../models/Building';
 import { placeStartingLayout } from '../scenes/CityStartingLayout';
 import { ITEM_DEFS } from '../data/items';
 import { ankaufpreis, istAnkaufbar, kaufpreis } from '../data/haendler';
@@ -64,46 +63,6 @@ describe('Händler: kaufen', () => {
   });
 });
 
-describe('Händler: Baupläne', () => {
-  it('Bauplan der Schmiede für 50 Gold, einmal', () => {
-    const state = stadt();
-    expect(bauplanGekauft(state, 'SMITHY')).toBe(false);
-    expect(bauplanKaufen(state, 'SMITHY')).toEqual({
-      ok: true, text: 'Bauplan: Schmiede gekauft für 50 Gold. Jetzt kannst du Schmiede bauen.',
-    });
-    expect(state.globalStock.bauplan_schmiede).toBe(1);
-    expect(state.globalStock.gold).toBe(50);
-    expect(state.statistics.total_haendler_kaeufe).toBe(1);
-    expect(bauplanGekauft(state, 'SMITHY')).toBe(true);
-    expect(bauplanKaufen(state, 'SMITHY')).toEqual({ ok: false, text: 'Den Bauplan: Schmiede hast du schon.' });
-    expect(state.globalStock.gold).toBe(50);
-  });
-
-  it('steht das Gebäude schon, gibt es keinen Bauplan mehr', () => {
-    const state = stadt();
-    state.buildings.push(createBuildingInstance('SMITHY'));
-    expect(bauplanGekauft(state, 'SMITHY')).toBe(true);
-    expect(bauplanKaufen(state, 'SMITHY')).toEqual({ ok: false, text: 'Schmiede steht schon.' });
-    expect(state.globalStock.gold).toBe(100);
-  });
-
-  it('zu wenig Gold, mit Rabatt der Stadtstufe', () => {
-    const state = stadt(140);
-    expect(bauplanKaufen(state, 'ARCANE_SMITHY')).toEqual({ ok: false, text: 'Zu wenig Gold: Bauplan: Arkanschmiede kostet 150 Gold, du hast 140.' });
-    state.stadtweg!.stufe = 4; // 10 %: 135 Gold
-    expect(bauplanKaufen(state, 'ARCANE_SMITHY').ok).toBe(true);
-    expect(state.globalStock.gold).toBe(5);
-    expect(state.globalStock.bauplan_arkanschmiede).toBe(1);
-  });
-
-  it('Gildenhaus und Händler haben keinen Bauplan', () => {
-    const state = stadt();
-    expect(bauplanKaufen(state, 'GUILD_HALL')).toEqual({ ok: false, text: 'Für Gildenhaus gibt es beim Händler keinen Bauplan.' });
-    expect(bauplanKaufen(state, 'HAENDLER').ok).toBe(false);
-    expect(bauplanKaufen(state, 'GIBT_ES_NICHT').ok).toBe(false);
-  });
-});
-
 describe('Händler: verkaufen', () => {
   it('Beute, die niemand trägt, zum halben Grundwert, mindestens 1 Gold', () => {
     const state = stadt();
@@ -123,10 +82,9 @@ describe('Händler: verkaufen', () => {
     expect(state.statistics.total_haendler_kaeufe).toBeUndefined();
   });
 
-  it('kauft keine Baupläne, Set-Teile und kein Dungeon-Material', () => {
+  it('kauft keine Set-Teile und kein Dungeon-Material', () => {
     const state = stadt();
-    Object.assign(state.globalStock, { bauplan_schmiede: 1, set_wyrm_klinge: 1, mat_glutkern: 10 });
-    expect(verkaufen(state, 'bauplan_schmiede')).toEqual({ ok: false, text: 'Der Händler kauft Bauplan: Schmiede nicht an.' });
+    Object.assign(state.globalStock, { set_wyrm_klinge: 1, mat_glutkern: 10 });
     expect(verkaufen(state, 'set_wyrm_klinge').ok).toBe(false);
     expect(verkaufen(state, 'mat_glutkern', 'alle').ok).toBe(false);
     expect(verkaufen(state, 'gold', 1).ok).toBe(false);

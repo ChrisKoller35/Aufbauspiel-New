@@ -65,23 +65,9 @@ export function saalSterne(state: GameState): number {
 }
 
 /**
- * Baupläne, die die Gilde je hatte: im Lager, schon verbaut (die Werkstatt steht) oder als
- * Erst-Sieg-Beute eines Bosses vergeben (state.erhalteneBauplaene).
- */
-function bauplaeneErworben(state: GameState): Set<string> {
-  const steht = new Set((state.buildings ?? []).filter(b => b && b.built).map(b => b.typeId));
-  const ids = new Set<string>(state.erhalteneBauplaene ?? []);
-  for (const def of Object.values(BUILDING_DEFS)) {
-    const bauplan = def.freischaltung?.bauplan;
-    if (bauplan && ((state.globalStock?.[bauplan] ?? 0) > 0 || steht.has(def.id))) ids.add(bauplan);
-  }
-  return ids;
-}
-
-/**
  * Schreibt die Kennzahlen, die niemand von selbst zählt, in state.statistics:
  * Stadtstufe, Helden, Wege und Meister, ganze Sets, Monsterbuch, Gildenrang,
- * Werkstätten und ihre Stufen, Baupläne, Auftragsbrett, Trophäensaal, Pokale und
+ * Werkstätten und ihre Stufen, Auftragsbrett, Trophäensaal, Pokale und
  * Schmiede. Es zählt jeweils der höchste je erreichte Wert, damit kein Fortschrittsbalken
  * zurückfällt (z. B. wenn ein Held die Gilde verlässt). Tage, Siege, Bosse und Gegner
  * kommen aus dem Spielstand selbst (Tag, Gildenstatistik und Bestenliste). Käufe beim Händler
@@ -116,7 +102,6 @@ export function kennzahlenAktualisieren(state: GameState): void {
   hoechstens('gildenrang', getGildenrang(state));
   hoechstens('werkstaetten', werkstaetten.length);
   hoechstens('werkstatt_hoechste_stufe', Math.max(0, ...werkstaetten.map(stufeVon)));
-  hoechstens('bauplaene', bauplaeneErworben(state).size);
 
   // Gildenhaus: Auftragsbrett, Kette «Der Saal der Gilde» und Trophäensaal; Pokale der Rangliste
   // (abgeholte und solche, deren Ruhmestruhe noch wartet); die beste Stufe aus der Schmiede

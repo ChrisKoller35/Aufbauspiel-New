@@ -1,7 +1,7 @@
 // ─── Magic City – CityStartingLayout ────────────────────────────
 // Stellt auf, womit jede neue Stadt beginnt: Gildenhaus und Händler
 // als Gebäude, dazu ein Held (Guardian, Stufe 1, wie beim Anheuern im
-// Heldenhaus). Alles andere baut man mit Bauplan (data/buildings.ts)
+// Heldenhaus). Alles andere baut man auf seinem Feld (data/buildings.ts)
 // oder heuert man an (systems/Empfehlung.ts: anheuerKosten).
 // Keine Bewohner, kein Raster.
 // ────────────────────────────────────────────────────────────────

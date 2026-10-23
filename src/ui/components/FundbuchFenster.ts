@@ -2,7 +2,7 @@
 // Links (am Handy oben) Suchfeld und Liste aller Einträge, gruppiert;
 // rechts (am Handy darunter) «Woher» und «Wofür» des gewählten
 // Gegenstands oder die Beute eines Dungeons. Ein Klick auf einen Dungeon
-// oder ein Gebäude springt zum passenden Eintrag im Fundbuch. Ändert den
+// oder einen Gegenstand springt zum passenden Eintrag im Fundbuch. Ändert den
 // Spielstand nicht. Die Suche filtert nur, ihr Text kommt nie in HTML.
 // Rechnung: systems/Fundbuch.ts. Stile: ui/html/fundbuch.css.
 // Doku: docs/FUNDBUCH.md
@@ -23,11 +23,11 @@ type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
 type Ziel = { art: 'item' | 'dungeon'; id: string };
 
 const EMOJI: Record<FundbuchGruppe, string> = {
-  material: '🪨', bauplan: '📜', verbrauch: '🧪', ausruestung: '⚔️', sonstiges: '💎',
+  material: '🪨', verbrauch: '🧪', ausruestung: '⚔️', sonstiges: '💎',
 };
 
 let loeseTasten: (() => void) | null = null;
-/** Was vor dem Öffnen den Fokus hatte («📜 Fundbuch» oder «Wo?»), bekommt ihn beim Schliessen zurück. */
+/** Was vor dem Öffnen den Fokus hatte («📜 Fundbuch»), bekommt ihn beim Schliessen zurück. */
 let vorherFokus: HTMLElement | null = null;
 
 function esc(text: string | number): string {
@@ -53,14 +53,10 @@ function dungeonLink(routeId: string, stand: Fortschritt): string {
   return `<button type="button" class="fb-link" data-route="${esc(routeId)}">${schloss}${esc(route.name)}</button>`;
 }
 
-/** Gebäude: springt zu seinem Bauplan, Gebäude ohne Bauplan stehen als Text da. */
-function gebaeudeLink(buildingId: string): string {
+/** Gebäude als Text (bis 22.10.2026 ein Link zu ihrem Bauplan; Baupläne gibt es nicht mehr). */
+function gebaeudeName(buildingId: string): string {
   const def = BUILDING_DEFS[buildingId];
-  if (!def) return '';
-  const bauplan = def.freischaltung.bauplan;
-  return bauplan && ITEM_DEFS[bauplan]
-    ? `<button type="button" class="fb-link" data-item="${esc(bauplan)}">${esc(def.name)}</button>`
-    : esc(def.name);
+  return def ? esc(def.name) : '';
 }
 
 function abschnitt(titel: string, zeilen: string[], leer: string): string {
@@ -71,11 +67,9 @@ function abschnitt(titel: string, zeilen: string[], leer: string): string {
 function woherZeilen(itemId: string, stand: Fortschritt): string[] {
   const f = fundorte(itemId);
   const z: string[] = [];
-  if (f.bauplan?.haendlerPreis) z.push(`Beim Händler der Stadt · ${f.bauplan.haendlerPreis} Gold`);
-  if (f.bauplan?.boss) z.push(`${esc(f.bauplan.boss.name)} (Boss) in ${dungeonLink(f.bauplan.boss.routeId, stand)} · beim ersten Sieg`);
   if (f.haendler) z.push(`Beim Händler der Stadt · ${f.haendler} Gold`);
   if (f.dungeonHaendler) z.push(`Beim Dungeon-Händler · ${f.dungeonHaendler.preis} Gold (höchstens ${f.dungeonHaendler.max} Käufe)`);
-  for (const h of f.hergestellt) z.push(`${gebaeudeLink(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
+  for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
   for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
   for (const d of f.dungeons) {
     const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg über ihn · `
@@ -94,10 +88,9 @@ function woherZeilen(itemId: string, stand: Fortschritt): string[] {
 function wofuerZeilen(itemId: string): string[] {
   const v = verwendung(itemId);
   const z: string[] = [];
-  if (v.schaltetFrei) z.push(`Schaltet ${esc(v.schaltetFrei.gebaeude)} frei (wird beim Bau verbraucht)`);
-  for (const r of v.rezepte) z.push(`${gebaeudeLink(r.buildingId)} · ${esc(r.name)} · ${r.menge} je Durchgang → ${itemLink(r.ergebnis)}`);
-  for (const b of v.bau) z.push(`Bau: ${gebaeudeLink(b.buildingId)} · ${b.menge}`);
-  for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeLink(a.buildingId)} auf Stufe ${a.stufe} · ${a.menge}`);
+  for (const r of v.rezepte) z.push(`${gebaeudeName(r.buildingId)} · ${esc(r.name)} · ${r.menge} je Durchgang → ${itemLink(r.ergebnis)}`);
+  for (const b of v.bau) z.push(`Bau: ${gebaeudeName(b.buildingId)} · ${b.menge}`);
+  for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeName(a.buildingId)} auf Stufe ${a.stufe} · ${a.menge}`);
   for (const a of v.abgaben) z.push(`Abgabe für Stadtstufe ${a.stufe} «${esc(a.name)}» · ${a.menge}`);
   for (const h of v.herzsteine) z.push(`${esc(h.name)} · ${h.menge}`);
   if (v.proviant) z.push('Proviant für Expeditionen');
@@ -148,7 +141,7 @@ export function schliesseFundbuch(): void {
   vorherFokus = null;
 }
 
-/** Öffnet das Fundbuch, auf Wunsch gleich beim Gegenstand `itemId` (z. B. einem Bauplan). */
+/** Öffnet das Fundbuch, auf Wunsch gleich beim Gegenstand `itemId`. */
 export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
   schliesseFundbuch();
   vorherFokus = document.activeElement instanceof HTMLElement ? document.activeElement : null;

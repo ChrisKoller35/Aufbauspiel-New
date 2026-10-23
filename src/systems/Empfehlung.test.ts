@@ -14,7 +14,7 @@ function bauen(state: GameState, typeId: string): void {
   state.buildings.push(createBuildingInstance(typeId));
 }
 
-/** Neues Spiel mit den Startgebäuden (Gildenhaus, Händler), dem Start-Guardian und 100 Gold. */
+/** Neues Spiel mit den Startgebäuden (Gildenhaus, Händler), dem Start-Guardian und 200 Gold. */
 function neuesSpiel(): GameState {
   const state = createNewGameState();
   placeStartingLayout(state);
@@ -55,46 +55,32 @@ describe('Empfehlung: nächster Schritt', () => {
     expect(anheuerKosten(3)).toBe(110);
   });
 
-  it('mit zwei Helden: zuerst den Bauplan der Schmiede kaufen, das Startgold reicht', () => {
-    const e = naechsterBau(startStadt());
-    expect(e).toMatchObject({ typeId: 'SMITHY', schritt: 'bauplan', text: 'Bauplan Schmiede kaufen (50 Gold)', bezahlbar: true });
+  it('mit zwei Helden: zuerst die Schmiede auf ihrem Feld bauen, das Startgold reicht für Held und Schmiede', () => {
+    const state = neuesSpiel();
+    expect(state.globalStock.gold).toBe(200);
+    state.globalStock.gold -= anheuerKosten(state.fighters.length);
+    zweiHelden(state);
+    const e = naechsterBau(state);
+    expect(e).toMatchObject({ typeId: 'SMITHY', schritt: 'bauen', text: 'Schmiede bauen (100 Gold)', bezahlbar: true });
     expect(e?.warum).toContain('Ausrüstung');
+    state.globalStock.gold = 99;
+    expect(naechsterBau(state)?.bezahlbar).toBe(false);
   });
 
   it('Gildenhaus und Händler werden nie empfohlen, auch ohne Startgebäude', () => {
     expect(naechsterBau(zweiHelden(createNewGameState()))?.typeId).toBe('SMITHY');
   });
 
-  it('liegt der Bauplan im Lager, heisst der Schritt bauen', () => {
-    const state = startStadt();
-    state.globalStock.bauplan_schmiede = 1;
-    expect(naechsterBau(state)).toMatchObject({ typeId: 'SMITHY', schritt: 'bauen', text: 'Schmiede bauen (50 Gold)', bezahlbar: true });
-    state.globalStock.gold = 49;
-    expect(naechsterBau(state)?.bezahlbar).toBe(false);
-  });
-
   it('gebaute Gebäude werden übersprungen, gesperrte mit Gildenrang warten', () => {
     const state = startStadt();
     bauen(state, 'SMITHY');
-    expect(naechsterBau(state)).toMatchObject({ typeId: 'HERB_GARDEN', schritt: 'bauplan' });
+    expect(naechsterBau(state)).toMatchObject({ typeId: 'HERB_GARDEN', schritt: 'bauen', text: 'Kräuterküche bauen (90 Gold)' });
     bauen(state, 'HERB_GARDEN');
     // Arkanschmiede braucht Gildenrang 2: noch keine Empfehlung
     expect(naechsterBau(state)).toBeNull();
     state.guildStats.rank = 2;
-    expect(naechsterBau(state)).toMatchObject({ typeId: 'ARCANE_SMITHY', schritt: 'bauplan', bezahlbar: false });
-    state.globalStock.gold = 150;
-    expect(naechsterBau(state)?.bezahlbar).toBe(true);
-  });
-
-  it('der Bauplan-Preis gilt mit dem Rabatt der Stadtstufe', () => {
-    const state = startStadt();
-    state.guildStats.rank = 4;
-    bauen(state, 'SMITHY');
-    bauen(state, 'HERB_GARDEN');
-    bauen(state, 'ARCANE_SMITHY');
-    state.globalStock.gold = 225;
-    expect(naechsterBau(state)).toMatchObject({ typeId: 'WAR_MACHINE_WORKSHOP', schritt: 'bauplan', bezahlbar: false });
-    state.stadtweg!.stufe = 4; // 10 % Rabatt: 225 Gold
+    expect(naechsterBau(state)).toMatchObject({ typeId: 'ARCANE_SMITHY', schritt: 'bauen', bezahlbar: false });
+    Object.assign(state.globalStock, { gold: 230, iron_scrap: 5, crystal_shard: 3 });
     expect(naechsterBau(state)?.bezahlbar).toBe(true);
   });
 
@@ -107,7 +93,7 @@ describe('Empfehlung: nächster Schritt', () => {
   it('die Engpass-Leiste nennt denselben Schritt', () => {
     const state = startStadt();
     bauen(state, 'SMITHY');
-    expect(engpaesseDerStadt(state, 10).some(e => e.typeId === 'HERB_GARDEN' && e.satz.includes('Bauplan fehlt'))).toBe(true);
+    expect(engpaesseDerStadt(state, 10)).toContainEqual({ typeId: 'HERB_GARDEN', satz: 'Kräuterküche fehlt noch. Bauen kostet 90 Gold.' });
   });
 
   it('jede Empfehlung ist ein echtes Gebäude, und jeder Kasten der Mindmap hat eine Erklärung', () => {

@@ -40,8 +40,6 @@ export interface ItemDef {
     cooldown: number;
   };
   airBonus?: number;
-  /** Nur Baupläne (Tag 'bauplan'): Building-ID, die dieser Bauplan freischaltet */
-  bauplanFuer?: string;
 }
 
 export const ITEM_DEFS: Record<string, ItemDef> = {
@@ -381,38 +379,6 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['special', 'treasure'],
   },
 
-  // --- Baupläne: schalten Gebäude frei, beim Händler zu kaufen (data/haendler.ts), zwei davon auch
-  //     als garantierte Beute beim ersten Sieg über einen Boss (LootTableDef.ersterSiegBauplan) ---
-  // Nicht verkaufbar (baseValue 0), nicht ausrüstbar (kein gearSlot). Wird beim Bau verbraucht.
-  bauplan_schmiede: {
-    id: 'bauplan_schmiede', name: 'Bauplan: Schmiede', type: 'special',
-    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
-    bauplanFuer: 'SMITHY',
-    tags: ['special', 'bauplan'],
-    flavorText: 'Esse, Amboss, Wasserbottich. Der Händler hat die Masse selbst nachgemessen, sagt er.',
-  },
-  bauplan_kraeuterkueche: {
-    id: 'bauplan_kraeuterkueche', name: 'Bauplan: Kräuterküche', type: 'special',
-    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
-    bauplanFuer: 'HERB_GARDEN',
-    tags: ['special', 'bauplan'],
-    flavorText: 'Ein Herd, drei Kessel und ein Regal für alles, was im Dungeon wächst. Am Rand ein Rezept gegen Kater.',
-  },
-  bauplan_arkanschmiede: {
-    id: 'bauplan_arkanschmiede', name: 'Bauplan: Arkanschmiede', type: 'special',
-    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
-    bauplanFuer: 'ARCANE_SMITHY',
-    tags: ['special', 'bauplan'],
-    flavorText: 'Im Kern des Golems eingeschlossen: Runen, Maße und ein Funken Kristallglut.',
-  },
-  bauplan_kriegsmaschinen: {
-    id: 'bauplan_kriegsmaschinen', name: 'Bauplan: Kriegsmaschinen-Werkstatt', type: 'special',
-    stackSize: 1, baseValue: 0, spriteKey: 'ITEM_BAUPLAN',
-    bauplanFuer: 'WAR_MACHINE_WORKSHOP',
-    tags: ['special', 'bauplan'],
-    flavorText: 'Der Ritter trug die Pläne der alten Belagerungsgeräte bis ins Grab.',
-  },
-
   // --- Gold (tracked separately in globalStock but defined here for completeness) ---
   gold: {
     id: 'gold', name: 'Gold', type: 'resource',
@@ -705,10 +671,6 @@ export function getItemSpriteKey(itemId: string): string {
   return `ITEM_${itemId.toUpperCase()}`;
 }
 
-/** True, wenn das Item ein Bauplan ist (nicht verkaufbar, nicht ausrüstbar). */
-export function isBauplan(itemId: string): boolean {
-  return ITEM_DEFS[itemId]?.tags.includes('bauplan') ?? false;
-}
 
 /** Vorräte für Expeditionen in Anzeige-Reihenfolge; jeder hat ein wirkungText. */
 export const PROVISION_ITEMS = [

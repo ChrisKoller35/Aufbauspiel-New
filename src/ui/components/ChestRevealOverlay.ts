@@ -3,15 +3,9 @@
 // ────────────────────────────────────────────────────────────────
 
 import { itemEigenschaften } from '../../data/specialEffects';
-import { ITEM_DEFS, getItemSpriteKey, isBauplan } from '../../data/items';
-import { BUILDING_DEFS } from '../../data/buildings';
+import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SchmiedeStufen, werteMitStufe } from '../../systems/Schmiede';
 import { nameMitStufe, stufeAbzeichen } from './SchmiedeAnzeige';
-
-/** Inline-Styles für die Bauplan-Hervorhebung (pergamentfarben, volle Breite, Glow). */
-const BAUPLAN_CARD_STYLE = 'grid-column:1/-1;border:2px solid #f59e0b;'
-  + 'background:linear-gradient(135deg,rgba(245,158,11,.22),rgba(120,72,20,.25));'
-  + 'box-shadow:0 0 14px rgba(245,158,11,.45);padding:10px 12px;';
 
 interface LootEntry {
   itemId: string;
@@ -40,10 +34,9 @@ export function showChestReveal(
       if (qty > 0) entries.push({ itemId: id, qty });
     }
 
-    // Sort: bauplan → set piece → gold → gear → consumable → rest
+    // Sort: set piece → gold → gear → consumable → rest
     entries.sort((a, b) => {
       const order = (e: LootEntry) => {
-        if (isBauplan(e.itemId)) return -2;
         if (ITEM_DEFS[e.itemId]?.tags.includes('set')) return -1;
         if (e.itemId === 'gold') return 0;
         const def = ITEM_DEFS[e.itemId];
@@ -90,7 +83,6 @@ export function showChestReveal(
       <div class="chest-title">Schatztruhe</div>
       <div class="chest-subtitle">${entries.length === 0 ? 'Die Truhe ist leer.'
         : untertitel ? untertitel
-        : entries.some(e => isBauplan(e.itemId)) ? '📜 Ein Bauplan ist in der Beute!'
         : entries.some(e => ITEM_DEFS[e.itemId]?.tags.includes('set')) ? '✦ Ein Set-Teil ist in der Beute!'
         : '✨ Beute dieser Expedition!'}</div>
     `;
@@ -138,23 +130,6 @@ export function showChestReveal(
       const card = document.createElement('div');
       card.className = `chest-item chest-item-anim ${rarCls}${isGear ? ' chest-item-gear' : ''}`;
       card.style.animationDelay = `${idx * 80}ms`;
-
-      // Bauplan: hervorgehoben, volle Breite, mit freigeschaltetem Gebäude
-      if (isBauplan(entry.itemId)) {
-        const building = def?.bauplanFuer ? BUILDING_DEFS[def.bauplanFuer] : undefined;
-        card.classList.add('chest-item-bauplan');
-        card.style.cssText += BAUPLAN_CARD_STYLE;
-        card.innerHTML = `
-          <span class="chest-item-ico" style="font-size:2rem;line-height:36px;text-align:center">📜</span>
-          <div class="chest-item-info">
-            <span style="font-size:0.68rem;font-weight:700;letter-spacing:.08em;color:#fbbf24">NEUER BAUPLAN!</span>
-            <span class="chest-item-name" style="color:#fde68a">${name}</span>
-            ${building ? `<span class="chest-item-stats" style="color:#fcd34d">Schaltet frei: ${building.name}</span>` : ''}
-          </div>
-        `;
-        grid.appendChild(card);
-        return;
-      }
 
       const hinweis = hinweise[entry.itemId];
       if (rarCls === 'rar-set') card.classList.add('chest-item-set');

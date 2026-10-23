@@ -6,10 +6,9 @@
 // ein Gebäude je Art (systems/Ausbau.ts).
 // ────────────────────────────────────────────────────────────────
 
-import { BUILDING_DEFS, bauplaeneImLager, getFreischaltHinweise } from '../data/buildings';
+import { BUILDING_DEFS, getFreischaltHinweise } from '../data/buildings';
 import { RECIPE_DEFS, RecipeDef } from '../data/recipes';
 import { ITEM_DEFS } from '../data/items';
-import { stadtStufeVon } from '../data/stadtstufen';
 import { GameState } from '../models/GameState';
 import { BuildingInstance } from '../models/Building';
 import { zyklusSekunden, stufeVon } from './Ausbau';
@@ -60,11 +59,9 @@ export function getGildenrang(state: GameState): number {
   return state.guildStats?.rank ?? 1;
 }
 
-/** Freischalt-Hinweise inkl. fehlendem Bauplan (der Bauplan muss im Lager liegen), Preis mit Rabatt der Stadtstufe. */
+/** Was noch fehlt, bevor das Gebäude auf seinem Feld gebaut werden darf (Gildenrang); leer = baubar. */
 export function freischaltHinweise(state: GameState, typeId: string): string[] {
-  return getFreischaltHinweise(
-    typeId, getBuiltTypeIds(state), getGildenrang(state), bauplaeneImLager(state.globalStock), stadtStufeVon(state),
-  );
+  return getFreischaltHinweise(typeId, getBuiltTypeIds(state), getGildenrang(state));
 }
 
 /** «50 Gold · 5 Eisenschrott» */
