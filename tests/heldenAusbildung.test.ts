@@ -58,6 +58,8 @@ describe('Training mit Klassen-Boni', () => {
       expect(trainiert.xp).toBe(vergleich.xp);
       expect(trainiert.baseStats).toEqual(vergleich.baseStats);
       expect(trainings).toBe(46);
+      expect(xpSumme).toBe(2300);
+      expect(ueberschuss(trainiert)).toBe(2300 - totalXpForLevel(15)); // 60 XP aus dem letzten Training
       expect(1_000_000 - state.globalStock['gold']).toBe(4600);
     });
   }
@@ -122,6 +124,56 @@ describe('Training mit Klassen-Boni', () => {
     expect(neu).toContain('paladin');
     expect(state.classesUnlocked).toContain('paladin');
   });
+});
+
+describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
+  /** Das alte Training aus HeroesScreen.handleTrain bis Stufe 15: je Aufstieg +2 Leben, +1 Angriff, +1 Verteidigung */
+  function altesTraining(classId: string): GuildFighter {
+    const f = neuerHeld(classId);
+    while (f.level < MAX_HERO_LEVEL) {
+      f.xp += 10 + f.level * 5;
+      while (f.level < MAX_HERO_LEVEL && f.xp >= totalXpForLevel(f.level + 1)) {
+        f.level++;
+        f.baseStats.maxHp += 2;
+        f.baseStats.hp = f.baseStats.maxHp;
+        f.baseStats.atk += 1;
+        f.baseStats.def += 1;
+      }
+    }
+    return f;
+  }
+
+  // Leben / Angriff / Verteidigung / Krit / Tempo auf Stufe 15
+  const TABELLE: Record<string, { vorher: number[]; nachher: number[] }> = {
+    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [126, 8.2, 10, 0.05, 0.8] },
+    ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 16.4, 2.4, 0.29, 1.2] },
+    cleric:      { vorher: [83, 17, 15.5, 0.05, 0.9], nachher: [97, 5.8, 5.7, 0.05, 1.18] },
+    berserker:   { vorher: [112, 21, 16, 0.12, 1.1],  nachher: [126, 14, 4.8, 0.12, 1.1] },
+    assassin:    { vorher: [82, 22, 14, 0.2, 1.4],    nachher: [82, 16.4, 1.4, 0.34, 1.4] },
+    paladin:     { vorher: [68, 18, 16.5, 0.05, 0.9], nachher: [96, 8.2, 8.1, 0.05, 0.9] },
+    bard:        { vorher: [88, 17, 15, 0.05, 1.1],   nachher: [88, 5.8, 3.8, 0.05, 1.38] },
+    witch:       { vorher: [85, 19, 14, 0.08, 1.2],   nachher: [85, 10.6, 1.4, 0.22, 1.2] },
+    necromancer: { vorher: [88, 18, 15, 0.05, 1],     nachher: [88, 9.3, 3.8, 0.05, 1] },
+    druid:       { vorher: [103, 18, 16, 0.06, 1],    nachher: [117, 8.2, 6.2, 0.06, 1.14] },
+  };
+
+  test('deckt alle Klassen ab', () => {
+    expect(Object.keys(TABELLE).sort()).toEqual(Object.keys(CLASS_DEFS).sort());
+  });
+
+  for (const [classId, { vorher, nachher }] of Object.entries(TABELLE)) {
+    test(`${classId}: Werte auf Stufe 15 mit altem und neuem Training`, () => {
+      const werte = (f: GuildFighter) => {
+        const s = f.baseStats;
+        return [s.maxHp, s.atk, s.def, s.critChance, s.spd].map(v => Math.round(v * 100) / 100);
+      };
+      expect(werte(altesTraining(classId))).toEqual(vorher);
+      const state = spielMitGold(1_000_000);
+      const neu = neuerHeld(classId);
+      while (trainieren(state, neu).ok) { /* bis Stufe 15 */ }
+      expect(werte(neu)).toEqual(nachher);
+    });
+  }
 });
 
 describe('Keine verlorenen XP auf Stufe 15', () => {
