@@ -5,10 +5,10 @@ import { ROUTE_DEFS } from '../src/data/routes';
 import { ENEMY_DEFS } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { ITEM_DEFS } from '../src/data/items';
-import { BUILDING_DEFS } from '../src/data/buildings';
+import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../src/data/buildings';
 import { RECIPE_DEFS } from '../src/data/recipes';
 import { STADTSTUFEN } from '../src/data/stadtstufen';
-import { BAUPLAN_PREISE, HAENDLER_WAREN, ankaufpreis, kaufpreis } from '../src/data/haendler';
+import { HAENDLER_WAREN, ankaufpreis, kaufpreis } from '../src/data/haendler';
 import { CombatEngine } from '../src/systems/CombatEngine';
 import { EncounterProcessor } from '../src/systems/EncounterProcessor';
 import { MERCHANT_PRICES } from '../src/systems/ExpeditionSystem';
@@ -19,8 +19,8 @@ import { EncounterRoom, ExpeditionRun } from '../src/models/ExpeditionRun';
 import { createNewGameState } from '../src/models/GameState';
 import { renderAufbauTab } from '../src/ui/screens/AufbauTab';
 import {
-  VERSTECK_CHANCE, beuteZiehungen, chanceInTabelle, dungeonBeute, fundbuchEintraege, fundorte, gegnerDerRoute,
-  gruppeVon, prozentText, verwendung, zahlText,
+  GRUPPEN_NAMEN, VERSTECK_CHANCE, beuteZiehungen, chanceInTabelle, dungeonBeute, fundbuchEintraege, fundorte,
+  gegnerDerRoute, gruppeVon, prozentText, verwendung, zahlText,
 } from '../src/systems/Fundbuch';
 
 const ROUTEN = Object.values(ROUTE_DEFS);
@@ -93,10 +93,9 @@ describe('Woher: Gegner und Dungeons', () => {
     }
   });
 
-  it('Händler der Stadt, Dungeon-Händler und Baupläne kommen aus den Datendateien', () => {
+  it('Händler der Stadt und Dungeon-Händler kommen aus den Datendateien', () => {
     for (const w of HAENDLER_WAREN) expect(fundorte(w.itemId).haendler).toBe(kaufpreis(w.itemId, 1));
     for (const [id, preis] of Object.entries(MERCHANT_PRICES)) expect(fundorte(id).dungeonHaendler?.preis).toBe(preis);
-    for (const id of Object.keys(BAUPLAN_PREISE)) expect(fundorte(id).bauplan?.haendlerPreis).toBe(BAUPLAN_PREISE[id]);
   });
 });
 
@@ -182,38 +181,25 @@ describe('Woher: Ø je Sieg gegen echte Läufe', () => {
   }, 120_000);
 });
 
-describe('Baupläne', () => {
-  it('jeder Bauplan, den ein Gebäude braucht, hat eine Quelle (Händler oder Boss)', () => {
-    for (const def of Object.values(BUILDING_DEFS)) {
-      const bauplan = def.freischaltung.bauplan;
-      if (!bauplan) continue;
-      const q = fundorte(bauplan).bauplan;
-      expect(q && (q.haendlerPreis !== null || q.boss !== null), `${def.name}: ${bauplan}`).toBeTruthy();
-      expect(verwendung(bauplan).schaltetFrei?.buildingId).toBe(def.id);
+describe('Ohne Baupläne (seit 23.10.2026)', () => {
+  it('das Fundbuch führt keine Baupläne mehr, auch nicht als Gruppe', () => {
+    expect(fundbuchEintraege().filter(id => id.startsWith('bauplan_'))).toEqual([]);
+    expect(Object.keys(GRUPPEN_NAMEN)).not.toContain('bauplan');
+  });
+
+  it('jede Beute in den Baukosten steht unter «Wofür» bei ihrem Gebäude', () => {
+    for (const id of BUILD_MENU_ORDER) {
+      for (const [itemId, menge] of Object.entries(BUILDING_DEFS[id].buildCost)) {
+        if (itemId === 'gold') continue;
+        expect(verwendung(itemId).bau.find(b => b.buildingId === id)?.menge, `${id}: ${itemId}`).toBe(menge);
+      }
     }
   });
 
-  it('der Reiter «Aufbau» nennt für gesperrte Gebäude mit Boss-Bauplan den richtigen Boss', () => {
+  it('der Reiter «Aufbau» hat keinen «Wo?»-Knopf mehr', () => {
     const html = renderAufbauTab(createNewGameState(), () => '');
-    for (const typeId of ['ARCANE_SMITHY', 'WAR_MACHINE_WORKSHOP']) {
-      const start = html.indexOf(`data-btype="${typeId}"`);
-      expect(start).toBeGreaterThan(-1);
-      const karte = html.slice(start, html.indexOf('</div>', start));
-      const boss = fundorte(BUILDING_DEFS[typeId].freischaltung.bauplan!).bauplan!.boss!;
-      expect(karte).toContain(ENEMY_DEFS[boss.enemyId].name);
-      expect(karte).toContain(ROUTE_DEFS[boss.routeId].name);
-      expect(karte).toContain('class="acard-wo"');
-    }
-  });
-
-  it('Boss-Baupläne nennen den Boss aus ENEMY_DEFS und seine Route', () => {
-    for (const t of Object.values(LOOT_TABLE_DEFS)) {
-      if (!t.ersterSiegBauplan) continue;
-      const boss = fundorte(t.ersterSiegBauplan).bauplan?.boss;
-      expect(boss).toBeTruthy();
-      expect(ENEMY_DEFS[boss!.enemyId].lootTableId).toBe(t.id);
-      expect(ROUTE_DEFS[boss!.routeId].bossId).toBe(boss!.enemyId);
-    }
+    expect(html).not.toContain('acard-wo');
+    expect(html).not.toContain('Bauplan');
   });
 });
 
@@ -252,12 +238,12 @@ describe('Einträge', () => {
     for (const id of fundbuchEintraege()) {
       const f = fundorte(id);
       const quellen = f.dungeons.length + f.fundRaeume.length + f.ersterSieg.length + f.hergestellt.length
-        + (f.bauplan ? 1 : 0) + (f.haendler ? 1 : 0) + (f.dungeonHaendler ? 1 : 0);
+        + (f.haendler ? 1 : 0) + (f.dungeonHaendler ? 1 : 0);
       expect(quellen, id).toBeGreaterThan(0);
       expect(gruppeVon(id)).toBeTruthy();
     }
     expect(gruppeVon('crystal_shard')).toBe('material');
-    expect(gruppeVon('bauplan_schmiede')).toBe('bauplan');
+    expect(gruppeVon('bread')).toBe('verbrauch');
   });
 
   it('das Fenster lädt ohne Browser (greift erst beim Öffnen auf document zu)', async () => {

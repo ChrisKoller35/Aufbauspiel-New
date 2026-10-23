@@ -1,15 +1,14 @@
 # Fundbuch
 
 Das Fundbuch beantwortet zwei Fragen: **Woher bekomme ich einen Gegenstand, und wofür brauche ich ihn?**
-Es öffnet sich im Hauptmenü über «📜 Fundbuch» (unten rechts neben «💾 Spielstand», am schmalen Handy nur «📜»)
-und im Reiter «Aufbau» über «📜 Wo?» auf der Karte eines Gebäudes, dessen Bauplan noch fehlt.
+Es öffnet sich im Hauptmenü über «📜 Fundbuch» (unten rechts neben «💾 Spielstand», am schmalen Handy nur «📜»).
 
 - Rechnung: `src/systems/Fundbuch.ts` (reine Funktionen, liest nur die Datendateien)
 - Fenster: `src/ui/components/FundbuchFenster.ts`, Stile `src/ui/html/fundbuch.css`
 - Tests: `tests/fundbuch.test.ts`
 
 Das Fundbuch ändert den Spielstand nicht und speichert nichts. Alle Namen, Preise und Mengen kommen aus den
-Datendateien (`ROUTE_DEFS`, `ENEMY_DEFS`, `LOOT_TABLE_DEFS`, `HAENDLER_WAREN`, `BAUPLAN_PREISE`,
+Datendateien (`ROUTE_DEFS`, `ENEMY_DEFS`, `LOOT_TABLE_DEFS`, `HAENDLER_WAREN`,
 `MERCHANT_PRICES`, `RECIPE_DEFS`, `BUILDING_DEFS`, `STADTSTUFEN`, `HERZSTEINE`); nichts ist abgeschrieben.
 
 ## Was es zählt: ein Fund je Sieg
@@ -33,7 +32,6 @@ Weitere Quellen:
 |---|---|---|
 | Händler der Stadt | «Beim Händler der Stadt · N Gold» | `kaufpreis(id, 1)`, Stadtstufe 1 ohne Rabatt |
 | Dungeon-Händler | «Beim Dungeon-Händler · N Gold (höchstens 2 Käufe)» | `MERCHANT_PRICES`, `MERCHANT_MAX_PURCHASES` |
-| Bauplan | «Beim Händler der Stadt · N Gold» und/oder «‹Boss› (Boss) in ‹Dungeon› · beim ersten Sieg» | `bauplanPreis(id, 1)`, `ersterSiegBauplan` der Boss-Tabelle |
 | Fund-Raum ohne feste Wahl | «Versteck durchsuchen: N Stück, angeboten in etwa 33 % der Besuche» | erstes `findItems`; die Option kommt in einem von drei Fällen (`EncounterProcessor`, `nextInt(0, 2)`), nachgezählt im Test mit 30 000 Besuchen |
 | Fund-Raum mit fester Wahl | «zur Wahl: N Stück» bzw. «…, wenn der Boss fällt» | `wahl.a` / `wahl.b` mit `effect: 'item'`, `nachSieg` |
 | Erstsieg-Beute der Gipfel-Dungeons | «‹Boss› (Boss) in ‹Dungeon› · 1 Stück beim ersten Sieg» | `RouteDef.ersterSiegBeute` |
@@ -41,30 +39,25 @@ Weitere Quellen:
 
 **Wofür:** Rezepte (Gebäude, Menge je Durchgang), Baukosten (`buildCost`), Ausbau-Kosten
 (`ausbauKosten` aus `Ausbau.ts`, Stufe 2 und 3), Abgaben für die Stadtstufen (`abgabe`), Herzsteine,
-Proviant (`PROVISION_ITEMS`), was ein Bauplan freischaltet, und der Ankauf beim Händler
+Proviant (`PROVISION_ITEMS`) und der Ankauf beim Händler
 («Der Händler zahlt N Gold je Stück», `ankaufpreis`).
 
-**Einträge:** jeder Gegenstand aus `ITEM_DEFS`, der als Beute eines Gegners in einer Route, als Fund, als
-Händlerware oder als Bauplan vorkommt: zurzeit 65 (13 Materialien, 4 Baupläne, 4 Tränke und Proviant,
-43 Ausrüstung, 1 Sonstiges). Gruppen nach `ItemDef.type` und Tags; Kristallsplitter und Talisman-Fragmente
+**Einträge:** jeder Gegenstand aus `ITEM_DEFS`, der als Beute eines Gegners in einer Route, als Fund oder als
+Händlerware vorkommt: zurzeit 61 (13 Materialien, 4 Tränke und Proviant, 43 Ausrüstung, 1 Sonstiges). Gruppen nach `ItemDef.type` und Tags; Kristallsplitter und Talisman-Fragmente
 (Typ `special`) stehen bei den Materialien, weil Rezepte, Bau oder Stadtstufen sie verbrauchen.
 
-Ein Klick auf einen Dungeon zeigt die Beute seiner Gegner (Ø je Sieg je Gegenstand); ein Klick auf ein
-Gebäude springt zu seinem Bauplan. Dungeons, die die Gilde noch nicht betreten darf (`isRouteAvailable`),
-stehen mit «🔒» und ihrem Namen da, damit man ein Ziel hat.
+Ein Klick auf einen Dungeon zeigt die Beute seiner Gegner (Ø je Sieg je Gegenstand), ein Klick auf einen
+Gegenstand seinen Eintrag; Gebäude stehen als Text da. Dungeons, die die Gilde noch nicht betreten darf
+(`isRouteAvailable`), stehen mit «🔒» und ihrem Namen da, damit man ein Ziel hat.
 
-## Baupläne
+## Ohne Baupläne (23.10.2026)
 
-| Bauplan | Gebäude | Beim Händler (Stadtstufe 1) | Boss (erster Sieg) |
-|---|---|---|---|
-| Bauplan: Schmiede | Schmiede | 50 Gold | – |
-| Bauplan: Kräuterküche | Kräuterküche | 50 Gold | – |
-| Bauplan: Arkanschmiede | Arkanschmiede | 150 Gold | Kristallgolem in «Tiefe Höhle» |
-| Bauplan: Kriegsmaschinen-Werkstatt | Kriegsmaschinen-Werkstatt | 250 Gold | Gefallener Ritter in «Alte Krypta» |
-
-Ab Stadtstufe 4 gibt der Händler Rabatt (`rabattProzent`); das Fundbuch nennt den Grundpreis. Der Test
-«jeder Bauplan, den ein Gebäude braucht, hat eine Quelle» schlägt fehl, wenn ein Gebäude in `buildings.ts`
-einen Bauplan ohne Händlerpreis und ohne Boss bekommt.
+Bis 22.10.2026 hatte das Fundbuch eine Gruppe «Baupläne» (4 Einträge, Quelle Händler und/oder Boss beim ersten
+Sieg), «Wofür» nannte das Gebäude, das ein Bauplan freischaltet, ein Gebäude-Link sprang zu seinem Bauplan, und
+im Reiter «Aufbau» führte «📜 Wo?» auf der Karte eines gesperrten Gebäudes dorthin. Seit dem Umbau auf Wunsch
+Christophs (Werkstätten direkt freischalten, nur der Gildenrang sperrt, docs/GILDENSTADT.md) ist das weg; was
+eine Werkstatt kostet, steht unter «Wofür» bei «Bau». Die Tests «Ohne Baupläne» prüfen, dass kein `bauplan_*`
+mehr als Eintrag oder Gruppe auftaucht und der Reiter «Aufbau» keinen «Wo?»-Knopf mehr hat.
 
 ## Gegenprobe (tests/fundbuch.test.ts)
 

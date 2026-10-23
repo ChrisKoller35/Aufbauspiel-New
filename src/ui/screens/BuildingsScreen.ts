@@ -23,7 +23,6 @@ import { freischaltHinweise, dasGebaeude } from '../../systems/GebaeudeStatus';
 import { maxStufe } from '../../systems/Ausbau';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { bindDruckWaechter, wirdGedrueckt } from '../components/DruckWaechter';
-import { oeffneFundbuch } from '../components/FundbuchFenster';
 
 /** Kartenbild je Gebäude-Art. */
 const BUILDING_IMAGE_MAP: Record<string, string> = {
@@ -210,7 +209,6 @@ function bindEvents(root: HTMLElement, state: GameState): void {
     bindAufbauTab(aufbau, {
       oeffne: typeId => oeffneGebaeude(root, typeId, state),
       zuDenHelden: () => navigateTo('heroes'),
-      fundbuch: bauplanId => oeffneFundbuch(state, bauplanId),
     });
   }
 
