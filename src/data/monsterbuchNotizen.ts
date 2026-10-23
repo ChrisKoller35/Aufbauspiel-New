@@ -3,8 +3,11 @@
 // sichtbar, sobald alle Gegner der Seite erforscht sind (docs/MONSTERBUCH.md).
 // Nur über die Tiere, keine Handlung: die steht in dungeonGeschichten.ts.
 // Jede Zahl stammt aus enemies.ts, lootTables.ts oder routes.ts und aus der
-// Kampfregel in CombatEngine.ts (Stärkung und Beschwörung geben Angriff).
-// Der Test tests/monsterbuch.test.ts prüft Route, Gegnernamen und Zeichen.
+// Kampfregel in CombatEngine.ts (Stärkung und Beschwörung geben Angriff). Takt:
+// Eine Fähigkeit mit Abklingzeit N kommt erst N + 1 Runden später wieder, eine
+// zweite oder dritte oft noch später (Monsterkunde.einsatzRunden).
+// Der Test tests/monsterbuch.test.ts prüft Route, Gegnernamen und Zeichen und
+// jede Takt-Angabe am echten Kampf (Tabelle TAKT dort).
 // ────────────────────────────────────────────────────────────────
 
 export interface MonsterbuchNotiz {
@@ -23,23 +26,23 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'forest_medium',
-    text: 'Uralter Treant: ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3. Sein Rindenwall ist kein Schutz, sondern bringt ihm alle fünf Runden 3 Angriff mehr für drei Runden.',
+    text: 'Uralter Treant: ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3. Sein Rindenwall ist kein Schutz, sondern bringt ihm 3 Angriff mehr für drei Runden, zuerst in Runde 2 und danach nur alle acht Runden, weil sein Wurzelschlag vorgeht.',
   },
   {
     routeId: 'haunted_woods',
-    text: 'Verfluchtes Irrlicht und Waldschamane heilen beide um 24 Leben, das Irrlicht alle drei Runden, der Schamane alle vier. Von beiden kommen hier je drei. Wer zuerst die Heiler fällt, kämpft kürzer.',
+    text: 'Verfluchtes Irrlicht und Waldschamane heilen beide um 24 Leben, das Irrlicht jede vierte Runde, der Schamane jede fünfte. Von beiden kommen hier je drei. Wer zuerst die Heiler fällt, kämpft kürzer.',
   },
   {
     routeId: 'ocean_shallows',
-    text: 'Der Quallenschwarm trifft mit Stromtentakel alle Helden und ist nach zwei Runden wieder bereit; sein Luftsauger zieht dazu 10 Luft aus dem Schild. Die Druckkrabbe hat 7 Abwehr, mehr als jeder andere Gegner an dieser Küste.',
+    text: 'Der Quallenschwarm trifft mit Stromtentakel jede dritte Runde alle Helden; sein Luftsauger zieht dazu 10 Luft aus dem Schild. Die Druckkrabbe hat 7 Abwehr, mehr als jeder andere Gegner an dieser Küste.',
   },
   {
     routeId: 'ocean_depths',
-    text: 'Der Leviathan wütet schon ab Runde 7, früher als jeder andere Boss in diesem Buch: Angriff mal 1,6, Tempo mal 1,2. Seine Druckwelle trifft alle Helden und zieht dazu 18 Luft aus dem Schild.',
+    text: 'Der Leviathan wütet schon ab Runde 7, so früh wie von sich aus kein anderer Boss in diesem Buch: Angriff mal 1,6, Tempo mal 1,2. Sein Tiefenstrahl trifft jede dritte Runde alle Helden.',
   },
   {
     routeId: 'ocean_abyss',
-    text: 'Ertrunkener Ritter: Flutfluch trifft alle Helden, Rostiger Hieb ist alle zwei Runden bereit. In der Abyssalen Tiefe kommen drei von ihnen und drei Tiefseeangler, einen Boss gibt es nicht.',
+    text: 'Ertrunkener Ritter: Flutfluch trifft alle Helden, Rostiger Hieb kommt jede dritte Runde. In der Abyssalen Tiefe kommen drei von ihnen und drei Tiefseeangler, einen Boss gibt es nicht.',
   },
   {
     routeId: 'cave_deep',
@@ -47,7 +50,7 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'cave_spider',
-    text: 'Sechs Giftzahnspinne je Lauf, mehr als von jedem anderen Gegner hier. Brut beschwören ruft keine Spinnen herbei: Die Spinnenkönigin bekommt damit vier Runden lang 3 Angriff mehr.',
+    text: 'Sechs Giftzahnspinnen je Lauf, mehr als von jedem anderen Gegner hier. Brut beschwören ruft keine Spinnen herbei: Die Spinnenkönigin bekommt damit vier Runden lang 3 Angriff mehr.',
   },
   {
     routeId: 'cave_tunnels',
@@ -59,7 +62,7 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'swamp_long',
-    text: 'Die Moorhexe heilt mit Dunkle Heilung um 30 Leben alle drei Runden, nur die Sumpfhydra heilt mehr. Sumpfphantom und Hohlschatten kommen je nur einmal je Lauf vor; an ihnen hängt, wie schnell diese Seite erforscht ist.',
+    text: 'Die Moorhexe heilt mit Dunkler Heilung jede vierte Runde um 30 Leben, nur die Sumpfhydra heilt mehr. Sumpfphantom und Hohlschatten kommen je nur einmal je Lauf vor; an ihnen hängt, wie schnell diese Seite erforscht ist.',
   },
   {
     routeId: 'swamp_village',
@@ -75,15 +78,15 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'siege_fortress',
-    text: 'Der Kampfmagier hat nur 32 Leben, so wenig wie kein anderer in der Festung, und schützt mit Schutzbarriere die Seinen. Sieben Burgverteidiger je Lauf; der Festungswächter wütet erst ab Runde 10.',
+    text: 'Der Kampfmagier hat nur 32 Leben, so wenig wie kein anderer in der Festung. Seine Schutzbarriere schützt niemanden, sie heilt den Verbündeten mit den wenigsten Leben um 8. Sieben Burgverteidiger je Lauf; der Festungswächter wütet erst ab Runde 10.',
   },
   {
     routeId: 'ruins_crypts',
-    text: 'Gefallener Ritter: ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3. Der Verwunschene Priester heilt alle drei Runden um 27 Leben und gibt dabei nur 6 XP.',
+    text: 'Gefallener Ritter: ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3. Der Verwunschene Priester heilt jede vierte Runde um 27 Leben und gibt dabei nur 6 XP.',
   },
   {
     routeId: 'ruins_depths',
-    text: 'Totenerweckung weckt keine Toten: Der Schattenlich bekommt damit vier Runden lang 1 Angriff mehr. Ernster ist sein Seelenraub, alle drei Runden.',
+    text: 'Totenerweckung weckt keine Toten: Der Schattenlich bekommt damit vier Runden lang 1 Angriff mehr. Ernster ist sein Seelenraub, der jede vierte Runde kommt.',
   },
   {
     routeId: 'shadow_catacombs',
@@ -91,19 +94,19 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'obsidian_tunnels',
-    text: 'Die Feuerfledermaus ist mit Flammensturz alle zwei Runden bereit. Einen Kristallstab lassen die kleinen Gegner hier nur in 1,7 von 100 Fällen fallen, Aschegolem und Flammengeist in 9,8.',
+    text: 'Die Feuerfledermaus greift jede dritte Runde mit Flammensturz an. Einen Kristallstab lassen Feuerfledermaus, Obsidiankrabbe und Lavaelementar nur in 1,7 von 100 Fällen fallen, Aschegolem und Flammengeist in 9,8.',
   },
   {
     routeId: 'ash_wastes',
-    text: 'Der Magmabrüter gibt sich mit Flammenaura alle drei Runden 2 Angriff mehr. Der Aschegolem hat mit 204 Leben die meisten in der Wüste, ist mit Tempo 0,5 aber auch der langsamste.',
+    text: 'Der Magmabrüter gibt sich mit Flammenaura jede vierte Runde 2 Angriff mehr. Der Aschegolem hat mit 204 Leben die meisten in der Wüste, ist mit Tempo 0,5 aber auch der langsamste.',
   },
   {
     routeId: 'magma_caverns',
-    text: 'Lavaelementar: Magmawelle trifft alle Helden, alle vier Runden. In den Magmahöhlen kommt keine der sechs Gegnerarten seltener als zweimal je Lauf vor.',
+    text: 'Lavaelementar: Magmawelle trifft jede fünfte Runde alle Helden. In den Magmahöhlen kommt keine der sechs Gegnerarten seltener als zweimal je Lauf vor.',
   },
   {
     routeId: 'volcano_core',
-    text: 'Magma-Wyrm: Infernoodem trifft alle Helden und ist alle zwei Runden bereit, die Wut kommt ab Runde 10. Die Feuerfledermaus begegnet einem hier sechsmal je Lauf.',
+    text: 'Magma-Wyrm: Infernoodem trifft jede dritte Runde alle Helden, die Wut kommt ab Runde 10. Die Feuerfledermaus begegnet einem hier sechsmal je Lauf.',
   },
   {
     routeId: 'drachenhort',
@@ -111,7 +114,7 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'himmelsarchiv',
-    text: 'Der Oberarchivar heilt mit Neuauflage um 150 Leben, alle sechs Runden. Der Flüstergeist heilt mit Stille Restaurierung um 70 und kommt fünfmal je Lauf.',
+    text: 'Der Oberarchivar heilt sich mit Neuauflage um 150 Leben, aber nur in Runde 3 und 14, weil seine zwei anderen Fähigkeiten vorgehen. Der Flüstergeist heilt mit Stiller Restaurierung um 70 und kommt fünfmal je Lauf.',
   },
   {
     routeId: 'sternenschmiede',
@@ -127,6 +130,6 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'morgentor',
-    text: 'Der Torhüter aus Messing hat 23 Abwehr, die höchste am Morgentor. Sunna, die Tagwächterin, schlägt mit 77 Angriff zu und wütet ab Runde 10.',
+    text: 'Der Torhüter aus Messing hat 23 Abwehr, die höchste am Morgentor. Sunna, die Tagwächterin, schlägt mit 77 Angriff zu und wütet ab Runde 10. Jedes Vorstellen der Sonnenuhr zieht ihre Wut um 2 Runden vor, dreimal vorgestellt wütet sie schon ab Runde 4.',
   },
 ];
