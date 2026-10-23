@@ -16,6 +16,7 @@ import { GameState } from '../../models/GameState';
 import { freischaltHinweise, getBuiltTypeIds, getGildenrang, dasGebaeude } from '../../systems/GebaeudeStatus';
 import { maxStufe, stufeVon } from '../../systems/Ausbau';
 import { naechsterBau } from '../../systems/Empfehlung';
+import { fundorte } from '../../systems/Fundbuch';
 
 type KachelStatus = 'gebaut' | 'baubar' | 'bauplan' | 'gesperrt';
 
@@ -35,6 +36,23 @@ export function bauplanSchritt(state: GameState, typeId: string): { preis: numbe
 /** «Bauplan kaufen (50 Gold)» */
 export function bauplanKaufenText(preis: number): string {
   return `Bauplan kaufen (${preis} Gold)`;
+}
+
+/**
+ * Knopf «📜 Wo?» zum Bauplan im Fundbuch, solange das Gebäude fehlt und der Bauplan nicht im Lager
+ * liegt. Bei einem Boss-Bauplan steht der Dungeon des Bosses drauf, der Boss (ENEMY_DEFS) im Titel.
+ */
+function woKnopf(state: GameState, typeId: string): string {
+  const bauplan = BUILDING_DEFS[typeId]?.freischaltung.bauplan;
+  if (!bauplan || (state.globalStock[bauplan] ?? 0) >= 1) return '';
+  const quelle = fundorte(bauplan).bauplan;
+  if (!quelle) return '';
+  const wege = [
+    quelle.haendlerPreis ? `beim Händler (${quelle.haendlerPreis} Gold)` : '',
+    quelle.boss ? `vom Boss «${quelle.boss.name}» in «${quelle.boss.routeName}» (erster Sieg)` : '',
+  ].filter(Boolean).join(' oder ');
+  const text = quelle.boss ? `📜 Wo? · ${quelle.boss.routeName}` : '📜 Wo?';
+  return `<button type="button" class="acard-wo" data-bauplan="${bauplan}" title="Im Fundbuch: Bauplan ${wege}"><span>${text}</span></button>`;
 }
 
 /** «✓ Stufe 2 von 3» bei ausbaubaren Gebäuden, sonst «✓ Gebaut». */
@@ -59,6 +77,7 @@ function kachel(state: GameState, typeId: string, built: Set<string>, empfohlen:
            role="button" tabindex="0" title="${def.name}" style="${imageStyle}">
         <span class="acard-nm">${def.name}</span>
         <span class="acard-st">${label}</span>
+        ${status === 'gebaut' ? '' : woKnopf(state, typeId)}
       </div>`;
 }
 
@@ -100,6 +119,8 @@ export interface AufbauCallbacks {
   bauplanKaufen: (typeId: string) => void;
   /** Empfohlener Schritt ohne Gebäude (Held anheuern): Helden-Bildschirm. */
   zuDenHelden: () => void;
+  /** «Wo?» auf einer Karte: Fundbuch beim Bauplan. */
+  fundbuch: (bauplanId: string) => void;
 }
 
 export function bindAufbauTab(panel: HTMLElement, cb: AufbauCallbacks): void {
@@ -110,6 +131,14 @@ export function bindAufbauTab(panel: HTMLElement, cb: AufbauCallbacks): void {
     if (card.dataset.status === 'bauplan') cb.bauplanKaufen(typeId);
     else cb.oeffne(typeId);
   };
+  // «Wo?» liegt in der Karte: Klick und Tasten nicht an die Karte geben (sonst öffnet zugleich der Kauf-Dialog)
+  panel.querySelectorAll<HTMLElement>('.acard-wo').forEach(knopf => {
+    knopf.addEventListener('click', (e) => {
+      e.stopPropagation();
+      if (knopf.dataset.bauplan) cb.fundbuch(knopf.dataset.bauplan);
+    });
+    knopf.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); });
+  });
   panel.querySelectorAll<HTMLElement>('.acard').forEach(card => {
     card.addEventListener('click', () => waehle(card));
     card.addEventListener('keydown', (e) => {
