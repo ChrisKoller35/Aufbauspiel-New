@@ -246,11 +246,16 @@ function kaempftAllein(id: string): boolean {
  * Was eine Fähigkeit im Kampf tut, nach der Regel in processCombat und nicht nach ihrer Beschreibung
  * in enemies.ts: Die verspricht bei Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei
  * Beschwörung Verstärkung. Heilung heilt den Gegner mit den wenigsten Leben, Stärkung und
- * Beschwörung geben immer dem Anwender Angriff (3 bzw. 4 Runden). Der Test prüft das am Kampfprotokoll.
+ * Beschwörung geben immer dem Anwender Angriff (3 bzw. 4 Runden). Schaden trifft auch im
+ * Belagerungsraum Helden und nie die Kriegsmaschine: enemyToCombatUnit übernimmt
+ * prefersWarMachineTarget nicht. Der Test prüft das am Kampfprotokoll, mit und ohne Katapult.
  */
 export function faehigkeitText(id: string, sk: EnemySkillDef): string {
   const zahl = (n: number) => n.toLocaleString('de');
-  const wucht = `mit dem ${zahl(sk.power)}-fachen Schaden eines normalen Angriffs`;
+  // Stärke 1 ist genau der Schaden eines normalen Angriffs, sonst ein Vielfaches davon
+  const wucht = sk.power === 1
+    ? 'mit dem Schaden eines normalen Angriffs'
+    : `mit dem ${zahl(sk.power)}-fachen Schaden eines normalen Angriffs`;
   switch (sk.effectType) {
     case 'damage':
       return `Trifft ${sk.target === 'all_players' ? 'alle Helden' : 'einen Helden'} ${wucht}.`;
@@ -261,7 +266,7 @@ export function faehigkeitText(id: string, sk: EnemySkillDef): string {
     case 'heal':
       return kaempftAllein(id)
         ? `Heilt sich um ${zahl(sk.power)} Leben.`
-        : `Heilt den Verbündeten mit den wenigsten Leben um ${zahl(sk.power)}, das kann auch er selbst sein.`;
+        : `Heilt den Verbündeten mit den wenigsten Leben um ${zahl(sk.power)}, auch sich selbst.`;
     case 'buff':
       return `Gibt sich selbst ${zahl(sk.power)} Angriff mehr, 3 Runden lang.`;
     case 'summon':

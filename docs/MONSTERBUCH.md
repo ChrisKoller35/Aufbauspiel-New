@@ -82,13 +82,16 @@ Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei Beschwörung Verstärkung
 
 | Art | Text im Fenster | was der Kampf tut |
 |---|---|---|
-| Schaden | «Trifft einen Helden mit dem 1,5-fachen Schaden eines normalen Angriffs.» | ein Ziel, bei `all_players` alle |
-| Flächenschaden | «Trifft alle Helden mit dem 0,5-fachen Schaden …» | jeder lebende Held |
-| Heilung | «Heilt den Verbündeten mit den wenigsten Leben um 24, das kann auch er selbst sein.» | Gegner mit den wenigsten Leben, um die Stärke der Fähigkeit (trifft ihn ein Held mit Wundfluch, nur halb) |
+| Schaden | «Trifft einen Helden mit dem 1,5-fachen Schaden eines normalen Angriffs.» | ein Ziel, bei `all_players` alle; im Belagerungsraum nie die Kriegsmaschine |
+| Flächenschaden | «Trifft alle Helden mit dem 0,5-fachen Schaden …» | jeder lebende Held, nie die Kriegsmaschine |
+| Heilung | «Heilt den Verbündeten mit den wenigsten Leben um 24, auch sich selbst.» | Gegner mit den wenigsten Leben, um die Stärke der Fähigkeit (trifft ihn ein Held mit Wundfluch, nur halb) |
 | Heilung (kämpft immer allein, z. B. jeder Boss) | «Heilt sich um 36 Leben.» | wie oben, er ist der einzige |
 | Stärkung | «Gibt sich selbst 5 Angriff mehr, 3 Runden lang.» | Angriff, nie Abwehr |
 | Beschwörung | «Ruft niemanden herbei, sondern gibt sich selbst 3 Angriff mehr, 4 Runden lang.» | keine neuen Gegner |
 | Luftraub | «Zieht 10 Luft aus dem Luftschild, ohne Schaden.» | `luftsauger` 10, `blasenstoss` 8 (Tabelle in `processCombat`) |
+
+Bei Stärke 1 heisst es «mit dem Schaden eines normalen Angriffs» statt «mit dem 1-fachen …»
+(Säure, Dreifachbiss, Steinschlag, Magmawelle und Torschlag, alle fünf Flächenschaden).
 
 Die Art steht vor der Abklingzeit, ausser sie ist schon der Name (die «Heilung» des Waldschamanen
 zeigt nur «Abklingzeit 4 Runden»). Dahinter die Runden des Einsatzes aus `einsatzRunden`:
@@ -106,15 +109,25 @@ Schutzbarriere des Kampfmagiers zeigt darum «Einsatz in Runde 2, 9, 17 …».
 Runde (`wutVorziehbar`, gerechnet wie `CombatEngine.wutAbRunde`): Sunna ab Runde 4 statt 10.
 Bei keinem anderen Boss rückt die Wut.
 
-**Druckwelle des Leviathans**: `enemies.ts` gibt ihr `drainAirAmount: 18`, aber
-`CombatEngine.enemyToCombatUnit` übernimmt das Feld nicht. Im Kampf nimmt sie darum keine Luft,
-und das Buch sagt das auch nicht. Wird das im Kampf behoben, scheitert der Test «faehigkeitText
-sagt, was der Kampf tut» und zeigt, wo der Text nachzieht.
+**Felder, die im Kampf nicht ankommen**: `CombatEngine.enemyToCombatUnit` übernimmt zwei Felder
+aus `enemies.ts` nicht, und das Buch beschreibt, was der Kampf tut:
+
+- Die Druckwelle des Leviathans hat `drainAirAmount: 18`, nimmt im Kampf aber keine Luft. Das Buch
+  nennt bei ihr keine Luft.
+- Mauerschütze, Armbrustschütze und Kampfmagier haben `prefersWarMachineTarget`, greifen im
+  Belagerungsraum aber wie alle anderen die Helden an, nie die Kriegsmaschine. So steht es bei den
+  Fähigkeiten im Fenster («Trifft einen Helden …») und in der Notiz zu den Stadtmauern. Ihr
+  Hintergrund (`ENEMY_LORE`, unverändert) sagt noch, sie zielten auf Kriegsmaschinen; die Notiz
+  nennt das ihren Ruf.
+
+Wird eins davon im Kampf behoben, scheitert der Test «faehigkeitText sagt, was der Kampf tut», bei
+der Kriegsmaschine auch der Test der Notiz; beide zeigen, wo Fenster und Notiz nachziehen.
 
 Tests «Fähigkeiten im Fenster = Fähigkeiten im Kampf»: Für jeden erreichbaren Gegner kämpft ein
 unverwundbares Team gegen ihn (`processCombat`, für die fünf Gegner aus Belagerungsräumen auch
-`processFortificationCombat`), verglichen werden die Runden jedes Einsatzes und das Kampfprotokoll
-(Zahl der Treffer, Heilmenge, Angriff und Dauer, Luft in beide Richtungen).
+`processFortificationCombat` neben einem Katapult), verglichen werden die Runden jedes Einsatzes
+und das Kampfprotokoll (Zahl der Treffer, keiner auf das Katapult, Heilmenge, Angriff und Dauer,
+Luft in beide Richtungen).
 
 ## Seiten und Prämien
 
@@ -192,10 +205,23 @@ aber mit: Was vor der Niederlage fällt, steht in der Strecke.
 ## Randnotizen
 
 Je Dungeon eine, 2 bis 3 Sätze, mit einem Gegner der Seite beim Namen. Was sie über den Kampf sagen,
-stimmt mit dem Spiel. Jede Takt-Angabe («jede vierte Runde», «nur in Runde 3 und 14») steht in
-der Tabelle `TAKT` im Test und wird am echten Kampf nachgerechnet; eine Notiz mit «jede …» oder
-«alle …» ohne Eintrag dort lässt den Test scheitern. Die Morgentor-Notiz nennt die Sonnenuhr
-(Sunnas Wut bis Runde 4).
+stimmt mit dem Spiel, und der Test rechnet es nach: Jede Stelle mit «Runde» oder «Runden», mit
+«jede» oder «alle» und einer Zahl (Wort oder Ziffer), mit «Luft» (auch «Luftsauger») oder mit
+«Kriegsmaschine» muss in einem Eintrag einer dieser Tabellen in `tests/monsterbuch.test.ts` stehen,
+sonst scheitert er («alle 2 Runden», «jede Runde» oder «nach zwei Runden wieder bereit» ohne
+Eintrag fallen durch):
+
+| Tabelle | Beispiel aus einer Notiz | nachgerechnet |
+|---|---|---|
+| `TAKT` | «jede vierte Runde», «nur in Runde 3 und 14» | Runden jedes Einsatzes im echten Kampf; Abstand und genannte Runden passen dazu |
+| `WUT` | «ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3»; Sonnenuhr «dreimal vorgestellt … ab Runde 4» | `bossWut` und `wutAbRunde` mit den Sonnenuhren der Route |
+| `WIRKUNG` | «3 Angriff mehr für drei Runden», «10 Luft» | dieselben Zahlen in der Zeile des Kampfprotokolls beim ersten Einsatz |
+| `KRIEGSMASCHINE` | «sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden» | `processFortificationCombat` mit Katapult: Treffer auf Helden, keiner auf das Katapult |
+
+Die Morgentor-Notiz nennt die Sonnenuhr (Sunnas Wut bis Runde 4). Die Stadtmauern-Notiz stellt
+den Ruf von Mauerschütze und Armbrustschütze richtig: Ihr Hintergrund im Fenster sagt, sie zielten
+auf Kriegsmaschinen, im Kampf schiessen sie auf die Helden (siehe «Felder, die im Kampf nicht
+ankommen»).
 
 ## Bildschirm
 
