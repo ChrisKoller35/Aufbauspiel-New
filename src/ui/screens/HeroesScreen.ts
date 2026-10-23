@@ -17,15 +17,16 @@ import { nameMitStufe, stufeAbzeichen, werteKurz } from '../components/SchmiedeA
 import { bindSchmiedeTab, schmiedeTabHtml, schmiedeTabVerlassen, schmiedeZeigeTeil } from './SchmiedeTab';
 import { wegAbzeichen, wegBereichHtml } from '../components/WegAnzeige';
 import { waehleWeg } from '../../systems/Spezialisierung';
-import { ClassUnlockSystem } from '../../systems/ClassUnlockSystem';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { anheuerKosten } from '../../systems/Empfehlung';
-import { xpProgress, xpForNextLevel, totalXpForLevel, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
+import { xpProgress, ueberschuss, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
+import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausbildung';
+import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
+import { klassenTafelHtml } from '../components/KlassenTafel';
 
 const gearSystem = new GearSystem();
-const classUnlockSystem = new ClassUnlockSystem();
 
 // ─── State ──────────────────────────────────────────────────────
 let gameState: GameState | null = null;
@@ -101,9 +102,9 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
   const emoji = classDef ? emojiForClass(classDef) : '\u2694\uFE0F';
   const spriteKey = classDef ? classDef.spriteKey : '';
   const pct = fighter.level >= MAX_HERO_LEVEL ? 100 : Math.round(xpProgress(fighter) * 100);
-  const xpLabel = fighter.level >= MAX_HERO_LEVEL ? 'MAX' : `${pct}%`;
+  const xpLabel = fighter.level >= MAX_HERO_LEVEL ? ueberschussText(fighter) : `${pct}%`;
 
-  const trainingCost = 20 + fighter.level * 10;
+  const trainingCost = trainingsKosten(fighter.level);
   const actionBtn = mode === 'train'
     ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}">TRAINIEREN (${trainingCost}G)</button>`
     : '';
@@ -118,6 +119,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
         <div class="hcard-overlay">
           <div class="hc-nm">${className}</div>
           <span class="hc-lv">Lv ${fighter.level}</span>
+          ${fighter.level >= MAX_HERO_LEVEL ? `<span class="hc-ueberschuss">${ueberschuss(fighter)} XP Überschuss</span>` : ''}
           ${wegAbzeichen(fighter)}
           ${actionBtn}
         </div>
@@ -205,7 +207,7 @@ function buildModalData(fighter: GuildFighter) {
   const heroImg = HERO_IMAGE_MAP[fighter.classId];
   const portraitUrl = heroImg ? `assets/heroes/${heroImg}.png` : '';
   const pct = fighter.level >= MAX_HERO_LEVEL ? 100 : Math.round(xpProgress(fighter) * 100);
-  const xpLabel = fighter.level >= MAX_HERO_LEVEL ? 'MAX' : `${pct}%`;
+  const xpLabel = fighter.level >= MAX_HERO_LEVEL ? ueberschussText(fighter) : `XP ${pct}%`;
 
   const gearSlots: { label: string; emoji: string; key: string | null; slot: string }[] = [
     { label: 'Haupthand', emoji: '\u2694\uFE0F', key: fighter.gear.mainHand, slot: 'mainHand' },
@@ -530,7 +532,7 @@ function renderDetailModal(fighter: GuildFighter): string {
         ${auswahlHtml(fighter)}
         <div class="hdm2-xp-row">
           <div class="hdm2-xpbar"><div class="hdm2-xpfill" style="width:${pct}%"></div></div>
-          <div class="hdm2-xplabel">XP ${xpLabel}</div>
+          <div class="hdm2-xplabel">${xpLabel}</div>
         </div>
         ${statsHtml(fighter)}
         ${wegBereichHtml(fighter, wegFrage)}
@@ -557,24 +559,8 @@ function renderMyHeroes(): string {
 
 function renderHireTab(): string {
   if (!gameState) return '<div class="empty-msg">Kein Spielstand geladen.</div>';
-  const state = gameState;
-  const ownedClassIds = new Set(state.fighters.map(f => f.classId));
-  const available = Object.values(CLASS_DEFS).filter(
-    c => !ownedClassIds.has(c.id) && classUnlockSystem.isClassUnlocked(state, c.id),
-  );
-
-  if (available.length === 0) {
-    const allUnlocked = Object.values(CLASS_DEFS).every(c => classUnlockSystem.isClassUnlocked(state, c.id));
-    return allUnlocked
-      ? '<div class="empty-msg">Alle Klassen bereits rekrutiert!</div>'
-      : '<div class="empty-msg">Alle freigeschalteten Klassen bereits rekrutiert. Weitere Klassen werden durch Expeditionen freigeschaltet.</div>';
-  }
-
-  // Der zweite Held kostet 50, jeder weitere 30 mehr (systems/Empfehlung.ts)
-  const cost = anheuerKosten(state.fighters.length);
-  const cards = available.map(c => renderHireCard(c, cost)).join('');
-
-  return `<div class="hcards">${cards}</div>`;
+  // Alle Klassen: freie mit Anheuern-Karte (Preis aus anheuerKosten), gesperrte mit Bedingung und Fortschritt
+  return klassenTafelHtml(gameState, renderHireCard);
 }
 
 function renderTrainTab(): string {
@@ -587,9 +573,9 @@ function renderTrainTab(): string {
     .join('');
 
   if (!cards) {
-    return '<div class="empty-msg">Alle Helden haben das Maximallevel erreicht!</div>';
+    return `${lehrbuchHtml(gameState)}<div class="empty-msg">Alle Helden haben das Maximallevel erreicht!</div>`;
   }
-  return `<div class="hcards">${cards}</div>`;
+  return `${lehrbuchHtml(gameState)}<div class="hcards">${cards}</div>`;
 }
 
 // ─── Inventar Tab ──────────────────────────────────────────────
@@ -760,6 +746,7 @@ export function renderHeroesScreen(container: HTMLElement): void {
   // ─── Event Binding ──────────────────────────────────────────
 
   if (activeTab === 'schmiede' && state) bindSchmiedeTab(el, state, () => renderHeroesScreen(container));
+  if (activeTab === 'train' && state) bindLehrbuch(el, state, () => renderHeroesScreen(container));
 
   // Back button
   const backBtn = el.querySelector('.hdr-back') as HTMLElement | null;
@@ -962,11 +949,11 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
   const fighter = gameState.fighters.find(f => f.id === fighterId);
   if (!fighter || fighter.level >= MAX_HERO_LEVEL) return;
 
-  const trainingCost = 20 + fighter.level * 10;
-  const gold = gameState.globalStock['gold'] ?? 0;
+  // Gold und XP über systems/Ausbildung.ts: Aufstiege bringen die Klassen-Boni (awardXP)
+  const ergebnis = trainieren(gameState, fighter);
 
   // Not enough gold — show error feedback on button
-  if (gold < trainingCost) {
+  if (!ergebnis.ok) {
     const originalText = btn.textContent ?? 'TRAINIEREN';
     const originalBg = btn.style.background;
     btn.textContent = 'Nicht genug Gold!';
@@ -980,30 +967,12 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
     return;
   }
 
-  gameState.globalStock['gold'] = gold - trainingCost;
-  const xpGain = 10 + fighter.level * 5;
-  fighter.xp += xpGain;
-
-  // Check level-up
-  let didLevelUp = false;
-  while (fighter.level < MAX_HERO_LEVEL) {
-    const needed = xpForNextLevel(fighter.level);
-    const xpInLevel = fighter.xp - totalXpForLevel(fighter.level);
-    if (xpInLevel >= needed) {
-      fighter.level++;
-      // Stat growth on level up
-      fighter.baseStats.maxHp += 2;
-      fighter.baseStats.hp = fighter.baseStats.maxHp;
-      fighter.baseStats.atk += 1;
-      fighter.baseStats.def += 1;
-      didLevelUp = true;
-    } else {
-      break;
-    }
-  }
+  erfolgePruefen(gameState);
+  window.dispatchEvent(new Event('mc:speichern'));
 
   // Show success feedback, then re-render
-  const successText = didLevelUp ? '\u2605 Level Up!' : '\u2713 Trainiert!';
+  const successText = ergebnis.neueKlassen.length > 0 ? '\u2605 Neue Klasse frei!'
+    : ergebnis.levelUps > 0 ? '\u2605 Level Up!' : '\u2713 Trainiert!';
   btn.textContent = successText;
   btn.style.background = '#166534';
   btn.setAttribute('disabled', 'true');
