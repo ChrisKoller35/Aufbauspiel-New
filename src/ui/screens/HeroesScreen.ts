@@ -451,10 +451,13 @@ function statsHtml(fighter: GuildFighter): string {
   const spdBonus = Math.round((eff.spd - base.spd) * 100) / 100;
   const critBonus = Math.round((eff.critChance - base.critChance) * 100);
   const kritSchaden = Math.round(eff.critMult * 100) / 100;
+  // Angriff und Verteidigung wachsen je Stufe um Zehntel: auf 0,1 runden, sonst zeigt der Anteil der
+  // Ausrüstung Rundungsrauschen (24.6 − 10.6 = 14.000000000000002)
+  const zehntel = (n: number) => Math.round(n * 10) / 10;
   return `
     <div class="hdm2-stats" title="Werte mit Ausrüstung, Set-Boni und Weg; die kleine Zahl kommt von dort">
-      ${wertHtml('⚔', 'ATK', String(eff.atk), eff.atk - base.atk)}
-      ${wertHtml('🛡', 'DEF', String(eff.def), eff.def - base.def)}
+      ${wertHtml('⚔', 'ATK', String(zehntel(eff.atk)), zehntel(eff.atk - base.atk))}
+      ${wertHtml('🛡', 'DEF', String(zehntel(eff.def)), zehntel(eff.def - base.def))}
       ${wertHtml('❤', 'HP', String(eff.maxHp), eff.maxHp - base.maxHp)}
       ${wertHtml('⚡', 'SPD', String(Math.round(eff.spd * 100) / 100), spdBonus)}
       ${wertHtml('🎯', 'CRIT', `${Math.round(eff.critChance * 100)}%`, critBonus, `${vorzeichen(critBonus)} %`)}

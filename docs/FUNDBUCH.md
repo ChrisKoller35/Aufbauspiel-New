@@ -100,16 +100,17 @@ mehr als Eintrag oder Gruppe auftaucht und der Reiter «Aufbau» keinen «Wo?»-
   - Vulkankern, Ebene 4, Team «stark»: 21 (14 × `loot_volcano_common`, 6 × `loot_volcano_rare`, 1 × `loot_boss_wyrm`)
 - **200 Siege je Dungeon (statistisch):** gezählt wird nur die Kampfbeute (Zuwachs von `run.loot` je
   rollLoot-Aufruf, ohne Funde, Geschichten, Set-Teile, Händler). Für jeden Gegenstand gilt
-  |gezählt − 200 × Ø| ≤ 4 × √(200 × Ø × maxQty) + 2. Beispiele (Startwerte 7919, 2 × 7919, …, Spielweise «vorsichtig»):
+  |gezählt − 200 × Ø| ≤ 4 × √(200 × Ø × maxQty) + 2. Beispiele (Startwerte 7919, 2 × 7919, …, Spielweise «vorsichtig»;
+  nachgezählt am 23.10.2026, seit die Musterteams die Werte echter Helden haben, in Klammern die Zahl davor):
 
   | Dungeon | Gegenstand | erwartet (200 × Ø) | gezählt |
   |---|---|---|---|
   | Waldpfad (kurz) | Eisenschrott | 610,1 | 570 |
   | Waldpfad (kurz) | Grüne Kräuter | 415,1 | 463 |
-  | Giftsumpf | Sumpfblüte | 583,7 | 557 |
-  | Giftsumpf | Talisman-Fragment | 279,0 | 267 |
-  | Vulkankern | Eisenschrott | 3711,0 | 3643 |
-  | Vulkankern | Glutwurzel | 857,1 | 809 |
+  | Giftsumpf | Sumpfblüte | 583,7 | 553 (557) |
+  | Giftsumpf | Talisman-Fragment | 279,0 | 271 (267) |
+  | Vulkankern | Eisenschrott | 3711,0 | 3510 (3643) |
+  | Vulkankern | Glutwurzel | 857,1 | 861 (809) |
 
 - **Rastplätze:** 30 000 Besuche mit dem echten `processRest` und `SeededRNG(778)`: «Kräuter sammeln» kommt in
   1/3 der Besuche (± 2 Prozentpunkte), immer mit 2 Grünen Kräutern. Dazu jeder Rastplatz jedes Dungeons in den

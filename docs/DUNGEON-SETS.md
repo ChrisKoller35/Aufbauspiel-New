@@ -103,43 +103,52 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
   mit dem Amtsstab, das Pfand-Set auf +2, +3 oder +5, die übrigen auf +5.
 - **Morgengabe** (`morgen0`, ab Ebene 10): dazu Sina in Sunnas Morgengabe ohne Stufen, die übrigen auf +5.
 
-Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
-eingerechnet, Siege von 200 Läufen (vorsichtig / klug / gierig):
+Stand 23.10.2026, mit den Werten echter Helden (`docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»), den Wegen vom
+21.10. (`docs/SPEZIALISIERUNG.md`) und Manager #43 und #44, Siege von 200 Läufen (vorsichtig / klug / gierig):
 
 | Dungeon | Team | eigene Ausrüstung | Sets aus Ebene 4 | dazu Grimm im Hort-Set |
 |---|---|---|---|---|
-| Der Drachenhort | frisch | 0 / 0 / 0 % | 75 / 44 / 0 % | 93 / 79 / 4 % |
-| Der Drachenhort | gut | 86 / 53 / 0 % | 100 / 100 / 99 % | 100 / 100 / 100 % |
+| Der Drachenhort | frisch | 0 / 0 / 0 % | 70 / 39 / 0 % | 94 / 77 / 3 % |
+| Der Drachenhort | gut | 79 / 51 / 1 % | 100 / 100 / 98 % | 100 / 100 / 100 % |
 | Der Drachenhort | stark | 100 / 100 / 99 % | 100 / 100 / 100 % | 100 / 100 / 100 % |
 | Das Himmelsarchiv | frisch | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
-| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 32 / 19 / 0 % | 48 / 33 / 0 % |
-| Das Himmelsarchiv | stark | 48 / 30 / 1 % | 100 / 99 / 54 % | 100 / 100 / 78 % |
+| Das Himmelsarchiv | gut | 0 / 0 / 0 % | 36 / 26 / 0 % | 49 / 25 / 0 % |
+| Das Himmelsarchiv | stark | 53 / 30 / 1 % | 100 / 99 / 37 % | 100 / 100 / 68 % |
+
+Bis zum 22.10. (Musterhelden mit den alten Werten; `docs/NEUE-DUNGEONS.md`, «Nach dem Umbau des Trainings neu
+gemessen»): Drachenhort «Frisch» 75 / 44 / 0 % und 93 / 79 / 4 %, «Gut» 86 / 53 / 0 % und 100 / 100 / 99 %;
+Himmelsarchiv «Gut» 32 / 19 / 0 % und 48 / 33 / 0 %, «Stark» 48 / 30 / 1 %, 100 / 99 / 54 % und 100 / 100 / 78 %.
 
 Zwischen den Sternen (Team «Frisch» schafft dort nichts):
 
 | Dungeon | Team | Hort-Set, ohne Stufen | Sterne +3 | Sterne +5 |
 |---|---|---|---|---|
-| Die Sternenschmiede | gut | 0 / 0 / 0 % | 1 / 1 / 0 % | 98 / 99 / 78 % |
-| Die Sternenschmiede | stark | 1 / 2 / 0 % | 83 / 82 / 10 % | 100 / 100 / 100 % |
-| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 4 / 1 / 0 % |
-| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 92 / 57 / 3 % |
+| Die Sternenschmiede | gut | 0 / 0 / 0 % | 2 / 5 / 0 % | 96 / 99 / 80 % |
+| Die Sternenschmiede | stark | 1 / 4 / 0 % | 82 / 93 / 13 % | 100 / 100 / 100 % |
+| Der Sternenschlund | gut | 0 / 0 / 0 % | 0 / 0 / 0 % | 1 / 0 / 0 % |
+| Der Sternenschlund | stark | 0 / 0 / 0 % | 0 / 0 / 0 % | 91 / 56 / 4 % |
 
-Im Mondlicht (Stand 22.10.2026, Team «Stark», 1000 Läufe; Zeilen mit 300 Läufen sind gekennzeichnet). «Frisch»
-und «Gut» schaffen dort mit den Sets der Ebene darunter nichts («Gut» mit `mond5` im Mondhof 1 %, mit `pfand5`
-am Morgentor 2 %), mit dem Lohn-Set aber viel: «Frisch» (Stufe 10) mit Brom im Pfand-Set auf +2 den Mondhof
-100 / 100 / 93 %, «Gut» mit Sina in der Morgengabe das Morgentor 100 / 92 / 41 % (200 Läufe). Die Sets des
+Im Mondlicht (Stand 23.10.2026, Team «Stark», 1000 Läufe; Zeilen mit 300 Läufen sind gekennzeichnet). «Frisch»
+und «Gut» schaffen dort mit den Sets der Ebene darunter nichts («Gut» mit `mond5` im Mondhof 0 %, mit `pfand5`
+am Morgentor 1 %), mit dem Lohn-Set aber viel: «Frisch» (Stufe 10) mit Brom im Pfand-Set auf +2 den Mondhof
+100 / 96 / 84 %, «Gut» mit Sina in der Morgengabe das Morgentor 98 / 87 / 51 % (200 Läufe). Die Sets des
 Mondes sind also stärker als die Stufen der Helden:
 
 | Dungeon | Sterne +5 (ohne Set der Ebene darunter) | Schlund-Set auf +2 | Mond +5 | Pfand-Set +2 / +3 / +5 | Morgengabe ohne Stufen |
 |---|---|---|---|---|---|
-| Der Mondhof | 0 / 0 / 0 % | 1 / 0 / 0 % | 74 / 28 / 2 % | ohne Stufen 100 / 100 / 100 % (300 Läufe), +2 100 / 100 / 100 % | – |
-| Das Morgentor | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % | 61 / 31 / 0 %, 62 / 38 / 0 %, 69 / 50 / 1 % | 100 / 100 / 98 % |
+| Der Mondhof | 0 / 0 / 0 % | 1 / 0 / 0 % | 66 / 20 / 1 % | ohne Stufen 100 / 100 / 100 % (300 Läufe), +2 100 / 100 / 100 % | – |
+| Das Morgentor | 0 / 0 / 0 % | 0 / 0 / 0 % | 0 / 0 / 0 % | 60 / 33 / 0 %, 62 / 41 / 0 %, 69 / 52 / 0 % | 100 / 100 / 99 % |
+
+Am 22.10. waren es im Mondhof mit `mond5` 74 / 28 / 2 %, am Morgentor 61 / 31 / 0 %, 62 / 38 / 0 % und
+69 / 50 / 1 % mit dem Pfand-Set und 100 / 100 / 98 % mit der Morgengabe; «Frisch» im Pfand-Set 100 / 100 / 93 %,
+«Gut» in der Morgengabe 100 / 92 / 41 %.
 
 Dazu die Läufe am Rundenlimit des Bosskampfs und die Siege vor der Wut-Runde: `docs/NEUE-DUNGEONS.md`,
 «Im Mondlicht».
 
 Vor der Eichung der Wege (21.10.2026) hatte das Team «Gut» im Himmelsarchiv mit Sets aus Ebene 4 54 / 37 / 0 %
-und mit dem Hort-Set 72 / 51 / 0 % (1000 Läufe; jetzt 32 / 18 / 0 % und 47 / 30 / 0 %). Seine Wege auf Stufe 12
+und mit dem Hort-Set 72 / 51 / 0 % (1000 Läufe; nach der Eichung der Wege 32 / 18 / 0 % und 47 / 30 / 0 %, seit
+dem 23.10. mit den Werten echter Helden 38 / 25 / 0 % und 46 / 26 / 0 %). Seine Wege auf Stufe 12
 waren deutlich stärker als ihr Ziel; die Gegner sind auf die Teams in eigener Ausrüstung nachgezogen
 (`docs/NEUE-DUNGEONS.md`, «Eichung»), nicht auf diese Mischung.
 
@@ -153,9 +162,9 @@ Zwischen den Sternen reichen Sets allein nicht mehr: Erst die Schmiede macht die
 (+3), für den Sternenschlund braucht es +4 bis +5 und Korrunds Meisterstücke (Stufe für Stufe in
 `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Im Mondlicht ist das Set der Ebene darunter der Schlüssel,
 und zwar auf +5: Ohne das Schlund-Set schafft «Stark» den Mondhof nie, mit dem Schlund-Set auf +2 fast nie
-(1 %), auf +4 jeden dritten Lauf, auf +5 drei von vier; ohne das Pfand-Set schafft es das Morgentor nie, mit
-dem Pfand-Set schon auf +2 in 61 % der Läufe (auf +5 69 %), weil dort das Set selbst zählt (Mondwall, Brom als
-Träger der Letzten Bastion), nicht seine Stufe.
+(1 %), auf +4 jeden fünften Lauf, auf +5 zwei von drei (bis 22.10.: jeden dritten, drei von vier); ohne das
+Pfand-Set schafft es das Morgentor nie, mit dem Pfand-Set schon auf +2 in 60 % der Läufe (auf +5 69 %), weil
+dort das Set selbst zählt (Mondwall, Brom als Träger der Letzten Bastion), nicht seine Stufe.
 
 **Korrunds Meisterstücke** sind ein Set für einen Kämpfer (Klinge, Platte, Talisman). Als Schild-Set für
 Brom war die erste Fassung deutlich schwächer als die Festung mit der Letzten Bastion; mit dem Schmiedetakt
@@ -172,12 +181,13 @@ genau das der Grund für den Patt am Rundenlimit, bis Sunna genug Angriff bekam,
 **Sunnas Morgengabe** (Erster Strahl, Dämmerwams, Messing-Sonnenuhr; Ebene 10) ist das Dolch-Set für Sina:
 Sonnenstich brennt Gegner über 60 % Leben herunter, genau bis dorthin, wo die Meuchlerin 2,5-fach trifft; oben
 Sonnenstich, unten Meucheln, derselbe Dolch. Es ist das Set gegen dicke einzelne Gegner, also gegen Bosse, und
-der Burst-Build, der am Morgentor die Sonnenuhr vorstellen darf (Eichung: 98 % gierig, Sunna wütet ab Runde 4;
-Brom im Pfand-Set ohne die Morgengabe 1 %).
+der Burst-Build, der am Morgentor die Sonnenuhr vorstellen darf (Eichung: 99 % gierig, Sunna wütet ab Runde 4;
+Brom im Pfand-Set ohne die Morgengabe 0 %; Stand 23.10.2026).
 Der Morgenstern (Erstsieg-Beute) trägt den Sternenfall des Schlund-Sets auf einen Zweihänder, wie Korrunds Hammer
 den Funkenflug: zwei Sets, drei Waffen, eine Hand zu wenig.
 Mondhof und Morgentor sind seit dem 22.10.2026 geeicht (`docs/NEUE-DUNGEONS.md`, «Im Mondlicht», mit Zielen,
-Messwerten und dem, was nicht erreicht wurde); die Tabelle «Im Mondlicht» oben ist der Stand danach.
+Messwerten und dem, was nicht erreicht wurde) und am 23.10. mit den Werten echter Helden nachgemessen; die
+Tabelle «Im Mondlicht» oben ist der Stand danach.
 
 **Letzte Bastion** (Set der Festung) zieht seit dem 20.10. genau 2 Runden lang alle Angriffe auf sich, wie ihr
 Text sagt, auch in Belagerungen. Spott zählt seither ganze Runden (für die Bärengestalt der Druiden). Vorher

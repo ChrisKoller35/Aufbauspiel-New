@@ -87,10 +87,12 @@ export const SPEZIALISIERUNGEN: SpezialisierungDef[] = [
   {
     id: 'cleric_kriegspriester', klasse: 'cleric', name: 'Kriegspriester', zeichen: '⚒️',
     kurz: 'Segnet das Team, solange er steht',
-    text: 'Solange er steht, hat das ganze Team +1 Verteidigung.',
+    text: 'Solange er steht, hat das ganze Team +1 Angriff und +1 Verteidigung.',
     meisterText: '+2 Verteidigung.',
-    effekte: [{ id: 'kriegssegen', power: 1 }],
-    meisterEffekte: [{ id: 'kriegssegen', power: 2 }],
+    // Seit dem 23.10.2026 mit +1 Angriff: Mit den Werten echter Helden brachte +1 / +2 Verteidigung allein
+    // nur noch 0,7 / 2,6 % statt 2,5 / 4 % (docs/SPEZIALISIERUNG.md)
+    effekte: [{ id: 'kriegssegen', power: 1, atk: 1 }],
+    meisterEffekte: [{ id: 'kriegssegen', power: 2, atk: 1 }],
   },
   // ── Berserker ──
   {

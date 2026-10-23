@@ -123,8 +123,10 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 ## Eichung
 
 `npm run dungeon-eichung` lässt die drei Musterteams (`src/data/musterteams.ts`) je 200 Mal durch
-jeden Dungeon laufen (`src/systems/Musterlauf.ts`). Ihre Helden gehen Wege (Phalanx, Zorn, Scharfschützin,
-Meuchlerin; `docs/SPEZIALISIERUNG.md`). An Rastplätzen rasten sie immer, bei den festen Wahl-Räumen spielen sie
+jeden Dungeon laufen (`src/systems/Musterlauf.ts`). Ihre Helden haben genau die Werte eines echten Helden ihrer
+Klasse und Stufe (seit dem 23.10.2026, `docs/AUSBILDUNG.md`, «Eichung nach dem Umbau») und gehen Wege (Phalanx,
+Zorn, Scharfschützin, Meuchlerin; `docs/SPEZIALISIERUNG.md`). An Rastplätzen rasten sie immer, bei den festen
+Wahl-Räumen spielen sie
 
 - **vorsichtig:** immer die sichere Option (Heilung; im Sternenschlund die Sterne befreien),
 - **klug:** das Risiko nur mit mindestens 85 % Leben,
@@ -138,28 +140,32 @@ Bosskampfs enden (20 Runden ohne Sieger: kein Sieg, keine Niederlage), und die S
 Wut-Runde nicht mehr erlebt. `npm run dungeon-eichung -- 1000 mondhof,morgentor stark` misst nur diese Dungeons
 mit diesem Team.
 
-Stand 21.10.2026, mit den neu geeichten Wegen (`docs/SPEZIALISIERUNG.md`), Manager #43 und #44
-eingerechnet (20 % Mindestschaden, stärkere Startklassen), Siege von 200 Läufen:
+Stand 23.10.2026, mit den Werten echter Helden (neue Klassen-Boni, unten «Nach dem Umbau des Trainings neu
+gemessen»), den Wegen vom 21.10. (`docs/SPEZIALISIERUNG.md`) und Manager #43 und #44 (20 % Mindestschaden,
+stärkere Startklassen), Siege von 200 Läufen:
 
 | Dungeon | Team | vorsichtig | klug | gierig |
 |---|---|---|---|---|
 | Vulkankern | frisch, gut, stark | 100 % | 100 % | 100 % |
 | Der Drachenhort | frisch | 0 % | 0 % | 0 % |
-| Der Drachenhort | gut | 86 % | 53 % | 0 % |
+| Der Drachenhort | gut | 79 % | 51 % | 1 % |
 | Der Drachenhort | stark | 100 % | 100 % | 99 % |
 | Das Himmelsarchiv | frisch | 0 % | 0 % | 0 % |
 | Das Himmelsarchiv | gut | 0 % | 0 % | 0 % |
-| Das Himmelsarchiv | stark | 48 % | 30 % | 1 % |
+| Das Himmelsarchiv | stark | 53 % | 30 % | 1 % |
 
-Die ersten 200 Läufe schmeicheln dem Drachenhort: Mit 1000 Läufen sind es für «Gut» 81 / 49 / 1 % (vor der
-Eichung der Wege 79 / 48 / 1 %), im Himmelsarchiv für «Stark» 47 / 31 / 1 % (vorher 48 / 32 / 0 %).
+Mit 1000 Läufen sind es für «Gut» im Drachenhort 82 / 53 / 1 % (21.10.: 81 / 49 / 1 %, vor der Eichung der
+Wege 79 / 48 / 1 %), für «Stark» im Himmelsarchiv 47 / 31 / 0 % (21.10.: 47 / 31 / 1 %, vorher 48 / 32 / 0 %).
+Bis zum 22.10. schmeichelten die ersten 200 Läufe dem Drachenhort (86 / 53 / 0 %), jetzt liegen sie leicht
+darunter.
 
 Die Sternen-Dungeons schafft in eigener Ausrüstung (T4) kein Musterteam, sie haben ihre eigene Tabelle unten.
 
-**Ohne Wege** (dritte Tabelle des Werkzeugs): Drachenhort «Gut» 10 / 7 / 0 %, «Stark» 100 / 94 / 0 %,
-Himmelsarchiv «Stark» 0 / 0 / 0 %. Seit den Wegen haben die Gegner beider Dungeons mehr Leben und Angriff
-(Drachenhort etwa ×1,11, Himmelsarchiv etwa ×1,15), seit #43 und #44 noch einmal (×1,04 und ×1,05), seit der
-Eichung der Wege wieder etwas weniger (Drachenhort ×0,976, Himmelsarchiv Angriff ×0,981 und Leben ×0,966).
+**Ohne Wege** (dritte Tabelle des Werkzeugs, 23.10.2026): Drachenhort «Gut» 12 / 8 / 0 %, «Stark»
+100 / 94 / 1 %, Himmelsarchiv «Stark» 0 / 0 / 0 % (21.10.: 10 / 7 / 0 %, 100 / 94 / 0 % und 0 %). Seit den
+Wegen haben die Gegner beider Dungeons mehr Leben und Angriff (Drachenhort etwa ×1,11, Himmelsarchiv etwa
+×1,15), seit #43 und #44 noch einmal (×1,04 und ×1,05), seit der Eichung der Wege wieder etwas weniger
+(Drachenhort ×0,976, Himmelsarchiv Angriff ×0,981 und Leben ×0,966).
 Vorher, ohne Wege und mit den alten Gegnern: Drachenhort «Gut» 77 / 61 / 0 %, «Stark» 100 / 100 / 79 %,
 Himmelsarchiv «Stark» 73 / 53 / 1 %.
 
@@ -182,6 +188,45 @@ viel stärkere Wege als das Ziel und verliert darum mehr, im Himmelsarchiv mit S
 32 % und mit dem Hort-Set von 72 auf 47 % (vorsichtig, 1000 Läufe; `docs/DUNGEON-SETS.md`). «Gut» kommt dort
 also mit dem Hort-Set etwa jeden zweiten Lauf durch, wie es gedacht war, nicht mehr fast drei von vier.
 
+**Nach dem Umbau des Trainings neu gemessen (23.10.2026).** Bis zum 22.10. hatten die Musterhelden eigene
+Werte: je Stufe die Hälfte von Klassen-Bonus und altem Training (+2 Leben, +1 Angriff, +1 Verteidigung), einmal
+gerundet, ohne Krit und Tempo. Seit Training und Lehrbuch über `awardXP` laufen (PR #42), erreichte das kein Held
+mehr: Ein echter Ranger auf Stufe 15 hatte 16,4 Angriff und 2,4 Verteidigung statt 19 und 9. Mit echten Helden
+wären die obersten Dungeons kaum zu schaffen gewesen (Drachenhort «Gut» 4 / 1 / 0 %, Himmelsarchiv «Stark» 0 %,
+Mondhof `mond5` 0 %, Morgentor `pfand5` 4 / 0 / 0 %; 1000 Läufe). Jetzt tragen die Klassen-Boni den Mittelwert,
+nach einer Regel für alle Klassen (`docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»), und die Musterteams rechnen
+mit genau den Werten echter Helden (`werteAufStufe`). Die Gegner blieben, wie sie waren. Von 227 Messwerten aus
+den Eichungs-Dokus (Dungeons, Sets, Schmiede, Monsterbuch; jede Zeile der Set-Tabellen mitgezählt, nachgezählt am
+23.10.) liegen 208 höchstens 5 Punkte neben den alten; der alte Stand, mit denselben Läufen nachgemessen, trifft
+226 davon. Die übrigen 19 weichen in beide Richtungen ab, darum hilft keine stärkere oder schwächere Regel
+(gemessen mit 80 bis 105 % des Wegs zum Mittelwert):
+
+- **Leichter:** Himmelsarchiv «Gut» in Sets aus Ebene 4 38 / 25 % statt 32 / 18 % (1000 Läufe; 200 Läufe klug 26
+  statt 19 %), mit allen Teilen auf +1 74 statt 62 % (vorsichtig); Sternenschmiede «Stark» auf +2 42 / 57 statt
+  31 / 40 %, auf +3 klug 93 statt 82 % (100 Läufe ebenso 93 statt 81 %), ohne Wege auf +5 59 statt 42 % (klug,
+  100 Läufe); Morgentor «Gut» in der Morgengabe gierig 51 statt 41 % (200 Läufe; auf dem alten Stand nachgemessen
+  schon 47 %, das ist der eine Wert, den auch der alte Stand verfehlt).
+- **Schwerer:** Mondhof `mond5` 66 / 20 / 1 % statt 74 / 28 / 2 % (1000 Läufe), mit Lias Schlund-Set auf +4
+  vorsichtig 20 statt 34 % (300 Läufe); Himmelsarchiv «Stark» in Sets gierig 37 statt 54 % (Ebene 4) und 68
+  statt 78 % (Hort); Himmelsarchiv «Gut» im Hort-Set klug 25 statt 33 % (200 Läufe; mit 1000 Läufen 26 statt
+  30 %); Sternenschlund «Stark» im Hort-Set auf +5 klug 12 statt 19 %; Mondhof «Frisch» mit Brom im Pfand-Set
+  auf +2 gierig 84 statt 93 %, dabei 16 % der gierigen Läufe am Rundenlimit (vorher 8 %).
+- **Drachenhort «Gut»**, 200 Läufe vorsichtig 79 statt 86 %: Mit 1000 Läufen sind es 82 statt 81 %, das
+  ist also das Rauschen der ersten 200 Läufe.
+
+Die Teams sind nicht gleichmässig stärker oder schwächer, sondern anders gebaut. Auf Stufe 15: Lias und Sinas
+Krit wächst jetzt mit (29 und 34 % statt 15 und 20 %), Grimm hat mehr Leben und weniger Angriff (126 / 16,8 /
+10,4 statt 119 / 18 / 10), Brom weniger Angriff und Verteidigung (12,4 / 12,8 statt 13 / 14), Lia und Sina etwas
+mehr Angriff und weniger Verteidigung (19,2 / 8 und 19,2 / 7 statt 19 / 9 und 19 / 8). Welcher Dungeon davon
+gewinnt, hängt an seinen Kämpfen. Einzeln nachziehen hiesse, Gegner je Dungeon zu ändern; das ist bewusst
+unterblieben. Die Regel für die Helden bleibt, weil sie die beste einheitliche ist: Mit dem vollen Mittelwert
+(100 % statt 90 %) wären die Teams zu stark (Drachenhort «Gut» 95 / 77 / 3 %, Himmelsarchiv «Stark»
+74 / 56 / 2 %, 1000 Läufe).
+
+**Offen (eigener Auftrag, zu entscheiden):** die Feineichung der Gegner einzelner Dungeons nach dem Umbau, vor
+allem Mondhof klug (20 % statt 35 bis 50 %) und Himmelsarchiv «Stark» in Sets gierig (37 statt 54 % in Sets aus
+Ebene 4), dazu die Läufe am Rundenlimit im Sternenschlund (unten, «Zwischen den Sternen»).
+
 ### Zwischen den Sternen (Ebene 7 und 8)
 
 **Ziele:** Die Schmiede ist der Schlüssel. Ohne Stufen schafft auch «Stark» die Sternenschmiede nie, mit allen
@@ -192,23 +237,28 @@ es sich beim ersten Mal, die Sterne zu befreien. Ihr Sternenstahl kommt erst mit
 erst für ein Team, das Nyxar sicher schlägt.
 
 Team «Stark» mit Wegen, Brom Festung, Grimm Hort-Set (oder Korrunds Meisterstücke), Lia Abyss, Sina Schatten,
-alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gierig):
+alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gierig), Stand 23.10.2026:
 
 | Stufe der Teile | Sternenschmiede | Sternenschlund | Sternenschlund, Grimm in Korrunds Set |
 |---|---|---|---|
-| +0 | 1 / 2 / 0 % | 0 / 0 / 0 % | – |
-| +1 | 2 / 19 / 0 % | – | – |
-| +2 | 31 / 40 / 1 % | – | – |
-| +3 | 83 / 82 / 10 % | 0 / 0 / 0 % | 1 / 0 / 0 % |
-| +4 | 98 / 99 / 48 % | 4 / 1 / 0 % | 16 / 1 / 0 % |
-| +5 | 100 / 100 / 100 % | 67 / 19 / 3 % | 92 / 58 / 3 % |
+| +0 | 1 / 4 / 0 % | 0 / 0 / 0 % | – |
+| +1 | 5 / 22 / 1 % | – | – |
+| +2 | 42 / 57 / 1 % | – | – |
+| +3 | 82 / 93 / 13 % | 0 / 0 / 0 % | 0 / 0 / 0 % |
+| +4 | 98 / 98 / 43 % | 2 / 0 / 0 % | 16 / 1 / 0 % |
+| +5 | 100 / 100 / 100 % | 68 / 12 / 0 % | 91 / 56 / 4 % |
 
-- **Team «Gut»** (Stufe 12): Sternenschmiede auf +3 1 / 1 / 0 %, mit Korrunds Set auf +5 98 / 99 / 78 %;
-  Sternenschlund auch dann nur 4 / 1 / 0 %.
-- **Ohne Wege** geht zwischen den Sternen fast nichts: Sternenschmiede auf +3 0 %, auf +5 42 %, Sternenschlund
-  auf +5 0 % (klug, 100 Läufe; mit Wegen 81, 100 und 58 %).
+Bis zum 22.10. (Musterhelden mit den alten Werten): +0 1 / 2 / 0 %, +1 2 / 19 / 0 %, +2 31 / 40 / 1 %, +3
+83 / 82 / 10 %, +4 98 / 99 / 48 % in der Sternenschmiede; im Sternenschlund +4 4 / 1 / 0 % und +5 67 / 19 / 3 %,
+mit Korrunds Set +3 1 / 0 / 0 % und +5 92 / 58 / 3 %.
+
+- **Team «Gut»** (Stufe 12): Sternenschmiede auf +3 2 / 5 / 0 %, mit Korrunds Set auf +5 96 / 99 / 80 %;
+  Sternenschlund auch dann nur 1 / 0 / 0 % (bis 22.10.: 1 / 1 / 0 %, 98 / 99 / 78 % und 4 / 1 / 0 %).
+- **Ohne Wege** geht zwischen den Sternen wenig: Sternenschmiede auf +3 0 %, auf +5 59 %, Sternenschlund
+  auf +5 0 % (klug, 100 Läufe; mit Wegen 93, 100 und 61 %; bis 22.10. ohne Wege 0, 42 und 0 %, mit Wegen 81,
+  100 und 58 %).
 - **Das Schlund-Set** macht den Schlund leicht: Trägt Lia es (die übrigen auf +5), sind es ohne Stufen schon
-  100 / 96 / 56 %, auf +2 100 / 100 / 85 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
+  100 / 96 / 56 %, auf +2 100 / 100 / 86 %. Wie das Hort-Set für den Drachenhort ist es der Lohn für den Sieg
   und der Schlüssel für die Dungeons, die einmal darüber kommen.
 - **Nyxar** wird durch befreite Sterne bis zu 30 % schwächer (`hortGier` 0,1 je Stern, drei Sterne).
 - **Nach der Gegenprüfung (21.10.2026):** Vorher hatte der Sternenschlund eine harte Kante an der
@@ -226,6 +276,13 @@ alle Teile auf derselben Stufe, Siege von 200 Läufen (vorsichtig / klug / gieri
   (vorher 13 / 1 / 0 %), auf +5 91 / 62 / 4 % (vorher 86 / 66 / 10 %). Gier gegen Nyxar kostet damit
   etwas mehr als vorher; in der Sternenschmiede auch, weil die Risiken dort Leben kosten (gierig auf +4 48
   statt 68 %), vorsichtig und klug sind dort gleich geblieben.
+- **Nach dem Umbau des Trainings (23.10.2026):** mit 1000 Läufen Korrunds Set auf +4 13 / 1 / 0 %, auf +5
+  89 / 61 / 5 % (vorher 16 / 2 / 0 % und 91 / 62 / 4 %); die Kante an der Meisterset-Schwelle ist dieselbe. Mehr
+  Kämpfe gegen Nyxar dauern aber bis zum Rundenlimit: Auf +5 enden 6 / 10 / 1 % der Läufe dort (vorher
+  4 / 4 / 1 %), auf +4 vorsichtig 20 % (vorher 17 %), und klug fallen nur noch 9 von 608 Siegen vor Nyxars
+  Wut-Runde (vorher 18 von 619). Ein Ziel für das Rundenlimit hat der Sternenschlund nicht. Am Mass aus dem
+  Mondlicht («unter 5 %») lag er auf +4 schon vorher darüber, auf +5 jetzt auch (vorsichtig 6, klug 10 %). Das
+  gehört zur offenen Feineichung der Gegner (oben).
 
 ### Im Mondlicht (Ebene 9 und 10)
 
@@ -242,26 +299,28 @@ Für beide: unter 5 % der Läufe am Rundenlimit des Bosskampfs; die Siege vor de
 Bei Zielkonflikten gilt die Reihenfolge des Entwurfs: das Schlüssel-Set bleibt der Schlüssel, dann die
 Siegquoten, zuletzt der Reiz der Gier.
 
-**Geeicht am 22.10.2026**, Team «Stark» mit Wegen, 1000 Läufe je Zeile (`npm run dungeon-eichung -- 1000
-mondhof,morgentor stark`; Zeilen mit 300 Läufen sind gekennzeichnet), Siege vorsichtig / klug / gierig:
+**Geeicht am 22.10.2026, nachgemessen am 23.10.2026** mit den Werten echter Helden (oben, «Nach dem Umbau des
+Trainings neu gemessen»), Team «Stark» mit Wegen, 1000 Läufe je Zeile (`npm run dungeon-eichung -- 1000
+mondhof,morgentor stark`; Zeilen mit 300 Läufen sind gekennzeichnet), Siege vorsichtig / klug / gierig. In
+Klammern der Stand vom 22.10., wo er um mehr als 2 Punkte anders war:
 
 | Mondhof, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
 |---|---|---|---|---|
 | `sterne5`: Lia Abyss +5, ohne Schlund-Set | höchstens 20 % vorsichtig | 0 / 0 / 0 % | 0 % | – |
-| `schlund2`: Lias Schlund-Set erst auf +2 | etwa 40 / 20 / 0 % | 1 / 0 / 0 % | 0 % | 0 von 14 |
+| `schlund2`: Lias Schlund-Set erst auf +2 | etwa 40 / 20 / 0 % | 1 / 0 / 0 % | 0 % | 0 von 11 |
 | Lias Schlund-Set auf +3 (300 Läufe) | – | 4 / 0 / 0 % | 0 % | 0 von 12 |
-| Lias Schlund-Set auf +4 (300 Läufe) | – | 34 / 3 / 0 % | 0 % | 6 von 101 |
-| `mond5`: alles auf +5 | 60–70 / 35–50 / höchstens 10 % | 74 / 28 / 2 % | 0 / 0 / 0 % | 295 von 741 / 20 von 279 / 0 von 19 |
-| Brom im Pfand-Set ohne Stufen, übrige +5 (300 Läufe) | mindestens 90 % vorsichtig | 100 / 100 / 100 % | 0 % | 300 von 300 / 275 von 300 / 168 von 300 |
-| `pfand2`: Broms Pfand-Set auf +2, übrige +5 | 100 / 100 / etwa 40 % | 100 / 100 / 100 % | 0 % | 1000 von 1000 / 903 von 1000 / 547 von 1000 |
+| Lias Schlund-Set auf +4 (300 Läufe) | – | 20 / 0 / 0 % (34 / 3 / 0 %) | 0 % | 3 von 59 |
+| `mond5`: alles auf +5 | 60–70 / 35–50 / höchstens 10 % | 66 / 20 / 1 % (74 / 28 / 2 %) | 0 / 0 / 0 % | 236 von 659 / 12 von 204 / 0 von 12 |
+| Brom im Pfand-Set ohne Stufen, übrige +5 (300 Läufe) | mindestens 90 % vorsichtig | 100 / 100 / 100 % | 0 % | 300 von 300 / 261 von 300 / 153 von 300 |
+| `pfand2`: Broms Pfand-Set auf +2, übrige +5 | 100 / 100 / etwa 40 % | 100 / 100 / 100 % | 0 % | 999 von 1000 / 851 von 1000 / 489 von 1000 |
 
 | Morgentor, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
 |---|---|---|---|---|
 | `mond5`: ohne Pfand-Set | höchstens 15 % vorsichtig, 0 % gierig | 0 / 0 / 0 % | 0 % | – |
-| `pfand2`: Broms Pfand-Set auf +2, übrige +5 | – | 61 / 31 / 0 % | 0 % | 315 von 605 / 0 von 310 / – |
-| `pfand3`: Broms Pfand-Set auf +3, übrige +5 | 15–25 % vorsichtig | 62 / 38 / 0 % | 0 % | 314 von 623 / 0 von 380 / – |
-| `pfand5`: alles auf +5 | 60–70 / 35–50 / höchstens 5 % | 69 / 50 / 1 % | 1 / 0 / 0 % | 315 von 694 / 0 von 500 / 0 von 13 |
-| `morgen0`: Sina in Sunnas Morgengabe ohne Stufen, übrige +5 | mindestens 90 % vorsichtig, mindestens 40 % gierig | 100 / 100 / 98 % | 0 % | 998 von 1000 / 86 von 999 / 0 von 981 |
+| `pfand2`: Broms Pfand-Set auf +2, übrige +5 | – | 60 / 33 / 0 % | 0 % | 307 von 603 / 0 von 333 / – |
+| `pfand3`: Broms Pfand-Set auf +3, übrige +5 | 15–25 % vorsichtig | 62 / 41 / 0 % (62 / 38 / 0 %) | 0 % | 309 von 617 / 0 von 405 / – |
+| `pfand5`: alles auf +5 | 60–70 / 35–50 / höchstens 5 % | 69 / 52 / 0 % | 2 / 0 / 0 % | 320 von 688 / 0 von 522 / – |
+| `morgen0`: Sina in Sunnas Morgengabe ohne Stufen, übrige +5 | mindestens 90 % vorsichtig, mindestens 40 % gierig | 100 / 100 / 99 % | 0 % | 1000 von 1000 / 153 von 1000 / 0 von 988 |
 
 Was die Zahlen vorher waren (Startwerte des Entwurfs, 100 Läufe): Mondhof `mond5` 3 / 0 / 0 %, `sterne5` 0 %,
 jeder Lauf kam bis zu Argentis und fiel dort; Morgentor `mond5` 0 %, `pfand5` 87 / 68 / 10 % mit 13 / 32 / 76 %
@@ -294,7 +353,7 @@ der Läufe am Rundenlimit, `pfand3` 94 / 71 / 5 %, Sina in der Morgengabe 100 / 
 - **Nicht geändert:** die Set-Werte (Mondwall 15, Sonnenstich 0,6 / 0,05 / 60), `bossWutFrueher` (2 je Raum),
   die Wut-Runden (Argentis und Sunna ab Runde 10) und die Mahnung.
 
-**Was nicht erreicht wurde, und warum:**
+**Was nicht erreicht wurde, und warum** (Zahlen vom 22.10.; was seit dem 23.10. gilt, steht jeweils am Ende):
 
 - **Mondhof klug 28 % statt 35 bis 50 %, vorsichtig 74 statt 60 bis 70 %.** Beide zusammen gehen mit diesem
   Boss nicht: Zwischen 0 und −13 % Angriff fällt die Siegquote um gut 45 Punkte, weil der Kampf ein Wettlauf
@@ -302,10 +361,12 @@ der Läufe am Rundenlimit, `pfand3` 94 / 71 / 5 %, Sina in der Morgengabe 100 / 
   (vorsichtig 85 %) klug auf 35 %. Gemessen wurde auch: Mahnung weg, Wut erst ab Runde 12, Wut nur ×1,3,
   Wachen stärker oder schwächer, Argentis mit sehr wenig Angriff und sehr viel Leben (36 / 2900: 98 / 65 / 8 %,
   aber 4 % am Rundenlimit). Nichts davon macht die Kante flach genug, ohne ein anderes Ziel zu reissen. Die
-  Mitte (74 / 28) weicht von beiden Zielen am wenigsten ab.
+  Mitte (74 / 28) weicht von beiden Zielen am wenigsten ab. Seit dem 23.10.: 66 / 20 %, vorsichtig also im Ziel,
+  klug weiter darunter; dieselbe Kante, das Team ist dort nur etwas schwächer.
 - **Lias Schlund-Set auf +2: 1 % statt etwa 40 %.** Aus demselben Grund: Drei Stufen auf Lias drei Teilen
   sind etwa 10 % des Schadens der Gruppe, und das ist an dieser Kante der Unterschied zwischen 74 und 1 %
   (+3: 4 %, +4: 34 %). Das Schlund-Set ist damit noch mehr der Schlüssel, als der Entwurf wollte: Es muss auf +5.
+  Seit dem 23.10.: +2 1 %, +3 4 %, +4 20 %.
 - **Lohn im Mondhof gierig 100 % statt etwa 40 %.** Brom im Pfand des Mondvogts ist für Argentis unverwundbar
   (Mindestschaden gegen Verteidigung 79, dazu Mondwall für alle), und Argentis heilt sich nicht; das Team
   gewinnt auch mit drei Zetteln, nur später (gierig 547 von 1000 Siegen vor der Wut, vorsichtig alle). Gier
@@ -316,21 +377,27 @@ der Läufe am Rundenlimit, `pfand3` 94 / 71 / 5 %, Sina in der Morgengabe 100 / 
   100 / 100 / 93 % der Läufe, und «Gut» (Stufe 12) das Morgentor mit Sina in der Morgengabe in 100 / 92 / 41 %,
   während «Gut» mit `mond5` im Mondhof bei 1 % und mit `pfand5` am Morgentor bei 2 % bleibt. Die beiden
   Lohn-Sets sind damit die stärksten Sprünge des Spiels; ob sie so stark bleiben sollen, ist eine Frage für die
-  Gegenprüfung, nicht für die Eichung der Gegner.
+  Gegenprüfung, nicht für die Eichung der Gegner. Seit dem 23.10.: «Stark» gierig 489 von 1000 Siegen vor der
+  Wut, «Frisch» 100 / 96 / 84 % (16 % der gierigen Läufe am Rundenlimit), «Gut» in der Morgengabe 98 / 87 / 51 %,
+  «Gut» mit `mond5` 0 % und mit `pfand5` 1 %.
 - **Morgentor, Pfand-Set auf +3: 62 % statt 15 bis 25 %.** Zwei Stufen auf Broms drei Teilen ändern an Sunnas
   Treffern fast nichts (Mindestschaden); der Unterschied zu +5 ist das Meisterset (doppelter Zwei-Teile-Bonus)
   und 10 % Werte, zusammen 7 Punkte vorsichtig, 12 Punkte klug. Ein Eintritt bei 15 bis 25 % bräuchte eine
   Sunna, die gegen Brom auf +3 trifft und gegen Brom auf +5 nicht, das gibt die Schadensformel nicht her. Der
-  Schlüssel ist das Pfand-Set selbst (ohne: 0 %), nicht seine Stufe; schon auf +2 sind es 61 %.
+  Schlüssel ist das Pfand-Set selbst (ohne: 0 %), nicht seine Stufe; schon auf +2 sind es 61 %. Seit dem 23.10.:
+  +2 60 %, +3 62 %, +5 69 % vorsichtig, klug 33, 41 und 52 % (`pfand5` klug damit 2 Punkte über dem Ziel).
 - **Morgentor gierig mit der Morgengabe 98 %, nicht «mindestens 40 %»:** erreicht, aber die Sonnenuhr kostet
   diesen Build gar nichts mehr (vorsichtig 100 %, gierig 98 %, Siege zwischen Runde 4 und 10). Der Beweis, dass
-  die Sonnenuhr vom Build abhängt, steht: `pfand5` gierig 1 %, `morgen0` gierig 98 %.
+  die Sonnenuhr vom Build abhängt, steht: `pfand5` gierig 1 %, `morgen0` gierig 98 %. Seit dem 23.10.: 0 und
+  99 %. Die 99 % sind keine Folge des Umbaus: Der alte Stand, am 23.10. nachgemessen, ergibt ebenfalls 99 %
+  (986 von 1000).
 
 **Geschichten-Eichung:** `npm run geschichten-eichung -- 100 mondhof` und `-- 100 morgentor` haben nichts zu
 messen, weil beide Geschichten keine eigenen Entscheidungen haben (`wahlen: []`); sie erzählen über die festen
 Wahl-Räume der Route (Pfandzettel, Sonnenuhr), und die misst die Dungeon-Eichung als Spielweise. Was die Wahl
 kostet, steht oben: jeder Pfandzettel etwa 20 Punkte Siege, jedes Vorstellen der Sonnenuhr für `pfand5` etwa
-20 bis 50 Punkte (vorsichtig 69, klug mit im Mittel zwei Stunden 50, gierig 1 %), für den Burst-Build nichts.
+20 bis 50 Punkte (vorsichtig 69, klug mit im Mittel zwei Stunden 50, gierig 1 %; seit dem 23.10. 69 / 52 / 0 %),
+für den Burst-Build nichts.
 
 ## Entschieden
 

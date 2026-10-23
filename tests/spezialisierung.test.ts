@@ -340,26 +340,29 @@ describe('Wege im Kampf', () => {
     expect(lia.hp).toBe(40 + heilung);
   });
 
-  test('Kriegspriester: das Team hat mehr Verteidigung, solange er steht', () => {
+  test('Kriegspriester: das Team hat mehr Angriff und Verteidigung, solange er steht', () => {
+    const zeile = (s: ReturnType<typeof wert>) =>
+      `★ Ilse setzt Kriegspriester ein → das ganze Team hat ${s.atk ? `+${s.atk} Angriff und ` : ''}+${s.power} Verteidigung`;
+    const segen = wert('cleric_kriegspriester', 'kriegssegen');
     const ilse = einheit(held('Ilse', 'cleric', 'cleric_kriegspriester'));
     const grimm = einheit(held('Grimm', 'berserker', null));
     const { run } = lauf([ilse, grimm]);
     const { log, liste } = zeilen();
     kampfBeginn([ilse, grimm], [], run, log);
-    expect(liste).toEqual(['★ Ilse setzt Kriegspriester ein → das ganze Team hat +1 Verteidigung']);
-    expect([ilse.def, grimm.def]).toEqual([1, 1]);
+    expect(liste).toEqual([zeile(segen)]);
+    expect([ilse.atk, ilse.def, grimm.atk, grimm.def]).toEqual([10 + (segen.atk ?? 0), segen.power, 10 + (segen.atk ?? 0), segen.power]);
     ilse.hp = 0;
     zustandAktualisieren([ilse, grimm], log);
     expect(liste.at(-1)).toBe('  ★ Der Segen des Kriegspriesters erlischt.');
-    expect(grimm.def).toBe(0);
+    expect([grimm.atk, grimm.def]).toEqual([10, 0]);
 
-    const segen = wert('cleric_kriegspriester', 'kriegssegen', true);
+    const meisterSegen = wert('cleric_kriegspriester', 'kriegssegen', true);
     const meister = einheit(held('Ilse', 'cleric', 'cleric_kriegspriester', MEISTER_AB_STUFE));
     const grimm2 = einheit(held('Grimm', 'berserker', null));
     const { log: log2, liste: liste2 } = zeilen();
     kampfBeginn([meister, grimm2], [], lauf([meister, grimm2]).run, log2);
-    expect(liste2).toEqual([`★ Ilse setzt Kriegspriester ein → das ganze Team hat ${segen.atk ? `+${segen.atk} Angriff und ` : ''}+${segen.power} Verteidigung`]);
-    expect([grimm2.atk, grimm2.def]).toEqual([10 + (segen.atk ?? 0), segen.power]);
+    expect(liste2).toEqual([zeile(meisterSegen)]);
+    expect([grimm2.atk, grimm2.def]).toEqual([10 + (meisterSegen.atk ?? 0), meisterSegen.power]);
     kampfEnde([meister, grimm2]);
     expect([grimm2.atk, grimm2.def]).toEqual([10, 0]);
   });
@@ -690,6 +693,13 @@ describe('Wege: Bilanz und Zustände im Kampf', () => {
     const dmg = grundSchaden(ork.atk, lia.def);
     wegAnteileZaehlen(ork, lia, dmg, [pater, lia], [ork]);
     expect(pater.wegWirkung).toEqual({ verhindert: grundSchaden(ork.atk, lia.def - segen) - dmg });
+    // Der Angriff aus dem Segen zählt als Schaden des Kriegspriesters
+    const plus = wert('cleric_kriegspriester', 'kriegssegen').atk!;
+    expect(plus).toBeGreaterThan(0);
+    const puppe = gegner('Puppe', { def: 3 });
+    const treffer = grundSchaden(lia.atk, puppe.def);
+    wegAnteileZaehlen(lia, puppe, treffer, [puppe], [pater, lia]);
+    expect(pater.wegWirkung?.schaden).toBeCloseTo(treffer - grundSchaden(lia.atk - plus, puppe.def));
 
     const bardin = einheit(held('Bardin', 'bard', 'bard_schmaehlied'));
     const riese = gegner('Riese', { atk: 50 });
