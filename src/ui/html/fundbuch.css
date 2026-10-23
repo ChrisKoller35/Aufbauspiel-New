@@ -68,8 +68,8 @@
 .fb-text { color: #a89c86; font-style: italic; margin: 0 0 8px; line-height: 1.45; }
 .fb-sperre { color: #fcd34d; margin: 0 0 8px; }
 .fb-zeilen > li { padding: 6px 0; border-bottom: 1px solid var(--bdr); line-height: 1.45; }
-.fb-gegner { margin: 2px 0 0 14px; color: #c9bfae; font-size: 0.9rem; }
-.fb-gegner li::before { content: '· '; color: var(--mut); }
+/* Die Gegner-Zeilen eines Dungeons stehen beisammen, ohne Strich dazwischen */
+.fb-gegner li + li { margin-top: 4px; }
 .fb-leer, .fb-regel { color: var(--mut); font-size: 0.9rem; line-height: 1.45; }
 .fb-regel { margin-top: 14px; }
 .fb-link {

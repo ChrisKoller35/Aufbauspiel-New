@@ -13,10 +13,12 @@ import { GameState } from '../../models/GameState';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { ROUTE_DEFS, getRouteLockReasons, isRouteAvailable } from '../../data/routes';
 import { BUILDING_DEFS } from '../../data/buildings';
+import { ANTEIL_OHNE_SIEG } from '../../data/schmiede';
 import {
-  FundbuchGruppe, GRUPPEN_NAMEN, VERSTECK_CHANCE, dungeonBeute, fundbuchEintraege, fundorte, gruppeVon,
-  mengeText, prozentText, verwendung, zahlText,
+  FundbuchGruppe, Fundorte, GRUPPEN_NAMEN, RAST_KRAEUTER, VERSTECK_CHANCE, dungeonBeute, fundbuchEintraege, fundorte,
+  gruppeVon, mengeText, prozentText, verwendung, zahlText,
 } from '../../systems/Fundbuch';
+import { materialJeSieg } from '../../systems/Schmiede';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 
 type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
@@ -64,17 +66,19 @@ function abschnitt(titel: string, zeilen: string[], leer: string): string {
   return `<section class="fb-abschnitt"><h3>${titel}</h3>${inhalt}</section>`;
 }
 
-function woherZeilen(itemId: string, stand: Fortschritt): string[] {
-  const f = fundorte(itemId);
+function woherZeilen(f: Fundorte, stand: Fortschritt): string[] {
   const z: string[] = [];
   if (f.haendler) z.push(`Beim Händler der Stadt · ${f.haendler} Gold`);
   if (f.dungeonHaendler) z.push(`Beim Dungeon-Händler · ${f.dungeonHaendler.preis} Gold (höchstens ${f.dungeonHaendler.max} Käufe)`);
   for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
   for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
+  for (const s of f.jedenSieg) z.push(`Jeder Sieg in ${dungeonLink(s.routeId, stand)} · ${s.menge} Stück`);
+  // Zeilenform aus dem Auftrag: «‹Gegner› · 35 % je Sieg über ihn · Ø 1,4 je Sieg in ‹Dungeon›»; die Zeilen
+  // eines Dungeons stehen beisammen (Ø gilt für den ganzen Dungeon), dazu Anzahl im Dungeon und Menge
   for (const d of f.dungeons) {
-    const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg über ihn · `
-      + `${mengeText(g.minQty, g.maxQty)} Stück</li>`).join('');
-    z.push(`${dungeonLink(d.routeId, stand)} · Ø ${zahlText(d.jeSieg)} je Sieg<ul class="fb-gegner">${gegner}</ul>`);
+    const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg `
+      + `über ihn, ${mengeText(g.minQty, g.maxQty)} Stück · Ø ${zahlText(d.jeSieg)} je Sieg in ${dungeonLink(d.routeId, stand)}</li>`).join('');
+    z.push(`<ul class="fb-gegner">${gegner}</ul>`);
   }
   for (const r of f.fundRaeume) {
     const wann = r.art === 'zufall'
@@ -82,10 +86,23 @@ function woherZeilen(itemId: string, stand: Fortschritt): string[] {
       : `zur Wahl: ${r.menge} Stück${r.nachSieg ? ', wenn der Boss fällt' : ''}`;
     z.push(`${dungeonLink(r.routeId, stand)} · Fund in Raum ${r.raum} · ${wann}`);
   }
+  if (f.rastplaetze.length) {
+    const dungeons = new Set(f.rastplaetze.map(r => r.routeId)).size;
+    const wo = dungeons === Object.keys(ROUTE_DEFS).length ? 'in jedem Dungeon' : `in ${dungeons} Dungeons`;
+    z.push(`Rastplatz ${wo} · Kräuter sammeln: ${RAST_KRAEUTER.menge} Stück, `
+      + `angeboten in etwa ${prozentText(RAST_KRAEUTER.chance)} der Besuche`);
+  }
+  for (const e of f.einschmelzen) z.push(`Einschmelzen: doppeltes Set-Teil aus ${dungeonLink(e.routeId, stand)} · ${e.menge} Stück`);
   return z;
 }
 
-function wofuerZeilen(itemId: string): string[] {
+/** [0, 0, 3, 6, 12] → «3 / 6 / 12 Stück für +3 bis +5» */
+function stufenText(mengen: number[]): string {
+  const ab = Math.max(0, mengen.findIndex(n => n > 0));
+  return `${mengen.slice(ab).join(' / ')} Stück für +${ab + 1} bis +${mengen.length}`;
+}
+
+function wofuerZeilen(itemId: string, stand: Fortschritt): string[] {
   const v = verwendung(itemId);
   const z: string[] = [];
   for (const r of v.rezepte) z.push(`${gebaeudeName(r.buildingId)} · ${esc(r.name)} · ${r.menge} je Durchgang → ${itemLink(r.ergebnis)}`);
@@ -93,30 +110,51 @@ function wofuerZeilen(itemId: string): string[] {
   for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeName(a.buildingId)} auf Stufe ${a.stufe} · ${a.menge}`);
   for (const a of v.abgaben) z.push(`Abgabe für Stadtstufe ${a.stufe} «${esc(a.name)}» · ${a.menge}`);
   for (const h of v.herzsteine) z.push(`${esc(h.name)} · ${h.menge}`);
+  for (const s of v.schmiede) {
+    const teile = s.routeId ? `Set-Teile aus ${dungeonLink(s.routeId, stand)}` : 'jedes Set-Teil';
+    z.push(`Schmiede: ${teile} verbessern · ${stufenText(s.mengen)}`);
+  }
   if (v.proviant) z.push('Proviant für Expeditionen');
   if (ITEM_DEFS[itemId]?.gearSlot) z.push('Ausrüstung für deine Helden');
   if (v.ankauf > 0) z.push(`Der Händler zahlt ${v.ankauf} Gold je Stück`);
   return z;
 }
 
+/** Die Regeln hinter den Zahlen, nur für die Quellen, die der Eintrag hat */
+function regelText(f: Fundorte): string {
+  const saetze: string[] = [];
+  if (f.dungeons.length) {
+    saetze.push('Jeder besiegte Gegner gibt Gold und einen Wurf aus seiner Beute: meist einen Gegenstand, manchmal '
+      + 'stattdessen noch mehr Gold. «Ø je Sieg» zählt die Beute aller Gegner des Dungeons zusammen.');
+  }
+  if (f.jedenSieg.length) {
+    saetze.push('Schmiede-Material kommt nach jeder Expedition in die Truhe: nach einem Sieg die volle Menge, '
+      + `sonst ${prozentText(ANTEIL_OHNE_SIEG)} davon im Verhältnis der geschafften Räume.`);
+  }
+  return saetze.length ? `<p class="fb-regel">${saetze.join(' ')}</p>` : '';
+}
+
 function itemSeite(itemId: string, stand: Fortschritt): string {
   const def = ITEM_DEFS[itemId];
+  const f = fundorte(itemId);
   const text = def.flavorText ? `<p class="fb-text">${esc(def.flavorText)}</p>` : '';
   return `<header class="fb-kopf">${bild(itemId)}<div><h2 class="fb-name">${esc(def.name)}</h2>
       <span class="fb-gruppe">${GRUPPEN_NAMEN[gruppeVon(itemId)]}</span></div></header>${text}
-    ${abschnitt('Woher', woherZeilen(itemId, stand), 'Keine Quelle bekannt.')}
-    ${abschnitt('Wofür', wofuerZeilen(itemId), 'Die Stadt verbraucht das nicht.')}
-    <p class="fb-regel">Jeder besiegte Gegner gibt Gold und genau einen Gegenstand aus seiner Beute.
-      «Ø je Sieg» zählt die Beute aller Gegner des Dungeons zusammen.</p>`;
+    ${abschnitt('Woher', woherZeilen(f, stand), 'Keine Quelle bekannt.')}
+    ${abschnitt('Wofür', wofuerZeilen(itemId, stand), 'Keine Werkstatt, kein Bau, keine Stadtstufe und keine Schmiede braucht das.')}
+    ${regelText(f)}`;
 }
 
 function dungeonSeite(routeId: string, stand: Fortschritt): string {
   const route = ROUTE_DEFS[routeId];
   const gruende = getRouteLockReasons(route, stand);
   const sperre = gruende.length ? `<p class="fb-sperre">🔒 ${esc(gruende.join(' · '))}</p>` : '';
+  const material = materialJeSieg(routeId);
+  const schmiede = material
+    ? abschnitt('Schmiede-Material', [`${itemLink(material.material.id)} · ${material.menge} Stück je Sieg`], '') : '';
   const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø ${zahlText(b.jeSieg)} je Sieg`);
   return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name">${esc(route.name)}</h2>
-      <span class="fb-gruppe">Dungeon · Ebene ${route.tier}</span></div></header>${sperre}
+      <span class="fb-gruppe">Dungeon · Ebene ${route.tier}</span></div></header>${sperre}${schmiede}
     ${abschnitt('Beute der Gegner', zeilen, 'Hier lassen die Gegner keine Gegenstände fallen.')}`;
 }
 
