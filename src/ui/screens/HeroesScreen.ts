@@ -13,7 +13,7 @@ import { getrageneSets, istMeisterset } from '../../systems/DungeonSets';
 import { SchmiedeStufen, schmiedeStufe, schmiedeStufen } from '../../systems/Schmiede';
 import { MAX_SCHMIEDE_STUFE } from '../../data/schmiede';
 import { setAbzeichen, setBoniHtml, setSammlungHtml, setTooltip } from '../components/SetAnzeige';
-import { nameMitStufe, stufeAbzeichen, werteKurz } from '../components/SchmiedeAnzeige';
+import { escapeAttr, nameMitStufe, stufeAbzeichen, werteKurz } from '../components/SchmiedeAnzeige';
 import { bindSchmiedeTab, schmiedeTabHtml, schmiedeTabVerlassen, schmiedeZeigeTeil } from './SchmiedeTab';
 import { wegAbzeichen, wegBereichHtml } from '../components/WegAnzeige';
 import { waehleWeg } from '../../systems/Spezialisierung';
@@ -134,7 +134,7 @@ function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): string {
              onerror="this.style.display='none'">
         <span class="hc-emoji">${emoji}</span>
       </div>
-      <div class="hc-nm">${fighter.name}</div>
+      <div class="hc-nm">${escapeAttr(fighter.name)}</div>
       <div class="hc-cl">${className}</div>
       <span class="hc-lv">Lv ${fighter.level}</span>
       ${wegAbzeichen(fighter)}
@@ -511,7 +511,7 @@ function renderDetailModal(fighter: GuildFighter): string {
         <button class="mcl" id="hero-detail-close">✕</button>
         <button class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle">🎒 Inventar</button>
         <div class="hdm2-header">
-          <div class="hdm2-name">${fighter.name}</div>
+          <div class="hdm2-name">${escapeAttr(fighter.name)}</div>
           <div class="hdm2-sub">${className} · Lv ${fighter.level}</div>
         </div>
         <div class="hdm2-portrait-area">
@@ -1023,6 +1023,7 @@ function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): 
 
   gameState.fighters.push(newFighter);
   erfolgePruefen(gameState); // Helden-Erfolge gleich zählen
+  window.dispatchEvent(new Event('mc:speichern')); // Held und Gold gleich sichern, nicht erst nach 60 s
 
   // Show success feedback, then re-render
   btn.textContent = '\u2713 Rekrutiert!';
