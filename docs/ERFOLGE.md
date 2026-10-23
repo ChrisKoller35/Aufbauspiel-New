@@ -45,13 +45,17 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   Knopf bleiben, wo sie sind. Bis 1000 px Breite (Handy hoch und quer, Tablet, schmales Fenster) liegt er
   über Logo und Name, die so lange unsichtbar sind, aber ihren Platz behalten (`.hdr-mit-hinweis` in
   `erfolge.css`). Breiter steht er daneben, wenn er dort auf zwei Zeilen passt. Das schätzt
-  `hinweisKlasse` (`HeaderRenderer.ts`) an der Länge, gemessen an allen 1425 Hinweisen des Spiels: Die bis
-  60 Zeichen brauchen höchstens 158 px, die bis 130 Zeichen (`.hdr-note-lang`, ein erledigter Zettel mit
-  Belohnung) höchstens 332 px, mit dem Abstand zum Namen und etwas Reserve also 190 und 370 px. Ist
-  weniger frei (langer Name, grosse Vorräte, viele neue Erfolge), liegt er auch dort über Logo und Name
-  und deckt sie zu (`@container` in `erfolge.css`). Zwei Hinweise kurz nacheinander (und alles über
-  130 Zeichen, `.hdr-note-sehr-lang`) liegen dort immer darüber: Zusammen brauchen sie oft mehr Platz,
-  als ihre Länge vermuten lässt (60 Zeichen bis 185 px).
+  `hinweisKlasse` (`HeaderRenderer.ts`) an der Länge, gemessen an allen Hinweisen, die das Spiel dort
+  zeigen kann (882 einzelne und 11.770 Paare aus zwei Hinweisen kurz nacheinander): Die bis 60 Zeichen
+  brauchen höchstens 158 px, die bis 90 Zeichen (`.hdr-note-lang`: ein erledigter Liefer-Zettel mit
+  Tagesbonus, bis 83 Zeichen und 203 px, und der Satz zum alten Spielstand, 88 Zeichen und 214 px)
+  höchstens 214 px, mit dem Abstand zum Namen und etwas Reserve also 190 und 250 px. Ist weniger frei
+  (langer Name, grosse Vorräte, viele neue Erfolge), liegt er auch dort über Logo und Name und deckt sie
+  zu (`@container` in `erfolge.css`); dabei blendet nur die Schrift ein, die Decke steht sofort. Zwei
+  Hinweise kurz nacheinander (und alles über 90 Zeichen, `.hdr-note-sehr-lang`) liegen dort immer
+  darüber: Zusammen brauchen sie oft mehr Platz, als ihre Länge vermuten lässt (60 Zeichen bis 185 px).
+  In die Kopfzeile kommen nur Liefer-Zettel; die anderen Zettel und die Kapitel des Saals meldet die
+  Bilanz nach der Expedition. Ein neuer Hinweis mit über 60 Zeichen gehört nachgemessen.
 - Auch die Zahl am Knopf ändert die Höhe nicht. Am Handy füllt das Logo die erste Zeile zwischen
   «← Zurück» und 🏅 und zählt beim Umbrechen nicht mit; neben «← Zurück» ist es unter 375 px kleiner
   (unter 340 px noch kleiner), notfalls endet es mit «…» (`magic-city.css`, Abschnitt Header). Über
@@ -71,13 +75,16 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   und 125 neuen Erfolgen, mit 1.234.567 Gold bis 732 px), «ROUTENÜBERSICHT» (bis 707 px) und «Die
   Sternenschmiede» (bei 701 px); mit 12.345.678 Gold bis 751 px, dann auch «DUNGEONKARTE» und
   «Verschlungene Tunnel».
-  Über 1000 px endet kein einzelner Hinweis mit «…» (1001 bis 1401 px, Vorräte bis 12.345.678 Gold),
-  zwei zusammen nur im längsten Fall (ein Zettel und zwei Erfolge, 180 Zeichen) neben sehr grossen
-  Vorräten knapp über 1000 px (mit 1.234.567 Gold bis 1021 px). Bis 1000 px ist der Platz über Logo und
-  Name schmaler, neben «← Zurück» am Handy bei 320 px 110 px, bei 360 px 150 px, bei 390 px 180 px: Ein
-  erledigter Zettel endet dort nach zwei Zeilen mit «…», am Handy bis 540 px, am Tablet und PC bis
-  821 px (mit sehr grossen Vorräten bis 929 px), unter 370 px auch kürzere Hinweise (bei 320 px etwa die
-  Hälfte der Erfolge mit zwei Namen). Was dazukam, zeigen trotzdem die Zahl am Knopf, das Lager und die
+  Über 1000 px endet kein Hinweis mit «…», auch zwei zusammen nicht (1001 bis 1401 px, Vorräte bis
+  12.345.678 Gold). Bis 1000 px ist der Platz über Logo und Name schmaler, neben «← Zurück» am Handy bei
+  320 px 110 px, bei 360 px 150 px, bei 390 px 180 px. Am Handy endet dort ein erledigter Liefer-Zettel
+  bis 412 px nach zwei Zeilen mit «…», ein Hinweis bis 60 Zeichen bis 366 px (bei 320 px etwa die Hälfte
+  der Erfolge mit zwei Namen) und ein Zettel zusammen mit zwei Erfolgen (bis 134 Zeichen) bis 556 px. Von
+  701 bis 1000 px (Handy quer, Tablet, schmales Fenster) passt jeder einzelne Hinweis, nur der Satz zum
+  alten Spielstand endet bis 703 px mit «…» (neben sehr grossen Vorräten bis 789 px); ein Zettel mit
+  zwei Erfolgen endet bis 841 px und von 861 bis 863 px mit «…», mit 1.234.567 Gold bis 945 px.
+  Gemessen in Chromium mit den Web-Schriften auf zwölf Bildschirmen, mit 0, 9 und 125 neuen Erfolgen,
+  in Schritten von 2 bis 8 px. Was dazukam, zeigen trotzdem die Zahl am Knopf, das Lager und die
   Bildschirme.
   Bei 1400 px sieht die Kopfzeile aus wie vorher, nur zwei Hinweise nebeneinander liegen jetzt über Logo
   und Name. Früher sprang sie bei 320 und 360 px von 79 auf 121 px, sobald der Hinweis verschwand, und

@@ -15,14 +15,15 @@ let hinweisTimer: number | null = null;
 const ZUSAMMEN_MS = 600;
 let letzterHinweis = { text: '', zeit: 0, ende: 0, zusammen: false };
 /**
- * Wie viel Platz ein Hinweis für zwei Zeilen braucht, nach seiner Länge (gemessen an allen Hinweisen des Spiels):
- * bis 60 Zeichen (fertige Aufträge der Werkstätten, Erfolge, Set-Teile …) höchstens 158 px, bis 130 Zeichen (ein
- * erledigter Zettel mit Belohnung, der alte Spielstand) höchstens 332 px (.hdr-note-lang). Ist so viel hinter dem
- * Namen nicht frei, liegt der Hinweis über Logo und Name (erfolge.css). Zwei Hinweise nebeneinander und noch längere
- * (.hdr-note-sehr-lang) brauchen oft mehr und liegen immer darüber.
+ * Wie viel Platz ein Hinweis für zwei Zeilen braucht, nach seiner Länge (gemessen an allen Hinweisen, die das Spiel
+ * hier zeigen kann): bis 60 Zeichen (fertige Aufträge der Werkstätten, Erfolge, Set-Teile …) höchstens 158 px, bis
+ * 90 Zeichen (ein erledigter Liefer-Zettel mit Tagesbonus, der alte Spielstand) höchstens 214 px (.hdr-note-lang).
+ * Ist so viel hinter dem Namen nicht frei, liegt der Hinweis über Logo und Name (erfolge.css). Zwei Hinweise
+ * nebeneinander und noch längere (.hdr-note-sehr-lang) brauchen oft mehr und liegen immer darüber. Ein neuer Hinweis
+ * mit über 60 Zeichen gehört nachgemessen (docs/ERFOLGE.md).
  */
 const HINWEIS_KURZ_BIS = 60;
-const HINWEIS_LANG_BIS = 130;
+const HINWEIS_LANG_BIS = 90;
 
 function hinweisKlasse(text: string, zusammen: boolean): string {
   if (zusammen || text.length > HINWEIS_LANG_BIS) return 'hdr-note hdr-note-sehr-lang';

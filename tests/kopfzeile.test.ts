@@ -92,7 +92,7 @@ describe('Platz für den Hinweis', () => {
 });
 
 describe('lange Hinweise und zwei nebeneinander liegen früher über Logo und Name', () => {
-  test('bis 60 Zeichen .hdr-note, bis 130 dazu .hdr-note-lang, länger .hdr-note-sehr-lang, auch beim Neuzeichnen', () => {
+  test('bis 60 Zeichen .hdr-note, bis 90 dazu .hdr-note-lang, länger .hdr-note-sehr-lang, auch beim Neuzeichnen', () => {
     const state = createNewGameState();
     const k = new Kopfzeile();
     kopfzeilen = [k];
@@ -109,11 +109,11 @@ describe('lange Hinweise und zwei nebeneinander liegen früher über Logo und Na
     };
     expect(klasse(60)).toBe('hdr-note');
     expect(klasse(61)).toBe('hdr-note hdr-note-lang');
-    expect(klasse(130)).toBe('hdr-note hdr-note-lang');
-    expect(klasse(131)).toBe('hdr-note hdr-note-sehr-lang');
+    expect(klasse(90)).toBe('hdr-note hdr-note-lang');
+    expect(klasse(91)).toBe('hdr-note hdr-note-sehr-lang');
 
-    // Der breiteste Zettel: 128 Zeichen, zwei Zeilen ab 332 px
-    const zettel = '📜 Der Saal der Gilde (Ein Pfandzettel mit dem Siegel des Mondvogts) erledigt: +9 Siegel · +24 Mondsilber · Tagesbonus +3 Siegel';
+    // Der breiteste Zettel in der Kopfzeile (dorthin kommen nur Lieferungen): 83 Zeichen, zwei Zeilen ab 203 px
+    const zettel = '📜 Schwerter für die Rekruten erledigt: +2 Siegel · +40 Gold · Tagesbonus +3 Siegel';
     kopf.zeigeKopfHinweis(zettel);
     expect(k.hinweis?.className).toBe('hdr-note hdr-note-lang');
     expect(kopf.renderHeader(state, 'gildenhaus', 'GILDENHAUS')).toContain(`<span class="hdr-note hdr-note-lang" role="status">${zettel}</span>`);
