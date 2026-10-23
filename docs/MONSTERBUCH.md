@@ -299,10 +299,10 @@ ankommen»).
   Kopfs, Firefox zeigt seinen eigenen Balken): Mit klassischem Balken (Chrome unter Windows und
   Linux, Firefox) rückten Buch und Pfeile sonst auf jeder Seite, die länger ist als das Fenster, um
   die halbe Balkenbreite (in Chrome 2,5 px), in schmalen Fenstern › um die ganze. Wo der Balken über
-  dem Inhalt liegt oder versteckt ist (Handy), nimmt er keinen Platz. `scrollbar-gutter: stable`
-  hielte den Platz auch dort frei, und neben dem Kopf bliebe ein Streifen in der Farbe der Seite.
-  `scrollbar-color` für Firefox fehlt mit Absicht: Damit liesse Chrome den 5-px-Balken der übrigen
-  Bildschirme fallen und zeigte hier einen 15 px breiten.
+  dem Inhalt liegt (Handy), nimmt er keinen Platz. `scrollbar-gutter: stable` liesse am PC neben dem
+  Kopf einen Streifen in der Farbe der Seite stehen. Ein `scrollbar-color` ohne Einschränkung fehlt
+  mit Absicht: Damit liesse Chrome den 5-px-Balken der übrigen Bildschirme fallen und zeigte hier
+  einen 15 px breiten. Eine Regel nur für Firefox ginge, ist aber in Firefox nicht geprüft.
 - **Detailfenster**: scrollt selbst, das ✕ (44 × 44) klebt oben rechts und bleibt beim Scrollen im
   Bild. Ein langer Name («Tropfsteinfledermaus») bricht um und läuft nicht unter das ✕; bis
   480 px Breite werden Bild und Rand kleiner.
