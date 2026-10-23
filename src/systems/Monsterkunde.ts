@@ -199,17 +199,28 @@ export const FAEHIGKEIT_ART: Record<EnemySkillDef['effectType'], string> = {
 const KAMPF_RUNDEN = 20;
 const BELAGERUNG_RUNDEN = 30;
 
-/** So lange kann ein Kampf mit dem Gegner dauern: in einem Belagerungsraum 30 Runden, sonst 20 */
-export function kampfRunden(id: string): number {
-  const belagert = Object.values(ROUTE_DEFS).some(route =>
-    route.encounters.some(enc => enc.type === 'fortification' && enc.enemies?.includes(id)));
-  return belagert ? BELAGERUNG_RUNDEN : KAMPF_RUNDEN;
+/**
+ * Wo ein Gegner kämpft: im Kampf um eine Befestigung (Belagerungsraum, Typ 'fortification',
+ * processFortificationCombat, bis Runde 30) und in gewöhnlichen Räumen (Kampf- und Bossräume,
+ * processCombat, bis Runde 20).
+ */
+export interface KampfRaeume {
+  befestigung: boolean;
+  gewoehnlich: boolean;
 }
 
-/** Kämpft der Gegner auch ausserhalb von Belagerungsräumen (dort endet der Kampf nach 20 Runden)? */
-function kaempftAuchOhneBelagerung(id: string): boolean {
-  return Object.values(ROUTE_DEFS).some(route =>
-    route.encounters.some(enc => enc.type !== 'fortification' && enc.enemies?.includes(id)));
+/** In welchen Räumen der Routen der Gegner steht (aus ROUTE_DEFS) */
+export function kampfRaeume(id: string): KampfRaeume {
+  const raeume = Object.values(ROUTE_DEFS).flatMap(route => route.encounters).filter(enc => enc.enemies?.includes(id));
+  return {
+    befestigung: raeume.some(enc => enc.type === 'fortification'),
+    gewoehnlich: raeume.some(enc => enc.type !== 'fortification'),
+  };
+}
+
+/** So lange kann ein Kampf mit dem Gegner dauern: in einem Belagerungsraum 30 Runden, sonst 20 */
+export function kampfRunden(id: string): number {
+  return kampfRaeume(id).befestigung ? BELAGERUNG_RUNDEN : KAMPF_RUNDEN;
 }
 
 /**
@@ -239,20 +250,52 @@ export function einsatzRunden(skills: EnemySkillDef[], runden = KAMPF_RUNDEN): n
   return einsaetze;
 }
 
+/** Die Einsätze je Fähigkeit fürs Detailfenster (einsatzPlanFuer) */
+export interface EinsatzPlan {
+  runden: number[][];
+  belagerung: number[][];
+  bis: number;
+}
+
 /**
- * Die Einsätze fürs Detailfenster. `runden` erlebt jeder Kampf des Gegners. Kämpft er in Belagerungsräumen
- * (bis Runde `bis` = 30) und auch in gewöhnlichen (bis Runde 20), stehen die Einsätze nach Runde 20 getrennt
- * in `belagerung`, sonst ist `belagerung` leer. Ohne ausgesetzten Zug gerechnet wie `einsatzRunden`.
+ * Die Einsätze fürs Detailfenster, für einen Gegner, der in diesen Räumen kämpft. `runden` erlebt jeder Kampf
+ * des Gegners. Kämpft er um eine Befestigung (bis Runde `bis` = 30) und auch in gewöhnlichen Räumen (bis
+ * Runde 20), stehen seine Einsätze nach Runde 20 getrennt in `belagerung`; ein Einsatz in Runde 20 gehört zu
+ * `runden`. Sonst ist `belagerung` leer, und `runden` geht bis zum Ende seiner Kämpfe: bei Kämpfen nur um
+ * Befestigungen bis Runde 30. Ohne ausgesetzten Zug gerechnet wie `einsatzRunden`.
  */
-export function einsatzPlan(id: string, skills: EnemySkillDef[]): { runden: number[][]; belagerung: number[][]; bis: number } {
-  const bis = kampfRunden(id);
+export function einsatzPlanFuer(skills: EnemySkillDef[], raeume: KampfRaeume): EinsatzPlan {
+  const bis = raeume.befestigung ? BELAGERUNG_RUNDEN : KAMPF_RUNDEN;
   const alle = einsatzRunden(skills, bis);
-  if (bis === KAMPF_RUNDEN || !kaempftAuchOhneBelagerung(id)) return { runden: alle, belagerung: skills.map(() => []), bis };
+  if (!raeume.befestigung || !raeume.gewoehnlich) return { runden: alle, belagerung: skills.map(() => []), bis };
   return {
     runden: alle.map(r => r.filter(runde => runde <= KAMPF_RUNDEN)),
     belagerung: alle.map(r => r.filter(runde => runde > KAMPF_RUNDEN)),
     bis,
   };
+}
+
+/** Die Einsätze eines Gegners in den Räumen, in denen er kämpft (kampfRaeume) */
+export function einsatzPlan(id: string, skills: EnemySkillDef[]): EinsatzPlan {
+  return einsatzPlanFuer(skills, kampfRaeume(id));
+}
+
+/**
+ * Der Satz zu den Einsätzen einer Fähigkeit (aus einsatzPlan): «Einsatz in Runde 1, 5, 9 …» bzw. «Einsatz in
+ * Runde 3 und 14.» (ohne ausgesetzten Zug, bis zur letzten Kampfrunde). `belagerung` sind Einsätze, die nur der
+ * Kampf um eine Befestigung erlebt (bis Runde `bis`). Sie bekommen einen eigenen Satz, wo die Liste sonst
+ * vollständig aussieht; nach «…» geht es ohnehin weiter. Das Spiel nennt ganze Dungeons «Belagerung» (Karte,
+ * Expeditionen), darum heisst der Raum hier «Kampf um eine Befestigung», wie er im Kampf mit 🏰 und ihrem
+ * Namen erscheint (Stadtmauer, Wehrturm, Bergfried …).
+ */
+export function rundenText(runden: number[], belagerung: number[] = [], bis = BELAGERUNG_RUNDEN): string {
+  const liste = (r: number[]) => r.length === 1 ? `${r[0]}` : `${r.slice(0, -1).join(', ')} und ${r[r.length - 1]}`;
+  if (runden.length > 3) return `Einsatz in Runde ${runden.slice(0, 3).join(', ')} …`;
+  if (runden.length === 0) {
+    return belagerung.length ? `Einsatz nur im Kampf um eine Befestigung (bis Runde ${bis}): Runde ${liste(belagerung)}.` : '';
+  }
+  const spaeter = belagerung.length ? ` Im Kampf um eine Befestigung (bis Runde ${bis}) auch in Runde ${liste(belagerung)}.` : '';
+  return `Einsatz in Runde ${liste(runden)}.${spaeter}`;
 }
 
 /** Luft, die eine Luftraub-Fähigkeit nimmt: die Tabelle in processCombat, sonst ihre Stärke */

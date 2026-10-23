@@ -13,10 +13,10 @@ import { GameState } from '../../models/GameState';
 import { BestiariumSystem } from '../../systems/BestiariumSystem';
 import {
   FAEHIGKEIT_ART, PraemienArt, Seite, Stufe, balken, beuteChancen, einsatzPlan, faehigkeitText, fundorte, goldSpanne,
-  mindestens, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, seiten, seitenStand, stufe,
+  mindestens, praemieAbgeholt, praemieAbholen, praemieBetrag, praemieFaellig, rundenText, seiten, seitenStand, stufe,
   wutVorziehbar,
 } from '../../systems/Monsterkunde';
-import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { bindeFensterTasten, halteFokusBeiGesperrtemKnopf, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader, vorratsZeileHtml } from './HeaderRenderer';
 
@@ -175,24 +175,11 @@ function inhaltHtml(state: GameState): string {
 
 // ─── Detailfenster ──────────────────────────────────────────────
 
-/**
- * «Einsatz in Runde 1, 5, 9 …» bzw. «Einsatz in Runde 3 und 14.» (ohne ausgesetzten Zug, bis zur letzten Kampfrunde).
- * `spaeter` sind Einsätze, die nur ein Belagerungsraum erlebt (Kampf bis Runde `bis`). Sie bekommen einen eigenen
- * Satz, wo die Liste sonst vollständig aussieht; nach «…» geht es ohnehin weiter.
- */
-function rundenText(runden: number[], spaeter: number[] = [], bis = 0): string {
-  const liste = (r: number[]) => r.length === 1 ? `${r[0]}` : `${r.slice(0, -1).join(', ')} und ${r[r.length - 1]}`;
-  if (runden.length > 3) return `Einsatz in Runde ${runden.slice(0, 3).join(', ')} …`;
-  if (runden.length === 0) return spaeter.length ? `Einsatz nur in Belagerungen (bis Runde ${bis}): Runde ${liste(spaeter)}.` : '';
-  const belagerung = spaeter.length ? ` In Belagerungen (bis Runde ${bis}) auch in Runde ${liste(spaeter)}.` : '';
-  return `Einsatz in Runde ${liste(runden)}.${belagerung}`;
-}
-
 /** Fähigkeiten nach der Kampfregel (Monsterkunde.faehigkeitText), nicht nach den Texten in enemies.ts */
 function faehigkeitenHtml(enemy: EnemyDef): string {
   if (enemy.skills.length === 0) return '';
-  // Wer auch in gewöhnlichen Räumen kämpft (dort nach 20 Runden Schluss), bekommt die späteren Einsätze
-  // der Belagerung als eigenen Satz, sonst verspräche «…» dort Einsätze, die nie kommen
+  // Wer auch in gewöhnlichen Räumen kämpft (dort nach 20 Runden Schluss), bekommt die späteren Einsätze aus dem
+  // Kampf um eine Befestigung als eigenen Satz; sonst verspräche die Liste dort Einsätze, die nie kommen
   const { runden, belagerung, bis } = einsatzPlan(enemy.id, enemy.skills);
   const zeilen = enemy.skills.map((sk, i) => {
     const abklingzeit = sk.cooldown === 1 ? '1 Runde' : `${sk.cooldown} Runden`;
@@ -387,6 +374,10 @@ export function renderBestiariumScreen(container: HTMLElement): void {
     if (e.detail <= 1) ersterDruckAufKnopf = !!ziel.closest('button');
     else if (ersterDruckAufKnopf && !(ziel instanceof HTMLSelectElement)) e.preventDefault();
   });
+  // Ein Druck auf einen gesperrten Knopf nimmt den Fokus nicht weg. Chromium schickt ihm pointerdown, aber kein
+  // mousedown, den Wächter oben erreicht er also nicht: Der zweite Druck eines Doppelklicks auf ›, das sich am
+  // Buchende eben gesperrt hat, nähme sonst ‹ den Fokus wieder (danach stünde er auf der Seite)
+  el.addEventListener('pointerdown', halteFokusBeiGesperrtemKnopf);
 
   inhalt.addEventListener('click', e => {
     const ziel = e.target as HTMLElement;
