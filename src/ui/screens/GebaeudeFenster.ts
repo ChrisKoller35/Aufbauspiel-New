@@ -6,7 +6,7 @@
 // eigenes Fenster (HaendlerFenster.ts). Das Fenster führt sich laufend
 // nach: ganz neu, wenn sich etwas ändert, sonst nur die Balken. Escape
 // schliesst es (FensterHilfen.ts). Abreissen gibt es nicht: Jedes
-// Gebäude steht genau einmal, und der Bauplan käme nicht zurück.
+// Gebäude steht genau einmal, und die Baukosten kämen nicht zurück.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS, BuildingDef } from '../../data/buildings';

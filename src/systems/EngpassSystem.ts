@@ -1,7 +1,7 @@
 // ─── Magic City – Engpass-Suche ─────────────────────────────────
 // Findet, woran eine Werkstatt oder die ganze Stadt hängt, und sagt es
 // in einem Satz in Spielersprache, mit dem nächsten Schritt: fehlt
-// Beute (Expedition), fehlt Gold, Bauplan fehlt (Händler oder Boss).
+// Beute (Expedition), fehlt Gold, fehlt ein Gildenrang.
 // ────────────────────────────────────────────────────────────────
 
 import { BUILDING_DEFS } from '../data/buildings';
@@ -35,10 +35,8 @@ function mitUnd(teile: string[]): string {
 }
 
 /**
- * Ein Gebäude fehlt noch, kurz und ohne Doppelung: «Schmiede: Bauplan fehlt – beim Händler (40 Gold).»,
- * «Arkanschmiede braucht Gildenrang 2.», «… braucht Gildenrang 2 und den Bauplan – beim Händler (150 Gold)
- * oder vom Kristallgolem.» oder, baubar, «Schmiede fehlt noch. Bauen kostet 50 Gold.»
- * Die Hinweise kommen aus GebaeudeStatus (Bauplan-Preis schon mit Rabatt der Stadtstufe).
+ * Ein Gebäude fehlt noch: «Arkanschmiede braucht Gildenrang 2.» oder, baubar,
+ * «Schmiede fehlt noch. Bauen kostet 100 Gold.» Die Hinweise kommen aus GebaeudeStatus.
  */
 function fehltSatz(state: GameState, typeId: string): string {
   const name = gebaeudeName(typeId);
@@ -46,12 +44,8 @@ function fehltSatz(state: GameState, typeId: string): string {
   if (status.zustand !== 'gesperrt') {
     return `${name} fehlt noch. Bauen kostet ${kostenText(BUILDING_DEFS[typeId]?.buildCost ?? {})}.`;
   }
-  const hinweise = status.hinweise ?? [];
-  // «Bauplan beim Händler (40 Gold) oder vom Kristallgolem» → «beim Händler (40 Gold) oder vom Kristallgolem»
-  const bauplan = hinweise.find(h => h.startsWith('Bauplan '))?.slice('Bauplan '.length);
-  const rest = hinweise.filter(h => !h.startsWith('Bauplan ')).map(h => h.replace(/^braucht /, ''));
-  if (rest.length === 0) return `${name}: Bauplan fehlt – ${bauplan ?? 'ohne Quelle'}.`;
-  return `${name} braucht ${mitUnd(bauplan ? [...rest, `den Bauplan – ${bauplan}`] : rest)}.`;
+  const rest = (status.hinweise ?? []).map(h => h.replace(/^braucht /, ''));
+  return `${name} braucht ${mitUnd(rest)}.`;
 }
 
 /** Woher Gold und Beute kommen, wenn keine Werkstatt sie macht. */

@@ -116,17 +116,13 @@ export interface GameState {
   // Fehlen in älteren Spielständen; die Systeme legen sie beim ersten Aufruf an.
   auftragsbrett?: AuftragsbrettStand;
   trophaeen?: TrophaeenStand;
-
-  // ── Baupläne ──
-  // Bauplan-Item-IDs, die bereits als Erst-Sieg-Beute vergeben wurden (danach kein Drop mehr).
-  erhalteneBauplaene: string[];
 }
 
 export function createNewGameState(): GameState {
   return {
     buildings: [],
     globalStock: {
-      gold: 100, // reicht für den zweiten Helden (50) und den Bauplan der Schmiede (50), oder für Heiltränke
+      gold: 200, // reicht für den zweiten Helden (50) und die Schmiede (100), dazu Proviant; oder für zwei weitere Helden
       bread: 5,
       healing_potion: 2,
       iron_scrap: 0,
@@ -154,7 +150,6 @@ export function createNewGameState(): GameState {
     achievements: [],
     bestiarium: { discovered: [], defeated: [] },
     pendingChestLoot: { items: {}, expeditionCount: 0 },
-    erhalteneBauplaene: [],
     stadtweg: { stufe: 1, herzsteine: [], gelesen: 0 },
     // SaveVersion 4 fields
     guildStats: {

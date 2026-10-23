@@ -3,6 +3,17 @@
 Geprüft: Stand vom PC (Ordner `Documents\Aufbauspiel`, Branch `ui-rebuild` plus Arbeit bis 10.04.2026),
 seit PR #1 auch auf GitHub. Spiel im Browser gestartet (Playwright), Code durchgesehen.
 
+## Nachtrag 23.10.2026: keine Baupläne, Mindmap ohne Linien
+
+Christophs Wunsch: Baupläne weg. Die vier Werkstätten werden direkt auf ihrem Feld gebaut, nur der Gildenrang sperrt
+(Arkanschmiede 2, Kriegsmaschinen-Werkstatt 4); der frühere Bauplan-Preis steckt in den Baukosten (Schmiede 100,
+Kräuterküche 90, Arkanschmiede 230, Kriegsmaschinen-Werkstatt 350 Gold, dazu Beute wie bisher), der Ausbau kostet
+gleich viel wie vorher (`BuildingDef.ausbauGold`). Startgold 200 statt 100. Gestrichen: Bauplan-Items, Abschnitt
+«Baupläne» im Händler-Fenster, Erst-Sieg-Baupläne der Bosse, Erfolg «Erster Bauplan» (`bauplan_1`), Check 4 in
+`tools/validateRefs.ts`. Alte Spielstände bekommen unverbaute Baupläne als Gold zurück (`tauscheBauplaeneInGold`).
+Die Mindmap «Stadt» hat keine Linien und Pfeile mehr, `MindmapLinien.ts` heisst `MindmapGroesse.ts` (nur noch die
+Breite), der Händler steht vorne in der mittleren Reihe. Einzelheiten: `docs/GILDENSTADT.md`, «Ohne Baupläne».
+
 ## Nachtrag Gildenstadt (22.10.2026)
 
 Christophs Wunsch vom 22.10.2026: keine Rohstoff-Stadt mehr, sondern ein Händler für die Start-Items, Baupläne für die
@@ -21,13 +32,13 @@ HeldenBindung, NpcRescueSystem, PeopleSystem, SatisfactionSystem, Tagesbilanz, T
 `docs/HANDEL.md`, `docs/TAGESBILANZ.md`.
 
 **Neu:** sechs Gebäude (Gildenhaus und Händler von Anfang an; Schmiede, Kräuterküche, Arkanschmiede,
-Kriegsmaschinen-Werkstatt mit Bauplan), Händler mit Waren, Bauplänen, Rabatt nach Stadtstufe und Ankauf
+Kriegsmaschinen-Werkstatt mit Bauplan, seit 23.10.2026 ohne), Händler mit Waren, Bauplänen (bis 22.10.2026), Rabatt nach Stadtstufe und Ankauf
 (`docs/HAENDLER.md`), Rezepte nur aus Gold und Beute, Werkstätten N-mal so schnell je Stufe ohne Arbeiter, acht
 Vorräte mit echter Wirkung im Dungeon (Krafttrank, Manatrank, Gegengift, Titan-Gebräu, Schnelligkeitstrank, Kraft-Brot),
 Stadtweg mit Helden-Aufgaben und Händler-Rabatt, Mindmap «Stadt» in drei Reihen, Aufbau-Raster, Erfolge «Erster Kauf»,
-«Erster Bauplan», «Gildenstadt», «Meisterwerkstatt», Spieltag in `Tag.ts`, Spielstand-Schema in eigener Datei.
+«Erster Bauplan» (am 23.10.2026 gestrichen), «Gildenstadt», «Meisterwerkstatt», Spieltag in `Tag.ts`, Spielstand-Schema in eigener Datei.
 Dateien: `src/data/haendler.ts`, `src/systems/{Haendler,Tag,SpielstandSchema}.ts`,
-`src/ui/screens/{HaendlerFenster,GebaeudeFenster,WerkstattAnzeige,CraftingTab,MindmapLinien,MindmapTexte,
+`src/ui/screens/{HaendlerFenster,GebaeudeFenster,WerkstattAnzeige,CraftingTab,MindmapGroesse,MindmapTexte,
 MindmapTipp,ExpeditionFlow}.ts`, `src/ui/components/{DruckWaechter,ExpeditionsDialog}.ts`, `tests/traenke.test.ts`,
 `src/systems/{Haendler,Tag}.test.ts`, `docs/GILDENSTADT.md`, `docs/HAENDLER.md`; umgebaut `buildings.ts`,
 `recipes.ts`, `items.ts`, `stadtstufen.ts`, `produktionsnetz.ts`, `achievements.ts`, `GameState.ts`, `Building.ts`,

@@ -99,6 +99,25 @@ function versionZuAlt(version: unknown): boolean {
   return !(Number.isInteger(version) && Number(version) >= CURRENT_VERSION);
 }
 
+/** Händler-Preise der früheren Baupläne: Wer noch einen im Lager hat, bekommt das Gold zurück. */
+const ALTE_BAUPLAENE: Readonly<Record<string, number>> = {
+  bauplan_schmiede: 50, bauplan_kraeuterkueche: 50, bauplan_arkanschmiede: 150, bauplan_kriegsmaschinen: 250,
+};
+
+/**
+ * Baupläne gibt es nicht mehr (Werkstätten werden direkt auf ihrem Feld freigeschaltet):
+ * Ungenutzte Baupläne aus alten Ständen werden zu Gold, die Liste der Boss-Baupläne fällt weg.
+ */
+export function tauscheBauplaeneInGold(state: GameState): void {
+  const stock = state.globalStock ?? {};
+  for (const [id, preis] of Object.entries(ALTE_BAUPLAENE)) {
+    const anzahl = Math.floor(stock[id] ?? 0);
+    if (anzahl > 0) stock.gold = (stock.gold ?? 0) + anzahl * preis;
+    delete stock[id];
+  }
+  delete (state as GameState & { erhalteneBauplaene?: unknown }).erhalteneBauplaene;
+}
+
 export function fasseSpielstandZusammen(state: Pick<GameState, 'day' | 'fighters' | 'stadtweg'>): SpielstandZusammenfassung {
   const stufen = (state.fighters ?? []).map(f => Number(f?.level) || 1);
   return {
@@ -273,10 +292,11 @@ export class SaveSystem {
 
   /**
    * Was bei jedem Laden mit dem gelesenen Stand geschieht (load, probeLaden): fehlende Felder
-   * anlegen, doppelte Gebäude einer Art zu einem verschmelzen (ein Gebäude je Art, systems/Ausbau.ts).
+   * anlegen, Baupläne aus alten Ständen in Gold tauschen, doppelte Gebäude einer Art zu einem
+   * verschmelzen (ein Gebäude je Art, systems/Ausbau.ts).
    */
   private bereiteVor(state: GameState): GameState {
-    if (!Array.isArray(state.erhalteneBauplaene)) state.erhalteneBauplaene = [];
+    tauscheBauplaeneInGold(state);
     vereinigeDoppelte(state);
     return state;
   }

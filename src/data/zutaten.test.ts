@@ -106,7 +106,6 @@ describe('Zutaten sind erreichbar', () => {
         if (e.itemId === 'gold') continue;
         expect(ITEM_DEFS[e.itemId], `${table.id}: ${e.itemId}`).toBeDefined();
       }
-      if (table.ersterSiegBauplan) expect(ITEM_DEFS[table.ersterSiegBauplan]?.tags, table.id).toContain('bauplan');
     }
     for (const enemy of Object.values(ENEMY_DEFS)) {
       expect(LOOT_TABLE_DEFS[enemy.lootTableId], `${enemy.id}: ${enemy.lootTableId}`).toBeDefined();

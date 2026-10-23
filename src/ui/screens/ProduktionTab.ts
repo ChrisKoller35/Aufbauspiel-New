@@ -1,11 +1,10 @@
 // ─── Magic City – Reiter «Stadt» (Mindmap) ──────────────────────
-// Drei Reihen von oben nach unten: Beute aus den Dungeons (Balken über
-// die ganze Breite mit den fünf Beute-Gruppen) → Werkstätten und Händler
-// → Gilde. Verbindungslinien werden nach dem Zeichnen aus den echten
-// Kartenpositionen als SVG gelegt (gold, wenn beide Seiten stehen).
-// Jedes Gebäude kommt genau einmal vor; statt «×N» steht die Ausbau-Stufe.
-// Daten: data/produktionsnetz.ts. Klicks werden über BuildingsScreen
-// angebunden (Callbacks). Linien und Grösse: MindmapLinien.ts, Texte:
+// Drei Reihen von oben nach unten, ohne Verbindungslinien: Beute aus den
+// Dungeons (Balken über die ganze Breite mit den fünf Beute-Gruppen) →
+// Händler und Werkstätten → Gilde. Ein Bauplatz wird direkt auf seiner
+// Karte freigeschaltet (Bau-Dialog). Jedes Gebäude kommt genau einmal
+// vor; statt «×N» steht die Ausbau-Stufe. Daten: data/produktionsnetz.ts.
+// Klicks werden über BuildingsScreen angebunden (Callbacks). Grösse: MindmapGroesse.ts, Texte:
 // MindmapTexte.ts, Erklärung beim Darüberfahren oder langen Drücken:
 // MindmapTipp.ts. Das empfohlene nächste Gebäude ist golden markiert
 // (systems/Empfehlung.ts); empfiehlt sie keinen Bau, sondern einen
@@ -17,8 +16,8 @@ import { GameState } from '../../models/GameState';
 import { getGebaeudeStatus, gebaeudeName, GebaeudeStatus } from '../../systems/GebaeudeStatus';
 import { naechsterBau } from '../../systems/Empfehlung';
 import { engpaesseDerStadt } from '../../systems/EngpassSystem';
-import { quellenVorrat, quellenText, stufeText, zielWert, flussText } from './MindmapTexte';
-import { zeichneKanten } from './MindmapLinien';
+import { quellenVorrat, quellenText, stufeText, zielWert } from './MindmapTexte';
+import { passeMindmapAn } from './MindmapGroesse';
 import { zeigeTipp, versteckeTipp, frischeTippAuf } from './MindmapTipp';
 
 export type ProduktionZiel = 'expeditions' | 'heroes' | 'aufbau';
@@ -55,11 +54,6 @@ function kartenKlasse(s: GebaeudeStatus, empfohlen: boolean): string {
   return `pk-karte z-${s.zustand}${empfohlen ? ' empfohlen' : ''}`;
 }
 
-function fluss(id: string): string {
-  const text = flussText(id);
-  return text ? `<div class="pk-fluss">${text}</div>` : '';
-}
-
 function gebaeudeKarte(state: GameState, typeId: string, bild: Bild, empfohlen: string | null): string {
   const s = getGebaeudeStatus(state, typeId);
   const stufe = stufeText(s);
@@ -71,7 +65,6 @@ function gebaeudeKarte(state: GameState, typeId: string, bild: Bild, empfohlen: 
       <span class="pk-stufe"${stufe ? '' : ' hidden'}>${stufe}</span>
       <div class="pk-nm">${gebaeudeName(typeId)}</div>
       <div class="pk-st">${s.text}</div>
-      ${fluss(typeId)}
       ${balken(s.fortschritt)}
     </div>`;
 }
@@ -96,7 +89,6 @@ function quellenKarte(state: GameState, k: Extract<NetzKnoten, { art: 'quelle' }
     <div class="${quellenKlasse(state, k)}" ${knopf}>
       <div class="pk-img" style="background-image:url('assets/tiles/${k.bild}.png')"></div>
       ${kopf}
-      ${fluss(k.id)}
     </div>`;
 }
 
@@ -119,16 +111,6 @@ function engpaesseHTML(state: GameState): string {
   return liste.map(e => `<button class="pk-eng-item" data-type-id="${e.typeId}">⚠ ${e.satz}</button>`).join('');
 }
 
-const SVG_DEFS = `
-  <defs>
-    <marker id="pk-pfeil-an" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#c8a227"></path>
-    </marker>
-    <marker id="pk-pfeil-aus" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#3a3a4a"></path>
-    </marker>
-  </defs>`;
-
 export function renderProduktionTab(state: GameState, bild: Bild): string {
   const empfohlen = naechsterBau(state)?.typeId ?? null;
   const reihen = NETZ_REIHEN.map(r => `
@@ -139,9 +121,9 @@ export function renderProduktionTab(state: GameState, bild: Bild): string {
   return `
     <div class="pk">
       <div class="pk-top">
-        <p class="pk-hint">Oben die Beute aus den Dungeons, in der Mitte machen Werkstätten und Händler daraus Ausrüstung
-          und Tränke, unten die Gilde. Klick auf ein Gebäude öffnet Werkstatt und Ausbau, auf einen Bauplatz den Bau-Dialog,
-          auf den Händler seinen Laden.
+        <p class="pk-hint">Oben die Beute aus den Dungeons, in der Mitte machen Händler und Werkstätten daraus Ausrüstung
+          und Tränke, unten die Gilde. Klick auf den Händler öffnet seinen Laden, auf ein Gebäude Werkstatt und Ausbau,
+          auf einen Bauplatz den Bau-Dialog: Dort schaltest du die Werkstatt direkt frei.
           <span class="nur-maus">Fahre mit der Maus über ein Gebäude, dann steht da kurz, wofür es gut ist.</span>
           <span class="nur-touch">Lange drücken zeigt kurz, wofür ein Gebäude gut ist.</span>
           Golden umrandet: das Gebäude, das sich als Nächstes lohnt.</p>
@@ -149,9 +131,7 @@ export function renderProduktionTab(state: GameState, bild: Bild): string {
       </div>
       <div class="pk-rahmen">
         <div class="pk-netz">
-          <svg class="pk-kanten" aria-hidden="true">${SVG_DEFS}<g class="pk-kanten-g"></g></svg>
           ${reihen}
-          <svg class="pk-kanten pk-kanten-txt" aria-hidden="true"><g class="pk-kanten-g"></g></svg>
         </div>
       </div>
       <div class="pk-tip" role="tooltip" hidden></div>
@@ -211,7 +191,7 @@ export function aktualisiereProduktionTab(panel: HTMLElement, state: GameState):
     if (eng.innerHTML !== neu) eng.innerHTML = neu;
   }
   frischeTippAuf(panel, state);
-  zeichneKanten(panel, state);
+  passeMindmapAn(panel);
 }
 
 // ── Klicks ──────────────────────────────────────────────────────

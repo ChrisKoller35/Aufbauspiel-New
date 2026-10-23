@@ -11,7 +11,8 @@ import {
 import { ENEMY_DEFS } from '../data/enemies';
 import { ROUTE_DEFS } from '../data/routes';
 import { GameState, StadtwegStand } from '../models/GameState';
-import { dasGebaeude, gebaeudeName, itemName, freischaltHinweise } from './GebaeudeStatus';
+import { BUILDING_DEFS } from '../data/buildings';
+import { dasGebaeude, gebaeudeName, itemName, freischaltHinweise, kostenText } from './GebaeudeStatus';
 
 const ROEMISCH = ['', 'I', 'II', 'III', 'IV', 'V'];
 
@@ -71,7 +72,9 @@ function aufgabenZeile(state: GameState, a: StadtAufgabe): AufgabenZeile {
       return {
         text: `${gebaeudeName(a.typeId)} steht`,
         erledigt: steht,
-        hinweis: gesperrt.length ? `noch gesperrt: ${gesperrt.join(', ')}` : undefined,
+        hinweis: steht ? undefined
+          : gesperrt.length ? `noch gesperrt: ${gesperrt.join(', ')}`
+          : `auf dem Feld bauen: ${kostenText(BUILDING_DEFS[a.typeId]?.buildCost ?? {})}`,
       };
     }
     case 'helden':

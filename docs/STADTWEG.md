@@ -19,7 +19,8 @@ als Bild aus Code), `src/ui/html/stadtweg.css`. Tests: `src/systems/Stadtweg.tes
   («Ein Weiler. Die Ziege ist beeindruckt.») und dem Fortschritt zur nächsten Stufe («2 von 4 erledigt»). Ist der
   Aufstieg möglich, leuchtet es golden; ein ungelesenes Kapitel zeigt «📜 Neues Kapitel».
 - **Fenster** (Klick aufs Banner): grosses Bild, der Weg mit allen 7 Stufen, die Aufgaben der nächsten Stufe mit
-  Häkchen (bei einem gesperrten Gebäude dazu «noch gesperrt: Bauplan beim Händler (50 Gold)»), die Abgabe, die
+  Häkchen (fehlt ein Gebäude, dazu «auf dem Feld bauen: 100 Gold» bzw., gesperrt, «noch gesperrt: braucht
+  Gildenrang 2»; bis 22.10.2026 stand hier der Bauplan), die Abgabe, die
   Belohnungen, der Knopf «Aufsteigen», die Stadtchronik und ab Stufe 6 das Arkane Herz.
 - **Hinweis unten links:** Wird ein Aufstieg möglich, während man anderswo ist (z. B. Gebäude), erscheint einmal
   «Aufstieg bereit! … Ansehen». Nicht während einer Expedition.
@@ -43,7 +44,7 @@ Aufgaben zählen live; die Abgabe zählt als ein Schritt («n von m erledigt»),
 | 6 | Grossstadt | Kriegsmaschinen-Werkstatt steht, Gildenrang IV, 5 verschiedene Bosse, 4 Helden | 400 Gold, 40 Eisenschrott, 10 Kristallsplitter | 300 Gold | 10 % |
 | 7 | Magische Stadt | alle fünf Herzsteine eingesetzt | – | 500 Gold | 20 % |
 
-«Rabatt» ist das Stadtrecht: der Rabatt beim Händler auf Waren und Baupläne (`haendlerRabatt`, gilt je Stufe und
+«Rabatt» ist das Stadtrecht: der Rabatt beim Händler auf seine Waren (`haendlerRabatt`, gilt je Stufe und
 wird nicht zusammengezählt; `docs/HAENDLER.md`). Die Belohnungsliste nennt ihn nur, wenn er gegenüber der Vorstufe
 steigt. Siege kommen aus `statistics.total_victories`, Bosse aus `guildStats.bossesDefeatedIds` und dem Monsterbuch
 (nur Einträge mit Rolle Boss), Helden aus `fighters` (Anzahl), der Gildenrang aus `guildStats.rank`.

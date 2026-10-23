@@ -18,7 +18,7 @@ import {
   AchievementSystem, beiNeuenErfolgen, erfolgePruefen, freigeschalteteErfolge, kennzahlenAktualisieren,
   ungeseheneErfolge, ungeseheneErfolgIds,
 } from '../src/systems/AchievementSystem';
-import { bauplanKaufen, kaufen, verkaufen } from '../src/systems/Haendler';
+import { kaufen, verkaufen } from '../src/systems/Haendler';
 import { erfolgHinweis, renderHeader } from '../src/ui/screens/HeaderRenderer';
 import { erfolgeGeoeffnet } from '../src/ui/screens/AchievementsScreen';
 
@@ -30,7 +30,7 @@ const ALTE_IDS = [
 /** Schlüssel, die kennzahlenAktualisieren() schreibt (alle anderen muss das Spiel selbst zählen) */
 const KENNZAHLEN = [
   'stadtstufe', 'helden_anzahl', 'helden_mit_weg', 'helden_meister', 'ganze_sets',
-  'monsterbuch_entdeckt', 'gildenrang', 'werkstaetten', 'werkstatt_hoechste_stufe', 'bauplaene',
+  'monsterbuch_entdeckt', 'gildenrang', 'werkstaetten', 'werkstatt_hoechste_stufe',
   'zettel_erledigt', 'saal_prunkstuecke', 'saal_sterne', 'rangliste_pokale', 'schmiede_hoechste_stufe',
   'total_days_survived',
 ];
@@ -120,34 +120,26 @@ describe('Erfolge: Liste', () => {
     expect(renderHeader(state)).toMatch(/<span class="hdr-erfolge-neu">1<\/span>/);
   });
 
-  test('Gildenstadt: der erste Bauplan, alle vier Werkstätten und eine Werkstatt auf Stufe 3', () => {
+  test('Gildenstadt: alle vier Werkstätten und eine Werkstatt auf Stufe 3', () => {
     const state = createNewGameState();
     erfolgePruefen(state);
-    expect(state.statistics).toMatchObject({ bauplaene: 0, werkstaetten: 0, werkstatt_hoechste_stufe: 0 });
+    expect(state.statistics).toMatchObject({ werkstaetten: 0, werkstatt_hoechste_stufe: 0 });
 
-    state.globalStock.bauplan_schmiede = 1; // beim Händler gekauft
-    erfolgePruefen(state);
-    expect(state.statistics.bauplaene).toBe(1);
-    expect(state.achievements).toContain('bauplan_1');
-
-    // Verbaut zählt der Bauplan weiter, ein Boss-Bauplan ebenso (state.erhalteneBauplaene)
-    state.globalStock.bauplan_schmiede = 0;
     state.buildings.push(createBuildingInstance('SMITHY'));
-    state.erhalteneBauplaene.push('bauplan_arkanschmiede');
     erfolgePruefen(state);
-    expect(state.statistics).toMatchObject({ bauplaene: 2, werkstaetten: 1, werkstatt_hoechste_stufe: 1 });
+    expect(state.statistics).toMatchObject({ werkstaetten: 1, werkstatt_hoechste_stufe: 1 });
     expect(state.achievements).not.toContain('werkstaetten_4');
 
     for (const typeId of WERKSTAETTEN.slice(1)) state.buildings.push(createBuildingInstance(typeId));
     state.buildings[0].tier = 3;
     erfolgePruefen(state);
-    expect(state.statistics).toMatchObject({ bauplaene: 4, werkstaetten: 4, werkstatt_hoechste_stufe: 3 });
+    expect(state.statistics).toMatchObject({ werkstaetten: 4, werkstatt_hoechste_stufe: 3 });
     expect(state.achievements).toEqual(expect.arrayContaining(['werkstaetten_4', 'werkstatt_3']));
     // Gildenhaus und Händler sind keine Werkstätten
     expect(state.statistics.werkstaetten).toBe(4);
   });
 
-  test('Gildenstadt: der erste Kauf beim Händler, Ware oder Bauplan; Verkaufen zählt nicht', () => {
+  test('Gildenstadt: der erste Kauf beim Händler; Verkaufen zählt nicht', () => {
     const state = createNewGameState();
     state.globalStock.gold = 200;
     expect(verkaufen(state, 'bread', 1).ok).toBe(true);
@@ -158,10 +150,6 @@ describe('Erfolge: Liste', () => {
     expect(erfolgePruefen(state)).toEqual(['haendler_1']);
     expect(state.statistics.total_haendler_kaeufe).toBe(1);
 
-    const bauplan = createNewGameState();
-    bauplan.globalStock.gold = 200;
-    expect(bauplanKaufen(bauplan, 'SMITHY').ok).toBe(true);
-    expect(erfolgePruefen(bauplan)).toEqual(expect.arrayContaining(['haendler_1', 'bauplan_1']));
   });
 });
 
@@ -450,7 +438,7 @@ describe('Gildenrang: Texte aus den echten Regeln', () => {
     const [dungeons, danach, gebaeude] = aufstieg.unlocks;
     expect(dungeons).toBe(`Neue Dungeons (${dungeonsVon(2).length}), gleich offen: ${offen.map(r => r.name).join(', ')}`);
     expect(danach).toBe(`Nach Bosssiegen: ${spaeter.map(r => r.name).join(', ')}`);
-    expect(gebaeude).toBe('Neues Gebäude: Arkanschmiede (mit Bauplan)');
+    expect(gebaeude).toBe('Neues Gebäude: Arkanschmiede');
     // Was gleich offen heisst, ist es auch
     for (const r of offen) expect(getRouteLockReasons(r, state), r.id).toEqual([]);
     for (const r of spaeter) expect(getRouteLockReasons(r, state).every(g => g.startsWith('Besiege')), r.id).toBe(true);
