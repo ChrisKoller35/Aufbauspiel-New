@@ -21,13 +21,17 @@
 
 /* «Wo?» auf einer Karte im Reiter «Aufbau»: Zeile im Fluss, Tippfläche 44 px über ::after */
 .acard-wo {
-  position: relative; z-index: 1; align-self: flex-start; max-width: 100%;
+  position: relative; z-index: 1; align-self: flex-start; max-width: 100%; min-width: 44px;
   padding: 1px 7px; border: 1px solid var(--gd); border-radius: 4px; background: rgba(6,8,16,.8);
-  color: var(--gl); font: inherit; font-size: 0.62rem; line-height: 1.4; cursor: pointer;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  color: var(--gl); font: inherit; font-size: 0.62rem; line-height: 1.4; cursor: pointer; text-align: left;
 }
+.acard-wo span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .acard-wo:hover, .acard-wo:focus-visible { border-color: var(--gold); color: var(--gold); }
 .acard-wo::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+/* Touch: 28 px hoch, damit die 44-px-Fläche nicht am Kartenrand (overflow: hidden, 9 px Abstand) abgeschnitten wird */
+@media (pointer: coarse) {
+  .acard-wo { min-height: 28px; }
+}
 
 .fb-ov {
   position: fixed; inset: 0; z-index: 210; display: flex; align-items: center; justify-content: center;
@@ -101,7 +105,7 @@
 @media (max-width: 700px) {
   .fb-ov { padding: 0; align-items: stretch; }
   .fb-fenster { height: 100%; max-height: none; border-radius: 0; border: none; overflow-y: auto; padding: 14px 14px 24px; }
-  .fb-spalten { display: block; }
+  .fb-spalten { display: block; flex: none; }
   .fb-liste { max-height: 38vh; }
   .fb-eintrag { overflow: visible; margin-top: 14px; padding-right: 0; scroll-margin-top: 8px; }
   .fb-link { min-height: 44px; }

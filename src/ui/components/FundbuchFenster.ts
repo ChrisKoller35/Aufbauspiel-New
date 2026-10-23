@@ -27,6 +27,8 @@ const EMOJI: Record<FundbuchGruppe, string> = {
 };
 
 let loeseTasten: (() => void) | null = null;
+/** Was vor dem Öffnen den Fokus hatte («📜 Fundbuch» oder «Wo?»), bekommt ihn beim Schliessen zurück. */
+let vorherFokus: HTMLElement | null = null;
 
 function esc(text: string | number): string {
   return String(text).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
@@ -35,7 +37,7 @@ function esc(text: string | number): string {
 /** Bild des Gegenstands, darunter das Emoji, falls die Datei fehlt. */
 function bild(itemId: string): string {
   const emoji = ITEM_DEFS[itemId]?.tags.includes('herb') ? '🌿' : EMOJI[gruppeVon(itemId)];
-  return `<span class="fb-bild"><img src="assets/sprites/final/${esc(getItemSpriteKey(itemId))}.png" alt=""
+  return `<span class="fb-bild"><img loading="lazy" src="assets/sprites/final/${esc(getItemSpriteKey(itemId))}.png" alt=""
     onerror="this.style.display='none';this.nextElementSibling.hidden=false"><span hidden>${emoji}</span></span>`;
 }
 
@@ -142,12 +144,14 @@ export function schliesseFundbuch(): void {
   const ov = document.querySelector('.fb-ov');
   if (!ov) return;
   ov.remove();
-  document.querySelector<HTMLElement>('.fb-oeffnen')?.focus();
+  (vorherFokus?.isConnected ? vorherFokus : document.querySelector<HTMLElement>('.fb-oeffnen'))?.focus();
+  vorherFokus = null;
 }
 
 /** Öffnet das Fundbuch, auf Wunsch gleich beim Gegenstand `itemId` (z. B. einem Bauplan). */
 export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
   schliesseFundbuch();
+  vorherFokus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   const eintraege = fundbuchEintraege();
   const ov = document.createElement('div');
   ov.className = 'fb-ov';
@@ -190,9 +194,10 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
     let treffer = 0;
     ov.querySelectorAll<HTMLElement>('.fb-gruppe-liste').forEach(gruppe => {
       let sichtbar = 0;
-      gruppe.querySelectorAll<HTMLElement>('.fb-eintrag-knopf').forEach(k => {
+      gruppe.querySelectorAll<HTMLButtonElement>('.fb-eintrag-knopf').forEach(k => {
         const passt = !wort || (k.dataset.name ?? '').includes(wort);
         k.parentElement!.hidden = !passt;
+        k.disabled = !passt; // Tab (FensterHilfen) springt nur zwischen sichtbaren Knöpfen
         if (passt) sichtbar++;
       });
       gruppe.hidden = sichtbar === 0;

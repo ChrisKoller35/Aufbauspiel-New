@@ -52,7 +52,7 @@ function woKnopf(state: GameState, typeId: string): string {
     quelle.boss ? `vom Boss «${quelle.boss.name}» in «${quelle.boss.routeName}» (erster Sieg)` : '',
   ].filter(Boolean).join(' oder ');
   const text = quelle.boss ? `📜 Wo? · ${quelle.boss.routeName}` : '📜 Wo?';
-  return `<button type="button" class="acard-wo" data-bauplan="${bauplan}" title="Im Fundbuch: Bauplan ${wege}">${text}</button>`;
+  return `<button type="button" class="acard-wo" data-bauplan="${bauplan}" title="Im Fundbuch: Bauplan ${wege}"><span>${text}</span></button>`;
 }
 
 /** «✓ Stufe 2 von 3» bei ausbaubaren Gebäuden, sonst «✓ Gebaut». */
@@ -137,7 +137,7 @@ export function bindAufbauTab(panel: HTMLElement, cb: AufbauCallbacks): void {
       e.stopPropagation();
       if (knopf.dataset.bauplan) cb.fundbuch(knopf.dataset.bauplan);
     });
-    knopf.addEventListener('keydown', (e) => e.stopPropagation());
+    knopf.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') e.stopPropagation(); });
   });
   panel.querySelectorAll<HTMLElement>('.acard').forEach(card => {
     card.addEventListener('click', () => waehle(card));
