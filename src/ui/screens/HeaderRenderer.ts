@@ -13,34 +13,50 @@ const HINWEIS_MS = 4000;
 let hinweisTimer: number | null = null;
 /** Kommt ein zweiter Hinweis so kurz nach dem ersten (z. B. ein Erfolg nach «Zettel erledigt»), steht er daneben */
 const ZUSAMMEN_MS = 600;
-let letzterHinweis = { text: '', zeit: 0, ende: 0 };
+let letzterHinweis = { text: '', zeit: 0, ende: 0, zusammen: false };
+/**
+ * Wie viel Platz ein Hinweis für zwei Zeilen braucht, nach seiner Länge (gemessen an allen Hinweisen des Spiels):
+ * bis 60 Zeichen (fertige Aufträge der Werkstätten, Erfolge, Set-Teile …) höchstens 158 px, bis 130 Zeichen (ein
+ * erledigter Zettel mit Belohnung, der alte Spielstand) höchstens 332 px (.hdr-note-lang). Ist so viel hinter dem
+ * Namen nicht frei, liegt der Hinweis über Logo und Name (erfolge.css). Zwei Hinweise nebeneinander und noch längere
+ * (.hdr-note-sehr-lang) brauchen oft mehr und liegen immer darüber.
+ */
+const HINWEIS_KURZ_BIS = 60;
+const HINWEIS_LANG_BIS = 130;
+
+function hinweisKlasse(text: string, zusammen: boolean): string {
+  if (zusammen || text.length > HINWEIS_LANG_BIS) return 'hdr-note hdr-note-sehr-lang';
+  return text.length > HINWEIS_KURZ_BIS ? 'hdr-note hdr-note-lang' : 'hdr-note';
+}
 
 /**
  * Kurzer Hinweis in jeder Kopfzeile, verschwindet von selbst (kein Popup), nach `dauerMs`
- * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Er steht in .hdr-mitte, bis 1000 px
- * Breite über Logo und Bildschirm-Name, breiter daneben (erfolge.css, .hdr-mit-hinweis), auf höchstens zwei
- * Zeilen: Die Kopfzeile wird nicht höher, und ausserhalb von .hdr-mitte verschiebt sich nichts.
+ * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Er steht in .hdr-platz hinter dem
+ * Bildschirm-Namen, auf höchstens zwei Zeilen: bis 1000 px Breite über Logo und Name, breiter daneben, wenn er dort
+ * Platz hat (hinweisKlasse, erfolge.css). Die Kopfzeile wird nicht höher, und sonst verschiebt sich nichts.
  * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist.
  */
 export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
   if (typeof document === 'undefined') return;
   const jetzt = Date.now();
   let ende = jetzt + dauerMs;
+  let zusammen = false;
   if (hinweisTimer !== null && jetzt - letzterHinweis.zeit < ZUSAMMEN_MS && !letzterHinweis.text.includes(text)) {
     text = `${letzterHinweis.text} · ${text}`;
     ende = Math.max(ende, letzterHinweis.ende);
+    zusammen = true;
   }
-  letzterHinweis = { text, zeit: jetzt, ende };
+  letzterHinweis = { text, zeit: jetzt, ende, zusammen };
   const hdrs = document.querySelectorAll('.hdr');
   for (let i = 0; i < hdrs.length; i++) {
     const hdr = hdrs[i] as HTMLElement;
     let note = hdr.querySelector('.hdr-note') as HTMLElement | null;
     if (!note) {
       note = document.createElement('span');
-      note.className = 'hdr-note';
       note.setAttribute('role', 'status');
-      (hdr.querySelector('.hdr-mitte') ?? hdr).insertBefore(note, null);
+      (hdr.querySelector('.hdr-platz') ?? hdr).insertBefore(note, null);
     }
+    note.className = hinweisKlasse(text, zusammen);
     note.textContent = text;
     hdr.classList.add('hdr-mit-hinweis');
   }
@@ -157,18 +173,19 @@ export function renderHeader(
     : '';
   // Ein laufender Hinweis bleibt stehen, wenn sich der Bildschirm neu zeichnet (z. B. gleich nach dem Bauen)
   const note = hinweisTimer !== null && letzterHinweis.text
-    ? `<span class="hdr-note" role="status">${letzterHinweis.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`
+    ? `<span class="${hinweisKlasse(letzterHinweis.text, letzterHinweis.zusammen)}" role="status">${letzterHinweis.text.replace(/&/g, '&amp;').replace(/</g, '&lt;')}</span>`
     : '';
 
-  // .hdr-mitte füllt den Platz zwischen «← Zurück» und den Vorräten (magic-city.css, Abschnitt Header)
+  // .hdr-mitte füllt den Platz zwischen «← Zurück» und den Vorräten, .hdr-platz darin den hinter dem Namen
+  // (magic-city.css, Abschnitt Header)
   return `
-    <div class="hdr${note ? ' hdr-mit-hinweis' : ''}">
+    <div class="hdr${backTarget ? ' hdr-zurueck' : ''}${note ? ' hdr-mit-hinweis' : ''}">
       ${backBtn}
       <div class="hdr-mitte">
         <span class="hdr-logo">⚔ MAGIC CITY</span>
         ${sep}
         ${label}
-        ${note}
+        <span class="hdr-platz">${note}</span>
       </div>
       <div class="res">
         ${vorratsZeileHtml(state)}
