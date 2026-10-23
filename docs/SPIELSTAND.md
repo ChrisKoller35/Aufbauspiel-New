@@ -43,7 +43,7 @@ wird nicht angeboten (zurückgeholt würde er nicht geladen).
 
 ## Fenster «Spielstand»
 
-Knopf **💾 Spielstand** im Hauptmenü unten rechts, neben der Hintergrund-Wahl. Auf Touch-Geräten
+Knopf **💾 Spielstand** im Hauptmenü in der Leiste unter dem Titel, neben der Hintergrund-Wahl. Auf Touch-Geräten
 und schmalen Bildschirmen ist seine Tippfläche 44 px hoch, ohne dass Knopf oder Leiste wachsen.
 Code: `src/ui/components/SpielstandFenster.ts`, Stile: `src/ui/html/spielstand.css`.
 

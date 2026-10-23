@@ -115,8 +115,13 @@ body {
 #s-main .hdr { position: relative; z-index: 1; }
 
 /* ── BG Switcher ── */
+/* Leiste unter dem Titel (Hintergrund, «💾 Spielstand», «📜 Fundbuch»), rechtsbündig mit Banner und Kacheln.
+   Sie steht im Fluss der Seite: Fest unten rechts lag sie am PC über der Kachel «Rangliste». */
+.main-leiste {
+  position: relative; z-index: 1; display: flex; justify-content: flex-end;
+  width: calc(100% - 64px); max-width: 1136px; margin: 0 auto;
+}
 .bg-switcher {
-  position: fixed; bottom: 16px; right: 16px; z-index: 10;
   display: flex; align-items: center; gap: 6px;
   background: rgba(6,8,16,.85); border: 1px solid var(--bdr);
   border-radius: 8px; padding: 6px 10px;
@@ -182,7 +187,10 @@ body {
 @media (max-width: 700px) {
   .main-title { font-size: 1.9rem; letter-spacing: 3px; }
   .main-tagline { letter-spacing: 2px; padding: 0 16px; }
-  .main-grid { grid-template-columns: 1fr; gap: 12px; padding: 12px 16px 70px; }
+  .main-leiste { width: calc(100% - 32px); justify-content: center; }
+  /* Eine Zeile bei 390 px; auf noch schmaleren Handys bricht die Leiste um, statt seitlich überzustehen */
+  .bg-switcher { flex-wrap: wrap; justify-content: center; gap: 6px 4px; padding: 6px 8px; white-space: nowrap; }
+  .main-grid { grid-template-columns: 1fr; gap: 12px; padding: 12px 16px 22px; }
   .tile { padding: 14px; aspect-ratio: 16 / 7; }
 }
 
@@ -1783,8 +1791,8 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 
 /* Finger: Trefferfläche mindestens 44 px hoch (quadratische Knöpfe auch breit). «← Zurück» ragt je 4 px
    in den Rand der Kopfzeile, damit sie kaum höher wird (wie .hdr-erfolge in erfolge.css). Der Umschalter
-   der Hintergründe bekommt die Trefferfläche über ::after, weil seine Leiste fest über dem Hauptmenü
-   steht und ein höherer Knopf die untersten Kacheln verdeckte (wie .ss-oeffnen in spielstand.css). */
+   der Hintergründe bekommt die Trefferfläche über ::after, damit seine Leiste im Hauptmenü nicht höher
+   wird als am PC (wie .ss-oeffnen in spielstand.css). */
 @media (pointer: coarse) {
   .prbtn { width: 44px; height: 44px; font-size: 1.1rem; }
   .btn-go, .mc-btn, .mc-co-speed, .mc-co-ability-btn, .btn-dungeon-map, .chest-collect-btn, .tab { min-height: 44px; }

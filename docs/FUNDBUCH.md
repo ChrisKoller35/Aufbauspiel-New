@@ -1,7 +1,8 @@
 # Fundbuch
 
 Das Fundbuch beantwortet zwei Fragen: **Woher bekomme ich einen Gegenstand, und wofür brauche ich ihn?**
-Es öffnet sich im Hauptmenü über «📜 Fundbuch» (unten rechts neben «💾 Spielstand», am schmalen Handy nur «📜»).
+Es öffnet sich im Hauptmenü über «📜 Fundbuch» (in der Leiste unter dem Titel neben «💾 Spielstand», am schmalen
+Handy nur «📜»).
 
 - Rechnung: `src/systems/Fundbuch.ts` (reine Funktionen, liest nur die Datendateien)
 - Fenster: `src/ui/components/FundbuchFenster.ts`, Stile `src/ui/html/fundbuch.css`
