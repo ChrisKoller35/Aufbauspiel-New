@@ -6,22 +6,17 @@ import { BOSS_MUSIK, musikFuerBildschirm, musikFuerRoute } from './data/klangZuo
 import { istGestartet, istStumm, spieleEffekt, spieleMusik, starteKlang } from './systems/Klang';
 import { zeigeKlangSchalter } from './ui/components/KlangSchalter';
 
-function musikFuer(screen: ScreenId): void {
-  const name = musikFuerBildschirm(screen);
-  if (name) spieleMusik(name);
-}
-
 // Erste Geste: AudioContext anlegen/fortsetzen, Musik für den Startbildschirm (ScreenRouter.ts getCurrentScreen)
 function geste(): void {
   const erstes = !istGestartet();
   starteKlang();
-  if (erstes) musikFuer(getCurrentScreen());
+  if (erstes) spieleMusik(musikFuerBildschirm(getCurrentScreen()));
 }
 window.addEventListener('pointerdown', geste, true);
 window.addEventListener('keydown', geste, true);
 
 // Bildschirmwechsel: ScreenRouter.ts navigateTo/goBack → mc:navigate { screen, prev }
-window.addEventListener('mc:navigate', e => musikFuer((e as CustomEvent<{ screen: ScreenId }>).detail.screen));
+window.addEventListener('mc:navigate', e => spieleMusik(musikFuerBildschirm((e as CustomEvent<{ screen: ScreenId }>).detail.screen)));
 
 // Expedition startet: ExpeditionsScreen.ts (Klick auf Start) → mc:startExpedition { routeId }
 window.addEventListener('mc:startExpedition', e => {
