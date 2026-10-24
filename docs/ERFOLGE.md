@@ -84,8 +84,9 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   alten Spielstand endet bis 703 px mit «…» (neben sehr grossen Vorräten bis 789 px); ein Zettel mit
   zwei Erfolgen endet bis 841 px und von 861 bis 863 px mit «…», mit 1.234.567 Gold bis 945 px.
   Gemessen in Chromium mit den Web-Schriften auf zwölf Bildschirmen, mit 0, 9 und 125 neuen Erfolgen,
-  in Schritten von 2 bis 8 px. Was dazukam, zeigen trotzdem die Zahl am Knopf, das Lager und die
-  Bildschirme.
+  in Schritten von 2 bis 8 px, ohne Scrollbalken. Am PC nimmt einer der Kopfzeile 5 px (im Monsterbuch
+  steht er immer), die Grenzen liegen dann bis zu 5 px höher. Was dazukam, zeigen trotzdem die Zahl am
+  Knopf, das Lager und die Bildschirme.
   Bei 1400 px sieht die Kopfzeile aus wie vorher, nur zwei Hinweise nebeneinander liegen jetzt über Logo
   und Name. Früher sprang sie bei 320 und 360 px von 79 auf 121 px, sobald der Hinweis verschwand, und
   knapp über 1000 px war ein Hinweis neben einem langen Namen bis auf wenige Buchstaben gekürzt
