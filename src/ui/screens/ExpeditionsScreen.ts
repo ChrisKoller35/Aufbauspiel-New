@@ -16,6 +16,7 @@ import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
 import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
+import { zeigeKriegsrat } from '../components/KriegsratFenster';
 
 // ── Module state ──
 
@@ -292,6 +293,7 @@ function buildTeamHTML(): string {
       <div class="prov">
         <div class="prov-hd">Proviant</div>
         ${provRows}
+        <button class="btn-kriegsrat"${document.querySelector('.kr-ov') ? ' disabled' : ''}>🎲 Kriegsrat</button>
         <button class="btn-go">EXPEDITION STARTEN</button>
       </div>
     </div>
@@ -359,6 +361,17 @@ function bindTeamEvents(el: HTMLElement): void {
         provisions[itemId] = (provisions[itemId] ?? 0) - 1;
       }
       refreshTeamScreen();
+      return;
+    }
+
+    // Kriegsrat: Probeläufe mit denselben Werten wie der Start; gesperrt, solange das Fenster offen ist
+    const ratBtn = target.closest<HTMLButtonElement>('.btn-kriegsrat');
+    if (ratBtn) {
+      const route = selectedRouteId ? ROUTE_DEFS[selectedRouteId] : null;
+      if (ratBtn.disabled || document.querySelector('.kr-ov') || selectedHeroes.length === 0 || !route || !isRoutePlayable(route)) return;
+      ratBtn.disabled = true;
+      zeigeKriegsrat(document.body, gameState, route.id, selectedHeroes.map(h => h.id), { ...provisions },
+        () => el.querySelector<HTMLButtonElement>('.btn-kriegsrat')?.removeAttribute('disabled'));
       return;
     }
 
