@@ -1,0 +1,17 @@
+/* Klang-Schalter: links unten über dem Toast (.sw-toast, z-index 150), unter jedem Fenster (ab 200) */
+.klang-schalter {
+  position: fixed;
+  left: calc(16px + env(safe-area-inset-left));
+  bottom: calc(72px + env(safe-area-inset-bottom));
+  z-index: 160;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: 1px solid rgba(201, 168, 76, 0.6);
+  background: rgba(10, 12, 22, 0.85);
+  font-size: 20px;
+  line-height: 1;
+  padding: 0;
+  cursor: pointer;
+}
+.klang-schalter:hover { border-color: #c9a84c; }
