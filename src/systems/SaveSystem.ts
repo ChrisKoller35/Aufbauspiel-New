@@ -2,7 +2,10 @@ import { GameState } from '../models/GameState';
 import { resetBuildingIdCounter } from '../models/Building';
 import { resetFighterIdCounter } from '../models/GuildRoster';
 import { BUILDING_DEFS } from '../data/buildings';
+import { CLASS_DEFS } from '../data/classes';
 import { stadtStufeVon } from '../data/stadtstufen';
+import { totalXpForLevel } from './HeroProgression';
+import { stufeBeiXp } from './Ausbildung';
 import { ExpeditionSystem } from './ExpeditionSystem';
 import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
@@ -116,6 +119,20 @@ export function tauscheBauplaeneInGold(state: GameState): void {
     delete stock[id];
   }
   delete (state as GameState & { erhalteneBauplaene?: unknown }).erhalteneBauplaene;
+}
+
+/**
+ * Name, Stufe und XP darf ein Held in einer Datei auslassen (SpielstandSchema verlangt sie nicht).
+ * Beim Laden kommen sie dazu: der Name der Klasse wie beim Anheuern, die Stufe aus den XP und die
+ * XP, mit denen die Stufe beginnt. Ohne XP rechnete awardXP mit NaN: Ein Held auf Stufe 15 zeigte
+ * «NaN XP Überschuss», und Lehrbuch und Expeditionen machten XP zu NaN (gespeichert als null).
+ */
+export function ergaenzeHelden(state: GameState): void {
+  for (const held of state.fighters) {
+    if (typeof held.name !== 'string') held.name = CLASS_DEFS[held.classId]?.name ?? 'Held';
+    if (!Number.isFinite(held.level)) held.level = Number.isFinite(held.xp) ? stufeBeiXp(held.xp) : 1;
+    if (!Number.isFinite(held.xp)) held.xp = totalXpForLevel(held.level);
+  }
 }
 
 export function fasseSpielstandZusammen(state: Pick<GameState, 'day' | 'fighters' | 'stadtweg'>): SpielstandZusammenfassung {
@@ -292,10 +309,11 @@ export class SaveSystem {
 
   /**
    * Was bei jedem Laden mit dem gelesenen Stand geschieht (load, probeLaden): fehlende Felder
-   * anlegen, Baupläne aus alten Ständen in Gold tauschen, doppelte Gebäude einer Art zu einem
-   * verschmelzen (ein Gebäude je Art, systems/Ausbau.ts).
+   * anlegen (Name, Stufe und XP der Helden), Baupläne aus alten Ständen in Gold tauschen, doppelte
+   * Gebäude einer Art zu einem verschmelzen (ein Gebäude je Art, systems/Ausbau.ts).
    */
   private bereiteVor(state: GameState): GameState {
+    ergaenzeHelden(state);
     tauscheBauplaeneInGold(state);
     vereinigeDoppelte(state);
     return state;

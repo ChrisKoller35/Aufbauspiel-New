@@ -39,9 +39,58 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   bei den freigeschalteten, leuchtet kurz auf und gilt als angeschaut.
 - «Zurück» führt dorthin, woher der Spieler kam (Hauptmenü, Gildenhaus, Monsterbuch …), einen
   Schritt zurück im Verlauf (`ScreenRouter.goBack`), ohne Hin und Her zwischen zwei Bildschirmen.
-- Am Handy ist der Knopf mindestens 44 px gross. Der Hinweis steht dort an der Stelle des Logos
-  (`.hdr-mit-hinweis` in `erfolge.css`), höchstens zwei Zeilen: Die Kopfzeile wird nicht höher,
-  der Knopf bleibt, wo er ist.
+- Am Handy ist der Knopf mindestens 44 px gross. Der Hinweis steht in `.hdr-platz`, dem freien Platz
+  hinter dem Bildschirm-Namen, auf höchstens zwei Zeilen, und verschiebt nichts: `.hdr-platz` zählt für
+  die Breite von `.hdr-mitte` nicht mit, die Kopfzeile wird nicht höher, «← Zurück», die Vorräte und der
+  Knopf bleiben, wo sie sind. Bis 1000 px Breite (Handy hoch und quer, Tablet, schmales Fenster) liegt er
+  über Logo und Name, die so lange unsichtbar sind, aber ihren Platz behalten (`.hdr-mit-hinweis` in
+  `erfolge.css`). Breiter steht er daneben, wenn er dort auf zwei Zeilen passt. Das schätzt
+  `hinweisKlasse` (`HeaderRenderer.ts`) an der Länge, gemessen an allen Hinweisen, die das Spiel dort
+  zeigen kann (882 einzelne und 11.770 Paare aus zwei Hinweisen kurz nacheinander): Die bis 60 Zeichen
+  brauchen höchstens 158 px, die bis 90 Zeichen (`.hdr-note-lang`: ein erledigter Liefer-Zettel mit
+  Tagesbonus, bis 83 Zeichen und 203 px, und der Satz zum alten Spielstand, 88 Zeichen und 214 px)
+  höchstens 214 px, mit dem Abstand zum Namen und etwas Reserve also 190 und 250 px. Ist weniger frei
+  (langer Name, grosse Vorräte, viele neue Erfolge), liegt er auch dort über Logo und Name und deckt sie
+  zu (`@container` in `erfolge.css`); dabei blendet nur die Schrift ein, die Decke steht sofort. Zwei
+  Hinweise kurz nacheinander (und alles über 90 Zeichen, `.hdr-note-sehr-lang`) liegen dort immer
+  darüber: Zusammen brauchen sie oft mehr Platz, als ihre Länge vermuten lässt (60 Zeichen bis 185 px).
+  In die Kopfzeile kommen nur Liefer-Zettel; die anderen Zettel und die Kapitel des Saals meldet die
+  Bilanz nach der Expedition. Ein neuer Hinweis mit über 60 Zeichen gehört nachgemessen.
+- Auch die Zahl am Knopf ändert die Höhe nicht. Am Handy füllt das Logo die erste Zeile zwischen
+  «← Zurück» und 🏅 und zählt beim Umbrechen nicht mit; neben «← Zurück» ist es unter 375 px kleiner
+  (unter 340 px noch kleiner), notfalls endet es mit «…» (`magic-city.css`, Abschnitt Header). Über
+  700 px steht alles in einer Zeile, «← Zurück», Logo und 🏅 brechen nie um. Fehlt Platz, stehen erst
+  die Vorräte auf zwei Zeilen (zwei Gruppen zu drei, `vorratsZeileHtml`), dann der Bildschirm-Name,
+  beide nicht höher als 🏅; erst wenn auch das nicht reicht, endet der Name mit «…». So ragt 🏅 auch
+  neben sehr grossen Vorräten nie hinaus. Von 701 bis 860 px ist neben «← Zurück» das Logo kleiner
+  und der Abstand etwas enger (`.hdr-zurueck`), ab 861 px ist alles wie am PC. Die Kopfzeile des
+  Hauptmenüs (ohne «← Zurück» und Namen) bleibt dort, wie sie war.
+  Gemessen mit den Web-Schriften auf neun Bildschirmen und vier Team-Auswahlen, mit 0, 9, 25 und 125
+  neuen Erfolgen, ohne, mit kurzem und mit langem Hinweis: 79 px hoch von 320 bis 700 px, 65 px quer
+  (844 × 390) und am Tablet (768 × 1024, 820 × 1180, 1000 × 800), 53 px am PC (701 bis 1400 px). Mit
+  sehr grossen Vorräten (1.234.567 Gold, Tag 1234) sind es am Handy von 320 bis 360 px 103 px (die
+  Vorräte brauchen dort zwei Zeilen), sonst bleibt die Höhe gleich.
+  Mit gewohnten Vorräten ist kein Name gekürzt. Neben grossen Vorräten und vielen neuen Erfolgen enden
+  von 701 bis 732 px einzelne lange Namen mit «…»: «Schattenkatakomben» (mit 25.000 Gold nur bei 701 px
+  und 125 neuen Erfolgen, mit 1.234.567 Gold bis 732 px), «ROUTENÜBERSICHT» (bis 707 px) und «Die
+  Sternenschmiede» (bei 701 px); mit 12.345.678 Gold bis 751 px, dann auch «DUNGEONKARTE» und
+  «Verschlungene Tunnel».
+  Über 1000 px endet kein Hinweis mit «…», auch zwei zusammen nicht (1001 bis 1401 px, Vorräte bis
+  12.345.678 Gold). Bis 1000 px ist der Platz über Logo und Name schmaler, neben «← Zurück» am Handy bei
+  320 px 110 px, bei 360 px 150 px, bei 390 px 180 px. Am Handy endet dort ein erledigter Liefer-Zettel
+  bis 412 px nach zwei Zeilen mit «…», ein Hinweis bis 60 Zeichen bis 366 px (bei 320 px etwa die Hälfte
+  der Erfolge mit zwei Namen) und ein Zettel zusammen mit zwei Erfolgen (bis 134 Zeichen) bis 556 px. Von
+  701 bis 1000 px (Handy quer, Tablet, schmales Fenster) passt jeder einzelne Hinweis, nur der Satz zum
+  alten Spielstand endet bis 703 px mit «…» (neben sehr grossen Vorräten bis 789 px); ein Zettel mit
+  zwei Erfolgen endet bis 841 px und von 861 bis 863 px mit «…», mit 1.234.567 Gold bis 945 px.
+  Gemessen in Chromium mit den Web-Schriften auf zwölf Bildschirmen, mit 0, 9 und 125 neuen Erfolgen,
+  in Schritten von 2 bis 8 px, ohne Scrollbalken. Am PC nimmt einer der Kopfzeile 5 px (im Monsterbuch
+  steht er immer), die Grenzen liegen dann bis zu 5 px höher. Was dazukam, zeigen trotzdem die Zahl am
+  Knopf, das Lager und die Bildschirme.
+  Bei 1400 px sieht die Kopfzeile aus wie vorher, nur zwei Hinweise nebeneinander liegen jetzt über Logo
+  und Name. Früher sprang sie bei 320 und 360 px von 79 auf 121 px, sobald der Hinweis verschwand, und
+  knapp über 1000 px war ein Hinweis neben einem langen Namen bis auf wenige Buchstaben gekürzt
+  («✔ Br…»).
 
 ## Während einer Expedition
 

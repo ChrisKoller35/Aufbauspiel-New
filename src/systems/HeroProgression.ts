@@ -1,4 +1,4 @@
-import { GuildFighter } from '../models/GuildRoster';
+import { FighterStats, GuildFighter } from '../models/GuildRoster';
 
 // ─── XP / Level Berechnung ──────────────────────────────────────
 // Level N requires: 30 + (N-1) * 20 XP (cumulative from previous level)
@@ -60,6 +60,11 @@ export function awardXP(fighter: GuildFighter, amount: number): number {
 // Jedes Level gibt kleine Stat-Boosts auf baseStats.
 // Ab Stufe 10 wählt jeder Held einen Weg, ab Stufe 15 ist er Meister darin
 // (data/spezialisierungen.ts, systems/Spezialisierung.ts).
+// Seit dem 23.10.2026 tragen Leben, Angriff und Verteidigung den Mittelwert, mit dem die Dungeons
+// geeicht sind: früherer Klassen-Bonus plus 90 % des Wegs zum Mittel aus Klassen-Bonus und altem
+// Training (+2 / +1 / +1), auf ganze Leben und Zehntel gerundet (docs/AUSBILDUNG.md, «Eichung nach
+// dem Umbau»). Auf dem Raster driftet das Runden in applyLevelBonus nicht (Test). Krit und Tempo
+// blieben. Helden aus älteren Spielständen behalten ihre Werte, neue Aufstiege bringen diese Boni.
 
 export interface LevelBonus {
   hp?: number;
@@ -71,22 +76,22 @@ export interface LevelBonus {
 
 /** Stat-Bonus pro Level-Up, nach Klasse */
 export const LEVEL_BONUSES: Record<string, LevelBonus> = {
-  // Basis-Klassen
-  guardian:    { hp: 4, atk: 0.3, def: 0.5 },
-  ranger:      { hp: 2, atk: 0.6, def: 0.1, critChance: 0.01 },
-  cleric:      { hp: 3, atk: 0.2, def: 0.3, spd: 0.02 },
+  // Basis-Klassen (bis 22.10.2026 in Klammern: Leben / Angriff / Verteidigung)
+  guardian:    { hp: 3, atk: 0.6, def: 0.7 },                       // (4 / 0,3 / 0,5)
+  ranger:      { hp: 2, atk: 0.8, def: 0.5, critChance: 0.01 },     // (2 / 0,6 / 0,1)
+  cleric:      { hp: 3, atk: 0.6, def: 0.6, spd: 0.02 },            // (3 / 0,2 / 0,3)
   // Unlock-Klassen
-  berserker:   { hp: 3, atk: 0.5, def: 0.2 },                       // aggressiver DPS
-  assassin:    { hp: 2, atk: 0.6, def: 0.1, critChance: 0.01 },     // burst/crit DPS
-  paladin:     { hp: 4, atk: 0.25, def: 0.4 },                      // defensiver Tank/Heiler
-  bard:        { hp: 2, atk: 0.2, def: 0.2, spd: 0.02 },            // Support, Speed-Fokus
-  witch:       { hp: 2, atk: 0.4, def: 0.1, critChance: 0.01 },     // AoE DPS
-  necromancer: { hp: 2, atk: 0.35, def: 0.2 },                      // Beschwörer-DPS
-  druid:       { hp: 3, atk: 0.25, def: 0.25, spd: 0.01 },          // Heiler/Hybrid
+  berserker:   { hp: 3, atk: 0.7, def: 0.6 },                       // aggressiver DPS (3 / 0,5 / 0,2)
+  assassin:    { hp: 2, atk: 0.8, def: 0.5, critChance: 0.01 },     // burst/crit DPS (2 / 0,6 / 0,1)
+  paladin:     { hp: 3, atk: 0.6, def: 0.7 },                       // defensiver Tank/Heiler (4 / 0,25 / 0,4)
+  bard:        { hp: 2, atk: 0.6, def: 0.6, spd: 0.02 },            // Support, Speed-Fokus (2 / 0,2 / 0,2)
+  witch:       { hp: 2, atk: 0.7, def: 0.5, critChance: 0.01 },     // AoE DPS (2 / 0,4 / 0,1)
+  necromancer: { hp: 2, atk: 0.6, def: 0.6 },                       // Beschwörer-DPS (2 / 0,35 / 0,2)
+  druid:       { hp: 3, atk: 0.6, def: 0.6, spd: 0.01 },            // Heiler/Hybrid (3 / 0,25 / 0,25)
 };
 
-/** Default Bonus wenn Klasse nicht in der Tabelle */
-export const DEFAULT_BONUS: LevelBonus = { hp: 3, atk: 0.3, def: 0.3 };
+/** Default Bonus wenn Klasse nicht in der Tabelle (nach derselben Regel; bis 22.10.2026 3 / 0,3 / 0,3) */
+export const DEFAULT_BONUS: LevelBonus = { hp: 3, atk: 0.6, def: 0.6 };
 
 function applyLevelBonus(fighter: GuildFighter): void {
   const bonus = LEVEL_BONUSES[fighter.classId] ?? DEFAULT_BONUS;
@@ -97,5 +102,20 @@ function applyLevelBonus(fighter: GuildFighter): void {
   if (bonus.def) s.def = Math.round((s.def + bonus.def) * 10) / 10;
   if (bonus.critChance) s.critChance = Math.round((s.critChance + bonus.critChance) * 100) / 100;
   if (bonus.spd) s.spd = Math.round((s.spd + bonus.spd) * 100) / 100;
+}
+
+/**
+ * Werte einer Klasse auf `stufe`, genau wie bei einem echten Helden: die Grundwerte und jeder Aufstieg
+ * über awardXP, also applyLevelBonus mit den Boni der Klasse samt Runden. Die Musterteams der Eichung
+ * und das Probespiel rechnen damit (musterWerte in data/musterteams.ts), ihre Werte erreicht also
+ * jeder Held dieser Klasse auf dieser Stufe.
+ */
+export function werteAufStufe(classId: string, grundwerte: FighterStats, stufe: number): FighterStats {
+  const held: GuildFighter = {
+    id: 0, classId, name: '', baseStats: { ...grundwerte },
+    gear: { mainHand: null, offHand: null, armor: null, trinket: null }, xp: 0, level: 1,
+  };
+  awardXP(held, totalXpForLevel(stufe));
+  return held.baseStats;
 }
 

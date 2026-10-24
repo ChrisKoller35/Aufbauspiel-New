@@ -16,6 +16,7 @@ import {
   probespielAktiv, spielstandDateiname,
 } from '../../systems/SaveSystem';
 import { fensterTaste, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
+import { anzahlText } from '../../utils/Anzahl';
 
 /** Grössere Dateien liest das Fenster gar nicht erst (ein Spielstand passt in die etwa 5 MB des Browsers). */
 const MAX_DATEI_BYTES = 10 * 1024 * 1024;
@@ -24,7 +25,7 @@ const MAX_DATEI_BYTES = 10 * 1024 * 1024;
 let gewaehlterText: string | null = null;
 
 function standText(z: SpielstandZusammenfassung): string {
-  const helden = z.helden === 1 ? '1 Held' : `${z.helden} Helden`;
+  const helden = anzahlText(z.helden, 'Held', 'Helden');
   const stufe = z.helden > 0 ? ` (höchste Stufe ${z.hoechsteHeldenstufe})` : '';
   return `Tag ${z.tag} · Stadtstufe ${z.stadtstufe} · ${helden}${stufe}`;
 }

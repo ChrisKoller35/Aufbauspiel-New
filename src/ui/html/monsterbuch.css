@@ -1,10 +1,21 @@
 /* ─── Monsterbuch (ui/screens/BestiariumScreen.ts, docs/MONSTERBUCH.md) ─── */
 
-.mb { padding: 16px; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
+/* Der Scrollbalken steht immer da, auch auf kurzen Seiten (in Chrome 5 px, .screen in magic-city.css): Mit
+   klassischem Balken (Chrome unter Windows und Linux, Firefox) rückten sonst Buch und Pfeile um die halbe
+   Balkenbreite, in schmalen Fenstern › um die ganze, sobald eine Seite länger als das Fenster ist. Wo der Balken
+   über dem Inhalt liegt (Handy), nimmt er keinen Platz. scrollbar-gutter: stable liesse am PC neben dem Kopf einen
+   Streifen in der Farbe der Seite stehen. Kein scrollbar-color ohne Einschränkung: Damit liesse Chrome den
+   5-px-Balken fallen und zeigte einen 15 px breiten. !important: Der Router setzt overflow-y: auto direkt am
+   Bildschirm (ScreenRouter.ts) */
+#s-bestiarium { overflow-y: scroll !important; }
+
+/* width: 100 %: In der Spalte des Routers wäre .mb sonst nur so breit wie die Karten der Seite, und die Pfeile
+   ‹ › sprängen am Handy und in flachen Fenstern beim Blättern hin und her */
+.mb { padding: 16px; width: 100%; max-width: 1200px; margin: 0 auto; box-sizing: border-box; }
 .mb-kopf { font-size: 0.85rem; color: var(--mut); margin-bottom: 10px; }
 .mb-kopf b { color: var(--gold); }
 
-/* Seitenwahl: bricht um, scrollt nicht waagrecht */
+/* Seitenwahl am PC: Knopfleiste, bricht um, scrollt nicht waagrecht */
 .mb-seiten { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
 .mb-seitenknopf {
   background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px; color: var(--txt);
@@ -12,7 +23,21 @@
 }
 .mb-seitenknopf small { color: var(--mut); margin-left: 4px; }
 .mb-seitenknopf[aria-pressed="true"] { border-color: var(--gold); color: var(--gold); background: var(--s3); }
-.mb-seitenknopf:focus-visible, .mb-karte:focus-visible, .mb-praemie:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.mb-seitenknopf:focus-visible, .mb-karte:focus-visible, .mb-praemie:focus-visible,
+.mb-seitenliste:focus-visible, .mb-blaettern:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+
+/* Seitenwahl am Handy (unten bei «Handy»): Auswahlliste mit Pfeilen zum Blättern, eine Zeile hoch */
+.mb-seitenwahl { display: none; }
+.mb-seitenliste {
+  flex: 1; min-width: 0; min-height: 44px; padding: 8px 10px; border-radius: 6px;
+  background: var(--s2); color: var(--txt); border: 1px solid var(--bdr); font: inherit;
+  font-size: 16px; /* unter 16px zoomt das iPhone beim Antippen hinein */
+}
+.mb-blaettern {
+  flex: none; width: 44px; height: 44px; border-radius: 6px; background: var(--s2); color: var(--gold);
+  border: 1px solid var(--bdr); font: inherit; font-size: 1.5rem; line-height: 1; cursor: pointer; touch-action: manipulation;
+}
+.mb-blaettern:disabled { opacity: 0.35; cursor: default; }
 
 .mb-seitenkopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px 14px; margin-bottom: 8px; }
 .mb-seitenkopf h2 { font-family: 'Cinzel', serif; font-size: 1.05rem; color: var(--gold); margin: 0; letter-spacing: 1px; }
@@ -56,19 +81,44 @@
 .mb-balken-spur { flex: 1; height: 5px; background: var(--s3); border-radius: 3px; overflow: hidden; }
 .mb-balken-fuell { display: block; height: 100%; background: var(--gold); }
 
-/* Detailfenster */
-.mb-detail { max-width: 460px; max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+/* Detailfenster: Es scrollt selbst; das ✕ (44 × 44) klebt oben rechts und bleibt beim Scrollen im Bild.
+   --rand ist der Innenabstand. Das ✕ steht 2px unter der Oberkante des Inhalts und 2px vor dem rechten
+   Rand, ragt also in den Innenabstand; der Rand unten nimmt es aus dem Fluss, der Kopf beginnt oben. */
+.modal.mb-detail {
+  --rand: 26px; max-width: 460px; max-height: 90vh; max-height: 90dvh; overflow-y: auto;
+  box-sizing: border-box; padding: var(--rand);
+}
+.mb-detail .mcl {
+  position: sticky; top: 2px; right: auto; z-index: 1; display: block; width: 44px; height: 44px;
+  margin: 0 calc(2px - var(--rand)) -44px auto;
+  background: var(--s1); border-radius: 8px;
+}
+/* Ein langer Name bricht um (Silbentrennung, sonst irgendwo) und läuft nie unter das ✕ */
+.mb-detail .bst-header-info { min-width: 0; padding-right: calc(46px - var(--rand)); }
+.mb-detail .mt { overflow-wrap: anywhere; hyphens: auto; }
 .mb-detail .md-stats span { white-space: nowrap; }
 .mb-klein { font-size: 0.72rem; color: var(--mut); margin-top: 2px; }
 .mb-tabelle { width: 100%; border-collapse: collapse; font-size: 0.76rem; margin-top: 4px; }
 .mb-tabelle th { text-align: left; color: var(--mut); font-weight: normal; padding: 2px 4px; }
 .mb-tabelle td { padding: 3px 4px; border-top: 1px solid var(--bdr); }
 .mb-tabelle td.mb-zahl, .mb-tabelle th.mb-zahl { text-align: right; white-space: nowrap; }
-.mb-detail .mcl { min-width: 44px; min-height: 44px; top: 2px; right: 2px; }
 
 /* Handy und Touch: Tippflächen mindestens 44 × 44 px */
 @media (pointer: coarse), (max-width: 700px) {
   .mb { padding: 10px; }
   .mb-seitenknopf, .mb-praemie { min-height: 44px; min-width: 44px; }
   .mb-karten { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 8px; }
+}
+
+/* Handy (schmal oder quer): 29 Knöpfe füllten den ersten Bildschirm, hier reicht eine Zeile */
+@media (max-width: 700px), (max-height: 500px) {
+  .mb-seiten { display: none; }
+  .mb-seitenwahl { display: flex; align-items: center; gap: 6px; margin-bottom: 12px; }
+}
+
+/* Schmales Handy: mehr Platz für den Namen im Detailfenster */
+@media (max-width: 480px) {
+  .modal.mb-detail { --rand: 18px; }
+  .mb-detail .bst-header { gap: 10px; }
+  .mb-detail .bst-sprite { width: 64px; height: 64px; }
 }

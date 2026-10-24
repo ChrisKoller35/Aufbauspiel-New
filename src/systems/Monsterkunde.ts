@@ -1,11 +1,12 @@
 // ─── Magic City – Monsterkunde ──────────────────────────────────
 // Was das Monsterbuch über die Jagd der Gilde weiss (docs/MONSTERBUCH.md):
 // die Jagdstrecke (wie oft jeder Gegner besiegt wurde), die Seiten je Dungeon,
-// die Kenntnisstufen, die Beute und die Seitenprämien. Einziger Ort, der die
-// Zusatzfelder `strecke` und `praemien` von `state.bestiarium` liest und
-// schreibt; GameState.ts nennt nur `discovered` und `defeated`. Gespeichert
-// werden sie mit dem Rest des Spielstands (SaveSystem.save, das Schema lässt
-// Zusatzfelder durch). Ohne DOM, die Tests rufen alles direkt auf.
+// die Kenntnisstufen, die Beute, die Fähigkeiten nach der Kampfregel und die
+// Seitenprämien. Einziger Ort, der die Zusatzfelder `strecke` und `praemien`
+// von `state.bestiarium` liest und schreibt; GameState.ts nennt nur
+// `discovered` und `defeated`. Gespeichert werden sie mit dem Rest des
+// Spielstands (SaveSystem.save, das Schema lässt Zusatzfelder durch). Ohne DOM,
+// die Tests rufen alles direkt auf.
 // ────────────────────────────────────────────────────────────────
 
 import type { GameState } from '../models/GameState';
@@ -182,6 +183,8 @@ export function beuteChancen(id: string): { itemId: string; chance: number; minQ
   return eintraege.map(e => ({ itemId: e.itemId, chance: summe > 0 ? e.weight / summe : 0, minQty: e.minQty, maxQty: e.maxQty }));
 }
 
+// ─── Fähigkeiten und Wut, wie CombatEngine sie einsetzt ─────────
+
 /** Deutsche Namen der Fähigkeitsarten (Record: jede Art aus EnemySkillDef braucht einen). */
 export const FAEHIGKEIT_ART: Record<EnemySkillDef['effectType'], string> = {
   damage: 'Schaden',
@@ -191,6 +194,168 @@ export const FAEHIGKEIT_ART: Record<EnemySkillDef['effectType'], string> = {
   summon: 'Beschwörung',
   drain_air: 'Luftraub',
 };
+
+/** Runden, die ein Kampf höchstens dauert (ohne Eilmarsch): processCombat 20, processFortificationCombat 30 */
+const KAMPF_RUNDEN = 20;
+const BELAGERUNG_RUNDEN = 30;
+
+/**
+ * Wo ein Gegner kämpft: im Kampf um eine Befestigung (Belagerungsraum, Typ 'fortification',
+ * processFortificationCombat, bis Runde 30) und in gewöhnlichen Räumen (Kampf- und Bossräume,
+ * processCombat, bis Runde 20).
+ */
+export interface KampfRaeume {
+  befestigung: boolean;
+  gewoehnlich: boolean;
+}
+
+/** In welchen Räumen der Routen der Gegner steht (aus ROUTE_DEFS) */
+export function kampfRaeume(id: string): KampfRaeume {
+  const raeume = Object.values(ROUTE_DEFS).flatMap(route => route.encounters).filter(enc => enc.enemies?.includes(id));
+  return {
+    befestigung: raeume.some(enc => enc.type === 'fortification'),
+    gewoehnlich: raeume.some(enc => enc.type !== 'fortification'),
+  };
+}
+
+/** So lange kann ein Kampf mit dem Gegner dauern: in einem Belagerungsraum 30 Runden, sonst 20 */
+export function kampfRunden(id: string): number {
+  return kampfRaeume(id).befestigung ? BELAGERUNG_RUNDEN : KAMPF_RUNDEN;
+}
+
+/**
+ * In welchen Runden ein Gegner jede seiner Fähigkeiten einsetzt, solange er keinen Zug aussetzt.
+ * Regel aus processCombat: In jedem Zug geht er seine Fähigkeiten der Reihe nach durch. Eine mit
+ * Abklingzeit zählt eins herunter und wird übersprungen, auch in dem Zug, in dem sie auf 0 fällt;
+ * die erste bereite setzt er ein, die Fähigkeiten danach zählen in diesem Zug nicht. Mit
+ * Abklingzeit N kommt eine Fähigkeit also frühestens N + 1 Runden später wieder, die zweite und
+ * dritte oft noch später. processFortificationCombat zählt gleich für Schaden, Fläche, Heilung und
+ * Stärkung, andere Fähigkeiten haben die Gegner der Belagerungsräume nicht. Der Test vergleicht jeden
+ * erreichbaren Gegner mit processCombat, die aus Belagerungsräumen auch mit processFortificationCombat.
+ */
+export function einsatzRunden(skills: EnemySkillDef[], runden = KAMPF_RUNDEN): number[][] {
+  const abklingen = skills.map(() => 0);
+  const einsaetze: number[][] = skills.map(() => []);
+  for (let runde = 1; runde <= runden; runde++) {
+    for (let i = 0; i < skills.length; i++) {
+      if (abklingen[i] > 0) {
+        abklingen[i]--;
+        continue;
+      }
+      einsaetze[i].push(runde);
+      abklingen[i] = skills[i].cooldown;
+      break;
+    }
+  }
+  return einsaetze;
+}
+
+/** Die Einsätze je Fähigkeit fürs Detailfenster (einsatzPlanFuer) */
+export interface EinsatzPlan {
+  runden: number[][];
+  belagerung: number[][];
+  bis: number;
+}
+
+/**
+ * Die Einsätze fürs Detailfenster, für einen Gegner, der in diesen Räumen kämpft. `runden` erlebt jeder Kampf
+ * des Gegners. Kämpft er um eine Befestigung (bis Runde `bis` = 30) und auch in gewöhnlichen Räumen (bis
+ * Runde 20), stehen seine Einsätze nach Runde 20 getrennt in `belagerung`; ein Einsatz in Runde 20 gehört zu
+ * `runden`. Sonst ist `belagerung` leer, und `runden` geht bis zum Ende seiner Kämpfe: bei Kämpfen nur um
+ * Befestigungen bis Runde 30. Ohne ausgesetzten Zug gerechnet wie `einsatzRunden`.
+ */
+export function einsatzPlanFuer(skills: EnemySkillDef[], raeume: KampfRaeume): EinsatzPlan {
+  const bis = raeume.befestigung ? BELAGERUNG_RUNDEN : KAMPF_RUNDEN;
+  const alle = einsatzRunden(skills, bis);
+  if (!raeume.befestigung || !raeume.gewoehnlich) return { runden: alle, belagerung: skills.map(() => []), bis };
+  return {
+    runden: alle.map(r => r.filter(runde => runde <= KAMPF_RUNDEN)),
+    belagerung: alle.map(r => r.filter(runde => runde > KAMPF_RUNDEN)),
+    bis,
+  };
+}
+
+/** Die Einsätze eines Gegners in den Räumen, in denen er kämpft (kampfRaeume) */
+export function einsatzPlan(id: string, skills: EnemySkillDef[]): EinsatzPlan {
+  return einsatzPlanFuer(skills, kampfRaeume(id));
+}
+
+/**
+ * Der Satz zu den Einsätzen einer Fähigkeit (aus einsatzPlan): «Einsatz in Runde 1, 5, 9 …» bzw. «Einsatz in
+ * Runde 3 und 14.» (ohne ausgesetzten Zug, bis zur letzten Kampfrunde). `belagerung` sind Einsätze, die nur der
+ * Kampf um eine Befestigung erlebt (bis Runde `bis`). Sie bekommen einen eigenen Satz, wo die Liste sonst
+ * vollständig aussieht; nach «…» geht es ohnehin weiter. Das Spiel nennt ganze Dungeons «Belagerung» (Karte,
+ * Expeditionen), darum heisst der Raum hier «Kampf um eine Befestigung», wie er im Kampf mit 🏰 und ihrem
+ * Namen erscheint (Stadtmauer, Wehrturm, Bergfried …).
+ */
+export function rundenText(runden: number[], belagerung: number[] = [], bis = BELAGERUNG_RUNDEN): string {
+  const liste = (r: number[]) => r.length === 1 ? `${r[0]}` : `${r.slice(0, -1).join(', ')} und ${r[r.length - 1]}`;
+  if (runden.length > 3) return `Einsatz in Runde ${runden.slice(0, 3).join(', ')} …`;
+  if (runden.length === 0) {
+    return belagerung.length ? `Einsatz nur im Kampf um eine Befestigung (bis Runde ${bis}): Runde ${liste(belagerung)}.` : '';
+  }
+  const spaeter = belagerung.length ? ` Im Kampf um eine Befestigung (bis Runde ${bis}) auch in Runde ${liste(belagerung)}.` : '';
+  return `Einsatz in Runde ${liste(runden)}.${spaeter}`;
+}
+
+/** Luft, die eine Luftraub-Fähigkeit nimmt: die Tabelle in processCombat, sonst ihre Stärke */
+const LUFTRAUB: Record<string, number> = { luftsauger: 10, blasenstoss: 8 };
+
+/** Kämpft der Gegner immer allein (jeder Raum mit ihm hat nur ihn)? Dann heilt seine Heilung nur ihn. */
+function kaempftAllein(id: string): boolean {
+  return Object.values(ROUTE_DEFS).every(route =>
+    route.encounters.every(enc => !enc.enemies?.includes(id) || enc.enemies.length === 1));
+}
+
+/**
+ * Was eine Fähigkeit im Kampf tut, nach der Regel in processCombat und nicht nach ihrer Beschreibung
+ * in enemies.ts: Die verspricht bei Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei
+ * Beschwörung Verstärkung. Heilung heilt den Gegner mit den wenigsten Leben, Stärkung und
+ * Beschwörung geben immer dem Anwender Angriff (3 bzw. 4 Runden). Schaden trifft auch im
+ * Belagerungsraum Helden und nie die Kriegsmaschine: enemyToCombatUnit übernimmt
+ * prefersWarMachineTarget nicht. Der Test prüft das am Kampfprotokoll, mit und ohne Katapult.
+ */
+export function faehigkeitText(id: string, sk: EnemySkillDef): string {
+  const zahl = (n: number) => n.toLocaleString('de');
+  // Stärke 1 ist genau der Schaden eines normalen Angriffs, sonst ein Vielfaches davon
+  const wucht = sk.power === 1
+    ? 'mit dem Schaden eines normalen Angriffs'
+    : `mit dem ${zahl(sk.power)}-fachen Schaden eines normalen Angriffs`;
+  switch (sk.effectType) {
+    case 'damage':
+      return `Trifft ${sk.target === 'all_players' ? 'alle Helden' : 'einen Helden'} ${wucht}.`;
+    case 'aoe':
+      // Kein Wort zu drainAirAmount (Druckwelle des Leviathans): enemyToCombatUnit übernimmt das Feld
+      // nicht, im Kampf nimmt die Fähigkeit darum keine Luft. Der Test prüft Luft in beide Richtungen.
+      return `Trifft alle Helden ${wucht}.`;
+    case 'heal':
+      return kaempftAllein(id)
+        ? `Heilt sich um ${zahl(sk.power)} Leben.`
+        : `Heilt den Verbündeten mit den wenigsten Leben um ${zahl(sk.power)}, auch sich selbst.`;
+    case 'buff':
+      return `Gibt sich selbst ${zahl(sk.power)} Angriff mehr, 3 Runden lang.`;
+    case 'summon':
+      return `Ruft niemanden herbei, sondern gibt sich selbst ${zahl(sk.power)} Angriff mehr, 4 Runden lang.`;
+    case 'drain_air':
+      return `Zieht ${zahl(LUFTRAUB[sk.id] ?? sk.power)} Luft aus dem Luftschild, ohne Schaden.`;
+  }
+}
+
+/**
+ * Wahlen unterwegs, welche die Wut des Bosses vorziehen (EncounterChoice.bossWutFrueher, die
+ * Sonnenuhr im Morgentor): je Dungeon, in dem der Gegner der Boss ist, die früheste Wut-Runde,
+ * wenn jede solche Wahl genommen wird (wie CombatEngine.wutAbRunde, nie vor Runde 1).
+ */
+export function wutVorziehbar(id: string): { routeId: string; name: string; abRunde: number }[] {
+  const wut = ENEMY_DEFS[id]?.enrage;
+  if (!wut) return [];
+  return Object.values(ROUTE_DEFS).flatMap(route => {
+    if (route.bossId !== id) return [];
+    const frueher = route.encounters.reduce((summe, enc) =>
+      summe + (enc.wahl ? Math.max(enc.wahl.a.bossWutFrueher ?? 0, enc.wahl.b.bossWutFrueher ?? 0) : 0), 0);
+    return frueher > 0 ? [{ routeId: route.id, name: route.name, abRunde: Math.max(1, wut.afterRound - frueher) }] : [];
+  });
+}
 
 // ─── Seitenprämien ──────────────────────────────────────────────
 

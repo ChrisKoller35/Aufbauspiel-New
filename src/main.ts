@@ -187,22 +187,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // ─── Keyboard Shortcuts ──────────────────────────────────────
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
+    // F5 speichert statt neu zu laden, auch in einem Eingabefeld (Suche im Fundbuch, Auswahl im Gildenhaus)
+    if (e.key === 'F5') {
+      e.preventDefault();
+      saveSystem.save(state);
+      console.log('Game saved.');
+      return;
+    }
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
 
     // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben).
-    // Ist ein Fenster offen (Händler, Gebäude, Stadtweg, Spielstand), fängt dessen Hörer in der
+    // Ist ein Fenster offen (Händler, Gebäude, Stadtweg, Spielstand, Fundbuch), fängt dessen Hörer in der
     // Capture-Phase die Taste vorher ab (FensterHilfen.fensterTaste): Escape schliesst dann nur das Fenster.
     switch (e.key.toUpperCase()) {
       case 'K': navigateTo('bestiarium'); break;
       case 'A': navigateTo('achievements'); break;
       case 'G': navigateTo('gildenhaus'); break;
       case 'ESCAPE': navigateTo('main'); break;
-    }
-
-    if (e.key === 'F5') {
-      e.preventDefault();
-      saveSystem.save(state);
-      console.log('Game saved.');
     }
   });
 

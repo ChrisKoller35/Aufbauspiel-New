@@ -102,7 +102,7 @@ describe('Stadtweg: aufsteigen', () => {
     const state = createNewGameState();
     state.stadtweg!.stufe = 2;
     const zeile = () => aufstiegStand(state)!.aufgaben.find(a => a.text.includes('Helden'))!;
-    expect(zeile()).toMatchObject({ text: '2 Helden in der Gilde', erledigt: false, ist: 0, soll: 2 });
+    expect(zeile()).toMatchObject({ text: '2\u00a0Helden in der Gilde', erledigt: false, ist: 0, soll: 2 });
     helden(state, 1);
     expect(zeile()).toMatchObject({ erledigt: false, ist: 1, soll: 2 });
     helden(state, 3);

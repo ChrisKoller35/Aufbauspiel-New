@@ -1,10 +1,13 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { CLASS_DEFS } from '../src/data/classes';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter, GuildFighter } from '../src/models/GuildRoster';
 import {
-  awardXP, totalXpForLevel, ueberschuss, LEVEL_BONUSES, MAX_HERO_LEVEL,
+  awardXP, totalXpForLevel, ueberschuss, werteAufStufe, DEFAULT_BONUS, LEVEL_BONUSES, MAX_HERO_LEVEL,
 } from '../src/systems/HeroProgression';
+import { MUSTER_TEAMS, musterWerte } from '../src/data/musterteams';
+import { musterStand } from '../src/systems/Musterlauf';
+import { richteProbespielEin } from '../src/systems/Probespiel';
 import {
   lehrbuchLernen, lehrbuchVorschau, stufeBeiXp, trainieren, trainingsKosten, trainingsXp,
 } from '../src/systems/Ausbildung';
@@ -143,18 +146,20 @@ describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
     return f;
   }
 
-  // Leben / Angriff / Verteidigung / Krit / Tempo auf Stufe 15
+  // Leben / Angriff / Verteidigung / Krit / Tempo auf Stufe 15. «nachher» mit den Klassen-Boni seit
+  // der Eichung vom 23.10.2026 (Spalte «Training nachher»; dieselben Werte im Abschnitt «Eichung nach
+  // dem Umbau», Spalte «Stufe 15 seit 23.10.»).
   const TABELLE: Record<string, { vorher: number[]; nachher: number[] }> = {
-    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [126, 8.2, 10, 0.05, 0.8] },
-    ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 16.4, 2.4, 0.29, 1.2] },
-    cleric:      { vorher: [83, 17, 15.5, 0.05, 0.9], nachher: [97, 5.8, 5.7, 0.05, 1.18] },
-    berserker:   { vorher: [112, 21, 16, 0.12, 1.1],  nachher: [126, 14, 4.8, 0.12, 1.1] },
-    assassin:    { vorher: [82, 22, 14, 0.2, 1.4],    nachher: [82, 16.4, 1.4, 0.34, 1.4] },
-    paladin:     { vorher: [68, 18, 16.5, 0.05, 0.9], nachher: [96, 8.2, 8.1, 0.05, 0.9] },
-    bard:        { vorher: [88, 17, 15, 0.05, 1.1],   nachher: [88, 5.8, 3.8, 0.05, 1.38] },
-    witch:       { vorher: [85, 19, 14, 0.08, 1.2],   nachher: [85, 10.6, 1.4, 0.22, 1.2] },
-    necromancer: { vorher: [88, 18, 15, 0.05, 1],     nachher: [88, 9.3, 3.8, 0.05, 1] },
-    druid:       { vorher: [103, 18, 16, 0.06, 1],    nachher: [117, 8.2, 6.2, 0.06, 1.14] },
+    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [112, 12.4, 12.8, 0.05, 0.8] },
+    ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 19.2, 8, 0.29, 1.2] },
+    cleric:      { vorher: [83, 17, 15.5, 0.05, 0.9], nachher: [97, 11.4, 9.9, 0.05, 1.18] },
+    berserker:   { vorher: [112, 21, 16, 0.12, 1.1],  nachher: [126, 16.8, 10.4, 0.12, 1.1] },
+    assassin:    { vorher: [82, 22, 14, 0.2, 1.4],    nachher: [82, 19.2, 7, 0.34, 1.4] },
+    paladin:     { vorher: [68, 18, 16.5, 0.05, 0.9], nachher: [82, 12.4, 12.3, 0.05, 0.9] },
+    bard:        { vorher: [88, 17, 15, 0.05, 1.1],   nachher: [88, 11.4, 9.4, 0.05, 1.38] },
+    witch:       { vorher: [85, 19, 14, 0.08, 1.2],   nachher: [85, 14.8, 7, 0.22, 1.2] },
+    necromancer: { vorher: [88, 18, 15, 0.05, 1],     nachher: [88, 12.4, 9.4, 0.05, 1] },
+    druid:       { vorher: [103, 18, 16, 0.06, 1],    nachher: [117, 12.4, 10.4, 0.06, 1.14] },
   };
 
   test('deckt alle Klassen ab', () => {
@@ -174,6 +179,54 @@ describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
       expect(werte(neu)).toEqual(nachher);
     });
   }
+});
+
+describe('Musterteams der Eichung haben die Werte echter Helden (docs/AUSBILDUNG.md, «Eichung nach dem Umbau»)', () => {
+  // Bis zum 23.10.2026 rechnete musterWerte mit dem alten Training und lag für jeden echten Helden
+  // ausser Reichweite. Diese Tests halten Eichung, Probespiel und Spiel auf demselben Weg.
+  for (const classId of Object.keys(CLASS_DEFS)) {
+    test(`${classId}: musterWerte auf Stufe 1 bis 15 = Werte nach awardXP`, () => {
+      for (let stufe = 1; stufe <= MAX_HERO_LEVEL; stufe++) {
+        const echt = neuerHeld(classId);
+        awardXP(echt, totalXpForLevel(stufe));
+        expect(echt.level).toBe(stufe);
+        expect(musterWerte({ classId, name: 'Muster', stufe, gear: echt.gear }), `Stufe ${stufe}`).toEqual(echt.baseStats);
+      }
+    });
+  }
+
+  test('Musterlauf und Probespiel (?probe, ?probe=sterne, =mond, =morgen) starten mit genau diesen Werten', () => {
+    const echt = (classId: string, stufe: number) => {
+      const f = neuerHeld(classId);
+      awardXP(f, totalXpForLevel(stufe));
+      return f.baseStats;
+    };
+    for (const team of Object.keys(MUSTER_TEAMS) as (keyof typeof MUSTER_TEAMS)[]) {
+      const { state } = musterStand(team, 7919);
+      for (const held of state.fighters) expect(held.baseStats, `${team} ${held.name}`).toEqual(echt(held.classId, held.level));
+    }
+    for (const stufe of ['neu', 'sterne', 'mond', 'morgen'] as const) {
+      const state = createNewGameState();
+      richteProbespielEin(state, stufe);
+      expect(state.fighters.map(f => f.level)).toEqual(stufe === 'neu' ? [12, 12, 12, 12] : [15, 15, 15, 15]);
+      for (const held of state.fighters) expect(held.baseStats, `${stufe} ${held.name}`).toEqual(echt(held.classId, held.level));
+    }
+  });
+
+  test('Klassen-Boni auf dem Raster: Leben ganz, Angriff und Verteidigung auf 0,1, kein Drift beim Runden', () => {
+    const aufRaster = (wert: number, raster: number) => Math.abs(wert / raster - Math.round(wert / raster)) < 1e-9;
+    for (const [classId, bonus] of [...Object.entries(LEVEL_BONUSES), ['unbekannt', DEFAULT_BONUS] as const]) {
+      expect(aufRaster(bonus.hp ?? 0, 1), `${classId} Leben`).toBe(true);
+      expect(aufRaster(bonus.atk ?? 0, 0.1), `${classId} Angriff`).toBe(true);
+      expect(aufRaster(bonus.def ?? 0, 0.1), `${classId} Verteidigung`).toBe(true);
+      // 14 Aufstiege ergeben genau 14 × den Bonus, applyLevelBonus rundet also nichts weg und nichts dazu
+      const grund = CLASS_DEFS[classId]?.baseStats ?? CLASS_DEFS.guardian.baseStats;
+      const werte = werteAufStufe(classId, grund, MAX_HERO_LEVEL);
+      expect(werte.maxHp).toBe(grund.maxHp + 14 * (bonus.hp ?? 0));
+      expect(werte.atk).toBeCloseTo(grund.atk + 14 * (bonus.atk ?? 0), 9);
+      expect(werte.def).toBeCloseTo(grund.def + 14 * (bonus.def ?? 0), 9);
+    }
+  });
 });
 
 describe('Keine verlorenen XP auf Stufe 15', () => {
@@ -302,6 +355,179 @@ describe('Lehrbuch', () => {
     state.fighters.push(neuerHeld('guardian'), neuerHeld('cleric'));
     expect(lehrbuchHtml(state)).toBe('');
   });
+
+  test('ohne Aufstieg: «bleibt auf Stufe 5 (noch 74 XP bis Stufe 6)» statt «Stufe 5 auf 5»', () => {
+    const { state, schueler } = klasse(36);
+    awardXP(schueler, totalXpForLevel(5));
+    // Von Stufe 5 auf 6 braucht es 110 XP, nach 36 fehlen noch 74
+    const html = lehrbuchHtml(state);
+    expect(html).toContain('+36 XP → bleibt auf Stufe 5 (noch 74 XP bis Stufe 6)');
+    expect(html).not.toContain('Stufe 5 auf 5');
+  });
+
+  test('fehlen einem Helden die XP (NaN), wandert nichts; die Vorschau fällt nie unter die Stufe', () => {
+    const { state, lehrer, schueler } = klasse(500);
+    lehrer.xp = NaN;
+    expect(lehrbuchVorschau(lehrer, schueler)).toBeNull();
+    lehrer.xp = totalXpForLevel(15) + 500;
+    schueler.xp = NaN;
+    expect(lehrbuchVorschau(lehrer, schueler)).toBeNull();
+    // Stufe 9 mit zu wenig XP (älterer Stand): 500 XP reichen nach den XP nur bis Stufe 7, awardXP senkt aber nie
+    schueler.level = 9;
+    schueler.xp = 0;
+    expect(lehrbuchVorschau(lehrer, schueler)).toEqual({ xp: 500, vonStufe: 9, nachStufe: 9 });
+    expect(lehrbuchLernen(state, lehrer.id, schueler.id)).toMatchObject({ xp: 500, vonStufe: 9, nachStufe: 9 });
+  });
+});
+
+describe('Lehrbuch im Reiter: Wahl und Sperre nach «Lernen»', () => {
+  /** Ein Knopf aus dem HTML des Lehrbuchs: klick() ruft die Hörer auf, die bindLehrbuch anhängt */
+  interface Knopf {
+    sel: string; id?: string; disabled: boolean; dataset: Record<string, string>; hoerer: (() => void)[];
+    addEventListener: (typ: string, f: () => void) => void;
+  }
+  /** window wie im Browser: Node meldet einen Hörer mit «true» (Capture) sonst nicht ab */
+  class Fenster extends EventTarget {
+    removeEventListener(typ: string, f: EventListenerOrEventListenerObject | null, o?: boolean | EventListenerOptions): void {
+      super.removeEventListener(typ, f, typeof o === 'boolean' ? { capture: o } : o);
+    }
+  }
+  let fenster: Fenster;
+  let gespeichert = 0;
+
+  beforeEach(() => {
+    vi.useFakeTimers();
+    fenster = new Fenster();
+    gespeichert = 0;
+    fenster.addEventListener('mc:speichern', () => { gespeichert++; });
+    vi.stubGlobal('window', fenster);
+    // Ohne Heldenseite gibt es nach dem Neuzeichnen nichts zu scrollen und zu fokussieren
+    vi.stubGlobal('document', { scrollingElement: null, getElementById: () => null });
+  });
+  afterEach(() => {
+    vi.runAllTimers();
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** Das Lehrbuch ohne Browser, frisch geladen (Wahl und Sperre stehen im Modul), neu gezeichnet wie in HeroesScreen */
+  async function lehrbuch(state: GameState) {
+    vi.resetModules();
+    const lb = await import('../src/ui/components/Lehrbuch');
+    const seite = { html: '', knoepfe: [] as Knopf[] };
+    const el = {
+      scrollTop: 0,
+      querySelectorAll: (sel: string) => seite.knoepfe.filter(k => k.sel === sel),
+      querySelector: (sel: string) => seite.knoepfe.find(k => k.sel === sel) ?? null,
+    };
+    const zeichnen = (): void => {
+      seite.html = lb.lehrbuchHtml(state);
+      seite.knoepfe = [...seite.html.matchAll(/<button[^>]*data-lb-(lehrer|schueler|lernen)(?:="(\d+)")?[^>]*>/g)]
+        .map(([tag, rolle, id]): Knopf => {
+          const hoerer: (() => void)[] = [];
+          const dataset: Record<string, string> = rolle === 'lehrer' ? { lbLehrer: id } : rolle === 'schueler' ? { lbSchueler: id } : {};
+          return {
+            sel: `[data-lb-${rolle}]`, id, disabled: tag.includes(' disabled'), dataset, hoerer,
+            addEventListener: (_typ: string, f: () => void) => { hoerer.push(f); },
+          };
+        });
+      lb.bindLehrbuch(el as unknown as HTMLElement, state, zeichnen);
+    };
+    zeichnen();
+    /** Wie ein Klick im Browser: ein gesperrter Knopf nimmt ihn nicht an */
+    const klick = (sel: string, id?: number): void => {
+      const knopf = seite.knoepfe.find(k => k.sel === sel && (id === undefined || k.id === String(id)));
+      if (!knopf) throw new Error(`Kein Knopf ${sel} ${id ?? ''}`);
+      if (!knopf.disabled) knopf.hoerer.forEach(f => f());
+    };
+    return { seite, klick };
+  }
+
+  /** Ein Druck auf die Seite: true, wenn er den Fokus nicht wegnehmen darf */
+  function druckVerhindert(): boolean {
+    const e = new Event('pointerdown', { cancelable: true });
+    fenster.dispatchEvent(e);
+    return e.defaultPrevented;
+  }
+
+  test('hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle', async () => {
+    const state = createNewGameState();
+    const guardian = meister('guardian');
+    awardXP(guardian, 3000);
+    const ranger = neuerHeld('ranger');
+    awardXP(ranger, totalXpForLevel(14) + 10);
+    const cleric = neuerHeld('cleric');
+    awardXP(cleric, totalXpForLevel(3));
+    state.fighters.push(guardian, ranger, cleric);
+    const { seite, klick } = await lehrbuch(state);
+
+    // Ohne eigene Wahl ist der schwächste Schüler gewählt
+    expect(seite.html).toContain(`class="lb-wahl gewaehlt" data-lb-schueler="${cleric.id}"`);
+    klick('[data-lb-schueler]', ranger.id);
+    expect(seite.html).toContain('+280 XP → Stufe 14 auf 15');
+
+    klick('[data-lb-lernen]');
+    expect(ranger.level).toBe(15);
+    expect(gespeichert).toBe(1);
+    expect(seite.html).toContain('Ranger lernt von Guardian: +280 XP, Stufe 14 auf 15.');
+    // Kein Schüler gewählt, «Lernen» aus, bis der Spieler wählt; auch nach der Sperre
+    expect(seite.html).toContain('Wähle den nächsten Schüler.');
+    expect(seite.html).not.toContain('lb-wahl gewaehlt" data-lb-schueler');
+    expect(seite.html).toContain('data-lb-lernen disabled');
+    expect(druckVerhindert()).toBe(true);
+    vi.advanceTimersByTime(600);
+    expect(druckVerhindert()).toBe(false);
+    klick('[data-lb-lernen]');
+    expect(cleric.xp).toBe(totalXpForLevel(3));
+
+    klick('[data-lb-schueler]', cleric.id);
+    expect(seite.html).toContain('+2160 XP → Stufe 3 auf 15');
+    expect(seite.html).not.toContain('data-lb-lernen disabled');
+  });
+
+  test('ist auch der Überschuss des Lehrers aufgebraucht, sagt die Vorschau das statt «Wähle …»', async () => {
+    const state = createNewGameState();
+    const guardian = meister('guardian');
+    awardXP(guardian, 280);
+    const ranger = neuerHeld('ranger');
+    awardXP(ranger, totalXpForLevel(14) + 10);
+    state.fighters.push(guardian, ranger, neuerHeld('cleric'));
+    const { seite, klick } = await lehrbuch(state);
+
+    klick('[data-lb-schueler]', ranger.id);
+    klick('[data-lb-lernen]');
+    expect(ranger.level).toBe(15);
+    expect(seite.html).toContain('Guardian hat noch keinen Überschuss.');
+    expect(seite.html).not.toContain('Wähle den nächsten Schüler.');
+    expect(seite.html).toContain('data-lb-lernen disabled');
+  });
+
+  test('0,6 s nach «Lernen» nimmt es keinen Klick an; ohne eigene Wahl folgt der nächste schwächste Schüler', async () => {
+    const state = createNewGameState();
+    const guardian = meister('guardian');
+    awardXP(guardian, 3000);
+    const cleric = neuerHeld('cleric');
+    awardXP(cleric, totalXpForLevel(3));
+    const assassine = neuerHeld('assassin');
+    awardXP(assassine, totalXpForLevel(6));
+    state.fighters.push(guardian, cleric, assassine);
+    const { seite, klick } = await lehrbuch(state);
+
+    klick('[data-lb-lernen]');
+    expect(cleric.level).toBe(15);
+    expect(seite.html).toContain(`class="lb-wahl gewaehlt" data-lb-schueler="${assassine.id}"`);
+    // Der zweite Klick eines Doppelklicks verschiebt nichts und wählt keinen anderen Lehrer
+    klick('[data-lb-lernen]');
+    klick('[data-lb-lehrer]', cleric.id);
+    expect(assassine.xp).toBe(totalXpForLevel(6));
+    expect(seite.html).toContain(`class="lb-wahl gewaehlt" data-lb-lehrer="${guardian.id}"`);
+
+    vi.advanceTimersByTime(600);
+    klick('[data-lb-lernen]');
+    expect(assassine.xp).toBe(totalXpForLevel(6) + 840);
+    expect(ueberschuss(guardian)).toBe(0);
+    expect(gespeichert).toBe(2);
+  });
 });
 
 /** Ein Lauf wie aufbrechen (ExpeditionFlow.ts), Raum für Raum wie playRoute (expeditionProgress.test.ts) */
@@ -420,6 +646,25 @@ describe('Klassen-Tafel', () => {
     expect(html).toContain('von Anfang an');
     expect(html).toContain('10 gewonnene Expeditionen: 0/10');
     expect(html).toContain(`${STARTING_CLASSES.length} von ${Object.keys(CLASS_DEFS).length} Klassen freigeschaltet`);
+    expect(html).toContain(`Anheuern kostet jetzt ${anheuerKosten(1)} Gold`);
+  });
+
+  test('Startklassen tragen «von Anfang an» auch in der Gilde; ohne freie Klasse nennt die Kopfzeile keinen Preis', () => {
+    const state = createNewGameState();
+    state.fighters.push(...STARTING_CLASSES.map(id => neuerHeld(id)));
+    const karte = (html: string, id: string) => html.split('<article').find(k => k.includes(`data-kt-klasse="${id}"`)) ?? '';
+    const alle = Object.keys(CLASS_DEFS);
+    let html = klassenTafelHtml(state, () => '');
+    for (const id of STARTING_CLASSES) expect(karte(html, id), id).toContain('von Anfang an · ✓ Schon in deiner Gilde');
+    expect(html).toContain(`${STARTING_CLASSES.length} von ${alle.length} Klassen freigeschaltet · Alle freien Klassen sind schon in deiner Gilde`);
+    expect(html).not.toContain('Anheuern kostet');
+
+    state.classesUnlocked = [...alle];
+    state.fighters.push(...alle.filter(id => !STARTING_CLASSES.includes(id)).map(id => neuerHeld(id)));
+    html = klassenTafelHtml(state, () => '');
+    expect(html).toContain(`${alle.length} von ${alle.length} Klassen freigeschaltet · Alle Klassen sind schon in deiner Gilde`);
+    expect(html).not.toContain('Anheuern kostet');
+    expect(karte(html, 'berserker')).toContain('<p class="kt-hinweis">✓ Schon in deiner Gilde</p>');
   });
 
   /** Für jede gesperrte Klasse: fortschritt «fertig» ⇔ checkUnlocks schaltet sie frei */

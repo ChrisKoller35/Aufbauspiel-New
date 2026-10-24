@@ -9,6 +9,7 @@ import { GuildFighter } from '../../models/GuildRoster';
 import { WegWirkung, WegWirkungArt } from '../../models/ExpeditionRun';
 import { MEISTER_AB_STUFE, SpezialisierungDef, WEG_AB_STUFE, wegeDerKlasse } from '../../data/spezialisierungen';
 import { istMeister, kannWegWaehlen, wegVon } from '../../systems/Spezialisierung';
+import { escapeAttr } from './SchmiedeAnzeige';
 
 /** Bilanz in Worten, in dieser Reihenfolge: «1.240 Schaden, 380 Leben geheilt» (`eins`: genau 1, Einzahl) */
 const WIRKUNG: [WegWirkungArt, (zahl: string, eins: boolean) => string][] = [
@@ -99,12 +100,12 @@ export function wegBereichHtml(fighter: GuildFighter, bestaetigen: string | null
          </div>`
       : `<button class="weg-knopf" data-weg-waehlen="${w.id}">${w.name} wählen</button>`))).join('');
     inhalt = `
-      <div class="hdm2-weg-hinweis neu">${fighter.name} kann jetzt einen Weg wählen. Die Wahl gilt für immer.</div>
+      <div class="hdm2-weg-hinweis neu">${escapeAttr(fighter.name)} kann jetzt einen Weg wählen. Die Wahl gilt für immer.</div>
       <div class="hdm2-weg-karten">${karten}</div>`;
   } else {
     const noch = WEG_AB_STUFE - fighter.level;
     inhalt = `
-      <div class="hdm2-weg-hinweis">Ab Stufe ${WEG_AB_STUFE} wählt ${fighter.name} einen dieser Wege (noch ${noch} ${noch === 1 ? 'Stufe' : 'Stufen'}).</div>
+      <div class="hdm2-weg-hinweis">Ab Stufe ${WEG_AB_STUFE} wählt ${escapeAttr(fighter.name)} einen dieser Wege (noch ${noch} ${noch === 1 ? 'Stufe' : 'Stufen'}).</div>
       <div class="hdm2-weg-karten">${wege.map(w => karte(w, 'vorschau', meisterZeile(w, false))).join('')}</div>`;
   }
   return `

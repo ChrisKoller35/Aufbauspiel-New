@@ -70,20 +70,21 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
   Innerhalb eines Gebiets zählt jeder Dungeon: Glutkern fällt in allen vier Feuer-Dungeons, die leichteren
   bringen je Sieg etwas weniger und sind kürzer. Nur im Dungeon des Sets fallen aber Teile zum Einschmelzen.
 - **Spürbar:** Die Stufen machen viel aus. Das Musterteam «Gut» in den Sets aus Ebene 4 schafft das
-  Himmelsarchiv ohne Stufen in 32 % der Läufe, mit allen Teilen auf +1 in 62 % und auf +2 in 99 %
-  (vorsichtig, 200 Läufe, 21.10.2026 nach der Eichung der Wege; in der Gegenprüfung am 20.10., vor Manager
-  #43 und #44 und mit stärkeren Gegnern: nie, 25, 48 und auf +3 93 %). Dafür braucht es aber 120 Grundmengen,
-  je nach Einschmelzen 60 bis 120 Siege in vier verschiedenen Dungeons.
+  Himmelsarchiv ohne Stufen in 36 % der Läufe, mit allen Teilen auf +1 in 74 % und auf +2 in 97 %
+  (vorsichtig, 200 Läufe, 23.10.2026 mit den Werten echter Helden; am 21.10. nach der Eichung der Wege 32, 62
+  und 99 %; in der Gegenprüfung am 20.10., vor Manager #43 und #44 und mit stärkeren Gegnern: nie, 25, 48 und
+  auf +3 93 %). Dafür braucht es aber 120 Grundmengen, je nach Einschmelzen 60 bis 120 Siege in vier
+  verschiedenen Dungeons.
 - **Zwischen den Sternen ist die Schmiede Pflicht:** Ohne Stufen schafft das Musterteam «Stark» die
   Sternenschmiede nie, mit allen Teilen auf +3 in vier von fünf Läufen, auf +5 immer. Den Sternenschlund
-  schafft es mit Korrunds Meisterstücken auf +4 ab und zu (16 % vorsichtig), auf +5 fast immer (92 %; 200 Läufe, Tabelle in
-  `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Ein Set aus den Sternen auf +5 kostet 810 bis 900
-  Sternenstahl, 13'000 bis 15'000 Gold (ohne Rabatt der Schmiede in der Stadt) und 63 Kristallsplitter:
-  das lange Ziel ganz oben.
+  schafft es mit Korrunds Meisterstücken auf +4 ab und zu (16 % vorsichtig), auf +5 fast immer (91 %; 200 Läufe,
+  Stand 23.10.2026, Tabelle in `docs/NEUE-DUNGEONS.md`, «Zwischen den Sternen»). Ein Set aus den Sternen auf +5
+  kostet 810 bis 900 Sternenstahl, 13'000 bis 15'000 Gold (ohne Rabatt der Schmiede in der Stadt) und 63
+  Kristallsplitter: das lange Ziel ganz oben.
 - **Im Mondlicht zählt die Stufe des Schlüssel-Sets:** Den Mondhof schafft «Stark» mit dem Schlund-Set auf
-  +2 fast nie (1 %), auf +4 jeden dritten Lauf, auf +5 drei von vier (vorsichtig, 1000 bzw. 300 Läufe,
-  `docs/NEUE-DUNGEONS.md`, «Im Mondlicht»). Am Morgentor ist es das Pfand des Mondvogts selbst, nicht seine
-  Stufe: auf +2 61 %, auf +3 62 %, auf +5 69 %.
+  +2 fast nie (1 %), auf +4 jeden fünften Lauf, auf +5 zwei von drei (vorsichtig, 1000 bzw. 300 Läufe, Stand
+  23.10.2026; am 22.10. jeden dritten und drei von vier; `docs/NEUE-DUNGEONS.md`, «Im Mondlicht»). Am Morgentor
+  ist es das Pfand des Mondvogts selbst, nicht seine Stufe: auf +2 60 %, auf +3 62 %, auf +5 69 %.
 
 ## Material je Gebiet
 

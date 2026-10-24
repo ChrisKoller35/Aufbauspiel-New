@@ -222,7 +222,7 @@ function buildTeamHTML(): string {
         <div class="exp-slot exp-slot-filled hcard-img" data-slot="${i}" style="${bgStyle}">
           ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
           <div class="hcard-overlay">
-            <div class="hc-nm">${hero.name}</div>
+            <div class="hc-nm">${escapeAttr(hero.name)}</div>
             <span class="hc-lv">Lv ${hero.level}</span>
             <div class="hc-st">
               <span>\u2694${hero.baseStats.atk}</span>
@@ -251,7 +251,7 @@ function buildTeamHTML(): string {
       <div class="hsm hcard-img" data-hero-id="${f.id}" style="${bgStyle}">
         ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
         <div class="hcard-overlay">
-          <div class="hc-nm">${f.name}</div>
+          <div class="hc-nm">${escapeAttr(f.name)}</div>
           <div class="hsm-meta">${clsName} Lv${f.level}</div>
           <div class="hc-st">
             <span>\u2694${f.baseStats.atk}</span>

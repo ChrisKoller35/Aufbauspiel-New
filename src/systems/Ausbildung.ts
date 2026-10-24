@@ -40,7 +40,7 @@ export function trainieren(state: GameState, fighter: GuildFighter): TrainingsEr
   return { ok: true, kosten, xp, levelUps, neueKlassen };
 }
 
-/** «Stufe 15 · 1240 XP Überschuss» für Heldenkarte und Heldenfenster */
+/** «Stufe 15 · 1240 XP Überschuss» für das Heldenfenster und Karten ohne Bild (die Bildkarte zeigt «Lv 15» und darunter den Überschuss) */
 export function ueberschussText(fighter: GuildFighter): string {
   return `Stufe ${MAX_HERO_LEVEL} · ${ueberschuss(fighter)} XP Überschuss`;
 }
@@ -68,8 +68,9 @@ export function lehrbuchVorschau(lehrer: GuildFighter, schueler: GuildFighter): 
   if (lehrer.id === schueler.id || lehrer.level < MAX_HERO_LEVEL || schueler.level >= MAX_HERO_LEVEL) return null;
   const bedarf = totalXpForLevel(MAX_HERO_LEVEL) - schueler.xp;
   const xp = Math.min(ueberschuss(lehrer), bedarf);
-  if (xp <= 0) return null;
-  return { xp, vonStufe: schueler.level, nachStufe: stufeBeiXp(schueler.xp + xp) };
+  if (!(xp > 0)) return null; // auch NaN: fehlen einem Helden die XP, wandert nichts
+  // awardXP steigt nur auf: Passen die XP nicht zur Stufe, bleibt es bei der Stufe
+  return { xp, vonStufe: schueler.level, nachStufe: Math.max(schueler.level, stufeBeiXp(schueler.xp + xp)) };
 }
 
 export interface LehrbuchErgebnis extends LehrbuchVorschau {

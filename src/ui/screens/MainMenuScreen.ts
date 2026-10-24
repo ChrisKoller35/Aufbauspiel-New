@@ -45,6 +45,22 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
       ${probespielHinweisHtml()}
     </section>
 
+    <div class="main-leiste">
+      <div class="bg-switcher" id="bg-switcher">
+        <span class="bg-wahl" role="group" aria-label="Hintergrund">
+          <span class="bg-switcher-label" aria-hidden="true">BG:</span>
+          <button class="bg-btn active" data-bg="1">1</button>
+          <button class="bg-btn" data-bg="2">2</button>
+          <button class="bg-btn" data-bg="3">3</button>
+          <button class="bg-btn" data-bg="0">Aus</button>
+        </span>
+        <span class="leiste-fenster">
+          <button type="button" class="ss-oeffnen" aria-label="Spielstand">💾<span class="ss-wort"> Spielstand</span></button>
+          <button type="button" class="fb-oeffnen" aria-label="Fundbuch">📜<span class="fb-wort"> Fundbuch</span></button>
+        </span>
+      </div>
+    </div>
+
     ${stadtBannerHtml()}
 
     <div class="main-grid">
@@ -70,16 +86,6 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
         <span class="tile-name">Gildenhaus</span>
         <span class="tile-desc">Auftragsbrett: ${brettText} \u00b7 ${brett.siegel} Siegel \u00b7 Troph\u00e4ensaal</span>
       </div>
-    </div>
-
-    <div class="bg-switcher" id="bg-switcher">
-      <span class="bg-switcher-label">BG:</span>
-      <button class="bg-btn active" data-bg="1">1</button>
-      <button class="bg-btn" data-bg="2">2</button>
-      <button class="bg-btn" data-bg="3">3</button>
-      <button class="bg-btn" data-bg="0">Aus</button>
-      <button type="button" class="ss-oeffnen">💾 Spielstand</button>
-      <button type="button" class="fb-oeffnen" aria-label="Fundbuch">📜<span class="fb-wort"> Fundbuch</span></button>
     </div>
   `;
 

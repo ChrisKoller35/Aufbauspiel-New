@@ -1,28 +1,31 @@
 // ─── Monsterbuch: Zählen, Strecke, Seiten, Stufen, Prämien ──────
 // Mit echten Läufen über das ExpeditionSystem und den echten Routen
-// und Gegnern (docs/MONSTERBUCH.md). Keine erfundenen Gegner oder Routen.
+// und Gegnern (docs/MONSTERBUCH.md). Keine erfundenen Gegner oder Routen;
+// nur die Zweige der Einsatz-Sätze, die kein echter Gegner nimmt, prüft
+// der Test mit erfundenen Abklingzeiten (einsatzPlanFuer, rundenText).
 // ────────────────────────────────────────────────────────────────
 
 import { describe, it, expect, afterEach, vi } from 'vitest';
 import { createNewGameState, GameState } from '../src/models/GameState';
-import { ExpeditionRun } from '../src/models/ExpeditionRun';
+import { CombatUnit, EncounterRoom, ExpeditionRun } from '../src/models/ExpeditionRun';
 import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { SaveSystem, pruefeSpielstandText } from '../src/systems/SaveSystem';
-import { CombatEngine } from '../src/systems/CombatEngine';
+import { CombatEngine, bossWut, wutAbRunde } from '../src/systems/CombatEngine';
 import { BestiariumSystem } from '../src/systems/BestiariumSystem';
 import { SeededRNG } from '../src/utils/RNG';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from '../src/data/routes';
-import { ENEMY_DEFS } from '../src/data/enemies';
+import { ENEMY_DEFS, ENEMY_LORE, EnemySkillDef } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { MONSTERBUCH_NOTIZEN } from '../src/data/monsterbuchNotizen';
 import { musterStand } from '../src/systems/Musterlauf';
 import {
-  FAEHIGKEIT_ART, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, erreichbareGegner, gesichtet, goldSpanne, praemieAbgeholt,
-  praemieAbholen, praemieBetrag, praemieFaellig, praemieGrundbetrag, praemien, seiten, seitenStand, siegeBis, strecke, stufe,
+  FAEHIGKEIT_ART, KampfRaeume, SCHWELLEN, anzahlBesiegt, begegnungenJeLauf, beuteChancen, einsatzPlan, einsatzPlanFuer, einsatzRunden,
+  erreichbareGegner, faehigkeitText, gesichtet, goldSpanne, kampfRaeume, kampfRunden, praemieAbgeholt, praemieAbholen, praemieBetrag,
+  praemieFaellig, praemieGrundbetrag, praemien, rundenText, seiten, seitenStand, siegeBis, strecke, stufe, wutVorziehbar,
 } from '../src/systems/Monsterkunde';
 
 /** Neues Spiel wie main.ts beim ersten Start: ein Guardian. */
@@ -105,17 +108,24 @@ describe('Zählen: nur gespielte Räume', () => {
   });
 
   it('Strecke = Zahl der Gegner mit hp <= 0, zwei Wölfe im Raum zählen 2', () => {
-    const { state, ids } = neuesSpiel();
+    // Fester Startwert und ein Team, das den Waldpfad sicher schafft: Es kommt immer bis in den vierten
+    // Raum, wo zwei Waldwölfe stehen (ein einzelner Guardian mit zufälligem Startwert kam fast nie dorthin)
+    const { state, ids } = musterStand('stark', 7919);
+    expect(ROUTE_DEFS.forest_short.encounters[0].enemies).toEqual(['forest_wolf', 'forest_spider']);
+    expect(ROUTE_DEFS.forest_short.encounters[3].enemies).toEqual(['forest_wolf', 'forest_wolf']);
     const run = lauf(state, ids, 'forest_short');
-    const erwartet = besiegteImLauf(run);
-    expect(Object.keys(erwartet).length).toBeGreaterThan(0);
-    expect(strecke(state)).toEqual(erwartet);
+    expect(run.status).toBe('victory');
+    const wolfsraum = run.rooms[3];
+    expect(wolfsraum.completed).toBe(true);
+    expect(wolfsraum.enemies.map(e => [e.defId, e.hp <= 0])).toEqual([['forest_wolf', true], ['forest_wolf', true]]);
+    // Ein Wolf aus dem ersten Raum und zwei aus dem vierten: drei, nicht zwei (je Raum und Art nur einmal)
+    expect(anzahlBesiegt(state, 'forest_wolf')).toBe(3);
+    expect(strecke(state)).toEqual({ forest_wolf: 3, forest_spider: 1, forest_bandit: 1, forest_bear: 1 });
+    expect(strecke(state)).toEqual(besiegteImLauf(run));
     // Ein zweiter Lauf zählt dazu
     const run2 = lauf(state, ids, 'forest_short');
-    const zwei = besiegteImLauf(run2);
-    for (const id of new Set([...Object.keys(erwartet), ...Object.keys(zwei)])) {
-      expect(anzahlBesiegt(state, id)).toBe((erwartet[id] ?? 0) + (zwei[id] ?? 0));
-    }
+    expect(run2.status).toBe('victory');
+    expect(strecke(state)).toEqual({ forest_wolf: 6, forest_spider: 2, forest_bandit: 2, forest_bear: 2 });
     // Die Listen für Erfolge und Stadtweg bleiben Listen von IDs
     expect(state.bestiarium.defeated.every(id => typeof id === 'string')).toBe(true);
     expect(state.bestiarium.discovered.every(id => typeof id === 'string')).toBe(true);
@@ -213,6 +223,243 @@ describe('Beute im Fenster = Beute im Spiel', () => {
   });
 });
 
+/** Die Kriegsmaschine im Prüfkampf: ein Katapult, wie es eine Belagerungsroute aus dem Lager mitnimmt */
+const KATAPULT = new CombatEngine(new GearSystem()).warMachineToCombatUnit('war_catapult').name;
+
+/**
+ * Ein Kampf gegen einen Gegner im echten Kampf (CombatEngine.processCombat, mit `belagerung` in einem
+ * Belagerungsraum processFortificationCombat mit Katapult). Vier Helden, der Gegner, die Befestigung
+ * und das Katapult sind unverwundbar, die Helden ohne Effekte (niemand betäubt, weicht aus oder fängt
+ * ab), mit Luftschild.
+ */
+function pruefKampf(id: string, belagerung = false): { run: ExpeditionRun; gegner: CombatUnit } {
+  const { state, ids } = musterStand('stark', 7919);
+  const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
+  const run = system.startExpedition(state, 'forest_short', ids, 'normal', null, false, [])!;
+  run.airShield = 1000;
+  for (const held of run.party) Object.assign(held, { hp: 1e7, maxHp: 1e7, def: 1e5, atk: 0, critChance: 0, specialEffects: [] });
+  const engine = new CombatEngine(new GearSystem());
+  const gegner = engine.enemyToCombatUnit(id);
+  Object.assign(gegner, { hp: 1e7, maxHp: 1e7 });
+  const raum = { index: 0, type: ENEMY_DEFS[id].isBoss ? 'boss' : 'combat', enemies: [gegner], healPercent: 0, hazardDamage: 0, completed: false } as EncounterRoom;
+  if (belagerung) {
+    run.warMachineUnit = Object.assign(engine.warMachineToCombatUnit('war_catapult'), { hp: 1e7, maxHp: 1e7 });
+    Object.assign(raum, { type: 'fortification', fortification: { name: 'Prüfturm', hp: 1e7, maxHp: 1e7, armor: 0, spriteKey: '' } });
+    engine.processFortificationCombat(run, raum, new SeededRNG(1));
+  } else {
+    engine.processCombat(run, raum, new SeededRNG(1));
+  }
+  return { run, gegner };
+}
+
+/** Was ein Gegner im Kampf mit seinen Fähigkeiten tut: je Fähigkeit die Runden ihres Einsatzes mit den Protokollzeilen der Runde */
+function imKampf(id: string, belagerung = false): { runde: number; zeilen: string[] }[][] {
+  const { run, gegner } = pruefKampf(id, belagerung);
+  return ENEMY_DEFS[id].skills.map(sk => (run.combatRoundSnapshots ?? [])
+    .filter(runde => runde.logLines.some(z => z.startsWith(`${gegner.name} setzt ${sk.name} ein`)
+      || (sk.effectType === 'drain_air' && z.startsWith(`>> ${gegner.name} entzieht dem Luftschild`))))
+    .map(runde => ({ runde: runde.round, zeilen: runde.logLines })));
+}
+
+/** Wie oft der Gegner im Belagerungsraum die Helden und wie oft das Katapult trifft (Fähigkeiten und Grundangriffe) */
+function zieleInBelagerung(id: string): { helden: number; katapult: number } {
+  const { run, gegner } = pruefKampf(id, true);
+  const treffer = (ziel: string) => run.combatLog.filter(z => (z.startsWith(`${gegner.name} setzt `) && z.includes(`→ ${ziel} erleidet`))
+    || z.startsWith(`${gegner.name} greift ${ziel} an`)).length;
+  return { helden: run.party.reduce((summe, held) => summe + treffer(held.name), 0), katapult: treffer(KATAPULT) };
+}
+
+describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
+  it('einsatzRunden: dieselben Runden wie processCombat, für jeden erreichbaren Gegner', () => {
+    let geprueft = 0;
+    for (const id of erreichbareGegner()) {
+      const skills = ENEMY_DEFS[id].skills;
+      if (skills.length === 0) continue;
+      expect(einsatzRunden(skills), id).toEqual(imKampf(id).map(einsaetze => einsaetze.map(e => e.runde)));
+      geprueft++;
+    }
+    expect(geprueft).toBeGreaterThan(70);
+    // Wer in einem Belagerungsraum steht, kämpft dort bis zu 30 Runden (processFortificationCombat)
+    const belagert = erreichbareGegner().filter(id => kampfRunden(id) === 30);
+    expect(belagert.sort()).toEqual(['siege_crossbowman', 'siege_defender', 'siege_mage', 'wall_archer', 'wall_guard']);
+    for (const id of belagert) {
+      expect(einsatzRunden(ENEMY_DEFS[id].skills, 30), id).toEqual(imKampf(id, true).map(einsaetze => einsaetze.map(e => e.runde)));
+    }
+    expect(einsatzRunden(ENEMY_DEFS.siege_mage.skills, 30)[1]).toEqual([2, 9, 17, 24]);
+    // Abklingzeit 3 heisst: jede vierte Runde. Die zweite Fähigkeit wartet, solange die erste vorgeht.
+    expect(einsatzRunden(ENEMY_DEFS.forest_wolf.skills)).toEqual([[1, 5, 9, 13, 17]]);
+    expect(einsatzRunden(ENEMY_DEFS.boss_elder_treant.skills)).toEqual([[1, 5, 9, 13, 17], [2, 10, 18]]);
+  });
+
+  it('kampfRaeume und einsatzPlan: wo jeder Gegner kämpft, und bis zu welcher Runde', () => {
+    // Die fünf aus Belagerungsräumen kämpfen alle auch in Kampfräumen, die Bosse der Belagerungen nur im Bossraum
+    // (processCombat wie ein Kampfraum). Wer nur um Befestigungen kämpft, gibt es nicht: Das prüft der Test mit
+    // erfundenen Fähigkeiten («Einsätze im Fenster …»).
+    const belagert = ['siege_crossbowman', 'siege_defender', 'siege_mage', 'wall_archer', 'wall_guard'];
+    for (const id of erreichbareGegner()) {
+      expect(kampfRaeume(id), id).toEqual({ befestigung: belagert.includes(id), gewoehnlich: true });
+      expect(einsatzPlan(id, ENEMY_DEFS[id].skills), id).toEqual(einsatzPlanFuer(ENEMY_DEFS[id].skills, kampfRaeume(id)));
+    }
+    for (const id of ['boss_iron_commander', 'boss_fortress_warden']) {
+      expect(Object.values(ROUTE_DEFS).flatMap(route => route.encounters).filter(enc => enc.enemies?.includes(id)).map(enc => enc.type), id)
+        .toEqual(['boss']);
+    }
+    // Ein Gegner ohne Route kämpft nirgends; sein Plan geht wie bisher bis Runde 20
+    const ohneRoute = Object.keys(ENEMY_DEFS).find(id => !erreichbareGegner().includes(id) && ENEMY_DEFS[id].skills.length > 0)!;
+    expect(kampfRaeume(ohneRoute)).toEqual({ befestigung: false, gewoehnlich: false });
+    expect(einsatzPlan(ohneRoute, ENEMY_DEFS[ohneRoute].skills).bis).toBe(20);
+    // Der Kampfmagier: Was nach Runde 20 kommt, erlebt nur der Kampf um eine Befestigung
+    expect(einsatzPlan('siege_mage', ENEMY_DEFS.siege_mage.skills)).toEqual({
+      runden: [[1, 4, 7, 10, 13, 16, 19], [2, 9, 17]], belagerung: [[22, 25, 28], [24]], bis: 30,
+    });
+  });
+
+  it('Einsätze im Fenster: bis Runde 20, im Kampf um eine Befestigung bis 30 (erfundene Abklingzeiten)', () => {
+    // Keiner der fünf Gegner aus Räumen um eine Befestigung kämpft nur dort, keiner von ihnen setzt genau in Runde 20
+    // oder erst danach ein. Genau in Runde 20 setzen nur Gegner ein, die allein in gewöhnlichen Räumen kämpfen
+    // (Luftsauger, Druckwelle …); bei ihnen trennt einsatzPlanFuer nichts ab. Diese Fälle bauen erfundene Fähigkeiten
+    // nach. Für die Runden zählt nur die Abklingzeit (einsatzRunden).
+    const faehigkeiten = (...abklingzeiten: number[]): EnemySkillDef[] => abklingzeiten.map((cooldown, i) =>
+      ({ id: `probe_${i}`, name: `Probe ${i}`, cooldown, effectType: 'damage', power: 1, target: 'player' }));
+    const NUR_BEFESTIGUNG: KampfRaeume = { befestigung: true, gewoehnlich: false };
+    const BEIDE: KampfRaeume = { befestigung: true, gewoehnlich: true };
+    const NUR_GEWOEHNLICH: KampfRaeume = { befestigung: false, gewoehnlich: true };
+    const texte = (skills: EnemySkillDef[], raeume: KampfRaeume) => {
+      const plan = einsatzPlanFuer(skills, raeume);
+      return plan.runden.map((r, i) => rundenText(r, plan.belagerung[i], plan.bis));
+    };
+
+    // Abklingzeit 11: jede zwölfte Runde, bis Runde 30 also dreimal
+    const zwoelfte = faehigkeiten(11);
+    expect(einsatzRunden(zwoelfte, 30)).toEqual([[1, 13, 25]]);
+    // Nur um Befestigungen: alle Einsätze bis Runde 30 im ersten Satz, kein zweiter
+    expect(einsatzPlanFuer(zwoelfte, NUR_BEFESTIGUNG)).toEqual({ runden: [[1, 13, 25]], belagerung: [[]], bis: 30 });
+    expect(texte(zwoelfte, NUR_BEFESTIGUNG)).toEqual(['Einsatz in Runde 1, 13 und 25.']);
+    // In beiden Räumen: Runde 25 erlebt nur der Kampf um eine Befestigung, sie steht im eigenen Satz
+    expect(einsatzPlanFuer(zwoelfte, BEIDE)).toEqual({ runden: [[1, 13]], belagerung: [[25]], bis: 30 });
+    expect(texte(zwoelfte, BEIDE)).toEqual(['Einsatz in Runde 1 und 13. Im Kampf um eine Befestigung (bis Runde 30) auch in Runde 25.']);
+    // Nur in gewöhnlichen Räumen: nach Runde 20 ist Schluss
+    expect(einsatzPlanFuer(zwoelfte, NUR_GEWOEHNLICH)).toEqual({ runden: [[1, 13]], belagerung: [[]], bis: 20 });
+    expect(texte(zwoelfte, NUR_GEWOEHNLICH)).toEqual(['Einsatz in Runde 1 und 13.']);
+
+    // Sechs Fähigkeiten: Jede wartet, solange eine frühere bereit ist. Die dritte kommt in Runde 20, die sechste
+    // erst in Runde 24 (mit Abklingzeit 1 überall wäre es Runde 32)
+    const kette = faehigkeiten(1, 1, 1, 2, 1, 1);
+    expect(einsatzRunden(kette, 30)).toEqual([
+      [1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27, 29], [2, 6, 10, 14, 18, 22, 26, 30], [4, 12, 20, 28], [8], [16], [24],
+    ]);
+    expect(texte(kette, BEIDE)).toEqual([
+      // Mehr als drei Einsätze: «…» ohne zweiten Satz, es geht ohnehin weiter
+      'Einsatz in Runde 1, 3, 5 …',
+      'Einsatz in Runde 2, 6, 10 …',
+      // Runde 20 erlebt jeder Kampf (processCombat endet nach Runde 20), Runde 28 nur der um eine Befestigung
+      'Einsatz in Runde 4, 12 und 20. Im Kampf um eine Befestigung (bis Runde 30) auch in Runde 28.',
+      'Einsatz in Runde 8.',
+      'Einsatz in Runde 16.',
+      // Erst nach Runde 20: nur im Kampf um eine Befestigung
+      'Einsatz nur im Kampf um eine Befestigung (bis Runde 30): Runde 24.',
+    ]);
+    expect(texte(kette, NUR_BEFESTIGUNG)).toEqual([
+      'Einsatz in Runde 1, 3, 5 …', 'Einsatz in Runde 2, 6, 10 …', 'Einsatz in Runde 4, 12, 20 …',
+      'Einsatz in Runde 8.', 'Einsatz in Runde 16.', 'Einsatz in Runde 24.',
+    ]);
+    // Bis Runde 20 kommt die sechste nie zum Einsatz: kein Satz
+    expect(texte(kette, NUR_GEWOEHNLICH)).toEqual([
+      'Einsatz in Runde 1, 3, 5 …', 'Einsatz in Runde 2, 6, 10 …', 'Einsatz in Runde 4, 12 und 20.',
+      'Einsatz in Runde 8.', 'Einsatz in Runde 16.', '',
+    ]);
+  });
+
+  it('faehigkeitText sagt, was der Kampf tut: Zahl, Ziel, Dauer, Luft; nie Abwehr, nie die Kriegsmaschine', () => {
+    const helden = 4;
+    // Wer in einem Belagerungsraum steht, kämpft auch dort, neben dem Katapult: Der Text gilt in beiden Kämpfen
+    const kaempfe = erreichbareGegner().flatMap(id =>
+      (kampfRunden(id) === 30 ? [false, true] : [false]).map(belagerung => ({ id, belagerung })));
+    expect(kaempfe.filter(k => k.belagerung).length).toBe(5);
+    for (const { id, belagerung } of kaempfe) {
+      const kampf = imKampf(id, belagerung);
+      ENEMY_DEFS[id].skills.forEach((sk, i) => {
+        const text = faehigkeitText(id, sk);
+        const name = `${id} ${sk.name}${belagerung ? ' (Belagerung)' : ''}`;
+        expect(kampf[i].length, name).toBeGreaterThan(0);
+        // Die Zeilen der ersten Runde, in der er die Fähigkeit einsetzt
+        const zeilen = kampf[i][0].zeilen;
+        expect(text, name).not.toMatch(/Abwehr|DEF|Verstärkung/);
+        if (sk.effectType === 'damage' || sk.effectType === 'aoe') {
+          // Stärke 1 ohne «1-fachen»
+          expect(text, name).toContain(sk.power === 1
+            ? 'mit dem Schaden eines normalen Angriffs'
+            : `mit dem ${sk.power.toLocaleString('de')}-fachen Schaden`);
+          // So viele Treffer, wie der Text Ziele nennt. Die Kriegsmaschine nennt er genau dann, wenn der
+          // Kampf sie trifft (heute nie: enemyToCombatUnit übernimmt prefersWarMachineTarget nicht)
+          const treffer = zeilen.filter(z => z.startsWith(`${ENEMY_DEFS[id].name} setzt ${sk.name} ein →`) && z.includes('erleidet'));
+          const aufKatapult = treffer.filter(z => z.includes(`→ ${KATAPULT} erleidet`)).length;
+          expect(text.includes('Kriegsmaschine'), name).toBe(aufKatapult > 0);
+          expect(treffer.length, name).toBe(text.startsWith('Trifft alle Helden') ? helden : 1);
+          expect(text.startsWith('Trifft alle Helden') || text.startsWith('Trifft einen Helden'), name).toBe(true);
+        }
+        // Luft nennt der Text genau dann, wenn der Kampf Luft nimmt, und dann dieselbe Menge
+        const luft = zeilen.map(z => /(?:reißt|entzieht dem Luftschild) (\d+) Luft/.exec(z)?.[1]).find(Boolean);
+        expect(/(\d+) Luft/.exec(text)?.[1], name).toBe(luft);
+        if (sk.effectType === 'heal') {
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → heilt`) && z.endsWith(`um ${sk.power}`)), name).toBe(true);
+          expect(text, name).toContain(`um ${sk.power.toLocaleString('de')}`);
+        }
+        if (sk.effectType === 'buff') {
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → +${sk.power} ATK für 3 Runden`)), name).toBe(true);
+          expect(text, name).toBe(`Gibt sich selbst ${sk.power} Angriff mehr, 3 Runden lang.`);
+        }
+        if (sk.effectType === 'summon') {
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → Verstärkung beschworen! (+${sk.power} ATK für 4 Runden)`)), name).toBe(true);
+          expect(text, name).toBe(`Ruft niemanden herbei, sondern gibt sich selbst ${sk.power} Angriff mehr, 4 Runden lang.`);
+        }
+        if (sk.effectType === 'drain_air') expect(luft, name).toBeDefined();
+      });
+    }
+  });
+
+  it('die Beispiele aus der Prüfung: Heilung, Diamantpanzer, Brut, Luftsauger, Stärke 1', () => {
+    const text = (id: string, skillId: string) => faehigkeitText(id, ENEMY_DEFS[id].skills.find(s => s.id === skillId)!);
+    const heilung = ENEMY_DEFS.forest_shaman.skills[0];
+    expect(faehigkeitText('forest_shaman', heilung)).toBe('Heilt den Verbündeten mit den wenigsten Leben um 24, auch sich selbst.');
+    // Passt auch zu «die Moorhexe» und «das Irrlicht» (früher: «…, das kann auch er selbst sein.»)
+    const dunkleHeilung = ENEMY_DEFS.bog_witch.skills.find(s => s.name === 'Dunkle Heilung')!;
+    expect(text('bog_witch', dunkleHeilung.id)).toBe('Heilt den Verbündeten mit den wenigsten Leben um 30, auch sich selbst.');
+    // Stärke 1: der Schaden eines normalen Angriffs, nicht der «1-fache»
+    const saeure = ENEMY_DEFS.cave_slime.skills.find(s => s.name === 'Säure')!;
+    expect(saeure.power).toBe(1);
+    expect(text('cave_slime', saeure.id)).toBe('Trifft alle Helden mit dem Schaden eines normalen Angriffs.');
+    // Ein Boss kämpft allein: Seine Heilung heilt nur ihn
+    const regeneration = ENEMY_DEFS.boss_swamp_hydra.skills.find(s => s.effectType === 'heal')!;
+    expect(faehigkeitText('boss_swamp_hydra', regeneration)).toBe('Heilt sich um 36 Leben.');
+    const diamantpanzer = ENEMY_DEFS.boss_crystal_golem.skills.find(s => s.name === 'Diamantpanzer')!;
+    expect(text('boss_crystal_golem', diamantpanzer.id)).toBe('Gibt sich selbst 5 Angriff mehr, 3 Runden lang.');
+    const brut = ENEMY_DEFS.boss_spider_queen.skills.find(s => s.name === 'Brut beschwören')!;
+    expect(text('boss_spider_queen', brut.id)).toBe('Ruft niemanden herbei, sondern gibt sich selbst 3 Angriff mehr, 4 Runden lang.');
+    const luftsauger = ENEMY_DEFS.jellyfish_swarm.skills.find(s => s.effectType === 'drain_air')!;
+    expect(text('jellyfish_swarm', luftsauger.id)).toBe('Zieht 10 Luft aus dem Luftschild, ohne Schaden.');
+    expect(text('forest_wolf', 'bite')).toBe('Trifft einen Helden mit dem 1,5-fachen Schaden eines normalen Angriffs.');
+    expect(text('forest_spider', 'web')).toBe('Trifft alle Helden mit dem 0,5-fachen Schaden eines normalen Angriffs.');
+    // drainAirAmount: 18 steht in enemies.ts, kommt aber nicht im Kampf an (enemyToCombatUnit)
+    expect(ENEMY_DEFS.boss_leviathan.skills.find(s => s.id === 'druckwelle')!.drainAirAmount).toBe(18);
+    expect(text('boss_leviathan', 'druckwelle')).toBe('Trifft alle Helden mit dem 0,9-fachen Schaden eines normalen Angriffs.');
+  });
+
+  it('Sonnenuhr: Sunnas Wut kann bis Runde 4 vorrücken, bei keinem anderen Boss rückt sie', () => {
+    const sonnenuhren = ROUTE_DEFS.morgentor.encounters.flatMap(enc => enc.wahl ? [enc.wahl.a, enc.wahl.b] : [])
+      .map(option => option.bossWutFrueher ?? 0).filter(n => n > 0);
+    expect(sonnenuhren).toEqual([2, 2, 2]);
+    const frueher = sonnenuhren.reduce((a, b) => a + b, 0);
+    expect(wutVorziehbar('boss_sunna')).toEqual([
+      { routeId: 'morgentor', name: ROUTE_DEFS.morgentor.name, abRunde: wutAbRunde(bossWut('boss_sunna'), { bossWutFrueher: frueher }) },
+    ]);
+    expect(wutVorziehbar('boss_sunna')[0].abRunde).toBe(4);
+    for (const id of erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_sunna')) {
+      expect(wutVorziehbar(id), id).toEqual([]);
+    }
+  });
+});
+
 describe('Stufen und Seitenprämien', () => {
   it('Stufen nach Siegen: normal 1/10/30, Boss 1/3/10', () => {
     const state = createNewGameState();
@@ -286,6 +533,194 @@ describe('Stufen und Seitenprämien', () => {
   });
 });
 
+const ZAHLWORT: Record<string, number> = {
+  zweite: 2, dritte: 3, vierte: 4, fünfte: 5, sechste: 6, siebte: 7, achte: 8, neunte: 9, zehnte: 10,
+  zwei: 2, drei: 3, vier: 4, fünf: 5, sechs: 6, sieben: 7, acht: 8, neun: 9, zehn: 10,
+};
+const ZAHLWOERTER = Object.keys(ZAHLWORT).join('|');
+/** Die Grundzahlen als Wort, «zwei» bis «zehn» */
+const GRUNDZAHLEN = 'zwei|drei|vier|fünf|sechs|sieben|acht|neun|zehn';
+
+/**
+ * «einmal», «zweimal», «3-mal», «zwei Mal»: die Zahl in Gruppe 1. Auch «noch einmal» («heilt sich noch einmal»),
+ * nicht aber «auf einmal» (plötzlich) und «nicht einmal» (sogar nicht): Die zählen nichts. «manchmal» und
+ * «Angriff mal 1,5» auch nicht, vor ihrem «mal» steht keine Zahl.
+ */
+const MAL = `\\b((?<!\\b(?:auf|nicht)\\s)ein|\\d+|${GRUNDZAHLEN})[-\\s]?mal\\b`;
+
+/** Eine Zahl als Ziffer («3», «3.») oder als Wort («drei», «dritte», «dritten»), sonst undefined */
+function zahlWert(wort: string): number | undefined {
+  const w = wort.toLowerCase();
+  return /^\d+\.?$/.test(w) ? parseInt(w, 10) : ZAHLWORT[w] ?? ZAHLWORT[w.replace(/[nrs]$/, '')];
+}
+
+/** Die Abstände eines Takts: «jede vierte» 4, «jeden zweiten» 2, «jedem dritten» 3, «alle 3» 3, «jede Runde» 1 */
+function abstaende(text: string): number[] {
+  return [...text.matchAll(/\b(?:alle|jede[mnrs]?)\s+(\d+\.?|[a-zäöü]+)/gi)]
+    .map(m => /^Runden?$/i.test(m[1]) ? 1 : zahlWert(m[1]))
+    .filter((n): n is number => n !== undefined);
+}
+
+/**
+ * Wie oft ein Text sagt, dass etwas vorkommt: «einmal» 1, «zweimal» 2, «3-mal» 3 (MAL); ohne «…mal» die Zahlen
+ * als Wort oder Ziffer («Sechs Giftzahnspinnen» 6, «je drei» 3, «drei von ihnen und drei Tiefseeangler» 3 und 3),
+ * ohne beides «nur einer» 1. Mit «…mal» zählen die anderen Zahlen nicht («keine der sechs Gegnerarten seltener
+ * als zweimal»: 2).
+ */
+function anzahlen(text: string): number[] {
+  const mal = [...text.matchAll(new RegExp(MAL, 'gi'))].map(m => (/^ein$/i.test(m[1]) ? 1 : zahlWert(m[1]) ?? NaN));
+  if (mal.length > 0) return mal;
+  const zahl = [...text.matchAll(new RegExp(`\\b(?:\\d+|${GRUNDZAHLEN})\\b`, 'gi'))].map(m => zahlWert(m[0]) ?? NaN);
+  if (zahl.length > 0) return zahl;
+  return /\bnur\s+ein/i.test(text) ? [1] : [];
+}
+
+/** Alle Zahlen eines Textes, der Grösse nach («drei Runden» und «3 Runden» geben beide 3) */
+function zahlen(text: string): number[] {
+  return [...text.matchAll(new RegExp(`\\d+(?:,\\d+)?|\\b(?:${ZAHLWOERTER})\\b`, 'gi'))]
+    .map(m => zahlWert(m[0]) ?? Number(m[0].replace(',', '.')))
+    .sort((a, b) => a - b);
+}
+
+function notizText(routeId: string): string {
+  return MONSTERBUCH_NOTIZEN.find(n => n.routeId === routeId)?.text ?? '';
+}
+
+/**
+ * Jede Takt-Angabe in Ottokars Notizen: der Text in der Notiz und die Runden, in denen der Gegner die
+ * Fähigkeit im echten Kampf einsetzt (20 Runden, ohne ausgesetzten Zug). Eine zweite oder dritte
+ * Fähigkeit wartet, solange eine frühere bereit ist (Rindenwall, Neuauflage). Abstand («jede vierte»,
+ * «alle 3», «jede Runde») und genannte Runden («nur in Runde 3 und 14») vergleicht der Test mit `runden`.
+ */
+const TAKT: { routeId: string; gegner: string; faehigkeit: string; text: string; runden: number[] }[] = [
+  { routeId: 'forest_medium', gegner: 'boss_elder_treant', faehigkeit: 'Rindenwall', text: 'zuerst in Runde 2 und danach nur alle acht Runden', runden: [2, 10, 18] },
+  { routeId: 'haunted_woods', gegner: 'cursed_wisp', faehigkeit: 'Verbündete heilen', text: 'das Irrlicht jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'haunted_woods', gegner: 'forest_shaman', faehigkeit: 'Heilung', text: 'der Schamane jede fünfte', runden: [1, 6, 11, 16] },
+  { routeId: 'ocean_shallows', gegner: 'jellyfish_swarm', faehigkeit: 'Stromtentakel', text: 'mit Stromtentakel jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'ocean_depths', gegner: 'boss_leviathan', faehigkeit: 'Tiefenstrahl', text: 'Tiefenstrahl trifft jede dritte Runde alle Helden', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'ocean_abyss', gegner: 'drowned_knight', faehigkeit: 'Rostiger Hieb', text: 'Rostiger Hieb kommt jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'swamp_long', gegner: 'bog_witch', faehigkeit: 'Dunkle Heilung', text: 'mit Dunkler Heilung jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'ruins_crypts', gegner: 'cursed_priest', faehigkeit: 'Dunkles Gebet', text: 'Priester heilt jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'ruins_depths', gegner: 'boss_shadow_lich', faehigkeit: 'Seelenraub', text: 'Seelenraub, der jede vierte Runde kommt', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'obsidian_tunnels', gegner: 'fire_bat', faehigkeit: 'Flammensturz', text: 'greift jede dritte Runde mit Flammensturz an', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'ash_wastes', gegner: 'magma_broodling', faehigkeit: 'Flammenaura', text: 'mit Flammenaura jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'magma_caverns', gegner: 'lava_elemental', faehigkeit: 'Magmawelle', text: 'Magmawelle trifft jede fünfte Runde', runden: [1, 6, 11, 16] },
+  { routeId: 'volcano_core', gegner: 'boss_magma_wyrm', faehigkeit: 'Infernoodem', text: 'Infernoodem trifft jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'himmelsarchiv', gegner: 'boss_oberarchivar', faehigkeit: 'Neuauflage', text: 'nur in Runde 3 und 14', runden: [3, 14] },
+];
+
+/**
+ * Jede Wut-Angabe: «ab Runde N» und die Faktoren, wie der Kampf sie nimmt (bossWut, wutAbRunde).
+ * `sonnenuhren`: so viele Wahlen unterwegs, welche die Wut vorziehen, sind genommen (Sonnenuhr im Morgentor).
+ */
+const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number }[] = [
+  { routeId: 'forest_medium', gegner: 'boss_elder_treant', text: 'ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3' },
+  { routeId: 'ocean_depths', gegner: 'boss_leviathan', text: 'wütet schon ab Runde 7, so früh wie von sich aus kein anderer Boss in diesem Buch: Angriff mal 1,6, Tempo mal 1,2' },
+  { routeId: 'siege_walls', gegner: 'boss_iron_commander', text: 'wütet ab Runde 9' },
+  { routeId: 'siege_fortress', gegner: 'boss_fortress_warden', text: 'wütet erst ab Runde 10' },
+  { routeId: 'ruins_crypts', gegner: 'boss_fallen_knight', text: 'ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3' },
+  { routeId: 'volcano_core', gegner: 'boss_magma_wyrm', text: 'die Wut kommt ab Runde 10' },
+  { routeId: 'drachenhort', gegner: 'boss_ignarax', text: 'Wut ab Runde 10' },
+  { routeId: 'sternenschmiede', gegner: 'boss_korrund', text: 'wütet ab Runde 10' },
+  { routeId: 'mondhof', gegner: 'boss_argentis', text: 'wütet ab Runde 10' },
+  { routeId: 'morgentor', gegner: 'boss_sunna', text: 'wütet ab Runde 10' },
+  { routeId: 'morgentor', gegner: 'boss_sunna', text: 'zieht ihre Wut um 2 Runden vor, dreimal vorgestellt wütet sie schon ab Runde 4', sonnenuhren: 3 },
+];
+
+/**
+ * Was eine Fähigkeit laut Notiz bewirkt (Angriff und Dauer einer Stärkung oder Beschwörung, Luft): Die
+ * Zeile `protokoll` steht beim ersten Einsatz im Kampfprotokoll, mit denselben Zahlen wie die Notiz.
+ */
+const WIRKUNG: { routeId: string; gegner: string; faehigkeit: string; text: string; protokoll: string }[] = [
+  { routeId: 'forest_medium', gegner: 'boss_elder_treant', faehigkeit: 'Rindenwall', text: '3 Angriff mehr für drei Runden', protokoll: '+3 ATK für 3 Runden' },
+  { routeId: 'ocean_shallows', gegner: 'jellyfish_swarm', faehigkeit: 'Luftsauger', text: 'Luftsauger zieht dazu 10 Luft aus dem Schild', protokoll: 'entzieht dem Luftschild 10 Luft' },
+  { routeId: 'cave_deep', gegner: 'boss_crystal_golem', faehigkeit: 'Diamantpanzer', text: '5 Angriff mehr für drei Runden', protokoll: '+5 ATK für 3 Runden' },
+  { routeId: 'cave_spider', gegner: 'boss_spider_queen', faehigkeit: 'Brut beschwören', text: 'vier Runden lang 3 Angriff mehr', protokoll: '+3 ATK für 4 Runden' },
+  { routeId: 'ruins_depths', gegner: 'boss_shadow_lich', faehigkeit: 'Totenerweckung', text: 'vier Runden lang 1 Angriff mehr', protokoll: '+1 ATK für 4 Runden' },
+];
+
+/**
+ * Was eine Notiz über die Kriegsmaschine sagt: Diese Gegner greifen im Belagerungsraum die Helden an und
+ * nie das Katapult. Ihr Hintergrund (ENEMY_LORE) und prefersWarMachineTarget in enemies.ts sagen anderes,
+ * aber enemyToCombatUnit übernimmt das Feld nicht; die Notiz stellt ihren Ruf richtig.
+ */
+const KRIEGSMASCHINE: { routeId: string; gegner: string[]; text: string }[] = [
+  { routeId: 'siege_walls', gegner: ['wall_archer', 'siege_crossbowman'], text: 'Mauerschütze und Armbrustschütze sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden' },
+];
+
+/**
+ * Wie oft Gegner je Lauf vorkommen («Sechs Giftzahnspinnen je Lauf», «je nur einmal», «zweimal»): So oft stehen
+ * sie in den Räumen der Route (begegnungenJeLauf), mit `mindestens` keiner seltener. Die Zahl liest der Test aus
+ * dem Text (anzahlen), den Namen sucht er im Text; mit `nameDavor` davor in der Notiz, wo der Text auf ihn
+ * zurückweist («Von beiden kommen hier je drei», «drei von ihnen», «nur einer»). Ein «mal» kann auch einen Takt
+ * im Kampf meinen; das gehört nach WUT («dreimal vorgestellt») oder TAKT, der es aber nicht nachrechnet: Ein Takt
+ * steht als Abstand («jede vierte Runde») oder mit seinen Runden da.
+ */
+const JE_LAUF: { routeId: string; gegner: string[] | 'alle'; text: string; mindestens?: true; nameDavor?: true }[] = [
+  { routeId: 'forest_ruins', gegner: ['forest_bandit'], text: 'stehen zwei Waldbanditen' },
+  { routeId: 'haunted_woods', gegner: ['cursed_wisp', 'forest_shaman'], text: 'Von beiden kommen hier je drei', nameDavor: true },
+  { routeId: 'ocean_abyss', gegner: ['drowned_knight', 'deep_sea_angler'], text: 'kommen drei von ihnen und drei Tiefseeangler', nameDavor: true },
+  { routeId: 'cave_spider', gegner: ['venomfang_spider'], text: 'Sechs Giftzahnspinnen je Lauf' },
+  { routeId: 'crystal_mines', gegner: ['crystal_beetle'], text: 'Sechs Kristallkäfer je Lauf' },
+  { routeId: 'swamp_long', gegner: ['mire_phantom', 'hollow_shade'], text: 'Sumpfphantom und Hohlschatten kommen je nur einmal je Lauf vor' },
+  { routeId: 'swamp_village', gegner: ['swamp_troll'], text: 'Im Sumpfdorf kommt nur einer vor', nameDavor: true },
+  { routeId: 'swamp_village', gegner: ['leech_swarm'], text: 'der Blutegelschwarm dagegen zweimal' },
+  { routeId: 'frozen_pass', gegner: ['skeleton_warrior'], text: 'Fünf Skelettkrieger je Lauf' },
+  { routeId: 'frozen_pass', gegner: ['bone_knight', 'stone_guardian'], text: 'Knochenritter und Steinwächter kommen je nur einmal vor' },
+  { routeId: 'siege_fortress', gegner: ['siege_defender'], text: 'Sieben Burgverteidiger je Lauf' },
+  { routeId: 'shadow_catacombs', gegner: 'alle', text: 'jede Gegnerart kommt mindestens zweimal je Lauf vor', mindestens: true },
+  { routeId: 'magma_caverns', gegner: 'alle', text: 'keine der sechs Gegnerarten seltener als zweimal je Lauf vor', mindestens: true },
+  { routeId: 'volcano_core', gegner: ['fire_bat'], text: 'Die Feuerfledermaus begegnet einem hier sechsmal je Lauf' },
+  { routeId: 'himmelsarchiv', gegner: ['fluestergeist'], text: 'Der Flüstergeist heilt mit Stiller Restaurierung um 70 und kommt fünfmal je Lauf' },
+  { routeId: 'sternenschmiede', gegner: ['funkenwichtel'], text: 'Sieben Funkenwichtel je Lauf' },
+];
+
+/**
+ * Die Gegner einer Seite als Muster: jedes Wort ihrer Namen ab vier Buchstaben mit grossem Anfang («Waldbandit»,
+ * bei «Torhüter aus Messing» «Torhüter» und «Messing»), dazu «Gegner». Ein Umlaut der Mehrzahl passt mit:
+ * «Waldwolf» auch auf «Waldwölfe», «Feuerfledermaus» auf «Feuerfledermäuse».
+ */
+function gegnerMuster(routeId: string): string {
+  const worte = Object.keys(begegnungenJeLauf(routeId))
+    .flatMap(id => ENEMY_DEFS[id].name.split(/[\s,:]+/))
+    .filter(wort => /^[A-ZÄÖÜ][^\s]{3,}$/.test(wort))
+    .concat('Gegner')
+    .map(wort => wort.replace(/[.*+?^${}()|[\]\\]/g, '\\$&').replace(/[aä]/g, '[aä]').replace(/[oö]/g, '[oö]').replace(/[uü]/g, '[uü]'));
+  return [...new Set(worte)].join('|');
+}
+
+/**
+ * Die Stellen einer Notiz, die kein Eintrag der Tabellen oben abdeckt (was dort steht, rechnet der Test nach):
+ * - «Runde», «Zug» oder «Züge», auch «Kampfrunden», «Spielzug»; Zusammensetzungen nur mit Kampf- und Spiel-:
+ *   «Rückzug», «Anzug», «Atemzug» oder «umrunden» meinen keinen Zug im Kampf und keine Runde;
+ * - «jede», «jedem», «jeden», «jeder», «jedes» oder «alle» und eine Zahl (Wort oder Ziffer);
+ * - wie oft: «einmal», «zweimal», «3-mal» … (MAL), «je Lauf», «pro Lauf», «je» und eine Zahl («je drei», «je nur
+ *   einmal»), «nur ein», «nur eine», «nur einer» …, eine Zahl vor einem Gegner der Seite («zwei Waldbanditen»,
+ *   «sechs Gegnerarten», gegnerMuster; ein Name nur mit grossem Anfang, «brutal» ist nicht «Brut»);
+ * - «Luft…» und «Kriegsmaschine».
+ */
+function ohneEintrag(routeId: string, text: string): string[] {
+  const angabe = new RegExp([
+    '\\b(?:Kampf|Spiel)?runden?\\b',
+    '\\b(?:Kampf|Spiel)?z(?:ug(?:e|es|s)?|üge|ügen)\\b',
+    `\\b(?:alle|jede[mnrs]?)\\s+(?:\\d+|(?:${ZAHLWOERTER})[nrs]?)\\b`,
+    MAL,
+    '\\b(?:je|pro)\\s+Lauf\\b',
+    `\\bje\\s+(?:nur\\s+)?(?:\\d+|ein[a-z]*|${GRUNDZAHLEN})\\b`,
+    '\\bnur\\s+ein(?:e[mnrs]?|s)?\\b',
+    '\\bLuft',
+    'Kriegsmaschine',
+  ].join('|'), 'gi');
+  const zahlVorGegner = new RegExp(`\\b(?:\\d+|${GRUNDZAHLEN})\\s+(?:[a-zäöü]+\\s+)?(${gegnerMuster(routeId)})[a-zäöü]*`, 'gi');
+  const bereiche = [...TAKT, ...WUT, ...WIRKUNG, ...KRIEGSMASCHINE, ...JE_LAUF]
+    .filter(e => e.routeId === routeId && text.includes(e.text))
+    .map(e => ({ von: text.indexOf(e.text), bis: text.indexOf(e.text) + e.text.length }));
+  return [...text.matchAll(angabe), ...[...text.matchAll(zahlVorGegner)].filter(m => /^[A-ZÄÖÜ]/.test(m[1]))]
+    .sort((a, b) => a.index - b.index)
+    .filter(m => !bereiche.some(b => m.index >= b.von && m.index + m[0].length <= b.bis))
+    .map(m => m[0]);
+}
+
 describe('Ottokars Randnotizen', () => {
   it('jede Route der Karte hat genau eine Notiz, keine Notiz ohne Route', () => {
     const ids = MONSTERBUCH_NOTIZEN.map(n => n.routeId);
@@ -303,6 +738,334 @@ describe('Ottokars Randnotizen', () => {
       expect(saetze, notiz.routeId).toBeGreaterThanOrEqual(2);
       expect(saetze, notiz.routeId).toBeLessThanOrEqual(3);
     }
+  });
+
+  it('jede Takt-Angabe stimmt mit dem echten Kampf (Abklingzeit N: erst N + 1 Runden später wieder)', () => {
+    for (const t of TAKT) {
+      const name = `${t.routeId} ${t.faehigkeit}`;
+      expect(notizText(t.routeId), name).toContain(t.text);
+      expect(begegnungenJeLauf(t.routeId)[t.gegner], name).toBeGreaterThan(0);
+      const i = ENEMY_DEFS[t.gegner].skills.findIndex(s => s.name === t.faehigkeit);
+      expect(i, name).toBeGreaterThanOrEqual(0);
+      expect(imKampf(t.gegner)[i].map(e => e.runde), name).toEqual(t.runden);
+      // «jede vierte», «jeden zweiten», «alle acht», «alle 3», «jede Runde»: genau so weit liegen die Einsätze auseinander
+      const abstand = abstaende(t.text);
+      for (const n of abstand) {
+        expect(new Set(t.runden.slice(1).map((r, k) => r - t.runden[k])), name).toEqual(new Set([n]));
+      }
+      // «zuerst in Runde 2», «nur in Runde 3 und 14»: die ersten Einsätze, ohne Abstand alle
+      const genannt = /\bRunde\s+(\d+(?:(?:,\s*|\s+und\s+)\d+)*)/.exec(t.text)?.[1].split(/,\s*|\s+und\s+/).map(Number) ?? [];
+      if (genannt.length > 0) expect(abstand.length > 0 ? t.runden.slice(0, genannt.length) : t.runden, name).toEqual(genannt);
+      expect(abstand.length + genannt.length, `${name}: kein Takt im Text`).toBeGreaterThan(0);
+    }
+  });
+
+  it('jede Wut-Angabe stimmt mit dem Kampf (bossWut, mit Sonnenuhren wutAbRunde)', () => {
+    for (const w of WUT) {
+      const name = `${w.routeId}: ${w.text}`;
+      expect(notizText(w.routeId), name).toContain(w.text);
+      expect(begegnungenJeLauf(w.routeId)[w.gegner], name).toBeGreaterThan(0);
+      const wut = bossWut(w.gegner);
+      // Je Wahl der Route, welche die Wut vorzieht, die Runden; die ersten `sonnenuhren` davon sind genommen
+      const vorziehen = ROUTE_DEFS[w.routeId].encounters
+        .map(enc => Math.max(enc.wahl?.a.bossWutFrueher ?? 0, enc.wahl?.b.bossWutFrueher ?? 0))
+        .filter(n => n > 0);
+      const sonnenuhren = w.sonnenuhren ?? 0;
+      expect(vorziehen.length, name).toBeGreaterThanOrEqual(sonnenuhren);
+      const frueher = vorziehen.slice(0, sonnenuhren).reduce((a, b) => a + b, 0);
+      expect(Number(/\bab Runde (\d+)/.exec(w.text)?.[1]), name).toBe(wutAbRunde(wut, { bossWutFrueher: frueher }));
+      const faktor = (wort: string) => new RegExp(`${wort} mal (\\d+(?:,\\d+)?)`).exec(w.text)?.[1];
+      if (faktor('Angriff')) expect(faktor('Angriff'), name).toBe(wut.atkMult.toLocaleString('de'));
+      if (faktor('Tempo')) expect(faktor('Tempo'), name).toBe(wut.spdMult.toLocaleString('de'));
+      // «um 2 Runden vor»: so viel zieht jede dieser Wahlen vor; «dreimal vorgestellt»: so viele sind genommen
+      const um = /\bum (\d+) Runden vor\b/.exec(w.text)?.[1];
+      if (um) expect(new Set(vorziehen), name).toEqual(new Set([Number(um)]));
+      const mal = /\b(\S+)mal vorgestellt\b/.exec(w.text)?.[1];
+      if (mal) expect(zahlWert(mal), name).toBe(sonnenuhren);
+    }
+    // «so früh wie von sich aus kein anderer Boss in diesem Buch» (der Leviathan ab Runde 7)
+    const andere = erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_leviathan');
+    expect(Math.min(...andere.map(id => bossWut(id).afterRound))).toBeGreaterThan(bossWut('boss_leviathan').afterRound);
+  });
+
+  it('Angriff, Dauer und Luft aus den Notizen stehen so im Kampfprotokoll', () => {
+    for (const w of WIRKUNG) {
+      const name = `${w.routeId} ${w.faehigkeit}`;
+      expect(notizText(w.routeId), name).toContain(w.text);
+      expect(begegnungenJeLauf(w.routeId)[w.gegner], name).toBeGreaterThan(0);
+      const i = ENEMY_DEFS[w.gegner].skills.findIndex(s => s.name === w.faehigkeit);
+      expect(i, name).toBeGreaterThanOrEqual(0);
+      // Die Zeile des Gegners beim ersten Einsatz, mit denselben Zahlen («drei Runden» = «3 Runden»)
+      const [erster] = imKampf(w.gegner)[i];
+      expect(erster?.zeilen.some(z => z.includes(ENEMY_DEFS[w.gegner].name) && z.includes(w.protokoll)), name).toBe(true);
+      expect(zahlen(w.text), name).toEqual(zahlen(w.protokoll));
+    }
+  });
+
+  it('was eine Notiz über die Kriegsmaschine sagt, stimmt im Belagerungsraum mit Katapult', () => {
+    for (const k of KRIEGSMASCHINE) {
+      expect(notizText(k.routeId), k.routeId).toContain(k.text);
+      for (const id of k.gegner) {
+        expect(k.text, id).toContain(ENEMY_DEFS[id].name);
+        expect(ROUTE_DEFS[k.routeId].encounters.some(enc => enc.type === 'fortification' && enc.enemies?.includes(id)), id).toBe(true);
+        // 30 Runden neben dem Katapult: Fähigkeiten und Grundangriffe treffen Helden, keiner das Katapult
+        const ziele = zieleInBelagerung(id);
+        expect(ziele.katapult, id).toBe(0);
+        expect(ziele.helden, id).toBeGreaterThan(0);
+      }
+    }
+  });
+
+  it('wie oft ein Gegner je Lauf vorkommt («Sechs Giftzahnspinnen je Lauf», «je nur einmal»), stimmt mit den Räumen der Route', () => {
+    for (const j of JE_LAUF) {
+      const name = `${j.routeId}: ${j.text}`;
+      const notiz = notizText(j.routeId);
+      expect(notiz, name).toContain(j.text);
+      const werte = anzahlen(j.text);
+      expect(new Set(werte).size, `${name}: genau eine Anzahl (${werte})`).toBe(1);
+      const anzahl = werte[0];
+      const begegnungen = begegnungenJeLauf(j.routeId);
+      const gegner = j.gegner === 'alle' ? Object.keys(begegnungen) : j.gegner;
+      // Der Name steht im Text, mit nameDavor auch davor («Von beiden kommen hier je drei», «drei von ihnen»)
+      const bisHier = j.nameDavor ? notiz.slice(0, notiz.indexOf(j.text) + j.text.length) : j.text;
+      for (const id of gegner) {
+        if (j.gegner !== 'alle') expect(bisHier, `${name}: ${id}`).toContain(ENEMY_DEFS[id].name);
+        if (j.mindestens) expect(begegnungen[id], `${name}: ${id}`).toBeGreaterThanOrEqual(anzahl);
+        else expect(begegnungen[id], `${name}: ${id}`).toBe(anzahl);
+      }
+      // «keine der sechs Gegnerarten»: so viele Arten hat die Seite
+      const arten = /\b(\S+) Gegnerarten\b/.exec(j.text)?.[1];
+      if (arten) expect(gegner.length, name).toBe(zahlWert(arten));
+    }
+    // Was die Notizen sonst über die Räume sagen. «mehr als von jedem anderen Gegner hier»: Von keinem anderen
+    // Gegner der Spinnenhöhle kommen so viele
+    expect(notizText('cave_spider')).toContain('Sechs Giftzahnspinnen je Lauf, mehr als von jedem anderen Gegner hier');
+    const { venomfang_spider: spinnen, ...andere } = begegnungenJeLauf('cave_spider');
+    expect(Math.max(...Object.values(andere))).toBeLessThan(spinnen);
+    // «zwei Waldbanditen statt einem wie auf dem kurzen Waldpfad»
+    expect(notizText('forest_ruins')).toContain('stehen zwei Waldbanditen statt einem wie auf dem kurzen Waldpfad');
+    expect(ROUTE_DEFS.forest_short.name).toBe('Waldpfad (kurz)');
+    expect(begegnungenJeLauf('forest_short').forest_bandit).toBe(1);
+    // «Einen Boss gibt es nicht»
+    for (const routeId of ['ocean_abyss', 'shadow_catacombs']) {
+      expect(notizText(routeId), routeId).toMatch(/\beinen Boss gibt es nicht\b/i);
+      expect(Object.keys(begegnungenJeLauf(routeId)).filter(id => ENEMY_DEFS[id].isBoss), routeId).toEqual([]);
+    }
+  });
+
+  it('die Anzahl je Lauf liest der Test aus dem Text: «einmal», «zweimal», «Sechs …», «je drei», «nur einer»', () => {
+    expect(anzahlen('kommen je nur einmal je Lauf vor')).toEqual([1]);
+    expect(anzahlen('der Blutegelschwarm dagegen zweimal, der Troll 3-mal')).toEqual([2, 3]);
+    expect(anzahlen('keine der sechs Gegnerarten seltener als zweimal je Lauf')).toEqual([2]);
+    expect(anzahlen('Sechs Giftzahnspinnen je Lauf')).toEqual([6]);
+    expect(anzahlen('kommen drei von ihnen und 3 Tiefseeangler')).toEqual([3, 3]);
+    expect(anzahlen('Von beiden kommen hier je drei')).toEqual([3]);
+    expect(anzahlen('Im Sumpfdorf kommt nur einer vor')).toEqual([1]);
+    expect(anzahlen('Hier kommen viele vor')).toEqual([]);
+  });
+
+  it('die Takt-Prüfung liest Abstände in jeder Form: «jede vierte», «jeden zweiten», «jedem dritten», «alle 3»', () => {
+    // zahlWert nimmt auch gebeugte Zahlwörter («zweiten», «dritter», «drittes»)
+    expect(['vierte', 'zweiten', 'Dritter', 'drittes', 'drei', '3', '3.'].map(zahlWert)).toEqual([4, 2, 3, 3, 3, 3, 3]);
+    expect(zahlWert('Gegnerart')).toBeUndefined();
+    expect(abstaende('Sie beisst jeden zweiten Zug.')).toEqual([2]);
+    expect(abstaende('Er schlägt bei jedem dritten Hieb doppelt zu.')).toEqual([3]);
+    expect(abstaende('jede vierte Runde, alle 3 Runden, alle acht Runden, jede Runde')).toEqual([4, 3, 8, 1]);
+    // «jede Gegnerart», «jeder andere»: kein Abstand
+    expect(abstaende('Jede Gegnerart kommt vor, jeder andere nicht.')).toEqual([]);
+  });
+
+  it('keine Angabe zu Runden, Anzahlen, Luft oder Kriegsmaschine ohne Eintrag, den der Test nachrechnet', () => {
+    for (const notiz of MONSTERBUCH_NOTIZEN) expect(ohneEintrag(notiz.routeId, notiz.text), notiz.routeId).toEqual([]);
+    // Die Probe greift auch bei Ziffern, bei «jede Runde» und bei den Fehlern, die hier schon standen
+    const mit = (routeId: string, satz: string) => ohneEintrag(routeId, `${notizText(routeId)} ${satz}`);
+    expect(mit('volcano_core', 'Er beisst alle 2 Runden.')).toEqual(['alle 2', 'Runden']);
+    expect(mit('volcano_core', 'Er beisst jede Runde.')).toEqual(['Runde']);
+    expect(mit('ocean_shallows', 'Der Stromtentakel ist nach zwei Runden wieder bereit.')).toEqual(['Runden']);
+    expect(mit('ocean_depths', 'Seine Druckwelle zieht dazu 18 Luft aus dem Schild.')).toEqual(['Luft']);
+    expect(mit('siege_walls', 'Sie zielen bevorzugt auf die Kriegsmaschine.')).toEqual(['Kriegsmaschine']);
+    // Auch der Takt in Zügen («jeden zweiten Zug») und mit «jedem», aber kein «Zugang» oder «Jedem das Seine»
+    expect(mit('forest_short', 'Sie beisst jeden zweiten Zug.')).toEqual(['jeden zweiten', 'Zug']);
+    expect(mit('forest_short', 'Nach drei Zügen ist sie wieder bereit.')).toEqual(['Zügen']);
+    expect(mit('forest_short', 'Er schlägt bei jedem dritten Hieb doppelt zu.')).toEqual(['jedem dritten']);
+    expect(mit('forest_short', 'Der Zugang ist schmal, und jeder Gegner kämpft allein. Jedem das Seine.')).toEqual([]);
+    // Zusammensetzungen mit Kampf- und Spiel-; «Rückzug», «Anzug», «Atemzug» und «umrunden» nicht
+    expect(mit('forest_short', 'Nach 20 Kampfrunden ist Schluss.')).toEqual(['Kampfrunden']);
+    expect(mit('forest_short', 'Nach drei Spielzügen ist sie bereit, jede Spielrunde und jeden Kampfzug.'))
+      .toEqual(['Spielzügen', 'Spielrunde', 'Kampfzug']);
+    expect(mit('forest_short', 'Beim Rückzug im Anzug, mit jedem Atemzug: Die Wölfe umrunden die Helden.')).toEqual([]);
+    // «einmal», «dreimal», «3-mal», «zwei Mal», auch «noch einmal»: ein Takt im Kampf oder wie oft ein Gegner je
+    // Lauf vorkommt (das gehört in JE_LAUF); «auf einmal», «nicht einmal», «einmalig», «manchmal» und «Angriff mal
+    // 2» nicht
+    expect(mit('ruins_crypts', 'Der Priester heilt sich dreimal im Kampf.')).toEqual(['dreimal']);
+    expect(mit('ruins_crypts', 'Sein Gebet kommt 3-mal, sein Fluch zwei Mal, sein Segen ein Mal.')).toEqual(['3-mal', 'zwei Mal', 'ein Mal']);
+    expect(mit('ruins_crypts', 'Er heilt sich noch einmal. Einmal heilt er alle.')).toEqual(['einmal', 'Einmal']);
+    expect(mit('ruins_crypts', 'Auf einmal greift er an, nicht einmal der Schild hilft, ein einmaliger Fluch, manchmal sogar mit Angriff mal 2.'))
+      .toEqual([]);
+    // Wie oft je Lauf: «je Lauf», «pro Lauf», «je» und eine Zahl, «nur einer», eine Zahl vor einem Gegner der Seite
+    // (auch mit Umlaut der Mehrzahl und einem Wort dazwischen)
+    expect(mit('cave_spider', 'Die Spinnenkönigin kommt zweimal je Lauf vor.')).toEqual(['zweimal', 'je Lauf']);
+    expect(mit('forest_short', 'Vier Waldwölfe pro Lauf, von den Bären je zwei, Spinnen je nur eine.'))
+      .toEqual(['Vier Waldwölfe', 'pro Lauf', 'je zwei', 'je nur eine']);
+    expect(mit('forest_short', 'Vom Waldbären kommt nur einer, dazu 2 weitere Waldbanditen und drei Gegner.'))
+      .toEqual(['nur einer', '2 weitere Waldbanditen', 'drei Gegner']);
+    expect(mit('volcano_core', 'Hier fliegen drei Feuerfledermäuse.')).toEqual(['drei Feuerfledermäuse']);
+    // Nicht: «je nach», eine Zahl vor anderem («10 Gold, ein Waldwolf», «15 Abwehr; Korrund»), ein Name klein
+    // geschrieben («brutal» ist nicht «Brut»), der Gegner einer anderen Seite
+    expect(mit('forest_short', 'Je nach Lage bringt er 10 Gold, ein Waldwolf 4 bis 5, der Waldbär 15 Leben; Waldwolf.')).toEqual([]);
+    expect(mit('sternenschlund', 'Nyxars Brut beisst drei brutale Male, fünf Kometen fallen.')).toEqual([]);
+    expect(mit('forest_short', 'Drei Feuerfledermäuse gibt es hier nicht.')).toEqual([]);
+  });
+});
+
+describe('Monsterbuch-Bildschirm (HTML ohne Browser)', () => {
+  it('genau die gewählte Seite ist gedrückt und ausgewählt, die Pfeile sperren am Buchende', async () => {
+    const { seitenwahlHtml } = await import('../src/ui/screens/BestiariumScreen');
+    const state = createNewGameState();
+    const alle = seiten();
+    alle.forEach((seite, i) => {
+      // seiten() baut jedes Mal neue Objekte, wie im Bildschirm
+      const html = seitenwahlHtml(state, seiten()[i]);
+      expect([...html.matchAll(/data-seite="(\w+)" aria-pressed="true"/g)].map(m => m[1])).toEqual([seite.routeId]);
+      expect([...html.matchAll(/aria-pressed="/g)].length).toBe(alle.length);
+      expect([...html.matchAll(/<option value="(\w+)" selected>/g)].map(m => m[1])).toEqual([seite.routeId]);
+      expect(html.includes('aria-label="Vorige Seite" disabled'), seite.routeId).toBe(i === 0);
+      expect(html.includes('aria-label="Nächste Seite" disabled'), seite.routeId).toBe(i === alle.length - 1);
+    });
+  });
+
+  it('Detailfenster: Fähigkeiten nach der Kampfregel, keine doppelten Bezeichnungen, Sonnenuhr bei Sunna', async () => {
+    const { detailHtml } = await import('../src/ui/screens/BestiariumScreen');
+    const state = createNewGameState();
+    Object.assign(state.bestiarium, { strecke: Object.fromEntries(erreichbareGegner().map(id => [id, 30])) });
+    for (const id of erreichbareGegner()) {
+      const html = detailHtml(state, ENEMY_DEFS[id]);
+      // Rolle unter dem Namen: keine Bezeichnung doppelt («💀 Boss · BOSS»)
+      const rolle = /<div class="ms">([^<]*)<\/div>/.exec(html)?.[1] ?? '';
+      const teile = rolle.split(' · ').map(t => t.replace(/^\P{L}+/u, '').toLowerCase());
+      expect(teile[0], id).not.toBe('');
+      expect(new Set(teile).size, `${id}: ${rolle}`).toBe(teile.length);
+      const plan = einsatzPlan(id, ENEMY_DEFS[id].skills);
+      ENEMY_DEFS[id].skills.forEach((sk, i) => {
+        // Was die Fähigkeit tut, dahinter ihre Einsätze
+        expect(html, id).toContain(`${faehigkeitText(id, sk)} ${rundenText(plan.runden[i], plan.belagerung[i], plan.bis)}`);
+        // Die alten Texte aus enemies.ts stehen nicht mehr im Fenster (ausser einer stimmt zufällig: «Heilt sich um 150»)
+        for (const alt of [sk.description, ENEMY_LORE[id]?.skillDescriptions?.[sk.id]]) {
+          if (alt && !faehigkeitText(id, sk).includes(alt)) expect(html, `${id} ${sk.name}`).not.toContain(alt);
+        }
+        if (FAEHIGKEIT_ART[sk.effectType] === sk.name) expect(html, id).not.toContain(`${sk.name} · Abklingzeit`);
+      });
+      // «Belagerung» heisst im Spiel der ganze Dungeon: Die Einsätze nennen den Raum («Kampf um eine Befestigung»)
+      expect(html, id).not.toMatch(/Belagerungen \(bis Runde|nur in Belagerungen/);
+    }
+    expect(detailHtml(state, ENEMY_DEFS.forest_shaman)).toContain('<span class="md-skill-cd">Abklingzeit 4 Runden</span>');
+    expect(detailHtml(state, ENEMY_DEFS.forest_shaman)).toContain('Einsatz in Runde 1, 6, 11 …');
+    expect(detailHtml(state, ENEMY_DEFS.boss_oberarchivar)).toContain('Einsatz in Runde 3 und 14.');
+    // Der Kampfmagier kämpft auch in gewöhnlichen Räumen (bis Runde 20): Nach Runde 17 kommt die Schutzbarriere nur
+    // im Kampf um eine Befestigung (bis Runde 30) noch einmal, im eigenen Satz
+    expect(detailHtml(state, ENEMY_DEFS.siege_mage))
+      .toContain('Einsatz in Runde 2, 9 und 17. Im Kampf um eine Befestigung (bis Runde 30) auch in Runde 24.');
+    // Der Mauerschütze kämpft ebenfalls in beiden Räumen, setzt aber öfter als dreimal ein: «…» ohne zweiten Satz
+    expect(detailHtml(state, ENEMY_DEFS.wall_archer)).toContain('Einsatz in Runde 1, 5, 9 …');
+    expect(detailHtml(state, ENEMY_DEFS.wall_archer)).not.toContain('Kampf um eine Befestigung');
+    expect(detailHtml(state, ENEMY_DEFS.boss_elder_treant)).toMatch(/<div class="ms">💀 Boss<\/div>/);
+    expect(detailHtml(state, ENEMY_DEFS.boss_sunna)).toContain('Im Dungeon «Das Morgentor» können Wahlen unterwegs die Wut bis auf Runde 4 vorziehen.');
+    expect(detailHtml(state, ENEMY_DEFS.boss_leviathan)).not.toContain('vorziehen');
+  });
+});
+
+describe('Druck auf gesperrte Knöpfe (ohne Browser)', () => {
+  // Chromium schickt einem Druck auf einen gesperrten Knopf nur pointerdown, kein mousedown und keinen Klick. Ohne
+  // preventDefault nähme er den Fokus weg: nach einem Doppelklick auf › am Buchende den Fokus auf ‹, nach einem
+  // Doppelklick auf «📜 Fundbuch» den im Suchfeld. Im Browser prüft das zusätzlich der Playwright-Lauf.
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** window wie im Browser: Node meldet einen Hörer mit «true» (Capture) sonst nicht ab */
+  class Fenster extends EventTarget {
+    removeEventListener(typ: string, f: EventListenerOrEventListenerObject | null, o?: boolean | EventListenerOptions): void {
+      super.removeEventListener(typ, f, typeof o === 'boolean' ? { capture: o } : o);
+    }
+  }
+
+  /** Wo ein Druck landet (closest wie im Browser): im Text eines gesperrten Knopfs, auf einem offenen, daneben */
+  const IN_GESPERRTEM_KNOPF = { closest: (sel: string) => (sel === 'button' || sel === 'button:disabled' ? {} : null) };
+  const AUF_OFFENEM_KNOPF = { closest: (sel: string) => (sel === 'button' ? {} : null) };
+  const AUF_TEXT = { closest: () => null };
+
+  /** Ein Druck (pointerdown) auf `ziel`, bei `an` angekommen: true, wenn er den Fokus nicht wegnehmen darf */
+  function druck(an: EventTarget, ziel: object): boolean {
+    const e = new Event('pointerdown', { cancelable: true });
+    Object.defineProperty(e, 'target', { value: ziel });
+    an.dispatchEvent(e);
+    return e.defaultPrevented;
+  }
+
+  /** mousedown oder click bei `an`; detail zählt die Klicks in Folge (2: der zweite eines Doppelklicks) */
+  function maus(an: EventTarget, typ: 'mousedown' | 'click', detail: number): Event {
+    const e = Object.assign(new Event(typ, { cancelable: true }), { detail });
+    an.dispatchEvent(e);
+    return e;
+  }
+
+  it('schluckeZweitenKlick: 700 ms lang löst der zweite Klick nichts aus, und kein Druck nimmt den Fokus, auch keiner auf einen gesperrten Knopf', async () => {
+    vi.useFakeTimers();
+    const fenster = new Fenster();
+    vi.stubGlobal('window', fenster);
+    const { schluckeZweitenKlick } = await import('../src/ui/components/FensterHilfen');
+
+    schluckeZweitenKlick();
+    let klicks = 0;
+    fenster.addEventListener('click', () => { klicks++; }); // was hinter dem Fenster liegt (Karte, Kachel)
+    // Der zweite Druck eines Doppelklicks: auf einem gesperrten Knopf nur pointerdown, sonst mousedown mit detail 2.
+    // Auf einem offenen Knopf und auf Text lässt pointerdown den Browser machen (dort hält mousedown den Fokus).
+    expect(druck(fenster, IN_GESPERRTEM_KNOPF)).toBe(true);
+    expect(druck(fenster, AUF_OFFENEM_KNOPF)).toBe(false);
+    expect(druck(fenster, AUF_TEXT)).toBe(false);
+    expect(maus(fenster, 'mousedown', 2).defaultPrevented).toBe(true);
+    expect(maus(fenster, 'click', 2).defaultPrevented).toBe(true);
+    expect(klicks).toBe(0);
+    // Ein neuer einfacher Druck beendet es: Danach geht alles wieder seinen Weg
+    expect(maus(fenster, 'mousedown', 1).defaultPrevented).toBe(false);
+    expect(druck(fenster, IN_GESPERRTEM_KNOPF)).toBe(false);
+    expect(maus(fenster, 'mousedown', 2).defaultPrevented).toBe(false);
+    maus(fenster, 'click', 1);
+    maus(fenster, 'click', 2);
+    expect(klicks).toBe(2);
+
+    // Ohne neuen Druck gilt es 700 ms. Ein zweites Fenster 400 ms danach hat seine eigenen 700 ms: Das Ende des
+    // ersten nimmt ihm nichts weg
+    schluckeZweitenKlick();
+    vi.advanceTimersByTime(400);
+    schluckeZweitenKlick();
+    vi.advanceTimersByTime(699);
+    expect(druck(fenster, IN_GESPERRTEM_KNOPF)).toBe(true);
+    expect(maus(fenster, 'mousedown', 2).defaultPrevented).toBe(true);
+    vi.advanceTimersByTime(1);
+    expect(druck(fenster, IN_GESPERRTEM_KNOPF)).toBe(false);
+    expect(maus(fenster, 'mousedown', 2).defaultPrevented).toBe(false);
+  });
+
+  it('im Monsterbuch nimmt kein Druck auf einen gesperrten Knopf den Fokus (› am Buchende, unbekannte Karte, abgeholte Prämie)', async () => {
+    const { initBestiariumScreen, renderBestiariumScreen } = await import('../src/ui/screens/BestiariumScreen');
+    /** Ein Knoten der Seite: Hörer wie im Browser; querySelector gibt einen neuen Knoten, querySelectorAll zwei (‹ ›) */
+    class Knoten extends EventTarget {
+      innerHTML = '';
+      kinder: Knoten[] = [];
+      querySelector(): Knoten { return new Knoten(); }
+      querySelectorAll(): Knoten[] { return [new Knoten(), new Knoten()]; }
+      appendChild(kind: Knoten): Knoten { this.kinder.push(kind); return kind; }
+    }
+    vi.stubGlobal('document', { getElementById: () => null, createElement: () => new Knoten() });
+    initBestiariumScreen(createNewGameState());
+    const app = new Knoten();
+    renderBestiariumScreen(app as unknown as HTMLElement);
+    const [bildschirm] = app.kinder;
+    expect(druck(bildschirm, IN_GESPERRTEM_KNOPF)).toBe(true);
+    expect(druck(bildschirm, AUF_OFFENEM_KNOPF)).toBe(false);
+    expect(druck(bildschirm, AUF_TEXT)).toBe(false);
   });
 });
 

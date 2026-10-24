@@ -5,6 +5,7 @@
 // ────────────────────────────────────────────────────────────────
 
 import { FighterStats, GuildFighter } from '../models/GuildRoster';
+import { werteAufStufe } from '../systems/HeroProgression';
 import { CLASS_DEFS } from './classes';
 
 export interface MusterHeld {
@@ -21,27 +22,16 @@ export interface MusterTeam {
   helden: MusterHeld[];
 }
 
-/** Werte-Zuwachs je Stufe wie in HeroProgression (Klassen-Bonus) … */
-const STUFEN_BONUS: Record<string, { hp: number; atk: number; def: number }> = {
-  guardian: { hp: 4, atk: 0.3, def: 0.5 }, ranger: { hp: 2, atk: 0.6, def: 0.1 },
-  berserker: { hp: 3, atk: 0.5, def: 0.2 }, assassin: { hp: 2, atk: 0.6, def: 0.1 },
-  cleric: { hp: 3, atk: 0.2, def: 0.3 }, paladin: { hp: 4, atk: 0.25, def: 0.4 },
-  bard: { hp: 2, atk: 0.2, def: 0.2 }, witch: { hp: 2, atk: 0.4, def: 0.1 },
-  necromancer: { hp: 2, atk: 0.35, def: 0.2 }, druid: { hp: 3, atk: 0.25, def: 0.25 },
-};
-/** … und durch Training (+2 Leben, +1 Angriff, +1 Rüstung); gerechnet wird je die Hälfte. */
-const TRAINING = { hp: 2, atk: 1, def: 1 };
-
-/** Grundwerte eines Musterhelden auf seiner Stufe, ohne Ausrüstung. */
+/**
+ * Grundwerte eines Musterhelden auf seiner Stufe, ohne Ausrüstung: genau die eines echten Helden dieser
+ * Klasse und Stufe (werteAufStufe, also awardXP mit den Klassen-Boni samt Krit und Tempo; der Test in
+ * tests/heldenAusbildung.test.ts hält beides gleich). Bis zum 23.10.2026 stand hier eine eigene Rechnung:
+ * je Stufe die Hälfte von Klassen-Bonus und altem Training (+2 Leben, +1 Angriff, +1 Rüstung), einmal
+ * gerundet. Seit dem Umbau des Trainings war das für keinen Helden mehr erreichbar; den Mittelwert tragen
+ * jetzt die Klassen-Boni selbst (LEVEL_BONUSES, docs/AUSBILDUNG.md, «Eichung nach dem Umbau»).
+ */
 export function musterWerte(held: MusterHeld): FighterStats {
-  const base = { ...CLASS_DEFS[held.classId].baseStats };
-  const bonus = STUFEN_BONUS[held.classId];
-  const ups = held.stufe - 1;
-  base.maxHp = Math.round(base.maxHp + ups * (bonus.hp + TRAINING.hp) / 2);
-  base.atk = Math.round(base.atk + ups * (bonus.atk + TRAINING.atk) / 2);
-  base.def = Math.round(base.def + ups * (bonus.def + TRAINING.def) / 2);
-  base.hp = base.maxHp;
-  return base;
+  return werteAufStufe(held.classId, CLASS_DEFS[held.classId].baseStats, held.stufe);
 }
 
 /** Ausrüstung nach den Regeln von GearSystem.equip: Schild nur zu einer Einhand-Waffe */

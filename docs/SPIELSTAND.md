@@ -43,8 +43,10 @@ wird nicht angeboten (zurückgeholt würde er nicht geladen).
 
 ## Fenster «Spielstand»
 
-Knopf **💾 Spielstand** im Hauptmenü unten rechts, neben der Hintergrund-Wahl. Auf Touch-Geräten
-und schmalen Bildschirmen ist seine Tippfläche 44 px hoch, ohne dass Knopf oder Leiste wachsen.
+Knopf **💾 Spielstand** im Hauptmenü in der Leiste unter dem Titel, neben der Hintergrund-Wahl. Auf Touch-Geräten
+und schmalen Bildschirmen ist seine Tippfläche wie die aller Knöpfe der Leiste mindestens 44 × 44 px gross, ohne
+dass Knopf oder Leiste wachsen. Am schmalen Handy (bis 380 px Breite) steht nur «💾» da (für Screenreader
+«Spielstand»), damit die Leiste bis 320 px Breite in eine Zeile passt (magic-city.css, «BG Switcher»).
 Code: `src/ui/components/SpielstandFenster.ts`, Stile: `src/ui/html/spielstand.css`.
 
 - **Oben:** was gespeichert ist: Tag, Stadtstufe, Anzahl Helden, höchste Heldenstufe.

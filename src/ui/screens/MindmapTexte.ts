@@ -13,6 +13,7 @@ import { GameState } from '../../models/GameState';
 import { getGebaeudeStatus, gebaeudeName, dasGebaeude, GebaeudeStatus, kostenText } from '../../systems/GebaeudeStatus';
 import { naechsterBau } from '../../systems/Empfehlung';
 import { maxStufe, kannAusbauen } from '../../systems/Ausbau';
+import { anzahlText } from '../../utils/Anzahl';
 
 export function quellenVorrat(state: GameState, items: string[]): number {
   return items.reduce((sum, item) => sum + Math.floor(state.globalStock[item] ?? 0), 0);
@@ -25,7 +26,9 @@ function traenkeImLager(state: GameState): number {
 }
 
 export function zielWert(state: GameState, wert: 'bauen' | 'expeditionen'): string {
-  if (wert === 'expeditionen') return `${state.fighters.length} Helden · ${traenkeImLager(state)} Tränke`;
+  if (wert === 'expeditionen') {
+    return `${anzahlText(state.fighters.length, 'Held', 'Helden')} · ${anzahlText(traenkeImLager(state), 'Trank', 'Tränke')}`;
+  }
   const e = naechsterBau(state);
   // Erst ein Held, dann Gebäude: der empfohlene Schritt selbst («Held anheuern (50 Gold)», Klick geht zu den Helden)
   if (e && !e.typeId) return e.text;

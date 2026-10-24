@@ -22,7 +22,7 @@ import { CombatScreen } from './CombatScreen';
 import { initExpeditionsScreen } from './ExpeditionsScreen';
 import { ranglistenZeilen } from '../components/RanglistenBilanzAnzeige';
 import { auftragsZeilen } from '../components/AuftragsBilanzAnzeige';
-import { truhenHinweise } from '../components/SchmiedeAnzeige';
+import { escapeAttr, truhenHinweise } from '../components/SchmiedeAnzeige';
 import { showChestReveal } from '../components/ChestRevealOverlay';
 import { wegBilanz, wegWirkungZeile } from '../components/WegAnzeige';
 import { chronikHtml, einleitungHtml, flavorHtml, folgenHtml, geschichtsText } from '../components/GeschichtsAnzeige';
@@ -312,7 +312,7 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
     const held = state.fighters.find(f => f.id === h.id);
     const weg = held ? wegBilanz(held, h.levelUps) : '';
     const farbe = weg ? '#fcd34d' : h.levelUps > 0 ? '#4ade80' : '#9ca3af';
-    body += line(`${h.name}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}${weg}`, farbe);
+    body += line(`${escapeAttr(h.name)}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}${weg}`, farbe);
     const wirkung = held ? wegWirkungZeile(held, h.wegWirkung) : '';
     if (wirkung) body += `<div class="weg-wirkung-zeile">${wirkung}</div>`;
   }

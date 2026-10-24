@@ -9,11 +9,18 @@
   color: var(--txt); padding: 3px 10px; cursor: pointer; font-size: 0.75rem; transition: .2s;
 }
 .fb-oeffnen:hover, .fb-oeffnen:focus-visible { border-color: var(--gold); color: var(--gold); }
+/* Touch und Handy: Tippfläche mindestens 44 × 44 px (wie .ss-oeffnen) */
 @media (pointer: coarse), (max-width: 700px) {
   .fb-oeffnen { position: relative; min-width: 44px; }
-  .fb-oeffnen::after { content: ''; position: absolute; left: 0; right: 0; top: 50%; height: 44px; transform: translateY(-50%); }
+  .fb-oeffnen::after {
+    content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    width: max(100% + 2px, 44px); height: max(100% + 2px, 44px);
+  }
 }
-/* Schmale Handys: die feste Leiste unten rechts passte mit dem Wort nicht mehr in 390 px, nur «📜» */
+@media (max-width: 700px) {
+  .fb-oeffnen { margin-left: 0; }
+}
+/* Schmale Handys: Mit dem Wort passte die Leiste über dem Banner nicht mehr in eine Zeile, nur «📜» */
 @media (max-width: 480px) {
   .fb-wort { display: none; }
 }
@@ -68,6 +75,7 @@
 .fb-text { color: #a89c86; font-style: italic; margin: 0 0 8px; line-height: 1.45; }
 .fb-sperre { color: #fcd34d; margin: 0 0 8px; }
 .fb-zeilen > li { padding: 6px 0; border-bottom: 1px solid var(--bdr); line-height: 1.45; }
+/* Die Gegner eines Dungeons unter seiner Kopfzeile, eingerückt und ohne Strich dazwischen */
 .fb-gegner { margin: 2px 0 0 14px; color: #c9bfae; font-size: 0.9rem; }
 .fb-gegner li::before { content: '· '; color: var(--mut); }
 .fb-leer, .fb-regel { color: var(--mut); font-size: 0.9rem; line-height: 1.45; }
@@ -83,15 +91,17 @@
 }
 .fb-zurueck:hover, .fb-zurueck:focus-visible { border-color: var(--gold); color: var(--gold); }
 
-@media (pointer: coarse) {
-  .fb-link { min-height: 44px; }
+/* Finger: auch kurze Links («Brot») mindestens 44 × 44 px */
+@media (pointer: coarse), (max-width: 700px) {
+  .fb-link { min-height: 44px; min-width: 44px; justify-content: center; }
 }
-/* Handy: Liste über dem Eintrag, das ganze Fenster scrollt, die Liste hat eine eigene Höhe */
+/* Handy: Liste über dem Eintrag, das ganze Fenster scrollt, die Liste hat eine eigene Höhe. ✕ bleibt beim
+   Scrollen oben rechts stehen (Escape und Rand gibt es am Handy nicht) */
 @media (max-width: 700px) {
   .fb-ov { padding: 0; align-items: stretch; }
   .fb-fenster { height: 100%; max-height: none; border-radius: 0; border: none; overflow-y: auto; padding: 14px 14px 24px; }
+  .fb-zu { position: fixed; z-index: 2; background: rgba(6,8,16,.9); }
   .fb-spalten { display: block; flex: none; }
   .fb-liste { max-height: 38vh; }
   .fb-eintrag { overflow: visible; margin-top: 14px; padding-right: 0; scroll-margin-top: 8px; }
-  .fb-link { min-height: 44px; }
 }

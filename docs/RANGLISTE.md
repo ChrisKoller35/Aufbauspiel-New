@@ -113,6 +113,12 @@ erste Sieg doppelt zählt und der neue Dungeon mehr Ruhm bringt, als die Rivalen
 bekommt ab und zu eine Truhe. Im Gipfel-Rennen ist man nie lange allein: Die Rivalen ziehen mit, und
 erst die ganze Karte bringt Platz 1 für immer.
 
+**Nachgemessen am 23.10.2026** (nach dem Umbau der Klassen-Boni, `docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»):
+Die Rangliste hängt nicht von den Werten der Helden ab, die Muster-Gilde zählt nur Expeditionen je Ebene. Die
+Ausgabe ist Zeichen für Zeichen dieselbe wie vorher, und die Woche-Tabelle stimmt. Die Gipfel-Tabelle ist aber
+noch vom 21.10., vor Mondhof und Morgentor: Mit ihnen liegt die ganze Karte bei 351 (normal), 207 (schnell) und
+558 (gemütlich), im Probespiel zwischen den Sternen bei 254 (normal). Die Verläufe darin sind noch nachzuführen.
+
 ## Wo es steht
 
 | Datei | Inhalt |

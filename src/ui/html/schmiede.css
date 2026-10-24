@@ -148,6 +148,12 @@
 .hdm2-schmiede-link:hover { border-color: var(--gold); }
 .set-meister { color: #fde68a; }
 
+/* Finger: Knöpfe der Schmiede (auch JA/NEIN beim Einschmelzen) und der Weg aus dem Heldenfenster mindestens
+   44 px hoch, wie TRAINIEREN */
+@media (pointer: coarse) {
+  .schm-knopf, .hdm2-schmiede-link { min-height: 44px; }
+}
+
 /* Sammlung: Platz für das «+3» am Bild */
 .set-teil-bild { position: relative; display: inline-block; line-height: 0; }
 

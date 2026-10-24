@@ -13,7 +13,12 @@ Stile in `src/ui/html/ausbildung.css`. Tests: `tests/heldenAusbildung.test.ts`.
 - Höchststufe 15. Von Stufe N auf N+1 braucht ein Held `30 + (N − 1) · 20` XP, bis Stufe 15 zusammen 2240 XP.
 - `fighter.xp` ist die Gesamt-XP. **Auf Stufe 15 gehen keine XP mehr verloren:** Alles über 2240 ist
   «Überschuss» (`ueberschuss(fighter) = fighter.xp − 2240`). Der Spielstand braucht dafür kein neues Feld.
-- Heldenkarte und Heldenfenster zeigen auf Stufe 15 «Stufe 15 · 720 XP Überschuss» statt «MAX».
+- Auf Stufe 15 zeigt die Heldenkarte «Lv 15» und darunter «720 XP Überschuss», das Heldenfenster
+  «Stufe 15 · 720 XP Überschuss», beide statt «MAX».
+- Fehlen einem Helden in einer Spielstand-Datei Name, Stufe oder XP (das Schema verlangt sie nicht), ergänzt
+  das Laden sie (`ergaenzeHelden` in `src/systems/SaveSystem.ts`): den Namen der Klasse, die Stufe aus den XP,
+  die XP vom Beginn der Stufe. Ein Held auf Stufe 15 hat dann 0 XP Überschuss statt «NaN», und das Lehrbuch
+  gibt nie NaN weiter.
 - Der Überschuss ändert keine Werte und nicht die Stufe, also auch nicht den Meister-Stand des Wegs
   (`docs/SPEZIALISIERUNG.md`).
 
@@ -37,27 +42,29 @@ Stile in `src/ui/html/ausbildung.css`. Tests: `tests/heldenAusbildung.test.ts`.
 ### Werte auf Stufe 15, vorher / nachher
 
 Ein Held von Stufe 1 bis 15 nur mit Training. «Vorher» ist das alte Training, «nachher» das neue; das neue
-ergibt genau dieselben Werte wie dieselbe XP aus Expeditionen. Spalten: Leben / Angriff / Verteidigung,
-dazu Krit-Chance und Tempo, wo die Klasse sie steigert. Weg-Werte kommen bei beiden gleich dazu und
-stehen nicht in der Tabelle.
+ergibt genau dieselben Werte wie dieselbe XP aus Expeditionen. «Nachher» gilt mit den Klassen-Boni seit dem
+23.10.2026; die Werte mit den Boni bis zum 22.10. stehen unten in «Eichung nach dem Umbau». Spalten: Leben /
+Angriff / Verteidigung, dazu Krit-Chance und Tempo, wo die Klasse sie steigert. Weg-Werte kommen bei beiden
+gleich dazu und stehen nicht in der Tabelle.
 
 | Klasse | Stufe 1 | Training vorher | Training nachher |
 |---|---|---|---|
-| Guardian | 70 / 4 / 3 | 98 / 18 / 17 | 126 / 8,2 / 10 |
-| Ranger | 50 / 8 / 1, Krit 15 % | 78 / 22 / 15, Krit 15 % | 78 / 16,4 / 2,4, Krit 29 % |
-| Cleric | 55 / 3 / 1,5, Tempo 0,9 | 83 / 17 / 15,5, Tempo 0,9 | 97 / 5,8 / 5,7, Tempo 1,18 |
-| Berserker | 84 / 7 / 2 | 112 / 21 / 16 | 126 / 14 / 4,8 |
-| Assassine | 54 / 8 / 0, Krit 20 % | 82 / 22 / 14, Krit 20 % | 82 / 16,4 / 1,4, Krit 34 % |
-| Paladin | 40 / 4 / 2,5 | 68 / 18 / 16,5 | 96 / 8,2 / 8,1 |
-| Barde | 60 / 3 / 1, Tempo 1,1 | 88 / 17 / 15, Tempo 1,1 | 88 / 5,8 / 3,8, Tempo 1,38 |
-| Hexe | 57 / 5 / 0, Krit 8 % | 85 / 19 / 14, Krit 8 % | 85 / 10,6 / 1,4, Krit 22 % |
-| Nekromant | 60 / 4 / 1 | 88 / 18 / 15 | 88 / 9,3 / 3,8 |
-| Druide | 75 / 4 / 2, Tempo 1,0 | 103 / 18 / 16, Tempo 1,0 | 117 / 8,2 / 6,2, Tempo 1,14 |
+| Guardian | 70 / 4 / 3 | 98 / 18 / 17 | 112 / 12,4 / 12,8 |
+| Ranger | 50 / 8 / 1, Krit 15 % | 78 / 22 / 15, Krit 15 % | 78 / 19,2 / 8, Krit 29 % |
+| Cleric | 55 / 3 / 1,5, Tempo 0,9 | 83 / 17 / 15,5, Tempo 0,9 | 97 / 11,4 / 9,9, Tempo 1,18 |
+| Berserker | 84 / 7 / 2 | 112 / 21 / 16 | 126 / 16,8 / 10,4 |
+| Assassine | 54 / 8 / 0, Krit 20 % | 82 / 22 / 14, Krit 20 % | 82 / 19,2 / 7, Krit 34 % |
+| Paladin | 40 / 4 / 2,5 | 68 / 18 / 16,5 | 82 / 12,4 / 12,3 |
+| Barde | 60 / 3 / 1, Tempo 1,1 | 88 / 17 / 15, Tempo 1,1 | 88 / 11,4 / 9,4, Tempo 1,38 |
+| Hexe | 57 / 5 / 0, Krit 8 % | 85 / 19 / 14, Krit 8 % | 85 / 14,8 / 7, Krit 22 % |
+| Nekromant | 60 / 4 / 1 | 88 / 18 / 15 | 88 / 12,4 / 9,4 |
+| Druide | 75 / 4 / 2, Tempo 1,0 | 103 / 18 / 16, Tempo 1,0 | 117 / 12,4 / 10,4, Tempo 1,14 |
 
-Vorher kaufte Gold also bessere Helden als das Spielen: Jede Klasse hatte nach reinem Training mehr
-Angriff (Ranger 22 statt 16,4, Cleric 17 statt 5,8) und mehr Verteidigung (Ranger 15 statt 2,4) als
-über Expeditionen. Dafür fehlten Krit und Tempo, und fünf Klassen hatten weniger Leben. Jetzt spart
-Training nur Zeit, die Werte sind dieselben.
+Vorher kaufte Gold also bessere Helden als das Spielen: Jede Klasse hatte nach dem alten Training mehr Angriff
+und Verteidigung, als sie heute über Expeditionen bekommt (Ranger 22 / 15 statt 19,2 / 8, Cleric 17 Angriff
+statt 11,4); mit den Boni bis zum 22.10. war der Abstand noch grösser (Ranger 16,4 / 2,4, Cleric 5,8). Dafür
+fehlten Krit und Tempo, und fünf Klassen hatten weniger Leben. Jetzt spart Training nur Zeit, die Werte sind
+dieselben.
 
 ## Lehrbuch
 
@@ -70,8 +77,23 @@ Im Reiter «Trainieren» erscheint das Lehrbuch, sobald ein Held auf Stufe 15 is
   bleibt beim Lehrer für den nächsten Schüler. Der Lehrer fällt nie unter Stufe 15.
 - **Beispiel:** Ein Ranger auf Stufe 9 lernt von einem Guardian mit 800 XP Überschuss. Die Vorschau zeigt
   «+800 XP → Stufe 9 auf 12»: 190 XP bis Stufe 10, 210 bis 11, 230 bis 12, 170 bleiben in Stufe 12.
-- Doppelklick: Der erste Klick sperrt den Knopf, danach nimmt das Lehrbuch 0,6 s lang keinen Klick an, und
-  `lehrbuchLernen` prüft selbst, ob noch Überschuss da ist. Danach wird gespeichert (`mc:speichern`).
+  Reichen die XP für keinen Aufstieg, steht dort zum Beispiel «+36 XP → bleibt auf Stufe 5 (noch 74 XP bis
+  Stufe 6)»; die Meldung nach dem Lernen sagt es gleich.
+- Ohne eigene Wahl nimmt das Lehrbuch den ersten Lehrer mit Überschuss und den Schüler mit den wenigsten XP.
+  Hat der gewählte Schüler Stufe 15 erreicht, rückt kein anderer an seine Stelle: «Lernen» bleibt aus, bis
+  man den nächsten wählt, und die Vorschau sagt «Wähle den nächsten Schüler.» (sofern der Lehrer noch
+  Überschuss hat). Sonst gäbe ein zweiter Klick auf «Lernen» die XP einem Helden, den man nie gewählt hat.
+- Die Meldung nach «Lernen» steht unter dem Knopf. Am Handy quer liegt sie dort oft unter dem Bildrand: Die
+  Seite scrollt dann gerade so weit, dass sie ganz zu sehen ist, «Lernen» darüber auch. Steht sie schon im
+  Bild (hochkant, am PC), bewegt sich nichts.
+- Doppelklick: Die Meldung erscheint unter «Lernen», und «Lernen» bleibt stehen, auch wenn die Vorschau
+  länger wird. Erreicht der Schüler dabei Stufe 15, wechselt er zu den Lehrern; am Handy kann «Lernen»
+  dann um eine Knopfreihe rücken. Der zweite Klick oder Tipp löst nichts aus, auch dort nicht: Der erste Klick sperrt den Knopf, danach nehmen
+  Lehrer, Schüler und «Lernen» 0,6 s lang keinen Klick an, und den zweiten Klick eines Maus-Doppelklicks
+  schluckt `schluckeZweitenKlick`. So lange nimmt auch kein Druck den Fokus weg oder markiert Text, wo er
+  auch landet: Der Fokus bleibt auf «Lernen» bzw. auf der Meldung, auch wenn der letzte Schüler Stufe 15
+  erreicht und das Lehrbuch zur Meldung schrumpft. `lehrbuchLernen` prüft selbst, ob noch Überschuss da
+  ist. Danach wird gespeichert (`mc:speichern`).
 - Erreicht ein Guardian über das Lehrbuch Stufe 5, wird der Paladin frei wie beim Training.
 
 ### Was das Lehrbuch bringt (20 echte Expeditionen)
@@ -93,9 +115,14 @@ dabei nur XP weiter, die der Meister selbst nicht mehr nutzen kann.
 Der Reiter «Anheuern» zeigt alle zehn Klassen:
 
 - **Freie Klassen** mit «Anheuern» zum Preis aus `anheuerKosten` (`src/systems/Empfehlung.ts`: der zweite
-  Held 50 Gold, jeder weitere 30 mehr). Startklassen tragen «von Anfang an».
+  Held 50 Gold, jeder weitere 30 mehr). Startklassen tragen «von Anfang an». Angeheuert wird sofort
+  gespeichert.
 - **Gesperrte Klassen** mit Rolle, Grundwerten und jeder Bedingung samt Fortschritt.
-- **Klassen, die schon in der Gilde sind**, am Ende mit «Schon in deiner Gilde».
+- **Klassen, die schon in der Gilde sind**, am Ende mit «Schon in deiner Gilde», Startklassen mit
+  «von Anfang an · ✓ Schon in deiner Gilde».
+- Die Kopfzeile nennt den Preis nur, solange es etwas anzuheuern gibt. Sonst steht dort «Alle Klassen sind
+  schon in deiner Gilde» oder, solange noch Klassen gesperrt sind, «Alle freien Klassen sind schon in
+  deiner Gilde».
 
 Den Fortschritt rechnet `fortschritt(state, classId)` in `ClassUnlockSystem.ts`. `checkUnlocks` schaltet mit
 genau dieser Rechnung frei, Anzeige und Freischaltung können also nicht auseinanderlaufen.
@@ -117,3 +144,157 @@ genau dieser Rechnung frei, Anzeige und Freischaltung können also nicht auseina
 So sieht der Fortschritt aus: «Besiege «Uralter Treant» im Tiefwald: 0/1», «10 gewonnene Expeditionen: 4/10»,
 «Guardian auf Stufe 5: Stufe 3». Sind alle Bedingungen erfüllt, die Klasse aber noch nicht frei (älterer
 Spielstand), steht dort: «Die Klasse wird nach der nächsten Expedition frei.»
+
+## Heldenkarten und Heldenfenster bedienen
+
+Code: `src/ui/screens/HeroesScreen.ts`, Stile in `src/ui/html/magic-city.css` (Abschnitte «Hero Cards» und
+«Hero Detail Modal»). Tests: `tests/heldenfenster.test.ts`, mit einem kleinen DOM ohne Browser auch die
+Tastenhörer, den zweiten Klick, den langsamen zweiten Druck, die Sperren und die Meldung des Lehrbuchs.
+
+- **Tastatur:** Über jeder Heldenkarte liegt ein unsichtbarer Knopf. Tab erreicht ihn, Enter oder Leertaste
+  öffnet das Heldenfenster, mit dem Fokus zeigt die Karte innen einen goldenen Rahmen. TRAINIEREN steht
+  daneben, nicht darin. Maus und Finger tippen wie bisher auf die Karte.
+- **Im Heldenfenster** nimmt beim Öffnen der Name des Helden den Fokus. Plätze und Gegenstände im Inventar
+  sind Knöpfe (Tab, Enter); nach jedem Antippen bleibt der Fokus auf dem Knopf. Nach ANLEGEN und ABLEGEN
+  steht er auf dem Platz: Der Knopf heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das
+  Teil sonst gleich wieder ab. Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen
+  es, und der Fokus kehrt auf die Karte zurück.
+- **Scrollen:** Ist das Fenster höher als der Bildschirm (mit Auswahl, in einem flachen Fenster, am Handy),
+  scrollt es in sich, mit Mausrad und Finger. Die Seite dahinter bleibt stehen und rückt auch nicht zur
+  Seite, wenn ihr Scrollbalken dabei verschwindet (am PC bleibt rechts ein Rand, so breit wie er). Das ✕
+  bleibt beim Scrollen oben rechts im Bild; am Touch-Gerät ist es 44 × 44 px gross, 🎒 Inventar und
+  ANLEGEN/ABLEGEN 44 px hoch.
+- **Breite:** Ab 1151 px steht das Inventar links neben dem Helden, der Hintergrund rechts. Über 700 bis
+  1150 px (Tablet, Handy quer) steht das Inventar unter Held und Hintergrund, bis 700 px steht alles
+  untereinander (die Grenze liegt bei 700,02 px, so gilt auch mit Zoom bei 700,5 px eine der Anordnungen).
+  Das Fenster ist nie breiter als der Bildschirm; wäre es breiter, begänne es am linken Rand und liesse sich
+  zur Seite scrollen.
+- **Doppelklick und Doppeltipp:** Nach jedem Antippen im Fenster (Platz, Gegenstand, ANLEGEN, 🎒 Inventar,
+  Weg wählen, Abbrechen) und nach dem Sprung in die Schmiede schluckt das Spiel den zweiten Klick. Er träfe
+  sonst, was nach dem Neuzeichnen unter dem Zeiger liegt, etwa ABLEGEN gleich nach ANLEGEN.
+- **Langsamer zweiter Druck:** Kommt er später, als der Browser einen Doppelklick zählt (am Handy ab etwa
+  350 ms, am PC nach der Doppelklick-Zeit des Systems), ist er ein eigener Klick. Auf der Heldenseite und im
+  Heldenfenster wirkt ein Druck bis 0,8 s nach dem letzten an derselben Stelle nur, wenn er dasselbe trifft
+  (`pruefeZweitenDruck`). Zweimal auf einen Platz tippen schliesst also die Auswahl wie bisher. Was der erste
+  Druck unter den Finger gebracht hat, löst der zweite aber nicht aus: ABLEGEN, wo eben ANLEGEN stand;
+  ABLEGEN oder den Link in die Schmiede, wenn das Fenster nach dem Antippen eines Platzes zur Auswahl scrollt
+  (am Handy quer); nach dem Schliessen des Fensters «Lernen», TRAINIEREN oder eine Karte dahinter. Ein Druck
+  anderswo zählt sofort, etwa ANLEGEN für ein zweites Teil gleich nach dem ersten oder ABLEGEN gleich nach dem
+  Antippen des Platzes. Der Preis gehört nicht dazu: TRAINIEREN bleibt derselbe Knopf, auch wenn er nach einem
+  Aufstieg mehr kostet, und trainiert bei jedem Druck. Dieselbe Stelle heisst: mit der Maus bis 16 px daneben, mit dem Finger bis 40 px (er
+  verrutscht, und der Browser schiebt einen Tipp knapp neben einem Knopf auf ihn). Die Tastatur prüft das
+  nicht; ihr Fokus bleibt auf dem gedrückten Knopf oder geht an den Platz.
+- **Kurz gesperrt, wo auch gedrückt wird:** «Ja, für immer» nimmt bis 0,8 s nach der Frage zum Weg keinen
+  Klick an, auch kein Enter. Ebenso in der Schmiede «AUF +N» nach dem Sprung aus dem Heldenfenster und nach
+  dem Schmieden, «JA, EINSCHMELZEN» nach der Frage (`src/ui/screens/SchmiedeTab.ts`). Gemessen wird bis zum
+  neuen Druck, auch wenn das Spiel gerade beschäftigt ist und erst später dazu kommt
+  (`src/ui/components/Druckzeit.ts`, Tests in `tests/druckzeit.test.ts`).
+
+## Eichung nach dem Umbau (23.10.2026)
+
+Die Dungeons über dem Vulkankern sind mit drei Musterteams geeicht (`src/data/musterteams.ts`,
+`docs/NEUE-DUNGEONS.md`, «Eichung»). Bis zum 22.10. hatten deren Helden eigene Werte: je Stufe die Hälfte von
+Klassen-Bonus und altem Training (+2 Leben, +1 Angriff, +1 Verteidigung), einmal gerundet, ohne Krit und Tempo,
+also der Durchschnitt aus Expeditionen und Training. Seit dem Umbau oben (alle XP über `awardXP`) erreichte das
+kein Held mehr: Ein Ranger auf Stufe 15 hatte 16,4 Angriff und 2,4 Verteidigung, die Eichung rechnete mit 19
+und 9. Mit echten Helden gemessen waren die obersten Dungeons kaum zu schaffen (Siegquoten unten).
+
+**Was sich änderte:**
+
+- **Klassen-Boni** (`LEVEL_BONUSES` in `src/systems/HeroProgression.ts`): Leben, Angriff und Verteidigung je
+  Aufstieg tragen jetzt den Mittelwert, mit dem die Dungeons geeicht sind, leicht abgeschwächt. Eine Regel für
+  alle Klassen: alter Klassen-Bonus plus 90 % des Wegs zum Mittel aus Klassen-Bonus und altem Training,
+  gerundet auf ganze Leben und auf Zehntel bei Angriff und Verteidigung (nächster Wert). Auf diesem Raster
+  rundet `applyLevelBonus` nichts weg und nichts dazu: 14 Aufstiege ergeben genau 14 × den Bonus. Krit und
+  Tempo blieben, wie sie waren.
+- **Musterteams und Probespiel** (`musterWerte`) rechnen nicht mehr selbst, sondern über `werteAufStufe`:
+  Grundwerte der Klasse und `awardXP` bis zur Stufe, genau wie bei einem echten Helden. Tests halten das für
+  jede Klasse auf Stufe 1 bis 15 gleich, dazu für den Musterlauf und jedes Probespiel (`?probe`, `?probe=sterne`,
+  `=mond`, `=morgen`; `tests/heldenAusbildung.test.ts`).
+- **Die Gegner blieben, wie sie waren.**
+- **Der Kriegspriester** gibt dem Team zur Verteidigung jetzt auch +1 Angriff, als Meister ebenso
+  (`src/data/spezialisierungen.ts`). Mit Verteidigung allein fiel er mit den Werten echter Helden aus dem Band
+  der Wege (`docs/SPEZIALISIERUNG.md`).
+- **Alte Spielstände werden nicht umgerechnet.** Wer schon aufgestiegen ist, behält seine Werte, jeder neue
+  Aufstieg bringt die neuen Boni. Ein Guardian, der mit den Boni bis zum 22.10. Stufe 15 erreicht hat, hat also
+  126 / 8,2 / 10 statt 112 / 12,4 / 12,8, ein Ranger 78 / 16,4 / 2,4 statt 78 / 19,2 / 8. Wer mit dem alten
+  Training aufgestiegen ist, behält dessen pauschale Werte (siehe «Training»).
+- Die Tabelle «Werte auf Stufe 15, vorher / nachher» weiter oben zeigt in der Spalte «Training nachher» die
+  Werte mit den neuen Boni (Test «Tabelle «Training vorher / nachher»»); die Werte bis zum 22.10. stehen in der
+  Tabelle hier.
+- Im Heldenfenster rundet der Anteil der Ausrüstung an Angriff und Verteidigung auf Zehntel. Mit Zehnteln in
+  den Grundwerten zeigte er sonst Rundungsrauschen (ATK 24.6 +14.000000000000002).
+
+**Klassen-Boni je Aufstieg** (Leben / Angriff / Verteidigung) **und die Werte auf Stufe 15** (Leben / Angriff /
+Verteidigung, dazu Krit-Chance und Tempo, wo die Klasse sie steigert):
+
+| Klasse | Bonus bis 22.10. | Bonus seit 23.10. | dazu, unverändert | Stufe 15 bis 22.10. | Stufe 15 seit 23.10. |
+|---|---|---|---|---|---|
+| Guardian | 4 / 0,3 / 0,5 | 3 / 0,6 / 0,7 | – | 126 / 8,2 / 10 | 112 / 12,4 / 12,8 |
+| Ranger | 2 / 0,6 / 0,1 | 2 / 0,8 / 0,5 | Krit +1 % | 78 / 16,4 / 2,4, Krit 29 % | 78 / 19,2 / 8, Krit 29 % |
+| Cleric | 3 / 0,2 / 0,3 | 3 / 0,6 / 0,6 | Tempo +0,02 | 97 / 5,8 / 5,7, Tempo 1,18 | 97 / 11,4 / 9,9, Tempo 1,18 |
+| Berserker | 3 / 0,5 / 0,2 | 3 / 0,7 / 0,6 | – | 126 / 14 / 4,8 | 126 / 16,8 / 10,4 |
+| Assassine | 2 / 0,6 / 0,1 | 2 / 0,8 / 0,5 | Krit +1 % | 82 / 16,4 / 1,4, Krit 34 % | 82 / 19,2 / 7, Krit 34 % |
+| Paladin | 4 / 0,25 / 0,4 | 3 / 0,6 / 0,7 | – | 96 / 8,2 / 8,1 | 82 / 12,4 / 12,3 |
+| Barde | 2 / 0,2 / 0,2 | 2 / 0,6 / 0,6 | Tempo +0,02 | 88 / 5,8 / 3,8, Tempo 1,38 | 88 / 11,4 / 9,4, Tempo 1,38 |
+| Hexe | 2 / 0,4 / 0,1 | 2 / 0,7 / 0,5 | Krit +1 % | 85 / 10,6 / 1,4, Krit 22 % | 85 / 14,8 / 7, Krit 22 % |
+| Nekromant | 2 / 0,35 / 0,2 | 2 / 0,6 / 0,6 | – | 88 / 9,3 / 3,8 | 88 / 12,4 / 9,4 |
+| Druide | 3 / 0,25 / 0,25 | 3 / 0,6 / 0,6 | Tempo +0,01 | 117 / 8,2 / 6,2, Tempo 1,14 | 117 / 12,4 / 10,4, Tempo 1,14 |
+| andere Klassen (`DEFAULT_BONUS`) | 3 / 0,3 / 0,3 | 3 / 0,6 / 0,6 | – | – | – |
+
+Guardian und Paladin verlieren auf Stufe 15 je 14 Leben und gewinnen Angriff und Verteidigung, die übrigen
+behalten ihre Leben. Jede Klasse hat jetzt deutlich mehr Verteidigung als bis zum 22.10. (Ranger 8 statt 2,4).
+
+**Das Profil der Tanks wird flacher.** Die eine Regel rückt die Boni aller Klassen ein Stück zum pauschalen
+alten Training hin (+1 Angriff, +1 Verteidigung je Stufe), die Klassen werden sich ähnlicher. Auf Stufe 15 hat
+der Guardian (112 / 12,4 / 12,8) nur noch 2,4 Verteidigung mehr als der Berserker (126 / 16,8 / 10,4), und der
+Berserker hat 14 Leben mehr. Bis zum 22.10. waren es bei echten Helden 5,2 Verteidigung (10 gegen 4,8) bei
+gleichen Leben, in der alten Eichung 4 (14 gegen 10). Für diese Eichung bleibt das so, weil eine Regel für alle
+Klassen gelten sollte. **Offen:** die Tank-Rolle bei der nächsten Abstimmung der Klassen prüfen, etwa
+Guardian-Verteidigung 0,8 statt 0,7 je Stufe, und danach neu eichen.
+
+**Guardian und Ranger auf Stufe 1, 5, 10 und 15** (Leben / Angriff / Verteidigung):
+
+| Held | Stufe | echter Held bis 22.10. | Eichung bis 22.10. | seit 23.10. (echter Held = Eichung) |
+|---|---|---|---|---|
+| Guardian | 1 | 70 / 4 / 3 | 70 / 4 / 3 | 70 / 4 / 3 |
+| Guardian | 5 | 86 / 5,2 / 5 | 82 / 7 / 6 | 82 / 6,4 / 5,8 |
+| Guardian | 10 | 106 / 6,7 / 7,5 | 97 / 10 / 10 | 97 / 9,4 / 9,3 |
+| Guardian | 15 | 126 / 8,2 / 10 | 112 / 13 / 14 | 112 / 12,4 / 12,8 |
+| Ranger | 1 | 50 / 8 / 1, Krit 15 % | 50 / 8 / 1, Krit 15 % | 50 / 8 / 1, Krit 15 % |
+| Ranger | 5 | 58 / 10,4 / 1,4, Krit 19 % | 58 / 11 / 3, Krit 15 % | 58 / 11,2 / 3, Krit 19 % |
+| Ranger | 10 | 68 / 13,4 / 1,9, Krit 24 % | 68 / 15 / 6, Krit 15 % | 68 / 15,2 / 5,5, Krit 24 % |
+| Ranger | 15 | 78 / 16,4 / 2,4, Krit 29 % | 78 / 19 / 9, Krit 15 % | 78 / 19,2 / 8, Krit 29 % |
+
+**Gemessene Siegquoten** (vorsichtig / klug / gierig, `npm run dungeon-eichung`, 1000 Läufe, wo nicht anders
+vermerkt; die Gegner sind in allen drei Spalten dieselben):
+
+| Dungeon, Team, Ausrüstung | Eichung bis 22.10. | echte Helden mit den Boni bis 22.10. | seit 23.10. |
+|---|---|---|---|
+| Drachenhort, «Gut» | 81 / 49 / 1 % | 4 / 1 / 0 % | 82 / 53 / 1 % |
+| Himmelsarchiv, «Stark» | 47 / 31 / 1 % | 0 / 0 / 0 % | 47 / 31 / 0 % |
+| Himmelsarchiv, «Gut» in Sets aus Ebene 4 | 32 / 18 / 0 % | 2 / 1 / 0 % | 38 / 25 / 0 % |
+| Sternenschmiede, «Stark», alle Teile auf +3 (200 Läufe) | 83 / 82 / 10 % | 5 / 12 / 0 % | 82 / 93 / 13 % |
+| Sternenschlund, «Stark», Korrunds Set auf +5 | 91 / 62 / 4 % | 9 / 3 / 0 % | 89 / 61 / 5 % |
+| Mondhof, «Stark», `mond5` | 74 / 28 / 2 % | 0 / 0 / 0 % | 66 / 20 / 1 % |
+| Morgentor, «Stark», `pfand5` | 69 / 50 / 1 % | 4 / 0 / 0 % | 69 / 52 / 0 % |
+| Morgentor, «Stark», `morgen0` | 100 / 100 / 98 % (nachgemessen 99 %) | 100 / 99 / 91 % | 100 / 100 / 99 % |
+
+Insgesamt: Von 227 Messwerten aus den Eichungs-Dokus (alle Zeilen der Dungeon-, Set-, Schmiede- und
+Monsterbuch-Tabellen, nachgezählt am 23.10.) lagen mit echten Helden und den Boni bis zum 22.10. 85 mehr als
+5 Punkte neben den Doku-Werten, seit dem 23.10. sind es 19; der alte Stand, mit denselben Läufen nachgemessen,
+verfehlt einen. Welche das sind und in welche Richtung sie abweichen, steht in `docs/NEUE-DUNGEONS.md`, «Nach dem
+Umbau des Trainings neu gemessen»; die übrigen Dokus (Sets, Schmiede, Fundbuch, Wege, Geschichten, Rangliste)
+sind mit Datum nachgeführt. Bei den Wegen fielen der Kriegspriester (darunter) und Zorn auf Stufe 12 (knapp
+darüber) aus dem Band; mit +1 Angriff zum Segen des Kriegspriesters (oben) liegen 39 von 40 Werten im Band,
+Zorn ist offen (`docs/SPEZIALISIERUNG.md`). Die Geschichten blieben alle im Ziel.
+
+**Annahme:** Die Regel (90 % des Wegs zum Mittelwert, nächster Wert auf dem Raster) ist eine Annahme. Gemessen
+wurden Anteile von 80 bis 105 % mit verschiedenen Rundungen, gegen die Eichung bis zum 22.10. (nachgemessen auf
+dem alten Stand). Mit 90 % und dem nächsten Wert lagen am wenigsten Werte mehr als 5 Punkte daneben (14 von 176,
+zusammen 251 Punkte; 100 % abgerundet 17 und 300, 80 % aufgerundet 20 und 301). Der volle Mittelwert (100 %,
+nächster Wert) machte die Teams deutlich zu stark (Drachenhort «Gut» 95 / 77 / 3 %, Himmelsarchiv «Stark»
+74 / 56 / 2 %, 1000 Läufe): Auf dem Zehntel-Raster rundet er bei mehreren Klassen auf (Guardian Angriff 0,65 auf
+0,7), und Lias und Sinas Krit wächst jetzt mit (auf Stufe 15 14 Punkte mehr), was die alte Rechnung nicht
+kannte. Die übrigen Abweichungen gehen in beide Richtungen; eine einzelne Regel für die Helden kann sie nicht
+alle schliessen, und die Gegner einzelner Dungeons blieben bewusst, wie sie waren.

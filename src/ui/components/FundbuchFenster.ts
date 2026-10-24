@@ -13,14 +13,20 @@ import { GameState } from '../../models/GameState';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { ROUTE_DEFS, getRouteLockReasons, isRouteAvailable } from '../../data/routes';
 import { BUILDING_DEFS } from '../../data/buildings';
+import { ANTEIL_OHNE_SIEG } from '../../data/schmiede';
+import { kaufpreis } from '../../data/haendler';
+import { stadtStufeVon } from '../../data/stadtstufen';
 import {
-  FundbuchGruppe, GRUPPEN_NAMEN, VERSTECK_CHANCE, dungeonBeute, fundbuchEintraege, fundorte, gruppeVon,
-  mengeText, prozentText, verwendung, zahlText,
+  FundbuchGruppe, Fundorte, GRUPPEN_NAMEN, RAST_KRAEUTER, VERSTECK_CHANCE, dungeonBeute, fundbuchEintraege, fundorte,
+  gruppeVon, mengeText, prozentText, verwendung, zahlText,
 } from '../../systems/Fundbuch';
+import { materialJeSieg } from '../../systems/Schmiede';
+import { anzahlText } from '../../utils/Anzahl';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 
-type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen'>;
-type Ziel = { art: 'item' | 'dungeon'; id: string };
+type Fortschritt = Pick<GameState, 'guildStats' | 'scoreboard' | 'bezwungen' | 'stadtweg'>;
+/** link: der wievielte Link im Eintrag zum nächsten Ziel führte (bekommt beim Zurückkommen den Fokus) */
+type Ziel = { art: 'item' | 'dungeon'; id: string; link?: number };
 
 const EMOJI: Record<FundbuchGruppe, string> = {
   material: '🪨', verbrauch: '🧪', ausruestung: '⚔️', sonstiges: '💎',
@@ -46,6 +52,26 @@ function itemLink(itemId: string): string {
   return ITEM_DEFS[itemId] ? `<button type="button" class="fb-link" data-item="${esc(itemId)}">${name}</button>` : name;
 }
 
+/** Die Einträge in der Reihenfolge der Liste: nach Gruppe, in der Gruppe wie `fundbuchEintraege` */
+function listenReihe(eintraege: string[]): string[] {
+  return (Object.keys(GRUPPEN_NAMEN) as FundbuchGruppe[]).flatMap(g => eintraege.filter(id => gruppeVon(id) === g));
+}
+
+/**
+ * Der Eintrag beim Öffnen: der gewünschte, sonst der erste der Liste, den die Gilde jetzt schon bekommen kann
+ * (Händler der Stadt, eine Quelle in einem offenen Dungeon), nicht ein Material aus einem gesperrten Dungeon.
+ */
+export function startEintrag(stand: Fortschritt, itemId?: string): string | undefined {
+  const eintraege = fundbuchEintraege();
+  if (itemId && eintraege.includes(itemId)) return itemId;
+  const reihe = listenReihe(eintraege);
+  const offen = (q: { routeId: string }) => !!ROUTE_DEFS[q.routeId] && isRouteAvailable(ROUTE_DEFS[q.routeId], stand);
+  return reihe.find(id => {
+    const f = fundorte(id);
+    return !!f.haendler || [...f.dungeons, ...f.fundRaeume, ...f.ersterSieg, ...f.jedenSieg, ...f.rastplaetze].some(offen);
+  }) ?? reihe[0];
+}
+
 function dungeonLink(routeId: string, stand: Fortschritt): string {
   const route = ROUTE_DEFS[routeId];
   if (!route) return esc(routeId);
@@ -59,71 +85,126 @@ function gebaeudeName(buildingId: string): string {
   return def ? esc(def.name) : '';
 }
 
+/**
+ * 3 → «3 Stück», «2–5» → «2–5 Stück». Die Menge bleibt mit ihrer Einheit auf einer Zeile: Vor der Einheit steht wie
+ * nach «Ø» und vor «%» ein geschütztes Leerzeichen, nach dem Strich eines Bereichs ein Wortverbinder (U+2060), denn
+ * auch dort bräche die Zeile sonst um. Ebenso bei «12 Gold», «Raum 3», «Stufe 2», «Ebene 4» und «2 je Durchgang».
+ */
+function stueck(menge: number | string): string {
+  return `${String(menge).replace('–', '–\u2060')}\u00a0Stück`;
+}
+
+/** 12 → «12 Gold» (geschütztes Leerzeichen wie bei stueck) */
+function gold(betrag: number): string {
+  return `${betrag}\u00a0Gold`;
+}
+
 function abschnitt(titel: string, zeilen: string[], leer: string): string {
   const inhalt = zeilen.length ? `<ul class="fb-zeilen">${zeilen.map(z => `<li>${z}</li>`).join('')}</ul>` : `<p class="fb-leer">${leer}</p>`;
   return `<section class="fb-abschnitt"><h3>${titel}</h3>${inhalt}</section>`;
 }
 
-function woherZeilen(itemId: string, stand: Fortschritt): string[] {
-  const f = fundorte(itemId);
+function woherZeilen(itemId: string, f: Fundorte, stand: Fortschritt): string[] {
   const z: string[] = [];
-  if (f.haendler) z.push(`Beim Händler der Stadt · ${f.haendler} Gold`);
-  if (f.dungeonHaendler) z.push(`Beim Dungeon-Händler · ${f.dungeonHaendler.preis} Gold (höchstens ${f.dungeonHaendler.max} Käufe)`);
-  for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge} je Durchgang`);
-  for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · 1 Stück beim ersten Sieg`);
+  // Preis der eigenen Stadtstufe (ab Stufe 4 mit Rabatt), nicht der Grundpreis aus fundorte
+  if (f.haendler) z.push(`Beim Händler der Stadt · ${gold(kaufpreis(itemId, stadtStufeVon(stand)))}`);
+  if (f.dungeonHaendler) {
+    z.push(`Beim Dungeon-Händler · ${gold(f.dungeonHaendler.preis)} (höchstens ${anzahlText(f.dungeonHaendler.max, 'Kauf', 'Käufe')})`);
+  }
+  for (const h of f.hergestellt) z.push(`${gebaeudeName(h.buildingId)} · ${esc(h.name)} · ${h.menge}\u00a0je Durchgang`);
+  for (const e of f.ersterSieg) z.push(`${esc(e.bossName)} (Boss) in ${dungeonLink(e.routeId, stand)} · ${stueck(1)} beim ersten Sieg`);
+  for (const s of f.jedenSieg) z.push(`Jeder Sieg in ${dungeonLink(s.routeId, stand)} · ${stueck(s.menge)}`);
+  // Je Dungeon eine Kopfzeile mit Link und Ø, darunter seine Gegner ohne Link: So steht der Dungeon nur einmal
+  // da (die Zeilenform «… · Ø 1,4 je Sieg in ‹Dungeon›» je Gegner verdoppelte am Handy die Länge, docs/FUNDBUCH.md)
   for (const d of f.dungeons) {
-    const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg über ihn · `
-      + `${mengeText(g.minQty, g.maxQty)} Stück</li>`).join('');
-    z.push(`${dungeonLink(d.routeId, stand)} · Ø ${zahlText(d.jeSieg)} je Sieg<ul class="fb-gegner">${gegner}</ul>`);
+    const gegner = d.gegner.map(g => `<li>${esc(g.name)}${g.anzahl > 1 ? ` (${g.anzahl}×)` : ''} · ${prozentText(g.chance)} je Sieg `
+      + `über ihn · ${stueck(mengeText(g.minQty, g.maxQty))}</li>`).join('');
+    z.push(`${dungeonLink(d.routeId, stand)} · Ø\u00a0${zahlText(d.jeSieg)} je Sieg<ul class="fb-gegner">${gegner}</ul>`);
   }
   for (const r of f.fundRaeume) {
     const wann = r.art === 'zufall'
-      ? `Versteck durchsuchen: ${r.menge} Stück, angeboten in etwa ${prozentText(VERSTECK_CHANCE)} der Besuche`
-      : `zur Wahl: ${r.menge} Stück${r.nachSieg ? ', wenn der Boss fällt' : ''}`;
-    z.push(`${dungeonLink(r.routeId, stand)} · Fund in Raum ${r.raum} · ${wann}`);
+      ? `Versteck durchsuchen: ${stueck(r.menge)}, angeboten in etwa ${prozentText(VERSTECK_CHANCE)} der Besuche`
+      : `zur Wahl: ${stueck(r.menge)}${r.nachSieg ? ', wenn der Boss fällt' : ''}`;
+    z.push(`${dungeonLink(r.routeId, stand)} · Fund in Raum\u00a0${r.raum} · ${wann}`);
   }
+  if (f.rastplaetze.length) {
+    const dungeons = new Set(f.rastplaetze.map(r => r.routeId)).size;
+    const wo = dungeons === Object.keys(ROUTE_DEFS).length ? 'in jedem Dungeon' : `in ${anzahlText(dungeons, 'Dungeon', 'Dungeons')}`;
+    z.push(`Rastplatz ${wo} · Kräuter sammeln: ${stueck(RAST_KRAEUTER.menge)}, `
+      + `angeboten in etwa ${prozentText(RAST_KRAEUTER.chance)} der Besuche`);
+  }
+  for (const e of f.einschmelzen) z.push(`Einschmelzen: doppeltes Set-Teil aus ${dungeonLink(e.routeId, stand)} · ${stueck(e.menge)}`);
   return z;
 }
 
-function wofuerZeilen(itemId: string): string[] {
+/** [0, 0, 3, 6, 12] → «3 / 6 / 12 Stück für +3 bis +5» («/» bleibt bei der Zahl davor, nie am Zeilenanfang) */
+function stufenText(mengen: number[]): string {
+  const ab = Math.max(0, mengen.findIndex(n => n > 0));
+  return `${stueck(mengen.slice(ab).join('\u00a0/ '))} für +${ab + 1} bis +${mengen.length}`;
+}
+
+function wofuerZeilen(itemId: string, stand: Fortschritt): string[] {
   const v = verwendung(itemId);
   const z: string[] = [];
-  for (const r of v.rezepte) z.push(`${gebaeudeName(r.buildingId)} · ${esc(r.name)} · ${r.menge} je Durchgang → ${itemLink(r.ergebnis)}`);
+  for (const r of v.rezepte) z.push(`${gebaeudeName(r.buildingId)} · ${esc(r.name)} · ${r.menge}\u00a0je Durchgang → ${itemLink(r.ergebnis)}`);
   for (const b of v.bau) z.push(`Bau: ${gebaeudeName(b.buildingId)} · ${b.menge}`);
-  for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeName(a.buildingId)} auf Stufe ${a.stufe} · ${a.menge}`);
-  for (const a of v.abgaben) z.push(`Abgabe für Stadtstufe ${a.stufe} «${esc(a.name)}» · ${a.menge}`);
+  for (const a of v.ausbau) z.push(`Ausbau: ${gebaeudeName(a.buildingId)} auf Stufe\u00a0${a.stufe} · ${a.menge}`);
+  for (const a of v.abgaben) z.push(`Abgabe für Stadtstufe\u00a0${a.stufe} «${esc(a.name)}» · ${a.menge}`);
   for (const h of v.herzsteine) z.push(`${esc(h.name)} · ${h.menge}`);
+  for (const s of v.schmiede) {
+    const teile = s.routeId ? `Set-Teile aus ${dungeonLink(s.routeId, stand)}` : 'jedes Set-Teil';
+    z.push(`Schmiede: ${teile} verbessern · ${stufenText(s.mengen)}`);
+  }
   if (v.proviant) z.push('Proviant für Expeditionen');
   if (ITEM_DEFS[itemId]?.gearSlot) z.push('Ausrüstung für deine Helden');
-  if (v.ankauf > 0) z.push(`Der Händler zahlt ${v.ankauf} Gold je Stück`);
+  if (v.ankauf > 0) z.push(`Der Händler zahlt ${gold(v.ankauf)} je Stück`);
   return z;
 }
 
-function itemSeite(itemId: string, stand: Fortschritt): string {
-  const def = ITEM_DEFS[itemId];
-  const text = def.flavorText ? `<p class="fb-text">${esc(def.flavorText)}</p>` : '';
-  return `<header class="fb-kopf">${bild(itemId)}<div><h2 class="fb-name">${esc(def.name)}</h2>
-      <span class="fb-gruppe">${GRUPPEN_NAMEN[gruppeVon(itemId)]}</span></div></header>${text}
-    ${abschnitt('Woher', woherZeilen(itemId, stand), 'Keine Quelle bekannt.')}
-    ${abschnitt('Wofür', wofuerZeilen(itemId), 'Die Stadt verbraucht das nicht.')}
-    <p class="fb-regel">Jeder besiegte Gegner gibt Gold und genau einen Gegenstand aus seiner Beute.
-      «Ø je Sieg» zählt die Beute aller Gegner des Dungeons zusammen.</p>`;
+/** Die Regeln hinter den Zahlen, nur für die Quellen, die der Eintrag hat */
+function regelText(f: Fundorte): string {
+  const saetze: string[] = [];
+  if (f.dungeons.length) {
+    saetze.push('Jeder besiegte Gegner gibt Gold und einen Wurf aus seiner Beute: meist einen Gegenstand, manchmal '
+      + 'stattdessen noch mehr Gold. «Ø\u00a0je Sieg» zählt die Beute aller Gegner des Dungeons zusammen.');
+  }
+  if (f.jedenSieg.length) {
+    saetze.push('Schmiede-Material kommt nach jeder Expedition in die Truhe: nach einem Sieg die volle Menge, '
+      + `sonst ${prozentText(ANTEIL_OHNE_SIEG)} davon im Verhältnis der geschafften Räume.`);
+  }
+  return saetze.length ? `<p class="fb-regel">${saetze.join(' ')}</p>` : '';
 }
 
-function dungeonSeite(routeId: string, stand: Fortschritt): string {
+/** Die Seite eines Gegenstands (exportiert für den Test ohne Browser) */
+export function itemSeite(itemId: string, stand: Fortschritt): string {
+  const def = ITEM_DEFS[itemId];
+  const f = fundorte(itemId);
+  const text = def.flavorText ? `<p class="fb-text">${esc(def.flavorText)}</p>` : '';
+  return `<header class="fb-kopf">${bild(itemId)}<div><h2 class="fb-name" tabindex="-1">${esc(def.name)}</h2>
+      <span class="fb-gruppe">${GRUPPEN_NAMEN[gruppeVon(itemId)]}</span></div></header>${text}
+    ${abschnitt('Woher', woherZeilen(itemId, f, stand), 'Keine Quelle bekannt.')}
+    ${abschnitt('Wofür', wofuerZeilen(itemId, stand), 'Keine Werkstatt, kein Bau, keine Stadtstufe und keine Schmiede braucht das.')}
+    ${regelText(f)}`;
+}
+
+/** Die Seite eines Dungeons (exportiert für den Test ohne Browser) */
+export function dungeonSeite(routeId: string, stand: Fortschritt): string {
   const route = ROUTE_DEFS[routeId];
   const gruende = getRouteLockReasons(route, stand);
   const sperre = gruende.length ? `<p class="fb-sperre">🔒 ${esc(gruende.join(' · '))}</p>` : '';
-  const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø ${zahlText(b.jeSieg)} je Sieg`);
-  return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name">${esc(route.name)}</h2>
-      <span class="fb-gruppe">Dungeon · Ebene ${route.tier}</span></div></header>${sperre}
+  const material = materialJeSieg(routeId);
+  const schmiede = material
+    ? abschnitt('Schmiede-Material', [`${itemLink(material.material.id)} · ${stueck(material.menge)} je Sieg`], '') : '';
+  const zeilen = dungeonBeute(routeId).map(b => `${itemLink(b.itemId)} · Ø\u00a0${zahlText(b.jeSieg)} je Sieg`);
+  return `<header class="fb-kopf"><span class="fb-bild"><span>🗺️</span></span><div><h2 class="fb-name" tabindex="-1">${esc(route.name)}</h2>
+      <span class="fb-gruppe">Dungeon · Ebene\u00a0${route.tier}</span></div></header>${sperre}${schmiede}
     ${abschnitt('Beute der Gegner', zeilen, 'Hier lassen die Gegner keine Gegenstände fallen.')}`;
 }
 
 function listeHtml(eintraege: string[]): string {
-  const gruppen = Object.keys(GRUPPEN_NAMEN) as FundbuchGruppe[];
-  return gruppen.map(g => {
-    const ids = eintraege.filter(id => gruppeVon(id) === g);
+  const reihe = listenReihe(eintraege);
+  return (Object.keys(GRUPPEN_NAMEN) as FundbuchGruppe[]).map(g => {
+    const ids = reihe.filter(id => gruppeVon(id) === g);
     if (!ids.length) return '';
     const knoepfe = ids.map(id => `<li><button type="button" class="fb-eintrag-knopf" data-item="${esc(id)}"
       data-name="${esc(ITEM_DEFS[id].name.toLocaleLowerCase('de'))}">${bild(id)}<span>${esc(ITEM_DEFS[id].name)}</span></button></li>`).join('');
@@ -166,9 +247,10 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
   let zurueck: Ziel | null = null;
   let aktuell: Ziel | null = null;
 
-  const zeige = (ziel: Ziel, vonLink = false, springen = true) => {
+  /** wie: aus der Liste, über einen Link im Eintrag, mit «← zurück» oder beim Öffnen */
+  const zeige = (ziel: Ziel, wie: 'liste' | 'link' | 'zurueck' | 'start') => {
     if (ziel.art === 'item' ? !ITEM_DEFS[ziel.id] : !ROUTE_DEFS[ziel.id]) return;
-    zurueck = vonLink ? aktuell : null;
+    zurueck = wie === 'link' ? aktuell : null;
     aktuell = ziel;
     const knopf = zurueck ? '<button type="button" class="fb-zurueck">← zurück</button>' : '';
     eintrag.innerHTML = knopf + (ziel.art === 'item' ? itemSeite(ziel.id, stand) : dungeonSeite(ziel.id, stand));
@@ -179,7 +261,16 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
     });
     eintrag.scrollTop = 0;
     // Am Handy steht der Eintrag unter der Liste: dorthin springen
-    if (springen && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
+    if (wie !== 'start' && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
+    // Der zweite Klick eines Doppelklicks (auch Doppeltipp) träfe sonst, was jetzt an derselben Stelle liegt,
+    // etwa einen anderen Link der neuen Seite, und spränge gleich weiter
+    if (wie !== 'start') schluckeZweitenKlick();
+    // Der gedrückte Knopf im Eintrag ist eben ersetzt worden, der Fokus bleibt trotzdem im Eintrag (Tastatur):
+    // nach einem Sprung auf «← zurück», nach «← zurück» auf dem Link, über den man gegangen war
+    if (wie === 'link') eintrag.querySelector<HTMLElement>('.fb-zurueck')?.focus({ preventScroll: true });
+    if (wie === 'zurueck') {
+      (eintrag.querySelectorAll<HTMLElement>('.fb-link')[ziel.link ?? -1] ?? eintrag.querySelector<HTMLElement>('.fb-name'))?.focus();
+    }
   };
 
   suche.addEventListener('input', () => {
@@ -205,18 +296,22 @@ export function oeffneFundbuch(stand: Fortschritt, itemId?: string): void {
     if (aufHintergrund(e)) { schliesseMitKlick(); return; }
     const ziel = e.target as HTMLElement;
     if (ziel.closest('.fb-zu')) { schliesseMitKlick(); return; }
-    if (ziel.closest('.fb-zurueck') && zurueck) { zeige(zurueck); return; }
+    if (ziel.closest('.fb-zurueck') && zurueck) { zeige(zurueck, 'zurueck'); return; }
     const listenKnopf = ziel.closest<HTMLElement>('.fb-eintrag-knopf');
-    if (listenKnopf?.dataset.item) { zeige({ art: 'item', id: listenKnopf.dataset.item }); return; }
+    if (listenKnopf?.dataset.item) { zeige({ art: 'item', id: listenKnopf.dataset.item }, 'liste'); return; }
     const link = ziel.closest<HTMLElement>('.fb-link');
-    if (link?.dataset.item) zeige({ art: 'item', id: link.dataset.item }, true);
-    else if (link?.dataset.route) zeige({ art: 'dungeon', id: link.dataset.route }, true);
+    if (!link || !aktuell) return;
+    aktuell.link = Array.from(eintrag.querySelectorAll('.fb-link')).indexOf(link);
+    if (link.dataset.item) zeige({ art: 'item', id: link.dataset.item }, 'link');
+    else if (link.dataset.route) zeige({ art: 'dungeon', id: link.dataset.route }, 'link');
   });
 
   document.body.appendChild(ov);
+  // Der zweite Klick eines Doppelklicks auf «📜 Fundbuch» träfe sonst schon das offene Fenster (Listeneintrag)
+  schluckeZweitenKlick();
   loeseTasten = bindeFensterTasten(ov, fenster, schliesseFundbuch);
-  const start = itemId && eintraege.includes(itemId) ? itemId : ov.querySelector<HTMLElement>('.fb-eintrag-knopf')?.dataset.item;
-  if (start) zeige({ art: 'item', id: start }, false, false);
+  const start = startEintrag(stand, itemId);
+  if (start) zeige({ art: 'item', id: start }, 'start');
   ov.querySelector('.fb-eintrag-knopf.aktiv')?.scrollIntoView({ block: 'nearest' });
   if (itemId && window.matchMedia('(max-width: 700px)').matches) eintrag.scrollIntoView({ block: 'start' });
   // Am Touch-Gerät nicht gleich die Tastatur aufklappen
