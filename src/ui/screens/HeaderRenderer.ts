@@ -8,6 +8,7 @@ import { ScreenId, navigateTo } from '../ScreenRouter';
 import { BUILDING_DEFS } from '../../data/buildings';
 import { beiAuftragFertig } from '../../systems/Auftraege';
 import { beiNeuenErfolgen, erfolgName, ungeseheneErfolge } from '../../systems/AchievementSystem';
+import { klangKnopfHtml } from '../components/KlangSchalter';
 
 const HINWEIS_MS = 4000;
 let hinweisTimer: number | null = null;
@@ -191,6 +192,7 @@ export function renderHeader(
       <div class="res">
         ${vorratsZeileHtml(state)}
       </div>
+      ${klangKnopfHtml('hdr-klang')}
       <button type="button" class="hdr-erfolge" data-nav="achievements" title="Erfolge" aria-label="${erfolgKnopfName(ungeseheneErfolge(state))}">${erfolgKnopfInhalt(ungeseheneErfolge(state))}</button>
     </div>`;
 }

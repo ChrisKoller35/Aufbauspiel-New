@@ -886,6 +886,26 @@ export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean
   return getRouteLockReasons(route, state).length === 0;
 }
 
+export type Biom = 'Drachengipfel' | 'Himmel' | 'Sterne' | 'Mond' | 'Unterwasser' | 'Belagerung'
+  | 'Vulkan' | 'Ruinen' | 'Sumpf' | 'Frost' | 'Höhle' | 'Wald';
+
+/** Das Biom einer Route: Etikett in der Routenübersicht (ExpeditionsScreen.ts) und Musik (data/klangZuordnung.ts). */
+export function biomFuerRoute(route: RouteDef): Biom {
+  const id = route.id;
+  if (route.gebiet === 'gipfel') return 'Drachengipfel';
+  if (route.gebiet === 'himmel') return 'Himmel';
+  if (route.gebiet === 'sterne') return 'Sterne';
+  if (route.gebiet === 'mond') return 'Mond';
+  if (route.isUnderwater) return 'Unterwasser';
+  if (route.isSiegeRoute) return 'Belagerung';
+  if (id.includes('volcano') || id.includes('obsidian') || id.includes('ash') || id.includes('magma')) return 'Vulkan';
+  if (id.includes('ruins') || id.includes('shadow')) return 'Ruinen';
+  if (id.includes('swamp')) return 'Sumpf';
+  if (id.includes('frozen')) return 'Frost';
+  if (id.includes('cave') || id.includes('crystal') || id.includes('spider')) return 'Höhle';
+  return 'Wald';
+}
+
 /**
  * Das Endgame: die Dungeons über dem Vulkankern (RouteDef.gebiet), von unten nach oben
  * wie auf der Dungeon-Karte. Neue Dungeons dort zählen von selbst mit.

@@ -1,54 +1,49 @@
 // ─── Magic City – Klang einhängen ──────────────────────────────
-// Eigener Einstieg (index.html), hört nur auf Ereignisse und das DOM; ändert keine Spieldatei.
+// Aus main.ts geladen. Hört auf die Ereignisse des Spiels und verteilt sie auf Musik und
+// Effekte (systems/Klang.ts, Zuordnung in data/klangZuordnung.ts, Übersicht in docs/KLANG.md).
+// ────────────────────────────────────────────────────────────────
+
 import { getCurrentScreen, type ScreenId } from './ui/ScreenRouter';
 import { ROUTE_DEFS } from './data/routes';
 import { BOSS_MUSIK, musikFuerBildschirm, musikFuerRoute } from './data/klangZuordnung';
-import { istGestartet, istStumm, spieleEffekt, spieleMusik, starteKlang } from './systems/Klang';
-import { zeigeKlangSchalter } from './ui/components/KlangSchalter';
+import { istGestartet, spieleEffekt, spieleMusik, starteKlang } from './systems/Klang';
+import { bindeKlangSchalter } from './ui/components/KlangSchalter';
 
-// Erste Geste: AudioContext anlegen/fortsetzen, Musik für den Startbildschirm (ScreenRouter.ts getCurrentScreen)
+// Ton erlaubt der Browser erst mit einer Nutzer-Aktivierung: mit der Maus schon bei pointerdown, beim Tippen erst
+// bei pointerup, touchend oder click, mit Escape nie. Jede Geste setzt den Klang fort und holt Abgelehntes nach;
+// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen).
 function geste(): void {
+  if (navigator.userActivation && !navigator.userActivation.isActive) return;
   const erstes = !istGestartet();
   starteKlang();
   if (erstes) spieleMusik(musikFuerBildschirm(getCurrentScreen()));
 }
-window.addEventListener('pointerdown', geste, true);
-window.addEventListener('keydown', geste, true);
+for (const typ of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(typ, geste, true);
 
 // Bildschirmwechsel: ScreenRouter.ts navigateTo/goBack → mc:navigate { screen, prev }
 window.addEventListener('mc:navigate', e => spieleMusik(musikFuerBildschirm((e as CustomEvent<{ screen: ScreenId }>).detail.screen)));
 
-// Expedition startet: ExpeditionsScreen.ts (Klick auf Start) → mc:startExpedition { routeId }
-window.addEventListener('mc:startExpedition', e => {
+// Die Expedition geht los: ExpeditionFlow.ts aufbrechen → mc:aufbruch { routeId }
+window.addEventListener('mc:aufbruch', e => {
   const route = ROUTE_DEFS[(e as CustomEvent<{ routeId: string }>).detail.routeId];
   spieleEffekt('expedition_start');
   if (route) spieleMusik(musikFuerRoute(route));
 });
 
-// Kampfausgang: CombatScreen.ts (Ende des Kampfs) legt .mc-co-outcome mit diesem Text an
-const AUSGANG: Record<string, string> = { 'SIEG!': 'boss_victory', 'NIEDERLAGE...': 'party_wipe', 'RÜCKZUG': 'retreat_horn' };
-const gemeldeteAusgaenge = new WeakSet<Element>();
-let bossTitelGesehen = false;
-let geplant = false;
+// Bosskampf: CombatScreen.ts show() für den Bossraum → mc:bosskampf
+window.addEventListener('mc:bosskampf', () => {
+  spieleMusik(BOSS_MUSIK);
+  spieleEffekt('boss_intro');
+});
 
-function auswerten(): void {
-  geplant = false;
-  // Bosskampf: CombatScreen.ts show() setzt .mc-co-title auf «BOSS KAMPF!» (einmal je Kampf);
-  // hide() versteckt #s-combat nur, deshalb zählt der Titel nur, solange er zu sehen ist
-  const titel = document.querySelector('.mc-co-title');
-  const boss = titel?.textContent === 'BOSS KAMPF!' && titel.getClientRects().length > 0;
-  if (boss && !bossTitelGesehen) { spieleMusik(BOSS_MUSIK); spieleEffekt('boss_intro'); }
-  bossTitelGesehen = boss;
-  document.querySelectorAll('.mc-co-outcome').forEach(el => {
-    const effekt = AUSGANG[el.textContent ?? ''];
-    if (effekt && !gemeldeteAusgaenge.has(el)) { gemeldeteAusgaenge.add(el); spieleEffekt(effekt); }
-  });
-  // Truhe: ChestRevealOverlay.ts spielt ein Video mit eigener Tonspur
-  if (istStumm()) document.querySelectorAll('video').forEach(v => { v.muted = true; });
-}
+// Ausgang der Expedition im Kampf: CombatScreen.ts showResult («SIEG!», «NIEDERLAGE...») → mc:kampfausgang { status }
+const AUSGANG: Record<string, string> = { victory: 'boss_victory', defeat: 'party_wipe' };
+window.addEventListener('mc:kampfausgang', e => {
+  const effekt = AUSGANG[(e as CustomEvent<{ status: string }>).detail.status];
+  if (effekt) spieleEffekt(effekt);
+});
 
-new MutationObserver(() => {
-  if (!geplant) { geplant = true; requestAnimationFrame(auswerten); }
-}).observe(document.body, { childList: true, subtree: true, characterData: true });
+// Rückzug per Knopf im Kampf oder am Kontrollpunkt: ExpeditionFlow.ts finishExpedition → mc:rueckzug
+window.addEventListener('mc:rueckzug', () => spieleEffekt('retreat_horn'));
 
-zeigeKlangSchalter();
+bindeKlangSchalter();

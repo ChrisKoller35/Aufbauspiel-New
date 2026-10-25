@@ -1,7 +1,13 @@
-/* Klang-Schalter: links unten über dem Toast (.sw-toast, z-index 150), unter jedem Fenster (ab 200) */
-.klang-schalter {
-  position: fixed; z-index: 160; left: calc(16px + env(safe-area-inset-left)); bottom: calc(72px + env(safe-area-inset-bottom));
-  width: 44px; height: 44px; padding: 0; border-radius: 50%; border: 1px solid rgba(201, 168, 76, 0.6);
-  background: rgba(10, 12, 22, 0.85); font-size: 20px; line-height: 1; cursor: pointer;
+/* ─── Magic City – Klang-Schalter 🔊/🔇 (KlangSchalter.ts) ─── */
+
+/* In der Kopfzeile vor 🏅: Aussehen wie .hdr-erfolge (erfolge.css teilt seine Regeln mit .hdr-klang) */
+
+/* Im Kopf des Kampfs neben x1/x1.5/x2 (.mc-co-speed in magic-city.css) */
+.mc-co-klang {
+  background: #111828; border: 1px solid #242040; color: var(--mut);
+  font-size: 0.8rem; line-height: 1; padding: 3px 7px; border-radius: 3px; cursor: pointer; transition: .15s;
 }
-.klang-schalter:hover { border-color: #c9a84c; }
+.mc-co-klang:hover { border-color: #6e5710; }
+@media (pointer: coarse) {
+  .mc-co-klang { min-height: 44px; min-width: 44px; }
+}

@@ -5,7 +5,7 @@
 import { navigateTo } from '../ScreenRouter';
 import { GameState } from '../../models/GameState';
 import { GuildFighter } from '../../models/GuildRoster';
-import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons } from '../../data/routes';
+import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons, biomFuerRoute, type Biom } from '../../data/routes';
 import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
@@ -34,20 +34,15 @@ function getRouteImageStyle(routeId: string): string {
   return img ? `background-image:url('assets/tiles/${img}.png')` : '';
 }
 
+const BIOM_KLASSE: Record<Biom, string> = {
+  Drachengipfel: 'tag-gipfel', Himmel: 'tag-himmel', Sterne: 'tag-sterne', Mond: 'tag-mond',
+  Unterwasser: 'tag-unterwasser', Belagerung: 'tag-belagerung', Vulkan: 'tag-vulkan', Ruinen: 'tag-ruinen',
+  Sumpf: 'tag-sumpf', Frost: 'tag-frost', Höhle: 'tag-hoehle', Wald: 'tag-wald',
+};
+
 function getBiomeTag(route: RouteDef): { label: string; cls: string } {
-  const id = route.id;
-  if (route.gebiet === 'gipfel') return { label: 'Drachengipfel', cls: 'tag-gipfel' };
-  if (route.gebiet === 'himmel') return { label: 'Himmel', cls: 'tag-himmel' };
-  if (route.gebiet === 'sterne') return { label: 'Sterne', cls: 'tag-sterne' };
-  if (route.gebiet === 'mond') return { label: 'Mond', cls: 'tag-mond' };
-  if (route.isUnderwater) return { label: 'Unterwasser', cls: 'tag-unterwasser' };
-  if (route.isSiegeRoute) return { label: 'Belagerung', cls: 'tag-belagerung' };
-  if (id.includes('volcano') || id.includes('obsidian') || id.includes('ash') || id.includes('magma')) return { label: 'Vulkan', cls: 'tag-vulkan' };
-  if (id.includes('ruins') || id.includes('shadow')) return { label: 'Ruinen', cls: 'tag-ruinen' };
-  if (id.includes('swamp')) return { label: 'Sumpf', cls: 'tag-sumpf' };
-  if (id.includes('frozen')) return { label: 'Frost', cls: 'tag-frost' };
-  if (id.includes('cave') || id.includes('crystal') || id.includes('spider')) return { label: 'Höhle', cls: 'tag-hoehle' };
-  return { label: 'Wald', cls: 'tag-wald' };
+  const biom = biomFuerRoute(route);
+  return { label: biom, cls: BIOM_KLASSE[biom] };
 }
 
 /** Wie auf der Dungeon-Karte: Ebenen über 5 bekommen je einen Funken dazu (★★★★★✦). */

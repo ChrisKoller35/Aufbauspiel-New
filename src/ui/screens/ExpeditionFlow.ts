@@ -90,6 +90,9 @@ function aufbrechen(routeId: string, heroIds: number[], provisionMap: Record<str
   state.statistics['total_expeditions'] = (state.statistics['total_expeditions'] ?? 0) + 1;
   speichern();
 
+  // Erst jetzt geht es wirklich los (nach der Einleitung, nicht schon beim Klick auf Start): Klang (klang.ts)
+  window.dispatchEvent(new CustomEvent('mc:aufbruch', { detail: { routeId } }));
+
   // Show combat for first combat room
   showNextCombatRoom();
 }
@@ -238,6 +241,8 @@ function showNextCombatRoom(): void {
 function finishExpedition(): void {
   const run = state.activeExpedition;
   if (!run) return;
+  // Rückzug per Knopf im Kampf oder am Kontrollpunkt: Horn (klang.ts)
+  if (run.status === 'retreat') window.dispatchEvent(new CustomEvent('mc:rueckzug'));
 
   // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe (eins mehr, wenn die Geschichte es versprochen hat)
   const setHinweise = setTeilHinweise(state, setBeute(state, run));

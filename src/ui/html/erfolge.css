@@ -1,13 +1,14 @@
 /* ─── Magic City – Erfolge: Knopf in der Kopfzeile und Bildschirm ─── */
 
-/* Knopf «🏅» rechts in der Kopfzeile, mit Zahl der neuen Erfolge (🏆 gehört Trophäensaal und Pokalen) */
-.hdr-erfolge {
+/* Knopf «🏅» rechts in der Kopfzeile, mit Zahl der neuen Erfolge (🏆 gehört Trophäensaal und Pokalen).
+   Der Klang-Schalter 🔊 davor (.hdr-klang, klang.css) sieht gleich aus. */
+.hdr-erfolge, .hdr-klang {
   display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0;
   min-height: 32px; min-width: 32px; padding: 2px 8px;
   background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px;
   color: var(--gold); font-size: 1rem; line-height: 1; cursor: pointer;
 }
-.hdr-erfolge:hover { border-color: var(--gold); }
+.hdr-erfolge:hover, .hdr-klang:hover { border-color: var(--gold); }
 .hdr-erfolge-neu {
   min-width: 18px; padding: 2px 5px; border-radius: 9px;
   background: #b91c1c; color: #fff;
@@ -16,14 +17,14 @@
 
 /* Finger: Trefferfläche mindestens 44 × 44 px */
 @media (max-width: 700px), (pointer: coarse) {
-  .hdr-erfolge { min-height: 44px; min-width: 44px; }
+  .hdr-erfolge, .hdr-klang { min-height: 44px; min-width: 44px; }
 }
 
 /* Handy: Knopf bleibt oben rechts, die Vorräte rutschen in die zweite Zeile. Der Knopf ragt je 4 px
    in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. */
 @media (max-width: 700px) {
   .hdr .res { order: 2; }
-  .hdr-erfolge { margin-top: -4px; margin-bottom: -4px; }
+  .hdr-erfolge, .hdr-klang { margin-top: -4px; margin-bottom: -4px; }
 }
 
 /* Ein Hinweis (zeigeKopfHinweis) steht in .hdr-platz, dem freien Platz hinter dem Bildschirm-Namen, auf höchstens
