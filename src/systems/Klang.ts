@@ -37,6 +37,8 @@ interface Spur {
   audio: HTMLAudioElement; gain: GainNode; name: string | null; stopp?: ReturnType<typeof setTimeout>;
   /** Einblenden, sobald das Stück wirklich spielt (Ereignis 'playing') */
   einblenden: boolean;
+  /** Die geplante Lautstärke: `von` um `ab`, dann gleichmässig bis `ziel` um `bis` (Zeit des AudioContext) */
+  plan: { von: number; ab: number; ziel: number; bis: number };
 }
 
 let einstellungen = ladeEinstellungen();
@@ -65,11 +67,11 @@ function neueSpur(c: AudioContext, musik: GainNode): Spur {
   const g = gain(c, 0, musik);
   c.createMediaElementSource(audio).connect(g);
   audio.load(); // in der Geste: gibt das Element auf dem iPhone für spätere play() frei
-  const spur: Spur = { audio, gain: g, name: null, einblenden: false };
+  const spur: Spur = { audio, gain: g, name: null, einblenden: false, plan: { von: 0, ab: 0, ziel: 0, bis: 0 } };
   audio.addEventListener('playing', () => {
     if (!spur.einblenden) return;
     spur.einblenden = false;
-    rampe(g.gain, 1, EINBLENDEN_S, c.currentTime);
+    blende(spur, 1, EINBLENDEN_S, c.currentTime);
   });
   return spur;
 }
@@ -89,12 +91,25 @@ function spiele(s: Spur): void {
   void s.audio.play().catch(() => {});
 }
 
-/** Von der Lautstärke, die gerade klingt, in `dauer` s auf `ziel`. Den Wert vor dem Löschen der Rampe lesen. */
-function rampe(p: AudioParam, ziel: number, dauer: number, jetzt: number): void {
-  const wert = p.value;
+/**
+ * Die Lautstärke der Spur um `jetzt` laut Plan. Nicht aus gain.value: Das liefert in Chromium den Wert, den der
+ * Audio-Thread zuletzt gerechnet hat. Gleich nach setValueAtTime ist das noch der alte, im angehaltenen Kontext
+ * (iPhone «interrupted») bleibt er stehen.
+ */
+function lautstaerke(s: Spur, jetzt: number): number {
+  const { von, ab, ziel, bis } = s.plan;
+  if (jetzt >= bis || bis <= ab) return ziel;
+  return von + ((ziel - von) * Math.max(0, jetzt - ab)) / (bis - ab);
+}
+
+/** Von der Lautstärke, die gerade klingt, in `dauer` s auf `ziel`; mit `dauer` 0 sofort. */
+function blende(s: Spur, ziel: number, dauer: number, jetzt: number): void {
+  const von = dauer > 0 ? lautstaerke(s, jetzt) : ziel;
+  const p = s.gain.gain;
   p.cancelScheduledValues(jetzt);
-  p.setValueAtTime(wert, jetzt);
-  p.linearRampToValueAtTime(ziel, jetzt + dauer);
+  p.setValueAtTime(von, jetzt);
+  if (dauer > 0) p.linearRampToValueAtTime(ziel, jetzt + dauer);
+  s.plan = { von, ab: jetzt, ziel, bis: jetzt + dauer };
 }
 
 /**
@@ -102,13 +117,14 @@ function rampe(p: AudioParam, ziel: number, dauer: number, jetzt: number): void 
  * Mal oft über 1 s). Eine Rampe ab dem Aufruf wäre dann vorbei, bevor man etwas hört, und das Stück begänne laut.
  */
 function blendeEin(s: Spur, jetzt: number): void {
-  if (!s.audio.paused && s.audio.readyState >= GENUG_GELADEN) rampe(s.gain.gain, 1, EINBLENDEN_S, jetzt);
+  if (!s.audio.paused && s.audio.readyState >= GENUG_GELADEN) blende(s, 1, EINBLENDEN_S, jetzt);
   else s.einblenden = true;
 }
 
 /**
  * Legt den AudioContext an bzw. setzt ihn fort und holt abgelehnte Musik nach. Nur aus einer Geste aufrufen.
- * `nachholen` false: nur anlegen und fortsetzen (Geste auf 🔊 oder Taste M: Erst sie entscheidet über «stumm»).
+ * `nachholen` false: nur anlegen und fortsetzen (Geste auf 🔊, Taste M oder Tab: Erst der Klick bzw. die Taste
+ * entscheidet über «stumm», mit Tab sucht jemand erst den Weg; klang.ts).
  */
 export function starteKlang(nachholen = true): void {
   if (!ctx) {
@@ -149,7 +165,7 @@ export function spieleMusik(name: string | null): void {
   const jetzt = ctx.currentTime;
   if (alt.name) {
     alt.einblenden = false; // lädt es noch, kommt es nicht mehr
-    rampe(alt.gain.gain, 0, AUSBLENDEN_S, jetzt);
+    blende(alt, 0, AUSBLENDEN_S, jetzt);
     clearTimeout(alt.stopp);
     alt.stopp = setTimeout(() => stoppe(alt), AUSBLENDEN_S * 1000);
   }
@@ -162,8 +178,7 @@ export function spieleMusik(name: string | null): void {
     if (neu.audio.paused) spiele(neu);
     return;
   }
-  neu.gain.gain.cancelScheduledValues(jetzt);
-  neu.gain.gain.setValueAtTime(0, jetzt);
+  blende(neu, 0, 0, jetzt);
   neu.name = name;
   neu.einblenden = true;
   neu.audio.src = `assets/audio/music/${name}.mp3`;

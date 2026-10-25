@@ -1,16 +1,23 @@
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Das Klang-System (src/systems/Klang.ts) ohne Browser: AudioContext, GainNode und <audio> als kleine Ersatz-Objekte.
-// Die Lautstärke rechnet der Ersatz aus den geplanten Werten wie der Browser: Wer eine laufende Rampe löscht und
-// danach liest, bekommt den Wert vor der Rampe. Zeitgeber laufen mit vi.useFakeTimers. Ein Stück lädt sofort und
-// meldet 'playing' gleich bei play(), ausser ein Test lädt es selbst (sofortGeladen = false, dann geladen()).
+// Was klingt, rechnet der Ersatz aus den geplanten Werten wie der Browser (klingt()). value liefert wie in Chromium
+// nur, was der Audio-Thread zuletzt gerechnet hat (bei zeit(), solange der Kontext läuft) oder was der Setzer schrieb.
+// Zeitgeber laufen mit vi.useFakeTimers. Ein Stück lädt sofort und meldet 'playing' gleich bei play(), ausser ein
+// Test lädt es selbst (sofortGeladen = false, dann geladen()) oder lässt play() ablehnen (ablehnen = true).
 
 type Punkt = { t: number; v: number; rampe: boolean };
+const params: Param[] = [];
 
 class Param {
   private punkte: Punkt[] = [];
-  constructor(private uhr: { currentTime: number }, private start: number) {}
-  get value(): number {
+  private gerechnet: number;
+  constructor(private uhr: { currentTime: number }, private start: number) {
+    this.gerechnet = start;
+    params.push(this);
+  }
+  /** Die Lautstärke laut Plan jetzt: Was man hört */
+  klingt(): number {
     const jetzt = this.uhr.currentTime;
     let t = 0;
     let v = this.start;
@@ -21,7 +28,10 @@ class Param {
     }
     return v;
   }
-  set value(v: number) { this.start = v; this.punkte = []; }
+  /** Der Audio-Thread rechnet: Erst danach liefert value den Wert von jetzt */
+  rechne(): void { this.gerechnet = this.klingt(); }
+  get value(): number { return this.gerechnet; }
+  set value(v: number) { this.gerechnet = v; this.setValueAtTime(v, this.uhr.currentTime); }
   setValueAtTime(v: number, t: number): void { this.punkte.push({ t, v, rampe: false }); }
   linearRampToValueAtTime(v: number, t: number): void { this.punkte.push({ t, v, rampe: true }); }
   cancelScheduledValues(t: number): void { this.punkte = this.punkte.filter(p => p.t < t); }
@@ -53,6 +63,7 @@ class Kontext {
 
 const spieler: Spieler[] = [];
 let sofortGeladen = true;
+let ablehnen = false;
 
 class Spieler extends EventTarget {
   loop = false;
@@ -70,6 +81,7 @@ class Spieler extends EventTarget {
   removeAttribute(name: string): void { if (name === 'src') { this.quelle = ''; this.readyState = 0; } }
   load(): void {}
   play(): Promise<void> {
+    if (ablehnen) return Promise.reject(new Error('NotAllowedError'));
     if (this.paused) {
       this.paused = false;
       if (sofortGeladen) this.readyState = 4;
@@ -99,18 +111,24 @@ const datei = (name: string) => `assets/audio/music/${name}.mp3`;
 const stueck = (s: Spieler) => s.src.replace('assets/audio/music/', '').replace('.mp3', '');
 /** Die Spuren, die gerade spielen: Stück und Lautstärke jetzt (gerundet), nach Stück geordnet */
 const laufend = () => spieler.filter(s => !s.paused)
-  .map(s => ({ stueck: stueck(s), laut: Math.round((s.gain?.gain.value ?? 0) * 100) / 100 }))
+  .map(s => ({ stueck: stueck(s), laut: Math.round((s.gain?.gain.klingt() ?? 0) * 100) / 100 }))
   .sort((a, b) => a.stueck.localeCompare(b.stueck));
 /** Die Spur, die `name` je bekommen hat */
 const spurVon = (name: string) => spieler.find(s => s.zuweisungen.includes(datei(name)))!;
-const zeit = (s: number) => { kontext.currentTime = s; };
+/** Die Zeit vergeht; läuft der Kontext, rechnet der Audio-Thread */
+const zeit = (s: number) => {
+  kontext.currentTime = s;
+  if (kontext.state === 'running') params.forEach(p => p.rechne());
+};
 /** Lässt die Versprechen von fetch und decodeAudioData durchlaufen */
 const leere = async () => { for (let i = 0; i < 20; i++) await Promise.resolve(); };
 
 beforeEach(() => {
   spieler.length = 0;
   quellen.length = 0;
+  params.length = 0;
   sofortGeladen = true;
+  ablehnen = false;
   vi.useFakeTimers();
   const daten = new Map<string, string>();
   vi.stubGlobal('localStorage', { getItem: (k: string) => daten.get(k) ?? null, setItem: (k: string, v: string) => { daten.set(k, v); } });
@@ -166,6 +184,7 @@ describe('Klang-System: Musik', () => {
     k.spieleMusik('ambient_forest');
     vi.advanceTimersByTime(400);
     zeit(5.4);
+    spurVon('ambient_city').readyState = 3; // spielt, nur knapp geladen (HAVE_FUTURE_DATA)
     k.spieleMusik('ambient_city');
     // nicht neu geladen, also nicht von vorn: Die Stadt-Spur bekam ihr src nur einmal
     expect(spurVon('ambient_city').zuweisungen).toEqual([datei('ambient_city')]);
@@ -226,6 +245,71 @@ describe('Klang-System: Musik', () => {
     zeit(1.2);
     vi.advanceTimersByTime(1000);
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 1 }]);
+  });
+
+  test('A → B → A, A wurde angehalten (iPhone unterbrochen): A spielt sofort weiter und blendet ein', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(5);
+    spurVon('ambient_city').pause(); // geladen, aber angehalten
+    k.spieleMusik('ambient_forest');
+    zeit(5.4);
+    k.spieleMusik('ambient_city');
+    zeit(5.55);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.8 }, { stueck: 'ambient_forest', laut: 0.85 }]);
+  });
+
+  test('A → B → A, A angehalten und play() abgelehnt: A blendet weiter aus, bis eine Geste es startet', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(5);
+    const stadt = spurVon('ambient_city');
+    stadt.pause();
+    k.spieleMusik('ambient_forest');
+    zeit(5.4);
+    ablehnen = true;
+    k.spieleMusik('ambient_city');
+    zeit(5.6);
+    // Still und weiter leiser, nicht im Stillen schon auf volle Lautstärke (es begänne sonst laut)
+    expect(stadt.paused).toBe(true);
+    expect(stadt.gain!.gain.klingt()).toBeCloseTo(0.4);
+    ablehnen = false;
+    k.starteKlang(); // die nächste Geste holt es nach und blendet von dort ein
+    zeit(5.75);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.7 }, { stueck: 'ambient_forest', laut: 0.65 }]);
+  });
+
+  test('zwei Wechsel, ohne dass der Audio-Thread dazwischen rechnet: Das verlassene Stück bleibt still', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(5);
+    k.spieleMusik('ambient_forest');
+    zeit(5.05); // die Stadt blendet aus, ihre Spur steht bei 0,95
+    sofortGeladen = false;
+    k.spieleMusik('ambient_boss'); // auf der Spur der Stadt: still, bis es spielt
+    k.spieleMusik('ambient_forest'); // gleich zurück, value liefert dort noch 0,95
+    zeit(5.1);
+    geladen(spurVon('ambient_boss'));
+    zeit(5.2);
+    expect(laufend()).toEqual([{ stueck: 'ambient_boss', laut: 0 }, { stueck: 'ambient_forest', laut: 0.58 }]);
+  });
+
+  test('angehaltener Kontext (iPhone «interrupted»): Ein neues Stück blendet nach dem Fortsetzen ein', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(1);
+    k.setzeStumm(true);
+    k.setzeStumm(false); // die Stadt kommt auf die andere Spur, die alte behält die volle Lautstärke
+    zeit(2);
+    kontext.state = 'suspended'; // der Audio-Thread rechnet nicht, die Zeit steht
+    k.spieleMusik('ambient_forest'); // auf die alte Spur, ohne Geste (etwa ein Bildschirmwechsel)
+    k.starteKlang(); // die nächste Geste setzt fort
+    zeit(2.15);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.85 }, { stueck: 'ambient_forest', laut: 0.5 }]);
   });
 
   test('A → B → C → A in kurzer Folge: am Ende läuft nur A', async () => {

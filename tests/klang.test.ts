@@ -179,12 +179,26 @@ describe('Ereignisse → Ton (klang.ts)', () => {
   test('erste Geste mit Tab (auch rückwärts): Musik nur gemerkt, die nächste andere Taste startet sie', () => {
     klang.gestartet = false;
     meldeMit('keydown', { key: 'Tab', target: { tagName: 'BODY' } });
+    // Shift+Tab wie im Browser: erst Shift allein, dann Tab mit shiftKey. Zusatztasten allein zählen nicht
+    meldeMit('keydown', { key: 'Shift', target: { tagName: 'BUTTON' } });
     meldeMit('keydown', { key: 'Tab', shiftKey: true, target: { tagName: 'BUTTON' } });
+    for (const key of ['Control', 'Alt', 'Meta']) meldeMit('keydown', { key, target: { tagName: 'BUTTON' } });
     expect(klang.starteKlang.mock.calls).toEqual([[false], [false]]);
     expect(klang.merkeMusik).toHaveBeenCalledTimes(1);
     expect(klang.spieleMusik).not.toHaveBeenCalled();
     meldeMit('keydown', { key: 'Enter', target: { tagName: 'BUTTON' } });
     expect(klang.starteKlang).toHaveBeenLastCalledWith(true);
+  });
+
+  test('🔊 mit dem Fokus: Enter und Leertaste lösen nur 🔊 aus, jede andere Taste startet die Musik', () => {
+    klang.gestartet = false;
+    meldeMit('keydown', { key: 'Tab', target: { tagName: 'BODY' } }); // der erste Halt ist 🔊
+    meldeMit('keydown', { key: 'Enter', target: aufKlangKnopf });
+    meldeMit('keydown', { key: ' ', target: aufKlangKnopf });
+    expect(klang.starteKlang.mock.calls).toEqual([[false], [false], [false]]);
+    meldeMit('keydown', { key: 'x', target: aufKlangKnopf });
+    expect(klang.starteKlang).toHaveBeenLastCalledWith(true);
+    expect(klang.merkeMusik).toHaveBeenCalledTimes(1);
   });
 
   test('Bildschirmwechsel: Stadtmusik, der Kampf ändert nichts', () => {

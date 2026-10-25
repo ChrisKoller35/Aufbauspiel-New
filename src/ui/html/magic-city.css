@@ -1877,8 +1877,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   /* clip statt hidden: schneidet weiter ab, lässt aber die Knopfleiste unten am Bildschirm kleben */
   .mc-combat-overlay { height: auto; min-height: 100%; flex-shrink: 0; overflow: clip; }
   /* Kopf eng genug, dass x1/x1.5/x2 mit 🔊 neben Titel und Raum passen. Wird es eng (Bosskampf bei 320 px, ab
-     Raum 10 bei 360 px), rutscht «Raum x / y» unter den Titel, nicht die Knöpfe in eine zweite Zeile: Der Kopf
-     bleibt in jedem Raum gleich hoch, das Kampffeld springt nicht */
+     Raum 10 bei 360 px), rutscht «Raum x / y» unter den Titel, nicht die Knöpfe in eine zweite Zeile: Am Handy
+     (Touch) bleibt der Kopf ab 320 px in jedem Raum gleich hoch (57 px), das Kampffeld springt nicht. Schmaler oder
+     mit Maus (kleinere Knöpfe) wird er im Bosskampf bis 15 px höher */
   .mc-co-header { padding: 6px 8px; flex-wrap: wrap; row-gap: 6px; column-gap: 8px; }
   .mc-co-title-group { flex: 1 1 0; min-width: 0; flex-wrap: wrap; gap: 0 6px; }
   .mc-co-title { letter-spacing: 1px; }

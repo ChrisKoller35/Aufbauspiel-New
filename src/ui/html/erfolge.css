@@ -55,9 +55,17 @@
   .hdr.hdr-mit-hinweis .hdr-cur { visibility: hidden; }
   .hdr .hdr-note { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3; }
 }
-/* Handy, neben «← Zurück» und 🔊: drei kleinere Zeilen statt zwei (3 × 11,9 px in den 36 px der ersten Zeile) */
-@media (max-width: 700px) {
-  .hdr.hdr-zurueck .hdr-note { font-size: 0.6875rem; line-height: 1.08; -webkit-line-clamp: 3; line-clamp: 3; }
+/* Handy hochkant, neben «← Zurück» und 🔊: drei kleinere Zeilen statt zwei (3 × 11,9 px in den 36 px der ersten
+   Zeile). Ab 552 px reichen zwei Zeilen zu 12 px wie im Hauptmenü. Ein farbiges Emoji am Anfang (🏅 📜 ⚒️ 💎) ist knapp
+   2 px höher als eine solche Zeile: 3 px Luft darüber (die margin hält den Text an seiner Stelle), und .hdr-mitte
+   schneidet nur seitlich ab. Ohne overflow: clip (Safari vor 16) bliebe sonst ein Rollbereich, dort also wie bisher. */
+@media (max-width: 551px) {
+  .hdr.hdr-zurueck .hdr-note {
+    font-size: 0.6875rem; line-height: 1.08; -webkit-line-clamp: 3; line-clamp: 3; padding-top: 3px; margin-top: -1.5px;
+  }
+  @supports (overflow: clip) {
+    .hdr.hdr-zurueck .hdr-mitte { overflow-x: clip; overflow-y: visible; }
+  }
 }
 @media (min-width: 1001px) {
   .hdr-platz { container-type: inline-size; }

@@ -24,9 +24,10 @@
 /* «Schliessen» bleibt unten im Fenster stehen, wenn es rollt (kleine Handys, «Boss überlebt»): Die Leiste reicht
    über den Innenabstand von .modal (26 px) bis an den Rand, der Text rollt unter ihr durch. Angehalten steht der
    Knopf 10 px über dem Rand, am Ende 26 px wie sonst; ohne Rollen sieht alles aus wie ohne Leiste.
-   sticky misst vom Rollbereich ohne dessen Innenabstand: bottom -42 px = 26 px Innenabstand + 16 px. Seitlich
-   bleiben 2 px frei: Dort zeichnet Chromium am Handy die innere Hälfte seines Fokusrings um das Fenster. */
+   sticky misst vom Rollbereich ohne dessen Innenabstand: bottom -42 px = 26 px Innenabstand + 16 px. */
 .kr-aktionen {
   display: flex; justify-content: flex-end;
-  position: sticky; bottom: -42px; margin: 4px -24px -26px; padding: 10px 24px 26px; background: var(--s1);
+  position: sticky; bottom: -42px; margin: 4px -26px -26px; padding: 10px 26px 26px; background: var(--s1);
 }
+/* Den Fokusring zeichnet Chromium am Handy zur Hälfte ins Fenster, die Leiste läge darüber: 1 px weiter aussen */
+.kr.modal:focus-visible { outline-offset: 1px; }

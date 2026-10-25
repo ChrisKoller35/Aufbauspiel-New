@@ -56,9 +56,12 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   darüber: Zusammen brauchen sie oft mehr Platz, als ihre Länge vermuten lässt (60 Zeichen bis 185 px).
   In die Kopfzeile kommen nur Liefer-Zettel; die anderen Zettel und die Kapitel des Saals meldet die
   Bilanz nach der Expedition. Ein neuer Hinweis mit über 60 Zeichen gehört nachgemessen.
-- Auch die Zahl am Knopf ändert die Höhe nicht. Am Handy füllt das Logo die erste Zeile zwischen
-  «← Zurück» und 🏅 und zählt beim Umbrechen nicht mit; neben «← Zurück» ist es unter 375 px kleiner
-  (unter 340 px noch kleiner), notfalls endet es mit «…» (`magic-city.css`, Abschnitt Header). Über
+- Auch die Zahl am Knopf ändert die Höhe nicht: Am Handy sitzt sie auf der Ecke von 🏅, ragt 4 px über
+  dessen obere und rechte Kante, bleibt 2 px unter der Oberkante der Kopfzeile und zählt für die Breite
+  nicht mit. Dort füllt das Logo die erste Zeile zwischen «← Zurück» und 🔊 🏅 (je 44 × 44 px, 4 px
+  auseinander) und zählt beim Umbrechen nicht mit; neben «← Zurück» ist es unter 375 px kleiner (14 px,
+  122 px breit), unter 340 px noch kleiner (12 px, 100 px breit), notfalls endet es mit «…»
+  (`magic-city.css`, Abschnitt Header). Über
   700 px steht alles in einer Zeile, «← Zurück», Logo und 🏅 brechen nie um. Fehlt Platz, stehen erst
   die Vorräte auf zwei Zeilen (zwei Gruppen zu drei, `vorratsZeileHtml`), dann der Bildschirm-Name,
   beide nicht höher als 🏅; erst wenn auch das nicht reicht, endet der Name mit «…». So ragt 🏅 auch
@@ -77,9 +80,20 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   «Verschlungene Tunnel».
   Über 1000 px endet kein Hinweis mit «…», auch zwei zusammen nicht (1001 bis 1401 px, Vorräte bis
   12.345.678 Gold). Bis 1000 px ist der Platz über Logo und Name schmaler, neben «← Zurück» am Handy bei
-  320 px 110 px, bei 360 px 150 px, bei 390 px 180 px. Am Handy endet dort ein erledigter Liefer-Zettel
-  bis 412 px nach zwei Zeilen mit «…», ein Hinweis bis 60 Zeichen bis 366 px (bei 320 px etwa die Hälfte
-  der Erfolge mit zwei Namen) und ein Zettel zusammen mit zwei Erfolgen (bis 134 Zeichen) bis 556 px. Von
+  320 px 116 px, bei 360 px 156 px, bei 390 px 186 px, bei 412 px 208 px (im Hauptmenü 204, 244, 274 und
+  296 px). Neben «← Zurück» steht ein Hinweis darum bis 551 px auf höchstens drei Zeilen zu 11 px statt
+  zwei zu 12 px (3 × 11,9 px in den 36 px der ersten Zeile, die Kopfzeile bleibt 79 px hoch). Ein farbiges
+  Emoji am Anfang (🏅 📜 ⚒️ 💎) ist knapp 2 px höher als eine solche Zeile: Der Hinweis hat darum 3 px Luft
+  nach oben, und `.hdr-mitte` schneidet dort nur seitlich ab (`erfolge.css`). Ab 552 px (Handy quer) endet
+  auch mit zwei Zeilen zu 12 px keiner der 1585 gemessenen Hinweise mit «…», dort bleibt es wie im
+  Hauptmenü. Neben «← Zurück» endet so nur noch ein erledigter Liefer-Zettel mit Tagesbonus bis 338 px
+  nach drei Zeilen mit «…», der Satz zum alten Spielstand bis 342 px und ein Zettel zusammen mit zwei
+  Erfolgen (bis 134 Zeichen) bis 410 px; ein Hinweis bis 60 Zeichen (Aufträge der Werkstätten, Erfolge mit
+  einem oder zwei Namen, Set-Teile, Zettel ohne Tagesbonus) nie. Im Hauptmenü endet der Satz zum alten
+  Spielstand bis 328 px nach zwei Zeilen mit «…» (bei 320 px fehlt «werden.»), ein Zettel mit zwei
+  Erfolgen bis 462 px. Mit zwei Zeilen zu 12 px endeten neben «← Zurück» bei 320 px 29 der 170 Hinweise
+  des Gildenhauses und 639 der 1332 Erfolge mit zwei Namen mit «…» (gemessen im Gildenhaus in
+  2-px-Schritten, ohne und mit Zahl am 🏅 gleich). Von
   701 bis 1000 px (Handy quer, Tablet, schmales Fenster) passt jeder einzelne Hinweis, nur der Satz zum
   alten Spielstand endet bis 703 px mit «…» (neben sehr grossen Vorräten bis 789 px); ein Zettel mit
   zwei Erfolgen endet bis 841 px und von 861 bis 863 px mit «…», mit 1.234.567 Gold bis 945 px.

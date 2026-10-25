@@ -11,15 +11,21 @@ import { bindeKlangSchalter, istStummTaste, type TasteInfo } from './ui/componen
 
 // Ton erlaubt der Browser erst mit einer Nutzer-Aktivierung: mit der Maus schon bei pointerdown, beim Tippen erst
 // bei pointerup, touchend oder click, mit Escape nie. Jede Geste setzt den Klang fort und holt Abgelehntes nach;
-// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen). Eine Geste auf 🔊, die Taste M
-// und Tab starten nichts: Erst der Klick bzw. die Taste entscheidet über «stumm» (am PC käme sonst beim Drücken kurz
-// Musik), und mit Tab sucht jemand erst den Weg; der erste Halt ist oft 🔊.
+// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen). Eine Geste auf 🔊 (Zeiger, Enter,
+// Leertaste), die Taste M und Tab starten nichts: Erst der Klick bzw. die Taste entscheidet über «stumm» (am PC käme
+// sonst beim Drücken kurz Musik), und mit Tab sucht jemand erst den Weg; der erste Halt ist oft 🔊. Andere Tasten
+// lösen 🔊 nicht aus, auch wenn es den Fokus hat: Sie sind gewöhnliche Gesten.
+// Zusatztasten allein (Shift, Strg, Alt, Cmd, Feststelltaste) zählen gar nicht: Vor Shift+Tab kommt Shift als eigenes
+// keydown, und die Aktivierung durch den Tab davor gilt dann noch (5 s).
+const ZUSATZTASTEN = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'OS', 'CapsLock', 'Fn']);
 function geste(e: Event): void {
+  const taste = e.type === 'keydown' ? (e as unknown as TasteInfo) : null;
+  if (taste && ZUSATZTASTEN.has(taste.key)) return;
   if (navigator.userActivation && !navigator.userActivation.isActive) return;
   const erstes = !istGestartet();
-  const taste = e.type === 'keydown' ? (e as unknown as TasteInfo) : null;
-  const nurFreigeben = Boolean((e.target as Element | null)?.closest?.('.klang-knopf'))
-    || (taste !== null && (istStummTaste(taste) || taste.key === 'Tab'));
+  const aufKnopf = Boolean((e.target as Element | null)?.closest?.('.klang-knopf'))
+    && (taste === null || taste.key === 'Enter' || taste.key === ' ');
+  const nurFreigeben = aufKnopf || (taste !== null && (istStummTaste(taste) || taste.key === 'Tab'));
   starteKlang(!nurFreigeben);
   if (erstes) (nurFreigeben ? merkeMusik : spieleMusik)(musikFuerBildschirm(getCurrentScreen()));
 }

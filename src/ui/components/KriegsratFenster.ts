@@ -2,7 +2,7 @@
 // Im Team-Bildschirm vor dem Aufbruch (ExpeditionsScreen.ts): zeigt, wie
 // die gewählte Expedition in Probeläufen ausgeht (systems/Kriegsrat.ts).
 // Erst steht das Fenster mit «Der Kriegsrat tagt …», dann rechnet es in
-// Häppchen (rechneHaeppchen), damit der Browser dazwischen zeichnen und
+// Häppchen (haeppchenweise), damit der Browser dazwischen zeichnen und
 // Tasten annehmen kann. Escape, «Schliessen» und der dunkle Rand schliessen
 // (FensterHilfen.ts), auch mitten im Rechnen; danach rechnet es nicht weiter.
 // ────────────────────────────────────────────────────────────────
@@ -29,6 +29,22 @@ export function rechneHaeppchen<T, R>(
   let schritt = schritte.next();
   while (!schritt.done && uhr() < bis) schritt = schritte.next();
   return schritt;
+}
+
+/**
+ * Rechnet `schritte` häppchenweise, je Aufruf ein Häppchen (`rechneHaeppchen`). Das erste rechnet nur einen Schritt,
+ * beim Kriegsrat den Start des ersten Laufs: Gleich nach dem Laden der Seite dauert schon der erste Kampfraum allein
+ * fast ein ganzes Häppchen. Danach rechnet jedes bis `ms`.
+ */
+export function haeppchenweise<T, R>(
+  schritte: Iterator<T, R>, ms = HAEPPCHEN_MS, uhr: () => number = () => performance.now(),
+): () => IteratorResult<T, R> {
+  let bis = 0;
+  return () => {
+    const schritt = rechneHaeppchen(schritte, bis, uhr);
+    bis = ms;
+    return schritt;
+  };
 }
 
 /** Zahl und Wort mit geschütztem Leerzeichen: Die Zeile bricht nie zwischen den beiden um. */
@@ -121,15 +137,11 @@ export function zeigeKriegsrat(
   const body = ov.querySelector<HTMLElement>('.kr-body')!;
   const stand = ov.querySelector<HTMLElement>('.kr-stand')!;
   // Der Stand von jetzt (beim Klick), nicht der beim ersten Häppchen
-  const laeufe = kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL);
-  // Das erste Häppchen rechnet nur den Start des ersten Laufs: Gleich nach dem Laden dauert schon der erste
-  // Kampfraum allein fast ein ganzes Häppchen
-  let haeppchenMs = 0;
+  const naechstesHaeppchen = haeppchenweise(kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL));
   const rechne = () => {
     if (!ov.isConnected) return;
     try {
-      const schritt = rechneHaeppchen(laeufe, haeppchenMs);
-      haeppchenMs = HAEPPCHEN_MS;
+      const schritt = naechstesHaeppchen();
       if (!schritt.done) {
         stand.textContent = ` ${schritt.value}\u00a0von\u00a0${ANZAHL}`;
         setTimeout(rechne, 0);

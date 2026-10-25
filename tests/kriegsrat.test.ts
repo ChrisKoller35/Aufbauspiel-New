@@ -4,7 +4,7 @@ import { GameState } from '../src/models/GameState';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { kriegsrat, kriegsratLaeufe } from '../src/systems/Kriegsrat';
 import { musterStand } from '../src/systems/Musterlauf';
-import { rechneHaeppchen } from '../src/ui/components/KriegsratFenster';
+import { haeppchenweise, rechneHaeppchen } from '../src/ui/components/KriegsratFenster';
 
 const ROUTE = Object.keys(ROUTE_DEFS)[0];
 
@@ -155,6 +155,15 @@ describe('Häppchen (KriegsratFenster.ts)', () => {
     const ergebnisse = [1, 2, 3].map(() => rechneHaeppchen(it, 30, () => uhr.jetzt).value);
     expect(ergebnisse).toEqual([1, 2, 3]);
     expect(rechneHaeppchen(it, 30, () => uhr.jetzt)).toEqual({ value: 'fertig', done: true });
+  });
+
+  it('häppchenweise: Das erste Häppchen rechnet nur einen Schritt, danach je eines bis 30 ms', () => {
+    const uhr = { jetzt: 0 };
+    const naechstes = haeppchenweise(schritte(uhr, 12, 7), 30, () => uhr.jetzt);
+    expect(naechstes()).toEqual({ value: 1, done: false });
+    expect(naechstes()).toEqual({ value: 6, done: false });
+    expect(naechstes()).toEqual({ value: 11, done: false });
+    expect(naechstes()).toEqual({ value: 'fertig', done: true });
   });
 
   it('der echte Rat in Häppchen: dasselbe Ergebnis wie am Stück', () => {
