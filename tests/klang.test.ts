@@ -10,13 +10,15 @@ const klang = vi.hoisted(() => ({
   gestartet: false,
   starteKlang: vi.fn(),
   spieleMusik: vi.fn(),
+  merkeMusik: vi.fn(),
   spieleEffekt: vi.fn(),
 }));
 vi.mock('../src/systems/Klang', async (original) => ({
   ...(await original<typeof import('../src/systems/Klang')>()),
   istGestartet: () => klang.gestartet,
-  starteKlang: () => { klang.starteKlang(); klang.gestartet = true; },
+  starteKlang: (nachholen = true) => { klang.starteKlang(nachholen); klang.gestartet = true; },
   spieleMusik: klang.spieleMusik,
+  merkeMusik: klang.merkeMusik,
   spieleEffekt: klang.spieleEffekt,
 }));
 
@@ -122,10 +124,19 @@ describe('Ereignisse → Ton (klang.ts)', () => {
   const fenster = new EventTarget();
   const aktivierung = { isActive: false };
   const melde = (typ: string, detail?: unknown) => fenster.dispatchEvent(new CustomEvent(typ, { detail }));
+  /** Ein Ereignis mit Ziel und Feldern (ein Knopf, eine Taste): Ohne Browser gibt es kein Element dafür */
+  const meldeMit = (typ: string, felder: Record<string, unknown>) => {
+    const e = new Event(typ);
+    for (const [feld, wert] of Object.entries(felder)) Object.defineProperty(e, feld, { value: wert });
+    fenster.dispatchEvent(e);
+  };
+  const aufKlangKnopf = { closest: (sel: string) => (sel === '.klang-knopf' ? {} : null) };
+  const effekte = () => klang.spieleEffekt.mock.calls.map(([name]) => name);
 
   beforeAll(async () => {
     vi.stubGlobal('window', fenster);
-    vi.stubGlobal('document', new EventTarget());
+    // querySelectorAll für schalteKlang (Taste M): keine Knöpfe, kein Video
+    vi.stubGlobal('document', Object.assign(new EventTarget(), { querySelectorAll: () => [] }));
     vi.stubGlobal('navigator', { userActivation: aktivierung });
     await import('../src/klang');
   });
@@ -138,10 +149,31 @@ describe('Ereignisse → Ton (klang.ts)', () => {
     aktivierung.isActive = true;
     melde('pointerup');
     expect(klang.starteKlang).toHaveBeenCalledTimes(1);
+    expect(klang.starteKlang).toHaveBeenCalledWith(true);
     expect(klang.spieleMusik).toHaveBeenCalledWith('ambient_city');
     melde('click');
     expect(klang.starteKlang).toHaveBeenCalledTimes(2);
     expect(klang.spieleMusik).toHaveBeenCalledTimes(1);
+  });
+
+  test('erste Geste auf 🔊 oder mit M: Musik nur gemerkt, erst der Klick bzw. die Taste entscheidet', () => {
+    klang.gestartet = false;
+    meldeMit('pointerdown', { target: aufKlangKnopf });
+    expect(klang.starteKlang).toHaveBeenCalledWith(false);
+    expect(klang.merkeMusik).toHaveBeenCalledWith('ambient_city');
+    expect(klang.spieleMusik).not.toHaveBeenCalled();
+
+    klang.gestartet = false;
+    vi.clearAllMocks();
+    // M zweimal: stumm und wieder laut (schalteKlang), danach ist alles wie vorher
+    for (let i = 0; i < 2; i++) meldeMit('keydown', { key: 'm', target: { tagName: 'BODY' } });
+    expect(klang.starteKlang.mock.calls).toEqual([[false], [false]]);
+    expect(klang.merkeMusik).toHaveBeenCalledTimes(1);
+    expect(klang.spieleMusik).not.toHaveBeenCalled();
+
+    // Eine andere Taste ist eine gewöhnliche Geste: holt Abgelehntes nach
+    meldeMit('keydown', { key: 'k', target: { tagName: 'BODY' } });
+    expect(klang.starteKlang).toHaveBeenLastCalledWith(true);
   });
 
   test('Bildschirmwechsel: Stadtmusik, der Kampf ändert nichts', () => {
@@ -156,12 +188,37 @@ describe('Ereignisse → Ton (klang.ts)', () => {
     expect(klang.spieleMusik).toHaveBeenCalledWith('Ecambient_cave');
   });
 
-  test('Bosskampf, Sieg, Niederlage und Rückzug', () => {
+  test('Bosskampf und Sieg im Kampf: ein Ausgangston, die Bilanz danach bleibt still', () => {
+    melde('mc:aufbruch', { routeId: 'drachenhort' });
     melde('mc:bosskampf');
     expect(klang.spieleMusik).toHaveBeenCalledWith(BOSS_MUSIK);
     melde('mc:kampfausgang', { status: 'victory' });
+    melde('mc:expeditionsende', { status: 'victory' });
+    expect(effekte()).toEqual(['expedition_start', 'boss_intro', 'boss_victory']);
+  });
+
+  test('Niederlage im Kampf, dann eine neue Expedition mit eigenem Ausgang', () => {
+    melde('mc:aufbruch', { routeId: 'cave_deep' });
     melde('mc:kampfausgang', { status: 'defeat' });
-    melde('mc:rueckzug');
-    expect(klang.spieleEffekt.mock.calls).toEqual([['boss_intro'], ['boss_victory'], ['party_wipe'], ['retreat_horn']]);
+    melde('mc:expeditionsende', { status: 'defeat' });
+    melde('mc:aufbruch', { routeId: 'cave_deep' });
+    melde('mc:kampfausgang', { status: 'defeat' });
+    expect(effekte()).toEqual(['expedition_start', 'party_wipe', 'expedition_start', 'party_wipe']);
+  });
+
+  test('Ausgang ohne Anzeige im Kampf: Rückzug aus einem verlorenen Kampf, letzter Raum ohne Kampf', () => {
+    // «Rückzug» während der Runden eines Kampfs, der schon verloren ist: Der Kampf zeigt den Ausgang nie
+    melde('mc:aufbruch', { routeId: 'drachenhort' });
+    melde('mc:expeditionsende', { status: 'defeat' });
+    // ocean_shallows endet mit einer Rast: Der Sieg entsteht erst zur Bilanz
+    melde('mc:aufbruch', { routeId: 'ocean_shallows' });
+    melde('mc:expeditionsende', { status: 'victory' });
+    expect(effekte()).toEqual(['expedition_start', 'party_wipe', 'expedition_start', 'boss_victory']);
+  });
+
+  test('Rückzug per Knopf im Kampf oder am Kontrollpunkt: Horn', () => {
+    melde('mc:aufbruch', { routeId: 'cave_deep' });
+    melde('mc:expeditionsende', { status: 'retreat' });
+    expect(effekte()).toEqual(['expedition_start', 'retreat_horn']);
   });
 });

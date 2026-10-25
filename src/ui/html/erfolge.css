@@ -21,10 +21,15 @@
 }
 
 /* Handy: Knopf bleibt oben rechts, die Vorräte rutschen in die zweite Zeile. Der Knopf ragt je 4 px
-   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. */
+   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. 🔊 und 🏅 stehen 4 px auseinander,
+   die Zahl neuer Erfolge sitzt auf der Ecke von 🏅 (bleibt in der Kopfzeile): Neben ihnen bleibt das Logo ganz
+   (magic-city.css, Abschnitt Header). */
 @media (max-width: 700px) {
   .hdr .res { order: 2; }
   .hdr-erfolge, .hdr-klang { margin-top: -4px; margin-bottom: -4px; }
+  .hdr .hdr-klang { margin-right: calc(4px - var(--hdr-abstand)); }
+  .hdr-erfolge { position: relative; }
+  .hdr-erfolge-neu { position: absolute; top: -5px; right: -5px; min-width: 16px; padding: 1px 4px; font-size: 0.62rem; }
 }
 
 /* Ein Hinweis (zeigeKopfHinweis) steht in .hdr-platz, dem freien Platz hinter dem Bildschirm-Namen, auf höchstens

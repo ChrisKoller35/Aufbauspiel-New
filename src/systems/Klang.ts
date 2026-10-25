@@ -2,8 +2,8 @@
 // Ein AudioContext (erst in der ersten Geste), darunter Haupt-Gain (stumm), Musik- und
 // Effekt-Gain. Lautstärke nur über GainNodes: `audio.volume` wirkt auf dem iPhone nicht.
 // Musik auf zwei festen Spuren (<audio>), beide in der ersten Geste angelegt und freigegeben:
-// Ein Wechsel blendet von der einen auf die andere über. So startet auch Musik ohne Geste
-// (Bosskampf), und es entstehen keine neuen Medien-Player. Bei «stumm» lädt nichts.
+// Ein Wechsel blendet das alte Stück in 1 s aus und das neue in 0,3 s ein. So startet auch Musik
+// ohne Geste (Bosskampf), und es entstehen keine neuen Medien-Player. Bei «stumm» lädt nichts.
 // ────────────────────────────────────────────────────────────────
 
 export const KLANG_SPEICHER_KEY = 'magic_city_klang';
@@ -28,6 +28,8 @@ export function speichereEinstellungen(e: KlangEinstellungen, s: Pick<Storage, '
 }
 
 const AUSBLENDEN_S = 1;
+/** Kurz statt hart: Boss- und Höhlenmusik beginnen laut */
+const EINBLENDEN_S = 0.3;
 
 interface Spur { audio: HTMLAudioElement; gain: GainNode; name: string | null; stopp?: ReturnType<typeof setTimeout> }
 
@@ -74,8 +76,19 @@ function spiele(s: Spur): void {
   void s.audio.play().catch(() => {});
 }
 
-/** Legt den AudioContext an bzw. setzt ihn fort und holt abgelehnte Musik nach. Nur aus einer Geste aufrufen. */
-export function starteKlang(): void {
+/** Von der Lautstärke, die gerade klingt, in `dauer` s auf `ziel`. Den Wert vor dem Löschen der Rampe lesen. */
+function rampe(p: AudioParam, ziel: number, dauer: number, jetzt: number): void {
+  const wert = p.value;
+  p.cancelScheduledValues(jetzt);
+  p.setValueAtTime(wert, jetzt);
+  p.linearRampToValueAtTime(ziel, jetzt + dauer);
+}
+
+/**
+ * Legt den AudioContext an bzw. setzt ihn fort und holt abgelehnte Musik nach. Nur aus einer Geste aufrufen.
+ * `nachholen` false: nur anlegen und fortsetzen (Geste auf 🔊 oder Taste M: Erst sie entscheidet über «stumm»).
+ */
+export function starteKlang(nachholen = true): void {
   if (!ctx) {
     ctx = new AudioContext();
     haupt = gain(ctx, einstellungen.stumm ? 0 : 1, ctx.destination);
@@ -84,7 +97,7 @@ export function starteKlang(): void {
     spuren = [neueSpur(ctx, musik), neueSpur(ctx, musik)];
   }
   if (ctx.state !== 'running') void ctx.resume().catch(() => {}); // auch «interrupted» auf dem iPhone
-  spieleMusik(gewuenscht);
+  if (nachholen) spieleMusik(gewuenscht);
 }
 
 export function setzeStumm(stumm: boolean): void {
@@ -94,6 +107,11 @@ export function setzeStumm(stumm: boolean): void {
   haupt.gain.setTargetAtTime(stumm ? 0 : 1, ctx.currentTime, 0.02);
   if (stumm) spuren.forEach(stoppe);
   else spieleMusik(gewuenscht);
+}
+
+/** Merkt sich das Stück nur, ohne es zu starten: Es läuft, sobald Ton und Geste es erlauben. `null`: nichts ändern. */
+export function merkeMusik(name: string | null): void {
+  if (name) gewuenscht = name;
 }
 
 /** Spielt `assets/audio/music/<name>.mp3` in Schleife und blendet das alte Stück aus. `null`: nichts ändern. */
@@ -108,18 +126,22 @@ export function spieleMusik(name: string | null): void {
   }
   const jetzt = ctx.currentTime;
   if (alt.name) {
-    const g = alt.gain.gain;
-    g.cancelScheduledValues(jetzt);
-    g.setValueAtTime(g.value, jetzt);
-    g.linearRampToValueAtTime(0, jetzt + AUSBLENDEN_S);
+    rampe(alt.gain.gain, 0, AUSBLENDEN_S, jetzt);
     clearTimeout(alt.stopp);
     alt.stopp = setTimeout(() => stoppe(alt), AUSBLENDEN_S * 1000);
   }
   aktiv = 1 - aktiv;
   const neu = spuren[aktiv];
   clearTimeout(neu.stopp);
+  // Kommt das Stück zurück, das gerade ausblendet (A → B → A): Es läuft weiter und blendet wieder ein
+  if (neu.name === name) {
+    rampe(neu.gain.gain, 1, EINBLENDEN_S, jetzt);
+    if (neu.audio.paused) spiele(neu);
+    return;
+  }
   neu.gain.gain.cancelScheduledValues(jetzt);
-  neu.gain.gain.setValueAtTime(1, jetzt);
+  neu.gain.gain.setValueAtTime(0, jetzt);
+  neu.gain.gain.linearRampToValueAtTime(1, jetzt + EINBLENDEN_S);
   neu.name = name;
   neu.audio.src = `assets/audio/music/${name}.mp3`;
   spiele(neu);

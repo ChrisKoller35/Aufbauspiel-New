@@ -2,9 +2,9 @@
 // Im Team-Bildschirm vor dem Aufbruch (ExpeditionsScreen.ts): zeigt, wie
 // die gewählte Expedition in Probeläufen ausgeht (systems/Kriegsrat.ts).
 // Erst steht das Fenster mit «Der Kriegsrat tagt …», dann rechnet es in
-// Häppchen, damit der Browser dazwischen zeichnen und Tasten annehmen kann.
-// Escape, «Schliessen» und der dunkle Rand schliessen (FensterHilfen.ts),
-// auch mitten im Rechnen; danach rechnet es nicht weiter.
+// Häppchen (rechneHaeppchen), damit der Browser dazwischen zeichnen und
+// Tasten annehmen kann. Escape, «Schliessen» und der dunkle Rand schliessen
+// (FensterHilfen.ts), auch mitten im Rechnen; danach rechnet es nicht weiter.
 // ────────────────────────────────────────────────────────────────
 
 import '../html/kriegsrat.css';
@@ -15,8 +15,21 @@ import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './Fe
 import { escapeAttr } from './SchmiedeAnzeige';
 
 const ANZAHL = 20;
-/** So lange rechnet das Fenster höchstens am Stück, dann ist der Browser wieder dran. */
+/** Nach so langem Rechnen am Stück ist der Browser wieder dran (der letzte Schritt rechnet noch fertig). */
 const HAEPPCHEN_MS = 30;
+
+/**
+ * Ein Häppchen: rechnet `schritte` weiter, bis `ms` um sind, mindestens einen Schritt. Gibt den letzten Schritt
+ * zurück (`done`: fertig, mit dem Ergebnis). Ein Häppchen dauert also bis `ms` plus einen Schritt.
+ */
+export function rechneHaeppchen<T, R>(
+  schritte: Iterator<T, R>, ms: number, uhr: () => number = () => performance.now(),
+): IteratorResult<T, R> {
+  const bis = uhr() + ms;
+  let schritt = schritte.next();
+  while (!schritt.done && uhr() < bis) schritt = schritte.next();
+  return schritt;
+}
 
 /** Zahl und Wort mit geschütztem Leerzeichen: Die Zeile bricht nie zwischen den beiden um. */
 function zahlWort(n: number, eins: string, viele: string): string {
@@ -46,12 +59,12 @@ function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
   // «Boss überlebt» nur, wenn es vorkam: Das Spiel zeigt dann «SIEG!», gezählt wird hier nur ein bezwungener Dungeon
   const boss = r.bossUeberlebt > 0;
   return `
-    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe: ${zahlWort(r.siege, 'Sieg', 'Siege')} · ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? ` · ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
+    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe: ${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
     ${balken('sieg', 'Siege', r.siege, anzahl)}
     ${balken('niederlage', 'Niederlagen', r.niederlagen, anzahl)}
     ${boss ? balken('boss', 'Boss überlebt', r.bossUeberlebt, anzahl) : ''}
-    ${boss ? '<p class="kr-info">Boss überlebt: Nach 20 Kampfrunden steht der Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, aber der Boss gilt nicht als besiegt: Er öffnet keinen neuen Dungeon, und es gibt keine Trophäe.</p>' : ''}
-    <p class="kr-info">${raum ? `Gefährlichster Raum: Raum ${raum.nummer}${gegner}. Dort ${raum.laeufe === 1 ? 'scheitert' : 'scheitern'} ${raum.laeufe} von ${anzahl}&nbsp;Läufen.` : 'Kein Lauf ist gescheitert.'}</p>
+    ${boss ? '<p class="kr-info">Boss überlebt: Nach 20&nbsp;Kampfrunden steht der Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, aber der Boss gilt nicht als besiegt: Er öffnet keinen neuen Dungeon, und es gibt keine Trophäe.</p>' : ''}
+    <p class="kr-info">${raum ? `Gefährlichster Raum: Raum&nbsp;${raum.nummer}${gegner}. Dort ${raum.laeufe === 1 ? 'scheitert' : 'scheitern'} ${raum.laeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen.` : 'Kein Lauf ist gescheitert.'}</p>
     <p class="kr-info">Ø Gold je Lauf: ${r.goldSchnitt.toLocaleString('de')}</p>
     <p class="kr-rat">${rat(r.siege, anzahl)}</p>
     <p class="kr-hinweis">Aus ${anzahl}&nbsp;Probeläufen. Proviant setzt der Rat nur vor einem Kampf und unter halben Leben ein; Stärkungs-Tränke und Fähigkeiten, die du im Kampf selbst auslöst, sind nicht eingerechnet.</p>`;
@@ -84,6 +97,10 @@ export function zeigeKriegsrat(
   const tastenLoesen = bindeFensterTasten(ov, fenster, close);
 
   const hintergrund = hintergrundKlick(ov);
+  // Ein Druck auf den Rand nimmt dem Fenster den Fokus nicht (etwa der zweite eines Doppelklicks auf «🎲 Kriegsrat»)
+  ov.addEventListener('mousedown', (e) => {
+    if (e.target === ov) e.preventDefault();
+  });
   ov.addEventListener('click', (e) => {
     const target = e.target as HTMLElement;
     if (target === ov) {
@@ -103,15 +120,14 @@ export function zeigeKriegsrat(
 
   const body = ov.querySelector<HTMLElement>('.kr-body')!;
   const stand = ov.querySelector<HTMLElement>('.kr-stand')!;
+  // Der Stand von jetzt (beim Klick), nicht der beim ersten Häppchen
   const laeufe = kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL);
   const rechne = () => {
     if (!ov.isConnected) return;
     try {
-      const bis = performance.now() + HAEPPCHEN_MS;
-      let schritt = laeufe.next();
-      while (!schritt.done && performance.now() < bis) schritt = laeufe.next();
+      const schritt = rechneHaeppchen(laeufe, HAEPPCHEN_MS);
       if (!schritt.done) {
-        stand.textContent = ` ${schritt.value} von ${ANZAHL}`;
+        stand.textContent = ` ${schritt.value}\u00a0von\u00a0${ANZAHL}`;
         setTimeout(rechne, 0);
         return;
       }

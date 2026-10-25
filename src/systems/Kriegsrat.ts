@@ -43,9 +43,12 @@ function gruppenLeben(run: ExpeditionRun): number {
 
 /**
  * Ein Lauf auf der Kopie, wie `spieleRoute` (Musterlauf.ts) mit «klug», dazu die Proviant-Regel:
- * vor einem Kampfraum ein heilender Vorrat, wenn die Gruppe unter halben Leben ist.
+ * vor einem Kampfraum ein heilender Vorrat, wenn die Gruppe unter halben Leben ist. Gibt nach jedem
+ * Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf.
  */
-function probelauf(kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>): ExpeditionRun {
+function* probelauf(
+  kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>,
+): Generator<void, ExpeditionRun, void> {
   const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
   const consumables: string[] = [];
   for (const [itemId, qty] of Object.entries(proviant)) {
@@ -70,20 +73,27 @@ function probelauf(kopie: GameState, routeId: string, heroIds: number[], provian
       }
       system.processCurrentRoom(kopie);
     }
+    yield;
   }
   return run;
 }
 
 /**
- * Spielt die Expedition `anzahl`-mal auf Kopien von `state` durch und zählt die Ausgänge, Lauf für Lauf:
- * Nach jedem Lauf gibt es die Zahl der fertigen Läufe ab, am Ende das Ergebnis. So rechnet das Fenster
- * in Häppchen und hält den Browser frei (KriegsratFenster.ts).
+ * Spielt die Expedition `anzahl`-mal auf Kopien von `state` durch und zählt die Ausgänge, Schritt für Schritt:
+ * Nach jedem Schritt eines Laufs gibt es die Zahl der fertigen Läufe ab, am Ende das Ergebnis. So rechnet das
+ * Fenster in Häppchen und hält den Browser frei, auch während eines langen Laufs (KriegsratFenster.ts).
+ * Der Spielstand wird schon beim Aufruf kopiert: Alle Läufe gehen vom Stand dieses Augenblicks aus, auch wenn
+ * die Stadt bis zum ersten und zwischen zwei Häppchen weiterläuft.
  */
-export function* kriegsratLaeufe(
+export function kriegsratLaeufe(
   state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, anzahl = 20,
 ): Generator<number, KriegsratErgebnis, void> {
-  // Einmal kopiert: Alle Läufe gehen vom selben Stand aus, auch wenn die Stadt zwischen zwei Häppchen weiterläuft
-  const basis = JSON.stringify(state);
+  return probelaeufe(JSON.stringify(state), routeId, heroIds, proviant, anzahl);
+}
+
+function* probelaeufe(
+  basis: string, routeId: string, heroIds: number[], proviant: Record<string, number>, anzahl: number,
+): Generator<number, KriegsratErgebnis, void> {
   const ergebnis: KriegsratErgebnis = { siege: 0, niederlagen: 0, bossUeberlebt: 0, gefaehrlichsterRaum: null, goldSchnitt: 0 };
   const enden = new Map<number, { zahl: number; gegner: string[] }>();
   let gold = 0;
@@ -91,7 +101,13 @@ export function* kriegsratLaeufe(
     const kopie: GameState = JSON.parse(basis);
     kopie.activeExpedition = null;
     kopie.rngSeed = 1000 + i * 7919;
-    const run = probelauf(kopie, routeId, heroIds, proviant);
+    const lauf = probelauf(kopie, routeId, heroIds, proviant);
+    let schritt = lauf.next();
+    while (!schritt.done) {
+      yield i;
+      schritt = lauf.next();
+    }
+    const run = schritt.value;
     gold += run.goldEarned;
     if (gewonnen(run)) ergebnis.siege++;
     else {

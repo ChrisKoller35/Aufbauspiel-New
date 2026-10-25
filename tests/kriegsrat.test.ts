@@ -4,6 +4,7 @@ import { GameState } from '../src/models/GameState';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { kriegsrat, kriegsratLaeufe } from '../src/systems/Kriegsrat';
 import { musterStand } from '../src/systems/Musterlauf';
+import { rechneHaeppchen } from '../src/ui/components/KriegsratFenster';
 
 const ROUTE = Object.keys(ROUTE_DEFS)[0];
 
@@ -79,7 +80,7 @@ describe('Kriegsrat', () => {
     expect(new Set(typen)).toEqual(new Set(typen.filter(t => ['combat', 'boss', 'fortification'].includes(t))));
   });
 
-  it('Lauf für Lauf: zählt 1 bis n und endet mit demselben Ergebnis wie am Stück', () => {
+  it('Schritt für Schritt: zählt die fertigen Läufe von 0 bis n, mehrere Schritte je Lauf, gleiches Ergebnis', () => {
     const { state, ids, proviant } = stand();
     const laeufe = kriegsratLaeufe(state, ROUTE, ids, proviant, 4);
     const fertig: number[] = [];
@@ -88,7 +89,68 @@ describe('Kriegsrat', () => {
       fertig.push(schritt.value);
       schritt = laeufe.next();
     }
-    expect(fertig).toEqual([1, 2, 3, 4]);
+    expect(fertig[0]).toBe(0);
+    expect(fertig.at(-1)).toBe(4);
+    expect(fertig.every((n, i) => i === 0 || n === fertig[i - 1] || n === fertig[i - 1] + 1)).toBe(true);
+    // Ein Schritt je Raum (dazu Wahl, Kontrollpunkt, Händler): Auch ein langer Lauf rechnet nie am Stück
+    for (let lauf = 0; lauf < 4; lauf++) expect(fertig.filter(n => n === lauf).length).toBeGreaterThan(1);
     expect(schritt.value).toEqual(kriegsrat(state, ROUTE, ids, proviant, 4));
+  });
+
+  it('kopiert den Spielstand beim Aufruf: Was danach geschieht, ändert das Ergebnis nicht', () => {
+    const { state, ids } = musterStand('gut', 1);
+    const vorher = kriegsrat(state, 'drachenhort', ids, {}, 20);
+    const laeufe = kriegsratLaeufe(state, 'drachenhort', ids, {}, 20);
+    // Die Stadt läuft weiter, bevor das erste Häppchen rechnet: Die Helden legen alles ab und verlernen das Kämpfen
+    for (const held of state.fighters) {
+      held.gear = { mainHand: null, offHand: null, armor: null, trinket: null };
+      held.baseStats.atk = 1;
+    }
+    expect(kriegsrat(state, 'drachenhort', ids, {}, 20)).not.toEqual(vorher);
+    let schritt = laeufe.next();
+    while (!schritt.done) schritt = laeufe.next();
+    expect(schritt.value).toEqual(vorher);
+  });
+});
+
+describe('Häppchen (KriegsratFenster.ts)', () => {
+  /** Schritte, die je `dauer` ms auf der Ersatz-Uhr brauchen */
+  function* schritte(uhr: { jetzt: number }, anzahl: number, dauer: number): Generator<number, string, void> {
+    for (let i = 1; i <= anzahl; i++) {
+      uhr.jetzt += dauer;
+      yield i;
+    }
+    return 'fertig';
+  }
+
+  it('rechnet, bis die Zeit um ist; der letzte Schritt rechnet noch fertig', () => {
+    const uhr = { jetzt: 0 };
+    const it = schritte(uhr, 10, 7);
+    expect(rechneHaeppchen(it, 30, () => uhr.jetzt)).toEqual({ value: 5, done: false });
+    expect(uhr.jetzt).toBe(35);
+    expect(rechneHaeppchen(it, 30, () => uhr.jetzt)).toEqual({ value: 10, done: false });
+    expect(rechneHaeppchen(it, 30, () => uhr.jetzt)).toEqual({ value: 'fertig', done: true });
+  });
+
+  it('mindestens ein Schritt je Häppchen, auch wenn einer länger dauert als das Häppchen', () => {
+    const uhr = { jetzt: 0 };
+    const it = schritte(uhr, 3, 100);
+    const ergebnisse = [1, 2, 3].map(() => rechneHaeppchen(it, 30, () => uhr.jetzt).value);
+    expect(ergebnisse).toEqual([1, 2, 3]);
+    expect(rechneHaeppchen(it, 30, () => uhr.jetzt)).toEqual({ value: 'fertig', done: true });
+  });
+
+  it('der echte Rat in Häppchen: dasselbe Ergebnis wie am Stück', () => {
+    const { state, ids } = musterStand('gut', 1);
+    const laeufe = kriegsratLaeufe(state, 'drachenhort', ids, {}, 20);
+    const uhr = { jetzt: 0 };
+    let haeppchen = 0;
+    let schritt = rechneHaeppchen(laeufe, 30, () => (uhr.jetzt += 4));
+    while (!schritt.done) {
+      haeppchen++;
+      schritt = rechneHaeppchen(laeufe, 30, () => (uhr.jetzt += 4));
+    }
+    expect(haeppchen).toBeGreaterThan(20);
+    expect(schritt.value).toEqual(kriegsrat(state, 'drachenhort', ids, {}, 20));
   });
 });

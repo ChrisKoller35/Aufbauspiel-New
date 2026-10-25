@@ -20,4 +20,10 @@
 .kr-info { font-size: 0.82rem; margin: 8px 0 0; overflow-wrap: anywhere; }
 .kr-rat { font-family: 'Cinzel', serif; color: var(--gold); margin: 12px 0 6px; }
 .kr-hinweis { font-size: 0.74rem; color: var(--mut); line-height: 1.4; }
-.kr-aktionen { display: flex; justify-content: flex-end; margin-top: 14px; }
+/* «Schliessen» bleibt unten im Fenster stehen, wenn es rollt (kleine Handys, «Boss überlebt»): Die Leiste reicht
+   über den Innenabstand von .modal (26 px) bis an den Rand, der Text rollt unter ihr durch. Angehalten steht der
+   Knopf 10 px über dem Rand, am Ende 26 px wie sonst; ohne Rollen sieht alles aus wie ohne Leiste. */
+.kr-aktionen {
+  display: flex; justify-content: flex-end;
+  position: sticky; bottom: -16px; margin: 4px -26px -26px; padding: 10px 26px 26px; background: var(--s1);
+}

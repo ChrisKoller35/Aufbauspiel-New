@@ -1,11 +1,12 @@
 # Klang
 
 Ton startet erst mit der ersten Nutzer-Aktivierung: Klick, Tippen oder eine Taste ausser Escape (`src/klang.ts`,
-ein `AudioContext` in `src/systems/Klang.ts`). Musik 30 %, Effekte 50 %. 🔊/🔇 steht in jeder Kopfzeile vor 🏅 und
-im Kampf neben x1/x1.5/x2 (`src/ui/components/KlangSchalter.ts`); auch die Taste M schaltet stumm, aber nicht beim
-Halten, nicht in Eingabefeldern und nicht, solange ein Fenster offen ist (`FensterHilfen.ts` `fensterTaste`).
-Gemerkt in `localStorage` unter `magic_city_klang` (nicht im Spielstand). Bei «stumm» lädt keine Musik, und das
-Truhen-Video läuft ohne Ton.
+ein `AudioContext` in `src/systems/Klang.ts`). Ist das ein Druck auf 🔊 oder die Taste M, merkt sich das Spiel die
+Musik nur (`merkeMusik`): Erst der Klick bzw. die Taste entscheidet über «stumm». Musik 30 %, Effekte 50 %.
+🔊/🔇 steht in jeder Kopfzeile vor 🏅 und im Kampf neben x1/x1.5/x2 (`src/ui/components/KlangSchalter.ts`); auch
+die Taste M schaltet stumm, aber nicht beim Halten, nicht in Eingabefeldern und nicht, solange ein Fenster offen
+ist (`FensterHilfen.ts` `fensterTaste`). Gemerkt in `localStorage` unter `magic_city_klang` (nicht im Spielstand).
+Bei «stumm» lädt keine Musik, und das Truhen-Video läuft ohne Ton.
 
 | Ereignis | Ton | Stelle im Code |
 |---|---|---|
@@ -13,12 +14,17 @@ Truhen-Video läuft ohne Ton.
 | Expedition geht los (nach der Einleitung) | `expedition_start` + Musik je Biom | `ExpeditionFlow.ts` `aufbrechen` → `mc:aufbruch`; Biom `biomFuerRoute` (`routes.ts`) |
 | Bosskampf | `ambient_boss` + `boss_intro` | `CombatScreen.ts` `show()` im Bossraum → `mc:bosskampf` |
 | Expedition endet im Kampf: SIEG! / NIEDERLAGE... | `boss_victory` / `party_wipe` | `CombatScreen.ts` `showResult` → `mc:kampfausgang` |
-| Rückzug per Knopf im Kampf oder am Kontrollpunkt | `retreat_horn` | `ExpeditionFlow.ts` `finishExpedition` → `mc:rueckzug` |
+| Expedition endet ohne diese Anzeige: Rückzug aus einem schon entschiedenen Kampf, letzter Raum ohne Kampf (Rast, Fund) | `boss_victory` / `party_wipe` | `ExpeditionFlow.ts` `finishExpedition` → `mc:expeditionsende` |
+| Rückzug per Knopf im Kampf oder am Kontrollpunkt | `retreat_horn` | `ExpeditionFlow.ts` `finishExpedition` → `mc:expeditionsende` |
 | Truhe bei «stumm» | Video `muted` | `ChestRevealOverlay.ts`; Umschalten in `KlangSchalter.ts` |
 
+Je Expedition erklingt ein Ausgangston: `mc:kampfausgang` zuerst, `mc:expeditionsende` nur, wenn noch keiner kam.
+
 **Musik:** zwei feste `<audio>`-Spuren, beide in der ersten Geste angelegt (auf dem iPhone braucht jedes Element
-eine Freigabe in einer Geste, sonst bliebe die Bossmusik stumm). Ein Wechsel blendet in 1 s über, die alte Spur
-gibt danach Download und Decoder frei. Was der Browser abgelehnt hat, holt die nächste Geste nach.
+eine Freigabe in einer Geste, sonst bliebe die Bossmusik stumm). Ein Wechsel blendet das alte Stück in 1 s aus und
+das neue in 0,3 s ein (Boss und Höhle beginnen laut); die alte Spur gibt danach Download und Decoder frei. Kommt das
+alte Stück zurück, solange es noch ausblendet, läuft es weiter und blendet wieder ein. Was der Browser abgelehnt
+hat, holt die nächste Geste nach. Geprüft ohne Browser in `tests/klangSystem.test.ts`.
 
 **Musik je Biom:** Wald, Himmel, Sterne, Mond, Belagerung → `ambient_forest` (offen, unter freiem Himmel; Belagerung liegt vor der Stadt). Sumpf, Unterwasser, Ruinen → `ambient_swamp` (nass bzw. düster-verfallen). Höhle, Vulkan, Frost, Drachengipfel → `Ecambient_cave` (Gestein, Glut, Eis, Drachenhort im Berg).
 

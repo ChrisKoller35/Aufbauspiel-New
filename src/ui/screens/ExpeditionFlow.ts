@@ -241,8 +241,9 @@ function showNextCombatRoom(): void {
 function finishExpedition(): void {
   const run = state.activeExpedition;
   if (!run) return;
-  // Rückzug per Knopf im Kampf oder am Kontrollpunkt: Horn (klang.ts)
-  if (run.status === 'retreat') window.dispatchEvent(new CustomEvent('mc:rueckzug'));
+  // Ton zum Ausgang (klang.ts), auch wo der Kampfbildschirm keinen zeigt: Rückzug (Horn), Rückzug aus einem schon
+  // entschiedenen Kampf, letzter Raum ohne Kampf
+  window.dispatchEvent(new CustomEvent('mc:expeditionsende', { detail: { status: run.status } }));
 
   // Set-Teil des Dungeons: liegt nach einem Sieg mit in der Truhe (eins mehr, wenn die Geschichte es versprochen hat)
   const setHinweise = setTeilHinweise(state, setBeute(state, run));

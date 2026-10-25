@@ -5,8 +5,9 @@ Niederlagen, «Boss überlebt», den gefährlichsten Raum und Ø Gold (`src/syst
 `src/ui/components/KriegsratFenster.ts`).
 
 ## Wie gerechnet wird
-- Jeder Lauf auf einer eigenen Kopie des Spielstands (einmal `JSON.stringify`, je Lauf `JSON.parse`), mit
-  `activeExpedition = null` und `rngSeed = 1000 + i × 7919`. Der echte Spielstand ändert sich nicht.
+- Jeder Lauf auf einer eigenen Kopie des Spielstands (einmal `JSON.stringify` beim Klick, je Lauf `JSON.parse`),
+  mit `activeExpedition = null` und `rngSeed = 1000 + i × 7919`. Der echte Spielstand ändert sich nicht, und was
+  die Stadt während des Rechnens tut, ändert das Ergebnis nicht.
 - Start wie der echte Aufbruch: gewählter Proviant als Liste an `startExpedition` (ohne Auswahl füllt
   es selbst aus dem Vorrat), dazu das Geschenk 1 Brot + 1 Heiltrank.
 - Dann die Schleife aus `spieleRoute` (Musterlauf.ts) mit der Spielweise «klug»: Kontrollpunkte immer
@@ -31,6 +32,8 @@ Heldenwege (`musterStand('gut', 1, undefined, false)`, wie das Team im Probespie
 
 ## Zeit
 Node 22, je 20 Läufe: mit «gut» ohne Sets höchstens 86 ms (Festung), mit «stark» und `pfand5` höchstens
-53 ms (Morgentor: 8 Siege, 12 Niederlagen, gefährlichster Raum 16). Das Fenster rechnet in Häppchen von
-höchstens 30 ms (`kriegsratLaeufe`, ein Lauf je Schritt) und zeigt dazwischen «Der Kriegsrat tagt … 7 von
-20»; so bleibt der Browser auch auf langsamen Handys bedienbar, und Escape schliesst sofort.
+53 ms (Morgentor: 8 Siege, 12 Niederlagen, gefährlichster Raum 16). Das Fenster rechnet in Häppchen
+(`rechneHaeppchen`): Schritt für Schritt (`kriegsratLaeufe`, ein Raum, eine Wahl oder ein Kontrollpunkt je
+Schritt), bis 30 ms um sind; der letzte Schritt rechnet noch fertig, ein Häppchen dauert also 30 ms plus einen
+Raum. Dazwischen zeigt es «Der Kriegsrat tagt … 7 von 20» (fertige Läufe); so bleibt der Browser auch auf
+langsamen Handys bedienbar, und Escape schliesst sofort.

@@ -7,7 +7,7 @@
 import '../html/klang.css';
 import { istStumm, setzeStumm } from '../../systems/Klang';
 
-type TasteInfo = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey'> & {
+export type TasteInfo = Pick<KeyboardEvent, 'key' | 'ctrlKey' | 'altKey' | 'metaKey'> & {
   repeat?: boolean;
   target: { tagName?: string; isContentEditable?: boolean } | null;
 };

@@ -6,26 +6,34 @@
 import { getCurrentScreen, type ScreenId } from './ui/ScreenRouter';
 import { ROUTE_DEFS } from './data/routes';
 import { BOSS_MUSIK, musikFuerBildschirm, musikFuerRoute } from './data/klangZuordnung';
-import { istGestartet, spieleEffekt, spieleMusik, starteKlang } from './systems/Klang';
-import { bindeKlangSchalter } from './ui/components/KlangSchalter';
+import { istGestartet, merkeMusik, spieleEffekt, spieleMusik, starteKlang } from './systems/Klang';
+import { bindeKlangSchalter, istStummTaste, type TasteInfo } from './ui/components/KlangSchalter';
 
 // Ton erlaubt der Browser erst mit einer Nutzer-Aktivierung: mit der Maus schon bei pointerdown, beim Tippen erst
 // bei pointerup, touchend oder click, mit Escape nie. Jede Geste setzt den Klang fort und holt Abgelehntes nach;
-// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen).
-function geste(): void {
+// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen). Eine Geste auf 🔊 oder die Taste M
+// startet nichts: Erst ihr Klick bzw. die Taste entscheidet über «stumm» (am PC käme sonst beim Drücken kurz Musik).
+function geste(e: Event): void {
   if (navigator.userActivation && !navigator.userActivation.isActive) return;
   const erstes = !istGestartet();
-  starteKlang();
-  if (erstes) spieleMusik(musikFuerBildschirm(getCurrentScreen()));
+  const umschalten = Boolean((e.target as Element | null)?.closest?.('.klang-knopf'))
+    || (e.type === 'keydown' && istStummTaste(e as unknown as TasteInfo));
+  starteKlang(!umschalten);
+  if (erstes) (umschalten ? merkeMusik : spieleMusik)(musikFuerBildschirm(getCurrentScreen()));
 }
 for (const typ of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(typ, geste, true);
 
 // Bildschirmwechsel: ScreenRouter.ts navigateTo/goBack → mc:navigate { screen, prev }
 window.addEventListener('mc:navigate', e => spieleMusik(musikFuerBildschirm((e as CustomEvent<{ screen: ScreenId }>).detail.screen)));
 
+// Ausgang der Expedition, ein Ton je Expedition: Sieg, Niederlage oder ein echter Rückzug (Horn)
+const AUSGANG: Record<string, string> = { victory: 'boss_victory', defeat: 'party_wipe', retreat: 'retreat_horn' };
+let ausgangGespielt = false;
+
 // Die Expedition geht los: ExpeditionFlow.ts aufbrechen → mc:aufbruch { routeId }
 window.addEventListener('mc:aufbruch', e => {
   const route = ROUTE_DEFS[(e as CustomEvent<{ routeId: string }>).detail.routeId];
+  ausgangGespielt = false;
   spieleEffekt('expedition_start');
   if (route) spieleMusik(musikFuerRoute(route));
 });
@@ -36,14 +44,22 @@ window.addEventListener('mc:bosskampf', () => {
   spieleEffekt('boss_intro');
 });
 
-// Ausgang der Expedition im Kampf: CombatScreen.ts showResult («SIEG!», «NIEDERLAGE...») → mc:kampfausgang { status }
-const AUSGANG: Record<string, string> = { victory: 'boss_victory', defeat: 'party_wipe' };
+// Der Ausgang kommt zuerst im Kampf, sobald «SIEG!» oder «NIEDERLAGE...» erscheint: CombatScreen.ts showResult →
+// mc:kampfausgang { status }
 window.addEventListener('mc:kampfausgang', e => {
   const effekt = AUSGANG[(e as CustomEvent<{ status: string }>).detail.status];
-  if (effekt) spieleEffekt(effekt);
+  if (!effekt || ausgangGespielt) return;
+  spieleEffekt(effekt);
+  ausgangGespielt = true;
 });
 
-// Rückzug per Knopf im Kampf oder am Kontrollpunkt: ExpeditionFlow.ts finishExpedition → mc:rueckzug
-window.addEventListener('mc:rueckzug', () => spieleEffekt('retreat_horn'));
+// Sonst zur Bilanz: ExpeditionFlow.ts finishExpedition → mc:expeditionsende { status }. So erklingt er auch nach
+// einem Rückzug aus einem schon entschiedenen Kampf, nach einem letzten Raum ohne Kampf (Rast, Fund) und beim
+// Rückzug per Knopf im Kampf oder am Kontrollpunkt (Horn)
+window.addEventListener('mc:expeditionsende', e => {
+  const effekt = AUSGANG[(e as CustomEvent<{ status: string }>).detail.status];
+  if (effekt && !ausgangGespielt) spieleEffekt(effekt);
+  ausgangGespielt = false;
+});
 
 bindeKlangSchalter();
