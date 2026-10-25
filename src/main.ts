@@ -21,6 +21,7 @@ import { ProvisionSystem } from './systems/ProvisionSystem';
 import { ProductionSystem } from './systems/ProductionSystem';
 import { STADT_TAKT_SEKUNDEN, TAG_SEKUNDEN, neuerTag } from './systems/Tag';
 import { placeStartingLayout } from './scenes/CityStartingLayout';
+import './klang';
 
 document.addEventListener('DOMContentLoaded', () => {
   const app = document.getElementById('app');

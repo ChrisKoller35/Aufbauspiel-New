@@ -1,13 +1,14 @@
 /* ─── Magic City – Erfolge: Knopf in der Kopfzeile und Bildschirm ─── */
 
-/* Knopf «🏅» rechts in der Kopfzeile, mit Zahl der neuen Erfolge (🏆 gehört Trophäensaal und Pokalen) */
-.hdr-erfolge {
+/* Knopf «🏅» rechts in der Kopfzeile, mit Zahl der neuen Erfolge (🏆 gehört Trophäensaal und Pokalen).
+   Der Klang-Schalter 🔊 davor (.hdr-klang, klang.css) sieht gleich aus. */
+.hdr-erfolge, .hdr-klang {
   display: inline-flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0;
   min-height: 32px; min-width: 32px; padding: 2px 8px;
   background: var(--s2); border: 1px solid var(--bdr); border-radius: 6px;
   color: var(--gold); font-size: 1rem; line-height: 1; cursor: pointer;
 }
-.hdr-erfolge:hover { border-color: var(--gold); }
+.hdr-erfolge:hover, .hdr-klang:hover { border-color: var(--gold); }
 .hdr-erfolge-neu {
   min-width: 18px; padding: 2px 5px; border-radius: 9px;
   background: #b91c1c; color: #fff;
@@ -16,14 +17,19 @@
 
 /* Finger: Trefferfläche mindestens 44 × 44 px */
 @media (max-width: 700px), (pointer: coarse) {
-  .hdr-erfolge { min-height: 44px; min-width: 44px; }
+  .hdr-erfolge, .hdr-klang { min-height: 44px; min-width: 44px; }
 }
 
 /* Handy: Knopf bleibt oben rechts, die Vorräte rutschen in die zweite Zeile. Der Knopf ragt je 4 px
-   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. */
+   in den Rand der Kopfzeile, damit seine Zeile so hoch bleibt wie bisher. 🔊 und 🏅 stehen 4 px auseinander,
+   die Zahl neuer Erfolge sitzt auf der Ecke von 🏅 (bleibt in der Kopfzeile): Neben ihnen bleibt das Logo ganz
+   (magic-city.css, Abschnitt Header). */
 @media (max-width: 700px) {
   .hdr .res { order: 2; }
-  .hdr-erfolge { margin-top: -4px; margin-bottom: -4px; }
+  .hdr-erfolge, .hdr-klang { margin-top: -4px; margin-bottom: -4px; }
+  .hdr .hdr-klang { margin-right: calc(4px - var(--hdr-abstand)); }
+  .hdr-erfolge { position: relative; }
+  .hdr-erfolge-neu { position: absolute; top: -5px; right: -5px; min-width: 16px; padding: 1px 4px; font-size: 0.62rem; }
 }
 
 /* Ein Hinweis (zeigeKopfHinweis) steht in .hdr-platz, dem freien Platz hinter dem Bildschirm-Namen, auf höchstens
@@ -48,6 +54,19 @@
   .hdr.hdr-mit-hinweis .hdr-sep,
   .hdr.hdr-mit-hinweis .hdr-cur { visibility: hidden; }
   .hdr .hdr-note { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3; }
+}
+/* Handy hochkant, neben «← Zurück» und 🔊: drei kleinere Zeilen statt zwei (3 × 11,9 px in den 36 px der ersten
+   Zeile). Ab 552 px reichen zwei Zeilen zu 12 px wie im Hauptmenü. Ein farbiges Emoji am Anfang (🏅 📜 ⚒️ 💎) ragt bis
+   knapp 3 px über eine solche Zeile: 4 px Luft darüber (die margin hält den Text an seiner Stelle, ganze Pixel, sonst
+   rücken die Zeilen gezeichnet zusammen), und .hdr-mitte schneidet nur unten und seitlich ab. Ohne clip-path bleibt
+   es wie bisher. */
+@media (max-width: 551px) {
+  .hdr.hdr-zurueck .hdr-note {
+    font-size: 0.6875rem; line-height: 1.08; -webkit-line-clamp: 3; line-clamp: 3; padding-top: 4px; margin-top: -2px;
+  }
+  @supports (clip-path: inset(-4px 0 0 0)) {
+    .hdr.hdr-zurueck .hdr-mitte { overflow: visible; clip-path: inset(-4px 0 0 0); }
+  }
 }
 @media (min-width: 1001px) {
   .hdr-platz { container-type: inline-size; }

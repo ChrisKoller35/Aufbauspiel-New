@@ -1,0 +1,34 @@
+/* ── Kriegsrat: Knopf im Team-Bildschirm und Fenster (KriegsratFenster.ts) ── */
+.btn-kriegsrat {
+  width: 100%; min-height: 44px; margin-top: 13px; padding: 8px 16px; border-radius: 4px; cursor: pointer;
+  background: var(--s3); border: 1px solid var(--gd); color: var(--gold);
+  font-family: 'Cinzel', serif; font-size: 0.8rem; letter-spacing: 1px;
+}
+.btn-kriegsrat:hover:not(:disabled) { border-color: var(--gold); }
+.btn-kriegsrat:disabled { opacity: 0.5; cursor: default; }
+.kr { max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
+/* Unten 4 px: fällt mit dem Rand von .kr-aktionen zusammen, «Schliessen» steht 14 px unter der Zeile wie sonst */
+.kr-tagt { color: var(--mut); font-style: italic; margin: 12px 0 4px; }
+.kr-kopf { font-size: 0.88rem; color: var(--txt); margin: 6px 0 10px; line-height: 1.4; }
+.kr-zeile { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
+.kr-name { width: 104px; flex-shrink: 0; color: var(--mut); }
+.kr-spur { flex: 1; min-width: 0; height: 10px; background: var(--s3); border-radius: 3px; overflow: hidden; }
+.kr-balken { display: block; height: 100%; }
+.kr-balken.sieg { background: var(--grn, #16a34a); }
+.kr-balken.niederlage { background: var(--red, #dc2626); }
+.kr-balken.boss { background: #ca8a04; }
+.kr-zahl { width: 24px; text-align: right; }
+.kr-info { font-size: 0.82rem; margin: 8px 0 0; overflow-wrap: anywhere; }
+.kr-rat { font-family: 'Cinzel', serif; color: var(--gold); margin: 12px 0 6px; }
+.kr-hinweis { font-size: 0.74rem; color: var(--mut); line-height: 1.4; }
+/* «Schliessen» bleibt unten im Fenster stehen, wenn es rollt (kleine Handys, «Boss überlebt»): Die Leiste reicht
+   über den Innenabstand von .modal (26 px) bis an den Rand, der Text rollt unter ihr durch. Angehalten steht der
+   Knopf 10 px über dem Rand, am Ende 26 px wie sonst; ohne Rollen sieht alles aus wie ohne Leiste.
+   sticky misst vom Rollbereich ohne dessen Innenabstand: bottom -42 px = 26 px Innenabstand + 16 px. */
+.kr-aktionen {
+  display: flex; justify-content: flex-end;
+  position: sticky; bottom: -42px; margin: 4px -26px -26px; padding: 10px 26px 26px; background: var(--s1);
+}
+/* Den Fokusring zeichnet Chromium zur Hälfte ins Fenster, die Leiste läge darüber, in den unteren Rundungen auch mit
+   1 px Abstand noch: 2 px weiter aussen */
+.kr.modal:focus-visible { outline-offset: 2px; }

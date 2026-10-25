@@ -18,6 +18,7 @@ import { getSet } from '../../data/dungeonSets';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
+import { klangKnopfHtml } from '../components/KlangSchalter';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -144,6 +145,7 @@ export class CombatScreen {
           <button class="mc-co-speed active" data-speed="1">x1</button>
           <button class="mc-co-speed" data-speed="1.5">x1.5</button>
           <button class="mc-co-speed" data-speed="2">x2</button>
+          ${klangKnopfHtml('mc-co-klang')}
         </div>
       </div>
       <div class="mc-co-air-shield" hidden style="
@@ -217,6 +219,8 @@ export class CombatScreen {
 
     this.titleEl.textContent = isBoss ? 'BOSS KAMPF!' : 'KAMPF';
     this.titleEl.style.color = isBoss ? 'var(--mc-damage)' : 'var(--mc-accent-expedition)';
+    // Bossmusik und boss_intro (klang.ts)
+    if (isBoss) window.dispatchEvent(new CustomEvent('mc:bosskampf'));
     this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
 
     this.logStart = run.combatLog.length;
@@ -1284,7 +1288,8 @@ export class CombatScreen {
     const isOver = run.status !== 'exploring';
 
     if (isOver) {
-      // TODO: Sound — boss_victory / party_wipe / retreat_horn
+      // Ton zum Ausgang (klang.ts): boss_victory oder party_wipe
+      window.dispatchEvent(new CustomEvent('mc:kampfausgang', { detail: { status: run.status } }));
       if (run.status === 'victory') shakeScreen(300, 0.006);
       else if (run.status === 'defeat') shakeScreen(500, 0.015);
 

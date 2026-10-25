@@ -1,0 +1,13 @@
+/* ─── Magic City – Klang-Schalter 🔊/🔇 (KlangSchalter.ts) ─── */
+
+/* In der Kopfzeile vor 🏅: Aussehen wie .hdr-erfolge (erfolge.css teilt seine Regeln mit .hdr-klang) */
+
+/* Im Kopf des Kampfs neben x1/x1.5/x2 (.mc-co-speed in magic-city.css) */
+.mc-co-klang {
+  background: #111828; border: 1px solid #242040; color: var(--mut);
+  font-size: 0.8rem; line-height: 1; padding: 3px 7px; border-radius: 3px; cursor: pointer; transition: .15s;
+}
+.mc-co-klang:hover { border-color: #6e5710; }
+@media (pointer: coarse) {
+  .mc-co-klang { min-height: 44px; min-width: 44px; }
+}

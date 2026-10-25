@@ -80,12 +80,15 @@ body {
   .res { flex: 1000 0 auto; width: min-content; max-width: max-content; row-gap: 0; }
 }
 /* Handy: Kopfzeile in zwei Zeilen statt einer hohen Spalte. In der ersten Zeile füllt .hdr-mitte mit dem Logo
-   den Platz zwischen «← Zurück» und 🏅. Sie zählt beim Umbrechen nicht mit (flex-basis 0) und kann 🏅 so nie in
-   eine eigene Zeile schieben. Neben «← Zurück» ist das Logo auf schmalen Handys kleiner, damit es auch neben
-   einer dreistelligen Zahl ganz bleibt (mit den Web-Schriften 149 px, darunter 122 und 100 px breit); reicht
-   der Platz trotzdem nicht, endet es mit «…». */
+   den Platz zwischen «← Zurück» und 🔊 🏅. Sie zählt beim Umbrechen nicht mit (flex-basis 0) und kann die Knöpfe
+   so nie in eine eigene Zeile schieben. Damit das Logo neben «← Zurück», 🔊 und 🏅 ganz bleibt, sind Abstände
+   und Rand 8 px, «← Zurück» etwas schmaler, 🔊 und 🏅 rücken auf 4 px zusammen, und die Zahl neuer Erfolge sitzt
+   auf der Ecke von 🏅 (erfolge.css): So zählt sie nicht mit. Auf schmalen Handys ist das Logo neben «← Zurück»
+   kleiner (mit den Web-Schriften 149 px, darunter 122 und 100 px breit). Reicht der Platz trotzdem nicht (etwa
+   mit einer Ersatzschrift), endet es mit «…». */
 @media (max-width: 700px) {
-  .hdr { flex-wrap: wrap; row-gap: 6px; padding-left: 10px; padding-right: 10px; }
+  .hdr { --hdr-abstand: 8px; flex-wrap: wrap; row-gap: 6px; padding-left: 8px; padding-right: 8px; }
+  .hdr .hdr-back { padding-left: 8px; padding-right: 8px; letter-spacing: 0.5px; }
   .hdr-sep, .hdr-cur { display: none; }
   .hdr-mitte { flex: 1 1 0; }
   .hdr-logo { flex-shrink: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
@@ -1873,7 +1876,15 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   /* Kampf: Seite wächst nach unten (Bildschirm scrollt senkrecht), nie seitlich */
   /* clip statt hidden: schneidet weiter ab, lässt aber die Knopfleiste unten am Bildschirm kleben */
   .mc-combat-overlay { height: auto; min-height: 100%; flex-shrink: 0; overflow: clip; }
-  .mc-co-header { padding: 6px 10px; flex-wrap: wrap; row-gap: 6px; }
+  /* Kopf eng genug, dass x1/x1.5/x2 mit 🔊 neben Titel und Raum passen. Wird es eng (Bosskampf bei 320 px, ab
+     Raum 10 bei 360 px), rutscht «Raum x / y» unter den Titel, nicht die Knöpfe in eine zweite Zeile: Am Handy
+     (Touch) bleibt der Kopf ab 320 px in jedem Raum gleich hoch (57 px), das Kampffeld springt nicht. Schmaler oder
+     mit Maus (kleinere Knöpfe) wird er im Bosskampf bis 15 px höher */
+  .mc-co-header { padding: 6px 8px; flex-wrap: wrap; row-gap: 6px; column-gap: 8px; }
+  .mc-co-title-group { flex: 1 1 0; min-width: 0; flex-wrap: wrap; gap: 0 6px; }
+  .mc-co-title { letter-spacing: 1px; }
+  .mc-co-room-info { letter-spacing: 0; }
+  .mc-co-speed-group { gap: 3px; }
   .mc-co-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); flex: 1 0 auto; overflow: visible; }
   .mc-co-col {
     flex-direction: column; flex-wrap: nowrap; justify-content: flex-start; align-content: stretch;

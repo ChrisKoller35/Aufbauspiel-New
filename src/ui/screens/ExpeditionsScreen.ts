@@ -5,7 +5,7 @@
 import { navigateTo } from '../ScreenRouter';
 import { GameState } from '../../models/GameState';
 import { GuildFighter } from '../../models/GuildRoster';
-import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons } from '../../data/routes';
+import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons, biomFuerRoute, type Biom } from '../../data/routes';
 import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { renderHeader } from './HeaderRenderer';
@@ -16,6 +16,7 @@ import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
 import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
+import { zeigeKriegsrat } from '../components/KriegsratFenster';
 
 // ── Module state ──
 
@@ -33,20 +34,15 @@ function getRouteImageStyle(routeId: string): string {
   return img ? `background-image:url('assets/tiles/${img}.png')` : '';
 }
 
+const BIOM_KLASSE: Record<Biom, string> = {
+  Drachengipfel: 'tag-gipfel', Himmel: 'tag-himmel', Sterne: 'tag-sterne', Mond: 'tag-mond',
+  Unterwasser: 'tag-unterwasser', Belagerung: 'tag-belagerung', Vulkan: 'tag-vulkan', Ruinen: 'tag-ruinen',
+  Sumpf: 'tag-sumpf', Frost: 'tag-frost', Höhle: 'tag-hoehle', Wald: 'tag-wald',
+};
+
 function getBiomeTag(route: RouteDef): { label: string; cls: string } {
-  const id = route.id;
-  if (route.gebiet === 'gipfel') return { label: 'Drachengipfel', cls: 'tag-gipfel' };
-  if (route.gebiet === 'himmel') return { label: 'Himmel', cls: 'tag-himmel' };
-  if (route.gebiet === 'sterne') return { label: 'Sterne', cls: 'tag-sterne' };
-  if (route.gebiet === 'mond') return { label: 'Mond', cls: 'tag-mond' };
-  if (route.isUnderwater) return { label: 'Unterwasser', cls: 'tag-unterwasser' };
-  if (route.isSiegeRoute) return { label: 'Belagerung', cls: 'tag-belagerung' };
-  if (id.includes('volcano') || id.includes('obsidian') || id.includes('ash') || id.includes('magma')) return { label: 'Vulkan', cls: 'tag-vulkan' };
-  if (id.includes('ruins') || id.includes('shadow')) return { label: 'Ruinen', cls: 'tag-ruinen' };
-  if (id.includes('swamp')) return { label: 'Sumpf', cls: 'tag-sumpf' };
-  if (id.includes('frozen')) return { label: 'Frost', cls: 'tag-frost' };
-  if (id.includes('cave') || id.includes('crystal') || id.includes('spider')) return { label: 'Höhle', cls: 'tag-hoehle' };
-  return { label: 'Wald', cls: 'tag-wald' };
+  const biom = biomFuerRoute(route);
+  return { label: biom, cls: BIOM_KLASSE[biom] };
 }
 
 /** Wie auf der Dungeon-Karte: Ebenen über 5 bekommen je einen Funken dazu (★★★★★✦). */
@@ -292,6 +288,7 @@ function buildTeamHTML(): string {
       <div class="prov">
         <div class="prov-hd">Proviant</div>
         ${provRows}
+        <button class="btn-kriegsrat"${document.querySelector('.kr-ov') ? ' disabled' : ''}>🎲 Kriegsrat</button>
         <button class="btn-go">EXPEDITION STARTEN</button>
       </div>
     </div>
@@ -359,6 +356,21 @@ function bindTeamEvents(el: HTMLElement): void {
         provisions[itemId] = (provisions[itemId] ?? 0) - 1;
       }
       refreshTeamScreen();
+      return;
+    }
+
+    // Kriegsrat: Probeläufe mit denselben Werten wie der Start; gesperrt, solange das Fenster offen ist
+    const ratBtn = target.closest<HTMLButtonElement>('.btn-kriegsrat');
+    if (ratBtn) {
+      const route = selectedRouteId ? ROUTE_DEFS[selectedRouteId] : null;
+      if (ratBtn.disabled || document.querySelector('.kr-ov') || selectedHeroes.length === 0 || !route || !isRoutePlayable(route)) return;
+      ratBtn.disabled = true;
+      zeigeKriegsrat(document.body, gameState, route.id, selectedHeroes.map(h => h.id), { ...provisions }, () => {
+        // Wieder frei, und der Fokus kehrt zum Knopf zurück (sonst landet er auf der Seite)
+        const knopf = el.querySelector<HTMLButtonElement>('.btn-kriegsrat');
+        knopf?.removeAttribute('disabled');
+        if (knopf?.offsetParent) knopf.focus();
+      });
       return;
     }
 

@@ -6,6 +6,7 @@ import { itemEigenschaften } from '../../data/specialEffects';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SchmiedeStufen, werteMitStufe } from '../../systems/Schmiede';
 import { nameMitStufe, stufeAbzeichen } from './SchmiedeAnzeige';
+import { istStumm } from '../../systems/Klang';
 
 interface LootEntry {
   itemId: string;
@@ -61,6 +62,8 @@ export function showChestReveal(
     video.playsInline = true;
     video.preload = 'auto';
     video.className = 'chest-video';
+    // Das Video hat eigenen Ton: bei «stumm» (Klang-Schalter) ohne
+    video.muted = istStumm();
 
     const skipHint = document.createElement('div');
     skipHint.className = 'chest-skip';
