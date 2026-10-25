@@ -10,12 +10,12 @@
 .kr-tagt { color: var(--mut); font-style: italic; margin: 12px 0; }
 .kr-kopf { font-size: 0.88rem; color: var(--txt); margin: 6px 0 10px; line-height: 1.4; }
 .kr-zeile { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
-.kr-name { width: 84px; flex-shrink: 0; color: var(--mut); }
+.kr-name { width: 104px; flex-shrink: 0; color: var(--mut); }
 .kr-spur { flex: 1; min-width: 0; height: 10px; background: var(--s3); border-radius: 3px; overflow: hidden; }
 .kr-balken { display: block; height: 100%; }
 .kr-balken.sieg { background: var(--grn, #16a34a); }
 .kr-balken.niederlage { background: var(--red, #dc2626); }
-.kr-balken.rueckzug { background: #ca8a04; }
+.kr-balken.boss { background: #ca8a04; }
 .kr-zahl { width: 24px; text-align: right; }
 .kr-info { font-size: 0.82rem; margin: 8px 0 0; overflow-wrap: anywhere; }
 .kr-rat { font-family: 'Cinzel', serif; color: var(--gold); margin: 12px 0 6px; }

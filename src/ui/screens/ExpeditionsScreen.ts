@@ -370,8 +370,12 @@ function bindTeamEvents(el: HTMLElement): void {
       const route = selectedRouteId ? ROUTE_DEFS[selectedRouteId] : null;
       if (ratBtn.disabled || document.querySelector('.kr-ov') || selectedHeroes.length === 0 || !route || !isRoutePlayable(route)) return;
       ratBtn.disabled = true;
-      zeigeKriegsrat(document.body, gameState, route.id, selectedHeroes.map(h => h.id), { ...provisions },
-        () => el.querySelector<HTMLButtonElement>('.btn-kriegsrat')?.removeAttribute('disabled'));
+      zeigeKriegsrat(document.body, gameState, route.id, selectedHeroes.map(h => h.id), { ...provisions }, () => {
+        // Wieder frei, und der Fokus kehrt zum Knopf zurück (sonst landet er auf der Seite)
+        const knopf = el.querySelector<HTMLButtonElement>('.btn-kriegsrat');
+        knopf?.removeAttribute('disabled');
+        if (knopf?.offsetParent) knopf.focus();
+      });
       return;
     }
 
