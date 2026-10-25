@@ -7,7 +7,8 @@
 .btn-kriegsrat:hover:not(:disabled) { border-color: var(--gold); }
 .btn-kriegsrat:disabled { opacity: 0.5; cursor: default; }
 .kr { max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
-.kr-tagt { color: var(--mut); font-style: italic; margin: 12px 0; }
+/* Unten 4 px: fällt mit dem Rand von .kr-aktionen zusammen, «Schliessen» steht 14 px unter der Zeile wie sonst */
+.kr-tagt { color: var(--mut); font-style: italic; margin: 12px 0 4px; }
 .kr-kopf { font-size: 0.88rem; color: var(--txt); margin: 6px 0 10px; line-height: 1.4; }
 .kr-zeile { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; font-size: 0.8rem; }
 .kr-name { width: 104px; flex-shrink: 0; color: var(--mut); }
@@ -22,8 +23,10 @@
 .kr-hinweis { font-size: 0.74rem; color: var(--mut); line-height: 1.4; }
 /* «Schliessen» bleibt unten im Fenster stehen, wenn es rollt (kleine Handys, «Boss überlebt»): Die Leiste reicht
    über den Innenabstand von .modal (26 px) bis an den Rand, der Text rollt unter ihr durch. Angehalten steht der
-   Knopf 10 px über dem Rand, am Ende 26 px wie sonst; ohne Rollen sieht alles aus wie ohne Leiste. */
+   Knopf 10 px über dem Rand, am Ende 26 px wie sonst; ohne Rollen sieht alles aus wie ohne Leiste.
+   sticky misst vom Rollbereich ohne dessen Innenabstand: bottom -42 px = 26 px Innenabstand + 16 px. Seitlich
+   bleiben 2 px frei: Dort zeichnet Chromium am Handy die innere Hälfte seines Fokusrings um das Fenster. */
 .kr-aktionen {
   display: flex; justify-content: flex-end;
-  position: sticky; bottom: -16px; margin: 4px -26px -26px; padding: 10px 26px 26px; background: var(--s1);
+  position: sticky; bottom: -42px; margin: 4px -24px -26px; padding: 10px 24px 26px; background: var(--s1);
 }

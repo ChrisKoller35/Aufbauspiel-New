@@ -11,15 +11,17 @@ import { bindeKlangSchalter, istStummTaste, type TasteInfo } from './ui/componen
 
 // Ton erlaubt der Browser erst mit einer Nutzer-Aktivierung: mit der Maus schon bei pointerdown, beim Tippen erst
 // bei pointerup, touchend oder click, mit Escape nie. Jede Geste setzt den Klang fort und holt Abgelehntes nach;
-// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen). Eine Geste auf 🔊 oder die Taste M
-// startet nichts: Erst ihr Klick bzw. die Taste entscheidet über «stumm» (am PC käme sonst beim Drücken kurz Musik).
+// die erste startet die Musik des Bildschirms (ScreenRouter.ts getCurrentScreen). Eine Geste auf 🔊, die Taste M
+// und Tab starten nichts: Erst der Klick bzw. die Taste entscheidet über «stumm» (am PC käme sonst beim Drücken kurz
+// Musik), und mit Tab sucht jemand erst den Weg; der erste Halt ist oft 🔊.
 function geste(e: Event): void {
   if (navigator.userActivation && !navigator.userActivation.isActive) return;
   const erstes = !istGestartet();
-  const umschalten = Boolean((e.target as Element | null)?.closest?.('.klang-knopf'))
-    || (e.type === 'keydown' && istStummTaste(e as unknown as TasteInfo));
-  starteKlang(!umschalten);
-  if (erstes) (umschalten ? merkeMusik : spieleMusik)(musikFuerBildschirm(getCurrentScreen()));
+  const taste = e.type === 'keydown' ? (e as unknown as TasteInfo) : null;
+  const nurFreigeben = Boolean((e.target as Element | null)?.closest?.('.klang-knopf'))
+    || (taste !== null && (istStummTaste(taste) || taste.key === 'Tab'));
+  starteKlang(!nurFreigeben);
+  if (erstes) (nurFreigeben ? merkeMusik : spieleMusik)(musikFuerBildschirm(getCurrentScreen()));
 }
 for (const typ of ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']) window.addEventListener(typ, geste, true);
 

@@ -97,6 +97,23 @@ describe('Kriegsrat', () => {
     expect(schritt.value).toEqual(kriegsrat(state, ROUTE, ids, proviant, 4));
   });
 
+  it('der Start eines Laufs ist ein eigener Schritt: Ein Häppchen von 0 ms rechnet nur ihn', () => {
+    const { state, ids, proviant } = stand();
+    const start = vi.spyOn(ExpeditionSystem.prototype, 'startExpedition');
+    const weiter = vi.spyOn(ExpeditionSystem.prototype, 'nextStep');
+    try {
+      const laeufe = kriegsratLaeufe(state, ROUTE, ids, proviant, 2);
+      expect(rechneHaeppchen(laeufe, 0, () => 0)).toEqual({ value: 0, done: false });
+      expect(start).toHaveBeenCalledTimes(1);
+      expect(weiter).not.toHaveBeenCalled();
+      laeufe.next();
+      expect(weiter).toHaveBeenCalledTimes(1);
+    } finally {
+      start.mockRestore();
+      weiter.mockRestore();
+    }
+  });
+
   it('kopiert den Spielstand beim Aufruf: Was danach geschieht, ändert das Ergebnis nicht', () => {
     const { state, ids } = musterStand('gut', 1);
     const vorher = kriegsrat(state, 'drachenhort', ids, {}, 20);

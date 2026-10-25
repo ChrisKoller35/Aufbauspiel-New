@@ -1876,10 +1876,11 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   /* Kampf: Seite wächst nach unten (Bildschirm scrollt senkrecht), nie seitlich */
   /* clip statt hidden: schneidet weiter ab, lässt aber die Knopfleiste unten am Bildschirm kleben */
   .mc-combat-overlay { height: auto; min-height: 100%; flex-shrink: 0; overflow: clip; }
-  /* Kopf eng genug, dass x1/x1.5/x2 mit 🔊 neben Titel und Raum passen (auch bei 320 px und im Bosskampf mit
-     zweistelliger Raumzahl ab 390 px); sonst rutschen sie in eine zweite Zeile */
+  /* Kopf eng genug, dass x1/x1.5/x2 mit 🔊 neben Titel und Raum passen. Wird es eng (Bosskampf bei 320 px, ab
+     Raum 10 bei 360 px), rutscht «Raum x / y» unter den Titel, nicht die Knöpfe in eine zweite Zeile: Der Kopf
+     bleibt in jedem Raum gleich hoch, das Kampffeld springt nicht */
   .mc-co-header { padding: 6px 8px; flex-wrap: wrap; row-gap: 6px; column-gap: 8px; }
-  .mc-co-title-group { gap: 6px; }
+  .mc-co-title-group { flex: 1 1 0; min-width: 0; flex-wrap: wrap; gap: 0 6px; }
   .mc-co-title { letter-spacing: 1px; }
   .mc-co-room-info { letter-spacing: 0; }
   .mc-co-speed-group { gap: 3px; }

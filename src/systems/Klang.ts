@@ -2,8 +2,8 @@
 // Ein AudioContext (erst in der ersten Geste), darunter Haupt-Gain (stumm), Musik- und
 // Effekt-Gain. Lautstärke nur über GainNodes: `audio.volume` wirkt auf dem iPhone nicht.
 // Musik auf zwei festen Spuren (<audio>), beide in der ersten Geste angelegt und freigegeben:
-// Ein Wechsel blendet das alte Stück in 1 s aus und das neue in 0,3 s ein. So startet auch Musik
-// ohne Geste (Bosskampf), und es entstehen keine neuen Medien-Player. Bei «stumm» lädt nichts.
+// Ein Wechsel blendet das alte Stück in 1 s aus und das neue in 0,3 s ein, sobald es spielt. So startet
+// auch Musik ohne Geste (Bosskampf), und es entstehen keine neuen Medien-Player. Bei «stumm» lädt nichts.
 // ────────────────────────────────────────────────────────────────
 
 export const KLANG_SPEICHER_KEY = 'magic_city_klang';
@@ -30,8 +30,14 @@ export function speichereEinstellungen(e: KlangEinstellungen, s: Pick<Storage, '
 const AUSBLENDEN_S = 1;
 /** Kurz statt hart: Boss- und Höhlenmusik beginnen laut */
 const EINBLENDEN_S = 0.3;
+/** HTMLMediaElement.HAVE_FUTURE_DATA: Ab hier spielt ein Stück, das nicht angehalten ist */
+const GENUG_GELADEN = 3;
 
-interface Spur { audio: HTMLAudioElement; gain: GainNode; name: string | null; stopp?: ReturnType<typeof setTimeout> }
+interface Spur {
+  audio: HTMLAudioElement; gain: GainNode; name: string | null; stopp?: ReturnType<typeof setTimeout>;
+  /** Einblenden, sobald das Stück wirklich spielt (Ereignis 'playing') */
+  einblenden: boolean;
+}
 
 let einstellungen = ladeEinstellungen();
 let ctx: AudioContext | null = null;
@@ -59,12 +65,19 @@ function neueSpur(c: AudioContext, musik: GainNode): Spur {
   const g = gain(c, 0, musik);
   c.createMediaElementSource(audio).connect(g);
   audio.load(); // in der Geste: gibt das Element auf dem iPhone für spätere play() frei
-  return { audio, gain: g, name: null };
+  const spur: Spur = { audio, gain: g, name: null, einblenden: false };
+  audio.addEventListener('playing', () => {
+    if (!spur.einblenden) return;
+    spur.einblenden = false;
+    rampe(g.gain, 1, EINBLENDEN_S, c.currentTime);
+  });
+  return spur;
 }
 
 /** Hält die Spur an und gibt Download und Decoder frei. */
 function stoppe(s: Spur): void {
   clearTimeout(s.stopp);
+  s.einblenden = false;
   s.audio.pause();
   s.audio.removeAttribute('src');
   s.audio.load();
@@ -82,6 +95,15 @@ function rampe(p: AudioParam, ziel: number, dauer: number, jetzt: number): void 
   p.cancelScheduledValues(jetzt);
   p.setValueAtTime(wert, jetzt);
   p.linearRampToValueAtTime(ziel, jetzt + dauer);
+}
+
+/**
+ * Blendet ein, sobald die Spur wirklich spielt: Ein Stück setzt erst ein, wenn genug geladen ist (am Handy beim ersten
+ * Mal oft über 1 s). Eine Rampe ab dem Aufruf wäre dann vorbei, bevor man etwas hört, und das Stück begänne laut.
+ */
+function blendeEin(s: Spur, jetzt: number): void {
+  if (!s.audio.paused && s.audio.readyState >= GENUG_GELADEN) rampe(s.gain.gain, 1, EINBLENDEN_S, jetzt);
+  else s.einblenden = true;
 }
 
 /**
@@ -126,6 +148,7 @@ export function spieleMusik(name: string | null): void {
   }
   const jetzt = ctx.currentTime;
   if (alt.name) {
+    alt.einblenden = false; // lädt es noch, kommt es nicht mehr
     rampe(alt.gain.gain, 0, AUSBLENDEN_S, jetzt);
     clearTimeout(alt.stopp);
     alt.stopp = setTimeout(() => stoppe(alt), AUSBLENDEN_S * 1000);
@@ -135,14 +158,14 @@ export function spieleMusik(name: string | null): void {
   clearTimeout(neu.stopp);
   // Kommt das Stück zurück, das gerade ausblendet (A → B → A): Es läuft weiter und blendet wieder ein
   if (neu.name === name) {
-    rampe(neu.gain.gain, 1, EINBLENDEN_S, jetzt);
+    blendeEin(neu, jetzt);
     if (neu.audio.paused) spiele(neu);
     return;
   }
   neu.gain.gain.cancelScheduledValues(jetzt);
   neu.gain.gain.setValueAtTime(0, jetzt);
-  neu.gain.gain.linearRampToValueAtTime(1, jetzt + EINBLENDEN_S);
   neu.name = name;
+  neu.einblenden = true;
   neu.audio.src = `assets/audio/music/${name}.mp3`;
   spiele(neu);
 }

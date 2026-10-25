@@ -55,6 +55,10 @@
   .hdr.hdr-mit-hinweis .hdr-cur { visibility: hidden; }
   .hdr .hdr-note { position: absolute; left: 0; right: 0; top: 50%; translate: 0 -50%; margin-left: 0; line-height: 1.3; }
 }
+/* Handy, neben «← Zurück» und 🔊: drei kleinere Zeilen statt zwei (3 × 11,9 px in den 36 px der ersten Zeile) */
+@media (max-width: 700px) {
+  .hdr.hdr-zurueck .hdr-note { font-size: 0.6875rem; line-height: 1.08; -webkit-line-clamp: 3; line-clamp: 3; }
+}
 @media (min-width: 1001px) {
   .hdr-platz { container-type: inline-size; }
   .hdr .hdr-note-sehr-lang {

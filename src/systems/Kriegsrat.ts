@@ -43,8 +43,8 @@ function gruppenLeben(run: ExpeditionRun): number {
 
 /**
  * Ein Lauf auf der Kopie, wie `spieleRoute` (Musterlauf.ts) mit «klug», dazu die Proviant-Regel:
- * vor einem Kampfraum ein heilender Vorrat, wenn die Gruppe unter halben Leben ist. Gibt nach jedem
- * Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf.
+ * vor einem Kampfraum ein heilender Vorrat, wenn die Gruppe unter halben Leben ist. Gibt nach dem Start
+ * und nach jedem Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf.
  */
 function* probelauf(
   kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>,
@@ -56,6 +56,8 @@ function* probelauf(
   }
   const run = system.startExpedition(kopie, routeId, heroIds, 'normal', null, false, consumables);
   if (!run) throw new Error(`Route ${routeId} lässt sich nicht starten`);
+  // Kopie lesen und Expedition anlegen dauert beim ersten Mal nach dem Laden fast so lange wie ein Häppchen
+  yield;
   for (let schritt = 0; schritt < 500; schritt++) {
     const step = system.nextStep(run);
     if (step === 'finish') break;

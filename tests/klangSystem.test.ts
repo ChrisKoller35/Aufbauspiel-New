@@ -2,7 +2,8 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 
 // Das Klang-System (src/systems/Klang.ts) ohne Browser: AudioContext, GainNode und <audio> als kleine Ersatz-Objekte.
 // Die Lautstärke rechnet der Ersatz aus den geplanten Werten wie der Browser: Wer eine laufende Rampe löscht und
-// danach liest, bekommt den Wert vor der Rampe. Zeitgeber laufen mit vi.useFakeTimers.
+// danach liest, bekommt den Wert vor der Rampe. Zeitgeber laufen mit vi.useFakeTimers. Ein Stück lädt sofort und
+// meldet 'playing' gleich bei play(), ausser ein Test lädt es selbst (sofortGeladen = false, dann geladen()).
 
 type Punkt = { t: number; v: number; rampe: boolean };
 
@@ -51,22 +52,38 @@ class Kontext {
 }
 
 const spieler: Spieler[] = [];
+let sofortGeladen = true;
 
-class Spieler {
+class Spieler extends EventTarget {
   loop = false;
   preload = '';
   paused = true;
+  /** 0: nichts geladen, 4: genug geladen, es spielt, sobald es nicht angehalten ist */
+  readyState = 0;
   gain?: Gain;
   /** Jede Zuweisung an src lädt neu und beginnt das Stück von vorn */
   zuweisungen: string[] = [];
   private quelle = '';
-  constructor() { spieler.push(this); }
+  constructor() { super(); spieler.push(this); }
   get src(): string { return this.quelle; }
-  set src(wert: string) { this.quelle = wert; this.zuweisungen.push(wert); this.paused = true; }
-  removeAttribute(name: string): void { if (name === 'src') this.quelle = ''; }
+  set src(wert: string) { this.quelle = wert; this.zuweisungen.push(wert); this.paused = true; this.readyState = 0; }
+  removeAttribute(name: string): void { if (name === 'src') { this.quelle = ''; this.readyState = 0; } }
   load(): void {}
-  play(): Promise<void> { this.paused = false; return Promise.resolve(); }
+  play(): Promise<void> {
+    if (this.paused) {
+      this.paused = false;
+      if (sofortGeladen) this.readyState = 4;
+      if (this.readyState >= 3) this.dispatchEvent(new Event('playing'));
+    }
+    return Promise.resolve();
+  }
   pause(): void { this.paused = true; }
+}
+
+/** Das Stück ist fertig geladen und setzt ein (wie der Browser: 'playing', wenn es nicht angehalten ist) */
+function geladen(s: Spieler): void {
+  s.readyState = 4;
+  if (!s.paused) s.dispatchEvent(new Event('playing'));
 }
 
 let kontext: Kontext;
@@ -93,6 +110,7 @@ const leere = async () => { for (let i = 0; i < 20; i++) await Promise.resolve()
 beforeEach(() => {
   spieler.length = 0;
   quellen.length = 0;
+  sofortGeladen = true;
   vi.useFakeTimers();
   const daten = new Map<string, string>();
   vi.stubGlobal('localStorage', { getItem: (k: string) => daten.get(k) ?? null, setItem: (k: string, v: string) => { daten.set(k, v); } });
@@ -115,11 +133,13 @@ describe('Klang-System: Musik', () => {
 
   test('merkeMusik und starteKlang(false): nichts spielt, bis eine Geste nachholt', async () => {
     const k = await ladeKlang();
-    k.starteKlang(false);
-    k.merkeMusik('ambient_city');
+    k.merkeMusik('ambient_city'); // gewünscht, bevor es Klang gibt
+    k.starteKlang(false); // Geste auf 🔊 oder M: anlegen, aber nicht nachholen
+    expect(laufend()).toEqual([]);
+    k.merkeMusik('ambient_forest'); // gemerkt bei laufendem Klang: startet auch nichts
     expect(laufend()).toEqual([]);
     k.starteKlang();
-    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0 }]);
+    expect(laufend()).toEqual([{ stueck: 'ambient_forest', laut: 0 }]);
   });
 
   test('Wechsel: das alte Stück blendet in 1 s aus, das neue in 0,3 s ein, danach gibt die alte Spur frei', async () => {
@@ -154,6 +174,57 @@ describe('Klang-System: Musik', () => {
     // Der Zeitgeber, der die Stadt-Spur nach dem Ausblenden angehalten hätte, ist gelöscht; der Wald hört auf
     zeit(6.4);
     vi.advanceTimersByTime(2000);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 1 }]);
+  });
+
+  test('langsames Laden: Ein neues Stück blendet erst ein, wenn es wirklich spielt', async () => {
+    const k = await ladeKlang();
+    sofortGeladen = false;
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(1.5); // lädt noch: still, und keine Rampe, die schon vorbei wäre, wenn es einsetzt
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0 }]);
+    geladen(spurVon('ambient_city'));
+    zeit(1.65);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.5 }]);
+    zeit(1.8);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 1 }]);
+  });
+
+  test('Wechsel, während das alte Stück noch lädt: Es setzt nicht mehr ein, das neue blendet ein', async () => {
+    const k = await ladeKlang();
+    sofortGeladen = false;
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(0.5);
+    k.spieleMusik('ambient_forest');
+    zeit(0.7);
+    geladen(spurVon('ambient_city')); // kommt erst während des Ausblendens an
+    geladen(spurVon('ambient_forest'));
+    zeit(1.2);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0 }, { stueck: 'ambient_forest', laut: 1 }]);
+    vi.advanceTimersByTime(1000);
+    expect(laufend()).toEqual([{ stueck: 'ambient_forest', laut: 1 }]);
+  });
+
+  test('A → B → A, A lädt noch: A blendet ein, sobald es spielt, B kommt nicht mehr', async () => {
+    const k = await ladeKlang();
+    sofortGeladen = false;
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(0.2);
+    k.spieleMusik('ambient_forest');
+    zeit(0.4);
+    k.spieleMusik('ambient_city');
+    expect(spurVon('ambient_city').zuweisungen).toEqual([datei('ambient_city')]);
+    zeit(0.9);
+    geladen(spurVon('ambient_city'));
+    geladen(spurVon('ambient_forest'));
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0 }, { stueck: 'ambient_forest', laut: 0 }]);
+    zeit(1.05);
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.5 }, { stueck: 'ambient_forest', laut: 0 }]);
+    zeit(1.2);
+    vi.advanceTimersByTime(1000);
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 1 }]);
   });
 

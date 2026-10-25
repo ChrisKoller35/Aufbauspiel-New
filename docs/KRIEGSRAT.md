@@ -33,7 +33,9 @@ Heldenwege (`musterStand('gut', 1, undefined, false)`, wie das Team im Probespie
 ## Zeit
 Node 22, je 20 Läufe: mit «gut» ohne Sets höchstens 86 ms (Festung), mit «stark» und `pfand5` höchstens
 53 ms (Morgentor: 8 Siege, 12 Niederlagen, gefährlichster Raum 16). Das Fenster rechnet in Häppchen
-(`rechneHaeppchen`): Schritt für Schritt (`kriegsratLaeufe`, ein Raum, eine Wahl oder ein Kontrollpunkt je
-Schritt), bis 30 ms um sind; der letzte Schritt rechnet noch fertig, ein Häppchen dauert also 30 ms plus einen
-Raum. Dazwischen zeigt es «Der Kriegsrat tagt … 7 von 20» (fertige Läufe); so bleibt der Browser auch auf
-langsamen Handys bedienbar, und Escape schliesst sofort.
+(`rechneHaeppchen`): Schritt für Schritt (`kriegsratLaeufe`: der Start eines Laufs, dann ein Raum, eine Wahl,
+ein Kontrollpunkt oder ein Händler je Schritt), bis 30 ms um sind; der letzte Schritt rechnet noch fertig, ein
+Häppchen dauert also 30 ms plus einen Schritt. Das erste Häppchen rechnet nur den Start des ersten Laufs.
+Dazwischen zeigt es «Der Kriegsrat tagt … 7 von 20» (fertige Läufe); so bleibt der Browser auch auf langsamen
+Handys bedienbar, und Escape schliesst sofort. Nur beim ersten Kriegsrat nach dem Laden der Seite ist der erste
+Kampfraum noch langsam (Chromium mit 6-fach gedrosseltem Prozessor bis 60 ms am Stück).

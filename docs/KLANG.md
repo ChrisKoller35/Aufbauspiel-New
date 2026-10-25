@@ -1,8 +1,9 @@
 # Klang
 
 Ton startet erst mit der ersten Nutzer-Aktivierung: Klick, Tippen oder eine Taste ausser Escape (`src/klang.ts`,
-ein `AudioContext` in `src/systems/Klang.ts`). Ist das ein Druck auf 🔊 oder die Taste M, merkt sich das Spiel die
-Musik nur (`merkeMusik`): Erst der Klick bzw. die Taste entscheidet über «stumm». Musik 30 %, Effekte 50 %.
+ein `AudioContext` in `src/systems/Klang.ts`). Ist das ein Druck auf 🔊, die Taste M oder Tab, merkt sich das Spiel
+die Musik nur (`merkeMusik`): Erst der Klick bzw. die Taste entscheidet über «stumm», und mit Tab sucht jemand erst
+den Weg (der erste Halt ist oft 🔊). Die nächste andere Geste startet die Musik. Musik 30 %, Effekte 50 %.
 🔊/🔇 steht in jeder Kopfzeile vor 🏅 und im Kampf neben x1/x1.5/x2 (`src/ui/components/KlangSchalter.ts`); auch
 die Taste M schaltet stumm, aber nicht beim Halten, nicht in Eingabefeldern und nicht, solange ein Fenster offen
 ist (`FensterHilfen.ts` `fensterTaste`). Gemerkt in `localStorage` unter `magic_city_klang` (nicht im Spielstand).
@@ -22,9 +23,11 @@ Je Expedition erklingt ein Ausgangston: `mc:kampfausgang` zuerst, `mc:expedition
 
 **Musik:** zwei feste `<audio>`-Spuren, beide in der ersten Geste angelegt (auf dem iPhone braucht jedes Element
 eine Freigabe in einer Geste, sonst bliebe die Bossmusik stumm). Ein Wechsel blendet das alte Stück in 1 s aus und
-das neue in 0,3 s ein (Boss und Höhle beginnen laut); die alte Spur gibt danach Download und Decoder frei. Kommt das
-alte Stück zurück, solange es noch ausblendet, läuft es weiter und blendet wieder ein. Was der Browser abgelehnt
-hat, holt die nächste Geste nach. Geprüft ohne Browser in `tests/klangSystem.test.ts`.
+das neue in 0,3 s ein (Boss und Höhle beginnen laut), und zwar erst, wenn es wirklich spielt (Ereignis `playing`):
+Ein Stück setzt erst ein, wenn genug geladen ist, am Handy beim ersten Mal oft nach über 1 s; bis dahin ist es still.
+Die alte Spur gibt danach Download und Decoder frei. Kommt das alte Stück zurück, solange es noch ausblendet, läuft
+es weiter und blendet wieder ein. Was der Browser abgelehnt hat, holt die nächste Geste nach. Geprüft ohne Browser
+in `tests/klangSystem.test.ts`.
 
 **Musik je Biom:** Wald, Himmel, Sterne, Mond, Belagerung → `ambient_forest` (offen, unter freiem Himmel; Belagerung liegt vor der Stadt). Sumpf, Unterwasser, Ruinen → `ambient_swamp` (nass bzw. düster-verfallen). Höhle, Vulkan, Frost, Drachengipfel → `Ecambient_cave` (Gestein, Glut, Eis, Drachenhort im Berg).
 
@@ -35,9 +38,11 @@ hat, holt die nächste Geste nach. Geprüft ohne Browser in `tests/klangSystem.t
 
 Christoph macht neue Musik selbst und ersetzt die Datei in `public/assets/audio/music/` unter demselben Namen; die Höhle heisst `Ecambient_cave.mp3` (mit «Ec»), `ambient_cave.mp3` gibt es nicht.
 
-**Zu leise Effekte (gemessen, RMS):** `boss_intro` −73 dBFS (kaum hörbar), `party_wipe` −59, `retreat_horn` −52,
-dagegen `expedition_start` und `boss_victory` −27. Ursache ist `tools/generateSounds.ts`: Tonhöhe drei Oktaven zu
-tief (441 statt 3528 · f²), Gleiten und Arpeggio auf der Frequenz statt der Periode, Hochpass immer an. Die Töne neu
-zu erzeugen ändert alle 31 Effekte und braucht Christophs Okay.
+**Zu leise Effekte (gemessen, RMS):** `boss_intro` −73 dBFS (unhörbar), `party_wipe` −59, `retreat_horn` −52 (nur
+zwei kurze Klicks), dagegen `expedition_start` und `boss_victory` −27. Ursache ist `tools/generateSounds.ts`:
+Tonhöhe drei Oktaven zu tief (441 statt 3528 · f², bei `boss_intro` 2,8 Hz), Gleiten und Arpeggio auf der Frequenz
+statt der Periode, und der Hochpass wirkt immer (auch ohne `hpFilterCutoff`) als Differenz zweier Abtastwerte: Tiefe
+Sinustöne werden fast stumm, Rechteck- und Sägezahnwellen zu Knack-Folgen. Die Töne neu zu erzeugen ändert alle
+31 Effekte und braucht Christophs Okay (der Generator überspringt vorhandene Dateien, nur gelöschte entstehen neu).
 
 **Nicht vertont:** Klicks (`ui_click`, `ui_coin`), Bau und Produktion (`build_place`, `production_*`), Kampftreffer (`combat_*`), Dungeon-, Biom-Eintritts- und Fallengeräusche, Erfolge, Rangaufstieg, Truhe öffnen (`chest_open`; das Video hat eigenen Ton). Keine Regler für Musik und Effekte, keine Pause im Hintergrund-Tab.

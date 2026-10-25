@@ -122,10 +122,14 @@ export function zeigeKriegsrat(
   const stand = ov.querySelector<HTMLElement>('.kr-stand')!;
   // Der Stand von jetzt (beim Klick), nicht der beim ersten Häppchen
   const laeufe = kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL);
+  // Das erste Häppchen rechnet nur den Start des ersten Laufs: Gleich nach dem Laden dauert schon der erste
+  // Kampfraum allein fast ein ganzes Häppchen
+  let haeppchenMs = 0;
   const rechne = () => {
     if (!ov.isConnected) return;
     try {
-      const schritt = rechneHaeppchen(laeufe, HAEPPCHEN_MS);
+      const schritt = rechneHaeppchen(laeufe, haeppchenMs);
+      haeppchenMs = HAEPPCHEN_MS;
       if (!schritt.done) {
         stand.textContent = ` ${schritt.value}\u00a0von\u00a0${ANZAHL}`;
         setTimeout(rechne, 0);

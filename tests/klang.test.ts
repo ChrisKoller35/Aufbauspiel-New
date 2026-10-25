@@ -176,6 +176,17 @@ describe('Ereignisse → Ton (klang.ts)', () => {
     expect(klang.starteKlang).toHaveBeenLastCalledWith(true);
   });
 
+  test('erste Geste mit Tab (auch rückwärts): Musik nur gemerkt, die nächste andere Taste startet sie', () => {
+    klang.gestartet = false;
+    meldeMit('keydown', { key: 'Tab', target: { tagName: 'BODY' } });
+    meldeMit('keydown', { key: 'Tab', shiftKey: true, target: { tagName: 'BUTTON' } });
+    expect(klang.starteKlang.mock.calls).toEqual([[false], [false]]);
+    expect(klang.merkeMusik).toHaveBeenCalledTimes(1);
+    expect(klang.spieleMusik).not.toHaveBeenCalled();
+    meldeMit('keydown', { key: 'Enter', target: { tagName: 'BUTTON' } });
+    expect(klang.starteKlang).toHaveBeenLastCalledWith(true);
+  });
+
   test('Bildschirmwechsel: Stadtmusik, der Kampf ändert nichts', () => {
     melde('mc:navigate', { screen: 'heroes', prev: 'main' });
     melde('mc:navigate', { screen: 'combat', prev: 'heroes' });
