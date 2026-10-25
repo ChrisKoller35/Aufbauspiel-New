@@ -15,12 +15,16 @@ import { bindeKlangSchalter, istStummTaste, type TasteInfo } from './ui/componen
 // Leertaste), die Taste M und Tab starten nichts: Erst der Klick bzw. die Taste entscheidet über «stumm» (am PC käme
 // sonst beim Drücken kurz Musik), und mit Tab sucht jemand erst den Weg; der erste Halt ist oft 🔊. Andere Tasten
 // lösen 🔊 nicht aus, auch wenn es den Fokus hat: Sie sind gewöhnliche Gesten.
-// Zusatztasten allein (Shift, Strg, Alt, Cmd, Feststelltaste) zählen gar nicht: Vor Shift+Tab kommt Shift als eigenes
-// keydown, und die Aktivierung durch den Tab davor gilt dann noch (5 s).
-const ZUSATZTASTEN = new Set(['Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'OS', 'CapsLock', 'Fn']);
+// Tasten, die selbst keine Aktivierung geben, zählen gar nicht: Escape und Zusatz- oder Feststelltasten allein (Shift,
+// Strg, Alt, Cmd, Num). Die Aktivierung durch einen Tab davor gilt noch 5 s: Vor Shift+Tab kommt Shift als eigenes
+// keydown, und Escape nach Tab soll so wenig starten wie Escape allein.
+const OHNE_AKTIVIERUNG = new Set([
+  'Escape', 'Shift', 'Control', 'Alt', 'AltGraph', 'Meta', 'OS', 'Hyper', 'Super', 'Fn', 'FnLock',
+  'CapsLock', 'NumLock', 'ScrollLock', 'Symbol', 'SymbolLock',
+]);
 function geste(e: Event): void {
   const taste = e.type === 'keydown' ? (e as unknown as TasteInfo) : null;
-  if (taste && ZUSATZTASTEN.has(taste.key)) return;
+  if (taste && OHNE_AKTIVIERUNG.has(taste.key)) return;
   if (navigator.userActivation && !navigator.userActivation.isActive) return;
   const erstes = !istGestartet();
   const aufKnopf = Boolean((e.target as Element | null)?.closest?.('.klang-knopf'))

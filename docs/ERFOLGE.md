@@ -83,24 +83,24 @@ oder beim nächsten Tageswechsel (höchstens 30 Sekunden).
   320 px 116 px, bei 360 px 156 px, bei 390 px 186 px, bei 412 px 208 px (im Hauptmenü 204, 244, 274 und
   296 px). Neben «← Zurück» steht ein Hinweis darum bis 551 px auf höchstens drei Zeilen zu 11 px statt
   zwei zu 12 px (3 × 11,9 px in den 36 px der ersten Zeile, die Kopfzeile bleibt 79 px hoch). Ein farbiges
-  Emoji am Anfang (🏅 📜 ⚒️ 💎) ist knapp 2 px höher als eine solche Zeile: Der Hinweis hat darum 3 px Luft
-  nach oben, und `.hdr-mitte` schneidet dort nur seitlich ab (`erfolge.css`). Ab 552 px (Handy quer) endet
-  auch mit zwei Zeilen zu 12 px keiner der 1585 gemessenen Hinweise mit «…», dort bleibt es wie im
-  Hauptmenü. Neben «← Zurück» endet so nur noch ein erledigter Liefer-Zettel mit Tagesbonus bis 338 px
-  nach drei Zeilen mit «…», der Satz zum alten Spielstand bis 342 px und ein Zettel zusammen mit zwei
-  Erfolgen (bis 134 Zeichen) bis 410 px; ein Hinweis bis 60 Zeichen (Aufträge der Werkstätten, Erfolge mit
-  einem oder zwei Namen, Set-Teile, Zettel ohne Tagesbonus) nie. Im Hauptmenü endet der Satz zum alten
-  Spielstand bis 328 px nach zwei Zeilen mit «…» (bei 320 px fehlt «werden.»), ein Zettel mit zwei
-  Erfolgen bis 462 px. Mit zwei Zeilen zu 12 px endeten neben «← Zurück» bei 320 px 29 der 170 Hinweise
-  des Gildenhauses und 639 der 1332 Erfolge mit zwei Namen mit «…» (gemessen im Gildenhaus in
-  2-px-Schritten, ohne und mit Zahl am 🏅 gleich). Von
-  701 bis 1000 px (Handy quer, Tablet, schmales Fenster) passt jeder einzelne Hinweis, nur der Satz zum
-  alten Spielstand endet bis 703 px mit «…» (neben sehr grossen Vorräten bis 789 px); ein Zettel mit
-  zwei Erfolgen endet bis 841 px und von 861 bis 863 px mit «…», mit 1.234.567 Gold bis 945 px.
-  Gemessen in Chromium mit den Web-Schriften auf zwölf Bildschirmen, mit 0, 9 und 125 neuen Erfolgen,
-  in Schritten von 2 bis 8 px, ohne Scrollbalken. Am PC nimmt einer der Kopfzeile 5 px (im Monsterbuch
-  steht er immer), die Grenzen liegen dann bis zu 5 px höher. Was dazukam, zeigen trotzdem die Zahl am
-  Knopf, das Lager und die Bildschirme.
+  Emoji am Anfang (🏅 📜 ⚒️ 💎) ragt bis knapp 3 px über eine solche Zeile: Der Hinweis hat darum 4 px Luft nach
+  oben, und `.hdr-mitte` schneidet dort nur unten und seitlich ab (`clip-path`, `erfolge.css`). Ab 552 px
+  (Handy quer) endet auch mit zwei Zeilen zu 12 px keiner der 1585 gemessenen Hinweise mit «…», dort bleibt es
+  wie im Hauptmenü. Neben «← Zurück» endet so nur noch ein erledigter Liefer-Zettel mit Tagesbonus bis 338 px
+  nach drei Zeilen mit «…», der Satz zum alten Spielstand bis 342 px und ein Zettel zusammen mit zwei Erfolgen
+  (bis 134 Zeichen) bis 411 px, mit Tagesbonus und langen Namen (bis 138 Zeichen) bis 417 px; ein Hinweis bis
+  60 Zeichen (Aufträge der Werkstätten, Erfolge mit einem oder zwei Namen, Set-Teile, Zettel ohne Tagesbonus)
+  nie. Im Hauptmenü endet der Satz zum alten Spielstand bis 329 px nach zwei Zeilen mit «…» (bei 320 px fehlt
+  «werden.»), ein Zettel mit zwei Erfolgen bis 463 px. Mit zwei Zeilen zu 12 px endeten neben «← Zurück» bei
+  320 px 29 der 170 Hinweise des Gildenhauses und 639 der 1332 Erfolge mit zwei Namen mit «…» (gemessen im
+  Gildenhaus in 2-px-Schritten, ohne und mit Zahl am 🏅 gleich). Von 701 bis 1000 px (Handy quer, Tablet,
+  schmales Fenster) passt jeder einzelne Hinweis, nur der Satz zum alten Spielstand endet bis 703 px mit «…»
+  (neben sehr grossen Vorräten bis 789 px); ein Zettel mit zwei Erfolgen endet bis 841 px und von 861 bis
+  863 px mit «…», mit 1.234.567 Gold bis 945 px.
+  Gemessen in Chromium mit den Web-Schriften auf zwölf Bildschirmen, mit 0, 9 und 125 neuen Erfolgen, in
+  Schritten von 2 bis 8 px (die Grenzen von 329 bis 463 px auf den Pixel), ohne Scrollbalken. Am PC nimmt
+  einer der Kopfzeile 5 px (im Monsterbuch steht er immer), die Grenzen liegen dann bis zu 5 px höher. Was
+  dazukam, zeigen trotzdem die Zahl am Knopf, das Lager und die Bildschirme.
   Bei 1400 px sieht die Kopfzeile aus wie vorher, nur zwei Hinweise nebeneinander liegen jetzt über Logo
   und Name. Früher sprang sie bei 320 und 360 px von 79 auf 121 px, sobald der Hinweis verschwand, und
   knapp über 1000 px war ein Hinweis neben einem langen Namen bis auf wenige Buchstaben gekürzt

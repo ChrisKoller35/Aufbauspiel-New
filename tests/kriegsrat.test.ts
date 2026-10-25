@@ -4,7 +4,7 @@ import { GameState } from '../src/models/GameState';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
 import { kriegsrat, kriegsratLaeufe } from '../src/systems/Kriegsrat';
 import { musterStand } from '../src/systems/Musterlauf';
-import { haeppchenweise, rechneHaeppchen } from '../src/ui/components/KriegsratFenster';
+import { haeppchenweise, rechneHaeppchen, rechneImHintergrund } from '../src/ui/components/KriegsratFenster';
 
 const ROUTE = Object.keys(ROUTE_DEFS)[0];
 
@@ -164,6 +164,41 @@ describe('Häppchen (KriegsratFenster.ts)', () => {
     expect(naechstes()).toEqual({ value: 6, done: false });
     expect(naechstes()).toEqual({ value: 11, done: false });
     expect(naechstes()).toEqual({ value: 'fertig', done: true });
+  });
+
+  it('im Hintergrund: ein Häppchen je Aufgabe (sonst 30 ms), dazwischen der Stand, am Ende das Ergebnis', () => {
+    vi.useFakeTimers();
+    try {
+      const uhr = { jetzt: 0 };
+      const meldungen: unknown[] = [];
+      const melde = {
+        zwischen: (n: number) => meldungen.push(n), fertig: (r: string) => meldungen.push(r), fehler: (e: unknown) => meldungen.push(e),
+      };
+      rechneImHintergrund(haeppchenweise(schritte(uhr, 12, 7), undefined, () => uhr.jetzt), () => true, melde);
+      expect(meldungen).toEqual([]);
+      vi.advanceTimersToNextTimer();
+      expect(meldungen).toEqual([1]);
+      vi.runAllTimers();
+      expect(meldungen).toEqual([1, 6, 11, 'fertig']);
+
+      // Das Fenster ist nach dem ersten Häppchen zu: Es rechnet nicht weiter
+      let offen = true;
+      meldungen.length = 0;
+      rechneImHintergrund(haeppchenweise(schritte(uhr, 12, 7), undefined, () => uhr.jetzt), () => offen, melde);
+      vi.advanceTimersToNextTimer();
+      offen = false;
+      vi.runAllTimers();
+      expect(meldungen).toEqual([1]);
+
+      // Eine Ausnahme beendet das Rechnen mit der Meldung
+      meldungen.length = 0;
+      const fehler = new Error('kaputt');
+      rechneImHintergrund(() => { throw fehler; }, () => true, melde);
+      vi.runAllTimers();
+      expect(meldungen).toEqual([fehler]);
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('der echte Rat in Häppchen: dasselbe Ergebnis wie am Stück', () => {

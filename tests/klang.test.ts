@@ -182,7 +182,7 @@ describe('Ereignisse → Ton (klang.ts)', () => {
     // Shift+Tab wie im Browser: erst Shift allein, dann Tab mit shiftKey. Zusatztasten allein zählen nicht
     meldeMit('keydown', { key: 'Shift', target: { tagName: 'BUTTON' } });
     meldeMit('keydown', { key: 'Tab', shiftKey: true, target: { tagName: 'BUTTON' } });
-    for (const key of ['Control', 'Alt', 'Meta']) meldeMit('keydown', { key, target: { tagName: 'BUTTON' } });
+    for (const key of ['Control', 'Alt', 'AltGraph', 'Meta', 'CapsLock']) meldeMit('keydown', { key, target: { tagName: 'BUTTON' } });
     expect(klang.starteKlang.mock.calls).toEqual([[false], [false]]);
     expect(klang.merkeMusik).toHaveBeenCalledTimes(1);
     expect(klang.spieleMusik).not.toHaveBeenCalled();
@@ -199,6 +199,24 @@ describe('Ereignisse → Ton (klang.ts)', () => {
     meldeMit('keydown', { key: 'x', target: aufKlangKnopf });
     expect(klang.starteKlang).toHaveBeenLastCalledWith(true);
     expect(klang.merkeMusik).toHaveBeenCalledTimes(1);
+  });
+
+  test('Escape, Num- und Rollen-Taste zählen auch kurz nach Tab nicht, auch nicht auf 🔊: Sie geben keine Aktivierung', () => {
+    klang.gestartet = false;
+    meldeMit('keydown', { key: 'Tab', target: { tagName: 'BODY' } }); // die Aktivierung des Tabs gilt noch
+    for (const key of ['Escape', 'NumLock', 'ScrollLock']) meldeMit('keydown', { key, target: aufKlangKnopf });
+    expect(klang.starteKlang.mock.calls).toEqual([[false]]);
+    expect(klang.spieleMusik).not.toHaveBeenCalled();
+  });
+
+  test('Enter auf 🔊 gehalten: Die Wiederholungen klicken nicht (sonst schaltete es hin und her), anderswo schon', () => {
+    const verhindert = vi.fn();
+    meldeMit('keydown', { key: 'Enter', repeat: true, target: aufKlangKnopf, preventDefault: verhindert });
+    expect(verhindert).toHaveBeenCalledTimes(1);
+    const ungehindert = vi.fn();
+    meldeMit('keydown', { key: 'Enter', target: aufKlangKnopf, preventDefault: ungehindert });
+    meldeMit('keydown', { key: 'Enter', repeat: true, target: { tagName: 'BUTTON' }, preventDefault: ungehindert });
+    expect(ungehindert).not.toHaveBeenCalled();
   });
 
   test('Bildschirmwechsel: Stadtmusik, der Kampf ändert nichts', () => {

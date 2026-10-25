@@ -33,10 +33,12 @@ Heldenwege (`musterStand('gut', 1, undefined, false)`, wie das Team im Probespie
 ## Zeit
 Node 22, je 20 Läufe: mit «gut» ohne Sets höchstens 86 ms (Festung), mit «stark» und `pfand5` höchstens
 53 ms (Morgentor: 8 Siege, 12 Niederlagen, gefährlichster Raum 16). Das Fenster rechnet in Häppchen
-(`haeppchenweise`, `rechneHaeppchen`): Schritt für Schritt (`kriegsratLaeufe`: der Start eines Laufs, dann ein
-Raum, eine Wahl, ein Kontrollpunkt oder ein Händler je Schritt), bis 30 ms um sind; der letzte Schritt rechnet
-noch fertig, ein Häppchen dauert also 30 ms plus einen Schritt. Das erste Häppchen rechnet nur den Start des
-ersten Laufs. Dazwischen zeigt es «Der Kriegsrat tagt … 7 von 20» (fertige Läufe); so bleibt der Browser auch auf
-langsamen Handys bedienbar, und Escape schliesst sofort. Am längsten dauern beim ersten Kriegsrat nach dem Laden
-der Seite die Häppchen mit dem ersten Kampfraum (Chromium mit 6-fach gedrosseltem Prozessor 45–60 ms);
-vereinzelt dauert auch ein späteres Häppchen länger (gemessen bis 80 ms).
+(`rechneImHintergrund`, `haeppchenweise`, `rechneHaeppchen`): Schritt für Schritt (`kriegsratLaeufe`: der Start
+eines Laufs, dann ein Raum, eine Wahl, ein Kontrollpunkt oder ein Händler je Schritt), bis 30 ms um sind; der
+letzte Schritt rechnet noch fertig, ein Häppchen dauert also 30 ms plus einen Schritt. Das erste Häppchen rechnet
+nur den Start des ersten Laufs. Dazwischen zeigt es «Der Kriegsrat tagt … 7 von 20» (fertige Läufe); so bleibt der
+Browser auch auf langsamen Handys bedienbar, und Escape schliesst sofort. Gemessen in Chromium mit 6-fach
+gedrosseltem Prozessor, beim ersten Kriegsrat nach dem Laden der Seite: Der erste Kampfraum ist dann ein einzelner
+Schritt über 30 ms und füllt sein Häppchen allein (30–52 ms). Die übrigen Häppchen dauern 30 ms plus einen Schritt,
+einzelne bis gut 60 ms, unter Last bis rund 100 ms; der Klick zum Öffnen sperrt in einem Drittel der Läufe 51–98 ms
+am Stück.

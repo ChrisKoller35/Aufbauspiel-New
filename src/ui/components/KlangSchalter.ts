@@ -48,5 +48,9 @@ export function bindeKlangSchalter(): void {
   document.addEventListener('click', e => {
     if ((e.target as Element | null)?.closest?.('.klang-knopf')) schalteKlang();
   });
-  window.addEventListener('keydown', e => { if (istStummTaste(e as unknown as TasteInfo)) schalteKlang(); });
+  window.addEventListener('keydown', e => {
+    if (istStummTaste(e as unknown as TasteInfo)) schalteKlang();
+    // Enter auf 🔊 gehalten: Jede Wiederholung wäre ein Klick und schaltete hin und her. So schaltet es wie M einmal
+    else if (e.repeat && e.key === 'Enter' && (e.target as Element | null)?.closest?.('.klang-knopf')) e.preventDefault();
+  });
 }

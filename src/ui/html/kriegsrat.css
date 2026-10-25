@@ -29,5 +29,6 @@
   display: flex; justify-content: flex-end;
   position: sticky; bottom: -42px; margin: 4px -26px -26px; padding: 10px 26px 26px; background: var(--s1);
 }
-/* Den Fokusring zeichnet Chromium am Handy zur Hälfte ins Fenster, die Leiste läge darüber: 1 px weiter aussen */
-.kr.modal:focus-visible { outline-offset: 1px; }
+/* Den Fokusring zeichnet Chromium zur Hälfte ins Fenster, die Leiste läge darüber, in den unteren Rundungen auch mit
+   1 px Abstand noch: 2 px weiter aussen */
+.kr.modal:focus-visible { outline-offset: 2px; }

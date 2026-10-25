@@ -3,8 +3,9 @@ import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 // Das Klang-System (src/systems/Klang.ts) ohne Browser: AudioContext, GainNode und <audio> als kleine Ersatz-Objekte.
 // Was klingt, rechnet der Ersatz aus den geplanten Werten wie der Browser (klingt()). value liefert wie in Chromium
 // nur, was der Audio-Thread zuletzt gerechnet hat (bei zeit(), solange der Kontext läuft) oder was der Setzer schrieb.
-// Zeitgeber laufen mit vi.useFakeTimers. Ein Stück lädt sofort und meldet 'playing' gleich bei play(), ausser ein
-// Test lädt es selbst (sofortGeladen = false, dann geladen()) oder lässt play() ablehnen (ablehnen = true).
+// Zeitgeber laufen mit vi.useFakeTimers, getrennt von der Zeit des Kontexts (zeit()). Ein Stück lädt sofort und meldet
+// 'playing' gleich bei play(), ausser ein Test lädt es selbst (sofortGeladen = false, dann geladen()) oder lässt play()
+// ablehnen (ablehnen = true).
 
 type Punkt = { t: number; v: number; rampe: boolean };
 const params: Param[] = [];
@@ -222,6 +223,7 @@ describe('Klang-System: Musik', () => {
     geladen(spurVon('ambient_forest'));
     zeit(1.2);
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0 }, { stueck: 'ambient_forest', laut: 1 }]);
+    zeit(1.5);
     vi.advanceTimersByTime(1000);
     expect(laufend()).toEqual([{ stueck: 'ambient_forest', laut: 1 }]);
   });
@@ -242,7 +244,7 @@ describe('Klang-System: Musik', () => {
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0 }, { stueck: 'ambient_forest', laut: 0 }]);
     zeit(1.05);
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.5 }, { stueck: 'ambient_forest', laut: 0 }]);
-    zeit(1.2);
+    zeit(1.4);
     vi.advanceTimersByTime(1000);
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 1 }]);
   });
@@ -297,6 +299,22 @@ describe('Klang-System: Musik', () => {
     expect(laufend()).toEqual([{ stueck: 'ambient_boss', laut: 0 }, { stueck: 'ambient_forest', laut: 0.58 }]);
   });
 
+  test('neues Stück auf der Spur, die noch ausblendet: Es beginnt still, nicht beim Pegel des alten', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(5);
+    k.spieleMusik('ambient_forest');
+    zeit(5.05); // die Stadt blendet aus, ihre Spur steht bei 0,95
+    sofortGeladen = false;
+    k.spieleMusik('ambient_boss'); // auf der Spur der Stadt, lädt noch
+    zeit(5.1);
+    expect(laufend()).toEqual([{ stueck: 'ambient_boss', laut: 0 }, { stueck: 'ambient_forest', laut: 0.16 }]);
+    geladen(spurVon('ambient_boss'));
+    zeit(5.25);
+    expect(laufend()).toEqual([{ stueck: 'ambient_boss', laut: 0.5 }, { stueck: 'ambient_forest', laut: 0.13 }]);
+  });
+
   test('angehaltener Kontext (iPhone «interrupted»): Ein neues Stück blendet nach dem Fortsetzen ein', async () => {
     const k = await ladeKlang();
     k.starteKlang();
@@ -310,6 +328,38 @@ describe('Klang-System: Musik', () => {
     k.starteKlang(); // die nächste Geste setzt fort
     zeit(2.15);
     expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.85 }, { stueck: 'ambient_forest', laut: 0.5 }]);
+  });
+
+  test('Kontext stand beim Wechsel: Die alte Spur blendet nach dem Fortsetzen ganz aus, statt nach 1 s abzubrechen', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(2);
+    kontext.state = 'suspended'; // die Zeit des Kontexts steht, die Uhr läuft weiter
+    k.spieleMusik('ambient_forest');
+    vi.advanceTimersByTime(300);
+    k.starteKlang(); // eine Geste setzt fort: Erst jetzt blendet die Stadt aus
+    zeit(2.7);
+    vi.advanceTimersByTime(700); // 1 s nach dem Wechsel: noch nicht ausgeblendet
+    expect(laufend()).toEqual([{ stueck: 'ambient_city', laut: 0.3 }, { stueck: 'ambient_forest', laut: 1 }]);
+    zeit(3);
+    vi.advanceTimersByTime(300);
+    expect(laufend()).toEqual([{ stueck: 'ambient_forest', laut: 1 }]);
+    expect(spurVon('ambient_city').src).toBe('');
+  });
+
+  test('Kontext steht noch, wenn die Sekunde um ist: Die alte Spur hält gleich an, man hört sie ohnehin nicht', async () => {
+    const k = await ladeKlang();
+    k.starteKlang();
+    k.spieleMusik('ambient_city');
+    zeit(2);
+    kontext.state = 'suspended';
+    k.spieleMusik('ambient_forest');
+    vi.advanceTimersByTime(1000);
+    expect(spurVon('ambient_city').src).toBe('');
+    k.starteKlang();
+    zeit(2.3);
+    expect(laufend()).toEqual([{ stueck: 'ambient_forest', laut: 1 }]);
   });
 
   test('A → B → C → A in kurzer Folge: am Ende läuft nur A', async () => {

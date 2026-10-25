@@ -4,11 +4,14 @@ Ton startet erst mit der ersten Nutzer-Aktivierung: Klick, Tippen oder eine Tast
 ein `AudioContext` in `src/systems/Klang.ts`). Ist das ein Druck auf 🔊 (Klick, Tippen, Enter oder Leertaste), die
 Taste M oder Tab, merkt sich das Spiel die Musik nur (`merkeMusik`): Erst der Klick bzw. die Taste entscheidet über
 «stumm», und mit Tab sucht jemand erst den Weg (der erste Halt ist oft 🔊). Die nächste andere Geste startet die
-Musik, auch jede andere Taste, während 🔊 den Fokus hat. Zusatztasten allein (Shift, Strg, Alt, Cmd) zählen nicht:
-Vor Shift+Tab kommt Shift als eigenes Tastenereignis. Musik 30 %, Effekte 50 %.
+Musik, auch jede andere Taste, während 🔊 den Fokus hat. Escape und Zusatz- oder Feststelltasten allein (Shift,
+Strg, Alt, Cmd, Feststell-, Num- und Rollen-Taste) geben keine Aktivierung und zählen nie, auch nicht kurz nach
+einem Tab, dessen Aktivierung noch 5 s gilt: Vor Shift+Tab kommt Shift als eigenes Tastenereignis. Musik 30 %,
+Effekte 50 %.
 🔊/🔇 steht in jeder Kopfzeile vor 🏅 und im Kampf neben x1/x1.5/x2 (`src/ui/components/KlangSchalter.ts`); auch
-die Taste M schaltet stumm, aber nicht beim Halten, nicht in Eingabefeldern und nicht, solange ein Fenster offen
-ist (`FensterHilfen.ts` `fensterTaste`). Gemerkt in `localStorage` unter `magic_city_klang` (nicht im Spielstand).
+die Taste M schaltet stumm. Gehalten schalten M und Enter auf 🔊 nur einmal; M wirkt nicht in Eingabefeldern und
+nicht, solange ein Fenster offen ist (`FensterHilfen.ts` `fensterTaste`). Gemerkt in `localStorage` unter
+`magic_city_klang` (nicht im Spielstand).
 Bei «stumm» lädt keine Musik, und das Truhen-Video läuft ohne Ton.
 
 | Ereignis | Ton | Stelle im Code |
@@ -25,10 +28,13 @@ Je Expedition erklingt ein Ausgangston: `mc:kampfausgang` zuerst, `mc:expedition
 
 **Musik:** zwei feste `<audio>`-Spuren, beide in der ersten Geste angelegt (auf dem iPhone braucht jedes Element
 eine Freigabe in einer Geste, sonst bliebe die Bossmusik stumm). Ein Wechsel blendet das alte Stück in 1 s aus und
-das neue in 0,3 s ein (Boss und Höhle beginnen laut), und zwar erst, wenn es wirklich spielt (Ereignis `playing`):
-Ein Stück setzt erst ein, wenn genug geladen ist, am Handy beim ersten Mal oft nach über 1 s; bis dahin ist es still.
-Die alte Spur gibt danach Download und Decoder frei. Kommt das alte Stück zurück, solange es noch ausblendet, läuft
-es weiter und blendet wieder ein. Was der Browser abgelehnt hat, holt die nächste Geste nach. Die Lautstärke jeder
+das neue in 0,3 s ein, und zwar erst, wenn es wirklich spielt (Ereignis `playing`): Ein Stück setzt erst ein, wenn
+genug geladen ist, am Handy beim ersten Mal oft nach über 1 s; bis dahin ist es still. Hörbar ist das Einblenden nur
+beim Boss, der nach 0,18 s laut einsetzt: Stadt und Wald (dieselbe Datei) sind die ersten 0,54 s still, Höhle und
+Sumpf beginnen leise. Ist das alte Stück ausgeblendet, gibt seine Spur Download und Decoder frei. Das zählt in der
+Zeit des `AudioContext`, die bei einer Unterbrechung steht (iPhone «interrupted»): Nach 1 s Uhrzeit bräche das
+Stück sonst nach dem Fortsetzen mitten im Ausblenden ab; steht der Kontext dann noch, hält die Spur gleich an.
+Kommt das alte Stück zurück, solange es noch ausblendet, läuft es weiter und blendet wieder ein. Was der Browser abgelehnt hat, holt die nächste Geste nach. Die Lautstärke jeder
 Spur rechnet das Spiel selbst mit (`lautstaerke`), statt `gain.value` zu lesen: Das liefert in Chromium bis zum
 nächsten Rechnen im Audio-Thread noch den alten Wert, im angehaltenen Kontext (iPhone «interrupted») bleibt er
 stehen. Sonst würde ein verlassenes Stück bei zwei schnellen Wechseln hörbar, oder ein neues begänne nach einer

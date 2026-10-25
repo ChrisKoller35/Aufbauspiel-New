@@ -86,6 +86,17 @@ function stoppe(s: Spur): void {
   s.name = null;
 }
 
+/**
+ * Hält die Spur an, sobald sie ausgeblendet ist. Das Ausblenden läuft in der Zeit des AudioContext: Stand er beim
+ * Wechsel (iPhone «interrupted»), ist es nach 1 s Uhrzeit noch nicht vorbei, dann später. Steht er jetzt, hört man
+ * die Spur ohnehin nicht: gleich.
+ */
+function stoppeAusgeblendet(s: Spur): void {
+  const rest = ctx?.state === 'running' ? s.plan.bis - ctx.currentTime : 0;
+  if (rest > 0) s.stopp = setTimeout(() => stoppeAusgeblendet(s), rest * 1000);
+  else stoppe(s);
+}
+
 /** Abgelehnt (keine Geste, iPhone unterbrochen): Die nächste Geste holt es nach (starteKlang). */
 function spiele(s: Spur): void {
   void s.audio.play().catch(() => {});
@@ -167,7 +178,7 @@ export function spieleMusik(name: string | null): void {
     alt.einblenden = false; // lädt es noch, kommt es nicht mehr
     blende(alt, 0, AUSBLENDEN_S, jetzt);
     clearTimeout(alt.stopp);
-    alt.stopp = setTimeout(() => stoppe(alt), AUSBLENDEN_S * 1000);
+    alt.stopp = setTimeout(() => stoppeAusgeblendet(alt), AUSBLENDEN_S * 1000);
   }
   aktiv = 1 - aktiv;
   const neu = spuren[aktiv];

@@ -2,7 +2,7 @@
 // Im Team-Bildschirm vor dem Aufbruch (ExpeditionsScreen.ts): zeigt, wie
 // die gewählte Expedition in Probeläufen ausgeht (systems/Kriegsrat.ts).
 // Erst steht das Fenster mit «Der Kriegsrat tagt …», dann rechnet es in
-// Häppchen (haeppchenweise), damit der Browser dazwischen zeichnen und
+// Häppchen (rechneImHintergrund), damit der Browser dazwischen zeichnen und
 // Tasten annehmen kann. Escape, «Schliessen» und der dunkle Rand schliessen
 // (FensterHilfen.ts), auch mitten im Rechnen; danach rechnet es nicht weiter.
 // ────────────────────────────────────────────────────────────────
@@ -45,6 +45,32 @@ export function haeppchenweise<T, R>(
     bis = ms;
     return schritt;
   };
+}
+
+/**
+ * Rechnet im Hintergrund, ein Häppchen (`naechstesHaeppchen`) je Aufgabe: Dazwischen ist der Browser dran
+ * (setTimeout 0). Meldet nach jedem Häppchen den Stand, am Ende das Ergebnis oder eine Ausnahme. Hört auf, sobald
+ * `offen()` false gibt (das Fenster ist zu).
+ */
+export function rechneImHintergrund<T, R>(
+  naechstesHaeppchen: () => IteratorResult<T, R>, offen: () => boolean,
+  melde: { zwischen(stand: T): void; fertig(ergebnis: R): void; fehler(err: unknown): void },
+): void {
+  const rechne = () => {
+    if (!offen()) return;
+    try {
+      const schritt = naechstesHaeppchen();
+      if (!schritt.done) {
+        melde.zwischen(schritt.value);
+        setTimeout(rechne, 0);
+        return;
+      }
+      melde.fertig(schritt.value);
+    } catch (err) {
+      melde.fehler(err);
+    }
+  };
+  setTimeout(rechne, 0);
 }
 
 /** Zahl und Wort mit geschütztem Leerzeichen: Die Zeile bricht nie zwischen den beiden um. */
@@ -138,22 +164,17 @@ export function zeigeKriegsrat(
   const stand = ov.querySelector<HTMLElement>('.kr-stand')!;
   // Der Stand von jetzt (beim Klick), nicht der beim ersten Häppchen
   const naechstesHaeppchen = haeppchenweise(kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL));
-  const rechne = () => {
-    if (!ov.isConnected) return;
-    try {
-      const schritt = naechstesHaeppchen();
-      if (!schritt.done) {
-        stand.textContent = ` ${schritt.value}\u00a0von\u00a0${ANZAHL}`;
-        setTimeout(rechne, 0);
-        return;
-      }
-      body.innerHTML = ergebnisHtml(schritt.value, ANZAHL);
-    } catch (err) {
-      console.error('Kriegsrat:', err);
-      body.innerHTML = '<p class="kr-info">Der Rat konnte diese Expedition nicht durchspielen.</p>';
-    }
+  const zeige = (html: string) => {
+    body.innerHTML = html;
     body.setAttribute('aria-busy', 'false');
   };
   // Erst «tagt» zeichnen, dann rechnen: requestAnimationFrame kommt vor dem nächsten Bild, setTimeout danach
-  requestAnimationFrame(() => setTimeout(rechne, 0));
+  requestAnimationFrame(() => rechneImHintergrund(naechstesHaeppchen, () => ov.isConnected, {
+    zwischen: fertigeLaeufe => { stand.textContent = ` ${fertigeLaeufe}\u00a0von\u00a0${ANZAHL}`; },
+    fertig: ergebnis => zeige(ergebnisHtml(ergebnis, ANZAHL)),
+    fehler: err => {
+      console.error('Kriegsrat:', err);
+      zeige('<p class="kr-info">Der Rat konnte diese Expedition nicht durchspielen.</p>');
+    },
+  }));
 }
