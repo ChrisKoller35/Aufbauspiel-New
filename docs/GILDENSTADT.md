@@ -250,7 +250,8 @@ Spezifikation oben entschieden wurde, mit den Annahmen der Umbau-Agenten:
   im Händler-Fenster ist nach Namen sortiert. Die Silhouette
   zeigt das Gildenhaus ab dem Dorf als Halle (vorher Zelte), den Händler ab Stufe 1 als Stand, die Händlerhalle im
   Marktflecken. `tools/validateRefs.ts` hatte einen Check 4 für die Baupläne (Gebäude ↔ Beutetabellen,
-  `ersterSiegBauplan`); er ist am 23.10.2026 mit den Bauplänen weggefallen, es bleiben Check 1-3.
+  `ersterSiegBauplan`); er ist am 23.10.2026 mit den Bauplänen weggefallen. Seit dem 26.10.2026 prüft ein neuer
+  Check 4, ob jeder Gegenstand ein Bild hat (fehlende als Leihbild über `tools/leihbilder.ts`, `npm run leihbilder`).
 
 ## Ohne Baupläne (23.10.2026)
 

@@ -116,6 +116,10 @@ export interface GameState {
   // Fehlen in älteren Spielständen; die Systeme legen sie beim ersten Aufruf an.
   auftragsbrett?: AuftragsbrettStand;
   trophaeen?: TrophaeenStand;
+
+  // ── Härtegrade (systems/Haertegrade.ts) ──
+  // Dungeon → höchster bezwungener Grad über Normal. Fehlt in älteren Spielständen.
+  haertegrade?: Record<string, 'hard' | 'nightmare'>;
 }
 
 export function createNewGameState(): GameState {

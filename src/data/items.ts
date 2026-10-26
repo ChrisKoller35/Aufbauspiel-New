@@ -382,7 +382,7 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
   // --- Gold (tracked separately in globalStock but defined here for completeness) ---
   gold: {
     id: 'gold', name: 'Gold', type: 'resource',
-    stackSize: 9999, baseValue: 1, tags: ['currency'],
+    stackSize: 9999, baseValue: 1, tags: ['currency'], spriteKey: 'ICON_GOLD',
   },
 
   // --- T4 Gear: Arkanschmiede (craftbar) ---

@@ -19,7 +19,8 @@ import {
 } from '../../systems/Geschichten';
 import { navigateTo } from '../ScreenRouter';
 import { CombatScreen } from './CombatScreen';
-import { initExpeditionsScreen } from './ExpeditionsScreen';
+import { gewaehlterHaertegrad, initExpeditionsScreen } from './ExpeditionsScreen';
+import { haertegradBilanz, merkeHaertegrad } from '../../systems/Haertegrade';
 import { ranglistenZeilen } from '../components/RanglistenBilanzAnzeige';
 import { auftragsZeilen } from '../components/AuftragsBilanzAnzeige';
 import { escapeAttr, truhenHinweise } from '../components/SchmiedeAnzeige';
@@ -80,7 +81,7 @@ function aufbrechen(routeId: string, heroIds: number[], provisionMap: Record<str
     }
   }
 
-  const run = expeditionSystem.startExpedition(state, routeId, heroIds, 'normal', null, false, consumables);
+  const run = expeditionSystem.startExpedition(state, routeId, heroIds, gewaehlterHaertegrad(state, routeId), null, false, consumables);
   if (!run) {
     console.error('Failed to start expedition');
     return;
@@ -238,6 +239,19 @@ function showNextCombatRoom(): void {
   }
 }
 
+/**
+ * Legt die Beute der Truhe ins Lager (`lager`, im Spiel state.globalStock): jeden Eintrag von `loot` mit seiner
+ * Menge, dazu `goldEarned` (Gold der Kämpfe, Geschichte, Fundstellen) zum Gold. So kommt genau ins Lager, was die
+ * Karten der Truhe zeigen (truhenEintraege: alles Gold in einer Karte); nachgeprüft mit echten Läufen in
+ * tests/truhe.test.ts.
+ */
+export function beuteEinlagern(lager: Record<string, number>, loot: Record<string, number>, goldEarned: number): void {
+  for (const [itemId, qty] of Object.entries(loot)) {
+    lager[itemId] = (lager[itemId] ?? 0) + qty;
+  }
+  lager['gold'] = (lager['gold'] ?? 0) + goldEarned;
+}
+
 function finishExpedition(): void {
   const run = state.activeExpedition;
   if (!run) return;
@@ -264,6 +278,7 @@ function finishExpedition(): void {
   // (before returning provisions: leftover provisions count towards the score)
   const progress = finalizeExpeditionProgress(state, run, expeditionSystem);
   const { entry } = progress;
+  const haerte = haertegradBilanz(run, merkeHaertegrad(state, run));
 
   // Return unused provisions to stock (gifted ones stay with the guild)
   expeditionSystem.returnProvisions(state, run);
@@ -277,10 +292,7 @@ function finishExpedition(): void {
   // Apply loot and finish (with or without chest reveal)
   const applyLootAndFinish = (): void => {
     // Add loot to global stock
-    for (const [itemId, qty] of Object.entries(loot)) {
-      state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
-    }
-    state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
+    beuteEinlagern(state.globalStock, loot, goldEarned);
     // Erfolge, die erst mit der Beute im Lager zählen (ganzes Set: Stern im Trophäensaal), auch in die Bilanz
     progress.newAchievements.push(...erfolgePruefen(state, { hinweis: false }).map(erfolgName));
 
@@ -288,7 +300,7 @@ function finishExpedition(): void {
     speichern();
     console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
 
-    showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), () => {
+    showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), haerte, () => {
       // Reset expedition screen state and navigate back
       initExpeditionsScreen(state);
       navigateTo('expeditions');
@@ -307,7 +319,7 @@ function finishExpedition(): void {
  * Result dialog after the chest: score, hero XP, everything newly unlocked, what the Schmiede can
  * now do (schmiede: «Rudelreisser auf +2») and the chronicle of the story.
  */
-function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], onClose: () => void): void {
+function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], haerte: string | null, onClose: () => void): void {
   const { entry, xp, rankUp, newClasses, newAchievements } = progress;
   const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
   const line = (text: string, color = '#e5e7eb'): string =>
@@ -332,6 +344,7 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
   for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
   for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
   if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
+  if (haerte) body += line(haerte, '#fca5a5');
 
   const chronik = geschichte ? chronikHtml(geschichte) : '';
   showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [

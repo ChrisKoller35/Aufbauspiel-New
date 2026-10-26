@@ -8,9 +8,34 @@ import { SchmiedeStufen, werteMitStufe } from '../../systems/Schmiede';
 import { nameMitStufe, stufeAbzeichen } from './SchmiedeAnzeige';
 import { istStumm } from '../../systems/Klang';
 
-interface LootEntry {
+export interface LootEntry {
   itemId: string;
   qty: number;
+}
+
+/**
+ * Karten der Truhe, ohne DOM: alles Gold in einer Karte. Gold kommt auf zwei Wegen: `goldEarned` (garantiertes
+ * Gold der Kämpfe, Geschichte, Fundstellen) und `loot.gold` (Eintrag «gold» einer Beutetabelle, CombatEngine.rollLoot).
+ * Ins Lager kommen beide (finishExpedition), also zeigt die Truhe die Summe.
+ * Reihenfolge: Set-Teil → Gold → Ausrüstung → Verbrauch → Rest.
+ */
+export function truhenEintraege(loot: Record<string, number>, goldEarned: number): LootEntry[] {
+  const entries: LootEntry[] = [];
+  const gold = goldEarned + (loot.gold ?? 0);
+  if (gold > 0) entries.push({ itemId: 'gold', qty: gold });
+  for (const [id, qty] of Object.entries(loot)) {
+    if (id !== 'gold' && qty > 0) entries.push({ itemId: id, qty });
+  }
+  const order = (e: LootEntry): number => {
+    if (ITEM_DEFS[e.itemId]?.tags.includes('set')) return -1;
+    if (e.itemId === 'gold') return 0;
+    const def = ITEM_DEFS[e.itemId];
+    if (!def) return 4;
+    if (def.type === 'gear') return 1;
+    if (def.type === 'consumable') return 2;
+    return 3;
+  };
+  return entries.sort((a, b) => order(a) - order(b));
 }
 
 /**
@@ -28,26 +53,7 @@ export function showChestReveal(
   stufen?: SchmiedeStufen,
 ): Promise<void> {
   return new Promise(resolve => {
-    // Merge gold into loot entries for display
-    const entries: LootEntry[] = [];
-    if (goldEarned > 0) entries.push({ itemId: 'gold', qty: goldEarned });
-    for (const [id, qty] of Object.entries(loot)) {
-      if (qty > 0) entries.push({ itemId: id, qty });
-    }
-
-    // Sort: set piece → gold → gear → consumable → rest
-    entries.sort((a, b) => {
-      const order = (e: LootEntry) => {
-        if (ITEM_DEFS[e.itemId]?.tags.includes('set')) return -1;
-        if (e.itemId === 'gold') return 0;
-        const def = ITEM_DEFS[e.itemId];
-        if (!def) return 4;
-        if (def.type === 'gear') return 1;
-        if (def.type === 'consumable') return 2;
-        return 3;
-      };
-      return order(a) - order(b);
-    });
+    const entries = truhenEintraege(loot, goldEarned);
 
     // ── Build overlay ──
     const overlay = document.createElement('div');

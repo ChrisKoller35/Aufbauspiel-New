@@ -5,11 +5,13 @@
 // ────────────────────────────────────────────────────────────────
 
 import '../html/schmiede.css';
+import '../html/beutevergleich.css';
 import { GameState } from '../../models/GameState';
 import { ITEM_DEFS, ItemDef } from '../../data/items';
 import { ROUTE_DEFS } from '../../data/routes';
 import { MAX_SCHMIEDE_STUFE, SCHMIEDE_MATERIALIEN, SchmiedeMaterialDef, getMaterial } from '../../data/schmiede';
 import { SchmiedeStufen, materialJeSieg, werteMitStufe } from '../../systems/Schmiede';
+import { besserFuer, besserText } from '../../systems/Beutevergleich';
 
 type Werte = NonNullable<ItemDef['statBonuses']>;
 
@@ -99,9 +101,15 @@ export function werteKurz(itemId: string, stufen?: SchmiedeStufen): string {
 
 /**
  * Zeilen für die Truhe: Set-Teile mit Stufe bekommen «⚒️ +2» angehängt (die Stufe gilt auch für
- * das neue Exemplar), das Material sagt, wofür es ist.
+ * das neue Exemplar), das Material sagt, wofür es ist. Ausrüstung, die einen Helden stärker macht,
+ * bekommt die grüne Zeile «⬆ Besser für …» (systems/Beutevergleich.ts).
+ * Regel: `truhenHinweise` vor dem Leeren von `state.activeExpedition` aufrufen. Ohne `beute` gilt
+ * dessen Beute; danach fehlen die grünen Zeilen still.
  */
-export function truhenHinweise(state: GameState, hinweise: Record<string, string>, materialId: string | null): Record<string, string> {
+export function truhenHinweise(
+  state: GameState, hinweise: Record<string, string>, materialId: string | null,
+  beute: Record<string, number> = state.activeExpedition?.loot ?? {},
+): Record<string, string> {
   const stufen = state.schmiede?.stufen ?? {};
   const neu: Record<string, string> = { ...hinweise };
   for (const [itemId, text] of Object.entries(hinweise)) {
@@ -110,6 +118,10 @@ export function truhenHinweise(state: GameState, hinweise: Record<string, string
   }
   const material = materialId ? getMaterial(materialId) : undefined;
   if (material) neu[material.id] = `⚒️ Für die Schmiede: Set-Teile ${material.ausGebiet}`;
+  for (const [itemId, menge] of Object.entries(beute)) {
+    const besser = menge > 0 ? besserFuer(state, itemId) : null;
+    if (besser) neu[itemId] = `${neu[itemId] ?? ''}<span class="truhe-besser">${escapeAttr(besserText(besser))}</span>`;
+  }
   return neu;
 }
 

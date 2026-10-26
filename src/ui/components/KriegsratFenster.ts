@@ -11,6 +11,9 @@ import '../html/kriegsrat.css';
 import { ROUTE_DEFS } from '../../data/routes';
 import { GameState } from '../../models/GameState';
 import { kriegsratLaeufe, KriegsratErgebnis } from '../../systems/Kriegsrat';
+import { BeuteVorschau, HeldVorschau } from '../../systems/KriegsratVorschau';
+import { MAX_HERO_LEVEL } from '../../systems/HeroProgression';
+import { KLUG_AB_LEBEN } from '../../systems/Musterlauf';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 import { escapeAttr } from './SchmiedeAnzeige';
 
@@ -95,21 +98,79 @@ function balken(cls: string, name: string, n: number, anzahl: number): string {
     </div>`;
 }
 
-function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
+/** «Beute»: Set-Teil, Schmiede-Material und Splitter, Ausrüstung (KriegsratVorschau.ts) */
+function beuteHtml(b: BeuteVorschau, anzahl: number): string {
+  const zeilen: string[] = [];
+  if (b.set) {
+    const wie = b.setLaeufe > 0
+      ? `in&nbsp;${b.setLaeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen${b.setTeile > b.setLaeufe ? ` (zusammen&nbsp;${zahlWort(b.setTeile, 'Teil', 'Teile')})` : ''}`
+      : 'in keinem Lauf';
+    zeilen.push(`<span class="rar-set">✦ Set-Teil ${b.set.zeichen} ${escapeAttr(b.set.name)}</span> (die Gilde hat&nbsp;${b.set.gesammelt}&nbsp;von&nbsp;3): ${wie}`);
+  }
+  if (b.material) {
+    const splitter = b.splitterSchnitt > 0 ? `&nbsp;· Ø&nbsp;${b.splitterSchnitt}&nbsp;Kristallsplitter` : '';
+    zeilen.push(`⚒️ Schmiede-Material: Ø&nbsp;${b.material.schnitt}&nbsp;${escapeAttr(b.material.name)}${splitter} je Lauf`);
+  }
+  if (b.ausruestung.length > 0) {
+    zeilen.push(`🗡️ Ausrüstung: ${b.ausruestung.map(a => {
+      const name = a.legendaer ? `<span class="rar-legendary">${escapeAttr(a.name)}</span>` : escapeAttr(a.name);
+      return `${name}${a.neu ? '&nbsp;(neu)' : ''}&nbsp;${a.laeufe}&nbsp;von&nbsp;${anzahl}`;
+    }).join('&nbsp;· ')}`);
+  }
+  return zeilen.length > 0 ? `<p class="kr-titel">Beute</p>${zeilen.map(z => `<p class="kr-info">${z}</p>`).join('')}` : '';
+}
+
+/** «Helden»: je Held Ø XP, Aufstieg oder was bis dahin fehlt, wie oft er fällt */
+function heldenHtml(helden: HeldVorschau[], anzahl: number): string {
+  if (helden.length === 0) return '';
+  const zeilen = helden.map(h => {
+    let text = `<b>${escapeAttr(h.name)}</b>&nbsp;· Stufe&nbsp;${h.stufe}: Ø&nbsp;+${h.xpSchnitt}&nbsp;XP`;
+    if (h.stufe >= MAX_HERO_LEVEL) text += ' Überschuss fürs Lehrbuch';
+    else if (h.aufstiege > 0) {
+      text += `&nbsp;· Aufstieg in&nbsp;${h.aufstiege}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen`;
+      if (h.besteStufe >= h.stufe + 2) text += ` (bis Stufe&nbsp;${h.besteStufe})`;
+    } else text += `&nbsp;· bis Stufe&nbsp;${h.stufe + 1} fehlen&nbsp;${h.fehltXp}&nbsp;XP`;
+    if (h.gefallen > 0) text += `&nbsp;· fällt in&nbsp;${h.gefallen}&nbsp;von&nbsp;${anzahl}`;
+    return `<p class="kr-info">${text}</p>`;
+  });
+  return `<p class="kr-titel">Helden</p>${zeilen.join('')}`;
+}
+
+/** «Entscheidungen unterwegs»: wie oft der Rat das Wagnis nahm, wie oft die sichere Wahl (Kriegsrat.ts); leer ohne */
+function wahlenHtml(w: KriegsratErgebnis['wahlen']): string {
+  const teile = [
+    w.wagnis > 0 ? `${w.wagnis}-\u2060mal das Wagnis` : '',
+    w.sicher > 0 ? `${w.sicher}-\u2060mal die sichere Wahl` : '',
+  ].filter(Boolean);
+  if (teile.length === 0) return '';
+  return `<p class="kr-info">Entscheidungen unterwegs:&nbsp;${teile.join('&nbsp;· ')}. Der Rat wagt es nur ab&nbsp;`
+    + `${Math.round(KLUG_AB_LEBEN * 100)}&nbsp;% Leben; entscheidest du anders, sehen Beute und XP anders aus.</p>`;
+}
+
+/**
+ * Das Ergebnis als HTML. Eine Zahl bricht nie von ihren Wörtern weg, auch nicht von dem davor (geschützte Leerzeichen:
+ * «fehlen 120 XP», «Langbogen (neu) 16 von 20»); umbrechen darf die Zeile zwischen den übrigen Wörtern und nach «·».
+ */
+export function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
   const raum = r.gefaehrlichsterRaum;
   const gegner = raum && raum.gegner.length > 0 ? ` (${raum.gegner.map(escapeAttr).join(', ')})` : '';
   // «Boss überlebt» nur, wenn es vorkam: Das Spiel zeigt dann «SIEG!», gezählt wird hier nur ein bezwungener Dungeon
   const boss = r.bossUeberlebt > 0;
+  // «17-mal»: nach dem Strich ein Wortverbinder (U+2060), sonst bricht die Zeile bei 330–350 px nach «17-» um (wie stueck im Fundbuch)
   return `
-    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe: ${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
+    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe:&nbsp;${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
     ${balken('sieg', 'Siege', r.siege, anzahl)}
     ${balken('niederlage', 'Niederlagen', r.niederlagen, anzahl)}
     ${boss ? balken('boss', 'Boss überlebt', r.bossUeberlebt, anzahl) : ''}
-    ${boss ? '<p class="kr-info">Boss überlebt: Nach 20&nbsp;Kampfrunden steht der Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, aber der Boss gilt nicht als besiegt: Er öffnet keinen neuen Dungeon, und es gibt keine Trophäe.</p>' : ''}
-    <p class="kr-info">${raum ? `Gefährlichster Raum: Raum&nbsp;${raum.nummer}${gegner}. Dort ${raum.laeufe === 1 ? 'scheitert' : 'scheitern'} ${raum.laeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen.` : 'Kein Lauf ist gescheitert.'}</p>
-    <p class="kr-info">Ø Gold je Lauf: ${r.goldSchnitt.toLocaleString('de')}</p>
+    ${boss ? '<p class="kr-info">Boss überlebt: Nach&nbsp;20&nbsp;Kampfrunden steht der Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, aber der Boss gilt nicht als besiegt: Er öffnet keinen neuen Dungeon, und es gibt keine Trophäe.</p>' : ''}
+    <p class="kr-info">${raum ? `Gefährlichster Raum: Raum&nbsp;${raum.nummer}${gegner}. Dort ${raum.laeufe === 1 ? 'scheitert' : 'scheitern'}&nbsp;${raum.laeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen.` : 'Kein Lauf ist gescheitert.'}</p>
+    <p class="kr-info">Ø Gold je Lauf:&nbsp;${r.goldSchnitt.toLocaleString('de')}</p>
+    <p class="kr-info">Ø Leben am Ende:&nbsp;${r.lebenSchnitt}&nbsp;%&nbsp;· ${r.proviantEingesetzt > 0 ? `Proviant eingesetzt:&nbsp;${r.proviantEingesetzt}-\u2060mal in&nbsp;${anzahl}&nbsp;Läufen` : 'Proviant: nie gebraucht'}</p>
+    ${wahlenHtml(r.wahlen)}
     <p class="kr-rat">${rat(r.siege, anzahl)}</p>
-    <p class="kr-hinweis">Aus ${anzahl}&nbsp;Probeläufen. Proviant setzt der Rat nur vor einem Kampf und unter halben Leben ein; Stärkungs-Tränke und Fähigkeiten, die du im Kampf selbst auslöst, sind nicht eingerechnet.</p>`;
+    ${beuteHtml(r.beute, anzahl)}
+    ${heldenHtml(r.helden, anzahl)}
+    <p class="kr-hinweis">Aus&nbsp;${anzahl}&nbsp;Probeläufen. Proviant setzt der Rat nur vor einem Kampf und unter halben Leben ein; Stärkungs-Tränke und Fähigkeiten, die du im Kampf selbst auslöst, sind nicht eingerechnet.</p>`;
 }
 
 /** Öffnet das Fenster über `root` und rechnet danach; `beimSchliessen` läuft, sobald es zu ist. */
