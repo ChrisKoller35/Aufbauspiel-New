@@ -213,10 +213,12 @@ Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
 - **Aus der Chronik gezählt** (`src/systems/GipfelTaten.ts`, am Ende in `finalizeExpeditionProgress`): Die Wahl
   steht nur dort, als Satz `nachklang.a` oder `nachklang.b`; ein eigenes Feld im Lauf gibt es nicht.
 - Jede Tat setzt ihren Zähler auf 1, nie höher: Sechsmal dieselbe Tat bringt nicht «Hat alles».
-- **Kleingedrucktes:** Im Mondhof alle drei Pfandzettel unterschrieben, Argentis lebt (Rückzug am letzten
-  Kontrollpunkt, Niederlage oder Rundenlimit).
-- Die Bilanz zeigt bei diesen acht Erfolgen Name und Satz («Name – Beschreibung», `erfolgBilanzZeile`), die
-  Kopfzeile nur den Namen.
+- **Kleingedrucktes:** Im Mondhof alle drei Pfandzettel unterschrieben, Argentis lebt: jeder Rückzug nach dem
+  dritten Pfandzettel (am letzten Kontrollpunkt «Raum 15 von 16» oder im Bosskampf mit «Rückzug» statt
+  «Kampf starten!»), Niederlage oder Rundenlimit (dann steht über der Bilanz «SIEG»).
+- Die Bilanz zeigt bei diesen acht Erfolgen Name und Satz («🏅 Erfolg: Name – Beschreibung», `erfolgBilanzZeile`).
+  Einen Hinweis in der Kopfzeile gibt es dafür nicht (Ende der Expedition, `hinweis: false`, wie unter
+  «Wann geprüft wird»); dort steigt nur die Zahl am 🏅.
 - Gezählt wird erst ab jetzt; frühere Läufe holt kein Spielstand nach.
 - Wie schwer das ist: Spielweise «gierig» in `docs/NEUE-DUNGEONS.md`.
 

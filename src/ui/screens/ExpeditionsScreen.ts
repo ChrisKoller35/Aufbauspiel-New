@@ -17,7 +17,7 @@ import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
 import { zeigeKriegsrat } from '../components/KriegsratFenster';
-import { haertegradMarke, haertegradWahlHtml } from '../components/HaertegradAnzeige';
+import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../components/HaertegradAnzeige';
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 
 // ── Module state ──
@@ -28,6 +28,12 @@ let selectedHeroes: GuildFighter[] = [];
 let provisions: Record<string, number> = {};
 /** Gewählter Härtegrad je Dungeon; bleibt bis zum Neu-Laden der Seite (initExpeditionsScreen setzt ihn nicht zurück) */
 const haertegradWahl: Record<string, Haertegrad> = {};
+/**
+ * Wer eine Route wählt, sieht den Team-Bildschirm von oben: Band, Härtegrad und Helden. Ein verstecktes Element merkt
+ * sich seine Scroll-Lage (am Handy unten beim Start-Knopf), und scrollTop wirkt dort nicht: zurückgesetzt wird beim
+ * ersten Neuzeichnen, bei dem der Bildschirm sichtbar ist (navigateTo zeigt ihn vor mc:navigate).
+ */
+let teamNachOben = false;
 
 /** Der gewählte Härtegrad, Normal solange der Dungeon nicht bezwungen ist */
 export function gewaehlterHaertegrad(state: GameState, routeId: string): Haertegrad {
@@ -93,6 +99,7 @@ export function setSelectedRoute(routeId: string): void {
 }
 
 function selectRoute(routeId: string): void {
+  teamNachOben = true;
   selectedRouteId = routeId;
   selectedHeroes = [];
   provisions = {};
@@ -205,6 +212,10 @@ function refreshTeamScreen(): void {
   const el = document.getElementById('s-team');
   if (!el) return;
   el.innerHTML = buildTeamHTML();
+  if (teamNachOben && el.style.display !== 'none') {
+    el.scrollTop = 0;
+    teamNachOben = false;
+  }
   // Do NOT re-bind events — the delegated listener on el persists across innerHTML rebuilds
 }
 
@@ -212,6 +223,7 @@ function buildTeamHTML(): string {
   const route = selectedRouteId ? ROUTE_DEFS[selectedRouteId] : null;
   const routeName = route ? route.name : 'Expedition';
   const recLevel = route ? route.recommendedLevel : '';
+  const grad = route ? gewaehlterHaertegrad(gameState, route.id) : 'normal';
 
   // Slots (2x2 grid, 3 slots / 4 with Guild Hall T2) — styled like hero cards
   const maxSlots = heldenJeExpedition(gameState);
@@ -288,7 +300,7 @@ function buildTeamHTML(): string {
   return `
     ${renderHeader(gameState, 'expeditions', routeName)}
     ${routeInfoHTML(recLevel, route?.besonderheit, route ? setFuerRoute(route.id) : undefined, route ? routenGeschichteHtml(gameState, route.id) : '')}
-    ${route && haertegradWaehlbar(gameState, route.id) ? haertegradWahlHtml(gameState, route.id, gewaehlterHaertegrad(gameState, route.id)) : ''}
+    ${route && haertegradWaehlbar(gameState, route.id) ? haertegradWahlHtml(gameState, route.id, grad) : ''}
     <div class="team-wrap">
       <div class="team-left">
         <div class="lbl" style="margin-bottom:8px">Dein Team</div>
@@ -300,7 +312,7 @@ function buildTeamHTML(): string {
         <div class="prov-hd">Proviant</div>
         ${provRows}
         <button class="btn-kriegsrat"${document.querySelector('.kr-ov') ? ' disabled' : ''}>🎲 Kriegsrat</button>
-        <button class="btn-go">EXPEDITION STARTEN</button>
+        <button class="btn-go${grad === 'normal' ? '' : ` btn-go-${grad}`}">EXPEDITION STARTEN${startKnopfHaerte(grad)}</button>
       </div>
     </div>
   `;

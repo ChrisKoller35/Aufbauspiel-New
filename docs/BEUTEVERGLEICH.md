@@ -13,10 +13,12 @@ Unter jedem Ausrüstungsteil, das einen Helden der Gilde stärker macht, steht i
   leert die Nebenhand, ein Schild braucht eine Einhandwaffe.
 - **Zählt nicht:** was schon im Lager liegt, Abwägungen (mehr ATK, aber weniger DEF: bleibt im Heldenfenster),
   Luft (`airBonus`) für Unterwasser-Dungeons.
-- **Aufruf-Regel:** `truhenHinweise` vor dem Leeren von `state.activeExpedition` aufrufen. Ohne viertes
-  Argument nimmt es dessen Beute; danach fehlen die grünen Zeilen still (so macht es `finishExpedition`).
+- **Aufruf-Regel:** `truhenHinweise` vor dem Leeren von `state.activeExpedition` aufrufen (so macht es
+  `finishExpedition` heute). Ohne viertes Argument nimmt es dessen Beute; ruft man es erst nach dem Leeren auf,
+  fehlen die grünen Zeilen still. Ohne laufende Expedition die Beute als viertes Argument mitgeben.
 - **Nebenhand mit Absicht:** Viele Zeilen gelten der Nebenhand. Eine leere Nebenhand zählt im Kampf voll,
-  eine zweite Waffe ist dort echter Gewinn (im Probespiel «sterne» haben Grimm und Sina sie leer).
+  eine zweite Waffe oder ein Schild ist dort echter Gewinn (im Probespiel «sterne» haben Grimm und Sina sie leer).
 
 Gemessen (26.10.2026, alle 138 Ausrüstungsteile aus `ITEM_DEFS`): im neuen Spiel (Guardian ohne Ausrüstung)
-bekommen 120 die Zeile, in `?probe=sterne` 23, davon 21 für die Nebenhand.
+bekommen 120 die Zeile, in `?probe=sterne` 23, alle für die leere Nebenhand von Grimm oder Sina:
+21 Einhandwaffen mit «(Nebenhand)», 2 Schilde (ohne Handangabe).

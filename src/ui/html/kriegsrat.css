@@ -21,7 +21,8 @@
 .kr-info { font-size: 0.82rem; margin: 8px 0 0; overflow-wrap: anywhere; }
 .kr-rat { font-family: 'Cinzel', serif; color: var(--gold); margin: 12px 0 6px; }
 .kr-titel { font-family: 'Cinzel', serif; color: var(--gold); font-size: 0.8rem; letter-spacing: 1px; margin: 14px 0 0; }
-.kr-hinweis { font-size: 0.74rem; color: var(--mut); line-height: 1.4; }
+/* Der Hinweis gilt für den ganzen Rat: Abstand wie vor «Beute» und «Helden», sonst liest er sich als Zeile des letzten Helden */
+.kr-hinweis { font-size: 0.74rem; color: var(--mut); line-height: 1.4; margin: 14px 0 0; }
 /* «Schliessen» bleibt unten im Fenster stehen, wenn es rollt (kleine Handys, «Boss überlebt»): Die Leiste reicht
    über den Innenabstand von .modal (26 px) bis an den Rand, der Text rollt unter ihr durch. Angehalten steht der
    Knopf 10 px über dem Rand, am Ende 26 px wie sonst; ohne Rollen sieht alles aus wie ohne Leiste.

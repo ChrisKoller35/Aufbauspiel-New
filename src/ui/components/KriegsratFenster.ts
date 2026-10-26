@@ -140,6 +140,7 @@ function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
   const gegner = raum && raum.gegner.length > 0 ? ` (${raum.gegner.map(escapeAttr).join(', ')})` : '';
   // «Boss überlebt» nur, wenn es vorkam: Das Spiel zeigt dann «SIEG!», gezählt wird hier nur ein bezwungener Dungeon
   const boss = r.bossUeberlebt > 0;
+  // «17-mal»: nach dem Strich ein Wortverbinder (U+2060), sonst bricht die Zeile bei 330–350 px nach «17-» um (wie stueck im Fundbuch)
   return `
     <p class="kr-kopf">${anzahl}&nbsp;Probeläufe: ${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
     ${balken('sieg', 'Siege', r.siege, anzahl)}
@@ -148,7 +149,7 @@ function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
     ${boss ? '<p class="kr-info">Boss überlebt: Nach 20&nbsp;Kampfrunden steht der Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, aber der Boss gilt nicht als besiegt: Er öffnet keinen neuen Dungeon, und es gibt keine Trophäe.</p>' : ''}
     <p class="kr-info">${raum ? `Gefährlichster Raum: Raum&nbsp;${raum.nummer}${gegner}. Dort ${raum.laeufe === 1 ? 'scheitert' : 'scheitern'} ${raum.laeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen.` : 'Kein Lauf ist gescheitert.'}</p>
     <p class="kr-info">Ø Gold je Lauf: ${r.goldSchnitt.toLocaleString('de')}</p>
-    <p class="kr-info">Ø Leben am Ende: ${r.lebenSchnitt}&nbsp;%&nbsp;· ${r.proviantEingesetzt > 0 ? `Proviant eingesetzt: ${r.proviantEingesetzt}-mal in&nbsp;${anzahl}&nbsp;Läufen` : 'Proviant: nie gebraucht'}</p>
+    <p class="kr-info">Ø Leben am Ende: ${r.lebenSchnitt}&nbsp;%&nbsp;· ${r.proviantEingesetzt > 0 ? `Proviant eingesetzt: ${r.proviantEingesetzt}-\u2060mal in&nbsp;${anzahl}&nbsp;Läufen` : 'Proviant: nie gebraucht'}</p>
     <p class="kr-rat">${rat(r.siege, anzahl)}</p>
     ${beuteHtml(r.beute, anzahl)}
     ${heldenHtml(r.helden, anzahl)}

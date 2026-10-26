@@ -7,13 +7,21 @@
   flex: 1; min-width: 0; min-height: 44px; padding: 6px 10px;
   background: var(--s3); border: 1px solid var(--bdr); border-radius: 4px; color: var(--mut);
   font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; transition: .15s;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display: inline-flex; flex-wrap: wrap; align-items: center; justify-content: center; overflow: hidden;
 }
 .haerte-knopf:hover { border-color: var(--gd); color: var(--txt); }
 .haerte-knopf.aktiv { border-color: var(--gold); color: var(--gl); background: rgba(110, 87, 16, .35); }
 .haerte-knopf.aktiv[data-haertegrad="nightmare"] { border-color: #dc2626; color: #fca5a5; background: rgba(220, 38, 38, .18); }
 .haerte-text { margin-top: 8px; font-size: 0.8rem; color: var(--txt); line-height: 1.4; }
 .haerte-hinweis { margin-top: 4px; color: var(--mut); }
+/* Name und ✓ getrennt: Wird es eng (320 px, grosse Schrift), rutscht das ✓ in eine zweite Zeile, statt im «…» zu
+   verschwinden; gekürzt wird erst, wenn der Name allein nicht passt */
+.haerte-name { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.haerte-haken { flex-shrink: 0; margin-left: .25em; }
+/* Start-Knopf (ExpeditionsScreen.ts): der gewählte Grad als zweite Zeile, wenn nicht Normal */
+.btn-go-haerte { display: block; margin-top: 3px; font-size: 0.72rem; letter-spacing: 1px; }
+.btn-go-nightmare { border-color: #dc2626; }
+.btn-go-nightmare .btn-go-haerte { color: #fca5a5; }
 
 /* Routenkarte: klein und rot im Fuss */
 .exp-haerte { font-size: 0.7rem; color: #fca5a5; text-shadow: 0 1px 4px rgba(0,0,0,.9); margin-top: 2px; }
@@ -22,4 +30,9 @@
   .haerte { margin: 0 12px 12px; }
   .haerte-knoepfe { gap: 6px; }
   .haerte-knopf { padding: 6px 4px; font-size: 0.72rem; letter-spacing: 0; }
+}
+
+@media (max-width: 360px) {
+  .haerte-knoepfe { gap: 4px; }
+  .haerte-knopf { padding: 6px 2px; }
 }

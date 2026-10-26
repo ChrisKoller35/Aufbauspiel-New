@@ -25,7 +25,8 @@
     "weg-eichung": "npx tsx tools/wegEichung.ts",
     "geschichten-eichung": "npx tsx tools/geschichtenEichung.ts",
     "rangliste-eichung": "npx tsx tools/ranglisteEichung.ts",
-    "material-bilder": "npx tsx tools/materialBilder.ts"
+    "material-bilder": "npx tsx tools/materialBilder.ts",
+    "leihbilder": "npx tsx tools/leihbilder.ts"
   },
   "devDependencies": {
     "@types/node": "^22.20.5",
