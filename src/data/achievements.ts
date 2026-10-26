@@ -12,9 +12,9 @@
 import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
 import { MAX_SCHMIEDE_STUFE } from './schmiede';
 
-export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Sammeln';
+export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Gipfel-Taten' | 'Sammeln';
 
-export const ERFOLG_GRUPPEN: ErfolgGruppe[] = ['Stadt', 'Gilde', 'Helden', 'Dungeons', 'Sammeln'];
+export const ERFOLG_GRUPPEN: ErfolgGruppe[] = ['Stadt', 'Gilde', 'Helden', 'Dungeons', 'Gipfel-Taten', 'Sammeln'];
 
 export interface AchievementDef {
   id: string;
@@ -52,6 +52,9 @@ export const SAAL_SOCKEL = DUNGEON_GRAPH.filter(n => ROUTE_DEFS[n.routeId]?.boss
 /** Drei Sterne je Sockel (Boss, ganzes Set, Prunkstück); «Glanz des Saals» will die Hälfte davon */
 const SAAL_STERNE = 3 * SAAL_SOCKEL;
 const SAAL_HALBER_GLANZ = Math.ceil(SAAL_STERNE / 2);
+
+/** Die sechs Gipfel-Taten (systems/GipfelTaten.ts): je Dungeon über dem Vulkankern dreimal das Risiko, Boss trotzdem tot */
+export const GIPFEL_TATEN = ['tat_hort', 'tat_archiv', 'tat_esse', 'tat_schlund', 'tat_pfand', 'tat_uhr'];
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // ── Stadt (die Gildenstadt: Händler und vier Werkstätten, docs/GILDENSTADT.md) ──
@@ -92,6 +95,16 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('gold_hoarder', 'Dungeons', '💰', 'Goldhamster', 'Erbeute insgesamt 500 Gold auf Expeditionen.', 'total_gold_earned', 500),
   erfolg('kill_100', 'Dungeons', '💠', 'Hundertfacher Tod', 'Besiege 100 Gegner.', 'total_enemies_killed', 100),
   erfolg('kill_1000', 'Dungeons', '🗡️', 'Tausendfacher Tod', 'Besiege 1000 Gegner.', 'total_enemies_killed', 1000),
+
+  // ── Gipfel-Taten (in allen drei Wahl-Räumen das Risiko, Boss trotzdem besiegt; docs/ERFOLGE.md) ──
+  erfolg('gipfel_hort', 'Gipfel-Taten', '🪙', 'Ehrlicher Finder', 'Im Drachenhort Goldhaufen, Edelsteinschale und Drachenkrone eingesteckt und Ignarax trotzdem besiegt. Er hat bis zuletzt nachgezählt.', 'tat_hort', 1),
+  erfolg('gipfel_archiv', 'Gipfel-Taten', '📕', 'Ohne Leseausweis', 'Alle drei verbotenen Bücher des Himmelsarchivs gelesen und den Oberarchivar trotzdem besiegt. Eure Namen sind jetzt doppelt rot unterstrichen.', 'tat_archiv', 1),
+  erfolg('gipfel_esse', 'Gipfel-Taten', '☄️', 'Nicht anfassen', 'Dreimal ins Sternenfeuer gegriffen und Korrund trotzdem besiegt. Auf seinem Amboss steht «Nicht anfassen» jetzt doppelt so gross.', 'tat_esse', 1),
+  erfolg('gipfel_schlund', 'Gipfel-Taten', '⛏️', 'Sternenmetzger', 'Aus allen drei gefangenen Sternen Sternenstahl geschlagen und Nyxar trotzdem besiegt. Die Bäckerin findet drei Sterne verdächtig blass.', 'tat_schlund', 1),
+  erfolg('gipfel_pfand', 'Gipfel-Taten', '✍️', 'Pfandleiher des Jahres', 'Alle drei Pfandzettel unterschrieben und Argentis trotzdem besiegt. Der Mondvogt prüft noch, wie.', 'tat_pfand', 1),
+  erfolg('gipfel_uhr', 'Gipfel-Taten', '🕛', 'Zeitumstellung', 'Die Sonnenuhr dreimal vorgestellt und Sunna trotzdem besiegt. Sie hatte schon gefrühstückt und war entsprechend gelaunt.', 'tat_uhr', 1),
+  erfolg('gipfel_alle', 'Gipfel-Taten', '🐲', 'Hat alles', 'Alle sechs Gipfel-Taten vollbracht. Ignarax hatte alles. Jetzt habt ihr es.', GIPFEL_TATEN, GIPFEL_TATEN.length),
+  erfolg('gipfel_kleingedrucktes', 'Gipfel-Taten', '🧾', 'Kleingedrucktes', 'Alle drei Pfandzettel unterschrieben und Argentis nicht besiegt. Das Pfand behält der Mondvogt, die Quittung dürft ihr behalten.', 'tat_kleingedrucktes', 1),
 
   // ── Sammeln ──
   erfolg('ganzes_set', 'Sammeln', '🧩', 'Komplett', 'Ein Held trägt alle drei Teile eines Dungeon-Sets.', 'ganze_sets', 1),

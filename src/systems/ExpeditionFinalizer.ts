@@ -16,7 +16,8 @@ import { ExpeditionSystem } from './ExpeditionSystem';
 import { GuildRankSystem } from './GuildRankSystem';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { BestiariumSystem } from './BestiariumSystem';
-import { erfolgName, erfolgePruefen } from './AchievementSystem';
+import { erfolgBilanzZeile, erfolgePruefen } from './AchievementSystem';
+import { gipfelTatenZaehlen } from './GipfelTaten';
 import { awardXP } from './HeroProgression';
 import { wegBilanzDazu } from './Spezialisierung';
 import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
@@ -133,7 +134,8 @@ export function finalizeExpeditionProgress(
   // ── Erfolge zuletzt, damit Rang, Monsterbuch, Kette und Trophäen schon mitzählen. Ohne Hinweis in
   //    der Kopfzeile: Die Bilanz nennt sie (main.ts), und der Tageswechsel findet sie nicht noch einmal ──
   if (rangliste.platzNachher === 1) stats.gipfel_spitze = 1;
-  const newAchievements = erfolgePruefen(state, { hinweis: false }).map(erfolgName);
+  gipfelTatenZaehlen(stats, run);
+  const newAchievements = erfolgePruefen(state, { hinweis: false }).map(erfolgBilanzZeile);
 
   return { entry, xp, rankUp, newClasses, newAchievements, rangliste, auftraege, neueTrophaee };
 }
