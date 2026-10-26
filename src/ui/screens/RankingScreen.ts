@@ -11,6 +11,7 @@ import { WochenErgebnis } from '../../models/RanglisteStand';
 import { ROUTE_DEFS } from '../../data/routes';
 import { ENEMY_DEFS } from '../../data/enemies';
 import { RIVALEN } from '../../data/rivalen';
+import { drohungSatz } from '../../data/rivalenStimmen';
 import { setFuerRoute, setVonItem } from '../../data/dungeonSets';
 import { imDungeon } from '../../data/dungeonNamen';
 import { bezwungeneDungeons } from '../../systems/Bezwungen';
@@ -145,9 +146,11 @@ function gipfelHtml(state: GameState, jetzt: number, gipfel: GildenStand[]): str
   }
 
   const bedrohung = naechsteBedrohung(state, jetzt);
+  // Der Satz der Gilde nur, wenn sie schon nach der nächsten Expedition vorbeizieht
+  const satz = bedrohung ? drohungSatz(bedrohung.gilde.id, bedrohung.runden) : null;
   const warnung = bedrohung
     ? `<p class="rl-warnung">⚠️ ${gildeHtml(bedrohung.gilde)} ${verb(bedrohung.gilde, 'zieht', 'ziehen')} ${inExpeditionen(bedrohung.runden)}
-        an dir vorbei (mit einem Sieg ${escapeHtml(imDungeon(bedrohung.routeId))}), wenn du bis dahin nicht weiter kletterst.</p>`
+        an dir vorbei (mit einem Sieg ${escapeHtml(imDungeon(bedrohung.routeId))}), wenn du bis dahin nicht weiter kletterst.${satz ? `<br><i>«${escapeHtml(satz)}»</i>` : ''}</p>`
     : '';
 
   return `
