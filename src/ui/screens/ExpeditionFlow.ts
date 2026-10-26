@@ -19,7 +19,8 @@ import {
 } from '../../systems/Geschichten';
 import { navigateTo } from '../ScreenRouter';
 import { CombatScreen } from './CombatScreen';
-import { initExpeditionsScreen } from './ExpeditionsScreen';
+import { gewaehlterHaertegrad, initExpeditionsScreen } from './ExpeditionsScreen';
+import { haertegradBilanz, merkeHaertegrad } from '../../systems/Haertegrade';
 import { ranglistenZeilen } from '../components/RanglistenBilanzAnzeige';
 import { auftragsZeilen } from '../components/AuftragsBilanzAnzeige';
 import { escapeAttr, truhenHinweise } from '../components/SchmiedeAnzeige';
@@ -80,7 +81,7 @@ function aufbrechen(routeId: string, heroIds: number[], provisionMap: Record<str
     }
   }
 
-  const run = expeditionSystem.startExpedition(state, routeId, heroIds, 'normal', null, false, consumables);
+  const run = expeditionSystem.startExpedition(state, routeId, heroIds, gewaehlterHaertegrad(state, routeId), null, false, consumables);
   if (!run) {
     console.error('Failed to start expedition');
     return;
@@ -264,6 +265,7 @@ function finishExpedition(): void {
   // (before returning provisions: leftover provisions count towards the score)
   const progress = finalizeExpeditionProgress(state, run, expeditionSystem);
   const { entry } = progress;
+  const haerte = haertegradBilanz(run, merkeHaertegrad(state, run));
 
   // Return unused provisions to stock (gifted ones stay with the guild)
   expeditionSystem.returnProvisions(state, run);
@@ -288,7 +290,7 @@ function finishExpedition(): void {
     speichern();
     console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
 
-    showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), () => {
+    showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), haerte, () => {
       // Reset expedition screen state and navigate back
       initExpeditionsScreen(state);
       navigateTo('expeditions');
@@ -307,7 +309,7 @@ function finishExpedition(): void {
  * Result dialog after the chest: score, hero XP, everything newly unlocked, what the Schmiede can
  * now do (schmiede: «Rudelreisser auf +2») and the chronicle of the story.
  */
-function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], onClose: () => void): void {
+function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], haerte: string | null, onClose: () => void): void {
   const { entry, xp, rankUp, newClasses, newAchievements } = progress;
   const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
   const line = (text: string, color = '#e5e7eb'): string =>
@@ -332,6 +334,7 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
   for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
   for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
   if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
+  if (haerte) body += line(haerte, '#fca5a5');
 
   const chronik = geschichte ? chronikHtml(geschichte) : '';
   showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [
