@@ -17,6 +17,8 @@ import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
 import { zeigeKriegsrat } from '../components/KriegsratFenster';
+import { haertegradMarke, haertegradWahlHtml } from '../components/HaertegradAnzeige';
+import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 
 // ── Module state ──
 
@@ -24,6 +26,13 @@ let gameState: GameState;
 let selectedRouteId: string | null = null;
 let selectedHeroes: GuildFighter[] = [];
 let provisions: Record<string, number> = {};
+/** Gewählter Härtegrad je Dungeon; bleibt bis zum Neu-Laden der Seite (initExpeditionsScreen setzt ihn nicht zurück) */
+const haertegradWahl: Record<string, Haertegrad> = {};
+
+/** Der gewählte Härtegrad, Normal solange der Dungeon nicht bezwungen ist */
+export function gewaehlterHaertegrad(state: GameState, routeId: string): Haertegrad {
+  return haertegradWaehlbar(state, routeId) ? haertegradWahl[routeId] ?? 'normal' : 'normal';
+}
 
 // ── Helpers ──
 
@@ -118,6 +127,7 @@ function buildExpeditionListHTML(): string {
       : `<span class="exp-rew">Belohnung: ${routeRewards(route)}</span>`
         + (set ? `<span class="exp-set">${setKurzinfo(gameState, set)}</span>` : '')
         + `<span class="exp-mat">${materialZeile(route.id)}</span>`
+        + haertegradMarke(gameState, route.id)
         + (auftraege.length > 0 ? `<span class="exp-auftrag" title="${escapeAttr(auftraege.join(' · '))}">📜 ${auftraege.join(' · ')}</span>` : '');
     return `
       <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
@@ -278,6 +288,7 @@ function buildTeamHTML(): string {
   return `
     ${renderHeader(gameState, 'expeditions', routeName)}
     ${routeInfoHTML(recLevel, route?.besonderheit, route ? setFuerRoute(route.id) : undefined, route ? routenGeschichteHtml(gameState, route.id) : '')}
+    ${route && haertegradWaehlbar(gameState, route.id) ? haertegradWahlHtml(gameState, route.id, gewaehlterHaertegrad(gameState, route.id)) : ''}
     <div class="team-wrap">
       <div class="team-left">
         <div class="lbl" style="margin-bottom:8px">Dein Team</div>
@@ -355,6 +366,15 @@ function bindTeamEvents(el: HTMLElement): void {
       } else if (action === 'dec' && (provisions[itemId] ?? 0) > 0) {
         provisions[itemId] = (provisions[itemId] ?? 0) - 1;
       }
+      refreshTeamScreen();
+      return;
+    }
+
+    // Härtegrad wählen (nur in bezwungenen Dungeons sichtbar)
+    const haerte = target.closest<HTMLElement>('[data-haertegrad]');
+    if (haerte) {
+      const grad = HAERTEGRADE.find(g => g === haerte.dataset.haertegrad);
+      if (grad && selectedRouteId) haertegradWahl[selectedRouteId] = grad;
       refreshTeamScreen();
       return;
     }

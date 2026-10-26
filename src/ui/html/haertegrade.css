@@ -1,0 +1,25 @@
+/* ─── Magic City – Härtegrad-Wahl im Team-Bildschirm und Marke der Routenkarte (HaertegradAnzeige.ts) ─── */
+
+/* Unter dem Band .exp-info, über .team-wrap */
+.haerte { margin: 0 22px 14px; }
+.haerte-knoepfe { display: flex; gap: 8px; }
+.haerte-knopf {
+  flex: 1; min-width: 0; min-height: 44px; padding: 6px 10px;
+  background: var(--s3); border: 1px solid var(--bdr); border-radius: 4px; color: var(--mut);
+  font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1px; cursor: pointer; transition: .15s;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.haerte-knopf:hover { border-color: var(--gd); color: var(--txt); }
+.haerte-knopf.aktiv { border-color: var(--gold); color: var(--gl); background: rgba(110, 87, 16, .35); }
+.haerte-knopf.aktiv[data-haertegrad="nightmare"] { border-color: #dc2626; color: #fca5a5; background: rgba(220, 38, 38, .18); }
+.haerte-text { margin-top: 8px; font-size: 0.8rem; color: var(--txt); line-height: 1.4; }
+.haerte-hinweis { margin-top: 4px; color: var(--mut); }
+
+/* Routenkarte: klein und rot im Fuss */
+.exp-haerte { font-size: 0.7rem; color: #fca5a5; text-shadow: 0 1px 4px rgba(0,0,0,.9); margin-top: 2px; }
+
+@media (max-width: 700px) {
+  .haerte { margin: 0 12px 12px; }
+  .haerte-knoepfe { gap: 6px; }
+  .haerte-knopf { padding: 6px 4px; font-size: 0.72rem; letter-spacing: 0; }
+}
