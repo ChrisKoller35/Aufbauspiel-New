@@ -124,9 +124,8 @@ kostet 990 Mondsilber (Grundmenge 11), Sunnas Morgengabe auf +5 1080 (Grundmenge
 Der Spielstand speichert nur die Stufen (`state.schmiede.stufen`, Teil → Stufe). Ältere Spielstände
 haben das Feld nicht und laufen ohne Änderung weiter; die Speicher-Version bleibt.
 
-Schwierigkeitsgrade gibt es im Spiel noch nicht zur Wahl (Expeditionen starten auf «Normal»). Kommen sie
-dazu, bringt ein Sieg schon mehr Material, wie bei den Punkten: Schwer ×1,5, Albtraum ×2, Infernal ×3
-(`materialJeSieg`).
+Bezwungene Dungeons lassen sich auf Schwer und Albtraum wiederholen; ein Sieg bringt dann ×1,5 bzw. ×2
+Material, wie bei den Punkten (`materialJeSieg`, siehe `docs/HAERTEGRADE.md`).
 
 ## Ein neuer Dungeon
 

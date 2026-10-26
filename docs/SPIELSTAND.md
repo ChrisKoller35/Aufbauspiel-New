@@ -109,7 +109,7 @@ nichts, ändert keinen ID-Zähler und wirft nie. Ergebnis `{ ok: true, zusammenf
    Ein Feld darf fehlen (`load()` und die Systeme legen es an), aber was da ist, hat die Form, mit der das Spiel
    rechnet. Pflicht sind `buildings`, `globalStock`, `fighters` und `day`, bei jedem Gebäude `id` und `typeId`, bei
    jedem Helden `id`, `baseStats.maxHp` und `gear`. Auftragsbrett, Rangliste, Stadtweg, Geschichten, Schmiede,
-   Trophäen und am Gebäude `vonSelbst`, `tier`, `pendingCraft`, `auftraege` haben ihre innere
+   Trophäen, Härtegrade und am Gebäude `vonSelbst`, `tier`, `pendingCraft`, `auftraege` haben ihre innere
    Form. Alte Felder (Bewohner, Raster, Zufriedenheit, Ereignisse, Spezialisten, Talismane, Kriegsmaschinen-Auswahl,
    Tutorial, Kacheln) kennt das Schema nicht; stehen sie in einer Datei, werden sie weder geprüft noch gelesen.
 4. **Probe-Laden** auf dem gelesenen Stand (`SaveSystem.probeLaden`), mit derselben Logik wie beim
