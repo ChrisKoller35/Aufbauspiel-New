@@ -14,6 +14,7 @@ import { GearSystem } from './GearSystem';
 import { ProvisionSystem } from './ProvisionSystem';
 import { istGeschichtsWahl } from './Geschichten';
 import { KLUG_AB_LEBEN, amRundenlimit, gewonnen } from './Musterlauf';
+import { BeuteVorschau, HeldVorschau, neueVorschau, vorschauNachLauf, vorschauSchnitt } from './KriegsratVorschau';
 
 export interface KriegsratErgebnis {
   /** Dungeon bezwungen (Musterlauf.ts gewonnen) */
@@ -26,8 +27,16 @@ export interface KriegsratErgebnis {
   bossUeberlebt: number;
   /** Raum (Nummer ab 1), in dem die meisten nicht gewonnenen Läufe endeten, bei Gleichstand der spätere */
   gefaehrlichsterRaum: { nummer: number; gegner: string[]; laeufe: number } | null;
-  /** Ø Gold je Lauf, gerundet */
+  /** Ø Gold je Lauf mit dem Gold aus der Beute (wie die Truhe), gerundet */
   goldSchnitt: number;
+  /** Ø Gruppenleben am Ende in Prozent, gerundet; eine Niederlage zählt 0 */
+  lebenSchnitt: number;
+  /** So oft hat die Proviant-Regel in allen Läufen zusammen Proviant eingesetzt */
+  proviantEingesetzt: number;
+  /** Je Held Ø XP, Aufstiege und wie oft er fällt (KriegsratVorschau.ts) */
+  helden: HeldVorschau[];
+  /** Set-Teil, Schmiede-Material, Splitter und Ausrüstung aus der Beute (KriegsratVorschau.ts) */
+  beute: BeuteVorschau;
 }
 
 /** Unter diesem Anteil der Gruppenleben setzt der Rat heilenden Proviant ein. */
@@ -44,11 +53,12 @@ function gruppenLeben(run: ExpeditionRun): number {
 /**
  * Ein Lauf auf der Kopie, wie `spieleRoute` (Musterlauf.ts) mit «klug», dazu die Proviant-Regel:
  * vor einem Kampfraum ein heilender Vorrat, wenn die Gruppe unter halben Leben ist. Gibt nach dem Start
- * und nach jedem Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf.
+ * und nach jedem Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf und wie oft die Regel
+ * Proviant eingesetzt hat.
  */
-function* probelauf(
+export function* probelauf(
   kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>,
-): Generator<void, ExpeditionRun, void> {
+): Generator<void, { run: ExpeditionRun; eingesetzt: number }, void> {
   const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
   const consumables: string[] = [];
   for (const [itemId, qty] of Object.entries(proviant)) {
@@ -58,6 +68,7 @@ function* probelauf(
   if (!run) throw new Error(`Route ${routeId} lässt sich nicht starten`);
   // Kopie lesen und Expedition anlegen dauert beim ersten Mal nach dem Laden fast so lange wie ein Häppchen
   yield;
+  let eingesetzt = 0;
   for (let schritt = 0; schritt < 500; schritt++) {
     const step = system.nextStep(run);
     if (step === 'finish') break;
@@ -71,13 +82,24 @@ function* probelauf(
     } else {
       if (KAMPFRAEUME.includes(run.rooms[run.currentRoom].type) && gruppenLeben(run) < PROVIANT_UNTER_LEBEN) {
         const index = run.provisions.findIndex(p => p.qty > 0 && (ITEM_DEFS[p.itemId]?.healAmount ?? 0) > 0);
-        if (index >= 0) system.useProvision(kopie, index);
+        if (index >= 0) {
+          system.useProvision(kopie, index);
+          eingesetzt++;
+        }
       }
       system.processCurrentRoom(kopie);
     }
     yield;
   }
-  return run;
+  return { run, eingesetzt };
+}
+
+/** Die Kopie für Lauf `i` aus dem beim Klick kopierten Stand `basis` */
+export function kopieFuerLauf(basis: string, i: number): GameState {
+  const kopie: GameState = JSON.parse(basis);
+  kopie.activeExpedition = null;
+  kopie.rngSeed = 1000 + i * 7919;
+  return kopie;
 }
 
 /**
@@ -96,21 +118,30 @@ export function kriegsratLaeufe(
 function* probelaeufe(
   basis: string, routeId: string, heroIds: number[], proviant: Record<string, number>, anzahl: number,
 ): Generator<number, KriegsratErgebnis, void> {
-  const ergebnis: KriegsratErgebnis = { siege: 0, niederlagen: 0, bossUeberlebt: 0, gefaehrlichsterRaum: null, goldSchnitt: 0 };
+  // Der Stand beim Klick: was die Gilde besitzt und wie weit die Helden sind
+  const stand: GameState = JSON.parse(basis);
+  const vorschau = neueVorschau(stand, routeId, heroIds);
+  const ergebnis: KriegsratErgebnis = {
+    siege: 0, niederlagen: 0, bossUeberlebt: 0, gefaehrlichsterRaum: null, goldSchnitt: 0,
+    lebenSchnitt: 0, proviantEingesetzt: 0, helden: [], beute: vorschau.beute,
+  };
   const enden = new Map<number, { zahl: number; gegner: string[] }>();
   let gold = 0;
+  let leben = 0;
   for (let i = 0; i < anzahl; i++) {
-    const kopie: GameState = JSON.parse(basis);
-    kopie.activeExpedition = null;
-    kopie.rngSeed = 1000 + i * 7919;
+    const kopie = kopieFuerLauf(basis, i);
     const lauf = probelauf(kopie, routeId, heroIds, proviant);
     let schritt = lauf.next();
     while (!schritt.done) {
       yield i;
       schritt = lauf.next();
     }
-    const run = schritt.value;
-    gold += run.goldEarned;
+    const { run, eingesetzt } = schritt.value;
+    // Beute und XP wie nach einer echten Expedition, auf der Kopie
+    vorschauNachLauf(vorschau, kopie, run);
+    ergebnis.proviantEingesetzt += eingesetzt;
+    leben += run.status === 'defeat' ? 0 : gruppenLeben(run);
+    gold += run.goldEarned + (run.loot.gold ?? 0);
     if (gewonnen(run)) ergebnis.siege++;
     else {
       // Am Rundenlimit endet der Lauf im Bossraum, eine Niederlage im Raum, in dem die Gruppe fiel
@@ -137,6 +168,8 @@ function* probelaeufe(
     }
   }
   ergebnis.goldSchnitt = anzahl > 0 ? Math.round(gold / anzahl) : 0;
+  ergebnis.lebenSchnitt = anzahl > 0 ? Math.round((leben / anzahl) * 100) : 0;
+  Object.assign(ergebnis, vorschauSchnitt(vorschau, stand, anzahl));
   return ergebnis;
 }
 

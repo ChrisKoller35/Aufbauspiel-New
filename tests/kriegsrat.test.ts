@@ -1,9 +1,15 @@
 import { describe, it, expect, vi } from 'vitest';
 import { ROUTE_DEFS } from '../src/data/routes';
 import { GameState } from '../src/models/GameState';
+import { PROVISION_ITEMS } from '../src/data/items';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
-import { kriegsrat, kriegsratLaeufe } from '../src/systems/Kriegsrat';
+import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
+import { GearSystem } from '../src/systems/GearSystem';
+import { xpForNextLevel } from '../src/systems/HeroProgression';
+import { kopieFuerLauf, kriegsrat, kriegsratLaeufe, probelauf } from '../src/systems/Kriegsrat';
 import { musterStand } from '../src/systems/Musterlauf';
+import { ProvisionSystem } from '../src/systems/ProvisionSystem';
+import { materialJeSieg } from '../src/systems/Schmiede';
 import { haeppchenweise, rechneHaeppchen, rechneImHintergrund } from '../src/ui/components/KriegsratFenster';
 
 const ROUTE = Object.keys(ROUTE_DEFS)[0];
@@ -42,10 +48,10 @@ describe('Kriegsrat', () => {
   it('Drachenhort mit «gut»: genaue Zahlen, der Startwert des Spielstands zählt nicht', () => {
     const { state, ids } = musterStand('gut', 1);
     const a = kriegsrat(state, 'drachenhort', ids, {}, 20);
-    expect(a).toEqual({
+    expect(a).toMatchObject({
       siege: 13, niederlagen: 7, bossUeberlebt: 0,
       gefaehrlichsterRaum: { nummer: 15, gegner: ['Ignarax, der Uralte'], laeufe: 7 },
-      goldSchnitt: 519,
+      goldSchnitt: 578,
     });
     state.rngSeed = 424242;
     expect(kriegsrat(state, 'drachenhort', ids, {}, 20)).toEqual(a);
@@ -53,10 +59,10 @@ describe('Kriegsrat', () => {
 
   it('Boss überlebt: Nach dem Rundenlimit zählt der Lauf weder als Sieg noch als Niederlage', () => {
     const { state, ids } = musterStand('stark', 1, 'sterne5');
-    expect(kriegsrat(state, 'sternenschlund', ids, {}, 20)).toEqual({
+    expect(kriegsrat(state, 'sternenschlund', ids, {}, 20)).toMatchObject({
       siege: 12, niederlagen: 6, bossUeberlebt: 2,
       gefaehrlichsterRaum: { nummer: 16, gegner: ['Nyxar, der Sternenfresser'], laeufe: 8 },
-      goldSchnitt: 687,
+      goldSchnitt: 732,
     });
   });
 
@@ -127,6 +133,55 @@ describe('Kriegsrat', () => {
     let schritt = laeufe.next();
     while (!schritt.done) schritt = laeufe.next();
     expect(schritt.value).toEqual(vorher);
+  });
+
+  it('XP, Aufstieg und Gold wie nach der echten Expedition', () => {
+    for (const routeId of ['forest_short', 'himmelsarchiv']) {
+      const { state, ids, proviant } = stand();
+      // Brom fehlen 5 XP bis zum Aufstieg
+      state.fighters[0].xp += xpForNextLevel(state.fighters[0].level) - 5;
+      const vorher = JSON.stringify(state);
+      const r = kriegsrat(state, routeId, ids, proviant, 1);
+      expect(JSON.stringify(state)).toBe(vorher);
+
+      const kopie = kopieFuerLauf(vorher, 0);
+      const lauf = probelauf(kopie, routeId, ids, proviant);
+      let s = lauf.next();
+      while (!s.done) s = lauf.next();
+      const { run } = s.value;
+      expect(run.status, routeId).toBe(routeId === 'forest_short' ? 'victory' : 'defeat');
+      const gold = run.goldEarned + (run.loot.gold ?? 0);
+      const bilanz = finalizeExpeditionProgress(kopie, run, new ExpeditionSystem(new GearSystem(), new ProvisionSystem()));
+      expect(r.helden.map(h => h.id)).toEqual(bilanz.xp.map(x => x.id));
+      for (const x of bilanz.xp) {
+        const held = r.helden.find(h => h.id === x.id)!;
+        expect(held.xpSchnitt, `${routeId} ${x.name}`).toBe(x.xp);
+        expect(held.besteStufe, `${routeId} ${x.name}`).toBe(x.level);
+        expect(held.aufstiege === 1, `${routeId} ${x.name}`).toBe(x.levelUps > 0);
+      }
+      expect(r.helden[0].aufstiege, routeId).toBe(1);
+      expect(r.goldSchnitt, routeId).toBe(gold);
+    }
+  });
+
+  it('Beute wie in der Truhe', () => {
+    const { state, ids, proviant } = stand();
+    const r = kriegsrat(state, 'forest_short', ids, proviant, 5);
+    expect(r.siege).toBe(5);
+    // Ohne Teil des Sets ist das erste bei jedem Sieg sicher (der Rat legt nichts ins Lager)
+    expect(r.beute.setLaeufe).toBe(5);
+    expect(r.beute.material?.schnitt).toBe(materialJeSieg('forest_short')!.menge);
+    expect(r.beute.ausruestung.length).toBeLessThanOrEqual(3);
+  });
+
+  it('Proviant wirkt', () => {
+    const { state, ids } = musterStand('stark', 1, 'sterne3');
+    for (const id of PROVISION_ITEMS) state.globalStock[id] = 0;
+    const nurGeschenk = kriegsrat(state, 'sternenschlund', ids, {}, 20);
+    state.globalStock.healing_potion = 10;
+    const mitTraenken = kriegsrat(state, 'sternenschlund', ids, { healing_potion: 10 }, 20);
+    expect(mitTraenken.proviantEingesetzt).toBeGreaterThan(nurGeschenk.proviantEingesetzt);
+    expect(mitTraenken.lebenSchnitt).toBeGreaterThanOrEqual(nurGeschenk.lebenSchnitt);
   });
 });
 
