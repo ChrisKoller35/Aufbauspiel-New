@@ -158,7 +158,7 @@ export function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
   const boss = r.bossUeberlebt > 0;
   // «17-mal»: nach dem Strich ein Wortverbinder (U+2060), sonst bricht die Zeile bei 330–350 px nach «17-» um (wie stueck im Fundbuch)
   return `
-    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe: ${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
+    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe:&nbsp;${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
     ${balken('sieg', 'Siege', r.siege, anzahl)}
     ${balken('niederlage', 'Niederlagen', r.niederlagen, anzahl)}
     ${boss ? balken('boss', 'Boss überlebt', r.bossUeberlebt, anzahl) : ''}

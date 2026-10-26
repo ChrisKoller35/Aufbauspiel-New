@@ -26,7 +26,7 @@ Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge 
 - Entscheidungen unterwegs (Geschichte und Fundstätten; am Rastplatz rastet der Rat immer): Das Fenster zählt,
   wie oft er das Wagnis nahm und wie oft die sichere Wahl, denn Beute und XP hängen daran. Bei der Geschichte
   bringt das Wagnis immer Gold, Gegenstände oder ein Set-Teil (oft mit stärkeren Gegnern), die sichere Option XP,
-  Heilung oder schwächere Gegner. Spukwald mit `?probe` (Brom, Grimm, Lia, Sina): 80-mal das Wagnis, Ø 25 XP je
+  Heilung oder schwächere Gegner. Geisterwald mit `?probe` (Brom, Grimm, Lia, Sina): 80-mal das Wagnis, Ø 25 XP je
   Held; mit der sicheren Option bei jeder Entscheidung der Geschichte wären es Ø 120.
 - Sieg heisst bezwungen (`gewonnen`). «Boss überlebt» (`amRundenlimit`): Nach 20 Kampfrunden steht der
   Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, der Boss öffnet aber keinen neuen Dungeon,

@@ -93,9 +93,9 @@ describe('Kriegsrat: Proviant in einer knappen Lage', () => {
 describe('Kriegsrat-Fenster: Zahlen bleiben bei ihren Wörtern', () => {
   it('vor einer Zahl nie ein gewöhnliches Leerzeichen, ausser nach «·»', () => {
     const html = ergebnisHtml(vollesErgebnis({ wagnis: 38, sicher: 2 }), 20);
-    const texte = [...absaetze(html, 'kr-info'), ...absaetze(html, 'kr-hinweis')];
-    // Jede Zeile kommt vor (Boss, Raum, Gold, Leben, Entscheidungen, Set, Material, Ausrüstung, drei Helden, Hinweis)
-    expect(texte).toHaveLength(12);
+    const texte = [...absaetze(html, 'kr-kopf'), ...absaetze(html, 'kr-info'), ...absaetze(html, 'kr-hinweis')];
+    // Jede Zeile: Kopf, Boss, Raum, Gold, Leben, Entscheidungen, Set, Material, Ausrüstung, drei Helden, Hinweis
+    expect(texte).toHaveLength(13);
     for (const text of texte) expect(text, text).not.toMatch(/(^|[^·]) \d/);
     // Wo die Prüfliste es sah: «Langbogen (neu)» und «16 von 20» auf zwei Zeilen
     expect(html).toContain('Langbogen&nbsp;(neu)&nbsp;16&nbsp;von&nbsp;20');
