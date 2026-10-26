@@ -1,8 +1,18 @@
 # Kriegsrat – Probeläufe vor dem Aufbruch
 
 Im Team-Bildschirm rechnet «🎲 Kriegsrat» die gewählte Expedition 20-mal durch und zeigt Siege,
-Niederlagen, «Boss überlebt», den gefährlichsten Raum und Ø Gold (`src/systems/Kriegsrat.ts`, Fenster in
-`src/ui/components/KriegsratFenster.ts`).
+Niederlagen, «Boss überlebt», den gefährlichsten Raum, Ø Gold, Ø Leben am Ende, Beute und Helden
+(`src/systems/Kriegsrat.ts`, `src/systems/KriegsratVorschau.ts`, Fenster in `src/ui/components/KriegsratFenster.ts`).
+
+## Beute und Helden
+Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge wie `finishExpedition`:
+`setBeute`, `schmiedeBeute`, dann die XP wie `finalizeExpeditionProgress` (`awardXP` auf den Helden der Kopie).
+- **Beute:** in wie vielen Läufen ein Set-Teil fällt (und wie viele Teile die Gilde schon hat), Ø Schmiede-Material
+  und Kristallsplitter, die drei wichtigsten Ausrüstungen ohne Set-Teile. «(neu)»: Die Gilde hat sie weder im Lager
+  noch an einem Helden; diese stehen zuerst, dann die in den meisten Läufen.
+- **Helden:** Ø XP, in wie vielen Läufen der Held aufsteigt (sonst wie viel XP fehlen, auf Stufe 15 Überschuss
+  fürs Lehrbuch) und wie oft er fällt. Läufe mit «Boss überlebt» bringen wie im Spiel Beute und +10 XP.
+- Ø Gold zählt wie die Truhe das Gold aus der Beute mit (Drachenhort «gut»: 578 statt 519).
 
 ## Wie gerechnet wird
 - Jeder Lauf auf einer eigenen Kopie des Spielstands (einmal `JSON.stringify` beim Klick, je Lauf `JSON.parse`),
@@ -28,11 +38,14 @@ Stärkungs-Tränke (Krafttrank, Schnelligkeitstrank …), Manatrank und Fähigke
 Kampf selbst auslöst. Im Drachenhort («gut» mit Heldenwegen, 20 Läufe: 13 Siege, 7 Niederlagen, alle im
 Bosskampf) setzt der Rat nur einmal Proviant ein; mit 5 Brot + 5 Heiltränken mehr bleibt es gleich. Ohne
 Heldenwege (`musterStand('gut', 1, undefined, false)`, wie das Team im Probespiel `?probe`) sind es
-1 Sieg und 19 Niederlagen.
+1 Sieg und 19 Niederlagen. Sternenschlund («stark», `sterne3`, sonst kein Proviant im Lager): nur das Geschenk
+39-mal eingesetzt, mit 10 Heiltränken 48-mal, Ø Leben am Ende beide Male 0 %, kein Sieg. Proviant ändert in den
+gemessenen Lagen am Ausgang nichts.
 
 ## Zeit
 Node 22, je 20 Läufe: mit «gut» ohne Sets höchstens 86 ms (Festung), mit «stark» und `pfand5` höchstens
-53 ms (Morgentor: 8 Siege, 12 Niederlagen, gefährlichster Raum 16). Das Fenster rechnet in Häppchen
+53 ms (Morgentor: 8 Siege, 12 Niederlagen, gefährlichster Raum 16). Beute und Helden kosten je 20 Läufe
+0,6–1,1 ms dazu (Node 22.23, Morgentor, Festung, Drachenhort). Das Fenster rechnet in Häppchen
 (`rechneImHintergrund`, `haeppchenweise`, `rechneHaeppchen`): Schritt für Schritt (`kriegsratLaeufe`: der Start
 eines Laufs, dann ein Raum, eine Wahl, ein Kontrollpunkt oder ein Händler je Schritt), bis 30 ms um sind; der
 letzte Schritt rechnet noch fertig, ein Häppchen dauert also 30 ms plus einen Schritt. Das erste Häppchen rechnet
