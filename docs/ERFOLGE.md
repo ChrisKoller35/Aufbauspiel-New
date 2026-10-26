@@ -150,7 +150,7 @@ ist sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
 
 ## Liste
 
-37 Erfolge. Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
+45 Erfolge. Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
 Die IDs stehen in Spielständen (`state.achievements`) und dürfen sich nicht ändern. Unbekannte IDs (wie die
 gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `bauplan_1`) überspringt das Spiel.
 
@@ -187,6 +187,14 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Dungeons | 💰 | Goldhamster | 500 Gold auf Expeditionen erbeutet | `total_gold_earned` ≥ 500 | `gold_hoarder` |
 | Dungeons | 💠 | Hundertfacher Tod | 100 Gegner besiegt | `total_enemies_killed` ≥ 100 | `kill_100` |
 | Dungeons | 🗡️ | Tausendfacher Tod (neu) | 1000 Gegner besiegt | `total_enemies_killed` ≥ 1000 | `kill_1000` |
+| Gipfel-Taten | 🪙 | Ehrlicher Finder (neu) | Drachenhort: dreimal das Risiko, Ignarax besiegt | `tat_hort` ≥ 1 | `gipfel_hort` |
+| Gipfel-Taten | 📕 | Ohne Leseausweis (neu) | Himmelsarchiv: dreimal das Risiko, Oberarchivar besiegt | `tat_archiv` ≥ 1 | `gipfel_archiv` |
+| Gipfel-Taten | ☄️ | Nicht anfassen (neu) | Sternenschmiede: dreimal das Risiko, Korrund besiegt | `tat_esse` ≥ 1 | `gipfel_esse` |
+| Gipfel-Taten | ⛏️ | Sternenmetzger (neu) | Sternenschlund: dreimal das Risiko, Nyxar besiegt | `tat_schlund` ≥ 1 | `gipfel_schlund` |
+| Gipfel-Taten | ✍️ | Pfandleiher des Jahres (neu) | Mondhof: dreimal das Risiko, Argentis besiegt | `tat_pfand` ≥ 1 | `gipfel_pfand` |
+| Gipfel-Taten | 🕛 | Zeitumstellung (neu) | Morgentor: dreimal das Risiko, Sunna besiegt | `tat_uhr` ≥ 1 | `gipfel_uhr` |
+| Gipfel-Taten | 🐲 | Hat alles (neu) | alle sechs Gipfel-Taten | `tat_hort` + … + `tat_uhr` ≥ 6 | `gipfel_alle` |
+| Gipfel-Taten | 🧾 | Kleingedrucktes (neu) | Mondhof: dreimal das Risiko, Argentis nicht besiegt | `tat_kleingedrucktes` ≥ 1 | `gipfel_kleingedrucktes` |
 | Sammeln | 🧩 | Komplett (neu) | ein Held trägt ein ganzes Dungeon-Set (3 Teile) | `ganze_sets` ≥ 1 | `ganzes_set` |
 | Sammeln | 🎒 | Sammler (neu) | Helden tragen 3 verschiedene ganze Sets | `ganze_sets` ≥ 3 | `ganze_sets_3` |
 | Sammeln | ⚒️ | Am Amboss (neu) | ein Set-Teil in der Schmiede verbessert | `schmiede_hoechste_stufe` ≥ 1 | `schmiede_1` |
@@ -197,6 +205,20 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 Die Zahlen 16 (Sockel), 24 und 48 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
 Boss-Dungeon der Karte (`SAAL_SOCKEL`), drei Sterne je Sockel, die Hälfte davon für «Glanz des
 Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
+
+## Gipfel-Taten
+
+- **Regel:** In den sechs Dungeons über dem Vulkankern in allen drei festen Wahl-Räumen die erste Option (das
+  Risiko) nehmen und den Boss besiegen (`dungeonBezwungen`). Ein Sieg am Rundenlimit zählt nicht, der Boss lebt.
+- **Aus der Chronik gezählt** (`src/systems/GipfelTaten.ts`, am Ende in `finalizeExpeditionProgress`): Die Wahl
+  steht nur dort, als Satz `nachklang.a` oder `nachklang.b`; ein eigenes Feld im Lauf gibt es nicht.
+- Jede Tat setzt ihren Zähler auf 1, nie höher: Sechsmal dieselbe Tat bringt nicht «Hat alles».
+- **Kleingedrucktes:** Im Mondhof alle drei Pfandzettel unterschrieben, Argentis lebt (Rückzug am letzten
+  Kontrollpunkt, Niederlage oder Rundenlimit).
+- Die Bilanz zeigt bei diesen acht Erfolgen Name und Satz («Name – Beschreibung», `erfolgBilanzZeile`), die
+  Kopfzeile nur den Namen.
+- Gezählt wird erst ab jetzt; frühere Läufe holt kein Spielstand nach.
+- Wie schwer das ist: Spielweise «gierig» in `docs/NEUE-DUNGEONS.md`.
 
 ## Geändert gegenüber früher
 
@@ -220,7 +242,9 @@ Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
 
 `tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (beim Händler kaufen, Bauen,
 Ausbauen, Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
-zu setzen: Eine starke Gilde schafft alle 37 Erfolge in unter 60 Tagen und unter 400 Expeditionen. Dazu hat
+zu setzen: Eine starke Gilde schafft alle 45 Erfolge in 38 Tagen und 229 Expeditionen (Grenze im Test: unter 60
+Tagen und unter 400 Expeditionen). In Wahl-Räumen nimmt sie immer das Risiko, für «Kleingedrucktes» kehrt sie einmal
+im Mondhof am letzten Kontrollpunkt um. Dazu hat
 jeder Zähler eine Obergrenze aus den Daten, kein Ziel liegt darüber, und ein neuer Zähler braucht
 dort eine Zeile.
 
@@ -229,6 +253,7 @@ dort eine Zeile.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
 - Sets: 29 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
 - Trophäensaal: 16 Sockel mit je 3 Sternen.
+- Gipfel-Taten: je Tat höchstens 1.
 - Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg
