@@ -1,6 +1,8 @@
 // Team-Bildschirm: Der gewählte Härtegrad ist beim Start zu sehen (Knöpfe oben im Bild, Grad auf dem Start-Knopf),
 // mit einem kleinen Ersatz für Fenster und Seite (die Tests laufen ohne Browser). Dass der Browser die Scroll-Lage
 // eines versteckten Bildschirms wiederherstellt, prüft nur Playwright (Prüfliste im PR).
+// Hier ruft der Test das Neuzeichnen selbst auf; dass main.ts es bei jedem Wechsel auf den Bildschirm tut, prüft
+// tests/neuzeichnen.test.ts.
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
 import { createNewGameState } from '../src/models/GameState';
 import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
@@ -56,7 +58,7 @@ function waehleGrad(team: Bildschirm, grad: string): void {
 }
 
 describe('Team-Bildschirm: Härtegrad beim Start', () => {
-  test('Name und ✓ in eigenen Spans: Das ✓ verschwindet bei 320 px nicht im «…»', () => {
+  test('Name und ✓ in eigenen Spans (nur das Markup; ob das ✓ bei 320 px sichtbar bleibt, misst Playwright)', () => {
     const state = stand();
     state.haertegrade = { ...state.haertegrade, himmelsarchiv: 'nightmare' };
     const html = haertegradWahlHtml(state, 'himmelsarchiv', 'nightmare');

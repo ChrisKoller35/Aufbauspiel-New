@@ -239,6 +239,19 @@ function showNextCombatRoom(): void {
   }
 }
 
+/**
+ * Legt die Beute der Truhe ins Lager (`lager`, im Spiel state.globalStock): jeden Eintrag von `loot` mit seiner
+ * Menge, dazu `goldEarned` (Gold der Kämpfe, Geschichte, Fundstellen) zum Gold. So kommt genau ins Lager, was die
+ * Karten der Truhe zeigen (truhenEintraege: alles Gold in einer Karte); nachgeprüft mit echten Läufen in
+ * tests/truhe.test.ts.
+ */
+export function beuteEinlagern(lager: Record<string, number>, loot: Record<string, number>, goldEarned: number): void {
+  for (const [itemId, qty] of Object.entries(loot)) {
+    lager[itemId] = (lager[itemId] ?? 0) + qty;
+  }
+  lager['gold'] = (lager['gold'] ?? 0) + goldEarned;
+}
+
 function finishExpedition(): void {
   const run = state.activeExpedition;
   if (!run) return;
@@ -279,10 +292,7 @@ function finishExpedition(): void {
   // Apply loot and finish (with or without chest reveal)
   const applyLootAndFinish = (): void => {
     // Add loot to global stock
-    for (const [itemId, qty] of Object.entries(loot)) {
-      state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
-    }
-    state.globalStock['gold'] = (state.globalStock['gold'] ?? 0) + goldEarned;
+    beuteEinlagern(state.globalStock, loot, goldEarned);
     // Erfolge, die erst mit der Beute im Lager zählen (ganzes Set: Stern im Trophäensaal), auch in die Bilanz
     progress.newAchievements.push(...erfolgePruefen(state, { hinweis: false }).map(erfolgName));
 
