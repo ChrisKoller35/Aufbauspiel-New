@@ -33,6 +33,12 @@ export interface KriegsratErgebnis {
   lebenSchnitt: number;
   /** So oft hat die Proviant-Regel in allen Läufen zusammen Proviant eingesetzt */
   proviantEingesetzt: number;
+  /**
+   * Entscheidungen unterwegs in allen Läufen zusammen, ohne Rastplätze (dort rastet der Rat immer): so oft nahm er das
+   * Wagnis (bei der Geschichte die mutige Option, sonst Option A wie «gierig» im Musterlauf), so oft die sichere Wahl.
+   * Beute und XP hängen daran.
+   */
+  wahlen: { wagnis: number; sicher: number };
   /** Je Held Ø XP, Aufstiege und wie oft er fällt (KriegsratVorschau.ts) */
   helden: HeldVorschau[];
   /** Set-Teil, Schmiede-Material, Splitter und Ausrüstung aus der Beute (KriegsratVorschau.ts) */
@@ -53,12 +59,12 @@ function gruppenLeben(run: ExpeditionRun): number {
 /**
  * Ein Lauf auf der Kopie, wie `spieleRoute` (Musterlauf.ts) mit «klug», dazu die Proviant-Regel:
  * vor einem Kampfraum ein heilender Vorrat, wenn die Gruppe unter halben Leben ist. Gibt nach dem Start
- * und nach jedem Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf und wie oft die Regel
- * Proviant eingesetzt hat.
+ * und nach jedem Schritt (Raum, Wahl, Kontrollpunkt, Händler) ab, am Ende den Lauf, wie oft die Regel
+ * Proviant eingesetzt hat und wie der Rat unterwegs entschieden hat.
  */
 export function* probelauf(
   kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>,
-): Generator<void, { run: ExpeditionRun; eingesetzt: number }, void> {
+): Generator<void, { run: ExpeditionRun; eingesetzt: number; wahlen: KriegsratErgebnis['wahlen'] }, void> {
   const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
   const consumables: string[] = [];
   for (const [itemId, qty] of Object.entries(proviant)) {
@@ -69,6 +75,7 @@ export function* probelauf(
   // Kopie lesen und Expedition anlegen dauert beim ersten Mal nach dem Laden fast so lange wie ein Häppchen
   yield;
   let eingesetzt = 0;
+  const wahlen = { wagnis: 0, sicher: 0 };
   for (let schritt = 0; schritt < 500; schritt++) {
     const step = system.nextStep(run);
     if (step === 'finish') break;
@@ -79,6 +86,8 @@ export function* probelauf(
       const risiko = gruppenLeben(run) >= KLUG_AB_LEBEN;
       if (istGeschichtsWahl(run.pendingChoice)) system.resolveChoice(run, risiko ? 1 : 0);
       else system.resolveChoice(run, raum.type === 'rest' || risiko ? 0 : 1);
+      // Am Rastplatz rastet der Rat immer: keine Entscheidung (die Geschichte fragt dort nie, RAEUME_MIT_ENTSCHEIDUNG)
+      if (raum.type !== 'rest') wahlen[risiko ? 'wagnis' : 'sicher']++;
     } else {
       if (KAMPFRAEUME.includes(run.rooms[run.currentRoom].type) && gruppenLeben(run) < PROVIANT_UNTER_LEBEN) {
         const index = run.provisions.findIndex(p => p.qty > 0 && (ITEM_DEFS[p.itemId]?.healAmount ?? 0) > 0);
@@ -91,7 +100,7 @@ export function* probelauf(
     }
     yield;
   }
-  return { run, eingesetzt };
+  return { run, eingesetzt, wahlen };
 }
 
 /** Die Kopie für Lauf `i` aus dem beim Klick kopierten Stand `basis` */
@@ -123,7 +132,7 @@ function* probelaeufe(
   const vorschau = neueVorschau(stand, routeId, heroIds);
   const ergebnis: KriegsratErgebnis = {
     siege: 0, niederlagen: 0, bossUeberlebt: 0, gefaehrlichsterRaum: null, goldSchnitt: 0,
-    lebenSchnitt: 0, proviantEingesetzt: 0, helden: [], beute: vorschau.beute,
+    lebenSchnitt: 0, proviantEingesetzt: 0, wahlen: { wagnis: 0, sicher: 0 }, helden: [], beute: vorschau.beute,
   };
   const enden = new Map<number, { zahl: number; gegner: string[] }>();
   let gold = 0;
@@ -136,10 +145,12 @@ function* probelaeufe(
       yield i;
       schritt = lauf.next();
     }
-    const { run, eingesetzt } = schritt.value;
+    const { run, eingesetzt, wahlen } = schritt.value;
     // Beute und XP wie nach einer echten Expedition, auf der Kopie
     vorschauNachLauf(vorschau, kopie, run);
     ergebnis.proviantEingesetzt += eingesetzt;
+    ergebnis.wahlen.wagnis += wahlen.wagnis;
+    ergebnis.wahlen.sicher += wahlen.sicher;
     leben += run.status === 'defeat' ? 0 : gruppenLeben(run);
     gold += run.goldEarned + (run.loot.gold ?? 0);
     if (gewonnen(run)) ergebnis.siege++;

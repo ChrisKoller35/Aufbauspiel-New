@@ -18,10 +18,11 @@
    verschwinden; gekürzt wird erst, wenn der Name allein nicht passt */
 .haerte-name { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .haerte-haken { flex-shrink: 0; margin-left: .25em; }
-/* Start-Knopf (ExpeditionsScreen.ts): der gewählte Grad als zweite Zeile, wenn nicht Normal */
-.btn-go-haerte { display: block; margin-top: 3px; font-size: 0.72rem; letter-spacing: 1px; }
+/* Start-Knopf (ExpeditionsScreen.ts): der gewählte Grad als zweite Zeile, wenn nicht Normal. Kleine Schrift auf dem
+   goldbraunen Verlauf braucht mindestens 4,5:1: heller als «EXPEDITION STARTEN» (5,2 bzw. 4,7:1 statt 3,6 bzw. 3,3:1) */
+.btn-go-haerte { display: block; margin-top: 3px; font-size: 0.72rem; letter-spacing: 1px; color: #ffe9a8; }
 .btn-go-nightmare { border-color: #dc2626; }
-.btn-go-nightmare .btn-go-haerte { color: #fca5a5; }
+.btn-go-nightmare .btn-go-haerte { color: #ffd6d6; }
 
 /* Routenkarte: klein und rot im Fuss */
 .exp-haerte { font-size: 0.7rem; color: #fca5a5; text-shadow: 0 1px 4px rgba(0,0,0,.9); margin-top: 2px; }

@@ -1,8 +1,9 @@
 # Kriegsrat – Probeläufe vor dem Aufbruch
 
 Im Team-Bildschirm rechnet «🎲 Kriegsrat» die gewählte Expedition 20-mal durch und zeigt Siege,
-Niederlagen, «Boss überlebt», den gefährlichsten Raum, Ø Gold, Ø Leben am Ende, Beute und Helden
-(`src/systems/Kriegsrat.ts`, `src/systems/KriegsratVorschau.ts`, Fenster in `src/ui/components/KriegsratFenster.ts`).
+Niederlagen, «Boss überlebt», den gefährlichsten Raum, Ø Gold, Ø Leben am Ende, die Entscheidungen unterwegs,
+Beute und Helden (`src/systems/Kriegsrat.ts`, `src/systems/KriegsratVorschau.ts`, Fenster in
+`src/ui/components/KriegsratFenster.ts`).
 
 ## Beute und Helden
 Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge wie `finishExpedition`:
@@ -22,6 +23,11 @@ Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge 
   es selbst aus dem Vorrat), dazu das Geschenk 1 Brot + 1 Heiltrank.
 - Dann die Schleife aus `spieleRoute` (Musterlauf.ts) mit der Spielweise «klug»: Kontrollpunkte immer
   weiter, Händler überspringen, Wagnis nur ab 85 % Gruppenleben. Einen Rückzug wählt der Rat nie.
+- Entscheidungen unterwegs (Geschichte und Fundstätten; am Rastplatz rastet der Rat immer): Das Fenster zählt,
+  wie oft er das Wagnis nahm und wie oft die sichere Wahl, denn Beute und XP hängen daran. Bei der Geschichte
+  bringt das Wagnis immer Gold, Gegenstände oder ein Set-Teil (oft mit stärkeren Gegnern), die sichere Option XP,
+  Heilung oder schwächere Gegner. Spukwald mit `?probe` (Brom, Grimm, Lia, Sina): 80-mal das Wagnis, Ø 25 XP je
+  Held; mit der sicheren Option bei jeder Entscheidung der Geschichte wären es Ø 120.
 - Sieg heisst bezwungen (`gewonnen`). «Boss überlebt» (`amRundenlimit`): Nach 20 Kampfrunden steht der
   Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, der Boss öffnet aber keinen neuen Dungeon,
   und es gibt keine Trophäe. Das Fenster zeigt diese Zeile nur, wenn es vorkam.
@@ -33,14 +39,15 @@ Vor jedem Kampfraum (Kampf, Boss, Befestigung: nur dort zeigt das Spiel die Kamp
 solange die Gruppe unter 50 % ihrer Leben ist, setzt der Rat den ersten Proviant mit Heilwirkung ein
 (Brot 8, Heiltrank 15 Leben je Held), höchstens einen je Raum.
 
+Was der Proviant am Ausgang ändert, je 20 Läufe: Drachenhort mit `?probe` (Brom, Grimm, Lia, Sina, ohne
+Heldenwege) ohne Auswahl 1 Sieg (17-mal eingesetzt), mit 5 Heiltränken 3 Siege (18-mal), mit 5 Brot 1 Sieg.
+Oft ändert er nichts: Drachenhort «gut» mit Heldenwegen (13 Siege, 7 Niederlagen, alle im Bosskampf) setzt ihn nur
+einmal ein, vor den Kämpfen ist die Gruppe kaum je unter halben Leben; mit 5 Brot und 5 Heiltränken mehr bleibt
+es gleich. Sternenschlund («stark», `sterne3`): nur das Geschenk 39-mal, mit 10 Heiltränken 48-mal, kein Sieg.
+
 ## Nicht eingerechnet
 Stärkungs-Tränke (Krafttrank, Schnelligkeitstrank …), Manatrank und Fähigkeiten, die der Spieler im
-Kampf selbst auslöst. Im Drachenhort («gut» mit Heldenwegen, 20 Läufe: 13 Siege, 7 Niederlagen, alle im
-Bosskampf) setzt der Rat nur einmal Proviant ein; mit 5 Brot + 5 Heiltränken mehr bleibt es gleich. Ohne
-Heldenwege (`musterStand('gut', 1, undefined, false)`, wie das Team im Probespiel `?probe`) sind es
-1 Sieg und 19 Niederlagen. Sternenschlund («stark», `sterne3`, sonst kein Proviant im Lager): nur das Geschenk
-39-mal eingesetzt, mit 10 Heiltränken 48-mal, Ø Leben am Ende beide Male 0 %, kein Sieg. Proviant ändert in den
-gemessenen Lagen am Ausgang nichts.
+Kampf selbst auslöst.
 
 ## Zeit
 Node 22, je 20 Läufe: mit «gut» ohne Sets höchstens 86 ms (Festung), mit «stark» und `pfand5` höchstens
