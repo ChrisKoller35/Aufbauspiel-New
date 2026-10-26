@@ -11,6 +11,8 @@ import '../html/kriegsrat.css';
 import { ROUTE_DEFS } from '../../data/routes';
 import { GameState } from '../../models/GameState';
 import { kriegsratLaeufe, KriegsratErgebnis } from '../../systems/Kriegsrat';
+import { BeuteVorschau, HeldVorschau } from '../../systems/KriegsratVorschau';
+import { MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from './FensterHilfen';
 import { escapeAttr } from './SchmiedeAnzeige';
 
@@ -95,6 +97,44 @@ function balken(cls: string, name: string, n: number, anzahl: number): string {
     </div>`;
 }
 
+/** «Beute»: Set-Teil, Schmiede-Material und Splitter, Ausrüstung (KriegsratVorschau.ts) */
+function beuteHtml(b: BeuteVorschau, anzahl: number): string {
+  const zeilen: string[] = [];
+  if (b.set) {
+    const wie = b.setLaeufe > 0
+      ? `in ${b.setLaeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen${b.setTeile > b.setLaeufe ? ` (zusammen ${zahlWort(b.setTeile, 'Teil', 'Teile')})` : ''}`
+      : 'in keinem Lauf';
+    zeilen.push(`<span class="rar-set">✦ Set-Teil ${b.set.zeichen} ${escapeAttr(b.set.name)}</span> (die Gilde hat ${b.set.gesammelt}&nbsp;von&nbsp;3): ${wie}`);
+  }
+  if (b.material) {
+    const splitter = b.splitterSchnitt > 0 ? `&nbsp;· Ø&nbsp;${b.splitterSchnitt}&nbsp;Kristallsplitter` : '';
+    zeilen.push(`⚒️ Schmiede-Material: Ø&nbsp;${b.material.schnitt}&nbsp;${escapeAttr(b.material.name)}${splitter} je Lauf`);
+  }
+  if (b.ausruestung.length > 0) {
+    zeilen.push(`🗡️ Ausrüstung: ${b.ausruestung.map(a => {
+      const name = a.legendaer ? `<span class="rar-legendary">${escapeAttr(a.name)}</span>` : escapeAttr(a.name);
+      return `${name}${a.neu ? '&nbsp;(neu)' : ''} ${a.laeufe}&nbsp;von&nbsp;${anzahl}`;
+    }).join('&nbsp;· ')}`);
+  }
+  return zeilen.length > 0 ? `<p class="kr-titel">Beute</p>${zeilen.map(z => `<p class="kr-info">${z}</p>`).join('')}` : '';
+}
+
+/** «Helden»: je Held Ø XP, Aufstieg oder was bis dahin fehlt, wie oft er fällt */
+function heldenHtml(helden: HeldVorschau[], anzahl: number): string {
+  if (helden.length === 0) return '';
+  const zeilen = helden.map(h => {
+    let text = `<b>${escapeAttr(h.name)}</b>&nbsp;· Stufe&nbsp;${h.stufe}: Ø&nbsp;+${h.xpSchnitt}&nbsp;XP`;
+    if (h.stufe >= MAX_HERO_LEVEL) text += ' Überschuss fürs Lehrbuch';
+    else if (h.aufstiege > 0) {
+      text += `&nbsp;· Aufstieg in&nbsp;${h.aufstiege}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen`;
+      if (h.besteStufe >= h.stufe + 2) text += ` (bis Stufe&nbsp;${h.besteStufe})`;
+    } else text += `&nbsp;· bis Stufe&nbsp;${h.stufe + 1} fehlen ${h.fehltXp}&nbsp;XP`;
+    if (h.gefallen > 0) text += `&nbsp;· fällt in&nbsp;${h.gefallen}&nbsp;von&nbsp;${anzahl}`;
+    return `<p class="kr-info">${text}</p>`;
+  });
+  return `<p class="kr-titel">Helden</p>${zeilen.join('')}`;
+}
+
 function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
   const raum = r.gefaehrlichsterRaum;
   const gegner = raum && raum.gegner.length > 0 ? ` (${raum.gegner.map(escapeAttr).join(', ')})` : '';
@@ -108,7 +148,10 @@ function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
     ${boss ? '<p class="kr-info">Boss überlebt: Nach 20&nbsp;Kampfrunden steht der Boss noch. Das Spiel zeigt dann «SIEG!» und zahlt die Beute, aber der Boss gilt nicht als besiegt: Er öffnet keinen neuen Dungeon, und es gibt keine Trophäe.</p>' : ''}
     <p class="kr-info">${raum ? `Gefährlichster Raum: Raum&nbsp;${raum.nummer}${gegner}. Dort ${raum.laeufe === 1 ? 'scheitert' : 'scheitern'} ${raum.laeufe}&nbsp;von&nbsp;${anzahl}&nbsp;Läufen.` : 'Kein Lauf ist gescheitert.'}</p>
     <p class="kr-info">Ø Gold je Lauf: ${r.goldSchnitt.toLocaleString('de')}</p>
+    <p class="kr-info">Ø Leben am Ende: ${r.lebenSchnitt}&nbsp;%&nbsp;· ${r.proviantEingesetzt > 0 ? `Proviant eingesetzt: ${r.proviantEingesetzt}-mal in&nbsp;${anzahl}&nbsp;Läufen` : 'Proviant: nie gebraucht'}</p>
     <p class="kr-rat">${rat(r.siege, anzahl)}</p>
+    ${beuteHtml(r.beute, anzahl)}
+    ${heldenHtml(r.helden, anzahl)}
     <p class="kr-hinweis">Aus ${anzahl}&nbsp;Probeläufen. Proviant setzt der Rat nur vor einem Kampf und unter halben Leben ein; Stärkungs-Tränke und Fähigkeiten, die du im Kampf selbst auslöst, sind nicht eingerechnet.</p>`;
 }
 
