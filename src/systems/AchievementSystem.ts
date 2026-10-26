@@ -152,6 +152,12 @@ export function erfolgName(id: string): string {
   return ACHIEVEMENT_DEFS.find(d => d.id === id)?.name ?? id;
 }
 
+/** Zeile für die Bilanz nach der Expedition: Gipfel-Taten mit ihrem Satz («Name – Beschreibung»), sonst der Name */
+export function erfolgBilanzZeile(id: string): string {
+  const def = ACHIEVEMENT_DEFS.find(d => d.id === id);
+  return def?.gruppe === 'Gipfel-Taten' ? `${def.name} – ${def.description}` : erfolgName(id);
+}
+
 /**
  * Kennzahlen aktualisieren, neue Erfolge in state.achievements eintragen
  * (genau einmal) und melden. Gibt die neuen IDs zurück.

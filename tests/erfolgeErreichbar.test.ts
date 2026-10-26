@@ -5,7 +5,9 @@
 // (ihre Stärke ist eine Frage der Eichung, nicht der Regeln), und Gold und Beute für Bauten,
 // Ausbauten und Abgaben kommen dazu, als hätten die Dungeons sie gebracht; Proviant kauft
 // die Gilde beim Händler (systems/Haendler.ts). Dazu die Obergrenzen, die die Daten setzen
-// (z. B. vier Werkstätten, Werkstatt-Stufe 3).
+// (z. B. vier Werkstätten, Werkstatt-Stufe 3). In Wahl-Räumen nimmt die Gilde immer die erste
+// Option (das Risiko); so kommen die Gipfel-Taten von selbst. Für «Kleingedrucktes» kehrt sie
+// einmal im Mondhof am letzten Kontrollpunkt um.
 // ────────────────────────────────────────────────────────────────
 
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -76,14 +78,14 @@ function nachfuellen(state: GameState, kosten: Record<string, number>): void {
 }
 
 /** Was main.ts nach einer Expedition tut (finishExpedition), ohne Truhe und Dialoge */
-function expedition(state: GameState, system: ExpeditionSystem, routeId: string, helden: number[]): void {
+function expedition(state: GameState, system: ExpeditionSystem, routeId: string, helden: number[], umkehren = false): void {
   const run = system.startExpedition(state, routeId, helden);
   expect(run, routeId).not.toBeNull();
   state.statistics.total_expeditions = (state.statistics.total_expeditions ?? 0) + 1;
   for (let s = 0; s < 500 && run!.status === 'exploring'; s++) {
     const step = system.nextStep(run!);
     if (step === 'finish') break;
-    if (step === 'checkpoint') system.resolveCheckpoint(run!, false);
+    if (step === 'checkpoint') system.resolveCheckpoint(run!, umkehren && run!.currentRoom >= run!.rooms.length - 2);
     else if (step === 'merchant') system.merchantSkip(run!);
     else if (step === 'choice') system.resolveChoice(run!, 0);
     else system.processCurrentRoom(state);
@@ -255,6 +257,11 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
       expedition(state, system, naechstesZiel(state, jetzt), trupp);
       expeditionen++;
     }
+    // «Kleingedrucktes»: im Mondhof dreimal die erste Option und am letzten Kontrollpunkt umkehren
+    if (istSpielbar(state, 'mondhof') && !state.achievements.includes('gipfel_kleingedrucktes')) {
+      expedition(state, system, 'mondhof', trupp, true);
+      expeditionen++;
+    }
     for (let i = 0; i < 5; i++) {
       state.day++;
       erfolgePruefen(state);
@@ -320,6 +327,14 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       ganze_sets: Math.min(DUNGEON_SETS.length, helden),
       monsterbuch_entdeckt: gegnerInRouten().size,
       schmiede_hoechste_stufe: MAX_SCHMIEDE_STUFE,
+      // Gipfel-Taten zählen je einmal (systems/GipfelTaten.ts)
+      tat_hort: 1,
+      tat_archiv: 1,
+      tat_esse: 1,
+      tat_schlund: 1,
+      tat_pfand: 1,
+      tat_uhr: 1,
+      tat_kleingedrucktes: 1,
     };
   }
 
