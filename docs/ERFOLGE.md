@@ -150,7 +150,7 @@ ist sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
 
 ## Liste
 
-45 Erfolge. Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
+51 Erfolge, die sechs versteckten stehen im Abschnitt «Das System schaut zu». Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
 Die IDs stehen in Spielständen (`state.achievements`) und dürfen sich nicht ändern. Unbekannte IDs (wie die
 gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `bauplan_1`) überspringt das Spiel.
 
@@ -222,6 +222,26 @@ Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
 - Gezählt wird erst ab jetzt; frühere Läufe holt kein Spielstand nach.
 - Wie schwer das ist: Spielweise «gierig» in `docs/NEUE-DUNGEONS.md`.
 
+## Das System schaut zu (versteckte Erfolge)
+
+Achtung, verrät sie. Bis zum Freischalten zeigt der Erfolge-Bildschirm statt Zeichen, Name, Beschreibung und Balken
+nur 👁️, «???» und den Satz des Systems (`versteckt`, kursiv, gestrichelter Rand); danach ist die Karte wie jede
+andere. Oben zählt `.erf-kopf` mit: «👁️ Das System verschweigt noch 6 Erfolge.» bis «… nichts mehr. Behauptet es.».
+Die Bilanz zeigt Name und Satz wie bei den Gipfel-Taten, die Kopfzeile verrät nichts (nur die Zahl am 🏅).
+Gezählt wird in `finalizeExpeditionProgress` (`versteckteTatenZaehlen`), jede Tat auf 1 und nur ab jetzt;
+`albtraum_dungeons` kommt aus `state.haertegrade` und diesem Lauf, darum bringt ein älterer Spielstand mit drei
+Albtraum-Dungeons «Schlafstörung» am Ende der nächsten Expedition. Rückzug zwischen den Runden: Der Kampf ist schon
+ganz gerechnet; fällt darin ein Gegner, gibt es kein «Kalte Füsse».
+
+| Zeichen | Name | Tat | Zähler | ID |
+|---|---|---|---|---|
+| 🐔 | Kalte Füsse | Rückzug, bevor ein Gegner fiel (Vorschau des ersten Kampfs) | `kalte_fuesse` ≥ 1 | `kalte_fuesse` |
+| 🤝 | Unentschieden | «Sieg» am Rundenlimit, der Boss lebt | `unentschieden` ≥ 1 | `unentschieden` |
+| 😱 | Wörtlich genommen | Niederlage auf ☠ Albtraum | `woertlich_genommen` ≥ 1 | `woertlich_genommen` |
+| 🛌 | Schlafstörung | drei verschiedene Dungeons auf ☠ Albtraum bezwungen | `albtraum_dungeons` ≥ 3 | `schlafstoerung` |
+| 👤 | Keine Zeugen | Boss mit einem einzigen Helden besiegt | `keine_zeugen` ≥ 1 | `keine_zeugen` |
+| 🩲 | Ohne Hose | Boss besiegt, ein Held trug keine Rüstung | `ohne_hose` ≥ 1 | `ohne_hose` |
+
 ## Geändert gegenüber früher
 
 - **Gildenstadt (22.10.2026):** Alle Erfolge um Bewohner, Wohnviertel, Markt, Bank und Zufriedenheit sind
@@ -244,9 +264,12 @@ Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
 
 `tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (beim Händler kaufen, Bauen,
 Ausbauen, Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
-zu setzen: Eine starke Gilde schafft alle 45 Erfolge in 38 Tagen und 229 Expeditionen (Grenze im Test: unter 60
+zu setzen: Eine starke Gilde schafft alle 51 Erfolge in 42 Tagen und 260 Expeditionen (Grenze im Test: unter 60
 Tagen und unter 400 Expeditionen). In Wahl-Räumen nimmt sie immer das Risiko, für «Kleingedrucktes» kehrt sie einmal
-im Mondhof am letzten Kontrollpunkt um. Dazu hat
+im Mondhof am letzten Kontrollpunkt um. Die versteckten holt `versteckteTaten()` mit sieben Expeditionen: an Tag 1
+«Ohne Hose» (von selbst beim ersten Boss), «Kalte Füsse», «Keine Zeugen», «Unentschieden» und «Schlafstörung», an
+Tag 2 «Wörtlich genommen» (ein frisch angeheuerter Held). Für «Unentschieden» kämpft der Guardian einmal ohne
+Angriff (für eine Gruppe, die den Boss nicht klein kriegt). Dazu hat
 jeder Zähler eine Obergrenze aus den Daten, kein Ziel liegt darüber, und ein neuer Zähler braucht
 dort eine Zeile.
 
@@ -255,7 +278,7 @@ dort eine Zeile.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
 - Sets: 29 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
 - Trophäensaal: 16 Sockel mit je 3 Sternen.
-- Gipfel-Taten: je Tat höchstens 1.
+- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 29 Dungeons der Karte.
 - Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg
