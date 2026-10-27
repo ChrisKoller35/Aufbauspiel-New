@@ -3,7 +3,7 @@ import { createNewGameState, GameState } from '../src/models/GameState';
 import { placeStartingLayout } from '../src/scenes/CityStartingLayout';
 import { richteProbespielEin } from '../src/systems/Probespiel';
 import { GearSystem } from '../src/systems/GearSystem';
-import { besserFuer, besserText, nebenhandFrei } from '../src/systems/Beutevergleich';
+import { besserFuer, besserFuerAlle, besserText, nebenhandFrei } from '../src/systems/Beutevergleich';
 import { buildInventoryHtml, initHeroesScreen, nebenhandHinweisHtml, renderInventarTab } from '../src/ui/screens/HeroesScreen';
 
 // Grüner Pfeil im Heldenfenster und im Lager, Hinweis «Nebenhand frei» (docs/BEUTEVERGLEICH.md), ohne Browser
@@ -109,6 +109,13 @@ describe('Grüner Pfeil im Heldenfenster und Lager', () => {
     expect(klinge.match(/title="([^"]*)"/)![1].split('\n').pop()).toBe('⬆ Besser für Grimm (Nebenhand): ATK +10 · CRIT +8 % · DEF +2 · auch für 1 weiteren');
     expect(html.split(PFEIL).length - 1).toBe(1);
     expect(html.indexOf('Wyrmzahnklinge')).toBeLessThan(html.indexOf('Korrunds Hammer'));
+  });
+
+  test('f2. sterne: eine doppelte Kennung ändert die beste Wahl nicht', () => {
+    const state = stand('sterne');
+    const einmal = besserFuerAlle(state, ['set_wyrm_klinge']).get('set_wyrm_klinge');
+    expect(einmal?.besteWahl).toBe(true);
+    expect(besserFuerAlle(state, ['set_wyrm_klinge', 'set_wyrm_klinge']).get('set_wyrm_klinge')).toEqual(einmal);
   });
 
   test('g. Werte eines Helden einmal je Zeichnen, nicht je Teil', () => {

@@ -1,6 +1,8 @@
 /* ── Rangliste mit Rivalen (ui/screens/RankingScreen.ts) ── */
 
-.rl { padding: 16px; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
+/* width: 100%: #s-ranking ist eine Spalte, margin: auto hebt das Strecken auf; ohne Breite würde .rl so breit wie die
+   offene Bestenliste (.rtable min-width 460 px), und am Handy fehlten Score und ⚔. So scrollt die Tabelle im Rahmen */
+.rl { padding: 16px; width: 100%; max-width: 760px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; }
 
 .rl-karte {
   background: var(--s1); border: 1px solid var(--bdr); border-radius: 10px;

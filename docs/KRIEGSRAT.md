@@ -7,7 +7,8 @@ Beute und Helden (`src/systems/Kriegsrat.ts`, `src/systems/KriegsratVorschau.ts`
 
 ## Beute und Helden
 Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge wie `finishExpedition`:
-`setBeute`, `schmiedeBeute`, dann die XP wie `finalizeExpeditionProgress` (`awardXP` auf den Helden der Kopie).
+`setBeute`, `schmiedeBeute`, `albtraumBeute` (nur nach einem bezwungenen ☠ Albtraum mit Boss), dann die XP wie
+`finalizeExpeditionProgress` (`awardXP` auf den Helden der Kopie).
 - **Beute:** in wie vielen Läufen ein Set-Teil fällt (und wie viele Teile die Gilde schon hat), Ø Schmiede-Material
   und Kristallsplitter, die drei wichtigsten Ausrüstungen ohne Set-Teile. «(neu)»: Die Gilde hat sie weder im Lager
   noch an einem Helden; diese stehen zuerst, dann die in den meisten Läufen.
@@ -48,6 +49,9 @@ Eine Niederlage bringt die Hälfte des Materials nach geschafften Räumen; der R
 mit (`processCurrentRoom` setzt `completed` vor der Prüfung auf Niederlage), und ×1,5 bzw. ×2 gelten auch dann.
 Auf Albtraum bringt im Himmelsarchiv eine Niederlage im Bossraum 8 Himmelstinte, so viel wie ein Sieg auf Normal;
 ohne einen Sieg sind es Ø 8.
+Nach einem bezwungenen ☠ Albtraum zählt der Rat den Wurf mehr auf die Boss-Beute mit (`albtraumBeute`,
+docs/HAERTEGRADE.md): Drachenhort ☠ Ø Gold 1032 statt 822 ohne diesen Wurf (Normal 907), Ø Kristallsplitter 11
+statt 10. Bei «Boss überlebt» gibt es keine Albtraum-Beute, und die Punkte zählen wie auf Normal.
 
 ## Der letzte Rat
 Unter «🎲 Kriegsrat» steht der letzte fertige Rat («Letzter Rat · ☠ Albtraum: 19 Siege · 1 Niederlage»), solange

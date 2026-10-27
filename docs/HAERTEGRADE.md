@@ -29,9 +29,9 @@ Beutetabelle des Bosses (`albtraumBeute`): `rollLoot` mit Gold und einem Eintrag
 Zufall aus `run.rngSeed`. `finishExpedition` würfelt direkt nach `schmiedeBeute`, also liegt die Beute in Truhe
 und Lager. In der Truhe steht unter dem Fund rot «☠ Albtraum-Beute» oder, kam derselbe Fund auch aus den
 Kämpfen, «☠ 9 davon aus der Albtraum-Beute»; in der Bilanz «☠ Albtraum-Beute: 192 Gold und Amulett der
-Wiedergeburt». Der Kriegsrat (`vorschauNachLauf`) zählt sie mit, sobald er auf Albtraum rechnet. Messung
+Wiedergeburt». Der Kriegsrat (`vorschauNachLauf`) zählt sie auf Albtraum mit (docs/KRIEGSRAT.md). Messung
 (Drachenhort, `sterne3`, «vorsichtig», 100 Läufe): 100 bezwungen, Ø 220 Gold je Wurf, 59-mal Ausrüstung,
-Ø Gold je Lauf wie in der Truhe 646 → 867.
+davon 32-mal legendär, Ø Gold je Lauf wie in der Truhe 646 → 867.
 
 **Punkte:** Den Faktor des Grads (×1,5 bzw. ×2) gibt es nur, wenn der Dungeon bezwungen ist
 (`calculateScore`); ältere Einträge der Bestenliste behalten ihre Punkte. Ø Punkte vorher → jetzt
@@ -41,10 +41,11 @@ Wiedergeburt». Der Kriegsrat (`vorschauNachLauf`) zählt sie mit, sobald er auf
 |---|---|---|---|---|
 | `sterne3`, klug | Himmelsarchiv | 3128 (100) | 3879 → 3699 (81) | 3558 → 1779 (0) |
 | `mond5`, vorsichtig | Sternenschlund | 3058 (100) | 3506 → 2979 (47) | 3161 → 1580 (0) |
-| `pfand5`, klug | Mondhof | 3140 (100) | 3439 → 2797 (37) | 3750 → 1875 (0) |
+| `pfand5`, klug | Mondhof | 3140 (100) | 3439 → 2797 (37, dazu 63 Rundenlimit) | 3750 → 1875 (0) |
 
-In zwölf gemessenen Reihen liegt jeder nicht bezwungene Lauf unter dem schwächsten Normal-Sieg: höchstens
-2155 gegen mindestens 2865 Punkte.
+In allen zwölf gemessenen Reihen (`sterne3`, `mond5` und `pfand5` je mit ihren zwei Dungeons der Messung unten,
+«klug» und «vorsichtig») liegt jeder nicht bezwungene Lauf unter dem schwächsten Normal-Sieg: höchstens 2155
+gegen mindestens 2865 Punkte.
 
 **Messung** (Team «Stark», «vorsichtig», Startwerte `i × 7919`, i = 1 … 100, bezwungen von 100; eigenes
 Mess-Skript, nicht eingecheckt):

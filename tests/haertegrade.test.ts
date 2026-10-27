@@ -86,15 +86,15 @@ describe('Härtegrade', () => {
     expect(sieg.goldEarned).toBe(vorher.goldEarned + 192);
     expect(sieg.loot).toEqual({ ...vorher.loot, amulet_of_rebirth: (vorher.loot.amulet_of_rebirth ?? 0) + 1 });
     expect(sieg.rngSeed).toBe(vorher.rngSeed);
-    expect(albtraumHinweise(beute, sieg.loot)).toEqual({ amulet_of_rebirth: '☠ Albtraum-Beute' });
+    expect(albtraumHinweise(beute, sieg.loot)).toEqual({ amulet_of_rebirth: '☠ Albtraum-\u2060Beute' });
     expect(haertegradBilanz(sieg, true, beute)).toEqual([
       '☠ Albtraum bezwungen: Das Himmelsarchiv. Das System vermerkt: Diese Gilde hört nicht auf, wenn es reicht.',
-      '☠ Albtraum-Beute: 192 Gold und Amulett der Wiedergeburt',
+      '☠ Albtraum-\u2060Beute: 192\u00a0Gold und Amulett der Wiedergeburt',
     ]);
     const zwei = lauf('himmelsarchiv', 'nightmare', 2);
     const beuteZwei = albtraumBeute(zwei);
-    expect(haertegradBilanz(zwei, false, beuteZwei)).toEqual(['☠ Albtraum-Beute: 213 Gold und 9× Kristallsplitter']);
-    expect(albtraumHinweise(beuteZwei, zwei.loot)).toEqual({ crystal_shard: '☠ 9 davon aus der Albtraum-Beute' });
+    expect(haertegradBilanz(zwei, false, beuteZwei)).toEqual(['☠ Albtraum-\u2060Beute: 213\u00a0Gold und 9×\u00a0Kristallsplitter']);
+    expect(albtraumHinweise(beuteZwei, zwei.loot)).toEqual({ crystal_shard: '☠ 9\u00a0davon aus der Albtraum-\u2060Beute' });
     expect(albtraumHinweise(null, zwei.loot)).toEqual({});
     expect(albtraumBeute(lauf('himmelsarchiv', 'hard'))).toBeNull();
     expect(albtraumBeute({ ...vorher, bossesKilled: 0 })).toBeNull();

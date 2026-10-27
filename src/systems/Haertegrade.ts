@@ -90,11 +90,16 @@ export function albtraumBeute(run: ExpeditionRun): AlbtraumBeute | null {
   return { gold: wurf.goldEarned, dinge: wurf.loot };
 }
 
+/** Hält beim Umbruch zusammen: Wortteile am Bindestrich (Wortverbinder U+2060, wie in KriegsratFenster.ts) */
+function amStueck(text: string): string {
+  return text.replace(/-/g, '-\u2060');
+}
+
 /** Hinweise für die Truhe (nur Text); `loot`: die ganze Beute der Truhe */
 export function albtraumHinweise(beute: AlbtraumBeute | null, loot: Record<string, number>): Record<string, string> {
   const hinweise: Record<string, string> = {};
   for (const [itemId, n] of Object.entries(beute?.dinge ?? {})) {
-    hinweise[itemId] = (loot[itemId] ?? 0) > n ? `☠ ${n} davon aus der Albtraum-Beute` : '☠ Albtraum-Beute';
+    hinweise[itemId] = (loot[itemId] ?? 0) > n ? `☠ ${n}\u00a0davon aus der ${amStueck('Albtraum-Beute')}` : `☠ ${amStueck('Albtraum-Beute')}`;
   }
   return hinweise;
 }
@@ -117,9 +122,10 @@ export function haertegradBilanz(run: ExpeditionRun, neu: boolean, beute: Albtra
   if (beute) {
     const teile = Object.entries(beute.dinge).map(([itemId, n]) => {
       const itemName = ITEM_DEFS[itemId]?.name ?? itemId;
-      return n > 1 ? `${n}× ${itemName}` : itemName;
+      // Menge und Name, Zahl und «Gold» brechen nicht auseinander (geschütztes Leerzeichen)
+      return n > 1 ? `${n}×\u00a0${amStueck(itemName)}` : amStueck(itemName);
     });
-    zeilen.push(`☠ Albtraum-Beute: ${[`${beute.gold} Gold`, ...teile].join(' und ')}`);
+    zeilen.push(`☠ ${amStueck('Albtraum-Beute')}: ${[`${beute.gold}\u00a0Gold`, ...teile].join(' und ')}`);
   }
   return zeilen;
 }

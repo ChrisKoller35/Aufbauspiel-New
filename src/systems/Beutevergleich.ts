@@ -111,7 +111,8 @@ export function besserFuerAlle(state: GameState, itemIds: string[]): Map<string,
   const listen = new Map<string, Verbesserung[]>();
   // je Held und Platz das Teil mit dem grössten Zugewinn
   const sieger = new Map<string, Verbesserung>();
-  for (const itemId of itemIds) {
+  // Jede Kennung einmal: Ein zweites Vorkommen legte sonst neue Objekte in listen, und besteWahl ginge verloren
+  for (const itemId of new Set(itemIds)) {
     const alle = mit.map(m => m(itemId)).filter((v): v is Verbesserung => v !== null);
     if (alle.length === 0) continue;
     listen.set(itemId, alle);

@@ -13,7 +13,6 @@
 .haerte-knopf.aktiv { border-color: var(--gold); color: var(--gl); background: rgba(110, 87, 16, .35); }
 .haerte-knopf.aktiv[data-haertegrad="nightmare"] { border-color: #dc2626; color: #fca5a5; background: rgba(220, 38, 38, .18); }
 .haerte-text { margin-top: 8px; font-size: 0.8rem; color: var(--txt); line-height: 1.4; }
-.haerte-hinweis { margin-top: 4px; color: var(--mut); }
 /* Name und ✓ getrennt: Wird es eng (320 px, grosse Schrift), rutscht das ✓ in eine zweite Zeile, statt im «…» zu
    verschwinden; gekürzt wird erst, wenn der Name allein nicht passt */
 .haerte-name { min-width: 0; max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }

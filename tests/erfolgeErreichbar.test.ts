@@ -39,7 +39,7 @@ import { ausbauen, ausbauInfo, maxStufe, MAX_STUFE_WERKSTATT } from '../src/syst
 import { brettStand, istSpielbar, laufendesKapitel, liefern, saalKapitel, splitterEinloesen } from '../src/systems/Auftragsbrett';
 import { belohnungenAbholen, TAG_MS } from '../src/systems/Rangliste';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
-import { merkeHaertegrad } from '../src/systems/Haertegrade';
+import { albtraumBeute, merkeHaertegrad } from '../src/systems/Haertegrade';
 import { dasGebaeude, freischaltHinweise } from '../src/systems/GebaeudeStatus';
 import { kaufen } from '../src/systems/Haendler';
 import { aufstiegStand, setzeHerzsteinEin, steigeAuf } from '../src/systems/Stadtweg';
@@ -96,6 +96,7 @@ function expedition(state: GameState, system: ExpeditionSystem, routeId: string,
   }
   setBeute(state, run!);
   schmiedeBeute(run!);
+  albtraumBeute(run!);
   const loot = { ...run!.loot };
   finalizeExpeditionProgress(state, run!, system);
   merkeHaertegrad(state, run!);
