@@ -14,9 +14,8 @@ export function haertegradWahlHtml(state: GameState, routeId: string, gewaehlt: 
   const knoepfe = HAERTEGRADE.map((grad, i) => `<button class="haerte-knopf${grad === gewaehlt ? ' aktiv' : ''}"`
     + ` data-haertegrad="${grad}" aria-pressed="${grad === gewaehlt}"><span class="haerte-name">${haertegradName(grad)}</span>`
     + `${i <= bis ? ' <span class="haerte-haken">✓</span>' : ''}</button>`).join('');
-  const hinweis = gewaehlt !== 'normal' ? '<div class="haerte-hinweis">🎲 Der Kriegsrat rechnet noch mit Normal.</div>' : '';
   return `<div class="haerte"><div class="haerte-knoepfe" role="group" aria-label="Härtegrad">${knoepfe}</div>`
-    + `<div class="haerte-text">${haertegradSatz(state, routeId, gewaehlt)}${hinweis}</div></div>`;
+    + `<div class="haerte-text">${haertegradSatz(state, routeId, gewaehlt)}</div></div>`;
 }
 
 /** Zweite Zeile auf «EXPEDITION STARTEN», wenn nicht Normal gewählt ist: Beim Start sind die Knöpfe oft nicht im Bild */

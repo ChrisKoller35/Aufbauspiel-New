@@ -6,6 +6,8 @@
 }
 .btn-kriegsrat:hover:not(:disabled) { border-color: var(--gold); }
 .btn-kriegsrat:disabled { opacity: 0.5; cursor: default; }
+/* Unter dem Knopf: der letzte Rat, solange die Auswahl gleich ist (letzterRatHtml) */
+.kr-letzter { margin: 6px 0 0; font-size: 0.75rem; color: var(--txt); line-height: 1.4; text-align: center; overflow-wrap: anywhere; }
 .kr { max-height: 90vh; overflow-y: auto; box-sizing: border-box; }
 /* Unten 4 px: fällt mit dem Rand von .kr-aktionen zusammen, «Schliessen» steht 14 px unter der Zeile wie sonst */
 .kr-tagt { color: var(--mut); font-style: italic; margin: 12px 0 4px; }
