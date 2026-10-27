@@ -109,6 +109,9 @@
 .ach-progress .lvbar { margin-top: 6px; flex: 1; }
 .ach-prog-text { font-size: 0.7rem; color: var(--mut); margin-top: 6px; white-space: nowrap; }
 .ach-check { flex-shrink: 0; }
+/* Versteckt (??? bis zum Freischalten): gestrichelter Rand, der Satz des Systems kursiv */
+.ach-card.ach-versteckt { border-style: dashed; }
+.ach-card.ach-versteckt .ach-desc { font-style: italic; }
 /* Gerade freigeschaltet: Die Karte leuchtet kurz auf */
 .ach-card.ach-neu { animation: ach-neu 2.4s ease-out; }
 @keyframes ach-neu {
