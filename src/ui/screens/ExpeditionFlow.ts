@@ -20,7 +20,7 @@ import {
 import { navigateTo } from '../ScreenRouter';
 import { CombatScreen } from './CombatScreen';
 import { gewaehlterHaertegrad, initExpeditionsScreen } from './ExpeditionsScreen';
-import { haertegradBilanz, merkeHaertegrad } from '../../systems/Haertegrade';
+import { albtraumBeute, albtraumHinweise, haertegradBilanz, merkeHaertegrad } from '../../systems/Haertegrade';
 import { ranglistenZeilen } from '../components/RanglistenBilanzAnzeige';
 import { auftragsZeilen } from '../components/AuftragsBilanzAnzeige';
 import { escapeAttr, truhenHinweise } from '../components/SchmiedeAnzeige';
@@ -263,7 +263,13 @@ function finishExpedition(): void {
   const setHinweise = setTeilHinweise(state, setBeute(state, run));
   // Material für die Schmiede: ein Sieg bringt die volle Menge, sonst nach den geschafften Räumen
   const material = schmiedeBeute(run);
+  // Albtraum-Sieg: ein Wurf mehr auf die Boss-Beute, liegt mit in Truhe und Lager und zählt für die Erfolge
+  const albtraum = albtraumBeute(run);
   const hinweise = truhenHinweise(state, setHinweise, material?.itemId ?? null);
+  // Eigene rote Zeile vor den übrigen Hinweisen (oft folgt nur «⬆ Besser für …»)
+  for (const [itemId, text] of Object.entries(albtraumHinweise(albtraum, run.loot))) {
+    hinweise[itemId] = `<span class="truhe-albtraum">${text}</span>${hinweise[itemId] ?? ''}`;
+  }
 
   // Capture loot data before clearing
   const loot = { ...run.loot };
@@ -278,7 +284,7 @@ function finishExpedition(): void {
   // (before returning provisions: leftover provisions count towards the score)
   const progress = finalizeExpeditionProgress(state, run, expeditionSystem);
   const { entry } = progress;
-  const haerte = haertegradBilanz(run, merkeHaertegrad(state, run));
+  const haerte = haertegradBilanz(run, merkeHaertegrad(state, run), albtraum);
 
   // Return unused provisions to stock (gifted ones stay with the guild)
   expeditionSystem.returnProvisions(state, run);
@@ -319,7 +325,7 @@ function finishExpedition(): void {
  * Result dialog after the chest: score, hero XP, everything newly unlocked, what the Schmiede can
  * now do (schmiede: «Rudelreisser auf +2») and the chronicle of the story.
  */
-function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], haerte: string | null, onClose: () => void): void {
+function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], haerte: string[], onClose: () => void): void {
   const { entry, xp, rankUp, newClasses, newAchievements } = progress;
   const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
   const line = (text: string, color = '#e5e7eb'): string =>
@@ -344,7 +350,7 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
   for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
   for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
   if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
-  if (haerte) body += line(haerte, '#fca5a5');
+  for (const z of haerte) body += line(z, '#fca5a5');
 
   const chronik = geschichte ? chronikHtml(geschichte) : '';
   showExpeditionDialog(entry.status === 'victory' ? '🏆' : '⚑', title, `<div style="margin-bottom:20px;">${body}</div>${chronik}`, [

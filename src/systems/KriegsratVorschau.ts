@@ -2,7 +2,7 @@
 // Was die Probeläufe des Kriegsrats heimbringen und wer dabei weiterkommt:
 // Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben
 // Reihenfolge wie finishExpedition (ExpeditionFlow.ts): setBeute,
-// schmiedeBeute, dann die XP wie finalizeExpeditionProgress. Der echte
+// schmiedeBeute, albtraumBeute, dann die XP wie finalizeExpeditionProgress. Der echte
 // Spielstand bleibt unberührt (docs/KRIEGSRAT.md). Reine Logik, kein DOM.
 // ────────────────────────────────────────────────────────────────
 
@@ -13,6 +13,7 @@ import { setFuerRoute } from '../data/dungeonSets';
 import { materialFuerRoute } from '../data/schmiede';
 import { besitz, gesammelteTeile, setBeute } from './DungeonSets';
 import { SPLITTER, schmiedeBeute } from './Schmiede';
+import { albtraumBeute } from './Haertegrade';
 import { VICTORY_XP_BONUS } from './ExpeditionFinalizer';
 import { MAX_HERO_LEVEL, awardXP, totalXpForLevel } from './HeroProgression';
 
@@ -84,6 +85,8 @@ export function vorschauNachLauf(v: Vorschau, kopie: GameState, run: ExpeditionR
   v.beute.setTeile += teile.length;
   const material = schmiedeBeute(run);
   if (v.beute.material && material) v.beute.material.schnitt += material.menge;
+  // Albtraum-Beute vor dem Zählen; ihr Gold zählt Kriegsrat.ts danach mit
+  albtraumBeute(run);
   v.beute.splitterSchnitt += run.loot[SPLITTER] ?? 0;
   for (const [itemId, menge] of Object.entries(run.loot)) {
     const def = ITEM_DEFS[itemId];

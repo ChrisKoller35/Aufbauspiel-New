@@ -9,8 +9,13 @@ import { istGeschichtsWahl } from '../src/systems/Geschichten';
 import { musterStand } from '../src/systems/Musterlauf';
 import { richteProbespielEin } from '../src/systems/Probespiel';
 import { CURRENT_VERSION, pruefeSpielstandText } from '../src/systems/SaveSystem';
+import { setBeute } from '../src/systems/DungeonSets';
+import { schmiedeBeute } from '../src/systems/Schmiede';
+import { neueVorschau, vorschauNachLauf } from '../src/systems/KriegsratVorschau';
+import { haertegradKnoten } from '../src/ui/screens/DungeonMapScreen';
 import {
-  Haertegrad, haertegradBilanz, haertegradSatz, haertegradWaehlbar, hoechsterHaertegrad, merkeHaertegrad,
+  Haertegrad, albtraumBeute, albtraumHinweise, haertegradBilanz, haertegradSatz, haertegradWaehlbar, hoechsterHaertegrad,
+  merkeHaertegrad,
 } from '../src/systems/Haertegrade';
 
 /** Ein Lauf ohne Bildschirm wie spieleRoute «vorsichtig», aber auf dem Grad `grad` */
@@ -48,7 +53,7 @@ describe('Härtegrade', () => {
     expect(haertegradSatz(state, 'drachenhort', 'hard')).toBe('⚔ Schwer: Gegner mit 30 % mehr Leben, 20 % mehr Angriff und +1 Verteidigung.'
       + ' Dafür: Punkte ×1,5 · 11 Drachenschuppe je Sieg statt 7 · Set-Teil 65 % statt 50 %.');
     expect(haertegradSatz(state, 'drachenhort', 'nightmare')).toBe('☠ Albtraum: Gegner mit 60 % mehr Leben, 40 % mehr Angriff und +2 Verteidigung.'
-      + ' Dafür: Punkte ×2 · 14 Drachenschuppe je Sieg statt 7 · Set-Teil 80 % statt 50 %.');
+      + ' Dafür: Punkte ×2 · 14 Drachenschuppe je Sieg statt 7 · Set-Teil 80 % statt 50 % · ein Wurf mehr auf die Boss-Beute.');
     expect(haertegradSatz(state, 'himmelsarchiv', 'hard')).not.toContain('Set-Teil');
   });
 
@@ -63,8 +68,83 @@ describe('Härtegrade', () => {
     expect(merkeHaertegrad(state, sieg)).toBe(false);
     expect(merkeHaertegrad(state, lauf('himmelsarchiv', 'hard'))).toBe(false);
     expect(state.haertegrade).toEqual({ himmelsarchiv: 'nightmare' });
-    expect(haertegradBilanz(sieg, true)).toBe('☠ Albtraum bezwungen: Das Himmelsarchiv. Das System vermerkt: Diese Gilde hört nicht auf, wenn es reicht.');
-    expect(haertegradBilanz(sieg, false)).toBeNull();
+    expect(haertegradBilanz(sieg, true)).toEqual(['☠ Albtraum bezwungen: Das Himmelsarchiv. Das System vermerkt: Diese Gilde hört nicht auf, wenn es reicht.']);
+    expect(haertegradBilanz(sieg, false)).toEqual([]);
+    const rundenlimit: ExpeditionRun = { ...sieg, bossesKilled: 0 };
+    const satz = 'nicht bezwungen: Das Himmelsarchiv. Der Boss stand nach dem Rundenlimit noch. Das System vermerkt: Beute ja, Punkte wie auf Normal.';
+    expect(haertegradBilanz(rundenlimit, false)).toEqual([`☠ Albtraum ${satz}`]);
+    expect(haertegradBilanz({ ...rundenlimit, difficulty: 'hard' }, false)).toEqual([`⚔ Schwer ${satz}`]);
+    expect(haertegradBilanz({ ...rundenlimit, difficulty: 'normal' }, false)).toEqual([]);
+    expect(haertegradBilanz({ ...rundenlimit, status: 'defeat' }, false)).toEqual([]);
+  });
+
+  it('Albtraum-Beute: ein Wurf mehr auf die Boss-Beute, nur nach bezwungenem Albtraum', () => {
+    const sieg = lauf('himmelsarchiv', 'nightmare');
+    const vorher: ExpeditionRun = { ...sieg, loot: { ...sieg.loot } };
+    const beute = albtraumBeute(sieg);
+    expect(beute).toEqual({ gold: 192, dinge: { amulet_of_rebirth: 1 } });
+    expect(sieg.goldEarned).toBe(vorher.goldEarned + 192);
+    expect(sieg.loot).toEqual({ ...vorher.loot, amulet_of_rebirth: (vorher.loot.amulet_of_rebirth ?? 0) + 1 });
+    expect(sieg.rngSeed).toBe(vorher.rngSeed);
+    expect(albtraumHinweise(beute, sieg.loot)).toEqual({ amulet_of_rebirth: '☠ Albtraum-Beute' });
+    expect(haertegradBilanz(sieg, true, beute)).toEqual([
+      '☠ Albtraum bezwungen: Das Himmelsarchiv. Das System vermerkt: Diese Gilde hört nicht auf, wenn es reicht.',
+      '☠ Albtraum-Beute: 192 Gold und Amulett der Wiedergeburt',
+    ]);
+    const zwei = lauf('himmelsarchiv', 'nightmare', 2);
+    const beuteZwei = albtraumBeute(zwei);
+    expect(haertegradBilanz(zwei, false, beuteZwei)).toEqual(['☠ Albtraum-Beute: 213 Gold und 9× Kristallsplitter']);
+    expect(albtraumHinweise(beuteZwei, zwei.loot)).toEqual({ crystal_shard: '☠ 9 davon aus der Albtraum-Beute' });
+    expect(albtraumHinweise(null, zwei.loot)).toEqual({});
+    expect(albtraumBeute(lauf('himmelsarchiv', 'hard'))).toBeNull();
+    expect(albtraumBeute({ ...vorher, bossesKilled: 0 })).toBeNull();
+    expect(albtraumBeute({ ...vorher, status: 'retreat' })).toBeNull();
+    expect(albtraumBeute(lauf('sternenschlund', 'nightmare'))).toBeNull();
+  });
+
+  it('Kriegsrat: vorschauNachLauf würfelt die Albtraum-Beute vor dem Zählen, wie finishExpedition', () => {
+    const { state, ids } = musterStand('stark', 7919, 'mond5');
+    const sieg = lauf('himmelsarchiv', 'nightmare');
+    const rat: ExpeditionRun = structuredClone(sieg);
+    const ende: ExpeditionRun = structuredClone(sieg);
+    const v = neueVorschau(state, 'himmelsarchiv', ids);
+    vorschauNachLauf(v, structuredClone(state), rat);
+    const kopie = structuredClone(state);
+    setBeute(kopie, ende);
+    schmiedeBeute(ende);
+    albtraumBeute(ende);
+    expect(rat.goldEarned).toBe(sieg.goldEarned + 192);
+    expect(rat.loot).toEqual(ende.loot);
+    expect(v.ausruestung.get('amulet_of_rebirth')).toBe(1);
+  });
+
+  it('ehrliche Punkte: den Faktor des Grads gibt es nur für bezwungene Dungeons', () => {
+    const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
+    const punkte = (run: ExpeditionRun, grad: Haertegrad, mehr: Partial<ExpeditionRun> = {}) =>
+      system.calculateScore({ ...run, difficulty: grad, ...mehr });
+    const sieg = lauf('himmelsarchiv', 'nightmare');
+    expect(punkte(sieg, 'nightmare')).toBe(6420);
+    expect(punkte(sieg, 'normal')).toBe(3210);
+    expect(punkte(sieg, 'nightmare', { bossesKilled: 0 })).toBe(2710);
+    expect(punkte(sieg, 'nightmare', { status: 'retreat' })).toBe(3210);
+    const verloren = lauf('sternenschlund', 'nightmare');
+    expect(verloren.status).toBe('defeat');
+    expect(punkte(verloren, 'nightmare')).toBe(1730);
+    const zehn = (grad: Haertegrad) => Array.from({ length: 10 }, (_, i) => lauf('sternenschlund', grad, i + 1));
+    const besteNiederlage = Math.max(...zehn('nightmare').filter(r => !dungeonBezwungen(r)).map(r => punkte(r, 'nightmare')));
+    const schwaechsterSieg = Math.min(...zehn('normal').filter(dungeonBezwungen).map(r => punkte(r, 'normal')));
+    expect(besteNiederlage).toBe(1970);
+    expect(schwaechsterSieg).toBe(2995);
+  });
+
+  it('Marke auf der Dungeon-Karte', () => {
+    expect(haertegradKnoten(undefined, 100, 200)).toBe('');
+    const albtraum = haertegradKnoten('nightmare', 100, 200);
+    for (const teil of ['dmap-haerte nightmare', '<title>☠ Albtraum bezwungen</title>', 'cx="100" cy="200"', '#dc2626', '☠']) {
+      expect(albtraum).toContain(teil);
+    }
+    const schwer = haertegradKnoten('hard', 100, 200);
+    for (const teil of ['dmap-haerte hard', '<title>⚔ Schwer bezwungen</title>', '#c8a227', '⚔']) expect(schwer).toContain(teil);
   });
 
   it('Leiter: Albtraum eine Ebene tiefer machbar, ganz oben nicht', () => {
