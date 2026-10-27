@@ -75,10 +75,7 @@ function vergleiche(held: GuildFighter, itemId: string, stufen: SchmiedeStufen, 
   return { held, platz, teile: [...namen, ...gestiegen.map(g => g.text)], zugewinn };
 }
 
-/**
- * Vergleicht viele Teile mit einem Helden: seine Werte und Kennungen höchstens einmal, erst beim ersten Teil, das
- * passt. Mit nurPlatz zählt nur dieser Platz (Heldenfenster, angetippter Platz)
- */
+/** Vergleicht viele Teile mit einem Helden (seine Werte höchstens einmal); mit nurPlatz zählt nur dieser Platz */
 export function vergleicher(held: GuildFighter, stufen: SchmiedeStufen = {}): (itemId: string, nurPlatz?: EquipSlot) => Verbesserung | null {
   let gemerkt: ReturnType<Vorher> | null = null;
   const vorher: Vorher = () => (gemerkt ??= {
@@ -88,10 +85,7 @@ export function vergleicher(held: GuildFighter, stufen: SchmiedeStufen = {}): (i
   return (itemId, nurPlatz) => {
     const def = ITEM_DEFS[itemId];
     if (!def || def.type !== 'gear' || !def.gearSlot) return null;
-    if (nurPlatz) {
-      if (gearSystem.resolveEquipSlot(held, itemId, nurPlatz) !== nurPlatz) return null;
-      return vergleiche(held, itemId, stufen, vorher, nurPlatz);
-    }
+    if (nurPlatz) return gearSystem.resolveEquipSlot(held, itemId, nurPlatz) === nurPlatz ? vergleiche(held, itemId, stufen, vorher, nurPlatz) : null;
     if (def.weaponSlotType !== '1h') return vergleiche(held, itemId, stufen, vorher);
     const haupt = vergleiche(held, itemId, stufen, vorher, 'mainHand');
     const neben = vergleiche(held, itemId, stufen, vorher, 'offHand');

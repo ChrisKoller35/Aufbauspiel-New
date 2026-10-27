@@ -1,4 +1,4 @@
-# Beutevergleich: grüne Zeile in der Truhe
+# Beutevergleich: grüner Pfeil in Truhe, Heldenfenster und Lager
 
 Unter jedem Ausrüstungsteil, das einen Helden der Gilde stärker macht, steht in der Truhe
 «⬆ Besser für Lia: ATK +12 · HP +30». Code: `src/systems/Beutevergleich.ts`, Anzeige über `truhenHinweise`.
@@ -22,3 +22,16 @@ Unter jedem Ausrüstungsteil, das einen Helden der Gilde stärker macht, steht i
 Gemessen (26.10.2026, alle 138 Ausrüstungsteile aus `ITEM_DEFS`): im neuen Spiel (Guardian ohne Ausrüstung)
 bekommen 120 die Zeile, in `?probe=sterne` 23, alle für die leere Nebenhand von Grimm oder Sina:
 21 Einhandwaffen mit «(Nebenhand)», 2 Schilde (ohne Handangabe).
+
+## Heldenfenster und Lager (dieselbe Regel)
+
+- **Heldenfenster:** Teile im Inventar, die *diesen* Helden stärker machen, tragen oben rechts ein grünes ⬆ (`.besser-pfeil`,
+  eine CSS-Form). Der Gewinn steht als letzte Zeile im `title`, nicht im `aria-label`: Vorleser lesen den `title` als
+  Beschreibung nach dem Namen, und `tests/heldenfenster.test.ts` prüft das `aria-label` Zeichen für Zeichen. Ist ein Platz angetippt, gilt der Pfeil nur für ihn.
+- **Nebenhand frei:** Ist die Nebenhand leer und macht sie ein Teil im Lager stärker, steht unter dem Bild «✋ Nebenhand frei» mit dem besten Teil.
+  Antippen wählt die Nebenhand wie ihr Platz, öffnet das Inventar und holt es ins Bild. Neben Zweihandwaffen und ohne Einhandwaffe in der Haupthand nie.
+- **Lager (Tab Inventar):** Je Held und Platz steht das Teil mit dem grössten Zugewinn vorne als breite Karte mit der grünen Zeile; sie nennt den
+  Helden dieser besten Wahl (die Truhe kennt das Lager nicht und kann einen anderen nennen). Die übrigen besseren Teile tragen das ⬆, die Zeile im `title`.
+  Grund (Thread, Musterspiel): gegen leere Nebenhände ist fast alles besser, sonst 17 Karten statt 3.
+- **Leistung:** ein `vergleicher` je Held und Zeichnen, Werte vor Eigenschaften. Gemessen in `?probe=sterne` mit allen 138 Ausrüstungsteilen
+  im Lager: Grimms Inventar 160 `getEffectiveStats` + 33 `getSpecialEffects`, das Lager 627 + 93 (2 Karten, 21 ⬆-Kacheln).

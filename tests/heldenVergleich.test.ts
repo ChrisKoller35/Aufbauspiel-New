@@ -26,7 +26,7 @@ function pfeile(html: string): [string, string][] {
 }
 const gruen = (html: string) => [...html.matchAll(/<span class="truhe-besser">([^<]*)<\/span>/g)].map(m => m[1]);
 
-describe('Heldenfenster: grüner Pfeil', () => {
+describe('Grüner Pfeil im Heldenfenster und Lager', () => {
   test('a. sterne: nur die Wyrmzahnklinge, für Grimm und Sina', () => {
     const state = stand('sterne');
     const html = buildInventoryHtml(held(state, 'Grimm'), true);
@@ -50,9 +50,7 @@ describe('Heldenfenster: grüner Pfeil', () => {
     ]);
     expect(pfeile(buildInventoryHtml(held(neu, 'Grimm'), true, 'armor')).map(p => p[0])).toEqual(['set_wyrm_platte']);
   });
-});
 
-describe('Heldenfenster: Nebenhand frei', () => {
   test('c. sterne: Hinweis für Grimm und Sina, nicht für Brom und Lia', () => {
     const state = stand('sterne');
     expect(nebenhandHinweisHtml(held(state, 'Grimm'))).toBe('<button type="button" class="nebenhand-frei" data-slot="offHand">✋ <b>Nebenhand frei:</b>'
@@ -77,9 +75,7 @@ describe('Heldenfenster: Nebenhand frei', () => {
     neu.fighters[0].gear.mainHand = 'iron_sword';
     expect(nebenhandFrei(neu, neu.fighters[0])?.besser.teile).toEqual(['ATK +3']);
   });
-});
 
-describe('Lager: Karte für die beste Wahl je Held und Platz', () => {
   test('e. neu: drei Karten in dieser Reihenfolge; Namen escapt', () => {
     stand('neu');
     const html = renderInventarTab();
@@ -116,17 +112,12 @@ describe('Lager: Karte für die beste Wahl je Held und Platz', () => {
   });
 
   test('g. Werte eines Helden einmal je Zeichnen, nicht je Teil', () => {
+    const state = stand('neu');
     const spy = vi.spyOn(GearSystem.prototype, 'getEffectiveStats');
-    try {
-      const state = stand('neu');
-      spy.mockClear();
-      buildInventoryHtml(held(state, 'Grimm'), true);
-      renderInventarTab();
-      for (const f of state.fighters) {
-        expect(spy.mock.calls.filter(c => c[0] === f).length).toBe(f.name === 'Grimm' ? 2 : 1);
-      }
-    } finally {
-      spy.mockRestore();
-    }
+    buildInventoryHtml(held(state, 'Grimm'), true);
+    renderInventarTab();
+    const aufrufe = state.fighters.map(f => spy.mock.calls.filter(c => c[0] === f).length);
+    spy.mockRestore();
+    expect(aufrufe).toEqual(state.fighters.map(f => (f.name === 'Grimm' ? 2 : 1)));
   });
 });
