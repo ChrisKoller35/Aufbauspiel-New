@@ -1,5 +1,5 @@
 // ─── Magic City – Beutevergleich ─────────────────────────────────
-// Grüner Pfeil in der Truhe: Macht ein Fund einen Helden der Gilde stärker? «Besser» nur, wenn
+// Grüner Pfeil in Truhe, Heldenfenster und Lager: Macht ein Fund einen Helden der Gilde stärker? «Besser» nur, wenn
 // nichts schlechter wird (docs/BEUTEVERGLEICH.md). Reine Logik, ändert weder Held noch Spielstand.
 // ────────────────────────────────────────────────────────────────
 
@@ -40,22 +40,24 @@ export function mitTeil(held: GuildFighter, itemId: string, wunsch?: EquipSlot):
   return { ...held, gear };
 }
 
-function vergleiche(held: GuildFighter, itemId: string, stufen: SchmiedeStufen, wunsch?: EquipSlot): Verbesserung | null {
+type Vorher = () => { werte: FighterStats; ids: Set<string> };
+
+function vergleiche(held: GuildFighter, itemId: string, stufen: SchmiedeStufen, vorher: Vorher, wunsch?: EquipSlot): Verbesserung | null {
   const nachher = mitTeil(held, itemId, wunsch);
   if (!nachher) return null;
-  const a = gearSystem.getEffectiveStats(held, stufen);
+  const { werte: a, ids: vorIds } = vorher();
   const b = gearSystem.getEffectiveStats(nachher, stufen);
-  const vorIds = new Set(gearSystem.getSpecialEffects(held).map(e => e.id));
-  const nachEffekte = gearSystem.getSpecialEffects(nachher);
-  const nachIds = new Set(nachEffekte.map(e => e.id));
-  if ([...vorIds].some(id => !nachIds.has(id))) return null;
-
+  // Erst die Werte: Sinkt einer, braucht es die Eigenschaften nicht mehr
   const gestiegen: { anteil: number; text: string }[] = [];
   for (const [k, fmt] of WERTE) {
     const d = Math.round((b[k] - a[k]) * 100) / 100;
     if (d < 0) return null;
     if (d > 0) gestiegen.push({ anteil: a[k] > 0 ? d / a[k] : 1, text: fmt(d) });
   }
+  const nachEffekte = gearSystem.getSpecialEffects(nachher);
+  const nachIds = new Set(nachEffekte.map(e => e.id));
+  if ([...vorIds].some(id => !nachIds.has(id))) return null;
+
   const neueIds = new Set<string>();
   const namen: string[] = [];
   for (const e of nachEffekte) {
@@ -73,26 +75,84 @@ function vergleiche(held: GuildFighter, itemId: string, stufen: SchmiedeStufen, 
   return { held, platz, teile: [...namen, ...gestiegen.map(g => g.text)], zugewinn };
 }
 
+/**
+ * Vergleicht viele Teile mit einem Helden: seine Werte und Kennungen höchstens einmal, erst beim ersten Teil, das
+ * passt. Mit nurPlatz zählt nur dieser Platz (Heldenfenster, angetippter Platz)
+ */
+export function vergleicher(held: GuildFighter, stufen: SchmiedeStufen = {}): (itemId: string, nurPlatz?: EquipSlot) => Verbesserung | null {
+  let gemerkt: ReturnType<Vorher> | null = null;
+  const vorher: Vorher = () => (gemerkt ??= {
+    werte: gearSystem.getEffectiveStats(held, stufen),
+    ids: new Set(gearSystem.getSpecialEffects(held).map(e => e.id)),
+  });
+  return (itemId, nurPlatz) => {
+    const def = ITEM_DEFS[itemId];
+    if (!def || def.type !== 'gear' || !def.gearSlot) return null;
+    if (nurPlatz) {
+      if (gearSystem.resolveEquipSlot(held, itemId, nurPlatz) !== nurPlatz) return null;
+      return vergleiche(held, itemId, stufen, vorher, nurPlatz);
+    }
+    if (def.weaponSlotType !== '1h') return vergleiche(held, itemId, stufen, vorher);
+    const haupt = vergleiche(held, itemId, stufen, vorher, 'mainHand');
+    const neben = vergleiche(held, itemId, stufen, vorher, 'offHand');
+    if (!haupt) return neben;
+    return neben && neben.zugewinn > haupt.zugewinn ? neben : haupt;
+  };
+}
+
 /** Wie sehr das Teil den Helden stärker macht, ohne dass etwas schlechter wird (sonst null) */
 export function verbesserungFuer(held: GuildFighter, itemId: string, stufen: SchmiedeStufen = {}): Verbesserung | null {
-  const def = ITEM_DEFS[itemId];
-  if (!def || def.type !== 'gear' || !def.gearSlot) return null;
-  if (def.weaponSlotType !== '1h') return vergleiche(held, itemId, stufen);
-  const haupt = vergleiche(held, itemId, stufen, 'mainHand');
-  const neben = vergleiche(held, itemId, stufen, 'offHand');
-  if (!haupt) return neben;
-  return neben && neben.zugewinn > haupt.zugewinn ? neben : haupt;
+  return vergleicher(held, stufen)(itemId);
+}
+
+export interface BesserFuer { beste: Verbesserung; weitere: number; besteWahl: boolean }
+
+/**
+ * Für wen in der Gilde jedes Teil besser ist (nur Teile, die jemanden stärker machen).
+ * Ist ein Teil die beste Wahl, nennt beste diesen Helden (bei mehreren den mit dem grössten Zugewinn), sonst wie besserFuer
+ */
+export function besserFuerAlle(state: GameState, itemIds: string[]): Map<string, BesserFuer> {
+  const stufen = schmiedeStufen(state);
+  const mit = state.fighters.map(f => vergleicher(f, stufen));
+  const listen = new Map<string, Verbesserung[]>();
+  // je Held und Platz das Teil mit dem grössten Zugewinn
+  const sieger = new Map<string, Verbesserung>();
+  for (const itemId of itemIds) {
+    const alle = mit.map(m => m(itemId)).filter((v): v is Verbesserung => v !== null);
+    if (alle.length === 0) continue;
+    listen.set(itemId, alle);
+    for (const v of alle) {
+      const schluessel = `${v.held.id}:${v.platz ?? ITEM_DEFS[itemId].gearSlot}`;
+      if (!sieger.has(schluessel) || v.zugewinn > sieger.get(schluessel)!.zugewinn) sieger.set(schluessel, v);
+    }
+  }
+  const gewonnen = new Set(sieger.values());
+  const ergebnis = new Map<string, BesserFuer>();
+  for (const [itemId, alle] of listen) {
+    const gewinne = alle.filter(v => gewonnen.has(v));
+    const besteWahl = gewinne.length > 0;
+    const beste = (besteWahl ? gewinne : alle).reduce((x, y) => (y.zugewinn > x.zugewinn ? y : x));
+    ergebnis.set(itemId, { beste, weitere: alle.length - 1, besteWahl });
+  }
+  return ergebnis;
 }
 
 /** Für wen in der Gilde das Teil am meisten bringt, und für wie viele weitere es auch besser ist */
-export function besserFuer(state: GameState, itemId: string): { beste: Verbesserung; weitere: number } | null {
-  const stufen = schmiedeStufen(state);
-  const alle = state.fighters
-    .map(f => verbesserungFuer(f, itemId, stufen))
-    .filter((v): v is Verbesserung => v !== null);
-  if (alle.length === 0) return null;
-  const beste = alle.reduce((x, y) => (y.zugewinn > x.zugewinn ? y : x));
-  return { beste, weitere: alle.length - 1 };
+export function besserFuer(state: GameState, itemId: string): BesserFuer | null {
+  return besserFuerAlle(state, [itemId]).get(itemId) ?? null;
+}
+
+/** Ist die Nebenhand leer: das Teil im Lager, das sie am meisten stärkt (sonst null) */
+export function nebenhandFrei(state: GameState, held: GuildFighter): { itemId: string; besser: Verbesserung } | null {
+  if (held.gear.offHand) return null;
+  const mit = vergleicher(held, schmiedeStufen(state));
+  let bestes: { itemId: string; besser: Verbesserung } | null = null;
+  for (const [itemId, qty] of Object.entries(state.globalStock)) {
+    if (qty <= 0) continue;
+    const besser = mit(itemId, 'offHand');
+    if (besser && (!bestes || besser.zugewinn > bestes.besser.zugewinn)) bestes = { itemId, besser };
+  }
+  return bestes;
 }
 
 /** «⬆ Besser für Lia: ATK +12 · HP +30» (Name roh, die Anzeige escapt) */
