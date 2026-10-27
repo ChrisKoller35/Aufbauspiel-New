@@ -218,7 +218,7 @@ describe('Kriegsrat', () => {
     expect(JSON.stringify(state)).toBe(vorher);
     // Gold, Tag, XP und mehr Brot im Lager (ohne Auswahl nimmt der Start je Sorte höchstens 3) ändern nichts
     const reicher = neu();
-    reicher.gold += 500;
+    reicher.globalStock.gold += 500;
     reicher.day += 1;
     reicher.fighters[0].xp += 10;
     reicher.globalStock.bread = 30;

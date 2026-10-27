@@ -19,7 +19,7 @@ Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge 
 - Jeder Lauf auf einer eigenen Kopie des Spielstands (einmal `JSON.stringify` beim Klick, je Lauf `JSON.parse`),
   mit `activeExpedition = null` und `rngSeed = 1000 + i × 7919`. Der echte Spielstand ändert sich nicht, und was
   die Stadt während des Rechnens tut, ändert das Ergebnis nicht.
-- Start wie der echte Aufbruch: gewählter Proviant als Liste an `startExpedition` (ohne Auswahl füllt
+- Start wie der echte Aufbruch: gewählter Härtegrad und Proviant als Liste an `startExpedition` (ohne Auswahl füllt
   es selbst aus dem Vorrat), dazu das Geschenk 1 Brot + 1 Heiltrank.
 - Dann die Schleife aus `spieleRoute` (Musterlauf.ts) mit der Spielweise «klug»: Kontrollpunkte immer
   weiter, Händler überspringen, Wagnis nur ab 85 % Gruppenleben. Einen Rückzug wählt der Rat nie.
@@ -33,6 +33,32 @@ Nach jedem Lauf rechnet die Kopie dieselben Funktionen in derselben Reihenfolge 
   und es gibt keine Trophäe. Das Fenster zeigt diese Zeile nur, wenn es vorkam.
 - Gefährlichster Raum: der Raum, in dem die meisten nicht gewonnenen Läufe endeten (bei «Boss überlebt»
   der Bossraum), mit ihrer Zahl. Bei Gleichstand der spätere: Dorthin kommen weniger Läufe.
+
+## Härtegrad
+Der Rat rechnet auf dem Grad, mit dem «EXPEDITION STARTEN» aufbrechen würde (`gewaehlterHaertegrad`); der Titel
+nennt ihn ausser bei Normal («🎲 Kriegsrat: Der Drachenhort · ☠ Albtraum»). Gegner, Material und Set-Chance folgen
+`run.difficulty` wie beim echten Aufbruch. Je 20 Läufe, `musterStand('stark', 1, 'sterne3')` wie `?probe=sterne` (Brom, Grimm, Lia, Sina, ohne Proviant):
+
+| Dungeon, Grad | Siege | Ø Leben | Läufe mit Set-Teil | Ø Material |
+|---|---|---|---|---|
+| Drachenhort, Normal / ⚔ Schwer / ☠ Albtraum | 20 / 20 / 19 | 83 / 68 / 32 % | 9 / 16 / 19 | 7 / 11 / 14 Drachenschuppe |
+| Himmelsarchiv, Normal / ⚔ Schwer / ☠ Albtraum | 20 / 14 / 0 | 61 / 20 / 0 % | 20 / 14 / 0 | 8 / 10 / 8 Himmelstinte |
+
+Eine Niederlage bringt die Hälfte des Materials nach geschafften Räumen; der Raum, in dem die Gruppe fällt, zählt
+mit (`processCurrentRoom` setzt `completed` vor der Prüfung auf Niederlage), und ×1,5 bzw. ×2 gelten auch dann.
+Auf Albtraum bringt im Himmelsarchiv eine Niederlage im Bossraum 8 Himmelstinte, so viel wie ein Sieg auf Normal;
+ohne einen Sieg sind es Ø 8.
+
+## Der letzte Rat
+Unter «🎲 Kriegsrat» steht der letzte fertige Rat («Letzter Rat · ☠ Albtraum: 19 Siege · 1 Niederlage»), solange
+`kriegsratSchluessel` gleich bleibt: der erste Probelauf gleich nach dem Start, ohne die Kennungen der Gegner. Darin
+stehen Dungeon, Grad, die Helden in ihrer Reihenfolge mit allen Werten (Stufe, Ausrüstung, Weg, Sets,
+Schmiede-Stufen), die Gegner, der Proviant und die Kriegsmaschine. Ändert sich davon etwas, verschwindet die Zeile,
+auch wenn nur die Reihenfolge wechselt (Drachenhort Albtraum rückwärts: 18 statt 19 Siege) oder Brom seinen
+Talisman ablegt (4 Siege). Gold, Tag und XP unter der nächsten Stufe ändern ihn nicht. Ohne Auswahl nimmt der Start
+den Proviant aus dem Vorrat, bis zu 4 Sorten zu je höchstens 3: 30 Brot im Lager statt 5 ändern nichts, 1 Brot
+schon. Gemerkt wird nur der letzte Rat und nur im Speicher der Seite, nicht im Spielstand; schliesst das Fenster
+vor dem Ende, merkt es nichts.
 
 ## Proviant-Regel
 Vor jedem Kampfraum (Kampf, Boss, Befestigung: nur dort zeigt das Spiel die Kampf-Vorschau mit Proviant),
