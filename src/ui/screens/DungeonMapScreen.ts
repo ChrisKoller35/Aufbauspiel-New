@@ -19,6 +19,8 @@ import { materialZeile } from '../components/SchmiedeAnzeige';
 import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
+import { haertegradName } from '../../systems/Haertegrade';
+import { haertegradMarke } from '../components/HaertegradAnzeige';
 
 
 
@@ -40,6 +42,9 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
   el.id = 's-dungeon';
   el.className = 'screen';
 
+  // Fernes Ziel: wie viele Dungeons schon auf Albtraum bezwungen sind
+  const albtraumZahl = Object.values(state.haertegrade ?? {}).filter(grad => grad === 'nightmare').length;
+
   el.innerHTML = `
     ${renderHeader(state, 'expeditions', 'DUNGEONKARTE')}
     <div class="dmap-wrap" id="dmap-wrap">
@@ -59,6 +64,8 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
       <div class="dmap-legend-row" style="margin-top:4px"><span class="dmap-ldot" style="background:#c8a227"></span> Hauptpfad</div>
       <div class="dmap-legend-row"><span class="dmap-lhex" style="background:#c8a227"></span> Boss</div>
       <div class="dmap-legend-row"><span class="dmap-lwappen">🦅</span> Gilde, höchster Dungeon</div>
+      <div class="dmap-legend-row"><span class="dmap-lhaerte hard">⚔</span> Schwer bezwungen</div>
+      <div class="dmap-legend-row"><span class="dmap-lhaerte nightmare">☠</span> Albtraum bezwungen&nbsp;· ${albtraumZahl}&nbsp;von&nbsp;${DUNGEON_GRAPH.length}</div>
     </div>
     <div class="dmap-scroll-hint" id="dmap-scroll-hint">▲ SCROLL — HÖHER = GEFÄHRLICHER ▲</div>
   `;
@@ -592,6 +599,7 @@ function buildDungeonSVG(state: GameState): string {
         ${startMarker}
         ${deadEndMarker}
         ${wappenHtml(aufKarte.get(route.id) ?? [], x, y - r * 0.55)}
+        ${haertegradKnoten(state.haertegrade?.[route.id], x, y + r * 0.55)}
       </g>`;
   }
 
@@ -633,6 +641,17 @@ function wappenHtml(gilden: GildenStand[], cx: number, cy: number): string {
       <text x="${xVon(anzahl - 1)}" y="${cy + 0.5}" text-anchor="middle" dominant-baseline="central" font-size="10" fill="#e5e7eb" font-family="Cinzel, serif">+${rest.length}</text>
     </g>` : '';
   return `<g class="dmap-wappen-reihe">${kreise}${mehr}</g>`;
+}
+
+/** Marke des höchsten bezwungenen Grads unten im Sechseck, gegenüber den Wappen */
+export function haertegradKnoten(grad: 'hard' | 'nightmare' | undefined, cx: number, cy: number): string {
+  if (!grad) return '';
+  return `
+    <g class="dmap-haerte ${grad}">
+      <title>${haertegradName(grad)} bezwungen</title>
+      <circle cx="${cx}" cy="${cy}" r="11.5" fill="rgba(10,8,5,0.88)" stroke="${grad === 'nightmare' ? '#dc2626' : '#c8a227'}" stroke-width="2"/>
+      <text x="${cx}" y="${cy}" text-anchor="middle" dominant-baseline="central" font-size="13" fill="#f3e7c4" style="user-select:none">${grad === 'nightmare' ? '☠' : '⚔'}</text>
+    </g>`;
 }
 
 // ── Hex point generator ──
@@ -702,6 +721,8 @@ function showRouteModal(routeId: string, state: GameState): void {
   if (route.isUnderwater) detailHtml += `<p><span style="color:#7dd3fc">🫧 Unterwasser-Route</span> — Luftvorrat beachten!</p>`;
   if (route.isSiegeRoute) detailHtml += `<p><span style="color:#f9a8d4">🏰 Belagerung</span> — Kriegsmaschine empfohlen</p>`;
   if (isCompleted) detailHtml += `<p style="color:#4ade80">✓ Bereits abgeschlossen</p>`;
+  const marke = haertegradMarke(state, route.id);
+  if (marke) detailHtml += `<p>${marke}</p>`;
   detailHtml += rivalenHtml(state, route.id);
 
   // Show unlock requirements if locked

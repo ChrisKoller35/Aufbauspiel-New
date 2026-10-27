@@ -24,12 +24,12 @@ und was bei neuen Dungeons oder Gilden zu tun ist.
 - **Zu sehen**
   - Seite «Rangliste»: Gipfel-Rangliste mit dem nächsten Ziel («Ein Sieg im Drachenhort bringt dich
     vorbei», gerechnet mit dem Zug der Rivalen in derselben Runde) und einer Warnung, wer bald
-  vorbeizieht; Wochenwertung; «Neues von der Karte» (die letzten
+    vorbeizieht (bei «nach deiner nächsten Expedition» mit dem Satz dieser Gilde); Wochenwertung; «Neues von der Karte» (die letzten
     sechs Siege); Pokale; unten zugeklappt die eigenen besten Expeditionen.
   - Dungeon-Karte: Das Wappen jeder Gilde steht an ihrem höchsten Dungeon (höchstens drei, dann «+n»).
     Das Fenster eines Dungeons sagt, wie viele Rivalen ihn bezwungen haben.
   - Expeditions-Bericht: Ruhm und Wochenplatz, an wem man vorbeigezogen ist, was die Rivalen in dieser
-    Runde bezwungen haben.
+    Runde bezwungen haben; bei einem Überholen ein Satz der Gilde (siehe «Stimmen der Rivalen»).
   - Hauptmenü: Kachel «Gipfel: Platz 3 von 10 · Woche: Platz 2», Abzeichen «🏆 Truhe bereit».
 
 ## Wochenwertung
@@ -73,6 +73,24 @@ pro Runde; ein Dungeon kostet Ebene hoch 1,5 (Ebene 1: 1, Ebene 4: 8, Ebene 6: 1
 Beim Start bekommt jede Gilde so viele Sterne wie die eigene Gilde plus ihren Vorsprung (nie über die
 erlaubte Ebene). Ein frisches Spiel beginnt darum auf Platz 5, das Probespiel auf Platz 3, das Probespiel
 zwischen den Sternen (`?probe=sterne`) auf Platz 2 hinter den Sturmadlern.
+
+## Stimmen der Rivalen
+
+Jede Rivalen-Gilde hat drei feste Sätze passend zum Motto (`src/data/rivalenStimmen.ts`), kein Zufall:
+Jeder Satz hängt an einem echten Überholen.
+
+- **Du ziehst vorbei** (`ueberholt`): im Expeditions-Bericht direkt unter «Gipfel-Rangliste: vorbei an …»,
+  es spricht die bestplatzierte überholte Gilde, die ihren Satz noch nicht gesagt hat.
+- **Sie zieht vorbei** (`vorbei`): sonst unter der ersten roten Zeile «… an dir vorbei», deren Gilde noch spricht.
+- **Sie zieht bald vorbei** (`drohung`): auf der Seite «Rangliste» kursiv am Ende der Warnung, aber nur bei
+  «nach deiner nächsten Expedition», damit sich der Satz nicht abnutzt. Im Musterspiel (normal, frisch,
+  Samen 12345) steht die Warnung nach 253 von 351 Expeditionen, mit Satz nach 27.
+
+Höchstens eine Stimme je Bericht, in der Farbe der Gilde. Jeder Satz kommt einmal bis zum Neuladen
+(Merker im Modul, nicht im Spielstand): Am Anfang überholen sich Glückspilze, Silbereulen und Rudel hin und
+her, ohne Merker käme derselbe Satz Bericht für Bericht. Im Musterspiel melden 40 von 351 Berichten ein
+Überholen (18 in den ersten 30); mit Neuladen alle 20 Expeditionen zeigen 31 davon eine Stimme (9 in den
+ersten 30), ganz ohne Neuladen 10.
 
 ## Eichung
 
@@ -124,6 +142,7 @@ noch vom 21.10., vor Mondhof und Morgentor: Mit ihnen liegt die ganze Karte bei 
 | Datei | Inhalt |
 |---|---|
 | `src/data/rivalen.ts` | Die neun Rivalen-Gilden und die eigene Gilde |
+| `src/data/rivalenStimmen.ts` | Drei Sätze je Rivalen-Gilde (Stimmen im Bericht und in der Warnung) |
 | `src/systems/Rangliste.ts` | Rennen, Gipfel-Rangliste, Wochenwertung, Ruhm, Ruhmestruhe, Neuigkeiten |
 | `src/data/dungeonNamen.ts` | Wie jeder Dungeon im Satz heisst («im Vulkankern», «den Vulkankern») |
 | `src/systems/Bezwungen.ts` | Merker der bezwungenen Dungeons (die Bestenliste behält nur die 100 besten Läufe) |
@@ -140,7 +159,8 @@ noch vom 21.10., vor Mondhof und Morgentor: Mit ihnen liegt die ganze Karte bei 
 - **Neuer Dungeon** auf der Karte: nur eine Zeile in `src/data/dungeonNamen.ts`, wie er im Satz heisst
   («Ein Sieg im Drachenhort», «bezwingen den Drachenhort»; der Test verlangt sie). Ruhm und Mühe ergeben
   sich aus Ebene und Räumen, die Rivalen dürfen eine Runde später hinein, die Wappen wandern von selbst.
-- **Neue Gilde:** Eintrag in `RIVALEN` (`src/data/rivalen.ts`, Felder dort erklärt), dann
+- **Neue Gilde:** Eintrag in `RIVALEN` (`src/data/rivalen.ts`, Felder dort erklärt) und ihre drei Sätze in
+  `src/data/rivalenStimmen.ts` (der Test verlangt sie), dann
   `npm run rangliste-eichung` laufen lassen und diese Datei nachführen.
 
 ## Spielstand

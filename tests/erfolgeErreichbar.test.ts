@@ -7,7 +7,9 @@
 // die Gilde beim Händler (systems/Haendler.ts). Dazu die Obergrenzen, die die Daten setzen
 // (z. B. vier Werkstätten, Werkstatt-Stufe 3). In Wahl-Räumen nimmt die Gilde immer die erste
 // Option (das Risiko); so kommen die Gipfel-Taten von selbst. Für «Kleingedrucktes» kehrt sie
-// einmal im Mondhof am letzten Kontrollpunkt um.
+// einmal im Mondhof am letzten Kontrollpunkt um. Die versteckten Erfolge holt versteckteTaten() mit je
+// einer Expedition; «Ohne Hose» kommt von selbst (beim ersten Boss trägt noch keiner Rüstung); für
+// «Unentschieden» kämpft der Guardian einmal ohne Angriff (er steht für eine Gruppe, die den Boss nicht klein kriegt).
 // ────────────────────────────────────────────────────────────────
 
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -37,6 +39,7 @@ import { ausbauen, ausbauInfo, maxStufe, MAX_STUFE_WERKSTATT } from '../src/syst
 import { brettStand, istSpielbar, laufendesKapitel, liefern, saalKapitel, splitterEinloesen } from '../src/systems/Auftragsbrett';
 import { belohnungenAbholen, TAG_MS } from '../src/systems/Rangliste';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
+import { albtraumBeute, merkeHaertegrad } from '../src/systems/Haertegrade';
 import { dasGebaeude, freischaltHinweise } from '../src/systems/GebaeudeStatus';
 import { kaufen } from '../src/systems/Haendler';
 import { aufstiegStand, setzeHerzsteinEin, steigeAuf } from '../src/systems/Stadtweg';
@@ -77,11 +80,12 @@ function nachfuellen(state: GameState, kosten: Record<string, number>): void {
   for (const [id, n] of Object.entries(kosten)) state.globalStock[id] = Math.max(state.globalStock[id] ?? 0, n);
 }
 
-/** Was main.ts nach einer Expedition tut (finishExpedition), ohne Truhe und Dialoge */
-function expedition(state: GameState, system: ExpeditionSystem, routeId: string, helden: number[], umkehren = false): void {
-  const run = system.startExpedition(state, routeId, helden);
+/** Was main.ts nach einer Expedition tut (finishExpedition), ohne Truhe und Dialoge; umkehren 'sofort': vor dem ersten Kampf */
+function expedition(state: GameState, system: ExpeditionSystem, routeId: string, helden: number[], umkehren: boolean | 'sofort' = false, grad = 'normal'): void {
+  const run = system.startExpedition(state, routeId, helden, grad);
   expect(run, routeId).not.toBeNull();
   state.statistics.total_expeditions = (state.statistics.total_expeditions ?? 0) + 1;
+  if (umkehren === 'sofort') system.retreat(run!);
   for (let s = 0; s < 500 && run!.status === 'exploring'; s++) {
     const step = system.nextStep(run!);
     if (step === 'finish') break;
@@ -92,8 +96,10 @@ function expedition(state: GameState, system: ExpeditionSystem, routeId: string,
   }
   setBeute(state, run!);
   schmiedeBeute(run!);
+  albtraumBeute(run!);
   const loot = { ...run!.loot };
   finalizeExpeditionProgress(state, run!, system);
+  merkeHaertegrad(state, run!);
   system.returnProvisions(state, run!);
   state.activeExpedition = null;
   for (const [id, n] of Object.entries(loot)) state.globalStock[id] = (state.globalStock[id] ?? 0) + n;
@@ -211,6 +217,34 @@ function naechstesZiel(state: GameState, jetzt: number): string {
   return spielbar.filter(id => ROUTE_DEFS[id].bossId).at(-1) ?? 'forest_short';
 }
 
+/** Die versteckten Erfolge, je eine Expedition, sobald sie geht; gibt die Zahl der Expeditionen zurück */
+function versteckteTaten(state: GameState, system: ExpeditionSystem, trupp: number[]): number {
+  const vorher = state.statistics.total_expeditions;
+  const fehlt = (id: string): boolean => !state.achievements.includes(id);
+  // «Kalte Füsse»: Rückzug, bevor ein Gegner fällt
+  if (fehlt('kalte_fuesse')) expedition(state, system, 'forest_short', trupp, 'sofort');
+  if (istSpielbar(state, 'forest_medium')) {
+    // «Keine Zeugen»: die Waldläuferin allein gegen den Boss des Tiefwalds
+    if (fehlt('keine_zeugen')) expedition(state, system, 'forest_medium', [trupp[1]]);
+    // «Unentschieden»: der Guardian ohne Angriff hält 20 Runden aus, der Boss auch (er trägt noch nichts; eine Waffe würde mitzählen)
+    const guardian = state.fighters.find(f => f.id === trupp[0])!;
+    const atk = guardian.baseStats.atk;
+    if (fehlt('unentschieden')) {
+      guardian.baseStats.atk = 0;
+      expedition(state, system, 'forest_medium', [guardian.id]);
+      guardian.baseStats.atk = atk;
+    }
+  }
+  // «Schlafstörung»: Albtraum in bezwungenen Dungeons, bis es drei sind
+  for (const id of Object.keys(bezwungeneDungeons(state))) {
+    if (fehlt('schlafstoerung') && state.haertegrade?.[id] !== 'nightmare') expedition(state, system, id, trupp, false, 'nightmare');
+  }
+  // «Wörtlich genommen»: ein frisch angeheuerter Held allein auf Albtraum im Tiefwald
+  const neuling = state.fighters.find(f => !trupp.includes(f.id));
+  if (neuling && fehlt('woertlich_genommen')) expedition(state, system, 'forest_medium', [neuling.id], false, 'nightmare');
+  return state.statistics.total_expeditions - vorher;
+}
+
 function fehlendeErfolge(state: GameState): string[] {
   return ACHIEVEMENT_DEFS.filter(d => !state.achievements.includes(d.id)).map(d => d.id);
 }
@@ -262,6 +296,7 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
       expedition(state, system, 'mondhof', trupp, true);
       expeditionen++;
     }
+    expeditionen += versteckteTaten(state, system, trupp);
     for (let i = 0; i < 5; i++) {
       state.day++;
       erfolgePruefen(state);
@@ -335,6 +370,13 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       tat_pfand: 1,
       tat_uhr: 1,
       tat_kleingedrucktes: 1,
+      // Das System schaut zu: je Tat höchstens 1, Albtraum in jedem Dungeon der Karte
+      kalte_fuesse: 1,
+      unentschieden: 1,
+      woertlich_genommen: 1,
+      keine_zeugen: 1,
+      ohne_hose: 1,
+      albtraum_dungeons: DUNGEON_GRAPH.length,
     };
   }
 

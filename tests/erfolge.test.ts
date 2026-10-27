@@ -76,7 +76,7 @@ describe('Erfolge: Liste', () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ALTE_IDS) expect(ids, id).toContain(id);
     expect(ids.length).toBeGreaterThanOrEqual(25);
-    expect(ids.length).toBeLessThanOrEqual(50);
+    expect(ids.length).toBeLessThanOrEqual(60);
   });
 
   test('jeder Erfolg hat Gruppe, Zeichen, Ziel und Texte mit Umlauten, ohne ß', () => {
@@ -84,7 +84,7 @@ describe('Erfolge: Liste', () => {
       expect(ERFOLG_GRUPPEN, d.id).toContain(d.gruppe);
       expect(d.icon.length, d.id).toBeGreaterThan(0);
       expect(d.ziel, d.id).toBeGreaterThanOrEqual(1);
-      expect(`${d.name} ${d.description}`, d.id).not.toMatch(/Gebaeude|zurueck|ueber|Ueber|aempf|fuehr|Fuehr|bekaempf|Schliesse|stueck|ß/);
+      expect(`${d.name} ${d.description} ${d.versteckt ?? ''}`, d.id).not.toMatch(/Gebaeude|zurueck|ueber|Ueber|aempf|fuehr|Fuehr|bekaempf|Schliesse|stueck|ß/);
     }
     for (const g of ERFOLG_GRUPPEN) expect(ACHIEVEMENT_DEFS.some(d => d.gruppe === g), g).toBe(true);
   });

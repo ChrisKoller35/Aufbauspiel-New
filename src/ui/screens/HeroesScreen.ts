@@ -27,6 +27,8 @@ import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
 import { klassenTafelHtml } from '../components/KlassenTafel';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gedruecktUm } from '../components/Druckzeit';
+import '../html/beutevergleich.css';
+import { besserFuerAlle, besserText, nebenhandFrei, vergleicher } from '../../systems/Beutevergleich';
 
 const gearSystem = new GearSystem();
 
@@ -414,12 +416,16 @@ function auswahlHtml(fighter: GuildFighter): string {
     </div>`;
 }
 
+/** Grünes Abzeichen «macht stärker» (Heldenfenster, Lager); der Pfeil kommt aus dem CSS, nicht aus der Schrift */
+const BESSER_PFEIL = '<span class="besser-pfeil" aria-hidden="true"></span>';
+
 /**
  * Gegenstände im Inventar des Heldenfensters, als Knöpfe (Tab, Enter). Ist das Inventar zu, sind sie gesperrt:
  * Tab im Fenster (FensterHilfen) überspringt gesperrte Knöpfe, versteckte aber nicht. Sonst stünden versteckte
  * Knöpfe am Anfang seiner Liste: Umschalt+Tab entkäme aus dem Fenster, und Tab am Ende bliebe hängen.
+ * platz: der angetippte Platz; Teile für andere Plätze treten zurück, der grüne Pfeil gilt nur für ihn.
  */
-export function buildInventoryHtml(fighter: GuildFighter, offen: boolean): string {
+export function buildInventoryHtml(fighter: GuildFighter, offen: boolean, platz = wunschPlatz()): string {
   if (!gameState) return '';
 
   // Collect equippable gear items from globalStock
@@ -454,22 +460,32 @@ export function buildInventoryHtml(fighter: GuildFighter, offen: boolean): strin
   }
 
   // Ist ein Platz angetippt, treten Gegenstände für andere Plätze zurück
-  const platz = wunschPlatz();
+  const besserMit = vergleicher(fighter, stufen());
   return items.map(item => {
     const istGewaehlt = auswahl?.art === 'inventar' && auswahl.itemId === item.id;
     const gewaehlt = istGewaehlt ? ' gewaehlt' : '';
     const mit = mitGegenstand(fighter, item.id, platz);
     const passt = !mit ? ' passt-nicht' : platz && mit.gear[platz] !== item.id ? ' anderer-platz' : '';
-    const titel = [gearName(item.id), gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id)].filter(Boolean).join('\n');
+    const besser = besserMit(item.id, platz);
+    const titel = [gearName(item.id), gearStatsSummary(item.id), eigenschaftenText(item.id), setTooltip(item.id),
+      besser ? escapeAttr(besserText({ beste: besser, weitere: 0 })) : ''].filter(Boolean).join('\n');
     const name = `${gearName(item.id)}${item.qty > 1 ? `, ${item.qty} Stück` : ''}`;
     return `
     <button type="button" class="hdm2-inv-slot ${item.rarCls}${gewaehlt}${passt}" data-item-id="${item.id}" title="${titel}"
             aria-label="${name}" aria-pressed="${istGewaehlt}"${offen ? '' : ' disabled'}>
       <img src="assets/sprites/final/${item.sprKey}.png" alt="" onerror="this.style.display='none'">
-      ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}
+      ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}${besser ? BESSER_PFEIL : ''}
       ${item.qty > 1 ? `<span class="hdm2-inv-qty">${item.qty}</span>` : ''}
     </button>`;
   }).join('');
+}
+
+/** Leere Nebenhand und im Lager etwas, das sie stärker macht: sagt es dem Helden (antippen wählt die Nebenhand) */
+export function nebenhandHinweisHtml(fighter: GuildFighter): string {
+  const frei = gameState && wunschPlatz() !== 'offHand' ? nebenhandFrei(gameState, fighter) : null;
+  if (!frei) return '';
+  return `<button type="button" class="nebenhand-frei" data-slot="offHand">✋ <b>Nebenhand frei:</b> Sie winkt dem Gegner nur zu. Eine zweite`
+    + ` Einhandwaffe oder ein Schild zählt dort voll.<span class="truhe-besser">⬆ ${gearName(frei.itemId)} aus dem Lager: ${frei.besser.teile.slice(0, 3).join(' · ')}</span></button>`;
 }
 
 /** Wert mit dem Anteil aus Ausrüstung und Sets: «ATK 22 +12» */
@@ -566,7 +582,7 @@ function renderDetailModal(fighter: GuildFighter): string {
             <span class="hdm2-slot-label">${gearSlots[3].label}</span>
           </div>
         </div>
-        ${auswahlHtml(fighter)}
+        ${nebenhandHinweisHtml(fighter)}${auswahlHtml(fighter)}
         <div class="hdm2-xp-row">
           <div class="hdm2-xpbar"><div class="hdm2-xpfill" style="width:${pct}%"></div></div>
           <div class="hdm2-xplabel">${xpLabel}</div>
@@ -650,7 +666,7 @@ function rarityLabel(tags: string[]): string {
   return '';
 }
 
-function renderInventarTab(): string {
+export function renderInventarTab(): string {
   if (!gameState) return '<div class="empty-msg">Kein Spielstand geladen.</div>';
 
   const stock = gameState.globalStock;
@@ -680,13 +696,17 @@ function renderInventarTab(): string {
   }
 
   let html = '';
+  // Grüne Zeile wie in der Truhe, als breite Karte vorne nur für die beste Wahl je Held und Platz (sonst wird das
+  // Lager im späten Spiel zur Wand aus Karten für leere Nebenhände). Was sonst besser ist, trägt das ⬆, die Zeile im title
+  const besser = besserFuerAlle(gameState, ownedItems.map(i => i.id));
+  const rang = (id: string) => { const b = besser.get(id); return b ? (b.besteWahl ? 2 : 1) : 0; };
 
   for (const cat of ITEM_CATEGORIES) {
     const items = ownedItems.filter(i => cat.filter(i.id, i.def));
     if (items.length === 0) continue;
 
-    // Sort: higher tier first, then alphabetical
-    items.sort((a, b) => (b.def.tier ?? 0) - (a.def.tier ?? 0) || a.def.name.localeCompare(b.def.name));
+    // Zuerst die beste Wahl, dann was sonst besser ist, dann höhere Ebene, dann nach Namen
+    items.sort((a, b) => rang(b.id) - rang(a.id) || (b.def.tier ?? 0) - (a.def.tier ?? 0) || a.def.name.localeCompare(b.def.name));
 
     const itemCards = items.map(item => {
       const rc = rarityClass(item.def.tags);
@@ -695,6 +715,8 @@ function renderInventarTab(): string {
       const statsStr = gearStatsSummary(item.id);
       const tierStr = item.def.tier ? `T${item.def.tier}` : '';
       const isStackable = (item.def.stackSize ?? 1) > 1;
+      const b = besser.get(item.id);
+      const zeile = b ? escapeAttr(besserText(b)) : '';
       const tooltip = [
         gearName(item.id),
         rl,
@@ -704,18 +726,19 @@ function renderInventarTab(): string {
         setTooltip(item.id),
         item.def.flavorText,
         isEquipped ? 'Ausger\u00FCstet' : '',
+        b?.besteWahl ? '' : zeile,
       ].filter(Boolean).join('\n');
 
       const isGear = item.def.type === 'gear';
 
       return `
-        <div class="inv-cell ${rc}${isEquipped ? ' inv-cell-eq' : ''}${isGear ? ' inv-cell-gear' : ''}" title="${tooltip}">
+        <div class="inv-cell ${rc}${isEquipped ? ' inv-cell-eq' : ''}${isGear ? ' inv-cell-gear' : ''}${b?.besteWahl ? ' inv-cell-besser' : ''}" title="${tooltip}">
           <img src="assets/sprites/final/${getItemSpriteKey(item.id)}.png" class="${isGear ? 'inv-cell-bg' : 'inv-cell-img'}"
                onerror="this.style.display='none'">
           ${isStackable && item.qty > 1 ? `<span class="inv-cell-qty">\u00D7${item.qty}</span>` : ''}
           ${isEquipped ? '<span class="inv-cell-eqbadge">E</span>' : ''}
-          ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}
-          <span class="inv-cell-nm">${gearName(item.id)}</span>
+          ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}${b && !b.besteWahl ? BESSER_PFEIL : ''}
+          <span class="inv-cell-nm">${gearName(item.id)}</span>${b?.besteWahl ? `<span class="truhe-besser">${zeile}</span>` : ''}
         </div>`;
     }).join('');
 
@@ -1035,12 +1058,15 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   };
 
   // Platz am Helden antippen: Gegenstand zeigen (nochmal antippen schliesst); ein leerer Platz öffnet das Inventar
-  overlay.querySelectorAll<HTMLElement>('.hdm-gear-icon[data-slot]').forEach(el => {
+  // Der Hinweis «Nebenhand frei» wirkt wie ihr Platz
+  overlay.querySelectorAll<HTMLElement>('.hdm-gear-icon[data-slot], .nebenhand-frei').forEach(el => {
     el.addEventListener('click', () => {
       const slot = el.dataset.slot as EquipSlot;
       auswahl = auswahl?.art === 'slot' && auswahl.slot === slot ? null : { art: 'slot', slot };
       if (auswahl && !fighter.gear[slot]) inventarOffen = true;
       neuZeichnen([`.hdm-gear-icon[data-slot="${slot}"]`]);
+      // Ein leerer Platz (auch über den Hinweis) holt das Inventar ins Bild: Am Handy liegt es unter dem Helden
+      if (auswahl && !fighter.gear[slot]) container.querySelector('#hdm2-inv-panel')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     });
   });
 

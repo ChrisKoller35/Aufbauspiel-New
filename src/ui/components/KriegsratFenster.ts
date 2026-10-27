@@ -5,12 +5,15 @@
 // Häppchen (rechneImHintergrund), damit der Browser dazwischen zeichnen und
 // Tasten annehmen kann. Escape, «Schliessen» und der dunkle Rand schliessen
 // (FensterHilfen.ts), auch mitten im Rechnen; danach rechnet es nicht weiter.
+// Gerechnet wird auf dem gewählten Härtegrad; der letzte fertige Rat bleibt als
+// Zeile beim Knopf stehen (letzterRatHtml), nur im Speicher der Seite.
 // ────────────────────────────────────────────────────────────────
 
 import '../html/kriegsrat.css';
 import { ROUTE_DEFS } from '../../data/routes';
 import { GameState } from '../../models/GameState';
-import { kriegsratLaeufe, KriegsratErgebnis } from '../../systems/Kriegsrat';
+import { kriegsratLaeufe, kriegsratSchluessel, KriegsratErgebnis } from '../../systems/Kriegsrat';
+import { Haertegrad, haertegradName } from '../../systems/Haertegrade';
 import { BeuteVorschau, HeldVorschau } from '../../systems/KriegsratVorschau';
 import { MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 import { KLUG_AB_LEBEN } from '../../systems/Musterlauf';
@@ -79,6 +82,40 @@ export function rechneImHintergrund<T, R>(
 /** Zahl und Wort mit geschütztem Leerzeichen: Die Zeile bricht nie zwischen den beiden um. */
 function zahlWort(n: number, eins: string, viele: string): string {
   return `${n}&nbsp;${n === 1 ? eins : viele}`;
+}
+
+/** «19 Siege · 1 Niederlage», «Boss überlebt» nur, wenn es vorkam: Kopfzeile und Zeile des letzten Rats */
+function ausgang(r: KriegsratErgebnis): string {
+  const boss = r.bossUeberlebt > 0 ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : '';
+  return `${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss}`;
+}
+
+/** «☠&nbsp;Albtraum»: Zeichen und Name brechen nie auseinander */
+const gradName = (grad: Haertegrad): string => haertegradName(grad).replace(' ', '&nbsp;');
+
+/** Nur der letzte fertige Rat, nie im Spielstand: weg beim Neu-Laden */
+let letzterRat: { routeId: string; schluessel: string; zeile: string } | null = null;
+
+/** Merkt sich den fertigen Rat mit dem Schlüssel der Auswahl (Kriegsrat.ts kriegsratSchluessel) */
+export function merkeLetztenRat(
+  state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, grad: Haertegrad,
+  r: KriegsratErgebnis,
+): void {
+  letzterRat = {
+    routeId,
+    schluessel: kriegsratSchluessel(state, routeId, heroIds, proviant, grad),
+    zeile: `Letzter Rat&nbsp;· ${gradName(grad)}:&nbsp;${ausgang(r)}`,
+  };
+}
+
+/** Die Zeile unter «🎲 Kriegsrat», solange dieselbe Expedition denselben Ausgang hätte; sonst leer */
+export function letzterRatHtml(
+  state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, grad: Haertegrad,
+): string {
+  // Ohne Helden startet keine Expedition: erst danach den Schlüssel rechnen
+  if (!letzterRat || letzterRat.routeId !== routeId || heroIds.length === 0) return '';
+  if (kriegsratSchluessel(state, routeId, heroIds, proviant, grad) !== letzterRat.schluessel) return '';
+  return `<p class="kr-letzter">${letzterRat.zeile}</p>`;
 }
 
 function rat(siege: number, anzahl: number): string {
@@ -158,7 +195,7 @@ export function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
   const boss = r.bossUeberlebt > 0;
   // «17-mal»: nach dem Strich ein Wortverbinder (U+2060), sonst bricht die Zeile bei 330–350 px nach «17-» um (wie stueck im Fundbuch)
   return `
-    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe:&nbsp;${zahlWort(r.siege, 'Sieg', 'Siege')}&nbsp;· ${zahlWort(r.niederlagen, 'Niederlage', 'Niederlagen')}${boss ? `&nbsp;· ${r.bossUeberlebt}×&nbsp;Boss&nbsp;überlebt` : ''}</p>
+    <p class="kr-kopf">${anzahl}&nbsp;Probeläufe:&nbsp;${ausgang(r)}</p>
     ${balken('sieg', 'Siege', r.siege, anzahl)}
     ${balken('niederlage', 'Niederlagen', r.niederlagen, anzahl)}
     ${boss ? balken('boss', 'Boss überlebt', r.bossUeberlebt, anzahl) : ''}
@@ -176,13 +213,13 @@ export function ergebnisHtml(r: KriegsratErgebnis, anzahl: number): string {
 /** Öffnet das Fenster über `root` und rechnet danach; `beimSchliessen` läuft, sobald es zu ist. */
 export function zeigeKriegsrat(
   root: HTMLElement, state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>,
-  beimSchliessen: () => void,
+  beimSchliessen: () => void, grad: Haertegrad = 'normal',
 ): void {
   const ov = document.createElement('div');
   ov.className = 'ov on kr-ov';
   ov.innerHTML = `
     <div class="modal kr" role="dialog" aria-modal="true" aria-labelledby="kr-titel" tabindex="-1">
-      <h3 class="mt" id="kr-titel">🎲 Kriegsrat: ${escapeAttr(ROUTE_DEFS[routeId]?.name ?? routeId)}</h3>
+      <h3 class="mt" id="kr-titel">🎲 Kriegsrat: ${escapeAttr(ROUTE_DEFS[routeId]?.name ?? routeId)}${grad === 'normal' ? '' : `&nbsp;· ${gradName(grad)}`}</h3>
       <div class="kr-body" aria-live="polite" aria-busy="true">
         <p class="kr-tagt">Der Kriegsrat tagt …<span class="kr-stand" aria-hidden="true"></span></p>
       </div>
@@ -224,7 +261,9 @@ export function zeigeKriegsrat(
   const body = ov.querySelector<HTMLElement>('.kr-body')!;
   const stand = ov.querySelector<HTMLElement>('.kr-stand')!;
   // Der Stand von jetzt (beim Klick), nicht der beim ersten Häppchen
-  const naechstesHaeppchen = haeppchenweise(kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL));
+  const naechstesHaeppchen = haeppchenweise(kriegsratLaeufe(state, routeId, heroIds, proviant, ANZAHL, grad));
+  // Für die Zeile des letzten Rats: der Stand beim Klick (die Stadt läuft weiter)
+  const beimKlick: GameState = JSON.parse(JSON.stringify(state));
   const zeige = (html: string) => {
     body.innerHTML = html;
     body.setAttribute('aria-busy', 'false');
@@ -232,7 +271,11 @@ export function zeigeKriegsrat(
   // Erst «tagt» zeichnen, dann rechnen: requestAnimationFrame kommt vor dem nächsten Bild, setTimeout danach
   requestAnimationFrame(() => rechneImHintergrund(naechstesHaeppchen, () => ov.isConnected, {
     zwischen: fertigeLaeufe => { stand.textContent = ` ${fertigeLaeufe}\u00a0von\u00a0${ANZAHL}`; },
-    fertig: ergebnis => zeige(ergebnisHtml(ergebnis, ANZAHL)),
+    // Ein Fehler beim Merken landet in der Meldung unten; zu geschlossen merkt sich das Fenster nichts
+    fertig: ergebnis => {
+      merkeLetztenRat(beimKlick, routeId, heroIds, proviant, grad, ergebnis);
+      zeige(ergebnisHtml(ergebnis, ANZAHL));
+    },
     fehler: err => {
       console.error('Kriegsrat:', err);
       zeige('<p class="kr-info">Der Rat konnte diese Expedition nicht durchspielen.</p>');

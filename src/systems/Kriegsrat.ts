@@ -1,7 +1,7 @@
 // ─── Magic City – Kriegsrat ─────────────────────────────────────
 // Vor dem Aufbruch: Die gewählte Expedition läuft `anzahl`-mal auf Kopien
-// des Spielstands, mit der Spielweise «klug» aus dem Musterlauf und einer
-// einfachen Proviant-Regel. Der echte Spielstand bleibt unberührt
+// des Spielstands, auf dem gewählten Härtegrad, mit der Spielweise «klug»
+// aus dem Musterlauf und einer einfachen Proviant-Regel. Der echte Spielstand bleibt unberührt
 // (docs/KRIEGSRAT.md). Reine Logik, kein DOM.
 // ────────────────────────────────────────────────────────────────
 
@@ -15,6 +15,7 @@ import { ProvisionSystem } from './ProvisionSystem';
 import { istGeschichtsWahl } from './Geschichten';
 import { KLUG_AB_LEBEN, amRundenlimit, gewonnen } from './Musterlauf';
 import { BeuteVorschau, HeldVorschau, neueVorschau, vorschauNachLauf, vorschauSchnitt } from './KriegsratVorschau';
+import type { Haertegrad } from './Haertegrade';
 
 export interface KriegsratErgebnis {
   /** Dungeon bezwungen (Musterlauf.ts gewonnen) */
@@ -63,14 +64,14 @@ function gruppenLeben(run: ExpeditionRun): number {
  * Proviant eingesetzt hat und wie der Rat unterwegs entschieden hat.
  */
 export function* probelauf(
-  kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>,
+  kopie: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, grad: Haertegrad = 'normal',
 ): Generator<void, { run: ExpeditionRun; eingesetzt: number; wahlen: KriegsratErgebnis['wahlen'] }, void> {
   const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
   const consumables: string[] = [];
   for (const [itemId, qty] of Object.entries(proviant)) {
     for (let i = 0; i < qty; i++) consumables.push(itemId);
   }
-  const run = system.startExpedition(kopie, routeId, heroIds, 'normal', null, false, consumables);
+  const run = system.startExpedition(kopie, routeId, heroIds, grad, null, false, consumables);
   if (!run) throw new Error(`Route ${routeId} lässt sich nicht starten`);
   // Kopie lesen und Expedition anlegen dauert beim ersten Mal nach dem Laden fast so lange wie ein Häppchen
   yield;
@@ -120,12 +121,14 @@ export function kopieFuerLauf(basis: string, i: number): GameState {
  */
 export function kriegsratLaeufe(
   state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, anzahl = 20,
+  grad: Haertegrad = 'normal',
 ): Generator<number, KriegsratErgebnis, void> {
-  return probelaeufe(JSON.stringify(state), routeId, heroIds, proviant, anzahl);
+  return probelaeufe(JSON.stringify(state), routeId, heroIds, proviant, anzahl, grad);
 }
 
 function* probelaeufe(
   basis: string, routeId: string, heroIds: number[], proviant: Record<string, number>, anzahl: number,
+  grad: Haertegrad = 'normal',
 ): Generator<number, KriegsratErgebnis, void> {
   // Der Stand beim Klick: was die Gilde besitzt und wie weit die Helden sind
   const stand: GameState = JSON.parse(basis);
@@ -139,7 +142,7 @@ function* probelaeufe(
   let leben = 0;
   for (let i = 0; i < anzahl; i++) {
     const kopie = kopieFuerLauf(basis, i);
-    const lauf = probelauf(kopie, routeId, heroIds, proviant);
+    const lauf = probelauf(kopie, routeId, heroIds, proviant, grad);
     let schritt = lauf.next();
     while (!schritt.done) {
       yield i;
@@ -187,9 +190,23 @@ function* probelaeufe(
 /** Alle Läufe am Stück (`kriegsratLaeufe`), etwa für Tests. */
 export function kriegsrat(
   state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, anzahl = 20,
+  grad: Haertegrad = 'normal',
 ): KriegsratErgebnis {
-  const laeufe = kriegsratLaeufe(state, routeId, heroIds, proviant, anzahl);
+  const laeufe = kriegsratLaeufe(state, routeId, heroIds, proviant, anzahl, grad);
   let schritt = laeufe.next();
   while (!schritt.done) schritt = laeufe.next();
   return schritt.value;
+}
+
+/**
+ * Was Siege und Niederlagen der Probeläufe bestimmt, als Text: der erste Probelauf gleich nach dem Start (Helden in
+ * ihrer Reihenfolge mit allen Werten, Gegner des Grads, Proviant, Kriegsmaschine). Gleicher Schlüssel, gleicher Ausgang.
+ * Ohne die Kennungen der Kampfeinheiten: Gegner und Kriegsmaschine bekommen bei jedem Start neue (CombatEngine).
+ */
+export function kriegsratSchluessel(
+  state: GameState, routeId: string, heroIds: number[], proviant: Record<string, number>, grad: Haertegrad = 'normal',
+): string {
+  const kopie = kopieFuerLauf(JSON.stringify(state), 0);
+  probelauf(kopie, routeId, heroIds, proviant, grad).next();
+  return JSON.stringify(kopie.activeExpedition, (k, v) => (k === 'id' && typeof v === 'number' ? undefined : v));
 }

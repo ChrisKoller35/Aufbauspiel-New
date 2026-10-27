@@ -12,9 +12,9 @@
 import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
 import { MAX_SCHMIEDE_STUFE } from './schmiede';
 
-export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Gipfel-Taten' | 'Sammeln';
+export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Gipfel-Taten' | 'Sammeln' | 'Das System schaut zu';
 
-export const ERFOLG_GRUPPEN: ErfolgGruppe[] = ['Stadt', 'Gilde', 'Helden', 'Dungeons', 'Gipfel-Taten', 'Sammeln'];
+export const ERFOLG_GRUPPEN: ErfolgGruppe[] = ['Stadt', 'Gilde', 'Helden', 'Dungeons', 'Gipfel-Taten', 'Sammeln', 'Das System schaut zu'];
 
 export interface AchievementDef {
   id: string;
@@ -27,6 +27,8 @@ export interface AchievementDef {
   zaehler: string | string[];
   /** Ab diesem Wert ist der Erfolg geschafft */
   ziel: number;
+  /** Versteckt: Bis zum Freischalten zeigt der Bildschirm nur «???» und diesen Satz des Systems */
+  versteckt?: string;
   condition: (stats: Record<string, number>) => boolean;
 }
 
@@ -38,9 +40,9 @@ export function zaehlerWert(def: Pick<AchievementDef, 'zaehler'>, stats: Record<
 
 function erfolg(
   id: string, gruppe: ErfolgGruppe, icon: string, name: string, description: string,
-  zaehler: string | string[], ziel: number,
+  zaehler: string | string[], ziel: number, versteckt?: string,
 ): AchievementDef {
-  const def = { id, gruppe, icon, name, description, zaehler, ziel };
+  const def = { id, gruppe, icon, name, description, zaehler, ziel, versteckt };
   return { ...def, condition: (stats) => zaehlerWert(def, stats) >= ziel };
 }
 
@@ -113,4 +115,12 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('schmiede_5', 'Sammeln', '💫', 'Meisterstück', `Schmiede ein Set-Teil auf +${MAX_SCHMIEDE_STUFE}.`, 'schmiede_hoechste_stufe', MAX_SCHMIEDE_STUFE),
   erfolg('monsterbuch_25', 'Sammeln', '📖', 'Monsterkundler', 'Entdecke 25 Monster für das Monsterbuch.', 'monsterbuch_entdeckt', 25),
   erfolg('monsterbuch_50', 'Sammeln', '📚', 'Monstergelehrter', 'Entdecke 50 Monster für das Monsterbuch.', 'monsterbuch_entdeckt', 50),
+
+  // ── Das System schaut zu (versteckt bis zum Freischalten; gezählt am Ende der Expedition, docs/ERFOLGE.md) ──
+  erfolg('kalte_fuesse', 'Das System schaut zu', '🐔', 'Kalte Füsse', 'Umgekehrt, bevor ein einziger Gegner fiel. Das System nennt es Rückzug. Die Gegner nennen es anders.', 'kalte_fuesse', 1, 'Das System hat schon kürzere Expeditionen gesehen. Nicht viele.'),
+  erfolg('unentschieden', 'Das System schaut zu', '🤝', 'Unentschieden', 'Zwanzig Runden gegen den Boss, und keine Seite fiel. Das System wertet das als Sieg. Der Boss auch.', 'unentschieden', 1, 'Das System zählt bis zwanzig. Manche Bosse auch.'),
+  erfolg('woertlich_genommen', 'Das System schaut zu', '😱', 'Wörtlich genommen', 'Auf ☠ Albtraum verloren. Das System weist darauf hin, dass der Name eine Warnung war.', 'woertlich_genommen', 1, 'Manche Warnungen stehen schon im Namen. Das System liest sie gern laut vor.'),
+  erfolg('schlafstoerung', 'Das System schaut zu', '🛌', 'Schlafstörung', 'Drei Dungeons auf ☠ Albtraum bezwungen. Das System hat dreimal vermerkt, dass diese Gilde nicht aufhört, wenn es reicht. Es führt dafür jetzt eine eigene Liste.', 'albtraum_dungeons', 3, 'Das System schläft nie. Manche Gilden offenbar auch nicht.'),
+  erfolg('keine_zeugen', 'Das System schaut zu', '👤', 'Keine Zeugen', 'Mit einem einzigen Helden einen Boss besiegt. Keine Zeugen, ausser dem System. Das erzählt es jetzt allen.', 'keine_zeugen', 1, 'Das System sieht auch, was sonst niemand sieht. Gerade dann.'),
+  erfolg('ohne_hose', 'Das System schaut zu', '🩲', 'Ohne Hose', 'Einen Boss besiegt, während ein Held keine Rüstung trug. Das System hat sich die Stelle mehrmals angesehen.', 'ohne_hose', 1, 'Das System achtet auf Kleidung. Vor allem auf fehlende.'),
 ];

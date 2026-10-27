@@ -16,7 +16,7 @@ import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
 import { routenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
-import { zeigeKriegsrat } from '../components/KriegsratFenster';
+import { letzterRatHtml, zeigeKriegsrat } from '../components/KriegsratFenster';
 import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../components/HaertegradAnzeige';
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 
@@ -312,6 +312,7 @@ function buildTeamHTML(): string {
         <div class="prov-hd">Proviant</div>
         ${provRows}
         <button class="btn-kriegsrat"${document.querySelector('.kr-ov') ? ' disabled' : ''}>🎲 Kriegsrat</button>
+        ${route ? letzterRatHtml(gameState, route.id, selectedHeroes.map(h => h.id), provisions, grad) : ''}
         <button class="btn-go${grad === 'normal' ? '' : ` btn-go-${grad}`}">EXPEDITION STARTEN${startKnopfHaerte(grad)}</button>
       </div>
     </div>
@@ -391,18 +392,19 @@ function bindTeamEvents(el: HTMLElement): void {
       return;
     }
 
-    // Kriegsrat: Probeläufe mit denselben Werten wie der Start; gesperrt, solange das Fenster offen ist
+    // Kriegsrat: Probeläufe mit denselben Werten wie der Start (auch dem Härtegrad); gesperrt, solange das Fenster offen ist
     const ratBtn = target.closest<HTMLButtonElement>('.btn-kriegsrat');
     if (ratBtn) {
       const route = selectedRouteId ? ROUTE_DEFS[selectedRouteId] : null;
       if (ratBtn.disabled || document.querySelector('.kr-ov') || selectedHeroes.length === 0 || !route || !isRoutePlayable(route)) return;
       ratBtn.disabled = true;
       zeigeKriegsrat(document.body, gameState, route.id, selectedHeroes.map(h => h.id), { ...provisions }, () => {
-        // Wieder frei, und der Fokus kehrt zum Knopf zurück (sonst landet er auf der Seite)
+        // Wieder frei, darunter die Zeile des letzten Rats, und der Fokus kehrt zum Knopf zurück (sonst landet er auf der Seite)
+        refreshTeamScreen();
         const knopf = el.querySelector<HTMLButtonElement>('.btn-kriegsrat');
         knopf?.removeAttribute('disabled');
         if (knopf?.offsetParent) knopf.focus();
-      });
+      }, gewaehlterHaertegrad(gameState, route.id));
       return;
     }
 

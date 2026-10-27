@@ -4,6 +4,7 @@ import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { isRouteCompleted } from '../data/routes';
 import { MAX_SCHMIEDE_STUFE } from '../data/schmiede';
 import { stadtStufeVon } from '../data/stadtstufen';
+import { ExpeditionRun, dungeonBezwungen } from '../models/ExpeditionRun';
 import { GameState } from '../models/GameState';
 import { stufeVon } from './Ausbau';
 import { saalKapitel } from './Auftragsbrett';
@@ -152,10 +153,26 @@ export function erfolgName(id: string): string {
   return ACHIEVEMENT_DEFS.find(d => d.id === id)?.name ?? id;
 }
 
-/** Zeile für die Bilanz nach der Expedition: Gipfel-Taten mit ihrem Satz («Name – Beschreibung»), sonst der Name */
+/** Zeile für die Bilanz nach der Expedition: Gipfel-Taten und versteckte mit ihrem Satz («Name – Beschreibung»), sonst der Name */
 export function erfolgBilanzZeile(id: string): string {
   const def = ACHIEVEMENT_DEFS.find(d => d.id === id);
-  return def?.gruppe === 'Gipfel-Taten' ? `${def.name} – ${def.description}` : erfolgName(id);
+  return def && (def.gruppe === 'Gipfel-Taten' || def.versteckt) ? `${def.name} – ${def.description}` : erfolgName(id);
+}
+
+/** Versteckte Erfolge am Ende einer Expedition: jede Tat auf 1; Albtraum-Dungeons aus state.haertegrade und diesem
+ *  Lauf (merkeHaertegrad trägt ihn erst nach finalizeExpeditionProgress ein) */
+export function versteckteTatenZaehlen(state: GameState, run: ExpeditionRun): void {
+  const stats = state.statistics;
+  const bezwungen = dungeonBezwungen(run);
+  const bossTot = bezwungen && run.bossesKilled > 0;
+  if (run.status === 'retreat' && run.enemiesKilled === 0) stats.kalte_fuesse = 1;
+  if (run.status === 'victory' && !bezwungen) stats.unentschieden = 1;
+  if (run.status === 'defeat' && run.difficulty === 'nightmare') stats.woertlich_genommen = 1;
+  if (bossTot && run.party.length === 1) stats.keine_zeugen = 1;
+  if (bossTot && run.party.some(u => { const held = state.fighters.find(f => f.id === u.id); return !!held && !held.gear.armor; })) stats.ohne_hose = 1;
+  const albtraum = new Set(Object.keys(state.haertegrade ?? {}).filter(id => state.haertegrade?.[id] === 'nightmare'));
+  if (bezwungen && run.difficulty === 'nightmare') albtraum.add(run.routeId);
+  stats.albtraum_dungeons = Math.max(stats.albtraum_dungeons || 0, albtraum.size);
 }
 
 /**

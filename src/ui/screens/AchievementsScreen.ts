@@ -62,8 +62,10 @@ function alsGesehenMerken(state: GameState): void {
 // ─── Erfolg-Karte ───────────────────────────────────────────────
 
 function renderAchievementCard(def: AchievementDef, unlocked: boolean, stats: Record<string, number>, frisch: boolean): string {
+  // Versteckt: bis zum Freischalten weder Zeichen noch Name, Beschreibung oder Balken, nur der Satz des Systems
+  const versteckt = !unlocked && def.versteckt;
   const current = Math.min(zaehlerWert(def, stats), def.ziel);
-  const progressHtml = !unlocked && def.ziel > 1
+  const progressHtml = !unlocked && !versteckt && def.ziel > 1
     ? `<div class="ach-progress">
         <div class="lvbar"><div class="lvfill" style="width:${Math.round((current / def.ziel) * 100)}%"></div></div>
         <span class="ach-prog-text">${current}/${def.ziel}</span>
@@ -71,19 +73,26 @@ function renderAchievementCard(def: AchievementDef, unlocked: boolean, stats: Re
     : '';
 
   return `
-    <div class="ach-card ${unlocked ? 'ach-unlocked' : 'ach-locked'}${frisch ? ' ach-neu' : ''}">
-      <div class="ach-ico">${def.icon}</div>
+    <div class="ach-card ${unlocked ? 'ach-unlocked' : 'ach-locked'}${versteckt ? ' ach-versteckt' : ''}${frisch ? ' ach-neu' : ''}">
+      <div class="ach-ico">${versteckt ? '👁️' : def.icon}</div>
       <div class="ach-info">
-        <div class="ach-title">${def.name}</div>
-        <div class="ach-desc">${def.description}</div>
+        <div class="ach-title">${versteckt ? '???' : def.name}</div>
+        <div class="ach-desc">${versteckt || def.description}</div>
         ${progressHtml}
       </div>
       ${unlocked ? '<div class="ach-check">✅</div>' : ''}
     </div>`;
 }
 
+/** «Das System verschweigt noch 6 Erfolge.»: wie viele versteckte noch fehlen, ohne einen zu verraten */
+function verschwiegenText(unlockedIds: Set<string>): string {
+  const fehlen = ACHIEVEMENT_DEFS.filter(d => d.versteckt && !unlockedIds.has(d.id)).length;
+  if (fehlen === 0) return 'Das System verschweigt nichts mehr. Behauptet es.';
+  return `Das System verschweigt noch ${fehlen} ${fehlen === 1 ? 'Erfolg' : 'Erfolge'}.`;
+}
+
 /** Zahl und Gruppen; `frisch`: Erfolge, deren Karten kurz aufleuchten */
-function inhaltHtml(state: GameState | null, frisch: string[]): string {
+export function inhaltHtml(state: GameState | null, frisch: string[]): string {
   const stats = state?.statistics ?? {};
   const unlockedIds = new Set(state?.achievements ?? []);
   const neu = new Set(frisch);
@@ -107,6 +116,7 @@ function inhaltHtml(state: GameState | null, frisch: string[]): string {
   return `
         <div class="erf-kopf">
           <span>🏅 Freigeschaltet: ${unlockedCount}/${totalCount}</span>
+          <span>👁️ ${verschwiegenText(unlockedIds)}</span>
         </div>
         ${gruppen}`;
 }

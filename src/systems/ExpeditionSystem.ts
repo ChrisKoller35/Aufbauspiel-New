@@ -1,5 +1,5 @@
 import { GameState } from '../models/GameState';
-import { ExpeditionRun, CombatUnit, EncounterRoom, EncounterChoice, TrankWirkung } from '../models/ExpeditionRun';
+import { ExpeditionRun, CombatUnit, EncounterRoom, EncounterChoice, TrankWirkung, dungeonBezwungen } from '../models/ExpeditionRun';
 import { GuildFighter } from '../models/GuildRoster';
 import { ROUTE_DEFS } from '../data/routes';
 import { ITEM_DEFS } from '../data/items';
@@ -896,10 +896,12 @@ export class ExpeditionSystem {
   /**
    * Berechnet den finalen Score am Ende eines Expeditions-Runs.
    * Formel: (enemies×100 + bosses×500 + hpPct×10 + provisions×50 - rounds×5) × modMult × diffMult
+   * Den Faktor des Härtegrads gibt es nur, wenn der Dungeon bezwungen ist.
    */
   calculateScore(run: ExpeditionRun): number {
     const diffDef = DIFFICULTY_DEFS[run.difficulty] ?? DIFFICULTY_DEFS.normal;
     const modDef = run.activeModifier ? MODIFIER_DEFS[run.activeModifier] : null;
+    const diffMult = dungeonBezwungen(run) ? diffDef.scoreMult : 1;
 
     const aliveParty = run.party.filter(u => u.hp > 0);
     const hpPct = aliveParty.length > 0
@@ -914,7 +916,7 @@ export class ExpeditionSystem {
       provisionsLeft * 50 -
       run.totalCombatRounds * 5;
 
-    const score = Math.max(0, Math.floor(raw * (modDef?.scoreMult ?? 1.0) * diffDef.scoreMult));
+    const score = Math.max(0, Math.floor(raw * (modDef?.scoreMult ?? 1.0) * diffMult));
     run.score = score;
     return score;
   }
