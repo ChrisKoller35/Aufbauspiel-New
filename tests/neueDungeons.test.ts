@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter } from '../src/models/GuildRoster';
-import { ExpeditionRun } from '../src/models/ExpeditionRun';
+import { ExpeditionRun, alleStehen, dungeonBezwungen, einHeldGefallen } from '../src/models/ExpeditionRun';
 import { ROUTE_DEFS, DUNGEON_GRAPH, isRouteAvailable, getRouteLockReasons } from '../src/data/routes';
 import { CombatEngine, wutAbRunde } from '../src/systems/CombatEngine';
 import { SeededRNG } from '../src/utils/RNG';
@@ -15,7 +15,7 @@ import { ProvisionSystem } from '../src/systems/ProvisionSystem';
 import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { setBeute } from '../src/systems/DungeonSets';
 import { setVonItem } from '../src/data/dungeonSets';
-import { messeLaeufe, musterStand, siegeVon, spieleRoute } from '../src/systems/Musterlauf';
+import { MusterSetName, messeLaeufe, musterStand, siegeVon, spieleRoute } from '../src/systems/Musterlauf';
 
 const NEUE = Object.values(ROUTE_DEFS).filter(r => r.gebiet);
 const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
@@ -845,6 +845,30 @@ describe('Dungeons über dem Vulkankern', () => {
     // Gier kostet: dreimal ins Feuer gegriffen gewinnt nur noch etwa jeder zehnte Lauf (die ersten 20 Startwerte haben Glück)
     expect(messeLaeufe('erste_stadt', 'stark', 'gierig', 100, 'morgen5').siege).toBeLessThanOrEqual(15);
     expect(messeLaeufe('erste_stadt', 'stark', 'vorsichtig', 20, 'stadt0').siege).toBeGreaterThanOrEqual(15);
+  });
+
+  // Kapitel «heimkehr» im Anbau des Saals (docs/AUFTRAGSBRETT.md); makellos hängt dort kein Zettel (OHNE_MAKELLOS)
+  it('Alrunas Kohle: mit Alrunas Wachfeuer kommen oft alle heim, ohne dass einer fällt aber kaum je', () => {
+    const zaehle = (routeId: string, sets: MusterSetName): { siege: number; heim: number; makellos: number } => {
+      const z = { siege: 0, heim: 0, makellos: 0 };
+      for (let i = 1; i <= 20; i++) {
+        const { state, ids } = musterStand('stark', i * 7919, sets);
+        const run = spieleRoute(state, ids, routeId, 'vorsichtig');
+        if (!dungeonBezwungen(run)) continue;
+        z.siege++;
+        if (alleStehen(run)) z.heim++;
+        if (!einHeldGefallen(run)) z.makellos++;
+      }
+      return z;
+    };
+    const wachfeuer = zaehle('erste_stadt', 'stadt0');
+    expect(wachfeuer.heim).toBeGreaterThanOrEqual(4);
+    expect(wachfeuer.makellos).toBeLessThanOrEqual(1);
+    // Ohne etwas, das Gefallene weckt, bleibt in jedem Sieg einer liegen
+    const morgen = zaehle('erste_stadt', 'morgen5');
+    expect(morgen.siege).toBeGreaterThan(0);
+    expect(morgen.heim).toBe(0);
+    expect(zaehle('tagespfeiler', 'tagwerk0').makellos).toBeLessThanOrEqual(1);
   });
 
   it('Eichung grob Pfeiler: das Wachfeuer auf +5 ist der Schlüssel, Brechen kostet den Sieg, die Tragkraft ist der Lohn', () => {

@@ -17,15 +17,16 @@ import { setFuerRoute, setTeilIds } from '../src/data/dungeonSets';
 import { kaufpreis } from '../src/data/haendler';
 import { HOECHSTE_STADTSTUFE } from '../src/data/stadtstufen';
 import {
-  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, EINLOESE_ANGEBOTE, FERNE_DUNGEONS, GOLD_ANTEIL, LIEFER_WAREN, MATERIAL_PREIS,
+  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, EINLOESE_ANGEBOTE, FERNE_DUNGEONS, GOLD_ANTEIL, LIEFER_WAREN, MATERIAL_PREIS, OHNE_MAKELLOS,
   ANBAU_AB_EBENE, ANBAU_SCHLUSS, ANBAU_SCHLUSS_SIEGEL, SAAL_EINLEITUNG, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL,
   setTeilPreis,
 } from '../src/data/auftragsbrett';
 import {
+  AuftragsBilanz, AuftragsMeldung,
   alleKapitel, auftraegeFuerDungeon, auftraegeNachExpedition, kapitelDesTeils, ketteEinleitung, kettenTeil, brettGesehen, brettKurz, brettStand, einloesbareMaterialien, einloesbareSets,
   goldJeLauf, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText, laufendesKapitel, lieferbareWaren, lieferGold, liefern,
   materialEinloesen, saalEinleitung, saalKapitel, setTeilEinloesen, spielbareDungeons, splitterEinloesen, tagVon, tauschen, tauschUebrig,
-  zettelText,
+  zettelText, zielText,
 } from '../src/systems/Auftragsbrett';
 import { bossTrophaeen, gildenbuch, saalGlanz, setSammlung, trophaeenStand } from '../src/systems/Trophaeensaal';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
@@ -235,6 +236,25 @@ describe('Auftragsbrett: Zettel des Tages', () => {
     expect([...arten].sort()).toEqual(['jagd', 'lieferung', 'makellos', 'set', 'sieg']);
   });
 
+  test('kein Zettel «ohne Gefallene» für die Erste Stadt und die Pfeiler: dort fällt fast in jedem Sieg ein Held', () => {
+    expect(OHNE_MAKELLOS).toEqual(['erste_stadt', 'tagespfeiler']);
+    const makellos: string[] = [];
+    for (let samen = 1; samen <= 60; samen++) {
+      const state = spielstand('pfeiler', samen);
+      for (let tag = 0; tag < 5; tag++) {
+        const stand = brettStand(state, MITTAG + tag * TAG);
+        tauschen(state, 1, MITTAG + tag * TAG);
+        for (const z of stand.auftraege) if (z.art === 'makellos') makellos.push(z.routeId);
+      }
+    }
+    expect(makellos.length).toBeGreaterThan(20);
+    for (const id of OHNE_MAKELLOS) expect(makellos).not.toContain(id);
+    // Die übrigen Arten hängen dort weiter
+    const oben = spielstand('pfeiler');
+    expect(zettelText(zettel('sieg', 'erste_stadt')).ziel).toBe('Bezwingt die Erste Stadt');
+    expect(spielbareDungeons(oben).slice(0, 2).sort()).toEqual([...OHNE_MAKELLOS].sort());
+  });
+
   test('eine Expedition über Mitternacht zählt für die Zettel vom Aufbruch, danach hängen neue', () => {
     const state = spielstand('probe');
     const stand = brettStand(state, MITTAG);
@@ -301,8 +321,12 @@ describe('Auftragsbrett: Fortschritt nach der Expedition', () => {
     expect(stand.auftraege.map(a => a.fertig)).toEqual([true, false]);
     auftraegeNachExpedition(state, lauf('volcano_core', { status: 'defeat' }), MITTAG);
     expect(stand.auftraege[1].fertig).toBe(false);
-    // Wer fiel und dank «Wiedergeburt» wieder aufstand, ist trotzdem gefallen
+    // Wer fiel und dank «Wiedergeburt» oder eines Wachfeuers wieder aufstand, ist trotzdem gefallen
     auftraegeNachExpedition(state, lauf('volcano_core', { wiedergeburt: 'verbraucht' }), MITTAG);
+    expect(stand.auftraege[1].fertig).toBe(false);
+    const geweckt = lauf('volcano_core');
+    (geweckt.party[0] as { geweckt?: number }).geweckt = 1;
+    auftraegeNachExpedition(state, geweckt, MITTAG);
     expect(stand.auftraege[1].fertig).toBe(false);
     auftraegeNachExpedition(state, lauf('volcano_core', { wiedergeburt: 'bereit' }), MITTAG);
     expect(stand.auftraege[1].fertig).toBe(true);
@@ -481,16 +505,21 @@ describe('Kette: Der Saal der Gilde', () => {
     expect(auftragsZeilen(bilanz, false).some(z => z.text.includes('Alle Sockel'))).toBe(true);
   });
 
-  test('der Anbau: Alrunas Kohle ohne Verlust, Orms Keil mit zwei Siegen; die Schluss-Siegel je Teil nur einmal', () => {
+  test('der Anbau: Alrunas Kohle, wenn alle heimkommen, Orms Keil mit zwei Siegen; die Schluss-Siegel je Teil nur einmal', () => {
     const state = spielstand('pfeiler');
     const stand = brettStand(state, MITTAG);
     stand.kette.fertig = saalKapitel().map(k => k.routeId);
+    expect(laufendesKapitel(stand)).toMatchObject({ routeId: 'erste_stadt', art: 'heimkehr', ziel: 1 });
+    expect(zielText('heimkehr', 'erste_stadt', 1)).toBe('Bezwingt die Erste Stadt und bringt alle Helden heim (wer wieder aufsteht, zählt mit)');
+    const imAnbau = (b: AuftragsBilanz): AuftragsMeldung[] => b.meldungen.filter(m => m.titel.startsWith('Der Anbau'));
+    // Wer am Ende am Boden liegt, kam nicht heim; eine Niederlage zählt nicht
+    expect(imAnbau(auftraegeNachExpedition(state, lauf('erste_stadt', { gefallen: true }), MITTAG))).toHaveLength(0);
+    expect(imAnbau(auftraegeNachExpedition(state, lauf('erste_stadt', { status: 'defeat' }), MITTAG))).toHaveLength(0);
     expect(laufendesKapitel(stand)?.routeId).toBe('erste_stadt');
-    // Wer sich am Wachfeuer wecken lässt, zählt als Verlust
+    // Wer am Wachfeuer geweckt wurde, kommt mit heim (makellos wäre der Lauf nicht mehr)
     const geweckt = lauf('erste_stadt');
     (geweckt.party[0] as { geweckt?: number }).geweckt = 1;
-    expect(auftraegeNachExpedition(state, geweckt, MITTAG).meldungen.filter(m => m.titel.startsWith('Der Anbau'))).toHaveLength(0);
-    const kohle = auftraegeNachExpedition(state, lauf('erste_stadt'), MITTAG);
+    const kohle = auftraegeNachExpedition(state, geweckt, MITTAG);
     const k1 = kohle.meldungen.find(m => m.prunkstueck)!;
     expect(k1.titel).toBe('Der Anbau des Saals (Eine Kohle aus dem ersten Wachfeuer)');
     // Kein zweites Mal die Siegel für den vollen Saal
@@ -616,6 +645,20 @@ describe('Trophäensaal', () => {
     const zweiter = finalizeExpeditionProgress(state, spiele(state, system, 'forest_medium', heroId), system);
     expect(zweiter.neueTrophaee).toBe(false);
     expect(trophaeenStand(state).siege.forest_medium).toBe(2);
+  });
+
+  test('Siege ohne Verlust (Gildenbuch, «Perfektionist») zählen wie am Brett: wer geweckt wurde, ist gefallen', () => {
+    const state = createNewGameState();
+    const { system, heroId } = mitHeld(state);
+    const geweckt = spiele(state, system, 'forest_medium', heroId);
+    expect(geweckt.status).toBe('victory');
+    geweckt.party[0].geweckt = 1;
+    finalizeExpeditionProgress(state, geweckt, system);
+    expect(state.statistics.total_victories).toBe(1);
+    expect(state.statistics.total_flawless_victories ?? 0).toBe(0);
+    state.activeExpedition = null;
+    finalizeExpeditionProgress(state, spiele(state, system, 'forest_medium', heroId), system);
+    expect(state.statistics.total_flawless_victories).toBe(1);
   });
 
   test('älterer Spielstand: Zähler aus der Bestenliste, der laufende Sieg zählt genau einmal', () => {

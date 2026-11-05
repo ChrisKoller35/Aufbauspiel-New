@@ -291,6 +291,24 @@ export function dungeonBezwungen(run: ExpeditionRun): boolean {
   return run.status === 'victory' && (run.bossesKilled > 0 || !run.rooms.some(r => r.type === 'boss'));
 }
 
+/**
+ * Fiel in dieser Expedition ein Held? Auch einer, der danach wieder stand: geweckt von einem Wachfeuer
+ * (unterwegs oder im Kampf, CombatUnit.geweckt) oder von «Wiedergeburt» (sie ist dann verbraucht).
+ * Gilt für makellose Siege am Auftragsbrett und für «Siege ohne Verlust» (Erfolg «Perfektionist»).
+ */
+export function einHeldGefallen(run: Pick<ExpeditionRun, 'party'>): boolean {
+  return run.party.some(u => u.hp <= 0 || (u.geweckt ?? 0) > 0
+    || !!u.specialEffects?.some(e => e.id === 'revive' && e.usesLeft === 0));
+}
+
+/**
+ * Stehen am Ende alle Helden? Wer fiel und wieder aufstand (Wachfeuer, «Wiedergeburt»), steht mit;
+ * das Kapitel «heimkehr» der Kette verlangt nur das (Alrunas Kohle im Anbau des Saals).
+ */
+export function alleStehen(run: Pick<ExpeditionRun, 'party'>): boolean {
+  return run.party.every(u => u.hp > 0);
+}
+
 /** Snapshot of HP values after a combat round – used by CombatOverlay for round-by-round animation */
 export interface CombatRoundSnapshot {
   round: number;

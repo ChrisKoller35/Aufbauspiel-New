@@ -12,7 +12,7 @@
 
 import { GameState } from '../models/GameState';
 import { Auftrag, AuftragsArt, AuftragsBelohnung, AuftragsbrettStand } from '../models/AuftragsbrettStand';
-import { ExpeditionRun, dungeonBezwungen } from '../models/ExpeditionRun';
+import { ExpeditionRun, alleStehen, dungeonBezwungen, einHeldGefallen } from '../models/ExpeditionRun';
 import { DUNGEON_GRAPH, ROUTE_DEFS, isRouteAvailable, isRouteCompleted } from '../data/routes';
 import { ENEMY_DEFS } from '../data/enemies';
 import { LOOT_TABLE_DEFS } from '../data/lootTables';
@@ -21,7 +21,7 @@ import { DungeonSetDef, setFuerRoute, setVonItem } from '../data/dungeonSets';
 import { SCHMIEDE_MATERIALIEN, SchmiedeMaterialDef } from '../data/schmiede';
 import { dungeonWen, imDungeon } from '../data/dungeonNamen';
 import {
-  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, GOLD_ANTEIL, LIEFER_WAREN, LieferWare, MATERIAL_PREIS, SAAL_EINLEITUNG,
+  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, GOLD_ANTEIL, KapitelArt, LIEFER_WAREN, LieferWare, MATERIAL_PREIS, OHNE_MAKELLOS, SAAL_EINLEITUNG,
   ANBAU_AB_EBENE, ANBAU_EINLEITUNG, ANBAU_SCHLUSS, ANBAU_SCHLUSS_SIEGEL, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, SaalKapitel,
   TAGESBONUS_SIEGEL, TAUSCH_JE_TAG, ZETTEL_JE_TAG, setTeilPreis,
 } from '../data/auftragsbrett';
@@ -124,9 +124,13 @@ function belohnung(art: AuftragsArt, routeId: string): AuftragsBelohnung {
   return { siegel: SIEGEL_JE_ART[art], gold: rund5(goldJeLauf(routeId) * GOLD_ANTEIL), dinge };
 }
 
-/** Ein Zettel für einen Dungeon, oder null, wenn die Art dort nicht geht (Set ohne Set, Jagd ohne Rudel) */
+/**
+ * Ein Zettel für einen Dungeon, oder null, wenn die Art dort nicht geht (Set ohne Set, Jagd ohne Rudel,
+ * «ohne Gefallene», wo das kaum je gelingt)
+ */
 function dungeonZettel(art: AuftragsArt, routeId: string, rng: SeededRNG, vergeben: Auftrag[]): Auftrag | null {
   if (vergeben.some(a => a.art === art && a.routeId === routeId)) return null;
+  if (art === 'makellos' && OHNE_MAKELLOS.includes(routeId)) return null;
   const vorlagen = AUFTRAGS_VORLAGEN.filter(v => v.art === art && !v.nichtIn?.includes(routeId) && !vergeben.some(a => a.vorlage === v.id));
   if (vorlagen.length === 0) return null;
   const vorlage = rng.pick(vorlagen).id;
@@ -350,22 +354,15 @@ function tagesbonusPruefen(stand: AuftragsbrettStand): number {
 
 // ── Fortschritt ──
 
-/**
- * Fiel ein Held? Auch einer, den «Wiedergeburt» wieder aufstehen liess (sie ist dann verbraucht), oder den ein
- * Wachfeuer geweckt hat (unterwegs oder im Kampf, CombatUnit.geweckt)
- */
-function einHeldGefallen(run: ExpeditionRun): boolean {
-  return run.party.some(u => u.hp <= 0 || (u.geweckt ?? 0) > 0
-    || !!u.specialEffects?.some(e => e.id === 'revive' && e.usesLeft === 0));
-}
-
-/** Wie viel ein Lauf zu einem Ziel beiträgt */
-function beitrag(art: AuftragsArt, routeId: string, gegnerId: string | undefined, run: ExpeditionRun): number {
+/** Wie viel ein Lauf zu einem Ziel beiträgt (Zettel oder Kapitel der Kette) */
+function beitrag(art: AuftragsArt | KapitelArt, routeId: string, gegnerId: string | undefined, run: ExpeditionRun): number {
   switch (art) {
     case 'sieg':
       return run.routeId === routeId && dungeonBezwungen(run) ? 1 : 0;
     case 'makellos':
       return run.routeId === routeId && dungeonBezwungen(run) && !einHeldGefallen(run) ? 1 : 0;
+    case 'heimkehr':
+      return run.routeId === routeId && dungeonBezwungen(run) && alleStehen(run) ? 1 : 0;
     case 'set':
       return run.routeId === routeId ? [run.setTeil, run.setTeilExtra].filter(id => !!id).length : 0;
     case 'jagd':
@@ -569,11 +566,12 @@ function zettelTitel(a: Auftrag): string {
 }
 
 /** Was ein Ziel verlangt, z. B. «Bezwingt den Vulkankern, ohne dass ein Held fällt» */
-export function zielText(art: AuftragsArt, routeId: string, ziel: number, gegnerId?: string, itemId?: string): string {
+export function zielText(art: AuftragsArt | KapitelArt, routeId: string, ziel: number, gegnerId?: string, itemId?: string): string {
   const mal = ziel > 1 ? ` ${ziel}-mal` : '';
   switch (art) {
     case 'sieg': return `Bezwingt ${dungeonWen(routeId)}${mal}`;
     case 'makellos': return `Bezwingt ${dungeonWen(routeId)}${mal}, ohne dass ein Held fällt`;
+    case 'heimkehr': return `Bezwingt ${dungeonWen(routeId)}${mal} und bringt alle Helden heim (wer wieder aufsteht, zählt mit)`;
     case 'set': return `Erbeutet ${ziel > 1 ? `${ziel} Teile` : 'ein Teil'} aus dem Set «${setFuerRoute(routeId)?.name ?? ''}»`;
     case 'jagd': return `Besiegt ${ziel}× ${ENEMY_DEFS[gegnerId ?? '']?.name ?? gegnerId} (zu finden ${imDungeon(routeId)})`;
     case 'lieferung': return `Gebt ${ziel}× ${ITEM_DEFS[itemId ?? '']?.name ?? itemId} am Brett ab`;

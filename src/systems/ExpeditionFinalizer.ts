@@ -8,7 +8,7 @@
 // ──────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
-import { ExpeditionRun, WegWirkung } from '../models/ExpeditionRun';
+import { ExpeditionRun, WegWirkung, einHeldGefallen } from '../models/ExpeditionRun';
 import { ScoreboardEntry } from '../models/ScoreboardEntry';
 import { ENEMY_DEFS } from '../data/enemies';
 import { CLASS_DEFS } from '../data/classes';
@@ -107,7 +107,8 @@ export function finalizeExpeditionProgress(
   add('total_gold_earned', run.goldEarned ?? 0);
   if (victory) {
     add('total_victories', 1);
-    if (run.party.every(u => u.hp > 0)) add('total_flawless_victories', 1);
+    // Wie «ohne Gefallene» am Auftragsbrett: Wer fiel und wieder aufstand (Wachfeuer, Wiedergeburt), ist gefallen
+    if (!einHeldGefallen(run)) add('total_flawless_victories', 1);
   } else if (run.status === 'defeat') {
     add('total_defeats', 1);
   } else {

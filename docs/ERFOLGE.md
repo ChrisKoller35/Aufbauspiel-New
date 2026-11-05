@@ -180,7 +180,7 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Dungeons | 🗺️ | Abenteuerlust | 1 Expedition gestartet | `total_expeditions` ≥ 1 | `first_expedition` |
 | Dungeons | 🏆 | Siegreich | 1 Expedition gewonnen | `total_victories` ≥ 1 | `first_victory` |
 | Dungeons | ⚔️ | Veteran | 10 Expeditionen beendet (Sieg, Niederlage oder Rückzug) | `total_victories` + `total_defeats` + `total_retreats` ≥ 10 | `veteran_explorer` |
-| Dungeons | 💎 | Perfektionist | ein Sieg, ohne dass ein Held fällt | `total_flawless_victories` ≥ 1 | `perfectionist` |
+| Dungeons | 💎 | Perfektionist | ein Sieg, ohne dass ein Held fällt (auch nicht für kurz: wer am Wachfeuer oder durch «Wiedergeburt» wieder aufstand, ist gefallen; `einHeldGefallen`) | `total_flawless_victories` ≥ 1 | `perfectionist` |
 | Dungeons | 💀 | Bossbekämpfer | 1 Boss besiegt | `total_bosses_killed` ≥ 1 | `first_boss` |
 | Dungeons | 🔥 | Bosskiller | 5 Bosse besiegt | `total_bosses_killed` ≥ 5 | `boss_slayer` |
 | Dungeons | 🐉 | Bossjäger (neu) | 10 Bosse besiegt | `total_bosses_killed` ≥ 10 | `bosse_10` |

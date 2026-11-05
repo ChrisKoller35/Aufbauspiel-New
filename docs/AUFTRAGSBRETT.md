@@ -19,11 +19,13 @@ und was bei neuen Dungeons zu tun ist.
   - Zettel 3 aus der Stadt: meist (70 %) eine Ware aus den Werkstätten, sonst ein Dungeon weiter unten.
 - **Arten.** Am selben Tag hängt jede Art möglichst nur einmal, jeder Dungeon und jede Gegnerart nur einmal.
   Texte mit Karawane oder Grabung hängen nie für Dungeons unter Wasser, in der Glut oder über den Wolken.
+  Für die Erste Stadt und die Pfeiler des Tages hängt kein Zettel «ohne Gefallene» (`OHNE_MAKELLOS`): Dort
+  fällt fast in jedem Sieg ein Held, auch mit der besten Ausrüstung (siehe [Der Anbau](#der-anbau-und-alle-heim)).
 
   | Art | verlangt | zählt |
   |---|---|---|
   | Sieg | den Dungeon bezwingen | gewonnen, mit besiegtem Boss (wie in der Rangliste) |
-  | ohne Gefallene | bezwingen, ohne dass ein Held fällt | wie Sieg, und kein Held fiel, auch keiner, den «Wiedergeburt» wieder aufstehen liess |
+  | ohne Gefallene | bezwingen, ohne dass ein Held fällt | wie Sieg, und kein Held fiel, auch keiner, den «Wiedergeburt» oder ein Wachfeuer wieder aufstehen liess |
   | Jagd | 4 bis 16 Gegner einer Art besiegen | jeder besiegte Gegner dieser Art, in jedem Dungeon, auch bei Rückzug |
   | Set | ein Teil aus dem Set des Dungeons erbeuten | gefundene Teile dieses Sets (auch das versprochene aus der Geschichte) |
   | Lieferung | 2 oder 3 Stück einer Ware abgeben | Knopf «Abgeben» am Brett, die Ware geht aus dem Lager |
@@ -40,7 +42,8 @@ und was bei neuen Dungeons zu tun ist.
   Ebene 11 (`ANBAU_AB_EBENE`) bekommen ihre Sockel im **Anbau** neben der Platte «Für die Nächsten»: zwei
   Sockel (Erste Stadt, Pfeiler des Tages) mit eigener Einleitung und eigenem Schluss (Alruna schreibt
   «Besser.» unter die Platte). Der Saal behält so seine 16 Sockel und seinen Schluss; die Kette läuft nach dem
-  Morgentor im Anbau weiter. Hat die Gilde
+  Morgentor im Anbau weiter. Alrunas Kapitel verlangt «alle heim» statt «ohne Gefallene» (siehe
+  [Der Anbau](#der-anbau-und-alle-heim)). Hat die Gilde
   den Dungeon eines Kapitels noch nie bezwungen, steht ein Text da, der nichts aus dem Schluss seiner Geschichte
   vorwegnimmt (zum Beispiel den Namen des Ritters in der Krypta).
 - **Siegel einlösen** am Brett: ein Set-Teil nach Wahl aus jedem bezwungenen Dungeon, Material für die
@@ -96,10 +99,40 @@ Alles in `src/data/auftragsbrett.ts`.
 | 14 | Der Sternenschlund | 8 | 1× Sieg | 490 | 7 · 820 · 20 Sternenstahl | 12 |
 | 15 | Der Mondhof | 9 | 2× Sieg | 555 | 8 · 925 · 22 Mondsilber | 14 |
 | 16 | Das Morgentor | 10 | 1 Set-Teil | 605 | 8 · 1010 · 24 Mondsilber | 14 |
-| 17 (Anbau) | Die Erste Stadt | 11 | 1× ohne Gefallene | 695 | 9 · 1160 · 26 Tagstein | 16 |
+| 17 (Anbau) | Die Erste Stadt | 11 | 1× alle heim | 695 | 9 · 1160 · 26 Tagstein | 16 |
 | 18 (Anbau) | Die Pfeiler des Tages | 12 | 2× Sieg | 745 | 9 · 1240 · 28 Tagstein | 16 |
 
 «Zettel: Gold» ist das Gold eines Zettels für diesen Dungeon; dazu kommt immer das Material eines Siegs.
+
+### Der Anbau und «alle heim»
+
+Alrunas Kapitel (Erste Stadt) hiess zuerst «1× ohne Gefallene». Die Gegenprüfung vom 5.11.2026 hat gezeigt,
+dass das nicht geht: Alruna wirft fast in jedem Sieg mindestens einen Helden um. Im Musterlauf (`stark`, 400 Läufe,
+`docs/NEUE-DUNGEONS.md`) gewann kein Lauf ohne Gefallene, weder mit Sunnas Morgengabe (`morgen5`) noch mit
+Alrunas Wachfeuer (`stadt0`, `stadt5`); nur mit «Was den Tag trug» (`tagwerk0`, erst nach den Pfeilern) 18 und 8 von
+400. In den Pfeilern keiner, in keiner gemessenen Ausrüstung. Weil die Kette der Reihe nach läuft, hätte das Kapitel auch
+Orms Keil und den ganzen Anbau gesperrt.
+
+Darum verlangt das Kapitel jetzt **«alle heim»** (`art: 'heimkehr'`, `alleStehen` in
+`src/models/ExpeditionRun.ts`): Die Erste Stadt bezwingen, und am Ende stehen alle Helden. Wer unterwegs am
+Wachfeuer geweckt wurde, wen das Set «Alrunas Wachfeuer» im Kampf wieder aufstehen liess oder wen «Wiedergeburt»
+rettete, zählt mit. Die Geschichte trägt das: Alrunas Gilde kam nicht heim, das steht auf ihrer Liste ganz oben,
+und für die, die wieder aufstehen, brennen ihre Feuer. Ziel am Brett: «Bezwingt die Erste Stadt und bringt alle
+Helden heim (wer wieder aufsteht, zählt mit)».
+
+| Ausrüstung (Musterlauf, 400 Läufe) | vorsichtig: alle heim / Siege | klug | gierig |
+|---|---|---|---|
+| Sunnas Morgengabe +5 (`morgen5`) | 0 / 284 | 0 / 199 | 0 / 32 |
+| Alrunas Wachfeuer +0 (`stadt0`) | 110 / 348 | 58 / 310 | 0 / 143 |
+| Alrunas Wachfeuer +5 (`stadt5`) | 131 / 393 | 73 / 367 | 0 / 229 |
+| «Was den Tag trug» +0 (`tagwerk0`) | 171 / 400 | 101 / 399 | 24 / 314 |
+
+Ohne etwas, das Gefallene weckt, bleibt in jedem Sieg einer liegen; mit dem Wachfeuer kommen in etwa jedem
+dritten vorsichtigen Sieg alle heim. Das Kapitel ist damit ein Ziel für das Set, das die Erste Stadt selbst
+bringt (wie Sunnas Strahl am Morgentor ein Teil ihrer Morgengabe verlangt). Andere Wege: das Amulett der
+Wiedergeburt (fällt ab dem Drachenhort, auch in der Ersten Stadt und bei Alruna), das Leere Phylakterium, das Set
+«Eid des Gefallenen Ritters» («Unbeugsam»). Der Zettel «ohne Gefallene»
+bleibt streng und hängt in den beiden Dungeons nicht (`OHNE_MAKELLOS` in `src/data/auftragsbrett.ts`).
 
 ### Lieferung
 
@@ -161,6 +194,8 @@ Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er 
   Stadtschreibers. Die Reihenfolge der Kette kommt von der Karte, nicht aus der Liste. Ohne Eintrag hängt
   ein schlichtes Kapitel «Ein Andenken an …» (der Test verlangt den Eintrag). `art: 'set'` nur, wenn der
   Dungeon ein Set hat; Spielstände, die die Kette schon beendet haben, bekommen das neue Kapitel als nächstes.
+  `art: 'makellos'` nur, wenn der Musterlauf dort Siege ohne Gefallene findet; sonst `'heimkehr'` oder Sieg.
+  Gelingt im neuen Dungeon fast nie ein Sieg ohne Gefallene, gehört er auch in `OHNE_MAKELLOS`.
   Kapitel ab Ebene 11 (`ANBAU_AB_EBENE`) gehören zum Anbau: Die Einleitung zählt seine Sockel von selbst, der
   Schluss des Anbaus kommt nach seinem letzten Kapitel. Kommt eine Ebene 13 dazu, steht sie im Anbau; der
   Schluss des Anbaus spricht von Alruna und Orm und wäre dann neu zu schreiben.
@@ -186,7 +221,8 @@ Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er 
 `tests/auftragsbrett.test.ts`: Kapitel für jeden Boss in Kartenreihenfolge, Texte ganz ausgefüllt und
 ohne «ß», Kapiteltexte vor dem ersten Sieg, 600 Spielstände mit gültigen und abwechslungsreichen Zetteln
 (keine Karawane in die Tiefsee), Tageswechsel, zurückgestellte Uhr und eine Expedition über Mitternacht,
-Tauschen, Fortschritt jeder Art (ohne Gefallene auch mit «Wiedergeburt»), Tagesbonus, Lieferung (fester Lohn je
+Tauschen, Fortschritt jeder Art (ohne Gefallene auch mit «Wiedergeburt» und Wachfeuer; kein solcher Zettel in
+`OHNE_MAKELLOS`), «alle heim» im Anbau, Tagesbonus, Lieferung (fester Lohn je
 Ware, auf allen Ebenen gleich, nur Waren mit Werkstatt oder im Lager am Brett), die Kette bis
 zum vollen Saal, Einlösen und Einschmelzen, Trophäen aus älteren Spielständen (ein echter Lauf durch
 `finalizeExpeditionProgress`), Glanz und Gildenbuch.
@@ -200,5 +236,9 @@ zum vollen Saal, Einlösen und Einschmelzen, Trophäen aus älteren Spielstände
   Die unteren Kapitel sind für sie schnell erledigt, eine Ehrenrunde über die Karte.
 - Der Saal ändert keine Kampfwerte.
 - Eine Expedition zählt für die Zettel vom Aufbruch, nicht für die nach Mitternacht.
-- «Ohne Gefallene» ist streng: «Wiedergeburt» hilft dabei nicht. Das Gildenbuch zählt dagegen wie der
-  Erfolg «Perfektionist» die «Siege ohne Verlust» (alle Helden stehen am Ende).
+- «Ohne Gefallene» ist streng: «Wiedergeburt» und Wachfeuer helfen dabei nicht. Seit dem 5.11.2026 zählen das
+  Gildenbuch («Siege ohne Verlust») und der Erfolg «Perfektionist» genauso (`einHeldGefallen` in
+  `src/models/ExpeditionRun.ts`); vorher zählten sie jeden Sieg, nach dem alle standen, und in der Ersten Stadt
+  wäre damit auch ein Lauf «ohne Verlust» gewesen, in dem alle am Feuer wieder aufstanden. Ältere Zähler bleiben.
+- Alrunas Kapitel verlangt «alle heim» statt «ohne Gefallene» (5.11.2026, siehe
+  [Der Anbau](#der-anbau-und-alle-heim)).

@@ -40,6 +40,13 @@ export const FERNE_DUNGEONS = [
   'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler',
 ];
 
+/**
+ * Dungeons ohne Zettel «ohne Gefallene»: Dort fällt fast in jedem Sieg ein Held, auch mit der besten Ausrüstung
+ * (Musterlauf am 5.11.2026, 400 Läufe vorsichtig: Erste Stadt mit Sunnas Morgengabe oder Alrunas Wachfeuer kein
+ * makelloser Sieg, mit «Was den Tag trug» 18; Pfeiler des Tages keiner). Kommt ein Dungeon dazu, nachmessen.
+ */
+export const OHNE_MAKELLOS = ['erste_stadt', 'tagespfeiler'];
+
 /** Die Zettel für Dungeons; Lieferungen stehen bei ihrer Ware (LIEFER_WAREN) */
 export const AUFTRAGS_VORLAGEN: AuftragsVorlage[] = [
   {
@@ -197,10 +204,17 @@ export const SPLITTER_MENGE = 3;
 
 // ── Die Kette: Der Saal der Gilde ──
 
+/**
+ * Was ein Kapitel verlangt: wie die Zettel 'sieg', 'makellos' (kein Held fällt, auch nicht für kurz) und 'set';
+ * dazu 'heimkehr': bezwingen, und am Ende stehen alle (wer am Feuer oder durch «Wiedergeburt» wieder aufstand,
+ * zählt mit). Makellos ist ab Ebene 11 kaum zu schaffen (OHNE_MAKELLOS), daher dort 'heimkehr'.
+ */
+export type KapitelArt = 'sieg' | 'makellos' | 'set' | 'heimkehr';
+
 export interface SaalKapitel {
   /** Der Boss-Dungeon */
   routeId: string;
-  art: 'sieg' | 'makellos' | 'set';
+  art: KapitelArt;
   ziel: number;
   /** Was auf den Sockel kommt */
   prunkstueck: string;
@@ -366,14 +380,15 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
 
   // ── Der Anbau (ab Ebene 11) ──
   {
-    routeId: 'erste_stadt', art: 'makellos', ziel: 1, prunkstueck: 'Eine Kohle aus dem ersten Wachfeuer',
+    routeId: 'erste_stadt', art: 'heimkehr', ziel: 1, prunkstueck: 'Eine Kohle aus dem ersten Wachfeuer',
     schild: 'Die Erste. Sie hat diesen Saal gebaut.',
     text: 'Der erste Sockel im Anbau meint Alruna, und das Schild hat sie selbst geschrieben. Auf den Sockel gehört eine Kohle aus '
-      + 'ihrem ersten Wachfeuer. Sie gibt sie nur einer Gilde, die ohne Verlust vor ihr steht, sagt Jorinde; das stehe auf Alrunas '
-      + 'Liste ganz oben. Wer sich am Feuer wecken lässt, zählt als Verlust, auch wenn er danach wieder steht.',
+      + 'ihrem ersten Wachfeuer. Sie gibt sie nur einer Gilde, die alle wieder heimbringt; ihre eigene kam nicht heim, und das steht '
+      + 'auf ihrer Liste ganz oben. Jorinde hat gefragt, ob zählt, wer am Feuer wieder aufsteht. Alruna sagt, genau dafür brennen '
+      + 'die Feuer, auch das, das man mitnehmen kann.',
     vorSieg: 'Der erste Sockel im Anbau hat ein Schild in der Schrift der Platte «Für die Nächsten», und es meint jemanden in der '
       + 'Stadt hinter dem Morgentor, die Jorinde durchs Fernrohr gesehen hat. Auf den Sockel gehört eine Kohle aus dem ersten Wachfeuer '
-      + 'dort oben. Wer sie holt, darf unterwegs niemanden verlieren, auch nicht für kurz.',
+      + 'dort oben. Wer sie holt, muss alle wieder heimbringen; wer unterwegs fällt und am Feuer wieder aufsteht, zählt mit.',
   },
   {
     routeId: 'tagespfeiler', art: 'sieg', ziel: 2, prunkstueck: 'Ein Keil aus Tagstein, mit Kreide gezählt',

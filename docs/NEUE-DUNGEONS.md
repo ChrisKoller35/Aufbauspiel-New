@@ -102,6 +102,8 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    «Der Saal der Gilde» in `SAAL_KAPITEL` (`src/data/auftragsbrett.ts`: Prunkstück, Messingschild, Text);
    der Test verlangt es. Ab Ebene 11 (`ANBAU_AB_EBENE`) zählt das Kapitel zum «Anbau des Saals», mit eigener
    Einleitung, eigenem Schluss und eigenen Schluss-Siegeln; der Saal bleibt bei sechzehn Sockeln. Zettel am Auftragsbrett entstehen von selbst (`docs/AUFTRAGSBRETT.md`).
+   Ein Kapitel «ohne Gefallene» (`makellos`) nur, wenn der Musterlauf dort solche Siege findet; sonst «alle heim»
+   (`heimkehr`) oder Sieg, und der Dungeon kommt in `OHNE_MAKELLOS` (die Erste Stadt hatte es zuerst falsch).
 8. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
    in `tools/generateTileImages.ts` und `ROUTE_IMAGE_MAP`. Bis dahin passen vorhandene Bilder.
    Ein neues Gegnerbild (1024 px, Magenta-Hintergrund) als `public/assets/sprites/generated/KEY.png` ablegen
@@ -149,7 +151,9 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   (`wutVorziehbar`: «bis auf Runde 4 vorziehen oder bis auf Runde 13 hinausschieben»; Pfeiler des Tages).
 - **Wecken** (`EncounterChoice.wecken`, Prozent): Gefallene stehen mit so viel Leben wieder auf, bevor die
   Option heilt (die Heilung trifft nur, wer schon stand). Jeder Geweckte zählt in `CombatUnit.geweckt`; ein Sieg
-  ohne Verlust (Auftragsbrett, «makellos») ist es dann nicht mehr (Erste Stadt).
+  ohne Verlust (Auftragsbrett «makellos», Erfolg «Perfektionist») ist es dann nicht mehr, heim kommt er aber mit:
+  Alrunas Kapitel im Anbau verlangt «alle heim» (`art: 'heimkehr'`, `docs/AUFTRAGSBRETT.md`). Zettel «ohne
+  Gefallene» hängen in der Ersten Stadt und den Pfeilern keine (`OHNE_MAKELLOS`).
 - **Erstsieg-Beute** (`RouteDef.ersterSiegBeute`).
 
 ## Eichung
