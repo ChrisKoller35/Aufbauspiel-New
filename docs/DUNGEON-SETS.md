@@ -167,7 +167,7 @@ zwanzigsten Lauf (Erste Stadt `morgen5` 4 %, Pfeiler `stadt5` 3 %), «Frisch» n
 | Dungeon | ohne Set der Ebene darunter | dessen Set +0 / +3 / +5 | Lohn ohne Stufen |
 |---|---|---|---|
 | Die Erste Stadt | `pfand5` 0 / 0 / 0 % | Morgengabe 6 / 0 / 0 %, 27 / 14 / 0 %, 69 / 48 / 10 % | Wachfeuer 88 / 78 / 38 % |
-| Die Pfeiler des Tages | `morgen5` 15 / 1 / 0 % | Wachfeuer 56 / 8 / 1 %, 62 / 15 / 2 %, 72 / 27 / 6 % | Tagwerk 94 / 77 / 29 % |
+| Die Pfeiler des Tages | `morgen5` 14 / 1 / 0 % | Wachfeuer 56 / 8 / 1 %, 62 / 15 / 2 %, 72 / 27 / 6 % | Tagwerk 94 / 77 / 29 % |
 
 **Alrunas Wachfeuer** (Glutkelle, Harnisch der Nachtwache, Glut der Vorigen; Ebene 11) ist ein Hammer-Set für
 Grimm. Gegen Alruna, deren Ruf zur Wache alle trifft, holt es einmal je Kampf den ersten Gefallenen zurück, auch

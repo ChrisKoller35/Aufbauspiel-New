@@ -467,16 +467,21 @@ mit einem eigenen Skript, das nur diese Zeilen misst):
 
 | Pfeiler des Tages, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
 |---|---|---|---|---|
-| `morgen5`: ohne Alrunas Wachfeuer | höchstens 15 % vorsichtig, 0 % gierig | 15 / 1 / 0 % | 0 % | 33 von 145 |
-| `stadt0`: Wachfeuer ohne Stufen, übrige +5 | Eintritt, unter `stadt5` | 56 / 8 / 1 % | 0 % | 348 von 555 / 0 / 0 |
-| `stadt3`: Wachfeuer auf +3 | 20–35 % vorsichtig | 62 / 15 / 2 % | 0 % | 433 von 621 / 1 von 149 / 0 |
+| `morgen5`: ohne Alrunas Wachfeuer | höchstens 15 % vorsichtig, 0 % gierig | 14 / 1 / 0 % | 0 % | 33 von 145 / 0 von 6 / – |
+| `stadt0`: Wachfeuer ohne Stufen, übrige +5 | Eintritt, unter `stadt5` | 56 / 8 / 1 % | 0 % | 348 von 555 / 0 von 78 / 0 von 9 |
+| `stadt3`: Wachfeuer auf +3 | 20–35 % vorsichtig | 62 / 15 / 2 % | 0 % | 433 von 621 / 0 von 149 / 0 von 23 |
 | `stadt5`: alles auf +5 | 65–75 / 35–50 / höchstens 5 % | 72 / 27 / 6 % | 0,3 / 0 / 0 % | 543 von 722 / 0 von 271 / 0 von 57 |
-| `tagwerk0`: Lia in «Was den Tag trug» ohne Stufen (Lohn) | mindestens 85 % vorsichtig, gierig 25–50 % | 94 / 77 / 29 % | 0,1 / 0 / 0 % | 815 von 935 / 0 / 0 |
+| `tagwerk0`: Lia in «Was den Tag trug» ohne Stufen (Lohn) | mindestens 85 % vorsichtig, gierig 25–50 % | 94 / 77 / 29 % | 0,1 / 0 / 0 % | 815 von 935 / 0 von 768 / 0 von 292 |
 | Team «Gut» mit `stadt5` | höchstens 5 % | 3 / 0 / 0 % | 1,2 % | – |
 | Team «Frisch» mit `stadt5` | 0 % | 0 / 0 / 0 % | 0 % | – |
 
 Abstand vorsichtig zu gierig bei den Pfeilern mit `stadt5`: 66 Punkte (Ziel mindestens 60). Gierig fällt kein
 Sieg vor Orms Wut; dreimal gebrochen gewinnt nur, wer seine Wut ab Runde 4 überlebt.
+
+Nach der Gegenprüfung (Nachmauern und Nachgreifen stärken 4 Runden lang, statt etwas zu beschwören) mit 1000
+Läufen je Zeile nachgemessen: Zeichen für Zeichen dieselben Zahlen. Zwei Angaben waren falsch übertragen: Die
+Pfeiler mit `morgen5` zeigt die Eichung mit 14 % (145 Siege von 1000, genau 14,5 %), nicht 15 %, und klug fällt mit `stadt3`
+kein Sieg vor Orms Wut (dort stand 1).
 
 **Was die Zahlen vorher waren** (Werte des Entwurfs, 200 Läufe): Erste Stadt `pfand5` 8 / 1 / 0 %, `morgen3`
 100 / 99 / 67 %, `morgen5` 100 / 100 / 98 %, `stadt0` 100 / 100 / 98 %; Pfeiler `morgen5` 90 / 85 / 30 %,
@@ -515,7 +520,7 @@ Sieg vor Orms Wut; dreimal gebrochen gewinnt nur, wer seine Wut ab Runde 4 über
   gierigen Gruppe einmal je Kampf einen Gefallenen zurückgibt. Gewählt ist die Mitte, die gierig fast im Ziel
   hält: Brechen soll etwas kosten, und klug zu sein heisst hier, nicht zu brechen.
 - **Wachfeuer auf +3: 62 % statt 20 bis 35 %.** Wie am Morgentor: Zwei Stufen auf drei Teilen sind 10 % Werte,
-  an Orms Treffern ändert das wenig. Der Schlüssel ist das Set selbst (ohne: 15 %), nicht seine Stufe; ohne
+  an Orms Treffern ändert das wenig. Der Schlüssel ist das Set selbst (ohne: 14 %), nicht seine Stufe; ohne
   Stufen sind es schon 56 %. Die Erste Stadt dagegen hält ihr Ziel (+3: 27 %), weil die Morgengabe ein
   Schadens-Set ist und dort jede Stufe zählt.
 - **Eintritt mit dem neuen Set ohne Stufen** ist sehr ungleich: Morgengabe +0 in der Ersten Stadt 6 %, Wachfeuer

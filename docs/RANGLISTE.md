@@ -99,25 +99,30 @@ ersten 30), ganz ohne Neuladen 10.
 
 `npm run rangliste-eichung` (nur ein Spielstand: `npm run rangliste-eichung -- probe`) spielt das Rennen
 mit einer Muster-Gilde durch: Sie braucht je neuen Dungeon 2 (Ebene 1) bis 20 Expeditionen (Ebene 6),
-zwischen den Sternen 28 (Ebene 7) und 38 (Ebene 8), weil dort erst die Schmiede den Weg frei macht;
-schnell 0,6-mal so viele, gemütlich 1,6-mal. Stand 21.10.2026, mit Sternenschmiede und Sternenschlund:
+zwischen den Sternen 28 (Ebene 7) und 38 (Ebene 8), weil dort erst die Schmiede den Weg frei macht, im
+Mondlicht 50 und 64, im Taglicht 80 (Erste Stadt) und 98 (Pfeiler des Tages); schnell 0,6-mal so viele,
+gemütlich 1,6-mal. Stand 5.11.2026, mit der Ersten Stadt und den Pfeilern des Tages:
 
 **Gipfel** (frisches Spiel, Platz nach Expeditionen)
 
 | Spielweise | Verlauf | Ganze Karte |
 |---|---|---|
-| normal, räumt jede Ebene ab | bis Expedition 28 Platz 3 bis 6, dann lange Platz 4 oder 3, ab 151 mit jedem neuen Dungeon kurz Platz 1, dazwischen ziehen Sturmadler und Glutschwinge wieder vorbei | 237, dann Platz 1 |
-| normal, klettert zuerst | ab 45 Platz 2, mit dem Himmelsarchiv (97) kurz Platz 1, danach meist Platz 2 oder 3; den Sternenschlund bezwingt sie bei 163, die Rivalen haben aber mehr Sterne | 237, dann Platz 1 |
-| schnell | mit dem Vulkankern (49) Platz 1, danach Kopf an Kopf mit Sturmadlern und Rudel, ab 87 vorn | 139 |
-| gemütlich | lange Platz 4 bis 7, ab 238 mit jedem neuen Dungeon kurz vorn | 376, dann Platz 1 |
+| normal, räumt jede Ebene ab | bis Expedition 28 Platz 3 bis 6, dann lange Platz 4 oder 3, ab 151 mit jedem neuen Dungeon kurz Platz 1 (151, 171, 199, 237, 287, 351, 431), dazwischen ziehen Sturmadler, Glutschwinge und das Rudel wieder vorbei | 529, dann Platz 1 |
+| normal, klettert zuerst | ab 45 Platz 2, mit dem Himmelsarchiv (97) kurz Platz 1, danach Platz 2 bis 4; je höher sie klettert, desto mehr Sterne holen die Rivalen unten (ab 254 meist Platz 4 bis 6); die Pfeiler bezwingt sie bei 455 | 529, dann Platz 1 |
+| schnell | mit dem Vulkankern (49) Platz 1, danach Kopf an Kopf mit Sturmadlern und Rudel, ab 87 vorn; ab dem Mondhof holen die Sturmadler vor jedem neuen Dungeon kurz auf (206, 251, 298) | 314 (die Sturmadler bei 308), dann Platz 1 |
+| gemütlich | lange Platz 4 bis 7, ab 238 mit jedem neuen Dungeon kurz vorn, zuletzt 686 mit der Ersten Stadt | 843, dann Platz 1 |
 
-Vorher, mit dem Himmelsarchiv als oberstem Dungeon, war die ganze Karte bei 171 (normal), 99 (schnell) und
-270 (gemütlich). Im Probespiel zwischen den Sternen steht die Muster-Gilde bei 140 (normal) auf der ganzen Karte.
+Wann die Muster-Gilde einen Dungeon zum ersten Mal bezwingt (Vulkankern, Drachenhort, Himmelsarchiv,
+Sternenschmiede, Sternenschlund, Mondhof, Morgentor, Erste Stadt, Pfeiler des Tages): normal 83, 151, 171,
+199, 237, 287, 351, 431, 529; schnell 49, 87, 99, 116, 139, 169, 207, 255, 314; gemütlich 132, 238, 270, 315,
+376, 456, 558, 686, 843; als Kletterer 45, 77, 97, 125, 163, 213, 277, 357, 455. Die Sturmadler stehen
+jeweils etwas früher bei den Pfeilern (normal 473, schnell 298, gemütlich 729), das Rennen bleibt also bis
+zuletzt offen.
 
-Nachtrag 5.11.2026, mit der Ersten Stadt (Ebene 11, 80 Expeditionen) und den Pfeilern des Tages (Ebene 12, 98
-Expeditionen) als Meilensteinen: Im Probespiel (ab Ebene 4) erreicht die Muster-Gilde die ganze Karte bei 466
-(normal), 277 (schnell) und 743 (gemütlich), jedes Mal danach Platz 1. Die Sturmadler stehen jeweils etwas früher
-bei den Pfeilern (412, 258, 629), das Rennen bleibt also bis zuletzt offen.
+Vorher: mit dem Himmelsarchiv als oberstem Dungeon war die ganze Karte bei 171 (normal), 99 (schnell) und
+270 (gemütlich), mit dem Sternenschlund bei 237, 139 und 376, mit dem Morgentor bei 351, 207 und 558. Im
+Probespiel (ab Ebene 4) erreicht die Muster-Gilde die ganze Karte heute bei 466 (normal), 277 (schnell) und
+743 (gemütlich), jedes Mal danach Platz 1; die Sturmadler sind dort bei den Pfeilern bei 412, 258 und 629.
 
 Die Spitzengilden bleiben bis zum Schluss knapp vorn oder gleichauf. Endgültig Platz 1 wird man erst mit
 der ganzen Karte: Das ist das ferne Ziel. Kommen neue Dungeons dazu, geht das Rennen weiter.
@@ -141,9 +146,8 @@ erst die ganze Karte bringt Platz 1 für immer.
 
 **Nachgemessen am 23.10.2026** (nach dem Umbau der Klassen-Boni, `docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»):
 Die Rangliste hängt nicht von den Werten der Helden ab, die Muster-Gilde zählt nur Expeditionen je Ebene. Die
-Ausgabe ist Zeichen für Zeichen dieselbe wie vorher, und die Woche-Tabelle stimmt. Die Gipfel-Tabelle ist aber
-noch vom 21.10., vor Mondhof und Morgentor: Mit ihnen liegt die ganze Karte bei 351 (normal), 207 (schnell) und
-558 (gemütlich), im Probespiel zwischen den Sternen bei 254 (normal). Die Verläufe darin sind noch nachzuführen.
+Ausgabe ist Zeichen für Zeichen dieselbe wie vorher, und die Woche-Tabelle stimmt. Die Gipfel-Tabelle oben ist
+seit dem 5.11.2026 wieder aktuell (mit Mondhof, Morgentor, Erster Stadt und Pfeilern des Tages).
 
 ## Wo es steht
 
