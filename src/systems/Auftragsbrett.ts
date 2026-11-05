@@ -303,6 +303,15 @@ export function kapitelText(state: GameState, kapitel: SaalKapitel): string {
   return kapitel.vorSieg && !(kapitel.routeId in bezwungeneDungeons(state)) ? kapitel.vorSieg : kapitel.text;
 }
 
+/** Das Messingschild, so weit die Gilde es lesen kann: vor dem ersten Sieg im Dungeon nur den Anfang (schildVorSieg) */
+export function kapitelSchild(
+  state: GameState, kapitel: SaalKapitel, bezwungen = kapitel.routeId in bezwungeneDungeons(state),
+): { text: string; warum?: string } {
+  return kapitel.schildVorSieg && !bezwungen
+    ? { text: kapitel.schildVorSieg.lesbar, warum: kapitel.schildVorSieg.warum }
+    : { text: kapitel.schild };
+}
+
 /** Stellt das laufende Kapitel ein; der Stand gilt nur für das Kapitel, zu dem er gehört */
 function ketteNachziehen(stand: AuftragsbrettStand): void {
   const kapitel = laufendesKapitel(stand);

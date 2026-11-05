@@ -24,11 +24,11 @@ import {
 import {
   AuftragsBilanz, AuftragsMeldung,
   alleKapitel, auftraegeFuerDungeon, auftraegeNachExpedition, kapitelDesTeils, ketteEinleitung, kettenTeil, brettGesehen, brettKurz, brettStand, einloesbareMaterialien, einloesbareSets,
-  goldJeLauf, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText, laufendesKapitel, lieferbareWaren, lieferGold, liefern,
+  goldJeLauf, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelSchild, kapitelText, laufendesKapitel, lieferbareWaren, lieferGold, liefern,
   materialEinloesen, saalEinleitung, saalKapitel, setTeilEinloesen, spielbareDungeons, splitterEinloesen, tagVon, tauschen, tauschUebrig,
   zettelText, zielText,
 } from '../src/systems/Auftragsbrett';
-import { bossTrophaeen, gildenbuch, saalGlanz, setSammlung, trophaeenStand } from '../src/systems/Trophaeensaal';
+import { bossTrophaeen, gildenbuch, saalAnsicht, saalGlanz, setSammlung, trophaeenStand } from '../src/systems/Trophaeensaal';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
 import { materialJeSieg } from '../src/systems/Schmiede';
 import { EINSCHMELZEN_GRUNDMENGEN } from '../src/data/schmiede';
@@ -39,7 +39,7 @@ const MITTAG = new Date(2026, 9, 21, 12, 0).getTime();
 const TAG = 86_400_000;
 
 /** Neues Spiel wie im Browser; mit 'probe' oder 'sterne' wie ?probe und ?probe=sterne */
-function spielstand(art: 'neu' | 'probe' | 'sterne' | 'pfeiler' = 'neu', samen = 12345): GameState {
+function spielstand(art: 'neu' | 'probe' | 'sterne' | 'stadt' | 'pfeiler' = 'neu', samen = 12345): GameState {
   const state = createNewGameState();
   state.rngSeed = samen;
   placeStartingLayout(state);
@@ -127,7 +127,7 @@ describe('Auftragsbrett: Texte und Daten', () => {
       ...Object.values(AUFTRAGGEBER).map(a => a.name),
       ...AUFTRAGS_VORLAGEN.flatMap(v => [v.titel, v.text]),
       ...LIEFER_WAREN.flatMap(w => [w.titel, w.text]),
-      ...SAAL_KAPITEL.flatMap(k => [k.prunkstueck, k.schild, k.text, k.vorSieg ?? '']),
+      ...SAAL_KAPITEL.flatMap(k => [k.prunkstueck, k.schild, k.text, k.vorSieg ?? '', k.schildVorSieg?.lesbar ?? '', k.schildVorSieg?.warum ?? '']),
       ...EINLOESE_ANGEBOTE.flatMap(a => [a.titel, a.text]),
     ];
     for (const t of texte) expect(t, t).not.toMatch(/ß/);
@@ -169,6 +169,15 @@ describe('Auftragsbrett: Texte und Daten', () => {
     const golem = SAAL_KAPITEL.find(k => k.routeId === 'cave_deep')!;
     expect(golem.vorSieg).toBeDefined();
     expect(kapitelText(neu, golem)).not.toContain('Dorfplatz, auf den Sockel');
+    // Wer den Saal gebaut hat, verrät Alrunas Schild erst nach dem Sieg in der Ersten Stadt; bis dahin ist es verrusst
+    for (const k of SAAL_KAPITEL.filter(k => k.schildVorSieg)) {
+      expect(k.schild.startsWith(k.schildVorSieg!.lesbar.replace(/ …$/, '')), k.routeId).toBe(true);
+      expect(kapitelSchild(neu, k), k.routeId).toEqual({ text: k.schildVorSieg!.lesbar, warum: k.schildVorSieg!.warum });
+      expect(kapitelSchild(neu, k, true), k.routeId).toEqual({ text: k.schild });
+    }
+    const alruna = SAAL_KAPITEL.find(k => k.routeId === 'erste_stadt')!;
+    expect(kapitelSchild(neu, alruna).text).not.toContain('gebaut');
+    expect(kapitelSchild(spielstand('pfeiler'), alruna).text).toBe('Die Erste. Sie hat diesen Saal gebaut.');
   });
 });
 
@@ -687,6 +696,42 @@ describe('Trophäensaal', () => {
     expect(glanz.sterne).toBe(erwartet);
     expect(trophaeen.find(t => t.routeId === 'sternenschlund')).toMatchObject({ bezwungen: false, prunk: false });
     expect(setSammlung(state).length).toBeGreaterThanOrEqual(trophaeen.length);
+  });
+
+  test('Saal und Anbau: sechzehn Sockel im Saal, der Anbau steht erst mit vollem Saal', () => {
+    const state = spielstand('stadt');
+    const vorher = saalAnsicht(state, MITTAG);
+    expect(vorher.saal.map(t => t.routeId)).toEqual(saalKapitel().map(k => k.routeId));
+    expect(vorher.saal).toHaveLength(16);
+    expect(vorher).toMatchObject({ anbau: [], saalVoll: false, anbauVoll: false, glanz: { max: 48 } });
+    // Der Glanz der sichtbaren Sockel zählt dieselben Sterne wie der aller Sockel (der Erfolg «Glanz des Saals»)
+    expect(vorher.glanz.sterne).toBe(saalGlanz(bossTrophaeen(state, MITTAG)).sterne);
+
+    // Das letzte Prunkstück des Saals liegt: der Anbau steht, Alrunas Schild ist bis zum ersten Sieg verrusst
+    const stand = brettStand(state, MITTAG);
+    stand.kette.fertig = saalKapitel().map(k => k.routeId);
+    const voll = saalAnsicht(state, MITTAG);
+    expect(voll).toMatchObject({ saalVoll: true, anbauVoll: false, glanz: { max: 54 } });
+    expect(voll.anbau.map(t => t.routeId)).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(voll.anbau[0]).toMatchObject({ bezwungen: false, teil: 'anbau', schild: 'Die Erste. Sie hat …', schildWarum: 'Der Rest ist verrusst.' });
+    expect(voll.anbau[1]).toMatchObject({ schild: 'Der Träger. Er hat nie gefragt, wer ihn darum bat.' });
+    expect(voll.anbau[1].schildWarum).toBeUndefined();
+    // Am Brett hängt dasselbe Schild
+    expect(kapitelSchild(state, laufendesKapitel(stand)!)).toEqual({ text: 'Die Erste. Sie hat …', warum: 'Der Rest ist verrusst.' });
+
+    // Beide Prunkstücke im Anbau: voll
+    stand.kette.fertig.push('erste_stadt', 'tagespfeiler');
+    expect(saalAnsicht(state, MITTAG)).toMatchObject({ saalVoll: true, anbauVoll: true });
+  });
+
+  test('ein Sieg über Alruna, bevor der Saal voll ist: der Anbau steht schon, ihre Trophäe bleibt nicht unsichtbar', () => {
+    const state = spielstand('pfeiler');
+    const ansicht = saalAnsicht(state, MITTAG);
+    expect(ansicht.saalVoll).toBe(false);
+    expect(ansicht.anbau.map(t => t.routeId)).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(ansicht.anbau[0]).toMatchObject({ bezwungen: true, schild: 'Die Erste. Sie hat diesen Saal gebaut.' });
+    expect(ansicht.anbau[0].schildWarum).toBeUndefined();
+    expect(ansicht.glanz).toEqual(saalGlanz(bossTrophaeen(state, MITTAG)));
   });
 
   test('Gildenbuch: erledigte Zettel und verdiente Siegel', () => {

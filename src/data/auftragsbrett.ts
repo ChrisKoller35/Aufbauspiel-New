@@ -220,6 +220,11 @@ export interface SaalKapitel {
   prunkstueck: string;
   /** Das alte Messingschild vor dem Sockel */
   schild: string;
+  /**
+   * Das Schild vor dem ersten Sieg im Dungeon, wenn «schild» vorwegnimmt, was erst der Sieg erzählt (wie vorSieg):
+   * lesbar ist nur der Anfang, «warum» sagt, was den Rest verdeckt
+   */
+  schildVorSieg?: { lesbar: string; warum: string };
   text: string;
   /** Text, solange die Gilde den Dungeon noch nie bezwungen hat (wenn «text» schon den ersten Sieg kennt) */
   vorSieg?: string;
@@ -246,8 +251,9 @@ export const SAAL_SCHLUSS_SIEGEL = 15;
 export const ANBAU_AB_EBENE = 11;
 
 export const ANBAU_EINLEITUNG = 'Neben der Platte «Für die Nächsten» war noch Platz, und eines Morgens standen dort {anzahl} neue Sockel '
-  + 'aus hellem Stein, den es in Magic City nicht gibt. Die Schilder sind in derselben Schrift wie die Platte, nur frischer. Jorinde '
-  + 'sagt, jemand habe angebaut. Ich sage, jemand habe uns zugetraut, dass wir weiter hinaufkommen als bis zum Morgentor.';
+  + 'aus hellem Stein, den es in Magic City nicht gibt. Die Schilder sind in derselben Schrift wie die Platte, nur frischer, und das erste '
+  + 'ist verrusst, als hätte es lange neben einem Feuer gestanden. Jorinde sagt, jemand habe angebaut. Ich sage, jemand habe uns '
+  + 'zugetraut, dass wir weiter hinaufkommen als bis zum Morgentor.';
 
 export const ANBAU_SCHLUSS = 'Auch der Anbau ist voll. Alruna ist heruntergekommen, hat sich ihre Kohle und Orms Keil angesehen und mit '
   + 'Kreide ein Wort unter die Platte «Für die Nächsten» geschrieben: «Besser.» Jorinde hat die Kreide mit Firnis überzogen, damit es '
@@ -382,6 +388,8 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
   {
     routeId: 'erste_stadt', art: 'heimkehr', ziel: 1, prunkstueck: 'Eine Kohle aus dem ersten Wachfeuer',
     schild: 'Die Erste. Sie hat diesen Saal gebaut.',
+    // Wer den Saal gebaut hat, fragt Jorinde seit der Einleitung des Saals; die Antwort gibt erst die Erste Stadt
+    schildVorSieg: { lesbar: 'Die Erste. Sie hat …', warum: 'Der Rest ist verrusst.' },
     text: 'Der erste Sockel im Anbau meint Alruna, und das Schild hat sie selbst geschrieben. Auf den Sockel gehört eine Kohle aus '
       + 'ihrem ersten Wachfeuer. Sie gibt sie nur einer Gilde, die alle wieder heimbringt; ihre eigene kam nicht heim, und das steht '
       + 'auf ihrer Liste ganz oben. Jorinde hat gefragt, ob zählt, wer am Feuer wieder aufsteht. Alruna sagt, genau dafür brennen '

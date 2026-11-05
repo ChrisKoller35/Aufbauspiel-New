@@ -50,8 +50,15 @@ und was bei neuen Dungeons zu tun ist.
   Schmiede, Kristallsplitter.
 - **Trophäensaal.** Ein Sockel je Boss mit dem Bild des Bosses; wer noch nicht bezwungen ist, steht als
   Schatten mit «???» da, das Messingschild ist schon lesbar. Jede Trophäe hat drei Sterne: Boss
-  bezwungen, Set des Dungeons komplett, Prunkstück aus der Kette. Die Summe ist der «Glanz des Saals»
-  (bei 18 Bossen 54 Sterne: 16 im Saal, 2 im Anbau), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
+  bezwungen, Set des Dungeons komplett, Prunkstück aus der Kette. Die Summe ist der «Glanz des Saals», der
+  Rahmen wird mit den Sternen bronzen, silbern, golden. Der Saal zeigt seine 16 Sockel (48 Sterne). Der **Anbau**
+  steht darunter als eigene Abteilung (heller Stein, 2 Sockel, 54 Sterne zusammen), sobald das letzte Prunkstück
+  des Saals liegt; dazwischen die Platte «Für die Nächsten. Macht es besser als wir.», nach dem letzten Prunkstück
+  im Anbau mit Alrunas Kreide «Besser.». Hat die Gilde dort oben schon gesiegt, bevor der Saal voll ist, steht der
+  Anbau schon früher da (eine verdiente Trophäe bleibt nie unsichtbar), mit einer Zeile von Ottokar statt der
+  Platte. Alrunas Schild ist bis zum ersten Sieg in der Ersten Stadt verrusst: «Die Erste. Sie hat …»
+  (`schildVorSieg`), am Brett wie im Saal; sonst wäre Jorindes Frage aus der Einleitung des Saals («wer hat den
+  Saal gebaut?») beantwortet, bevor die Gilde oben war (`saalAnsicht` in `src/systems/Trophaeensaal.ts`). Darunter die Pokale
   der Rangliste, alle Sets der Dungeons (komplett grün) und das Gildenbuch (Expeditionen, Siege, Siege
   ohne Verlust, Gegner, Bosse, bezwungene Dungeons, erledigte Zettel, verdiente Siegel).
   Der Saal zeigt nur; Kampfwerte ändert er nicht.
@@ -208,7 +215,9 @@ Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er 
   der Text nicht überall (Karawane, Grabung), `nichtIn: FERNE_DUNGEONS`; jede Art braucht für jeden Dungeon
   mindestens eine passende Vorlage (der Test prüft das).
 - **Kapiteltext und erster Sieg:** Erzählt `text` etwas aus dem Schluss der Geschichte des Dungeons (was die
-  Gilde erst nach dem ersten Sieg weiss), braucht das Kapitel `vorSieg`, einen Text ohne dieses Wissen.
+  Gilde erst nach dem ersten Sieg weiss), braucht das Kapitel `vorSieg`, einen Text ohne dieses Wissen. Verrät
+  schon das Schild zu viel, zeigt `schildVorSieg` bis zum ersten Sieg nur seinen Anfang und sagt, was den Rest
+  verdeckt (Alrunas Schild ist verrusst).
 - **Neue Ware:** in `LIEFER_WAREN` mit festem `gold`; sie hängt nur am Brett, wenn eine stehende Werkstatt ein
   Rezept mit ihr als Ausgabe hat (`lieferbareWaren`) oder sie in der verlangten Menge im Lager liegt. Der Lohn
   liegt über dem Wert der Zutaten (Beute und Gold), aber nicht über dem Händlerpreis der Ware bei 20 % Rabatt; der
