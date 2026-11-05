@@ -156,3 +156,20 @@ export function besserText({ beste, weitere }: { beste: Verbesserung; weitere: n
   const mehr = weitere === 1 ? ' · auch für 1 weiteren' : weitere > 1 ? ` · auch für ${weitere} weitere` : '';
   return `⬆ Besser für ${beste.held.name}${hand}: ${beste.teile.slice(0, 3).join(' · ')}${mehr}`;
 }
+
+/**
+ * Das Teil unter `kandidaten`, das denselben Helden am selben Platz am meisten stärkt wie `v` es mit `itemId` täte,
+ * falls eins mehr bringt (Platz-Schlüssel wie in besserFuerAlle). Für «Noch besser für …» in der Truhe.
+ */
+export function nochBesserAls(state: GameState, kandidaten: Iterable<string>, itemId: string, v: Verbesserung): { itemId: string; besser: Verbesserung } | null {
+  const platz = (w: Verbesserung, id: string) => w.platz ?? ITEM_DEFS[id]?.gearSlot;
+  const mit = vergleicher(v.held, schmiedeStufen(state));
+  let bestes: { itemId: string; besser: Verbesserung } | null = null;
+  for (const id of new Set(kandidaten)) {
+    if (id === itemId) continue;
+    const w = mit(id);
+    if (!w || platz(w, id) !== platz(v, itemId) || w.zugewinn <= (bestes?.besser.zugewinn ?? v.zugewinn)) continue;
+    bestes = { itemId: id, besser: w };
+  }
+  return bestes;
+}

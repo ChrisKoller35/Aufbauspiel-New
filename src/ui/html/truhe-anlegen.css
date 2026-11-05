@@ -1,0 +1,13 @@
+/* Truhe: gleich anlegen (ui/components/TruheAnlegen.ts). Farben auf --s2 #111828 und der Set-Karte: alle ≥ 4,5 : 1 */
+.truhe-anlegen { display: flex; flex-direction: column; align-items: flex-start; gap: 3px; font-size: 0.74rem; line-height: 1.3; }
+.truhe-anlegen:empty { display: none; }
+.truhe-noch-besser { color: #fde68a; } /* ≈ 13 : 1 */
+.truhe-traegt { color: #86efac; font-weight: 700; } /* ≈ 11 : 1 */
+.truhe-anlegen-btn {
+  min-height: 32px; max-width: 100%; padding: 4px 12px; margin-top: 2px; cursor: pointer;
+  background: #4ade80; color: #052e16; border: 0; border-radius: 6px; /* ≈ 10 : 1 */
+  font: inherit; font-size: 0.78rem; font-weight: 700; overflow-wrap: anywhere; text-align: left;
+}
+.truhe-anlegen-btn:hover { background: #86efac; }
+.truhe-anlegen-btn:disabled { opacity: .6; cursor: default; }
+@media (pointer: coarse) { .truhe-anlegen-btn { min-height: 44px; } }

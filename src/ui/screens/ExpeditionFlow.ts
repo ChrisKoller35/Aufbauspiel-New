@@ -25,6 +25,7 @@ import { ranglistenZeilen } from '../components/RanglistenBilanzAnzeige';
 import { auftragsZeilen } from '../components/AuftragsBilanzAnzeige';
 import { escapeAttr, truhenHinweise } from '../components/SchmiedeAnzeige';
 import { showChestReveal } from '../components/ChestRevealOverlay';
+import { TruheAnlegen } from '../components/TruheAnlegen';
 import { wegBilanz, wegWirkungZeile } from '../components/WegAnzeige';
 import { chronikHtml, einleitungHtml, flavorHtml, folgenHtml, geschichtsText } from '../components/GeschichtsAnzeige';
 import { DialogButton, partyHpHtml, showExpeditionDialog } from '../components/ExpeditionsDialog';
@@ -315,7 +316,8 @@ function finishExpedition(): void {
 
   // Show chest reveal animation if there's loot
   if (hasLoot) {
-    showChestReveal(loot, goldEarned, hinweise, undefined, schmiedeStufen(state)).then(applyLootAndFinish);
+    // Gleich anlegen: zieht Angelegtes von loot ab (beuteEinlagern danach), speichert nicht
+    showChestReveal(loot, goldEarned, hinweise, undefined, schmiedeStufen(state), new TruheAnlegen(state, loot, 'expedition')).then(applyLootAndFinish);
   } else {
     applyLootAndFinish();
   }
