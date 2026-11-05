@@ -305,6 +305,57 @@ const BILDER: Record<string, string> = {
     </g>
     ${funkeln(96, 44, 8, '#e0f2fe')}${funkeln(104, 84, 5, '#ffffff')}${funkeln(92, 104, 4, '#e0f2fe')}
     <circle cx="86" cy="64" r="1.8" fill="#ffffff"/><circle cx="100" cy="24" r="1.6" fill="#e0f2fe"/>`,
+
+  // Tagstein: ein honiggelber Quader aus den Pfeilern über dem Morgentor, innen hell wie Mittag
+  MAT_TAGSTEIN: `
+    <defs>${defs('ta', '#fde047')}
+      <linearGradient id="ta-oben" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef9c3"/><stop offset="100%" stop-color="#fcd34d"/>
+      </linearGradient>
+      <linearGradient id="ta-links" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+      <linearGradient id="ta-rechts" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="66" r="56" fill="url(#ta-schein)"/>
+    <g filter="url(#ta-schatten)">
+      <path d="M64 22 L106 42 L64 62 L22 42Z" fill="url(#ta-oben)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M22 42 L64 62 L64 110 L22 90Z" fill="url(#ta-links)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M106 42 L64 62 L64 110 L106 90Z" fill="url(#ta-rechts)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M30 56 L56 69 M32 74 L48 82" stroke="#92400e" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+      <path d="M76 74 L96 64 M80 90 L92 84" stroke="#451a03" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <path d="M44 40 L64 31 L76 37" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.85" fill="none"/>
+      <circle cx="64" cy="42" r="6" fill="#fffbeb" opacity="0.9"/>
+    </g>
+    ${funkeln(104, 22, 8, '#fef9c3')}${funkeln(20, 26, 5, '#ffffff')}${funkeln(112, 104, 4, '#fde68a')}`,
+
+  // Der Schlussstein (Erstsieg-Beute bei Orm): ein Keilstein aus Tagstein, oben breit, unten schmal,
+  // mit einer eingemeisselten Sonne. Kein Material, aber aus demselben Stein, darum hier gezeichnet.
+  ITEM_DER_SCHLUSSSTEIN: `
+    <defs>${defs('sl', '#fbbf24')}
+      <linearGradient id="sl-k" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef3c7"/><stop offset="45%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#92400e"/>
+      </linearGradient>
+      <linearGradient id="sl-s" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="62" r="56" fill="url(#sl-schein)"/>
+    <g filter="url(#sl-schatten)">
+      <path d="M18 22 L110 22 L86 108 L42 108Z" fill="url(#sl-k)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M110 22 L116 28 L92 112 L86 108Z" fill="url(#sl-s)" stroke="${LINIE}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M86 108 L92 112 L48 112 L42 108Z" fill="#78350f" stroke="${LINIE}" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="64" cy="58" r="13" fill="#fef9c3" stroke="#92400e" stroke-width="3"/>
+      <g stroke="#92400e" stroke-width="3" stroke-linecap="round">
+        <path d="M64 37 L64 31"/><path d="M64 79 L64 85"/><path d="M43 58 L37 58"/><path d="M85 58 L91 58"/>
+        <path d="M49 43 L45 39"/><path d="M79 43 L83 39"/><path d="M49 73 L45 77"/><path d="M79 73 L83 77"/>
+      </g>
+      <path d="M26 28 L70 28" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+      <path d="M50 96 L58 92 M70 98 L78 94" stroke="#78350f" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+    </g>
+    ${funkeln(108, 10, 7, '#fef9c3')}${funkeln(14, 88, 5, '#ffffff')}`,
 };
 
 async function zeichne(key: string): Promise<void> {

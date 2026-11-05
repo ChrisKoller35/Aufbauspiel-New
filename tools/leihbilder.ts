@@ -1,10 +1,12 @@
 // ============================================================
-// Magic City – Leihbilder für Gegenstände ohne eigenes Bild
+// Magic City – Leihbilder für Gegenstände, Gegner und Routen ohne eigenes Bild
 // ============================================================
 // Färbt ein vorhandenes Bild aus public/assets/sprites/final/ um und speichert
-// es unter dem Schlüssel des Gegenstands (getItemSpriteKey). So hat jede
-// Truhenkarte, jeder Trank im Kampf und jede Kachel im Lager ein Bild, und
-// gleiche Gegenstände sehen gleich aus. Keine KI, kein Netz, kostet nichts.
+// es unter dem Schlüssel des Gegenstands (getItemSpriteKey) oder des Gegners
+// (spriteKey). So hat jede Truhenkarte, jeder Trank im Kampf und jede Kachel
+// im Lager ein Bild, und gleiche Gegenstände sehen gleich aus. Routenbilder
+// (ordner: 'tiles') liegen in public/assets/tiles/ und werden dort gefärbt.
+// Keine KI, kein Netz, kostet nichts.
 //
 // Nutzung:
 //   npm run leihbilder                    # fehlende Leihbilder anlegen
@@ -22,6 +24,7 @@ import * as path from 'path';
 import { fileURLToPath } from 'url';
 
 const FINAL = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/assets/sprites/final');
+const TILES = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../public/assets/tiles');
 
 /** Für sharp recomb: die drei Zeilen ergeben neues Rot, Grün und Blau aus R, G, B der Vorlage */
 type Mischung = [[number, number, number], [number, number, number], [number, number, number]];
@@ -36,7 +39,21 @@ interface Leihbild {
   helligkeit?: number;
   /** Farbkanäle mischen, vor dem Drehen */
   mischung?: Mischung;
+  /** 'tiles': Vorlage und Ziel in public/assets/tiles/ (Routenbilder); sonst sprites/final/ */
+  ordner?: 'tiles';
 }
+
+/** Sepia, mit der Vorlage gemischt: 0 = unverändert, 1 = ganz Sepia. Für die blassen Echos der Vorigen. */
+function sepia(anteil: number): Mischung {
+  const s = [[0.393, 0.769, 0.189], [0.349, 0.686, 0.168], [0.272, 0.534, 0.131]];
+  const z = (i: number): [number, number, number] =>
+    [0, 1, 2].map(j => +(anteil * s[i][j] + (1 - anteil) * (i === j ? 1 : 0)).toFixed(4)) as [number, number, number];
+  return [z(0), z(1), z(2)];
+}
+// Graustufen, golden getönt (Helligkeit × 1,25 / 1,0 / 0,55): Tagstein, Gold der Ersten Stadt
+const GOLDTON: Mischung = [[0.375, 0.7375, 0.1375], [0.3, 0.59, 0.11], [0.165, 0.3245, 0.0605]];
+// Warm, aber nicht ganz grau: Ocker und Staub (Harnisch der Nachtwache, Mantel des Trägers)
+const OCKER: Mischung = [[0.6, 0.4, 0.1], [0.25, 0.6, 0.1], [0.1, 0.2, 0.5]];
 
 // Ergibt jede Zeile zusammen 1, bleibt Grau grau (Stahl, Silber, Glas).
 // Blau wird Türkis: Grün und Blau mischen sich, Rot bleibt. Den Farbton drehen reicht bei blauen Vorlagen
@@ -71,18 +88,47 @@ export const LEIHBILDER: Record<string, Leihbild> = {
   ITEM_ABYSSAL_LEATHER: { quelle: 'ITEM_LEATHER_ARMOR', farbton: 60 },
   ITEM_TIDE_ROBE: { quelle: 'ITEM_BATTLE_ROBE', mischung: BLAU_ZU_TUERKIS },
   ITEM_ABYSS_AMULET: { quelle: 'ITEM_ARCANE_AMULET', farbton: 250 },
+
+  // Ebene 11, Die Erste Stadt: die Vorigen sind blasse Echos der eigenen Helden (Sepia),
+  // Alruna und ihr Geselle aus Tagstein golden; das Wachfeuer-Set warm
+  ENEMY_ECHO_SCHILDTRAEGER: { quelle: 'HERO_GUARDIAN_OLD', mischung: sepia(0.6) },
+  ENEMY_ECHO_BOGENSCHUETZIN: { quelle: 'HERO_RANGER', mischung: sepia(0.6) },
+  ENEMY_ECHO_MESSERSTECHER: { quelle: 'HERO_ASSASSIN', mischung: sepia(0.6), helligkeit: 1.25 },
+  ENEMY_ECHO_STADTHEILERIN: { quelle: 'HERO_CLERIC', mischung: sepia(0.6) },
+  ENEMY_WACHFEUERWICHT: { quelle: 'ENEMY_FOREST_WISP', farbton: -30 },
+  ENEMY_STEINGESELLE: { quelle: 'ENEMY_MOSS_GOLEM', mischung: sepia(0.9) },
+  BOSS_ALRUNA: { quelle: 'BOSS_FORTRESS_WARDEN', mischung: GOLDTON, helligkeit: 1.8 },
+  ITEM_ALRUNAS_KELLE: { quelle: 'ITEM_IRON_SWORD', farbton: -80 },
+  ITEM_SET_WACHFEUER_HAMMER: { quelle: 'ITEM_WAR_HAMMER', mischung: GOLDTON, helligkeit: 1.4 },
+  ITEM_SET_WACHFEUER_PLATTE: { quelle: 'ITEM_CHAIN_ARMOR', mischung: OCKER, helligkeit: 1.1 },
+  ITEM_SET_WACHFEUER_TALISMAN: { quelle: 'ITEM_AMULET_OF_REBIRTH', farbton: -20, saettigung: 1.2 },
+  // Ebene 12, Die Pfeiler des Tages: heller, sonnenwarmer Stein
+  ENEMY_SCHLUSSSTEINWAECHTER: { quelle: 'ENEMY_CAVE_GOLEM_SHARD', mischung: sepia(0.9), helligkeit: 1.3 },
+  ENEMY_GEWOELBEFLEDERMAUS: { quelle: 'ENEMY_STALACTITE_BAT', mischung: sepia(0.8), helligkeit: 1.2 },
+  ENEMY_MOERTELGEIST: { quelle: 'ENEMY_TOMB_WRAITH', mischung: sepia(0.4) },
+  ENEMY_HIMMELSRISS: { quelle: 'ENEMY_CURSED_WISP', saettigung: 0.6, helligkeit: 1.25 },
+  ENEMY_ECHO_STEINMETZ: { quelle: 'HERO_BERSERKER', mischung: sepia(0.6) },
+  BOSS_ORM: { quelle: 'BOSS_CRYSTAL_GOLEM', mischung: sepia(0.8), helligkeit: 1.45 },
+  ITEM_SET_GEWOELBE_BOGEN: { quelle: 'ITEM_LONGBOW', farbton: 150 },
+  ITEM_SET_GEWOELBE_LEDER: { quelle: 'ITEM_BANDIT_KINGS_CLOAK', mischung: OCKER, helligkeit: 1.4 },
+  ITEM_SET_GEWOELBE_RING: { quelle: 'ITEM_CRYSTAL_PENDANT', farbton: 150 },
+  // Routenbilder, bis Christoph eigene zeichnet: die Erste Stadt ist Magic City in Gold,
+  // die Pfeiler die Ruinentiefen in Gold
+  exp_erste_stadt: { quelle: 'tile_buildings', mischung: GOLDTON, helligkeit: 1.3, ordner: 'tiles' },
+  exp_tagespfeiler: { quelle: 'exp_ruins_depths', mischung: GOLDTON, helligkeit: 1.5, ordner: 'tiles' },
 };
 
 async function main(): Promise<void> {
   const args = process.argv.slice(2);
   const ueberschreiben = args.includes('--ueberschreiben');
   const zielIdx = args.indexOf('--ziel');
-  const ziel = zielIdx >= 0 ? path.resolve(args[zielIdx + 1]) : FINAL;
+  const zielOrdner = zielIdx >= 0 ? path.resolve(args[zielIdx + 1]) : null;
   let neu = 0;
   for (const [key, b] of Object.entries(LEIHBILDER)) {
-    const datei = path.join(ziel, `${key}.png`);
+    const quellOrdner = b.ordner === 'tiles' ? TILES : FINAL;
+    const datei = path.join(zielOrdner ?? quellOrdner, `${key}.png`);
     if (fs.existsSync(datei) && !ueberschreiben) continue;
-    let bild = sharp(path.join(FINAL, `${b.quelle}.png`));
+    let bild = sharp(path.join(quellOrdner, `${b.quelle}.png`));
     // sharp mischt immer zuerst die Kanäle und dreht danach, egal in welcher Reihenfolge aufgerufen
     if (b.mischung) bild = bild.recomb(b.mischung);
     await bild
