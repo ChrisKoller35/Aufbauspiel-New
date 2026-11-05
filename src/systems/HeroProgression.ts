@@ -77,7 +77,7 @@ export interface LevelBonus {
 /** Stat-Bonus pro Level-Up, nach Klasse */
 export const LEVEL_BONUSES: Record<string, LevelBonus> = {
   // Basis-Klassen (bis 22.10.2026 in Klammern: Leben / Angriff / Verteidigung)
-  guardian:    { hp: 3, atk: 0.6, def: 0.7 },                       // (4 / 0,3 / 0,5)
+  guardian:    { hp: 3, atk: 0.5, def: 1.0 },                       // Beschützer (bis 22.10.: 4 / 0,3 / 0,5; 23.10.–4.11.: 3 / 0,6 / 0,7)
   ranger:      { hp: 2, atk: 0.8, def: 0.5, critChance: 0.01 },     // (2 / 0,6 / 0,1)
   cleric:      { hp: 3, atk: 0.6, def: 0.6, spd: 0.02 },            // (3 / 0,2 / 0,3)
   // Unlock-Klassen

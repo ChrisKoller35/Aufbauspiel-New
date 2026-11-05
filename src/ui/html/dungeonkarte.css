@@ -59,3 +59,8 @@
     overflow-y: auto; padding: 22px 16px 16px;
   }
 }
+
+/* Handy: Knopf «Legende» ≥ 44 px (Befund 91-b3) */
+@media (pointer: coarse) {
+  #s-dungeon .dmap-legend-knopf { min-height: 44px; }
+}

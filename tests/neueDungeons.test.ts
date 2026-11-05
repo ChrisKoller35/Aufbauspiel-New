@@ -656,7 +656,9 @@ describe('Dungeons über dem Vulkankern', () => {
   it('Eichung grob Morgentor: das Pfand-Set ist der Schlüssel, die Sonnenuhr kostet den Sieg, Sunnas Morgengabe nicht', () => {
     const pfand = messeLaeufe('morgentor', 'stark', 'vorsichtig', 20, 'pfand5');
     expect(pfand.siege).toBeGreaterThanOrEqual(10);
-    expect(pfand.rundenlimit).toBeLessThanOrEqual(1);
+    // Seit dem Beschützer-Profil des Guardians (5.11.) hält Brom länger, trifft aber schwächer: 2 statt 1 von 20
+    // enden am Rundenlimit (1000 Läufe: siehe docs/AUSBILDUNG.md, «Guardian als Beschützer»)
+    expect(pfand.rundenlimit).toBeLessThanOrEqual(2);
     expect(messeLaeufe('morgentor', 'stark', 'vorsichtig', 10, 'mond5').siege).toBeLessThanOrEqual(1);
     expect(messeLaeufe('morgentor', 'stark', 'gierig', 20, 'pfand5').siege).toBeLessThanOrEqual(2);
     const morgen = messeLaeufe('morgentor', 'stark', 'gierig', 10, 'morgen0');

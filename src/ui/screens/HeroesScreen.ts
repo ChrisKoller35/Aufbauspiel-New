@@ -1066,7 +1066,9 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
       if (auswahl && !fighter.gear[slot]) inventarOffen = true;
       neuZeichnen([`.hdm-gear-icon[data-slot="${slot}"]`]);
       // Ein leerer Platz (auch über den Hinweis) holt das Inventar ins Bild: Am Handy liegt es unter dem Helden
-      if (auswahl && !fighter.gear[slot]) container.querySelector('#hdm2-inv-panel')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+      // Ein gezieltes Scrollen statt zweimal scrollIntoView: Der eben erschienene Kasten darf nicht unter dem
+      // klebenden ✕ landen (Befund 94-b1)
+      if (auswahl && !fighter.gear[slot]) inventarInsBild(container);
     });
   });
 
@@ -1247,4 +1249,32 @@ function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): 
   setTimeout(() => {
     renderHeroesScreen(container);
   }, 600);
+}
+
+/** Streifen oben, den das klebende ✕ belegt (wie `scroll-padding-top` von #hero-detail-ov) */
+const KREUZ_STREIFEN = 60;
+
+/**
+ * Holt das Inventar unten ganz ins Bild. Läge der Auswahl-Kasten danach mit seiner Oberkante im Streifen des ✕
+ * und wäre noch sichtbar, wird weiter gescrollt, bis er ganz aus dem Bild ist (der Kopf des Inventars sagt dasselbe).
+ * Passt alles, scrollt das Fenster nicht.
+ */
+function inventarInsBild(container: HTMLElement): void {
+  const ov = container.querySelector('#hero-detail-ov') as HTMLElement | null;
+  const inv = container.querySelector('#hdm2-inv-panel') as HTMLElement | null;
+  if (!ov || !inv || typeof ov.scrollTo !== 'function' || typeof inv.getBoundingClientRect !== 'function') return;
+  const ovRect = ov.getBoundingClientRect();
+  const invRect = inv.getBoundingClientRect();
+  const unterkante = invRect.bottom - ovRect.top; // relativ zur sichtbaren Oberkante
+  let delta = Math.max(0, unterkante - ov.clientHeight);
+  if (delta <= 0) return;
+  const box = container.querySelector('#hdm2-auswahl') as HTMLElement | null;
+  if (box && typeof box.getBoundingClientRect === 'function') {
+    const r = box.getBoundingClientRect();
+    const oben = r.top - ovRect.top - delta;
+    const unten = r.bottom - ovRect.top - delta;
+    if (oben < KREUZ_STREIFEN && unten > 0) delta += unten;
+  }
+  const max = ov.scrollHeight - ov.clientHeight;
+  ov.scrollTo({ top: Math.min(ov.scrollTop + delta, max), behavior: 'smooth' });
 }

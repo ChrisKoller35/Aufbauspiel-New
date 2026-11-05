@@ -54,12 +54,12 @@ docs/HAERTEGRADE.md): Drachenhort ☠ Ø Gold 1032 statt 822 ohne diesen Wurf (N
 statt 10. Bei «Boss überlebt» gibt es keine Albtraum-Beute, und die Punkte zählen wie auf Normal.
 
 ## Der letzte Rat
-Unter «🎲 Kriegsrat» steht der letzte fertige Rat («Letzter Rat · ☠ Albtraum: 19 Siege · 1 Niederlage»), solange
+Unter «🎲 Kriegsrat» steht der letzte fertige Rat («Letzter Rat · ☠ Albtraum: 20 Siege · 0 Niederlagen»), solange
 `kriegsratSchluessel` gleich bleibt: der erste Probelauf gleich nach dem Start, ohne die Kennungen der Gegner. Darin
 stehen Dungeon, Grad, die Helden in ihrer Reihenfolge mit allen Werten (Stufe, Ausrüstung, Weg, Sets,
 Schmiede-Stufen), die Gegner, der Proviant und die Kriegsmaschine. Ändert sich davon etwas, verschwindet die Zeile,
-auch wenn nur die Reihenfolge wechselt (Drachenhort Albtraum rückwärts: 18 statt 19 Siege) oder Brom seinen
-Talisman ablegt (4 Siege). Gold, Tag und XP unter der nächsten Stufe ändern ihn nicht. Ohne Auswahl nimmt der Start
+auch wenn nur die Reihenfolge wechselt (Drachenhort Albtraum rückwärts: 19 statt 20 Siege) oder Brom seinen
+Talisman ablegt (3 Siege). Gold, Tag und XP unter der nächsten Stufe ändern ihn nicht. Ohne Auswahl nimmt der Start
 den Proviant aus dem Vorrat, bis zu 4 Sorten zu je höchstens 3: 30 Brot im Lager statt 5 ändern nichts, 1 Brot
 schon. Gemerkt wird nur der letzte Rat und nur im Speicher der Seite, nicht im Spielstand; schliesst das Fenster
 vor dem Ende, merkt es nichts.
@@ -70,10 +70,12 @@ solange die Gruppe unter 50 % ihrer Leben ist, setzt der Rat den ersten Proviant
 (Brot 8, Heiltrank 15 Leben je Held), höchstens einen je Raum.
 
 Was der Proviant am Ausgang ändert, je 20 Läufe: Drachenhort mit `?probe` (Brom, Grimm, Lia, Sina, ohne
-Heldenwege) ohne Auswahl 1 Sieg (17-mal eingesetzt), mit 5 Heiltränken 3 Siege (18-mal), mit 5 Brot 1 Sieg.
-Oft ändert er nichts: Drachenhort «gut» mit Heldenwegen (13 Siege, 7 Niederlagen, alle im Bosskampf) setzt ihn nur
-einmal ein, vor den Kämpfen ist die Gruppe kaum je unter halben Leben; mit 5 Brot und 5 Heiltränken mehr bleibt
-es gleich. Sternenschlund («stark», `sterne3`): nur das Geschenk 39-mal, mit 10 Heiltränken 48-mal, kein Sieg.
+Heldenwege) ohne Auswahl 3 Siege (18-mal eingesetzt), mit 5 Heiltränken 3 Siege (19-mal), mit 5 Brot 3 Siege.
+Bis zum 5.11., vor dem Beschützer-Profil des Guardians (`docs/AUSBILDUNG.md`), waren es 1, 3 und 1 Sieg: Seither
+hält Brom die Gruppe hier ohne Proviant so gut wie mit.
+Oft ändert er nichts: Drachenhort «gut» mit Heldenwegen (12 Siege, 8 Niederlagen, alle im Bosskampf) setzt ihn nur
+dreimal ein, vor den Kämpfen ist die Gruppe kaum je unter halben Leben; mit 5 Brot und 5 Heiltränken mehr bleibt
+es gleich. Sternenschlund («stark», `sterne3`): nur das Geschenk 38-mal, mit 10 Heiltränken 47-mal, kein Sieg.
 
 ## Nicht eingerechnet
 Stärkungs-Tränke (Krafttrank, Schnelligkeitstrank …), Manatrank und Fähigkeiten, die der Spieler im

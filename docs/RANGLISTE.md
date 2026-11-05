@@ -86,7 +86,10 @@ Jeder Satz hängt an einem echten Überholen.
   «nach deiner nächsten Expedition», damit sich der Satz nicht abnutzt. Im Musterspiel (normal, frisch,
   Samen 12345) steht die Warnung nach 253 von 351 Expeditionen, mit Satz nach 27.
 
-Höchstens eine Stimme je Bericht, in der Farbe der Gilde. Jeder Satz kommt einmal bis zum Neuladen
+Höchstens eine Stimme je Bericht. Im Bericht steht sie kursiv in ruhigem Hellgrau (#d1d5db, Klasse
+`bericht-stimme`), die Farbe der Gilde nur als schmaler Rand links (3 px): So verwechselt man sie nicht mit den
+roten Warnzeilen (die Glückspilze haben dasselbe Rot #f87171). Die Aufklapper «So funktioniert …» sind am Handy
+(`pointer: coarse`) 44 px hoch. Jeder Satz kommt einmal bis zum Neuladen
 (Merker im Modul, nicht im Spielstand): Am Anfang überholen sich Glückspilze, Silbereulen und Rudel hin und
 her, ohne Merker käme derselbe Satz Bericht für Bericht. Im Musterspiel melden 40 von 351 Berichten ein
 Überholen (18 in den ersten 30); mit Neuladen alle 20 Expeditionen zeigen 31 davon eine Stimme (9 in den

@@ -43,13 +43,14 @@ Stile in `src/ui/html/ausbildung.css`. Tests: `tests/heldenAusbildung.test.ts`.
 
 Ein Held von Stufe 1 bis 15 nur mit Training. «Vorher» ist das alte Training, «nachher» das neue; das neue
 ergibt genau dieselben Werte wie dieselbe XP aus Expeditionen. «Nachher» gilt mit den Klassen-Boni seit dem
-23.10.2026; die Werte mit den Boni bis zum 22.10. stehen unten in «Eichung nach dem Umbau». Spalten: Leben /
+23.10.2026, beim Guardian seit dem 5.11. (unten «Guardian als Beschützer»); die Werte mit den Boni bis zum 22.10.
+stehen unten in «Eichung nach dem Umbau». Spalten: Leben /
 Angriff / Verteidigung, dazu Krit-Chance und Tempo, wo die Klasse sie steigert. Weg-Werte kommen bei beiden
 gleich dazu und stehen nicht in der Tabelle.
 
 | Klasse | Stufe 1 | Training vorher | Training nachher |
 |---|---|---|---|
-| Guardian | 70 / 4 / 3 | 98 / 18 / 17 | 112 / 12,4 / 12,8 |
+| Guardian | 70 / 4 / 3 | 98 / 18 / 17 | 112 / 11 / 17 |
 | Ranger | 50 / 8 / 1, Krit 15 % | 78 / 22 / 15, Krit 15 % | 78 / 19,2 / 8, Krit 29 % |
 | Cleric | 55 / 3 / 1,5, Tempo 0,9 | 83 / 17 / 15,5, Tempo 0,9 | 97 / 11,4 / 9,9, Tempo 1,18 |
 | Berserker | 84 / 7 / 2 | 112 / 21 / 16 | 126 / 16,8 / 10,4 |
@@ -251,7 +252,8 @@ der Guardian (112 / 12,4 / 12,8) nur noch 2,4 Verteidigung mehr als der Berserke
 Berserker hat 14 Leben mehr. Bis zum 22.10. waren es bei echten Helden 5,2 Verteidigung (10 gegen 4,8) bei
 gleichen Leben, in der alten Eichung 4 (14 gegen 10). Für diese Eichung bleibt das so, weil eine Regel für alle
 Klassen gelten sollte. **Offen:** die Tank-Rolle bei der nächsten Abstimmung der Klassen prüfen, etwa
-Guardian-Verteidigung 0,8 statt 0,7 je Stufe, und danach neu eichen.
+Guardian-Verteidigung 0,8 statt 0,7 je Stufe, und danach neu eichen. **Erledigt am 5.11.**, siehe «Guardian als
+Beschützer» unten. Die Tabellen in diesem Abschnitt zeigen den Stand vom 23.10.
 
 **Guardian und Ranger auf Stufe 1, 5, 10 und 15** (Leben / Angriff / Verteidigung):
 
@@ -298,3 +300,51 @@ nächster Wert) machte die Teams deutlich zu stark (Drachenhort «Gut» 95 / 77 
 0,7), und Lias und Sinas Krit wächst jetzt mit (auf Stufe 15 14 Punkte mehr), was die alte Rechnung nicht
 kannte. Die übrigen Abweichungen gehen in beide Richtungen; eine einzelne Regel für die Helden kann sie nicht
 alle schliessen, und die Gegner einzelner Dungeons blieben bewusst, wie sie waren.
+
+## Guardian als Beschützer (5.11.2026)
+
+Nach der Eichung vom 23.10. hatte der Guardian auf Stufe 15 nur 2,4 Verteidigung mehr als der Berserker, 14 Leben
+weniger und fast denselben Angriff. Er bekommt ein klares Beschützer-Profil, nur über seinen Bonus je Aufstieg
+(`LEVEL_BONUSES.guardian` in `src/systems/HeroProgression.ts`); Spott, Schildschlag und die Wege bleiben, wie sie
+waren. Der Paladin behält seine Boni.
+
+| Guardian | Bonus je Aufstieg | Stufe 10 | Stufe 12 | Stufe 15 |
+|---|---|---|---|---|
+| 23.10. bis 4.11. | 3 / 0,6 / 0,7 | 97 / 9,4 / 9,3 | 103 / 10,6 / 10,7 | 112 / 12,4 / 12,8 |
+| seit 5.11. | 3 / 0,5 / 1,0 | 97 / 8,5 / 12 | 103 / 9,5 / 14 | 112 / 11 / 17 |
+| zum Vergleich: Berserker | 3 / 0,7 / 0,6 | 111 / 13,3 / 7,4 | 117 / 14,7 / 8,6 | 126 / 16,8 / 10,4 |
+
+Auf Stufe 15 hat der Guardian jetzt 6,6 Verteidigung mehr als der Berserker (vorher 2,4) und 5,8 Angriff weniger
+(vorher 4,4). Ohne Ausrüstung hält er gegen einen Gegner mit 15 Angriff 28 Treffer aus statt 16 (Berserker 16),
+mit 20 Angriff 13 statt 10. In voller Ausrüstung ist der Unterschied kleiner, weil dort meist der Mindestschaden
+(20 % des Angriffs) gilt: Brom im Morgentor («stark», `pfand5`) fällt in 24 % der vorsichtigen Läufe statt in
+33 %, in den übrigen gemessenen Dungeons gleich oft wie vorher (Drachenhort «gut» 17 %, Mondhof `mond5` 69 statt
+70 %, Himmelsarchiv «stark» 59 statt 56 %, je 300 Läufe).
+
+**Keine Leben dazu.** Gewünscht waren auch mehr Leben. Mit 4 statt 3 Leben je Aufstieg (dazu 0,5 Angriff und 1,0
+Verteidigung) stieg aber der Mondhof («stark», Lia im Schlund-Set) von 66 auf 75 % Siege (vorsichtig, 1000 Läufe),
+also über die erlaubten 5 Punkte. Mit 0,4 Angriff fielen Himmelsarchiv und Drachenhort um bis zu 7 Punkte (300 Läufe). 3 / 0,5 /
+1,0 ist die einzige gemessene Mischung, die alle Siegquoten im Band hält. **Annahme:** Mehr Verteidigung statt
+mehr Leben genügt für die Rolle; mehr Leben bringt der Weg Phalanx (+10, als Meister +15).
+
+**Dungeons nachgemessen** (`npm run dungeon-eichung -- 1000`, alle Dungeons, alle drei Teams, mit und ohne
+Sets, je vorsichtig / klug / gierig): Keine der 378 Siegquoten ändert sich um mehr als 5 Punkte. Die grössten:
+
+| Dungeon, Team, Ausrüstung | vorher | nachher |
+|---|---|---|
+| Himmelsarchiv, «stark» | 47 / 31 / 0 % | 42 / 27 / 0 % |
+| Drachenhort, «frisch», Sets aus Ebene 4 | 70 / 39 / 0 % | 66 / 36 / 0 % |
+| Himmelsarchiv, «gut», Sets aus Ebene 4 | 38 / 25 / 0 % | 35 / 22 / 0 % |
+| Morgentor, «gut», Sina in Sunnas Morgengabe | 99 / 89 / 52 % | 99 / 87 / 55 % |
+| Morgentor, «stark», Pfand-Set, alle Teile auf +5 | 69 / 52 / 0 % | 67 / 49 / 1 % |
+
+**Schwäche:** Brom hält länger, trifft aber schwächer, darum enden mehr Bosskämpfe am Rundenlimit. Im Morgentor
+(«stark», alle Teile auf +5, vorsichtig) sind es 9 statt 2 %, Mondhof «frisch» im Pfand-Set (klug) 6 statt 4 %,
+sonst höchstens 1 Punkt mehr. Der grobe Test fürs Morgentor (`tests/neueDungeons.test.ts`) lässt darum 2 statt 1
+von 20 Läufen am Rundenlimit zu. Die Kriegsrat-Zahlen in `docs/KRIEGSRAT.md` und ihre Tests sind nachgeführt
+(Drachenhort «gut» 12 statt 13 Siege, Albtraum 20 statt 19, `?probe` ohne Proviant 3 statt 1 Sieg). Die
+Tabellen in `docs/NEUE-DUNGEONS.md` und `docs/DUNGEON-SETS.md` bleiben beim Stand vom 23.10., die Abweichungen
+liegen innerhalb der 5 Punkte.
+
+**Alte Spielstände** werden nicht umgerechnet: Ein Guardian behält seine Werte, jeder neue Aufstieg bringt
+0,5 / 1,0 statt 0,6 / 0,7.

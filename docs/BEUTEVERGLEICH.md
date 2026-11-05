@@ -30,6 +30,10 @@ bekommen 120 die Zeile, in `?probe=sterne` 23, alle für die leere Nebenhand von
   Beschreibung nach dem Namen, und `tests/heldenfenster.test.ts` prüft das `aria-label` Zeichen für Zeichen. Ist ein Platz angetippt, gilt der Pfeil nur für ihn.
 - **Nebenhand frei:** Ist die Nebenhand leer und macht sie ein Teil im Lager stärker, steht unter dem Bild «✋ Nebenhand frei» mit dem besten Teil.
   Antippen wählt die Nebenhand wie ihr Platz, öffnet das Inventar und holt es ins Bild. Neben Zweihandwaffen und ohne Einhandwaffe in der Haupthand nie.
+  Ins Bild holen heisst ein gezieltes `scrollTo` (`inventarInsBild` in `HeroesScreen.ts`): Das Inventar kommt unten ganz ins
+  Bild. Läge der eben erschienene Kasten «Nebenhand: leer …» dann im Streifen des klebenden ✕ (oberste 60 px), scrollt das
+  Fenster weiter, bis er ganz weg ist; der Kopf des Inventars sagt dasselbe. Am Handy 390 × 844 vorher: Kasten bei y = 26–80
+  unter dem ✕ (18–62), «leuchten» verdeckt; nachher scrollTop 339, Kasten über dem Rand, Inventar bis y = 764.
 - **Lager (Tab Inventar):** Je Held und Platz steht das Teil mit dem grössten Zugewinn vorne als breite Karte mit der grünen Zeile; sie nennt den
   Helden dieser besten Wahl (die Truhe kennt das Lager nicht und kann einen anderen nennen). Die übrigen besseren Teile tragen das ⬆, die Zeile im `title`.
   Grund (Thread, Musterspiel): gegen leere Nebenhände ist fast alles besser, sonst 17 Karten statt 3.

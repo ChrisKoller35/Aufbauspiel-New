@@ -114,11 +114,14 @@ describe('Stimmen der Rivalen: Regeln', () => {
   test('Einzahl, Mehrzahl und Farbe der Gilde', () => {
     expect(stimmeZeile(name('dunstrudel'), 'ueberholt', new Set())).toEqual({
       text: '🐺 Das Rudel von Dunstmoor lässt ausrichten: «Wir haben kurz nachgedacht. Das passiert uns nicht wieder.»',
-      farbe: '#a3a3a3',
+      farbe: '#d1d5db',
+      stimme: true,
+      rand: '#a3a3a3',
     });
     const adler = stimmeZeile(name('sturmadler'), 'vorbei', new Set())!;
     expect(adler.text).toBe('🦅 Die Sturmadler lassen ausrichten: «Von hier oben sieht man dich kaum. Wir winken trotzdem.»');
-    expect(adler.farbe).toBe('#7dd3fc');
+    expect(adler.farbe).toBe('#d1d5db');
+    expect(adler.rand).toBe('#7dd3fc');
     expect(stimmeZeile('Unbekannte Gilde', 'vorbei', new Set())).toBeNull();
   });
 });

@@ -5,9 +5,7 @@
 // Jede Zahl stammt aus enemies.ts, lootTables.ts oder routes.ts und aus der
 // Kampfregel in CombatEngine.ts (Stärkung und Beschwörung geben Angriff). Takt:
 // Eine Fähigkeit mit Abklingzeit N kommt erst N + 1 Runden später wieder, eine
-// zweite oder dritte oft noch später (Monsterkunde.einsatzRunden). Was
-// enemyToCombatUnit nicht übernimmt, wirkt im Kampf nicht (drainAirAmount,
-// prefersWarMachineTarget).
+// zweite oder dritte oft noch später (Monsterkunde.einsatzRunden).
 // Der Test tests/monsterbuch.test.ts prüft: je Route der Karte genau eine
 // Notiz, keine für eine fremde Route; in jeder ein Gegner der Seite beim Namen,
 // 2 bis 3 Sätze, keins der Zeichen < > " und kein Eszett. Jede dieser Stellen
@@ -90,7 +88,7 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'siege_walls',
-    text: 'Mauerschütze und Armbrustschütze sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden. Der Torwächter hat 10 Abwehr, der Eiserne Kommandant wütet ab Runde 9.',
+    text: 'Mauerschütze und Armbrustschütze schiessen nur auf die Kriegsmaschine, solange sie steht. Der Torwächter hat 10 Abwehr, der Eiserne Kommandant wütet ab Runde 9.',
   },
   {
     routeId: 'frozen_pass',

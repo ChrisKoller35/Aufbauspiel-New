@@ -52,9 +52,9 @@ describe('Kriegsrat', () => {
     const { state, ids } = musterStand('gut', 1);
     const a = kriegsrat(state, 'drachenhort', ids, {}, 20);
     expect(a).toMatchObject({
-      siege: 13, niederlagen: 7, bossUeberlebt: 0,
-      gefaehrlichsterRaum: { nummer: 15, gegner: ['Ignarax, der Uralte'], laeufe: 7 },
-      goldSchnitt: 578,
+      siege: 12, niederlagen: 8, bossUeberlebt: 0,
+      gefaehrlichsterRaum: { nummer: 15, gegner: ['Ignarax, der Uralte'], laeufe: 8 },
+      goldSchnitt: 570,
     });
     state.rngSeed = 424242;
     expect(kriegsrat(state, 'drachenhort', ids, {}, 20)).toEqual(a);
@@ -63,9 +63,9 @@ describe('Kriegsrat', () => {
   it('Boss überlebt: Nach dem Rundenlimit zählt der Lauf weder als Sieg noch als Niederlage', () => {
     const { state, ids } = musterStand('stark', 1, 'sterne5');
     expect(kriegsrat(state, 'sternenschlund', ids, {}, 20)).toMatchObject({
-      siege: 12, niederlagen: 6, bossUeberlebt: 2,
+      siege: 12, niederlagen: 4, bossUeberlebt: 4,
       gefaehrlichsterRaum: { nummer: 16, gegner: ['Nyxar, der Sternenfresser'], laeufe: 8 },
-      goldSchnitt: 732,
+      goldSchnitt: 743,
     });
   });
 
@@ -192,13 +192,13 @@ describe('Kriegsrat', () => {
     const { state, ids } = musterStand('stark', 1, 'sterne3');
     const normal = kriegsrat(state, 'drachenhort', ids, {}, 20, 'normal');
     expect(normal).toEqual(kriegsrat(state, 'drachenhort', ids, {}, 20));
-    expect(normal).toMatchObject({ siege: 20, niederlagen: 0, bossUeberlebt: 0, lebenSchnitt: 83,
-      wahlen: { wagnis: 45, sicher: 15 }, beute: { setLaeufe: 9, material: { schnitt: 7 } } });
+    expect(normal).toMatchObject({ siege: 20, niederlagen: 0, bossUeberlebt: 0, lebenSchnitt: 82,
+      wahlen: { wagnis: 47, sicher: 13 }, beute: { setLaeufe: 7, material: { schnitt: 7 } } });
     expect(kriegsrat(state, 'drachenhort', ids, {}, 20, 'hard')).toMatchObject({ siege: 20, niederlagen: 0,
-      bossUeberlebt: 0, lebenSchnitt: 68, wahlen: { wagnis: 40, sicher: 20 }, beute: { setLaeufe: 16, material: { schnitt: 11 } } });
+      bossUeberlebt: 0, lebenSchnitt: 68, wahlen: { wagnis: 40, sicher: 20 }, beute: { setLaeufe: 14, material: { schnitt: 11 } } });
     // Je schwerer der Grad, desto öfter fehlen die 85 % Leben fürs Wagnis
-    expect(kriegsrat(state, 'drachenhort', ids, {}, 20, 'nightmare')).toMatchObject({ siege: 19, niederlagen: 1,
-      bossUeberlebt: 0, lebenSchnitt: 32, wahlen: { wagnis: 36, sicher: 24 }, beute: { material: { schnitt: 14 } } });
+    expect(kriegsrat(state, 'drachenhort', ids, {}, 20, 'nightmare')).toMatchObject({ siege: 20, niederlagen: 0,
+      bossUeberlebt: 0, lebenSchnitt: 35, wahlen: { wagnis: 35, sicher: 25 }, beute: { material: { schnitt: 14 } } });
     expect(kriegsrat(state, 'himmelsarchiv', ids, {}, 20, 'nightmare')).toMatchObject({ siege: 0, niederlagen: 20,
       bossUeberlebt: 0, lebenSchnitt: 0, beute: { material: { schnitt: 8 } } });
     const schluessel = JSON.parse(kriegsratSchluessel(state, 'drachenhort', ids, {}, 'nightmare'));
@@ -213,7 +213,7 @@ describe('Kriegsrat', () => {
     const { state, ids } = musterStand('stark', 1, 'sterne3');
     const vorher = JSON.stringify(state);
     merkeLetztenRat(state, 'drachenhort', ids, {}, 'nightmare', kriegsrat(state, 'drachenhort', ids, {}, 20, 'nightmare'));
-    const zeile = '<p class="kr-letzter">Letzter Rat&nbsp;· ☠&nbsp;Albtraum:&nbsp;19&nbsp;Siege&nbsp;· 1&nbsp;Niederlage</p>';
+    const zeile = '<p class="kr-letzter">Letzter Rat&nbsp;· ☠&nbsp;Albtraum:&nbsp;20&nbsp;Siege&nbsp;· 0&nbsp;Niederlagen</p>';
     expect(letzterRatHtml(state, 'drachenhort', ids, {}, 'nightmare')).toBe(zeile);
     expect(JSON.stringify(state)).toBe(vorher);
     // Gold, Tag, XP und mehr Brot im Lager (ohne Auswahl nimmt der Start je Sorte höchstens 3) ändern nichts
@@ -224,7 +224,7 @@ describe('Kriegsrat', () => {
     reicher.globalStock.bread = 30;
     expect(letzterRatHtml(reicher, 'drachenhort', ids, {}, 'nightmare')).toBe(zeile);
     const rueckwaerts = [...ids].reverse();
-    expect(kriegsrat(state, 'drachenhort', rueckwaerts, {}, 20, 'nightmare').siege).toBe(18);
+    expect(kriegsrat(state, 'drachenhort', rueckwaerts, {}, 20, 'nightmare').siege).toBe(19);
     expect(letzterRatHtml(state, 'drachenhort', rueckwaerts, {}, 'nightmare')).toBe('');
     expect(letzterRatHtml(state, 'drachenhort', ids, {}, 'hard')).toBe('');
     expect(letzterRatHtml(state, 'himmelsarchiv', ids, {}, 'nightmare')).toBe('');
@@ -232,7 +232,7 @@ describe('Kriegsrat', () => {
     expect(letzterRatHtml(state, 'drachenhort', ids.slice(0, 3), {}, 'nightmare')).toBe('');
     const ohneTalisman = neu();
     ohneTalisman.fighters[0].gear.trinket = null;
-    expect(kriegsrat(ohneTalisman, 'drachenhort', ids, {}, 20, 'nightmare').siege).toBe(4);
+    expect(kriegsrat(ohneTalisman, 'drachenhort', ids, {}, 20, 'nightmare').siege).toBe(3);
     const schwaecher = neu();
     schwaecher.schmiede!.stufen.set_hort_klinge = 2;
     const wenigBrot = neu();
@@ -245,7 +245,7 @@ describe('Kriegsrat', () => {
     merkeLetztenRat(sterne5.state, 'sternenschlund', sterne5.ids, {}, 'normal',
       kriegsrat(sterne5.state, 'sternenschlund', sterne5.ids, {}, 20));
     expect(letzterRatHtml(sterne5.state, 'sternenschlund', sterne5.ids, {}, 'normal')).toBe(
-      '<p class="kr-letzter">Letzter Rat&nbsp;· Normal:&nbsp;12&nbsp;Siege&nbsp;· 6&nbsp;Niederlagen&nbsp;· 2×&nbsp;Boss&nbsp;überlebt</p>');
+      '<p class="kr-letzter">Letzter Rat&nbsp;· Normal:&nbsp;12&nbsp;Siege&nbsp;· 4&nbsp;Niederlagen&nbsp;· 4×&nbsp;Boss&nbsp;überlebt</p>');
     expect(letzterRatHtml(state, 'drachenhort', ids, {}, 'nightmare')).toBe('');
   });
 });

@@ -20,7 +20,13 @@ const MAX_RIVALEN_ZEILEN = 3;
 export interface BilanzZeile {
   text: string;
   farbe: string;
+  /** Stimme einer Gilde: kursiv in ruhigem Grau, die Gildenfarbe nur als schmaler Rand links (`rand`) */
+  stimme?: true;
+  rand?: string;
 }
+
+/** Textfarbe der Stimmen im Bericht: ruhiges Hellgrau, nie Warnrot, Erfolgsgrün oder Gold */
+export const STIMME_FARBE = '#d1d5db';
 
 /** Sätze, die seit dem Laden schon kamen (`${id}:${anlass}`); nicht im Spielstand */
 const GESAGT = new Set<string>();
@@ -33,7 +39,7 @@ export function stimmeZeile(name: string, anlass: StimmenAnlass, gesagt = GESAGT
   const schluessel = `${gilde.id}:${anlass}`;
   if (gesagt.has(schluessel)) return null;
   gesagt.add(schluessel);
-  return { text: `${gilde.wappen} ${name} ${gilde.mehrzahl ? 'lassen' : 'lässt'} ausrichten: «${satz}»`, farbe: gilde.farbe };
+  return { text: `${gilde.wappen} ${name} ${gilde.mehrzahl ? 'lassen' : 'lässt'} ausrichten: «${satz}»`, farbe: STIMME_FARBE, stimme: true, rand: gilde.farbe };
 }
 
 /** Die Zeilen für den Ergebnis-Dialog (höchstens eine Stimme je Bericht) */

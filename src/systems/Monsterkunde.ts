@@ -311,10 +311,16 @@ function kaempftAllein(id: string): boolean {
  * Was eine Fähigkeit im Kampf tut, nach der Regel in processCombat und nicht nach ihrer Beschreibung
  * in enemies.ts: Die verspricht bei Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei
  * Beschwörung Verstärkung. Heilung heilt den Gegner mit den wenigsten Leben, Stärkung und
- * Beschwörung geben immer dem Anwender Angriff (3 bzw. 4 Runden). Schaden trifft auch im
- * Belagerungsraum Helden und nie die Kriegsmaschine: enemyToCombatUnit übernimmt
- * prefersWarMachineTarget nicht. Der Test prüft das am Kampfprotokoll, mit und ohne Katapult.
+ * Beschwörung geben immer dem Anwender Angriff (3 bzw. 4 Runden). Gegner mit
+ * prefersWarMachineTarget treffen im Belagerungsraum nur die Kriegsmaschine, solange sie steht,
+ * sonst Helden. drainAirAmount (Druckwelle des Leviathans) nimmt zum Schaden Luft. Der Test prüft
+ * das am Kampfprotokoll, mit und ohne Katapult.
  */
+/** Zusatz für Gegner, die im Belagerungsraum auf die Kriegsmaschine zielen (prefersWarMachineTarget) */
+function maschine(id: string): string {
+  return ENEMY_DEFS[id]?.prefersWarMachineTarget ? `; neben einer Kriegsmaschine trifft er nur sie, solange sie steht` : '';
+}
+
 export function faehigkeitText(id: string, sk: EnemySkillDef): string {
   const zahl = (n: number) => n.toLocaleString('de');
   // Stärke 1 ist genau der Schaden eines normalen Angriffs, sonst ein Vielfaches davon
@@ -323,11 +329,11 @@ export function faehigkeitText(id: string, sk: EnemySkillDef): string {
     : `mit dem ${zahl(sk.power)}-fachen Schaden eines normalen Angriffs`;
   switch (sk.effectType) {
     case 'damage':
-      return `Trifft ${sk.target === 'all_players' ? 'alle Helden' : 'einen Helden'} ${wucht}.`;
+      return `Trifft ${sk.target === 'all_players' ? 'alle Helden' : 'einen Helden'} ${wucht}${maschine(id)}.`;
     case 'aoe':
-      // Kein Wort zu drainAirAmount (Druckwelle des Leviathans): enemyToCombatUnit übernimmt das Feld
-      // nicht, im Kampf nimmt die Fähigkeit darum keine Luft. Der Test prüft Luft in beide Richtungen.
-      return `Trifft alle Helden ${wucht}.`;
+      // Luft nur mit drainAirAmount (Druckwelle des Leviathans); der Test prüft Luft in beide Richtungen
+      return `Trifft alle Helden ${wucht}${maschine(id)}`
+        + (sk.drainAirAmount ? ` und zieht ${zahl(sk.drainAirAmount)} Luft aus dem Luftschild.` : '.');
     case 'heal':
       return kaempftAllein(id)
         ? `Heilt sich um ${zahl(sk.power)} Leben.`

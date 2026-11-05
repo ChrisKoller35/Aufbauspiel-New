@@ -15,6 +15,7 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
+import { hpAnzeige, rundeLogZahlen } from '../hpAnzeige';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
@@ -389,7 +390,7 @@ export class CombatScreen {
       fill.style.background = pct > 50 ? '#FF6600' : pct > 25 ? '#FF4400' : '#CC2200';
     }
     if (label) {
-      label.textContent = `${Math.max(0, Math.round(current))} / ${Math.round(max)}`;
+      label.textContent = hpAnzeige(current, max);
     }
   }
 
@@ -475,7 +476,7 @@ export class CombatScreen {
 
     const hpText = document.createElement('div');
     hpText.className = 'mc-co-unit-hp';
-    hpText.textContent = `${Math.max(0, unit.hp)} / ${unit.maxHp}`;
+    hpText.textContent = hpAnzeige(unit.hp, unit.maxHp);
     this.colorHpText(hpText, unit.hp, unit.maxHp);
 
     // HP bar
@@ -818,7 +819,7 @@ export class CombatScreen {
       if (!unit) continue;
       const pct = unit.maxHp > 0 ? Math.max(0, unit.hp) / unit.maxHp : 0;
       entry.hpFill.style.width = `${pct * 100}%`;
-      entry.hpText.textContent = `${Math.max(0, unit.hp)} / ${unit.maxHp}`;
+      entry.hpText.textContent = hpAnzeige(unit.hp, unit.maxHp);
       this.colorHpText(entry.hpText, unit.hp, unit.maxHp);
       // Tränke wirken sofort auf Angriff und Tempo (Krafttrank, Schnelligkeitstrank): die Vorschau zeigt es
       entry.statsEl.textContent = statsText(unit);
@@ -837,7 +838,7 @@ export class CombatScreen {
       const span = document.createElement('div');
       span.className = 'mc-co-log-line';
       span.style.color = getLogLineColor(line);
-      span.textContent = line;
+      span.textContent = rundeLogZahlen(line);
       this.logLinesEl.appendChild(span);
     }
   }
@@ -1040,7 +1041,8 @@ export class CombatScreen {
 
       const floaty = document.createElement('div');
       floaty.className = 'mc-co-floaty';
-      floaty.textContent = diff > 0 ? `-${diff}` : `+${Math.abs(diff)}`;
+      const diffZahl = Math.max(1, Math.round(Math.abs(diff)));
+      floaty.textContent = diff > 0 ? `-${diffZahl}` : `+${diffZahl}`;
       floaty.style.color = diff > 0 ? 'var(--mc-damage)' : 'var(--mc-heal)';
       floaty.style.fontSize = Math.abs(diff) >= 20 ? '22px' : Math.abs(diff) >= 10 ? '18px' : '16px';
       floaty.style.animationDuration = `${Math.round(900 / spd)}ms`;
@@ -1067,7 +1069,7 @@ export class CombatScreen {
       const curHp = Math.max(0, currentHp[unit.id] ?? 0);
       const pct = unit.maxHp > 0 ? curHp / unit.maxHp : 0;
       entry.hpFill.style.width = `${pct * 100}%`;
-      entry.hpText.textContent = `${curHp} / ${unit.maxHp}`;
+      entry.hpText.textContent = hpAnzeige(curHp, unit.maxHp);
       this.colorHpText(entry.hpText, curHp, unit.maxHp);
       if (curHp <= 0) entry.el.classList.add('is-dead');
     }

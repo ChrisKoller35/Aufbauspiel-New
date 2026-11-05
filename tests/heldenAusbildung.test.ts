@@ -150,7 +150,7 @@ describe('Tabelle «Training vorher / nachher» (docs/AUSBILDUNG.md)', () => {
   // der Eichung vom 23.10.2026 (Spalte «Training nachher»; dieselben Werte im Abschnitt «Eichung nach
   // dem Umbau», Spalte «Stufe 15 seit 23.10.»).
   const TABELLE: Record<string, { vorher: number[]; nachher: number[] }> = {
-    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [112, 12.4, 12.8, 0.05, 0.8] },
+    guardian:    { vorher: [98, 18, 17, 0.05, 0.8],   nachher: [112, 11, 17, 0.05, 0.8] },
     ranger:      { vorher: [78, 22, 15, 0.15, 1.2],   nachher: [78, 19.2, 8, 0.29, 1.2] },
     cleric:      { vorher: [83, 17, 15.5, 0.05, 0.9], nachher: [97, 11.4, 9.9, 0.05, 1.18] },
     berserker:   { vorher: [112, 21, 16, 0.12, 1.1],  nachher: [126, 16.8, 10.4, 0.12, 1.1] },
