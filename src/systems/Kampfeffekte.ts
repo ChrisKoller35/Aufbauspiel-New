@@ -701,6 +701,7 @@ export function gegnerGestorben(gestorben: CombatUnit, party: CombatUnit[], log:
 /** Am Ende jeder Runde: Gift, Gezeitenwelle, Druckwelle, Verbotene Fussnote und die Wege mit Rundenwirkung */
 export function rundenEnde(
   party: CombatUnit[], gegner: CombatUnit[], runde: number, rng: SeededRNG, log: Log,
+  { gegnerGift = true }: { gegnerGift?: boolean } = {},
 ): void {
   // Tragkraft (Set «Was den Tag trug»): Solange der Träger steht, trägt die ganze Gruppe mit, jede Runde
   // etwas mehr Angriff bis Kampfende, mit Höchstwert. Mehrere Träger tragen nicht doppelt (der stärkste zählt).
@@ -717,7 +718,8 @@ export function rundenEnde(
     }
     if (gewachsen > 0) log(`✦ ${traeger.name} setzt ${anzeigeName(kraft)} ein → die ganze Gruppe +${gewachsen} Angriff bis Kampfende`);
   }
-  for (const u of [...lebendig(party), ...lebendig(gegner)]) {
+  // Gift auf Gegnern nur einmal je Runde: der Raid ruft rundenEnde je Trupp auf, nur der erste mit gegnerGift
+  for (const u of [...lebendig(party), ...(gegnerGift ? lebendig(gegner) : [])]) {
     if (!u.gift) continue;
     u.hp -= u.gift.schaden;
     log(`  ${u.name}: Gift −${u.gift.schaden} Leben`);

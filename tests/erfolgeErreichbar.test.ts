@@ -10,6 +10,9 @@
 // einmal im Mondhof am letzten Kontrollpunkt um. Die versteckten Erfolge holt versteckteTaten() mit je
 // einer Expedition; «Ohne Hose» kommt von selbst (beim ersten Boss trägt noch keiner Rüstung); für
 // «Unentschieden» kämpft der Guardian einmal ohne Angriff (er steht für eine Gruppe, die den Boss nicht klein kriegt).
+// Über den Pfeilern des Tages wartet der Raid: Wer dort aufgestellt ist, wird so stark wie der Trupp; einmal gehen
+// genau vier hinein, danach alle, bis Zenits Truhe in vier Wochen offen war. Fehlt nur noch der Raid, zieht die
+// Gilde nicht mehr aus und wartet auf den nächsten Montag.
 // ────────────────────────────────────────────────────────────────
 
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -26,7 +29,7 @@ import { DUNGEON_GRAPH, ROUTE_DEFS } from '../src/data/routes';
 import { DUNGEON_SETS, setFuerRoute, setTeilIds, setVonItem } from '../src/data/dungeonSets';
 import { GUILD_RANK_DEFS } from '../src/data/guildRanks';
 import { HERZSTEINE, HOECHSTE_STADTSTUFE } from '../src/data/stadtstufen';
-import { MAX_SCHMIEDE_STUFE, SCHMIEDE_MATERIALIEN } from '../src/data/schmiede';
+import { grundMenge, MATERIAL_JE_STUFE, MAX_SCHMIEDE_STUFE, SCHMIEDE_MATERIALIEN } from '../src/data/schmiede';
 import { wegeDerKlasse } from '../src/data/spezialisierungen';
 import { ENEMY_DEFS } from '../src/data/enemies';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
@@ -47,6 +50,7 @@ import { kannWegWaehlen, waehleWeg } from '../src/systems/Spezialisierung';
 import { erfolgePruefen, saalSterne } from '../src/systems/AchievementSystem';
 import { bossTrophaeen, saalGlanz } from '../src/systems/Trophaeensaal';
 import { placeStartingLayout, STARTING_BUILDING_TYPES } from '../src/scenes/CityStartingLayout';
+import { ernstkampf, raidOffen, raidStand, setzeHeld } from '../src/systems/Raid';
 
 /** Montag, 19. Oktober 2026, 9 Uhr: Auftragsbrett (Tage) und Rangliste (Wochen) gehen nach dieser Uhr */
 const START = new Date(2026, 9, 19, 9, 0).getTime();
@@ -173,8 +177,10 @@ function setsAnlegen(state: GameState, gear: GearSystem): void {
 /** Das Teil, das in der Schmiede am wenigsten Material bis +5 braucht, und wo es sein Material gibt */
 function schmiedeZiel(state: GameState): { teil: string; route: string } | null {
   const teile = DUNGEON_SETS.flatMap(setTeilIds).filter(id => besitz(state, id) > 0 && schmiedeKosten(state, id));
-  teile.sort((a, b) => schmiedeKosten(state, a)!.menge - schmiedeKosten(state, b)!.menge
-    || schmiedeStufe(state, b) - schmiedeStufe(state, a));
+  // Material bis +5, alle Stufen zusammen (nur die nächste zu zählen, zöge jedes neue Teil vor)
+  const bisFuenf = (id: string): number =>
+    grundMenge(setVonItem(id)!.tier) * MATERIAL_JE_STUFE.slice(schmiedeStufe(state, id)).reduce((s, n) => s + n, 0);
+  teile.sort((a, b) => bisFuenf(a) - bisFuenf(b) || schmiedeStufe(state, b) - schmiedeStufe(state, a));
   for (const teil of teile) {
     const material = SCHMIEDE_MATERIALIEN.find(m => m.id === materialFuerTeil(teil)?.id);
     const route = material?.routen.filter(id => istSpielbar(state, id)).sort((a, b) => ROUTE_DEFS[b].tier - ROUTE_DEFS[a].tier)[0];
@@ -245,6 +251,33 @@ function versteckteTaten(state: GameState, system: ExpeditionSystem, trupp: numb
   return state.statistics.total_expeditions - vorher;
 }
 
+/**
+ * Der Raid «Über dem Tag» (systems/Raid.ts), sobald die Pfeiler des Tages bezwungen sind, in der Startaufstellung.
+ * Wer aufgestellt ist, wird so stark wie der Trupp (eine Frage der Eichung, nicht der Regeln). Einmal kämpfen genau
+ * vier, danach alle, bis Zenits Truhe diese Woche offen ist. Gibt die Zahl der Ernstkämpfe zurück.
+ */
+function raid(state: GameState, jetzt: number): number {
+  if (!raidOffen(state)) return 0;
+  const stand = raidStand(state, jetzt);
+  for (const held of state.fighters) {
+    if (stand.aufstellung[String(held.id)]) held.baseStats = { ...STARK };
+  }
+  let kaempfe = 0;
+  if (!state.achievements.includes('raid_zu_viert')) {
+    const alle = { ...stand.aufstellung };
+    for (const id of Object.keys(alle).slice(4)) setzeHeld(state, Number(id), null);
+    expect(ernstkampf(state, jetzt)?.ergebnis.helden).toBe(4);
+    kaempfe++;
+    for (const [id, feld] of Object.entries(alle)) setzeHeld(state, Number(id), feld);
+  }
+  while (!stand.woche.truhe && kaempfe < 4) {
+    const ergebnis = ernstkampf(state, jetzt);
+    expect(ergebnis, 'Ernstkampf möglich').not.toBeNull();
+    kaempfe++;
+  }
+  return kaempfe;
+}
+
 function fehlendeErfolge(state: GameState): string[] {
   return ACHIEVEMENT_DEFS.filter(d => !state.achievements.includes(d.id)).map(d => d.id);
 }
@@ -255,7 +288,7 @@ function fehlendeErfolge(state: GameState): string[] {
  * und fünf Tageswechsel im Spiel (ein Spieltag dauert 30 Sekunden; main.ts zählt den Tag hoch
  * und prüft die Erfolge).
  */
-function musterspiel(): { state: GameState; expeditionen: number; tage: number } {
+function musterspiel(): { state: GameState; expeditionen: number; tage: number; ernstkaempfe: number } {
   const state = createNewGameState();
   state.rngSeed = 4711;
   placeStartingLayout(state);
@@ -270,10 +303,16 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
   });
 
   let expeditionen = 0;
+  let ernstkaempfe = 0;
   let tag = 0;
   for (; tag < 120 && fehlendeErfolge(state).length > 0; tag++) {
     const jetzt = START + tag * TAG_MS;
     vi.setSystemTime(jetzt);
+    // Fehlt nur noch der Raid: auf den nächsten Montag warten
+    if (fehlendeErfolge(state).every(id => id.startsWith('raid_'))) {
+      ernstkaempfe += raid(state, jetzt);
+      continue;
+    }
     bauen(state);
     ausbauenWasGeht(state);
     stadtweg(state);
@@ -302,13 +341,14 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
       expeditionen++;
     }
     expeditionen += versteckteTaten(state, system, trupp);
+    ernstkaempfe += raid(state, jetzt);
     for (let i = 0; i < 5; i++) {
       state.day++;
       erfolgePruefen(state);
     }
   }
   erfolgePruefen(state);
-  return { state, expeditionen, tage: tag };
+  return { state, expeditionen, tage: tag, ernstkaempfe };
 }
 
 describe('Erfolge: mit den echten Regeln erreichbar', () => {
@@ -316,8 +356,9 @@ describe('Erfolge: mit den echten Regeln erreichbar', () => {
   afterAll(() => { vi.useRealTimers(); });
 
   test('Musterspiel: eine starke Gilde schafft jeden Erfolg, ohne einen Zähler von Hand zu setzen', () => {
-    const { state, expeditionen, tage } = musterspiel();
+    const { state, expeditionen, tage, ernstkaempfe } = musterspiel();
     expect(fehlendeErfolge(state)).toEqual([]);
+    console.log(`Musterspiel: ${tage} Tage, ${expeditionen} Expeditionen, ${ernstkaempfe} Ernstkämpfe`);
     // Grob im Rahmen: kein Erfolg braucht ein endloses Spiel
     expect(tage).toBeLessThan(60);
     expect(expeditionen).toBeLessThan(400);
@@ -387,6 +428,13 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       keine_zeugen: 1,
       ohne_hose: 1,
       albtraum_dungeons: DUNGEON_GRAPH.length,
+      // Raid: jeder Ernstkampf zählt (systems/Raid.ts), Wochen mit offener Zenits Truhe auch
+      raid_versuche: Infinity,
+      raid_siege: Infinity,
+      raid_punkt_zwoelf: Infinity,
+      raid_mehr_als_vier: Infinity,
+      raid_wochen: Infinity,
+      raid_zu_viert: Infinity,
     };
   }
 

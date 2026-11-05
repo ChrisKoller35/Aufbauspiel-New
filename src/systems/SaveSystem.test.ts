@@ -432,7 +432,7 @@ describe('pruefeSpielstandText – nur Dateien, mit denen das Spiel auch startet
   });
 
   it('die neuen Felder (Gildenhaus, Rangliste, Schmiede …) dürfen fehlen, aber nicht falsch geformt sein', () => {
-    const neu = ['geschichten', 'bezwungen', 'rangliste', 'schmiede', 'auftragsbrett', 'trophaeen'];
+    const neu = ['geschichten', 'bezwungen', 'rangliste', 'schmiede', 'auftragsbrett', 'trophaeen', 'raid'];
     expect(pruefeSpielstandText(datei(s => {
       for (const feld of neu) delete s[feld];
       delete s.buildings[0].vonSelbst;
@@ -446,6 +446,7 @@ describe('pruefeSpielstandText – nur Dateien, mit denen das Spiel auch startet
       schmiede: s => { s.schmiede = { stufen: [3] }; },
       auftragsbrett: s => { s.auftragsbrett = {}; },
       trophaeen: s => { s.trophaeen = { siege: null }; },
+      raid: s => { s.raid = { aufstellung: { 7: { reihe: 0 } }, woche: { id: '2026-W45' }, versucheGesamt: 0, siege: 0, verlauf: [] }; },
       vonSelbst: s => { s.buildings[0].vonSelbst = { art: 'immer', fuer: 'iron_sword' }; },
       wegBilanz: s => { s.fighters[0].wegBilanz = { schaden: 'viel' }; },
     };

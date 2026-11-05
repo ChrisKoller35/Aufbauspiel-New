@@ -20,6 +20,8 @@ haben («Siegreich» 🏆), nur 🏅 trägt keiner selbst.
 - **Beim Laden des Spiels** (der Erfolge-Bildschirm wird dabei gezeichnet): Was ein Spielstand schon
   erfüllt, kommt hier dazu, mit Hinweis wie am Tageswechsel («🏅 8 neue Erfolge»).
 - **Beim Öffnen des Erfolge-Bildschirms.**
+- **Nach jedem Ernstkampf im Raid** (`ernstkampf` in `src/systems/Raid.ts`): ohne Hinweis in der Kopfzeile, das
+  Ergebnis des Kampfs zeigt die neuen Erfolge wie die Bilanz einer Expedition (`erfolgBilanzZeile`).
 - **Gleich nach der Tat**, mit Hinweis in der Kopfzeile: Gebäude bauen oder ausbauen, beim Händler kaufen,
   Held anwerben, Weg wählen, Gegenstand anlegen (ein ganzes Set), Stadt aufsteigen (Stadtweg),
   in der Schmiede verbessern, Zettel liefern und Set-Teil einlösen (Gildenhaus). Kommen zwei Hinweise fast
@@ -126,7 +128,9 @@ Die Funktion liest nur. Sie legt kein Auftragsbrett, keine Rangliste und keinen 
 `saalSterne()` wie der Saal selbst: je Sockel einer für den bezwungenen Boss, einer für das ganze
 Set des Dungeons, einer für das Prunkstück aus der Kette. `gipfel_spitze` setzt das Ende einer
 Expedition, wenn die Gilde danach die Gipfel-Rangliste anführt. `total_haendler_kaeufe` zählt
-`systems/Haendler.ts` bei jedem Kauf (nicht beim Verkauf).
+`systems/Haendler.ts` bei jedem Kauf (nicht beim Verkauf). Die Zähler des Raids (`raid_versuche`, `raid_siege`,
+`raid_punkt_zwoelf`, `raid_mehr_als_vier`, `raid_wochen`, `raid_zu_viert`) zählt `ernstkampf` in `systems/Raid.ts`
+bei jedem Ernstkampf hoch; Probeläufe und der Kriegsrat zählen nicht (`docs/RAID.md`).
 
 ## Aus dem Spielstand nachgeholt
 
@@ -188,6 +192,11 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Dungeons | 💰 | Goldhamster | 500 Gold auf Expeditionen erbeutet | `total_gold_earned` ≥ 500 | `gold_hoarder` |
 | Dungeons | 💠 | Hundertfacher Tod | 100 Gegner besiegt | `total_enemies_killed` ≥ 100 | `kill_100` |
 | Dungeons | 🗡️ | Tausendfacher Tod (neu) | 1000 Gegner besiegt | `total_enemies_killed` ≥ 1000 | `kill_1000` |
+| Dungeons | 🪜 | Zehn Sprossen (neu) | der erste Ernstkampf im Raid «Über dem Tag» | `raid_versuche` ≥ 1 | `raid_versuch` |
+| Dungeons | 🕰️ | Der Tag hängt gerade (neu) | Zenit besiegt | `raid_siege` ≥ 1 | `raid_sieg` |
+| Dungeons | 🔔 | Punkt zwölf (neu) | Zenit in Runde 12 oder früher besiegt, bevor es Mittag schlägt | `raid_punkt_zwoelf` ≥ 1 | `raid_punkt_zwoelf` |
+| Dungeons | 🪑 | Mehr als vier (neu) | Zenit besiegt, und am Ende stehen mindestens fünf | `raid_mehr_als_vier` ≥ 1 | `raid_mehr_als_vier` |
+| Dungeons | 📅 | Jeden Montag (neu) | Zenits Truhe in vier verschiedenen Wochen (der erste Sieg der Woche öffnet sie) | `raid_wochen` ≥ 4 | `raid_montage` |
 | Gipfel-Taten | 🪙 | Ehrlicher Finder (neu) | Drachenhort: dreimal das Risiko, Ignarax besiegt | `tat_hort` ≥ 1 | `gipfel_hort` |
 | Gipfel-Taten | 📕 | Ohne Leseausweis (neu) | Himmelsarchiv: dreimal das Risiko, Oberarchivar besiegt | `tat_archiv` ≥ 1 | `gipfel_archiv` |
 | Gipfel-Taten | ☄️ | Nicht anfassen (neu) | Sternenschmiede: dreimal das Risiko, Korrund besiegt | `tat_esse` ≥ 1 | `gipfel_esse` |
@@ -234,12 +243,13 @@ voll» bleibt bei sechzehn, auch wer den Saal schon voll hatte, behält den Erfo
 
 Achtung, verrät sie. Bis zum Freischalten zeigt der Erfolge-Bildschirm statt Zeichen, Name, Beschreibung und Balken
 nur 👁️, «???» und den Satz des Systems (`versteckt`, kursiv, gestrichelter Rand); danach ist die Karte wie jede
-andere. Oben zählt `.erf-kopf` mit: «👁️ Das System verschweigt noch 6 Erfolge.» bis «… nichts mehr. Behauptet es.».
+andere. Oben zählt `.erf-kopf` mit: «👁️ Das System verschweigt noch 7 Erfolge.» bis «… nichts mehr. Behauptet es.».
 Die Bilanz zeigt Name und Satz wie bei den Gipfel-Taten, die Kopfzeile verrät nichts (nur die Zahl am 🏅).
 Gezählt wird in `finalizeExpeditionProgress` (`versteckteTatenZaehlen`), jede Tat auf 1 und nur ab jetzt;
 `albtraum_dungeons` kommt aus `state.haertegrade` und diesem Lauf, darum bringt ein älterer Spielstand mit drei
 Albtraum-Dungeons «Schlafstörung» am Ende der nächsten Expedition. Rückzug zwischen den Runden: Der Kampf ist schon
-ganz gerechnet; fällt darin ein Gegner, gibt es kein «Kalte Füsse».
+ganz gerechnet; fällt darin ein Gegner, gibt es kein «Kalte Füsse». Der siebte kommt aus dem Raid: `ernstkampf`
+zählt `raid_zu_viert` bei jedem Ernstkampf mit genau vier Helden (dem Mindestmass), Sieg oder nicht.
 
 | Zeichen | Name | Tat | Zähler | ID |
 |---|---|---|---|---|
@@ -249,6 +259,7 @@ ganz gerechnet; fällt darin ein Gegner, gibt es kein «Kalte Füsse».
 | 🛌 | Schlafstörung | drei verschiedene Dungeons auf ☠ Albtraum bezwungen | `albtraum_dungeons` ≥ 3 | `schlafstoerung` |
 | 👤 | Keine Zeugen | Boss mit einem einzigen Helden besiegt | `keine_zeugen` ≥ 1 | `keine_zeugen` |
 | 🩲 | Ohne Hose | Boss besiegt, ein Held trug keine Rüstung | `ohne_hose` ≥ 1 | `ohne_hose` |
+| 4️⃣ | Zu viert | ein Ernstkampf im Raid mit genau vier Helden | `raid_zu_viert` ≥ 1 | `raid_zu_viert` |
 
 ## Geändert gegenüber früher
 
@@ -272,12 +283,17 @@ ganz gerechnet; fällt darin ein Gegner, gibt es kein «Kalte Füsse».
 
 `tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (beim Händler kaufen, Bauen,
 Ausbauen, Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
-zu setzen: Eine starke Gilde schafft alle 55 Erfolge in 41 Tagen und 255 Expeditionen (Grenze im Test: unter 60
-Tagen und unter 400 Expeditionen). In Wahl-Räumen nimmt sie immer das Risiko, für «Kleingedrucktes» kehrt sie einmal
+zu setzen: Eine starke Gilde schafft alle 61 Erfolge in 29 Tagen, 129 Expeditionen und 4 Ernstkämpfen im Raid
+(Grenze im Test: unter 60 Tagen und unter 400 Expeditionen). Für die Schmiede nimmt sie das Teil, das bis +5 am
+wenigsten Material braucht, alle Stufen zusammengezählt; bis zum Raid zählte der Test nur die nächste Stufe, dann
+zog jedes neue Set-Teil vor, und «Meisterstück» kam erst nach 41 Tagen und 255 Expeditionen. In Wahl-Räumen nimmt sie immer das Risiko, für «Kleingedrucktes» kehrt sie einmal
 im Mondhof am letzten Kontrollpunkt um, für «Einsturzgefahr» einmal bei den Pfeilern des Tages. Die versteckten holt `versteckteTaten()` mit sieben Expeditionen: an Tag 1
 «Ohne Hose» (von selbst beim ersten Boss), «Kalte Füsse», «Keine Zeugen», «Unentschieden» und «Schlafstörung», an
 Tag 2 «Wörtlich genommen» (ein frisch angeheuerter Held). Für «Unentschieden» kämpft der Guardian einmal ohne
-Angriff (für eine Gruppe, die den Boss nicht klein kriegt). Dazu hat
+Angriff (für eine Gruppe, die den Boss nicht klein kriegt). Im Raid (offen ab Tag 8) werden die Aufgestellten so stark
+wie der Trupp; einmal kämpfen genau vier («Zu viert»), danach alle, bis Zenits Truhe in vier Wochen offen war.
+«Jeden Montag» braucht darum mindestens drei Wochen und einen Tag nach dem ersten Sieg; fehlt nur noch der Raid,
+zieht die Gilde nicht mehr aus und wartet auf den Montag. Dazu hat
 jeder Zähler eine Obergrenze aus den Daten, kein Ziel liegt darüber, und ein neuer Zähler braucht
 dort eine Zeile.
 
@@ -287,7 +303,7 @@ dort eine Zeile.
 - Sets: 31 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
 - Trophäensaal: 16 Sockel im Saal und 2 im Anbau, je mit 3 Sternen.
 - Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 31 Dungeons der Karte.
-- Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe), hat keine Grenze.
+- Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe, Ernstkämpfe im Raid), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg
 
