@@ -19,7 +19,8 @@ Selbst `sterne3` bezwingt den Drachenhort darauf nur 8 von 100 Mal.
 Er zeigt ✓ auf den Knöpfen und «☠ Albtraum bezwungen» auf der Routenkarte; beim ersten Mal steht eine Zeile
 in der Bilanz. Auf der Dungeon-Karte trägt der Knoten unten im Sechseck ⚔ bzw. ☠ (`haertegradKnoten`), das
 Fenster die Zeile «⚔ Schwer bezwungen» bzw. «☠ Albtraum bezwungen», und die Legende erklärt beide Marken und
-zählt «☠ Albtraum bezwungen · 1 von 29». Die Wahl selbst gilt bis zum Neu-Laden der Seite. Ein Sieg am
+zählt «☠ Albtraum bezwungen · 1 von 29». Am Handy (`pointer: coarse`) sind «Legende», das ✕ des Fensters und
+«EXPEDITION STARTEN»/«Nochmals» mindestens 44 px hoch. Die Wahl selbst gilt bis zum Neu-Laden der Seite. Ein Sieg am
 Rundenlimit («SIEG!», der Boss steht noch) zählt nicht; die Bilanz sagt rot «⚔ Schwer nicht bezwungen: Der
 Mondhof. Der Boss stand nach dem Rundenlimit noch. Das System vermerkt: Beute ja, Punkte wie auf Normal.»
 Das ist häufig: Mondhof «klug» unten 63 von 100.

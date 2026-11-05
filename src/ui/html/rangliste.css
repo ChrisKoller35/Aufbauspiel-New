@@ -114,3 +114,8 @@
   border-radius: 999px; padding: 4px 10px; box-shadow: 0 0 12px rgba(230, 192, 96, 0.6);
   animation: rl-leuchten 2.4s ease-in-out infinite;
 }
+
+/* Handy: Aufklapper «So funktioniert …» ≥ 44 px (Befund 85-b2); display bleibt list-item (Pfeil) */
+@media (pointer: coarse) {
+  .rl-regel summary { padding: 13px 0; min-height: 44px; box-sizing: border-box; }
+}

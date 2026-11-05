@@ -1933,3 +1933,12 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   .hdm2 .mcl { --zu: 44px; }
   .hdm2-inv-btn, .hdm2-aktion { min-height: 44px; }
 }
+
+/* Dungeon-Karte am Handy: Tippflächen ≥ 44 px (Befund 91-b3) */
+@media (pointer: coarse) {
+  .dmap-modal-close {
+    top: 4px; right: 4px; min-width: 44px; min-height: 44px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .dmap-btn-go, .dmap-btn-replay { min-height: 44px; }
+}

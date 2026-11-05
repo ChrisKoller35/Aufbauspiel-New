@@ -347,7 +347,11 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
   }
   for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
   for (const a of newAchievements) body += line(`🏅 Erfolg: ${a}`, '#4ade80');
-  for (const z of ranglistenZeilen(progress.rangliste)) body += line(z.text, z.farbe);
+  for (const z of ranglistenZeilen(progress.rangliste)) {
+    body += z.stimme
+      ? `<div class="bericht-stimme" style="color:${z.farbe};font-size:.82rem;margin-bottom:6px;font-style:italic;border-left:3px solid ${z.rand ?? z.farbe};padding-left:8px;">${z.text}</div>`
+      : line(z.text, z.farbe);
+  }
   for (const z of auftragsZeilen(progress.auftraege, progress.neueTrophaee)) body += line(z.text, z.farbe);
   if (schmiede.length) body += line(`⚒️ Jetzt in der Schmiede möglich: ${schmiede.join(', ')}`, '#fbbf24');
   for (const z of haerte) body += line(z, '#fca5a5');
