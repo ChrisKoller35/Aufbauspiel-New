@@ -1388,10 +1388,10 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
         titel: 'Die Wachstube',
         text: 'Die Wachstube der Vorigen gleicht unserem Gildenhaus wie ein älterer Bruder. Im Kamin brennt das Feuer, und in der Glut liegen Kelle, Harnisch und eine Kohle, '
           + 'in Reihen wie zur Ausgabe; wer hineingreift, bekommt ein Teil davon, wenn Alruna fällt, und zahlt mit Haut. Am Brett neben der Tür hängen Zettel in unserer Schrift, '
-          + 'nur älter, und einer ist nie abgehakt worden. Wer sich wärmt, sitzt auf einem von vier Hockern, und wer am Boden lag, steht auf.',
+          + 'nur älter, und einer ist nie abgehakt worden. Wer sich wärmt, findet am Kamin vier Hocker, und wer am Boden lag, steht auf.',
         nachklang: {
           a: 'Wir holten Alrunas Ausgabe aus der Glut, und die Echos am Brett nickten, als hätten wir eine Prüfung bestanden, von der uns niemand erzählt hatte.',
-          b: 'Wir setzten uns auf die vier Hocker am Kamin, und es fiel uns erst danach auf, dass es genau vier waren.',
+          b: 'Wir wärmten uns auf den Hockern der Vorigen, Schild, Bogen, Messer und Salbentopf im Holz. Die Besitzer hatten wir unterwegs alle schon getroffen, und keiner hatte uns einen Platz angeboten.',
         },
       },
       14: {

@@ -545,7 +545,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['steingeselle', 'stadtheilerin_vorige'] },
       { type: 'find', wahl: {
         a: { label: 'Alrunas Ausgabe aus der Glut holen (+1 Set-Teil, wenn ihr siegt; −8% HP)', flavorText: 'Im Feuer der Wachstube liegen eine Kelle, ein Harnisch und eine Kohle, alles noch heiss. Jemand hat es dort aufbewahrt, wo kein Dieb hinlangt. Fast keiner.', effect: 'kein', value: 0, setTeil: true, kostetLeben: 8 },
-        b: { label: 'In der Wachstube wärmen (+5% HP; Gefallene stehen mit 30% HP auf)', flavorText: 'Neben dem Feuer stehen vier Hocker. Einer ist frei, als hätte man euch erwartet.', effect: 'heal', value: 5, wecken: 30 },
+        b: { label: 'In der Wachstube wärmen (+5% HP; Gefallene stehen mit 30% HP auf)', flavorText: 'In jeden Hocker ist ein Zeichen geschnitzt: Schild, Bogen, Messer, Salbentopf. Die Besitzer habt ihr unterwegs schon getroffen. Sie standen lieber.', effect: 'heal', value: 5, wecken: 30 },
       } },
       { type: 'combat', enemies: ['bogenschuetzin_vorige', 'bogenschuetzin_vorige', 'schildtraeger_vorige'] },
       { type: 'hazard', damage: 26 },
