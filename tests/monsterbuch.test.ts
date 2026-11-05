@@ -454,16 +454,23 @@ describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
     expect(text('wall_archer', 'aimed_shot')).toBe('Trifft einen Helden mit dem 1,4-fachen Schaden eines normalen Angriffs; neben einer Kriegsmaschine trifft er nur sie, solange sie steht.');
   });
 
-  it('Sonnenuhr: Sunnas Wut kann bis Runde 4 vorrücken, bei keinem anderen Boss rückt sie', () => {
+  it('Sonnenuhr: Sunnas Wut kann bis Runde 4 vorrücken; Orms von Runde 4 bis 13 wandern; bei keinem anderen Boss rückt sie', () => {
     const sonnenuhren = ROUTE_DEFS.morgentor.encounters.flatMap(enc => enc.wahl ? [enc.wahl.a, enc.wahl.b] : [])
       .map(option => option.bossWutFrueher ?? 0).filter(n => n > 0);
     expect(sonnenuhren).toEqual([2, 2, 2]);
     const frueher = sonnenuhren.reduce((a, b) => a + b, 0);
     expect(wutVorziehbar('boss_sunna')).toEqual([
-      { routeId: 'morgentor', name: ROUTE_DEFS.morgentor.name, abRunde: wutAbRunde(bossWut('boss_sunna'), { bossWutFrueher: frueher }) },
+      { routeId: 'morgentor', name: ROUTE_DEFS.morgentor.name, abRunde: wutAbRunde(bossWut('boss_sunna'), { bossWutFrueher: frueher }), bisRunde: 10 },
     ]);
     expect(wutVorziehbar('boss_sunna')[0].abRunde).toBe(4);
-    for (const id of erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_sunna')) {
+    // Pfeiler des Tages: brechen zieht je 2 Runden vor, stützen schiebt je 1 Runde hinaus
+    const pfeiler = ROUTE_DEFS.tagespfeiler.encounters.flatMap(enc => enc.wahl ? [[enc.wahl.a.bossWutFrueher ?? 0, enc.wahl.b.bossWutFrueher ?? 0]] : []);
+    expect(pfeiler).toEqual([[2, -1], [2, -1], [2, -1]]);
+    expect(wutVorziehbar('boss_orm')).toEqual([
+      { routeId: 'tagespfeiler', name: ROUTE_DEFS.tagespfeiler.name, abRunde: 4, bisRunde: wutAbRunde(bossWut('boss_orm'), { bossWutFrueher: -3 }) },
+    ]);
+    expect(wutVorziehbar('boss_orm')[0].bisRunde).toBe(13);
+    for (const id of erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_sunna' && id !== 'boss_orm')) {
       expect(wutVorziehbar(id), id).toEqual([]);
     }
   });
@@ -616,13 +623,17 @@ const TAKT: { routeId: string; gegner: string; faehigkeit: string; text: string;
   { routeId: 'magma_caverns', gegner: 'lava_elemental', faehigkeit: 'Magmawelle', text: 'Magmawelle trifft jede fünfte Runde', runden: [1, 6, 11, 16] },
   { routeId: 'volcano_core', gegner: 'boss_magma_wyrm', faehigkeit: 'Infernoodem', text: 'Infernoodem trifft jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
   { routeId: 'himmelsarchiv', gegner: 'boss_oberarchivar', faehigkeit: 'Neuauflage', text: 'nur in Runde 3 und 14', runden: [3, 14] },
+  { routeId: 'erste_stadt', gegner: 'wachfeuerwicht', faehigkeit: 'Funkenregen', text: 'Funkenregen jede vierte Runde', runden: [1, 5, 9, 13, 17] },
+  { routeId: 'erste_stadt', gegner: 'boss_alruna', faehigkeit: 'Alte Gildenregel', text: 'nur in Runde 3 und 12', runden: [3, 12] },
+  { routeId: 'tagespfeiler', gegner: 'fugenspinne', faehigkeit: 'Fugenbiss', text: 'Fugenbiss jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
 ];
 
 /**
  * Jede Wut-Angabe: «ab Runde N» und die Faktoren, wie der Kampf sie nimmt (bossWut, wutAbRunde).
- * `sonnenuhren`: so viele Wahlen unterwegs, welche die Wut vorziehen, sind genommen (Sonnenuhr im Morgentor).
+ * `sonnenuhren`: so viele Wahlen unterwegs, welche die Wut vorziehen, sind genommen (Sonnenuhr im Morgentor,
+ * gebrochene Pfeiler). `gestuetzt`: so viele Wahlen, welche die Wut hinausschieben (gestützte Pfeiler).
  */
-const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number }[] = [
+const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number; gestuetzt?: number }[] = [
   { routeId: 'forest_medium', gegner: 'boss_elder_treant', text: 'ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3' },
   { routeId: 'ocean_depths', gegner: 'boss_leviathan', text: 'wütet schon ab Runde 7, so früh wie von sich aus kein anderer Boss in diesem Buch: Angriff mal 1,6, Tempo mal 1,2' },
   { routeId: 'siege_walls', gegner: 'boss_iron_commander', text: 'wütet ab Runde 9' },
@@ -634,6 +645,10 @@ const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number
   { routeId: 'mondhof', gegner: 'boss_argentis', text: 'wütet ab Runde 10' },
   { routeId: 'morgentor', gegner: 'boss_sunna', text: 'wütet ab Runde 10' },
   { routeId: 'morgentor', gegner: 'boss_sunna', text: 'zieht ihre Wut um 2 Runden vor, dreimal vorgestellt wütet sie schon ab Runde 4', sonnenuhren: 3 },
+  { routeId: 'erste_stadt', gegner: 'boss_alruna', text: 'wütet ab Runde 10' },
+  { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'wütet ab Runde 10, Angriff mal 1,6' },
+  { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'zieht seine Wut um 2 Runden vor, dreimal gebrochen wütet er schon ab Runde 4', sonnenuhren: 3 },
+  { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'schiebt sie um 1 Runde hinaus, dreimal gestützt erst ab Runde 13', gestuetzt: 3 },
 ];
 
 /**
@@ -778,9 +793,17 @@ describe('Ottokars Randnotizen', () => {
       const vorziehen = ROUTE_DEFS[w.routeId].encounters
         .map(enc => Math.max(enc.wahl?.a.bossWutFrueher ?? 0, enc.wahl?.b.bossWutFrueher ?? 0))
         .filter(n => n > 0);
+      // Je Wahl, welche die Wut hinausschiebt (negatives bossWutFrueher), die Runden
+      const hinaus = ROUTE_DEFS[w.routeId].encounters
+        .map(enc => -Math.min(enc.wahl?.a.bossWutFrueher ?? 0, enc.wahl?.b.bossWutFrueher ?? 0))
+        .filter(n => n > 0);
       const sonnenuhren = w.sonnenuhren ?? 0;
+      const gestuetzt = w.gestuetzt ?? 0;
       expect(vorziehen.length, name).toBeGreaterThanOrEqual(sonnenuhren);
-      const frueher = vorziehen.slice(0, sonnenuhren).reduce((a, b) => a + b, 0);
+      expect(hinaus.length, name).toBeGreaterThanOrEqual(gestuetzt);
+      // Vorziehen und Hinausschieben sind Optionen derselben Wahl: beides zugleich steht in keiner Notiz
+      expect(sonnenuhren > 0 && gestuetzt > 0, name).toBe(false);
+      const frueher = vorziehen.slice(0, sonnenuhren).reduce((a, b) => a + b, 0) - hinaus.slice(0, gestuetzt).reduce((a, b) => a + b, 0);
       expect(Number(/\bab Runde (\d+)/.exec(w.text)?.[1]), name).toBe(wutAbRunde(wut, { bossWutFrueher: frueher }));
       const faktor = (wort: string) => new RegExp(`${wort} mal (\\d+(?:,\\d+)?)`).exec(w.text)?.[1];
       if (faktor('Angriff')) expect(faktor('Angriff'), name).toBe(wut.atkMult.toLocaleString('de'));
@@ -788,8 +811,14 @@ describe('Ottokars Randnotizen', () => {
       // «um 2 Runden vor»: so viel zieht jede dieser Wahlen vor; «dreimal vorgestellt»: so viele sind genommen
       const um = /\bum (\d+) Runden vor\b/.exec(w.text)?.[1];
       if (um) expect(new Set(vorziehen), name).toEqual(new Set([Number(um)]));
-      const mal = /\b(\S+)mal vorgestellt\b/.exec(w.text)?.[1];
+      const mal = /\b(\S+)mal (?:vorgestellt|gebrochen)\b/.exec(w.text)?.[1];
       if (mal) expect(zahlWert(mal), name).toBe(sonnenuhren);
+      // «um 1 Runde hinaus»: so viel schiebt jede dieser Wahlen hinaus; «dreimal gestützt»: so viele sind genommen
+      const umHinaus = /\bum (\d+) Runden? hinaus\b/.exec(w.text)?.[1];
+      if (umHinaus) expect(new Set(hinaus), name).toEqual(new Set([Number(umHinaus)]));
+      const malGestuetzt = /\b(\S+)mal gestützt\b/.exec(w.text)?.[1];
+      if (malGestuetzt) expect(zahlWert(malGestuetzt), name).toBe(gestuetzt);
+      if (gestuetzt > 0) expect(umHinaus && malGestuetzt, `${name}: Hinausschieben ohne Zahl`).toBeTruthy();
     }
     // «so früh wie von sich aus kein anderer Boss in diesem Buch» (der Leviathan ab Runde 7)
     const andere = erreichbareGegner().filter(id => ENEMY_DEFS[id].isBoss && id !== 'boss_leviathan');
@@ -980,6 +1009,13 @@ describe('Monsterbuch-Bildschirm (HTML ohne Browser)', () => {
     expect(detailHtml(state, ENEMY_DEFS.boss_elder_treant)).toMatch(/<div class="ms">💀 Boss<\/div>/);
     expect(detailHtml(state, ENEMY_DEFS.boss_sunna)).toContain('Im Dungeon «Das Morgentor» können Wahlen unterwegs die Wut bis auf Runde 4 vorziehen.');
     expect(detailHtml(state, ENEMY_DEFS.boss_leviathan)).not.toContain('vorziehen');
+    // Orm: die Pfeiler ziehen die Wut vor oder schieben sie hinaus; Alrunas Wachfeuer ändern an der Wut nichts
+    expect(detailHtml(state, ENEMY_DEFS.boss_orm))
+      .toContain('Im Dungeon «Die Pfeiler des Tages» können Wahlen unterwegs die Wut bis auf Runde 4 vorziehen oder bis auf Runde 13 hinausschieben.');
+    expect(detailHtml(state, ENEMY_DEFS.boss_alruna)).not.toMatch(/vorziehen|hinausschieben/);
+    // Stärkungen und Beschwörungen sagen, was sie tun: Nachgreifen ruft niemanden
+    expect(detailHtml(state, ENEMY_DEFS.boss_orm)).toContain('Ruft niemanden herbei, sondern gibt sich selbst 10 Angriff mehr, 4 Runden lang.');
+    expect(detailHtml(state, ENEMY_DEFS.boss_alruna)).toContain('Einsatz in Runde 3 und 12.');
   });
 });
 

@@ -281,7 +281,7 @@ export function kampfBeginn(party: CombatUnit[], gegner: CombatUnit[], run: Expe
     const ziele = lebendig(gegner);
     if (ziele.length === 0) break;
     const dmg = staerke(u, 'feueratem');
-    log(`✦ ${u.name} setzt Feueratem ein → alle Gegner erleiden ${dmg} Schaden`);
+    log(`✦ ${u.name} setzt ${anzeigeName(atem)} ein → alle Gegner erleiden ${dmg} Schaden`);
     for (const z of ziele) schadenNehmen(z, dmg);
   }
 }
@@ -310,7 +310,7 @@ export function kampfEnde(party: CombatUnit[]): void {
       u.buffs.splice(i, 1);
     }
     setzeBonus(u, 'glutherz', 'atk', 0);
-    for (const quelle of ['zorn', 'heldenlied', 'kriegssegen', 'schmiedetakt']) {
+    for (const quelle of ['zorn', 'heldenlied', 'kriegssegen', 'schmiedetakt', 'tragkraft']) {
       setzeBonus(u, quelle, 'atk', 0);
       setzeBonus(u, quelle, 'def', 0);
       setzeBonus(u, quelle, 'spd', 0);
@@ -324,6 +324,7 @@ export function kampfEnde(party: CombatUnit[]): void {
     u.baerin = false;
     u.gift = undefined;
     u.sternenTreffer = 0;
+    u.wachfeuerBrannte = false;
   }
 }
 
@@ -693,7 +694,7 @@ export function gegnerGestorben(gestorben: CombatUnit, party: CombatUnit[], log:
     const menge = ernte.power ?? 8;
     let summe = 0;
     for (const h of lebendig(party)) summe += heilen(h, menge);
-    if (summe > 0) log(`✦ ${u.name} setzt Seelenernte ein → ${gestorben.name} nährt das Team (+${menge} Leben)`);
+    if (summe > 0) log(`✦ ${u.name} setzt ${anzeigeName(ernte)} ein → ${gestorben.name} nährt das Team (+${menge} Leben)`);
   }
 }
 
@@ -764,6 +765,17 @@ export function rundenEnde(
         treffer.push(`${ziel.name} −${wucht}`);
       }
       log(`  ★ ${u.name}: ${u.skelette === 1 ? 'Sein Skelett schlägt' : `${u.skelette} Skelette schlagen`} zu → ${treffer.join(', ')}`);
+    }
+
+    // Tragkraft (Set «Was den Tag trug»): jede Runde mehr Angriff für den Träger, bis Kampfende, mit Höchstwert
+    const kraft = effekt(u, 'tragkraft');
+    if (kraft && lebendig(gegner).length > 0) {
+      const alt = bonus(u, 'tragkraft', 'atk');
+      const neu = Math.min(kraft.max ?? 24, alt + staerke(u, 'tragkraft'));
+      if (neu > alt) {
+        setzeBonus(u, 'tragkraft', 'atk', neu);
+        log(`✦ ${u.name} setzt ${anzeigeName(kraft)} ein → +${neu} Angriff bis Kampfende`);
+      }
     }
 
     const fussnote = effekt(u, 'fussnote');
@@ -860,8 +872,9 @@ export function goldFaktor(party: CombatUnit[]): number {
 }
 
 /**
- * Meldet Gegner, die seit dem letzten Aufruf gestorben sind (Seelenernte).
- * bekannt merkt sich die schon gemeldeten Toten dieses Kampfs.
+ * Meldet Gegner, die seit dem letzten Aufruf gestorben sind (Seelenernte), und Helden, die gerade gefallen
+ * sind (Wachfeuer). bekannt merkt sich die schon gemeldeten Toten dieses Kampfs, auch die Helden, die schon
+ * vor dem Kampf am Boden lagen (CombatEngine legt sie zu Beginn hinein).
  */
 export function neueToteMelden(gegner: CombatUnit[], party: CombatUnit[], bekannt: Set<CombatUnit>, log: Log): void {
   for (const g of gegner) {
@@ -869,4 +882,25 @@ export function neueToteMelden(gegner: CombatUnit[], party: CombatUnit[], bekann
     bekannt.add(g);
     gegnerGestorben(g, party, log);
   }
+  for (const h of party) {
+    if (h.hp > 0 || bekannt.has(h) || h.isWarMachine) continue;
+    if (!wachfeuer(h, party, bekannt, log)) bekannt.add(h);
+  }
+}
+
+/**
+ * Wachfeuer (Set «Alrunas Wachfeuer»): Fällt ein Held, steht er gleich wieder auf, mit einem Anteil seiner
+ * Leben, einmal je Kampf fürs ganze Team (bei mehreren Trägern brennt nur ein Feuer). Der Träger muss den
+ * Kampf stehend begonnen haben; fällt er selbst als Erster, weckt das Feuer ihn. Gibt zurück, ob es gebrannt hat.
+ */
+function wachfeuer(gefallen: CombatUnit, party: CombatUnit[], bekannt: Set<CombatUnit>, log: Log): boolean {
+  if (party.some(u => u.wachfeuerBrannte)) return false;
+  const traeger = party.find(u => !u.isWarMachine && !bekannt.has(u) && effekt(u, 'wachfeuer'));
+  const e = traeger && effekt(traeger, 'wachfeuer');
+  if (!traeger || !e) return false;
+  traeger.wachfeuerBrannte = true;
+  gefallen.hp = Math.max(1, Math.floor(gefallen.maxHp * (e.anteil ?? 0.3)));
+  gefallen.geweckt = (gefallen.geweckt ?? 0) + 1;
+  log(`✦ ${traeger.name} setzt ${anzeigeName(e)} ein → ${gefallen.name} steht mit ${gefallen.hp} Leben wieder auf`);
+  return true;
 }

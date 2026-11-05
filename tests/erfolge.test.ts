@@ -31,7 +31,7 @@ const ALTE_IDS = [
 const KENNZAHLEN = [
   'stadtstufe', 'helden_anzahl', 'helden_mit_weg', 'helden_meister', 'ganze_sets',
   'monsterbuch_entdeckt', 'gildenrang', 'werkstaetten', 'werkstatt_hoechste_stufe',
-  'zettel_erledigt', 'saal_prunkstuecke', 'saal_sterne', 'rangliste_pokale', 'schmiede_hoechste_stufe',
+  'zettel_erledigt', 'saal_prunkstuecke', 'anbau_prunkstuecke', 'saal_sterne', 'rangliste_pokale', 'schmiede_hoechste_stufe',
   'total_days_survived',
 ];
 

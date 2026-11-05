@@ -7,7 +7,7 @@ import { stadtStufeVon } from '../data/stadtstufen';
 import { ExpeditionRun, dungeonBezwungen } from '../models/ExpeditionRun';
 import { GameState } from '../models/GameState';
 import { stufeVon } from './Ausbau';
-import { saalKapitel } from './Auftragsbrett';
+import { kapitelDesTeils, alleKapitel } from './Auftragsbrett';
 import { gesammelteTeile, getrageneSets } from './DungeonSets';
 import { getGildenrang } from './GebaeudeStatus';
 import { istMeister, wegVon } from './Spezialisierung';
@@ -56,7 +56,7 @@ export function saalSterne(state: GameState): number {
   const fertig = state.auftragsbrett?.kette?.fertig ?? [];
   const siege = state.trophaeen?.siege ?? {};
   let sterne = 0;
-  for (const { routeId } of saalKapitel()) {
+  for (const { routeId } of alleKapitel()) {
     const set = setFuerRoute(routeId);
     if (isRouteCompleted(routeId, state) || (siege[routeId] ?? 0) > 0) sterne++;
     if (set && gesammelteTeile(state, set).length >= setTeilIds(set).length) sterne++;
@@ -107,11 +107,13 @@ export function kennzahlenAktualisieren(state: GameState): void {
   // Gildenhaus: Auftragsbrett, Kette «Der Saal der Gilde» und Trophäensaal; Pokale der Rangliste
   // (abgeholte und solche, deren Ruhmestruhe noch wartet); die beste Stufe aus der Schmiede
   const brett = state.auftragsbrett;
-  const kapitel = new Set(saalKapitel().map(k => k.routeId));
+  const saal = new Set(kapitelDesTeils('saal').map(k => k.routeId));
+  const anbau = new Set(kapitelDesTeils('anbau').map(k => k.routeId));
   const pokale = state.rangliste?.pokale;
   const stufen = Object.values(state.schmiede?.stufen ?? {}).filter(n => Number.isFinite(n));
   hoechstens('zettel_erledigt', brett?.erledigt ?? 0);
-  hoechstens('saal_prunkstuecke', (brett?.kette?.fertig ?? []).filter(id => kapitel.has(id)).length);
+  hoechstens('saal_prunkstuecke', (brett?.kette?.fertig ?? []).filter(id => saal.has(id)).length);
+  hoechstens('anbau_prunkstuecke', (brett?.kette?.fertig ?? []).filter(id => anbau.has(id)).length);
   hoechstens('saal_sterne', saalSterne(state));
   hoechstens('rangliste_pokale', zahl(pokale?.gold) + zahl(pokale?.silber) + zahl(pokale?.bronze)
     + (state.rangliste?.offen ?? []).filter(w => w.pokal).length);

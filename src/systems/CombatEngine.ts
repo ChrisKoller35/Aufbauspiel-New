@@ -55,7 +55,8 @@ export class CombatEngine {
 
     const log = (zeile: string): void => { run.combatLog.push(zeile); };
     // Schon vor dem Kampf besiegte Gegner (Fähigkeiten in der Vorschau) lösen keine Seelenernte aus
-    const tote = new Set(enemies.filter(e => e.hp <= 0));
+    // Helden, die schon vor dem Kampf am Boden lagen, weckt kein Wachfeuer (Kampfeffekte.neueToteMelden)
+    const tote = new Set([...enemies, ...party].filter(e => e.hp <= 0));
 
     let round = 0;
     // speed_march: maximal 10 Runden; Standard: 20 Runden
@@ -408,7 +409,7 @@ export class CombatEngine {
     run.combatRoundSnapshots = [];
 
     const log = (zeile: string): void => { run.combatLog.push(zeile); };
-    const tote = new Set(enemies.filter(e => e.hp <= 0));
+    const tote = new Set([...enemies, ...run.party].filter(e => e.hp <= 0));
 
     let round = 0;
     const maxRounds = run.activeModifier === 'speed_march' ? 15 : 30;

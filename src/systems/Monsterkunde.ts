@@ -348,18 +348,21 @@ export function faehigkeitText(id: string, sk: EnemySkillDef): string {
 }
 
 /**
- * Wahlen unterwegs, welche die Wut des Bosses vorziehen (EncounterChoice.bossWutFrueher, die
- * Sonnenuhr im Morgentor): je Dungeon, in dem der Gegner der Boss ist, die früheste Wut-Runde,
- * wenn jede solche Wahl genommen wird (wie CombatEngine.wutAbRunde, nie vor Runde 1).
+ * Wahlen unterwegs, welche die Wut des Bosses verschieben (EncounterChoice.bossWutFrueher): die Sonnenuhr im
+ * Morgentor zieht sie vor, die Pfeiler des Tages ziehen sie vor oder schieben sie hinaus. Je Dungeon, in dem
+ * der Gegner der Boss ist, die früheste Wut-Runde (`abRunde`, jede Wahl mit dem grössten Vorziehen genommen,
+ * wie CombatEngine.wutAbRunde nie vor Runde 1) und die späteste (`bisRunde`, jede Wahl mit dem grössten Aufschub).
  */
-export function wutVorziehbar(id: string): { routeId: string; name: string; abRunde: number }[] {
+export function wutVorziehbar(id: string): { routeId: string; name: string; abRunde: number; bisRunde: number }[] {
   const wut = ENEMY_DEFS[id]?.enrage;
   if (!wut) return [];
   return Object.values(ROUTE_DEFS).flatMap(route => {
     if (route.bossId !== id) return [];
-    const frueher = route.encounters.reduce((summe, enc) =>
-      summe + (enc.wahl ? Math.max(enc.wahl.a.bossWutFrueher ?? 0, enc.wahl.b.bossWutFrueher ?? 0) : 0), 0);
-    return frueher > 0 ? [{ routeId: route.id, name: route.name, abRunde: Math.max(1, wut.afterRound - frueher) }] : [];
+    const werte = route.encounters.flatMap(enc => enc.wahl ? [[enc.wahl.a.bossWutFrueher ?? 0, enc.wahl.b.bossWutFrueher ?? 0]] : []);
+    const frueher = werte.reduce((summe, [a, b]) => summe + Math.max(a, b, 0), 0);
+    const spaeter = werte.reduce((summe, [a, b]) => summe - Math.min(a, b, 0), 0);
+    if (frueher === 0 && spaeter === 0) return [];
+    return [{ routeId: route.id, name: route.name, abRunde: Math.max(1, wut.afterRound - frueher), bisRunde: wut.afterRound + spaeter }];
   });
 }
 

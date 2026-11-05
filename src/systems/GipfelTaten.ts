@@ -1,4 +1,4 @@
-// ─── Gipfel-Taten: dreimal das Risiko in den sechs obersten Dungeons ───
+// ─── Gipfel-Taten: dreimal das Risiko in den acht obersten Dungeons ───
 // Welche Option in einem festen Wahl-Raum gewählt wurde, steht nur in der Chronik des Laufs
 // (chronikNachWahl hängt den Satz nachklang.a oder nachklang.b an). Gezählt wird am Ende der
 // Expedition (ExpeditionFinalizer), solange der Lauf noch ganz da ist. Jede Tat zählt nur einmal.
@@ -15,13 +15,14 @@ export function ersteOptionen(run: ExpeditionRun): number {
 
 /**
  * Dreimal die erste Option und der Boss tot: die Tat des Dungeons. Dreimal die erste Option im Mondhof,
- * aber Argentis lebt (Rückzug, Niederlage, Rundenlimit): «Kleingedrucktes». Immer auf 1, nie hochzählen,
- * sonst brächte eine Tat sechsmal gemacht «Hat alles».
+ * aber Argentis lebt (Rückzug, Niederlage, Rundenlimit): «Kleingedrucktes»; bei den Pfeilern des Tages,
+ * aber Orm lebt: «Einsturzgefahr». Immer auf 1, nie hochzählen, sonst brächte eine Tat achtmal gemacht «Hat alles».
  */
 export function gipfelTatenZaehlen(stats: Record<string, number>, run: ExpeditionRun): void {
   if (ersteOptionen(run) < 3) return;
   if (!dungeonBezwungen(run)) {
     if (run.routeId === 'mondhof') stats.tat_kleingedrucktes = 1;
+    if (run.routeId === 'tagespfeiler') stats.tat_einsturz = 1;
     return;
   }
   switch (run.routeId) {
@@ -31,5 +32,7 @@ export function gipfelTatenZaehlen(stats: Record<string, number>, run: Expeditio
     case 'sternenschlund': stats.tat_schlund = 1; break;
     case 'mondhof': stats.tat_pfand = 1; break;
     case 'morgentor': stats.tat_uhr = 1; break;
+    case 'erste_stadt': stats.tat_feuer = 1; break;
+    case 'tagespfeiler': stats.tat_pfeiler = 1; break;
   }
 }

@@ -130,6 +130,18 @@ const SETS_MORGEN: Record<string, GuildFighter['gear']> = {
   Sina: { mainHand: 'set_morgen_dolch', offHand: null, armor: 'set_morgen_leder', trinket: 'set_morgen_talisman' },
 };
 
+/** Im Taglicht: dazu Grimm in Alrunas Wachfeuer (statt Korrunds Meisterstücken), der Lohn der Ersten Stadt */
+const SETS_STADT: Record<string, GuildFighter['gear']> = {
+  ...SETS_MORGEN,
+  Grimm: { mainHand: 'set_wachfeuer_hammer', offHand: null, armor: 'set_wachfeuer_platte', trinket: 'set_wachfeuer_talisman' },
+};
+
+/** Über der Ersten Stadt: dazu Lia in «Was den Tag trug» (statt des Schlund-Sets), der Lohn der Pfeiler */
+const SETS_TAGWERK: Record<string, GuildFighter['gear']> = {
+  ...SETS_STADT,
+  Lia: { mainHand: 'set_tagwerk_bogen', offHand: null, armor: 'set_tagwerk_leder', trinket: 'set_tagwerk_ring' },
+};
+
 /**
  * Für die Dungeons zwischen den Sternen (Ebene 7 und 8) dazu die Schmiede: Wer dort ankommt,
  * hat seine Sets aus den Dungeons darunter verbessert, und wer weiter will, trägt dazu
@@ -137,9 +149,12 @@ const SETS_MORGEN: Record<string, GuildFighter['gear']> = {
  * Set aus dem Sternenschlund, über dem Mondhof (ab Ebene 10) Brom das Pfand des Mondvogts.
  * Die Stufen dazwischen (`schlund2`, `pfand2`, `pfand3`, `morgen0`) zeigen, was das neue Set
  * einer Ebene ausmacht, bevor es ganz hochgeschmiedet ist (docs/NEUE-DUNGEONS.md, «Im Mondlicht»).
+ * Im Taglicht (ab Ebene 11) trägt Sina Sunnas Morgengabe, über der Ersten Stadt (ab Ebene 12) Grimm
+ * Alrunas Wachfeuer; `tagwerk0` ist der Lohn der Pfeiler (docs/NEUE-DUNGEONS.md, «Im Taglicht»).
  */
 export const MUSTER_SETS: Record<
-  'ebene4' | 'hort' | 'sterne3' | 'sterne5' | 'mond5' | 'schlund2' | 'pfand2' | 'pfand3' | 'pfand5' | 'morgen0', MusterSet
+  'ebene4' | 'hort' | 'sterne3' | 'sterne5' | 'mond5' | 'schlund2' | 'pfand2' | 'pfand3' | 'pfand5' | 'morgen0'
+  | 'morgen3' | 'morgen5' | 'stadt0' | 'stadt3' | 'stadt5' | 'tagwerk0', MusterSet
 > = {
   ebene4: { name: 'Sets aus Ebene 4', gear: SETS_EBENE_4 },
   hort: { name: 'Ebene 4, Grimm mit dem Hort-Set', gear: SETS_HORT },
@@ -162,5 +177,23 @@ export const MUSTER_SETS: Record<
   morgen0: {
     name: 'Dazu Sina in Sunnas Morgengabe ohne Stufen, die übrigen auf +5', gear: SETS_MORGEN,
     schmiede: 5, abEbene: 10, stufen: teileAuf('morgen', ['dolch', 'leder', 'talisman'], 0),
+  },
+  morgen3: {
+    name: 'Dazu Sina in Sunnas Morgengabe auf +3, die übrigen auf +5', gear: SETS_MORGEN,
+    schmiede: 5, abEbene: 11, stufen: teileAuf('morgen', ['dolch', 'leder', 'talisman'], 3),
+  },
+  morgen5: { name: 'Dazu Sina in Sunnas Morgengabe, alle Teile auf +5', gear: SETS_MORGEN, schmiede: 5, abEbene: 11 },
+  stadt0: {
+    name: 'Dazu Grimm in Alrunas Wachfeuer ohne Stufen (statt Korrunds Meisterstücken), die übrigen auf +5', gear: SETS_STADT,
+    schmiede: 5, abEbene: 11, stufen: teileAuf('wachfeuer', ['hammer', 'platte', 'talisman'], 0),
+  },
+  stadt3: {
+    name: 'Dazu Grimm in Alrunas Wachfeuer auf +3, die übrigen auf +5', gear: SETS_STADT,
+    schmiede: 5, abEbene: 12, stufen: teileAuf('wachfeuer', ['hammer', 'platte', 'talisman'], 3),
+  },
+  stadt5: { name: 'Dazu Grimm in Alrunas Wachfeuer, alle Teile auf +5', gear: SETS_STADT, schmiede: 5, abEbene: 12 },
+  tagwerk0: {
+    name: 'Dazu Lia in «Was den Tag trug» ohne Stufen (statt des Schlund-Sets), die übrigen auf +5', gear: SETS_TAGWERK,
+    schmiede: 5, abEbene: 12, stufen: teileAuf('tagwerk', ['bogen', 'leder', 'ring'], 0),
   },
 };

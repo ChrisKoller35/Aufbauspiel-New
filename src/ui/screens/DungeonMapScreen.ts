@@ -141,6 +141,10 @@ const GEBIETE: Record<NonNullable<RouteDef['gebiet']>, { stil: BiomeStyle; regio
     stil: { fill: '#0b1a2e', stroke: '#e2e8f0', text: '#f8fafc', glow: '#7dd3fc', icon: '🌙', label: 'Mond' },
     region: 'IM MONDLICHT — ÜBER DEN STERNEN',
   },
+  licht: {
+    stil: { fill: '#3d2a0c', stroke: '#fde047', text: '#fef9c3', glow: '#fbbf24', icon: '☀️', label: 'Taglicht' },
+    region: 'IM TAGLICHT — ÜBER DEM MORGENTOR',
+  },
 };
 
 function getBiomeStyle(route: RouteDef): BiomeStyle {
@@ -217,13 +221,47 @@ function buildGipfelHimmel(width: number, oben: number): string {
     <rect y="${-oben}" width="${width}" height="${oben}" fill="url(#dmap-himmel-g)"/>
     <rect y="-110" width="${width}" height="220" fill="url(#dmap-himmel-naht)"/>`;
 
+  // Im Taglicht (über dem Morgentor) ist es Tag: Dort enden die Sterne, darüber liegt ein Taghimmel (unten)
+  const lichtYs = gebietsKnoten.filter(k => k.gebiet === 'licht').map(k => k.n.y);
+  const tagBis = lichtYs.length > 0 ? Math.max(...lichtYs) + 320 : -oben;
+
   let sternHtml = '';
   for (let i = 0; i < 80; i++) {
     const x = (i * 211 + 37) % width;
     const y = -oben + 20 + ((i * 131) % Math.max(1, oben - 160));
+    if (y < tagBis) continue;
     sternHtml += `<circle cx="${x}" cy="${y}" r="${i % 4 === 0 ? 1.4 : 0.8}" fill="#f3e7c4" opacity="${i % 3 ? 0.3 : 0.6}"/>`;
   }
   html += `<g>${sternHtml}</g>`;
+
+  // Taghimmel: von oben ein gedämpftes Tagblau, zum Morgentor hin warmes Gold, das in die Nacht ausläuft.
+  // Bewusst nicht hell: Schriftzüge und Namen der Dungeons sind hell und müssen lesbar bleiben.
+  if (lichtYs.length > 0) {
+    const hoehe = tagBis + oben;
+    html += `
+    <defs>
+      <linearGradient id="dmap-taghimmel-g" gradientUnits="userSpaceOnUse" x1="0" y1="${-oben}" x2="0" y2="${tagBis}">
+        <stop offset="0" stop-color="#26406a"/>
+        <stop offset=".45" stop-color="#3a3f5c"/>
+        <stop offset=".8" stop-color="#5a4318" stop-opacity=".75"/>
+        <stop offset="1" stop-color="#3a2a10" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="dmap-sonne">
+        <stop offset="0%" stop-color="#fde68a" stop-opacity=".32"/>
+        <stop offset="45%" stop-color="#fbbf24" stop-opacity=".12"/>
+        <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect y="${-oben}" width="${width}" height="${hoehe}" fill="url(#dmap-taghimmel-g)"/>
+    <ellipse cx="${width * 0.72}" cy="${-oben + 40}" rx="${width * 0.55}" ry="${Math.min(hoehe, 520)}" fill="url(#dmap-sonne)"/>`;
+    let dunst = '';
+    for (let i = 0; i < 8; i++) {
+      const x = 50 + i * 120 + (i % 2) * 50;
+      const y = -oben + 90 + ((i * 197) % Math.max(1, hoehe - 200));
+      dunst += `<ellipse cx="${x}" cy="${y}" rx="${130 + ((i * 41) % 80)}" ry="${12 + (i % 3) * 6}" fill="#fef3c7" opacity="${0.04 + (i % 3) * 0.02}"/>`;
+    }
+    html += `<g class="dmap-tagdunst">${dunst}</g>`;
+  }
 
   // Zwischen den Sternen: violetter Nebel und ein dichteres Sternenfeld, einige Sterne funkeln.
   // Liegt darüber noch ein Gebiet (Mond), endet der Nebel über dem obersten Sternen-Dungeon.

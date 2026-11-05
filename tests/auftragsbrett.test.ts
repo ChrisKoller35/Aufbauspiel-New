@@ -18,11 +18,11 @@ import { kaufpreis } from '../src/data/haendler';
 import { HOECHSTE_STADTSTUFE } from '../src/data/stadtstufen';
 import {
   AUFTRAGGEBER, AUFTRAGS_VORLAGEN, EINLOESE_ANGEBOTE, FERNE_DUNGEONS, GOLD_ANTEIL, LIEFER_WAREN, MATERIAL_PREIS,
-  SAAL_EINLEITUNG, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL,
+  ANBAU_AB_EBENE, ANBAU_SCHLUSS, ANBAU_SCHLUSS_SIEGEL, SAAL_EINLEITUNG, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, TAGESBONUS_SIEGEL,
   setTeilPreis,
 } from '../src/data/auftragsbrett';
 import {
-  auftraegeFuerDungeon, auftraegeNachExpedition, brettGesehen, brettKurz, brettStand, einloesbareMaterialien, einloesbareSets,
+  alleKapitel, auftraegeFuerDungeon, auftraegeNachExpedition, kapitelDesTeils, ketteEinleitung, kettenTeil, brettGesehen, brettKurz, brettStand, einloesbareMaterialien, einloesbareSets,
   goldJeLauf, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText, laufendesKapitel, lieferbareWaren, lieferGold, liefern,
   materialEinloesen, saalEinleitung, saalKapitel, setTeilEinloesen, spielbareDungeons, splitterEinloesen, tagVon, tauschen, tauschUebrig,
   zettelText,
@@ -38,11 +38,11 @@ const MITTAG = new Date(2026, 9, 21, 12, 0).getTime();
 const TAG = 86_400_000;
 
 /** Neues Spiel wie im Browser; mit 'probe' oder 'sterne' wie ?probe und ?probe=sterne */
-function spielstand(art: 'neu' | 'probe' | 'sterne' = 'neu', samen = 12345): GameState {
+function spielstand(art: 'neu' | 'probe' | 'sterne' | 'pfeiler' = 'neu', samen = 12345): GameState {
   const state = createNewGameState();
   state.rngSeed = samen;
   placeStartingLayout(state);
-  if (art !== 'neu') richteProbespielEin(state, art === 'sterne' ? 'sterne' : 'neu');
+  if (art !== 'neu') richteProbespielEin(state, art === 'probe' ? 'neu' : art);
   return state;
 }
 
@@ -88,7 +88,7 @@ describe('Auftragsbrett: Texte und Daten', () => {
     const bossRouten = DUNGEON_GRAPH.filter(n => ROUTE_DEFS[n.routeId]?.bossId);
     for (const n of bossRouten) expect(SAAL_KAPITEL.some(k => k.routeId === n.routeId), n.routeId).toBe(true);
     expect(new Set(SAAL_KAPITEL.map(k => k.routeId)).size).toBe(SAAL_KAPITEL.length);
-    const kette = saalKapitel();
+    const kette = alleKapitel();
     expect(kette).toHaveLength(bossRouten.length);
     expect(kette.map(k => k.routeId)).toEqual([...bossRouten].sort((a, b) => b.y - a.y).map(n => n.routeId));
     expect(kette[0].routeId).toBe('forest_medium');
@@ -96,7 +96,15 @@ describe('Auftragsbrett: Texte und Daten', () => {
       expect(k.ziel, k.routeId).toBeGreaterThan(0);
       if (k.art === 'set') expect(setFuerRoute(k.routeId), k.routeId).toBeDefined();
     }
+    // Zwei Teile: der Saal bis Ebene 10, darüber der Anbau; erst der ganze Saal, dann der Anbau
+    expect(saalKapitel()).toEqual(kette.filter(k => ROUTE_DEFS[k.routeId].tier < ANBAU_AB_EBENE));
+    expect(saalKapitel()).toHaveLength(16);
+    expect(kapitelDesTeils('anbau').map(k => k.routeId)).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(kette.map(kettenTeil)).toEqual([...Array(16).fill('saal'), 'anbau', 'anbau']);
     expect(saalEinleitung()).toContain('Sechzehn leere Sockel');
+    expect(ketteEinleitung('anbau')).toContain('zwei neue Sockel');
+    // Das letzte Prunkstück des Saals bleibt Sunnas Strahl, ganz gleich, wie hoch die Karte wächst
+    expect(saalKapitel().at(-1)!.routeId).toBe('morgentor');
   });
 
   test('Auftraggeber, Vorlagen und Waren passen zusammen', () => {
@@ -467,8 +475,41 @@ describe('Kette: Der Saal der Gilde', () => {
     expect(meldung.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS[letztes.routeId].tier / 2) + SAAL_SCHLUSS_SIEGEL);
     // Am Brett stand vorher schon dieselbe Belohnung, mit den Siegeln für den vollen Saal
     expect(angezeigt).toEqual(meldung.belohnung);
-    expect(laufendesKapitel(stand)).toBeNull();
+    // Der Saal ist voll, die Kette geht im Anbau weiter
+    expect(bilanz.anbauVoll).toBe(false);
+    expect(laufendesKapitel(stand)?.routeId).toBe('erste_stadt');
     expect(auftragsZeilen(bilanz, false).some(z => z.text.includes('Alle Sockel'))).toBe(true);
+  });
+
+  test('der Anbau: Alrunas Kohle ohne Verlust, Orms Keil mit zwei Siegen; die Schluss-Siegel je Teil nur einmal', () => {
+    const state = spielstand('pfeiler');
+    const stand = brettStand(state, MITTAG);
+    stand.kette.fertig = saalKapitel().map(k => k.routeId);
+    expect(laufendesKapitel(stand)?.routeId).toBe('erste_stadt');
+    // Wer sich am Wachfeuer wecken lässt, zählt als Verlust
+    const geweckt = lauf('erste_stadt');
+    (geweckt.party[0] as { geweckt?: number }).geweckt = 1;
+    expect(auftraegeNachExpedition(state, geweckt, MITTAG).meldungen.filter(m => m.titel.startsWith('Der Anbau'))).toHaveLength(0);
+    const kohle = auftraegeNachExpedition(state, lauf('erste_stadt'), MITTAG);
+    const k1 = kohle.meldungen.find(m => m.prunkstueck)!;
+    expect(k1.titel).toBe('Der Anbau des Saals (Eine Kohle aus dem ersten Wachfeuer)');
+    // Kein zweites Mal die Siegel für den vollen Saal
+    expect(k1.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS.erste_stadt.tier / 2));
+    expect(kohle).toMatchObject({ saalVoll: false, anbauVoll: false });
+    // Orm: zwei Siege, der zweite füllt den Anbau
+    expect(laufendesKapitel(stand)).toMatchObject({ routeId: 'tagespfeiler', art: 'sieg', ziel: 2 });
+    auftraegeNachExpedition(state, lauf('tagespfeiler'), MITTAG);
+    const angezeigt = kapitelBelohnungVon(stand, laufendesKapitel(stand)!);
+    const keil = auftraegeNachExpedition(state, lauf('tagespfeiler'), MITTAG);
+    const k2 = keil.meldungen.find(m => m.prunkstueck)!;
+    expect(k2.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS.tagespfeiler.tier / 2) + ANBAU_SCHLUSS_SIEGEL);
+    expect(angezeigt).toEqual(k2.belohnung);
+    expect(keil).toMatchObject({ saalVoll: false, anbauVoll: true });
+    expect(laufendesKapitel(stand)).toBeNull();
+    expect(auftragsZeilen(keil, false).some(z => z.text.includes('Auch der Anbau ist voll'))).toBe(true);
+    expect(auftragsZeilen(kohle, false).some(z => z.text.includes('voll'))).toBe(false);
+    expect(ANBAU_SCHLUSS).toContain('«Besser.»');
+    expect(SAAL_SCHLUSS).toContain('Daneben ist noch Platz');
   });
 });
 
@@ -596,7 +637,7 @@ describe('Trophäensaal', () => {
     const stand = brettStand(state, MITTAG);
     stand.kette.fertig = ['forest_medium', 'cave_deep'];
     const trophaeen = bossTrophaeen(state, MITTAG);
-    expect(trophaeen).toHaveLength(saalKapitel().length);
+    expect(trophaeen).toHaveLength(alleKapitel().length);
     const glanz = saalGlanz(trophaeen);
     expect(glanz.max).toBe(3 * trophaeen.length);
     const erwartet = trophaeen.filter(t => t.bezwungen).length + trophaeen.filter(t => t.setKomplett).length + 2;

@@ -195,11 +195,15 @@ function faehigkeitenHtml(enemy: EnemyDef): string {
   return `<div class="md-section"><div class="lbl">FÄHIGKEITEN</div>${zeilen}</div>`;
 }
 
-/** Wut-Runde aus enemies.ts, dazu, wo Wahlen unterwegs sie vorziehen (die Sonnenuhr im Morgentor) */
+/** Wut-Runde aus enemies.ts, dazu, wo Wahlen unterwegs sie verschieben (Sonnenuhr im Morgentor, Pfeiler des Tages) */
 function wutHtml(enemy: EnemyDef): string {
   if (!enemy.enrage) return '';
-  const vorziehbar = wutVorziehbar(enemy.id).map(v =>
-    `<p class="mb-klein">Im Dungeon «${v.name}» können Wahlen unterwegs die Wut bis auf Runde ${v.abRunde} vorziehen.</p>`).join('');
+  const afterRound = enemy.enrage.afterRound;
+  const vorziehbar = wutVorziehbar(enemy.id).map(v => {
+    const vor = v.abRunde < afterRound ? `bis auf Runde ${v.abRunde} vorziehen` : '';
+    const hinaus = v.bisRunde > afterRound ? `bis auf Runde ${v.bisRunde} hinausschieben` : '';
+    return `<p class="mb-klein">Im Dungeon «${v.name}» können Wahlen unterwegs die Wut ${[vor, hinaus].filter(Boolean).join(' oder ')}.</p>`;
+  }).join('');
   return `<div class="md-section"><div class="lbl">WUT</div><p>Wut ab Runde ${enemy.enrage.afterRound}: Angriff ×${zahl(enemy.enrage.atkMult)}, Tempo ×${zahl(enemy.enrage.spdMult)}</p>${vorziehbar}</div>`;
 }
 

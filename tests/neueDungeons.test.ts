@@ -60,8 +60,10 @@ function boss(run: ExpeditionRun) {
 }
 
 describe('Dungeons über dem Vulkankern', () => {
-  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv zwischen die Sterne, in den Mondhof und ans Morgentor', () => {
-    expect(NEUE.map(r => r.id)).toEqual(['drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof', 'morgentor']);
+  it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv zwischen die Sterne, in den Mondhof, ans Morgentor und ins Taglicht', () => {
+    expect(NEUE.map(r => r.id)).toEqual([
+      'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler',
+    ]);
     const knoten = (id: string) => DUNGEON_GRAPH.find(n => n.routeId === id)!;
     expect(knoten('volcano_core').leadsTo).toContain('drachenhort');
     expect(knoten('drachenhort').y).toBeLessThan(0);

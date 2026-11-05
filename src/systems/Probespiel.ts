@@ -7,7 +7,11 @@
 // besiegt, die Sternenschmiede offen. ?probe=mond beginnt vor dem Mondhof: dasselbe
 // Team in den Sets der Sterne auf +5 (MUSTER_SETS.mond5), alle Bosse bis Nyxar besiegt.
 // ?probe=morgen beginnt vor dem Morgentor: dazu Brom im Pfand des Mondvogts mit dem
-// Amtsstab (MUSTER_SETS.pfand5), alle Bosse bis Argentis besiegt.
+// Amtsstab (MUSTER_SETS.pfand5), alle Bosse bis Argentis besiegt. ?probe=stadt beginnt
+// vor der Ersten Stadt: dazu Sina in Sunnas Morgengabe (morgen5), alle Bosse bis Sunna.
+// ?probe=pfeiler beginnt vor den Pfeilern des Tages: dazu Grimm in Alrunas Wachfeuer
+// (stadt5), alle Bosse bis Alruna, und Alrunas Kelle liegt im Lager, nicht angelegt,
+// damit der Vergleich mit Broms Amtsstab zu sehen ist.
 // Das Gildenhaus ist ausgebaut, damit alle vier Helden mitgehen. Es hat einen eigenen
 // Speicherplatz (SaveSystem.nutzeProbespiel), der richtige Spielstand bleibt unberührt.
 // Hinweis im Hauptmenü: ui/components/ProbespielHinweis.ts.
@@ -26,18 +30,23 @@ import { totalXpForLevel } from './HeroProgression';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { SPLITTER, istSchmiedbar, schmiedeKosten } from './Schmiede';
 
-/** Wo das Probespiel beginnt: vor dem Drachenhort, vor der Sternenschmiede, vor dem Mondhof oder vor dem Morgentor */
-export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen';
+/** Wo das Probespiel beginnt: vor dem Drachenhort, der Sternenschmiede, dem Mondhof, dem Morgentor, der Ersten Stadt oder den Pfeilern */
+export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen' | 'stadt' | 'pfeiler';
+const OBEN: ProbeStufe[] = ['sterne', 'mond', 'morgen', 'stadt', 'pfeiler'];
 
 /**
  * Die Stufen über dem Drachenhort: bis zu welcher Ebene die Bosse besiegt sind, welche Sets
  * der Eichung das Team trägt und welcher Dungeon das nächste Set bringt (sein Material liegt
  * zum Schmieden bis +5 im Lager).
  */
-const STUFEN: Record<Exclude<ProbeStufe, 'neu'>, { bisEbene: number; sets: 'sterne3' | 'mond5' | 'pfand5'; naechstesSet: string }> = {
+const STUFEN: Record<Exclude<ProbeStufe, 'neu'>, {
+  bisEbene: number; sets: 'sterne3' | 'mond5' | 'pfand5' | 'morgen5' | 'stadt5'; naechstesSet: string; lager?: Record<string, number>;
+}> = {
   sterne: { bisEbene: 6, sets: 'sterne3', naechstesSet: 'sternenschmiede' },
   mond: { bisEbene: 8, sets: 'mond5', naechstesSet: 'mondhof' },
   morgen: { bisEbene: 9, sets: 'pfand5', naechstesSet: 'morgentor' },
+  stadt: { bisEbene: 10, sets: 'morgen5', naechstesSet: 'erste_stadt' },
+  pfeiler: { bisEbene: 11, sets: 'stadt5', naechstesSet: 'tagespfeiler', lager: { alrunas_kelle: 1 } },
 };
 
 /**
@@ -55,19 +64,20 @@ export function istProbespiel(search: string): boolean {
   return new URLSearchParams(search).has('probe');
 }
 
-/** ?probe=neu, ?probe=sterne, ?probe=mond oder ?probe=morgen: das Probespiel von vorn beginnen */
+/** ?probe=neu oder eine Stufe weiter oben (?probe=sterne … ?probe=pfeiler): das Probespiel von vorn beginnen */
 export function probespielNeu(search: string): boolean {
   const wert = new URLSearchParams(search).get('probe');
-  return wert === 'neu' || wert === 'sterne' || wert === 'mond' || wert === 'morgen';
+  return wert === 'neu' || OBEN.includes(wert as ProbeStufe);
 }
 
 /**
  * Wo das Probespiel beginnt: ?probe=sterne vor der Sternenschmiede, ?probe=mond vor dem Mondhof,
- * ?probe=morgen vor dem Morgentor, sonst vor dem Drachenhort
+ * ?probe=morgen vor dem Morgentor, ?probe=stadt vor der Ersten Stadt, ?probe=pfeiler vor den Pfeilern
+ * des Tages, sonst vor dem Drachenhort
  */
 export function probespielStufe(search: string): ProbeStufe {
-  const wert = new URLSearchParams(search).get('probe');
-  return wert === 'sterne' || wert === 'mond' || wert === 'morgen' ? wert : 'neu';
+  const wert = new URLSearchParams(search).get('probe') as ProbeStufe;
+  return OBEN.includes(wert) ? wert : 'neu';
 }
 
 /**
@@ -77,7 +87,7 @@ export function probespielStufe(search: string): ProbeStufe {
  * dazu Vorräte und ein Set für die Schmiede.
  * Die Gilde hat den höchsten Rang und alle Bosse bis Ebene 4 besiegt: Als Nächstes
  * warten die Dungeons über dem Vulkankern (Drachenhort, dann Himmelsarchiv).
- * Mit `stufe` 'sterne', 'mond' oder 'morgen' die Varianten weiter oben (richteStufeEin).
+ * Mit `stufe` 'sterne', 'mond', 'morgen', 'stadt' oder 'pfeiler' die Varianten weiter oben (richteStufeEin).
  */
 export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu'): void {
   state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };
@@ -119,10 +129,11 @@ export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu')
 
 /**
  * Probespiel weiter oben: Die getragenen Set-Teile stehen in der Schmiede auf der Stufe der
- * Musterausrüstung (sterne3: +3, damit ist die Sternenschmiede meist zu schaffen; mond5 und pfand5: +5).
+ * Musterausrüstung (sterne3: +3, damit ist die Sternenschmiede meist zu schaffen; die übrigen: +5).
  * Dazu liegt alles im Lager, um sie und das Set des nächsten Dungeons (Korrunds Meisterstücke,
- * das Pfand des Mondvogts bzw. Sunnas Morgengabe, fallen erst dort) bis +5 zu schmieden: Erst
- * damit hat der Dungeon darüber eine Chance.
+ * das Pfand des Mondvogts, Sunnas Morgengabe, Alrunas Wachfeuer bzw. «Was den Tag trug», fallen
+ * erst dort) bis +5 zu schmieden: Erst damit hat der Dungeon darüber eine Chance. Was die Stufe
+ * sonst noch ins Lager legt (`lager`, Alrunas Kelle), kommt dazu.
  */
 function richteStufeEin(state: GameState, oben: (typeof STUFEN)[keyof typeof STUFEN]): void {
   const stufe = MUSTER_SETS[oben.sets].schmiede ?? 0;
@@ -138,5 +149,8 @@ function richteStufeEin(state: GameState, oben: (typeof STUFEN)[keyof typeof STU
       state.globalStock.gold = (state.globalStock.gold ?? 0) + kosten.gold;
       state.globalStock[SPLITTER] = (state.globalStock[SPLITTER] ?? 0) + kosten.splitter;
     }
+  }
+  for (const [itemId, menge] of Object.entries(oben.lager ?? {})) {
+    state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + menge;
   }
 }

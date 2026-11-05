@@ -17,7 +17,7 @@ import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { escapeAttr } from '../components/SchmiedeAnzeige';
 import {
   belohnungText, brettGesehen, brettStand, einloesbareMaterialien, einloesbareSets, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText,
-  laufendesKapitel, liefern, materialEinloesen, saalEinleitung, saalKapitel, SAAL_SCHLUSS, setTeilEinloesen, setTeilKosten, splitterEinloesen,
+  ANBAU_SCHLUSS, kapitelDesTeils, kettenTeil, ketteEinleitung, laufendesKapitel, liefern, materialEinloesen, SAAL_SCHLUSS, setTeilEinloesen, setTeilKosten, splitterEinloesen,
   tagVon, tauschen, tauschUebrig, zettelText, zielText,
 } from '../../systems/Auftragsbrett';
 import { bossTrophaeen, gildenbuch, pokale, saalGlanz, setSammlung } from '../../systems/Trophaeensaal';
@@ -99,26 +99,31 @@ function zettelHtml(state: GameState, stand: AuftragsbrettStand, a: Auftrag, i: 
 }
 
 function ketteHtml(state: GameState, stand: AuftragsbrettStand): string {
-  const alle = saalKapitel();
   const kapitel = laufendesKapitel(stand);
   if (!kapitel) {
+    const anbau = kapitelDesTeils('anbau');
     return `
       <article class="gh-kette gh-kette-voll">
-        <div class="gh-kette-kopf">Kette · Der Saal der Gilde · alle ${alle.length} Sockel voll</div>
-        <p class="gh-text">${SAAL_SCHLUSS}</p>
+        <div class="gh-kette-kopf">Kette · Der Anbau des Saals · alle ${anbau.length} Sockel voll</div>
+        <p class="gh-text">${ANBAU_SCHLUSS}</p>
       </article>`;
   }
-  const nr = stand.kette.fertig.length + 1;
+  const teil = kettenTeil(kapitel);
+  const alle = kapitelDesTeils(teil);
+  const fertig = alle.filter(k => stand.kette.fertig.includes(k.routeId)).length;
   const route = ROUTE_DEFS[kapitel.routeId];
   const offen = istSpielbar(state, kapitel.routeId);
   const weg = offen
     ? `<button class="gh-knopf" data-gh-hin="${kapitel.routeId}">Zum Dungeon</button>`
     : `<span class="gh-gesperrt">🔒 ${getRouteLockReasons(route, state).join(' · ') || 'Noch nicht erreichbar'}</span>`;
-  const einleitung = stand.kette.fertig.length === 0 ? `<p class="gh-text gh-einleitung">${saalEinleitung()}</p>` : '';
+  // Zu Beginn des Anbaus steht zuerst noch der Schluss des Saals da: Er erzählt, wie es zum Anbau kam
+  const einleitung = fertig > 0 ? ''
+    : teil === 'saal' ? `<p class="gh-text gh-einleitung">${ketteEinleitung('saal')}</p>`
+      : `<p class="gh-text gh-einleitung">${SAAL_SCHLUSS}</p><p class="gh-text gh-einleitung">${ketteEinleitung('anbau')}</p>`;
   return `
     <article class="gh-kette">
       <span class="gh-wachs" aria-hidden="true"></span>
-      <div class="gh-kette-kopf">Kette · Der Saal der Gilde · Kapitel ${nr} von ${alle.length}</div>
+      <div class="gh-kette-kopf">Kette · ${teil === 'saal' ? 'Der Saal der Gilde' : 'Der Anbau des Saals'} · Kapitel ${fertig + 1} von ${alle.length}</div>
       ${einleitung}
       <h3 class="gh-titel">${kapitel.prunkstueck}</h3>
       <div class="gh-ort">📍 ${route.name} · Ebene ${route.tier}</div>

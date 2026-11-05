@@ -14,7 +14,7 @@ import { ENEMY_DEFS } from '../data/enemies';
 import { DungeonSetDef, setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { bezwungeneDungeons } from './Bezwungen';
 import { gesammelteTeile } from './DungeonSets';
-import { brettStand, saalKapitel } from './Auftragsbrett';
+import { alleKapitel, brettStand } from './Auftragsbrett';
 import { ranglisteKurz } from './Rangliste';
 
 /**
@@ -66,12 +66,12 @@ export interface BossTrophaee {
   schild: string;
 }
 
-/** Die Sockel des Saals, von unten nach oben wie die Kette */
+/** Die Sockel des Saals und seines Anbaus, von unten nach oben wie die Kette */
 export function bossTrophaeen(state: GameState, jetzt: number): BossTrophaee[] {
   const stand = trophaeenStand(state);
   const brett = brettStand(state, jetzt);
   const merker = bezwungeneDungeons(state);
-  return saalKapitel().map(k => {
+  return alleKapitel().map(k => {
     const route = ROUTE_DEFS[k.routeId];
     const boss = ENEMY_DEFS[route.bossId ?? ''];
     const set = setFuerRoute(k.routeId);

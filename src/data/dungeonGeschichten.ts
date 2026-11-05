@@ -1364,4 +1364,95 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       + 'Die Morgengabe hat sie uns überreicht wie ein Geschenk, das man seit Jahren im Schrank hatte, und den Morgenstern dazu, mit der Bemerkung, der Witz sei alt. '
       + 'Über Magic City kam die Sonne am nächsten Tag pünktlich, die Bäckerin hat gebacken, und ich habe meine Sonnenuhr auf dem Marktplatz aufgestellt, ein wenig vorgestellt, nur damit niemand mehr zu spät kommt.',
   },
+  // ── Ebene 11 und 12: im Taglicht, über dem Morgentor ──
+  {
+    routeId: 'erste_stadt', titel: 'Für die Nächsten',
+    einleitung: 'Seit Sunna das Tor jeden Morgen ganz aufstösst, geht in Magic City jede Nacht ein Feuer aus: zuerst der Ofen der Bäckerin, dann die Esse, '
+      + 'gestern meine Lampe, mitten im Satz. Niemand bläst sie aus; sie gehen, als würden sie anderswo gebraucht. '
+      + 'Jorinde hat durchs Fernrohr hinter dem Morgentor eine Stadt gesehen, mit hellen Dächern und vielen Wachfeuern, jede Nacht eins mehr, '
+      + 'und über ihrem Tor ein Schild in goldener Farbe, in derselben Schrift wie das Schild in der Asche, mit dem unsere Stadt angefangen hat, und wie ihre Steinplatte unter dem Platz. '
+      + 'Wir gehen hinauf, um unsere Feuer zurückzuholen, und ich nehme nichts zum Schlafen mit, weil man dort, sagt Jorinde, keine Gelegenheit dazu bekommt.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Das erste Feuer',
+        text: 'Auf dem ersten Platz brennt ein Wachfeuer, grösser als jedes, das wir kennen, und niemand legt nach. Ein Wachfeuerwicht erklärt, es brenne mit allem, '
+          + 'was man hineinlege, und unter der Glut liege Tagstein für den, der hineingreift; die Haut lasse man als Pfand da. '
+          + 'Wer sich nur wärmen will, darf das, und wer gefallen ist, steht am Feuer wieder auf, denn Schlafen ist in dieser Stadt verboten.',
+        nachklang: {
+          a: 'Wir griffen ins erste Feuer und zogen Tagstein heraus, und ein wenig von uns blieb drin.',
+          b: 'Wir wärmten uns am ersten Feuer, und der Wicht sah uns zu, als wären wir das Interessanteste seit tausend Jahren. Dann kam er mit, um uns aus der Nähe anzusehen.',
+        },
+      },
+      8: {
+        titel: 'Die Wachstube',
+        text: 'Die Wachstube der Vorigen gleicht unserem Gildenhaus wie ein älterer Bruder. Im Kamin brennt das Feuer, und in der Glut liegen Kelle, Harnisch und eine Kohle, '
+          + 'in Reihen wie zur Ausgabe; wer hineingreift, bekommt ein Teil davon, wenn Alruna fällt, und zahlt mit Haut. Am Brett neben der Tür hängen Zettel in unserer Schrift, '
+          + 'nur älter, und einer ist nie abgehakt worden. Wer sich wärmt, sitzt auf einem von vier Hockern, und wer am Boden lag, steht auf.',
+        nachklang: {
+          a: 'Wir holten Alrunas Ausgabe aus der Glut, und die Echos am Brett nickten, als hätten wir eine Prüfung bestanden, von der uns niemand erzählt hatte.',
+          b: 'Wir setzten uns auf die vier Hocker am Kamin, und es fiel uns erst danach auf, dass es genau vier waren.',
+        },
+      },
+      14: {
+        titel: 'Das letzte Feuer',
+        text: 'Vor Alrunas Haus brennt das letzte Feuer, und unter seiner Asche liegt Tagstein, gestapelt und beschriftet: «Für den Saal». Der Saal steht seit tausend Jahren '
+          + 'hinter unserem Gildenhaus; der Stein wäre also übrig, sagt Jorinde, und Übriges dürfe man mitnehmen. Wer sich am Feuer wärmt, geht ausgeruhter zu Alruna, '
+          + 'und wer gefallen ist, geht wieder mit. Wer am letzten Kontrollpunkt umkehrt, lässt allen Tagstein liegen.',
+        nachklang: {
+          a: 'Wir räumten das letzte Feuer aus. Im Haus ging ein Fenster auf und gleich wieder zu, sehr bestimmt.',
+          b: 'Wir wärmten uns am letzten Feuer, und Alruna kam heraus und wärmte sich mit, schweigend, bis wir fertig waren.',
+        },
+      },
+    },
+    ende: 'Alruna war die erste Gildenmeisterin, und die Stadt unter uns war ihre: Sie hiess schon Magic City, als sie brannte, und das Schild in der Asche hat Alruna selbst gemalt. '
+      + 'Ihre Gilde ging so weit hinauf wie wir, nur schneller; sie brachen Stein aus den Pfeilern des Tages, um unten zu bauen, bis unten nichts mehr stand und oben nur noch sie. '
+      + 'Seither hält Alruna die Wachfeuer, und weil ihr die Nächte zu lang wurden, hat sie sich zuletzt unsere dazugenommen; sie gibt sie zurück, sagt sie, weil wir sie selbst geholt haben. '
+      + 'Sie hat eine Liste geführt, was ihre Gilde falsch gemacht hat, damit die nächste es besser macht. Jorinde hat sie gelesen und mir gesagt, auf welcher Seite wir schon sind; ich schreibe es hier nicht auf. '
+      + 'Die Tür in den Kristallminen, vor der Jorinde ihr Kissen liegen hat, ist jetzt offen: Dahinter führt eine Treppe bis in Alrunas Keller. '
+      + 'Als wir heimkamen, brannte meine Lampe wieder, und über der Stadt hing der Tag schief. Alruna sagt, das sei der letzte Punkt auf der Liste.',
+  },
+  {
+    routeId: 'tagespfeiler', titel: 'Was den Tag trägt',
+    einleitung: 'Seit wir aus der Ersten Stadt zurück sind, fällt in Magic City manchmal Tagstein vom Himmel, kleine Stücke, warm, und gestern eins in den Brunnen; '
+      + 'das Wasser schmeckt seither nach Mittag. Alruna hat uns gesagt, woher: Ihre Gilde hat Pfeiler aus dem Tag gebrochen, um unten zu bauen, '
+      + 'und wo einer fehlt, trägt Orm, und Orm wird müde. Wir gehen hinauf, um nachzusehen, wie viele Pfeiler noch stehen, und ich nehme Kreide mit, um sie zu zählen.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Der erste Pfeiler',
+        text: 'Gleich hinter dem Aufgang steht ein Pfeiler, und er wackelt, wenn man ihn ansieht. Der Tagstein darin ist das Beste, was wir hier oben gefunden haben, '
+          + 'und er kommt leicht heraus; Orm wird es merken und weniger Geduld haben, wenn wir bei ihm ankommen. '
+          + 'Wer einen Keil hineinschlägt, gibt ihm einen Atemzug mehr, und der Keil kostet Schweiss und ein paar Fingernägel.',
+        nachklang: {
+          a: 'Wir brachen den ersten Pfeiler heraus, wie die Vorigen, und oben seufzte etwas so laut, dass meine Kreide brach.',
+          b: 'Wir stützten den ersten Pfeiler mit einem Keil, und ich zählte ihn mit Kreide: einer, der steht.',
+        },
+      },
+      8: {
+        titel: 'Der Tragstein',
+        text: 'Im Tragstein eines Pfeilers steckt ein Teil, das die Vorigen beim Herausbrechen vergessen haben, so fest, dass man den Pfeiler brechen muss, um es zu bekommen. '
+          + 'Ein Steinmetz der Vorigen steht daneben, mit Meissel, und wartet darauf, dass jemand es tut, damit er nicht der Einzige war. '
+          + 'Wer stützt, schwitzt und nimmt die Brocken mit, die schon heruntergefallen sind.',
+        nachklang: {
+          a: 'Wir brachen den Tragstein heraus. Der Steinmetz nickte zufrieden und meisselte weiter, jetzt nicht mehr allein.',
+          b: 'Wir stützten den Pfeiler und sammelten die Brocken darunter, und der Steinmetz sah uns an, als hätten wir ihm den Tag verdorben. Genau genommen hatten wir ihn gerettet.',
+        },
+      },
+      14: {
+        titel: 'Der letzte Pfeiler',
+        text: 'Vor Orms Schultern steht der letzte Pfeiler, und er trägt fast so viel wie Orm. Wer ihn herausbricht, bekommt den meisten Tagstein, wenn Orm fällt, '
+          + 'und Orm wird es sofort wissen. Wer sich danebenstellt und mitdrückt, kommt verschwitzt, aber mit mehr Zeit vor ihn. '
+          + 'Wer am letzten Kontrollpunkt umkehrt, lässt allen Tagstein liegen.',
+        nachklang: {
+          a: 'Wir brachen den letzten Pfeiler, und Orm sagte nichts mehr, was man aufschreiben kann.',
+          b: 'Wir drückten mit am letzten Pfeiler, und Orm atmete aus, zum ersten Mal, sagte er, seit tausend Jahren.',
+        },
+      },
+    },
+    ende: 'Orm hat den Tag abgesetzt, auf die Pfeiler, die noch stehen, und ich habe sie mit Kreide gezählt; es sind weniger, als Alruna gehofft hat, und mehr, als ich befürchtet habe. '
+      + 'Orm sagt, sie reichen, wenn niemand mehr welche herausbricht, und hat dabei uns angesehen, nicht Alruna. In Magic City fällt seither kein Tagstein mehr in den Brunnen, '
+      + 'und der Schlussstein liegt in unserem Lager. Der Händler hat seine alte Karte ausgerollt, die mit dem leeren Rand oben und dem Satz «Hier geht es weiter. Wohin, wissen wir noch nicht.» '
+      + 'Ich habe die Erste Stadt und die Pfeiler eingezeichnet und darüber eine Leiter, die Jorinde über dem Tag gefunden hat. Orm sagt, da oben sei nichts. Alruna sagt, das habe ihre Gilde auch gesagt.',
+  },
 ];

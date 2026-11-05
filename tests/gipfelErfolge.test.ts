@@ -1,4 +1,4 @@
-// ─── Gipfel-Taten: echte Läufe durch die sechs obersten Dungeons ───
+// ─── Gipfel-Taten: echte Läufe durch die acht obersten Dungeons ───
 // Ein sehr starker Held spielt die Route; in den festen Wahl-Räumen nimmt er die vorgegebene
 // Option, an Rastplätzen immer die erste. Gezählt wird beim Abschluss (finalizeExpeditionProgress).
 
@@ -18,6 +18,7 @@ const STARK = { hp: 99999, maxHp: 99999, atk: 9999, def: 9999, spd: 99, critChan
 const TATEN: Record<string, string> = {
   drachenhort: 'gipfel_hort', himmelsarchiv: 'gipfel_archiv', sternenschmiede: 'gipfel_esse',
   sternenschlund: 'gipfel_schlund', mondhof: 'gipfel_pfand', morgentor: 'gipfel_uhr',
+  erste_stadt: 'gipfel_feuer', tagespfeiler: 'gipfel_pfeiler',
 };
 
 function spielstand(): { state: GameState; held: number } {
@@ -73,7 +74,7 @@ describe('Gipfel-Taten', () => {
     expect(Object.keys(state.statistics).filter(k => k.startsWith('tat_'))).toEqual([]);
   });
 
-  test('«Hat alles» erst nach der sechsten Tat, dieselbe Tat zweimal zählt einmal', () => {
+  test('«Hat alles» erst nach der achten Tat, dieselbe Tat zweimal zählt einmal', () => {
     const { state, held } = spielstand();
     lauf(state, held, 'drachenhort', [0, 0, 0]);
     lauf(state, held, 'drachenhort', [0, 0, 0]);
@@ -100,6 +101,21 @@ describe('Gipfel-Taten', () => {
     expect(lauf(state, held, 'mondhof', [0, 0, 1], true).run.status).toBe('retreat');
     expect(lauf(state, held, 'morgentor', [0, 0, 0], true).run.status).toBe('retreat');
     expect(Object.keys(state.statistics).filter(k => k.startsWith('tat_'))).toEqual([]);
+  });
+
+  test('«Einsturzgefahr»: dreimal einen Pfeiler gebrochen, Orm lebt; nicht im Mondhof-Sinn, nicht anderswo', () => {
+    const { state, held } = spielstand();
+    const { run, ergebnis } = lauf(state, held, 'tagespfeiler', [0, 0, 0], true);
+    expect(run.status).toBe('retreat');
+    expect(state.achievements).toContain('gipfel_einsturz');
+    expect(state.achievements).not.toContain('gipfel_pfeiler');
+    expect(state.achievements).not.toContain('gipfel_kleingedrucktes');
+    expect(ergebnis.newAchievements).toContain(zeile('gipfel_einsturz'));
+    // Gestützt statt gebrochen: keine Tat
+    const zwei = spielstand();
+    lauf(zwei.state, zwei.held, 'tagespfeiler', [0, 1, 0], true);
+    lauf(zwei.state, zwei.held, 'erste_stadt', [0, 0, 0], true);
+    expect(Object.keys(zwei.state.statistics).filter(k => k.startsWith('tat_'))).toEqual([]);
   });
 
   test('Rundenlimit: Sieg ohne toten Boss zählt nur als «Kleingedrucktes»', () => {

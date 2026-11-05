@@ -360,6 +360,26 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     flavorText: 'Es ist ein Morgenstern. Es ist auch der Morgenstern: Jeder dritte Treffer holt einen Stern vom Himmel, der alle Gegner mit der Hälfte des Schadens trifft. Sunna fand das lustig, einmal, vor sehr langer Zeit, und hat ihn seither nicht mehr angefasst.',
   },
 
+  // --- Ebene 11: Beute der ersten Gildenmeisterin (erster Sieg garantiert). Einhändig, mit der Gezeitenwelle:
+  //     alle 3 Runden heilt der verletzteste Verbündete 15 % seiner Leben. Die Alternative zum Amtsstab
+  //     (Letzte Bastion) für ein Team ohne Heiler. Leihbild: tools/leihbilder.ts ---
+  alrunas_kelle: {
+    id: 'alrunas_kelle', name: 'Alrunas Kelle', type: 'gear',
+    stackSize: 1, baseValue: 250, gearSlot: 'mainHand', weaponSlotType: '1h', tier: 11,
+    statBonuses: { atk: 23, def: 7, hp: 30 },
+    tags: ['gear', 'weapon', 'tier11', 'legendary', 'special:gezeitenwelle'],
+    flavorText: 'Eine Maurerkelle, mit der man auch zuschlagen kann. Alruna hat damit den Saal gebaut und drei Gildenmeister erzogen; alle 3 Runden flickt sie den, der es am nötigsten hat. Den Mörtel bringt man selbst mit.',
+  },
+  // --- Ebene 12: Orms Beute (erster Sieg garantiert). Schmuck aus Tagstein, mit der Druckwelle: alle 4 Runden
+  //     trifft der Träger alle Gegner mit 60 % seines Schadens. Bild aus Code (tools/materialBilder.ts) ---
+  der_schlussstein: {
+    id: 'der_schlussstein', name: 'Der Schlussstein', type: 'gear',
+    stackSize: 1, baseValue: 275, gearSlot: 'trinket', tier: 12,
+    statBonuses: { atk: 11, def: 8, hp: 46, spd: 0.16, critChance: 0.16 },
+    tags: ['gear', 'trinket', 'tier12', 'legendary', 'special:druckwelle'],
+    flavorText: 'Wer ihn aus dem Bogen zieht, bringt das Gewölbe zum Einsturz. Wer ihn trägt, nur die Gegner, alle 4 Runden. Orm hat ihn freiwillig hergegeben, mit dem Hinweis, er habe ohnehin nichts mehr getragen.',
+  },
+
   // --- Special (expedition-only) ---
   crystal_shard: {
     id: 'crystal_shard', name: 'Kristallsplitter', type: 'special',

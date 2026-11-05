@@ -109,9 +109,9 @@ export const LEIHBILDER: Record<string, Leihbild> = {
   ENEMY_HIMMELSRISS: { quelle: 'ENEMY_CURSED_WISP', saettigung: 0.6, helligkeit: 1.25 },
   ENEMY_ECHO_STEINMETZ: { quelle: 'HERO_BERSERKER', mischung: sepia(0.6) },
   BOSS_ORM: { quelle: 'BOSS_CRYSTAL_GOLEM', mischung: sepia(0.8), helligkeit: 1.45 },
-  ITEM_SET_GEWOELBE_BOGEN: { quelle: 'ITEM_LONGBOW', farbton: 150 },
-  ITEM_SET_GEWOELBE_LEDER: { quelle: 'ITEM_BANDIT_KINGS_CLOAK', mischung: OCKER, helligkeit: 1.4 },
-  ITEM_SET_GEWOELBE_RING: { quelle: 'ITEM_CRYSTAL_PENDANT', farbton: 150 },
+  ITEM_SET_TAGWERK_BOGEN: { quelle: 'ITEM_LONGBOW', farbton: 150 },
+  ITEM_SET_TAGWERK_LEDER: { quelle: 'ITEM_BANDIT_KINGS_CLOAK', mischung: OCKER, helligkeit: 1.4 },
+  ITEM_SET_TAGWERK_RING: { quelle: 'ITEM_CRYSTAL_PENDANT', farbton: 150 },
   // Routenbilder, bis Christoph eigene zeichnet: die Erste Stadt ist Magic City in Gold,
   // die Pfeiler die Ruinentiefen in Gold
   exp_erste_stadt: { quelle: 'tile_buildings', mischung: GOLDTON, helligkeit: 1.3, ordner: 'tiles' },
