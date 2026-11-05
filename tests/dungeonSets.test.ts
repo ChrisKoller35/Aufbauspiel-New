@@ -598,6 +598,33 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(runde(run3, 1)).toContain(`  ${sumpf.name}: Lebensraub +${Math.floor(sumpf.atk * 0.2)} HP`);
   });
 
+  test('Unbeugsam greift auch, wenn eine Gegner-Fähigkeit, Flächenschaden oder Luftmangel den Helden fällt, und nur einmal', () => {
+    const wieder = (u: CombatUnit) => `>> ${u.name}: WIEDERGEBURT! Steht mit ${Math.floor(u.maxHp * 0.4)} HP wieder auf!`;
+    const schlag: CombatSkill = { id: 'schlag', name: 'Henkersschlag', cooldown: 9, currentCooldown: 0, effectType: 'damage', power: 1, target: 'single' };
+    const welle: CombatSkill = { id: 'welle', name: 'Aschewelle', cooldown: 9, currentCooldown: 0, effectType: 'aoe', power: 1, target: 'all_players' };
+
+    // Einzelfähigkeit: steht nach dem Treffer auf, bevor ein Tod gemeldet wird
+    const ritter = einheit(heldMitSet('ritter'), { hp: 1, spd: 0.1 });
+    const run1 = kampf([ritter], [gegner('Henker', { atk: 500, spd: 5, skills: [schlag] })]);
+    const treffer = run1.combatLog.findIndex(l => l.startsWith('Henker setzt Henkersschlag ein'));
+    expect(treffer).toBeGreaterThanOrEqual(0);
+    expect(run1.combatLog[treffer + 1]).toBe(wieder(ritter));
+    expect(run1.combatLog.filter(l => l.includes('WIEDERGEBURT'))).toHaveLength(1);
+
+    // Flächenschaden: beide Träger stehen einmal auf
+    const a = einheit(heldMitSet('ritter'), { hp: 1, spd: 0.1 });
+    const b = einheit(heldMitSet('ritter'), { hp: 1, spd: 0.1 });
+    const run2 = kampf([a, b], [gegner('Aschenwicht', { atk: 500, spd: 5, skills: [welle] })]);
+    expect(run2.combatLog).toContain(wieder(a));
+    expect(run2.combatLog).toContain(wieder(b));
+    expect(run2.combatLog.filter(l => l.includes('WIEDERGEBURT'))).toHaveLength(2);
+
+    // Luftmangel am Rundenende: steht noch in derselben Runde auf
+    const taucher = einheit(heldMitSet('ritter'), { hp: 5, spd: 0.1 });
+    const run3 = kampf([taucher], [gegner('Qualle', { def: 999 })], { airShield: 0 });
+    expect(runde(run3, 1)).toContain(wieder(taucher));
+  });
+
   test('Kampfeffekte bleiben nach dem Kampf nicht hängen', () => {
     const traeger = einheit(heldMitSet('archiv'));
     const run = kampf([traeger], [gegner('Wurm', { hp: 5, maxHp: 5 })]);

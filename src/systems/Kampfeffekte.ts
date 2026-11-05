@@ -888,8 +888,27 @@ export function neueToteMelden(gegner: CombatUnit[], party: CombatUnit[], bekann
   }
   for (const h of party) {
     if (h.hp > 0 || bekannt.has(h) || h.isWarMachine) continue;
+    // Erst die eigene Wiedergeburt (wie beim Grundangriff), dann das Wachfeuer der Gruppe
+    if (wiedergeburt(h, log)) continue;
     if (!wachfeuer(h, party, bekannt, log)) bekannt.add(h);
   }
+}
+
+/**
+ * Wiedergeburt (Eigenschaft «revive»: Set «Eid des Gefallenen Ritters», Amulett der Wiedergeburt, Der letzte Stern):
+ * Fällt ein Held, steht er einmal mit einem Anteil seiner Leben wieder auf, egal ob ihn ein Grundangriff, eine
+ * Gegner-Fähigkeit, Gift oder Luftmangel gefällt hat. Der Grundangriff ruft sie gleich beim Treffer auf
+ * (CombatEngine.checkRevive), alle übrigen Wege erreicht sie über neueToteMelden. Gibt zurück, ob er aufgestanden ist.
+ */
+export function wiedergeburt(unit: CombatUnit, log: Log): boolean {
+  const effekt = unit.specialEffects?.find(e => e.id === 'revive' && e.usesLeft > 0);
+  if (!effekt) return false;
+  effekt.usesLeft--;
+  const anteil = effekt.power ?? SPECIAL_EFFECT_DEFS.revive.power;
+  const leben = Math.max(1, Math.floor(unit.maxHp * anteil));
+  unit.hp = leben;
+  log(`>> ${unit.name}: WIEDERGEBURT! Steht mit ${leben} HP wieder auf!`);
+  return true;
 }
 
 /**
