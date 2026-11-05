@@ -81,12 +81,13 @@ describe('Kriegsrat: Entscheidungen unterwegs', () => {
 });
 
 describe('Kriegsrat: Proviant in einer knappen Lage', () => {
-  it('Drachenhort mit ?probe: mit 5 Heiltränken 3 Siege, ohne Auswahl 1 (docs/KRIEGSRAT.md)', () => {
+  // Bis zum 5.11. (Guardian vor dem Beschützer-Profil, docs/AUSBILDUNG.md) ohne Auswahl 1 Sieg, mit Tränken 3
+  it('Drachenhort mit ?probe: 3 Siege, mit 5 Heiltränken einer mehr eingesetzt (docs/KRIEGSRAT.md)', () => {
     const { state, ids } = probe();
     const ohne = kriegsrat(state, 'drachenhort', ids, {}, 20);
     const mit = kriegsrat(state, 'drachenhort', ids, { healing_potion: 5 }, 20);
-    expect([ohne.siege, ohne.proviantEingesetzt]).toEqual([1, 17]);
-    expect([mit.siege, mit.proviantEingesetzt]).toEqual([3, 18]);
+    expect([ohne.siege, ohne.proviantEingesetzt]).toEqual([3, 18]);
+    expect([mit.siege, mit.proviantEingesetzt]).toEqual([3, 19]);
   });
 });
 
