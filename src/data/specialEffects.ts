@@ -287,6 +287,22 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
     procChance: 1.0,
     power: 0.6,
   },
+  wachfeuer: {
+    id: 'wachfeuer',
+    name: 'Wachfeuer',
+    description: 'Fällt ein Held, steht er sofort mit 30 % seiner Leben wieder auf, einmal je Kampf fürs ganze Team',
+    trigger: 'on_death',
+    procChance: 1.0,
+    power: 0.3,
+  },
+  tragkraft: {
+    id: 'tragkraft',
+    name: 'Tragkraft',
+    description: 'Solange der Träger steht: am Ende jeder Runde +6 Angriff für die ganze Gruppe, bis Kampfende höchstens +42',
+    trigger: 'on_round_end',
+    procChance: 1.0,
+    power: 6,
+  },
 };
 
 /** Extract special effect IDs from an item's tags array */

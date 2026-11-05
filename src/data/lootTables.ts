@@ -527,6 +527,92 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     guaranteedGold: { min: 340, max: 470 },
   },
 
+  // ── Die Erste Stadt (Ebene 11) ──
+  loot_erste_stadt_common: {
+    id: 'loot_erste_stadt_common',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 3, maxQty: 7 },
+      { itemId: 'gold', weight: 18, minQty: 20, maxQty: 30 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 2, maxQty: 5 },
+      { itemId: 'healing_potion', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'blade_of_thousand_shadows', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 24, max: 38 },
+  },
+  loot_erste_stadt_rare: {
+    id: 'loot_erste_stadt_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 4, maxQty: 9 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 3, maxQty: 7 },
+      { itemId: 'magitech_component', weight: 10, minQty: 1, maxQty: 2 },
+      { itemId: 'blade_of_thousand_shadows', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 5, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 5, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 36, max: 60 },
+  },
+  loot_boss_alruna: {
+    id: 'loot_boss_alruna',
+    entries: [
+      { itemId: 'alrunas_kelle', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'der_morgenstern', weight: 10, minQty: 1, maxQty: 1 },
+      { itemId: 'amtsstab_des_mondvogts', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 18, maxQty: 28 },
+      { itemId: 'talisman_fragment', weight: 14, minQty: 11, maxQty: 18 },
+    ],
+    guaranteedGold: { min: 370, max: 510 },
+  },
+
+  // ── Die Pfeiler des Tages (Ebene 12) ──
+  loot_tagespfeiler_common: {
+    id: 'loot_tagespfeiler_common',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 4, maxQty: 7 },
+      { itemId: 'gold', weight: 18, minQty: 22, maxQty: 33 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 3, maxQty: 5 },
+      { itemId: 'healing_potion', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'blade_of_thousand_shadows', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 26, max: 42 },
+  },
+  loot_tagespfeiler_rare: {
+    id: 'loot_tagespfeiler_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 5, maxQty: 10 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 4, maxQty: 7 },
+      { itemId: 'magitech_component', weight: 12, minQty: 1, maxQty: 3 },
+      { itemId: 'blade_of_thousand_shadows', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 6, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 6, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 40, max: 66 },
+  },
+  loot_boss_orm: {
+    id: 'loot_boss_orm',
+    entries: [
+      { itemId: 'der_schlussstein', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'alrunas_kelle', weight: 10, minQty: 1, maxQty: 1 },
+      { itemId: 'der_morgenstern', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 20, maxQty: 30 },
+      { itemId: 'talisman_fragment', weight: 14, minQty: 12, maxQty: 20 },
+    ],
+    guaranteedGold: { min: 400, max: 560 },
+  },
+
   // --- T4 Legendary Loot (Nemesis-Modifier Bonus) ---
   loot_nemesis_legendary: {
     id: 'loot_nemesis_legendary',

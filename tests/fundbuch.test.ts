@@ -125,6 +125,10 @@ describe('Woher: Fund-Räume', () => {
     for (const r of fundorte('mat_sternenstahl').fundRaeume) expect(r.nachSieg).toBe(true);
     expect(fundorte('mat_mondsilber').fundRaeume.some(r => r.art === 'fest' && !r.nachSieg)).toBe(true);
     expect(fundorte('old_coin').fundRaeume.every(r => r.art === 'zufall')).toBe(true);
+    // Tagstein: Wachfeuer und gebrochene Pfeiler zahlen erst nach dem Sieg, der gestützte Pfeiler in Raum 8 sofort
+    const tag = fundorte('mat_tagstein').fundRaeume.filter(r => r.art === 'fest');
+    expect(new Set(tag.map(r => r.routeId))).toEqual(new Set(['erste_stadt', 'tagespfeiler']));
+    expect(tag.filter(r => !r.nachSieg).map(r => r.routeId)).toEqual(['tagespfeiler']);
   });
 });
 
@@ -200,6 +204,9 @@ describe('Schmiede-Material (Mondsilber, Sternenstahl und die anderen zehn)', ()
     // Die Hauptquelle fehlte bis 23.10.2026: Mondsilber und Sternenstahl standen nur mit ihren Fund-Räumen da
     expect(fundorte('mat_sternenstahl').jedenSieg.map(s => s.routeId).sort()).toEqual(['sternenschlund', 'sternenschmiede']);
     expect(fundorte('mat_mondsilber').jedenSieg.map(s => s.routeId).sort()).toEqual(['mondhof', 'morgentor']);
+    // Tagstein bringt jeder Sieg im Taglicht, dazu die Wachfeuer und Pfeiler unterwegs
+    expect(fundorte('mat_tagstein').jedenSieg.map(s => s.routeId).sort()).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(gruppeVon('mat_tagstein')).toBe('material');
   });
 
   it('Woher: Einschmelzen nennt genau die Sets, deren Teile das Material bringen, mit der Menge der Schmiede', () => {
@@ -239,7 +246,7 @@ describe('Schmiede-Material (Mondsilber, Sternenstahl und die anderen zehn)', ()
       }
     }
     expect(geprueft).toBeGreaterThan(0);
-    for (const id of ['mat_mondsilber', 'mat_sternenstahl']) expect(verwendung(id).schmiede.length, id).toBeGreaterThan(0);
+    for (const id of ['mat_mondsilber', 'mat_sternenstahl', 'mat_tagstein']) expect(verwendung(id).schmiede.length, id).toBeGreaterThan(0);
   });
 });
 

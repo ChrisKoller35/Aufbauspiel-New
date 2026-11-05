@@ -141,6 +141,10 @@ const GEBIETE: Record<NonNullable<RouteDef['gebiet']>, { stil: BiomeStyle; regio
     stil: { fill: '#0b1a2e', stroke: '#e2e8f0', text: '#f8fafc', glow: '#7dd3fc', icon: '🌙', label: 'Mond' },
     region: 'IM MONDLICHT — ÜBER DEN STERNEN',
   },
+  licht: {
+    stil: { fill: '#3d2a0c', stroke: '#fde047', text: '#fef9c3', glow: '#fbbf24', icon: '☀️', label: 'Taglicht' },
+    region: 'IM TAGLICHT — ÜBER DEM MORGENTOR',
+  },
 };
 
 function getBiomeStyle(route: RouteDef): BiomeStyle {
@@ -181,6 +185,13 @@ function buildGraphIndex(): { nodeMap: Map<string, DungeonGraphNode>; allEdges: 
 const GIPFEL_RAND = 330;
 
 /**
+ * So weit reicht der Himmel links und rechts über die Karte (0..900) hinaus. Am PC steht die
+ * Karte mittig; ohne das endete der Taghimmel neben der Karte an einer harten Kante.
+ * Das SVG zeigt, was über seinen Rand ragt (.dmap-svg-scroll overflow: visible).
+ */
+const HIMMEL_SEITE = 1000;
+
+/**
  * Hintergrund über der alten Karte (y < 0): Nachthimmel mit Sternen, ein Wolkenband
  * unter dem Himmel-Gebiet, Glut und Schein um die Dungeons (Schriftzüge: gebietsSchriftzuege).
  * Alles richtet sich nach DUNGEON_GRAPH, neue Dungeons weiter oben brauchen hier nichts.
@@ -190,6 +201,11 @@ function buildGipfelHimmel(width: number, oben: number): string {
   const gebietsKnoten = DUNGEON_GRAPH
     .map(n => ({ n, gebiet: ROUTE_DEFS[n.routeId]?.gebiet }))
     .filter((k): k is { n: DungeonGraphNode; gebiet: NonNullable<RouteDef['gebiet']> } => !!k.gebiet);
+
+  // Himmel und alles, was darin verstreut ist (Sterne, Dunst, Wolken), über die ganze Breite samt Seiten
+  const links = -HIMMEL_SEITE;
+  const breite = width + 2 * HIMMEL_SEITE;
+  const anzahl = (aufDerKarte: number) => Math.round(aufDerKarte * breite / width);
 
   let html = `
     <defs>
@@ -214,16 +230,50 @@ function buildGipfelHimmel(width: number, oben: number): string {
   }
   html += `
     </defs>
-    <rect y="${-oben}" width="${width}" height="${oben}" fill="url(#dmap-himmel-g)"/>
-    <rect y="-110" width="${width}" height="220" fill="url(#dmap-himmel-naht)"/>`;
+    <rect x="${links}" y="${-oben}" width="${breite}" height="${oben}" fill="url(#dmap-himmel-g)"/>
+    <rect x="${links}" y="-110" width="${breite}" height="220" fill="url(#dmap-himmel-naht)"/>`;
+
+  // Im Taglicht (über dem Morgentor) ist es Tag: Dort enden die Sterne, darüber liegt ein Taghimmel (unten)
+  const lichtYs = gebietsKnoten.filter(k => k.gebiet === 'licht').map(k => k.n.y);
+  const tagBis = lichtYs.length > 0 ? Math.max(...lichtYs) + 320 : -oben;
 
   let sternHtml = '';
-  for (let i = 0; i < 80; i++) {
-    const x = (i * 211 + 37) % width;
+  for (let i = 0; i < anzahl(80); i++) {
+    const x = links + (i * 211 + 37) % breite;
     const y = -oben + 20 + ((i * 131) % Math.max(1, oben - 160));
+    if (y < tagBis) continue;
     sternHtml += `<circle cx="${x}" cy="${y}" r="${i % 4 === 0 ? 1.4 : 0.8}" fill="#f3e7c4" opacity="${i % 3 ? 0.3 : 0.6}"/>`;
   }
   html += `<g>${sternHtml}</g>`;
+
+  // Taghimmel: von oben ein gedämpftes Tagblau, zum Morgentor hin warmes Gold, das in die Nacht ausläuft.
+  // Bewusst nicht hell: Schriftzüge und Namen der Dungeons sind hell und müssen lesbar bleiben.
+  if (lichtYs.length > 0) {
+    const hoehe = tagBis + oben;
+    html += `
+    <defs>
+      <linearGradient id="dmap-taghimmel-g" gradientUnits="userSpaceOnUse" x1="0" y1="${-oben}" x2="0" y2="${tagBis}">
+        <stop offset="0" stop-color="#26406a"/>
+        <stop offset=".45" stop-color="#3a3f5c"/>
+        <stop offset=".8" stop-color="#5a4318" stop-opacity=".75"/>
+        <stop offset="1" stop-color="#3a2a10" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="dmap-sonne">
+        <stop offset="0%" stop-color="#fde68a" stop-opacity=".32"/>
+        <stop offset="45%" stop-color="#fbbf24" stop-opacity=".12"/>
+        <stop offset="100%" stop-color="#f59e0b" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect x="${links}" y="${-oben}" width="${breite}" height="${hoehe}" fill="url(#dmap-taghimmel-g)"/>
+    <ellipse cx="${width * 0.72}" cy="${-oben + 40}" rx="${width * 0.55}" ry="${Math.min(hoehe, 520)}" fill="url(#dmap-sonne)"/>`;
+    let dunst = '';
+    for (let i = 0; i < anzahl(8); i++) {
+      const x = links + 50 + i * 120 + (i % 2) * 50;
+      const y = -oben + 90 + ((i * 197) % Math.max(1, hoehe - 200));
+      dunst += `<ellipse cx="${x}" cy="${y}" rx="${130 + ((i * 41) % 80)}" ry="${12 + (i % 3) * 6}" fill="#fef3c7" opacity="${0.04 + (i % 3) * 0.02}"/>`;
+    }
+    html += `<g class="dmap-tagdunst">${dunst}</g>`;
+  }
 
   // Zwischen den Sternen: violetter Nebel und ein dichteres Sternenfeld, einige Sterne funkeln.
   // Liegt darüber noch ein Gebiet (Mond), endet der Nebel über dem obersten Sternen-Dungeon.
@@ -243,8 +293,8 @@ function buildGipfelHimmel(width: number, oben: number): string {
     </defs>
     <ellipse cx="${width / 2}" cy="${von + hoehe / 2}" rx="${width * 0.8}" ry="${hoehe / 2}" fill="url(#dmap-nebel)"/>`;
     let feld = '';
-    for (let i = 0; i < 90; i++) {
-      const x = (i * 157 + 61) % width;
+    for (let i = 0; i < anzahl(90); i++) {
+      const x = links + (i * 157 + 61) % breite;
       const y = von + 24 + ((i * 97) % Math.max(1, hoehe - 48));
       const gross = i % 6 === 0;
       const farbe = i % 4 === 0 ? '#fde68a' : '#f8fafc';
@@ -268,8 +318,8 @@ function buildGipfelHimmel(width: number, oben: number): string {
     </defs>
     <ellipse cx="${width / 2}" cy="${von + hoehe / 2}" rx="${width * 0.85}" ry="${hoehe / 2}" fill="url(#dmap-dunst)"/>`;
     let schleier = '';
-    for (let i = 0; i < 7; i++) {
-      const x = 60 + i * 130 + (i % 2) * 40;
+    for (let i = 0; i < anzahl(7); i++) {
+      const x = links + 60 + i * 130 + (i % 2) * 40;
       const y = von + 80 + ((i * 173) % Math.max(1, hoehe - 160));
       schleier += `<ellipse cx="${x}" cy="${y}" rx="${120 + ((i * 47) % 70)}" ry="${14 + (i % 3) * 6}" fill="#e2e8f0" opacity="${0.03 + (i % 3) * 0.015}"/>`;
     }
@@ -281,8 +331,8 @@ function buildGipfelHimmel(width: number, oben: number): string {
   if (himmelYs.length > 0) {
     const wolkenY = Math.max(...himmelYs) + 250;
     let wolken = '';
-    for (let i = 0; i < 9; i++) {
-      const x = 40 + i * 105 + (i % 2) * 30;
+    for (let i = 0; i < anzahl(9); i++) {
+      const x = links + 40 + i * 105 + (i % 2) * 30;
       const y = wolkenY + ((i * 37) % 50) - 25;
       const rx = 90 + ((i * 53) % 60);
       wolken += `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="${22 + (i % 3) * 8}" fill="#c7d2fe" opacity="${0.05 + (i % 3) * 0.02}"/>`;
@@ -555,17 +605,21 @@ function buildDungeonSVG(state: GameState): string {
       ? '' // image replaces the emoji
       : `<text x="${x}" y="${y}" text-anchor="middle" dominant-baseline="central" font-size="${emojiSize}" filter="url(#dmap-glow-f)" style="user-select:none">${biome.icon}</text>`;
 
-    // Name label
-    const shortName = route.name.length > 20 ? route.name.substring(0, 19) + '…' : route.name;
+    // Name label: immer ganz, ein langer Name in zwei Zeilen; Sterne und Räume rücken dann eine Zeile tiefer
+    const zeilen = namensZeilen(route.name);
+    const nameFont = hasBoss ? 11 : 9;
+    const tiefer = (zeilen.length - 1) * Math.round(nameFont * ZEILEN_HOEHE);
+    const zwei = zeilen.length > 1 ? ' zwei' : '';
     const labelOpacity = isLocked ? 0.4 : 1;
-    const nameLabel = `<text class="dmap-t-name${hasBoss ? ' boss' : ''}" x="${x}" y="${y + r + 16}" text-anchor="middle" fill="${biome.text}" font-size="${hasBoss ? 11 : 9}" font-family="Cinzel, serif" letter-spacing="0.5" opacity="${labelOpacity}">${shortName}</text>`;
+    const nameTspans = zeilen.map((z, i) => `<tspan x="${x}"${i > 0 ? ` dy="${ZEILEN_HOEHE}em"` : ''}>${z}</tspan>`).join('');
+    const nameLabel = `<text class="dmap-t-name${hasBoss ? ' boss' : ''}" x="${x}" y="${y + r + 16}" text-anchor="middle" fill="${biome.text}" font-size="${nameFont}" font-family="Cinzel, serif" letter-spacing="0.5" opacity="${labelOpacity}">${nameTspans}</text>`;
 
     // Difficulty stars
     const diff = route.tier;
-    const stars = `<text class="dmap-t-sterne" x="${x}" y="${y + r + 29}" text-anchor="middle" fill="${biome.stroke}" font-size="8" opacity="${isLocked ? 0.3 : 0.6}">${sterne(diff)}</text>`;
+    const stars = `<text class="dmap-t-sterne${zwei}" x="${x}" y="${y + r + 29 + tiefer}" text-anchor="middle" fill="${biome.stroke}" font-size="8" opacity="${isLocked ? 0.3 : 0.6}">${sterne(diff)}</text>`;
 
-    // Room count
-    const roomsBadge = `<text class="dmap-t-raeume" x="${x}" y="${y + r + 41}" text-anchor="middle" fill="#6b6050" font-size="7.5" font-family="Cinzel, serif" opacity="${labelOpacity}">${route.rooms} Räume</text>`;
+    // Room count (hell genug auch auf dem Taghimmel; dazu der dunkle Rand aus dungeonkarte.css)
+    const roomsBadge = `<text class="dmap-t-raeume${zwei}" x="${x}" y="${y + r + 41 + tiefer}" text-anchor="middle" fill="#a39474" font-size="7.5" font-family="Cinzel, serif" opacity="${labelOpacity}">${route.rooms} Räume</text>`;
 
     // Completed checkmark
     const checkMark = isCompleted
@@ -655,6 +709,24 @@ export function haertegradKnoten(grad: 'hard' | 'nightmare' | undefined, cx: num
 }
 
 // ── Hex point generator ──
+
+/** Zeilenhöhe der Dungeon-Namen in em (zweite Zeile eines langen Namens) */
+const ZEILEN_HOEHE = 1.15;
+
+/**
+ * Ein Name bis 20 Zeichen steht in einer Zeile. Länger («Die Pfeiler des Tages») wird er am
+ * Leerzeichen nächst der Mitte geteilt statt abgeschnitten: Unten auf der Karte stehen die
+ * Dungeons eng, eine lange Zeile liefe dort in die Nachbarn.
+ */
+export function namensZeilen(name: string, hoechstens = 20): string[] {
+  if (name.length <= hoechstens) return [name];
+  const mitte = name.length / 2;
+  let teilung = -1;
+  for (let i = 0; i < name.length; i++) {
+    if (name[i] === ' ' && (teilung < 0 || Math.abs(i - mitte) < Math.abs(teilung - mitte))) teilung = i;
+  }
+  return teilung < 0 ? [name] : [name.slice(0, teilung), name.slice(teilung + 1)];
+}
 
 function hexPoints(cx: number, cy: number, r: number, rotDeg: number = 0): string {
   const pts: string[] = [];

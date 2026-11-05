@@ -30,6 +30,8 @@ export interface EnemySkillDef {
   power: number;
   target: 'player' | 'self' | 'ally_lowest_hp' | 'all_players';
   description?: string;
+  /** Stärkung ('buff'): so viele Runden hält der Angriff (ohne Angabe 3; 'summon' hält immer 4) */
+  runden?: number;
 }
 
 export const ENEMY_DEFS: Record<string, EnemyDef> = {
@@ -720,6 +722,142 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_boss_sunna', xpReward: 600, goldReward: 300, spriteKey: 'BOSS_ANCIENT_DRAGON',
   },
 
+  // ── Die Erste Stadt (Ebene 11, über dem Morgentor) ──
+  // Die Vorigen: Echos der Gilde vor der Gilde, gebaut wie unsere (Schild, Bogen, Messer, Heilerin), dazu ein
+  // Wicht aus den Wachfeuern und Alrunas Geselle aus Tagstein. Werte: die Wachen des Morgentors, Angriff ×1,12,
+  // Leben nur ×1,05, weil es keine Rast gibt (Entwurf; Eichung in docs/NEUE-DUNGEONS.md, «Im Taglicht»).
+  // Die Bilder sind Leihbilder (tools/leihbilder.ts): die alten Bilder unserer Klassen, ganz Sepia, verblasst und
+  // gespiegelt, damit sie niemand für die eigenen Helden hält; Alruna golden.
+  schildtraeger_vorige: {
+    id: 'schildtraeger_vorige', name: 'Schildträger der Vorigen', role: 'melee',
+    hp: 630, atk: 38, def: 25, spd: 0.6, critChance: 0.05, critMult: 1.5,
+    skills: [
+      { id: 'schildstoss', name: 'Schildstoss', cooldown: 4, effectType: 'aoe', power: 1.0, target: 'all_players', description: '1.0× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_erste_stadt_common', xpReward: 84, goldReward: 32, spriteKey: 'ENEMY_ECHO_SCHILDTRAEGER',
+  },
+  bogenschuetzin_vorige: {
+    id: 'bogenschuetzin_vorige', name: 'Bogenschützin der Vorigen', role: 'ranged',
+    hp: 415, atk: 49, def: 12, spd: 1.3, critChance: 0.24, critMult: 1.9,
+    skills: [
+      { id: 'gezielter_schuss', name: 'Gezielter Schuss', cooldown: 3, effectType: 'damage', power: 2.1, target: 'player', description: '2.1× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_erste_stadt_common', xpReward: 81, goldReward: 31, spriteKey: 'ENEMY_ECHO_BOGENSCHUETZIN',
+  },
+  messerstecher_vorige: {
+    id: 'messerstecher_vorige', name: 'Messerstecher der Vorigen', role: 'melee',
+    hp: 280, atk: 41, def: 8, spd: 1.7, critChance: 0.2, critMult: 1.8,
+    skills: [
+      { id: 'kehlschnitt', name: 'Kehlschnitt', cooldown: 2, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
+      { id: 'klinge_wetzen', name: 'Klinge wetzen', cooldown: 4, effectType: 'buff', power: 7, target: 'self', description: '+7 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_erste_stadt_common', xpReward: 77, goldReward: 26, spriteKey: 'ENEMY_ECHO_MESSERSTECHER',
+  },
+  stadtheilerin_vorige: {
+    id: 'stadtheilerin_vorige', name: 'Stadtheilerin der Vorigen', role: 'support',
+    hp: 300, atk: 33, def: 9, spd: 1.3, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'russwolke', name: 'Russwolke', cooldown: 3, effectType: 'aoe', power: 0.8, target: 'all_players', description: '0.8× Schaden auf alle' },
+      { id: 'wundsalbe', name: 'Wundsalbe', cooldown: 4, effectType: 'heal', power: 135, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 135' },
+    ],
+    lootTableId: 'loot_erste_stadt_rare', xpReward: 77, goldReward: 29, spriteKey: 'ENEMY_ECHO_STADTHEILERIN',
+  },
+  wachfeuerwicht: {
+    id: 'wachfeuerwicht', name: 'Wachfeuerwicht', role: 'ranged',
+    hp: 240, atk: 38, def: 6, spd: 1.5, critChance: 0.15, critMult: 1.7,
+    skills: [
+      { id: 'funkenregen', name: 'Funkenregen', cooldown: 3, effectType: 'aoe', power: 1.0, target: 'all_players', description: '1.0× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_erste_stadt_common', xpReward: 72, goldReward: 25, spriteKey: 'ENEMY_WACHFEUERWICHT',
+  },
+  steingeselle: {
+    id: 'steingeselle', name: 'Steingeselle', role: 'melee',
+    hp: 520, atk: 40, def: 20, spd: 0.8, critChance: 0.08, critMult: 1.6,
+    skills: [
+      { id: 'mauerschlag', name: 'Mauerschlag', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
+      { id: 'nachmauern', name: 'Nachmauern', cooldown: 5, effectType: 'buff', power: 8, runden: 4, target: 'self', description: '+8 ATK für 4 Runden' },
+    ],
+    lootTableId: 'loot_erste_stadt_rare', xpReward: 82, goldReward: 30, spriteKey: 'ENEMY_STEINGESELLE',
+  },
+  boss_alruna: {
+    id: 'boss_alruna', name: 'Alruna, die erste Gildenmeisterin', role: 'boss',
+    hp: 5100, atk: 84, def: 18, spd: 1.0, critChance: 0.14, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
+    skills: [
+      { id: 'ruf_zur_wache', name: 'Ruf zur Wache', cooldown: 3, effectType: 'aoe', power: 1.3, target: 'all_players', description: '1.3× Schaden auf alle' },
+      { id: 'meisterstreich', name: 'Meisterstreich', cooldown: 4, effectType: 'damage', power: 2.7, target: 'player', description: '2.7× Schaden auf 1 Ziel' },
+      { id: 'alte_gildenregel', name: 'Alte Gildenregel', cooldown: 5, effectType: 'buff', power: 10, target: 'self', description: '+10 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_boss_alruna', xpReward: 660, goldReward: 330, spriteKey: 'BOSS_ALRUNA',
+  },
+
+  // ── Die Pfeiler des Tages (Ebene 12, über der Ersten Stadt) ──
+  // Was den Tag trägt und was an ihm nagt. Werte: Erste Stadt ×1,12 beim Angriff, Leben ×1,10 (hier gibt es
+  // wieder eine Rast). Orm hat keine Heilung: Wer die Pfeiler stützt, verlängert den Kampf (Rundenlimit).
+  schlusssteinwaechter: {
+    id: 'schlusssteinwaechter', name: 'Schlusssteinwächter', role: 'melee',
+    hp: 700, atk: 48, def: 28, spd: 0.55, critChance: 0.05, critMult: 1.5,
+    skills: [
+      { id: 'gewoelbeschlag', name: 'Gewölbeschlag', cooldown: 4, effectType: 'aoe', power: 1.0, target: 'all_players', description: '1.0× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_tagespfeiler_common', xpReward: 92, goldReward: 35, spriteKey: 'ENEMY_SCHLUSSSTEINWAECHTER',
+  },
+  gewoelbefledermaus: {
+    id: 'gewoelbefledermaus', name: 'Gewölbefledermaus', role: 'ranged',
+    hp: 455, atk: 63, def: 12, spd: 1.4, critChance: 0.25, critMult: 1.9,
+    skills: [
+      { id: 'kopfueber', name: 'Kopfüber', cooldown: 3, effectType: 'damage', power: 2.1, target: 'player', description: '2.1× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_tagespfeiler_common', xpReward: 89, goldReward: 34, spriteKey: 'ENEMY_GEWOELBEFLEDERMAUS',
+  },
+  fugenspinne: {
+    id: 'fugenspinne', name: 'Fugenspinne', role: 'melee',
+    hp: 320, atk: 53, def: 9, spd: 1.6, critChance: 0.2, critMult: 1.8,
+    skills: [
+      { id: 'fugenbiss', name: 'Fugenbiss', cooldown: 2, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
+    ],
+    lootTableId: 'loot_tagespfeiler_common', xpReward: 84, goldReward: 29, spriteKey: 'ENEMY_GIANT_SPIDER',
+  },
+  moertelgeist: {
+    id: 'moertelgeist', name: 'Mörtelgeist', role: 'support',
+    hp: 335, atk: 43, def: 10, spd: 1.3, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'kalkstaub', name: 'Kalkstaub', cooldown: 3, effectType: 'aoe', power: 0.85, target: 'all_players', description: '0.85× Schaden auf alle' },
+      { id: 'ausfugen', name: 'Ausfugen', cooldown: 4, effectType: 'heal', power: 150, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 150' },
+    ],
+    lootTableId: 'loot_tagespfeiler_rare', xpReward: 85, goldReward: 32, spriteKey: 'ENEMY_MOERTELGEIST',
+  },
+  himmelsriss: {
+    id: 'himmelsriss', name: 'Himmelsriss', role: 'ranged',
+    hp: 300, atk: 51, def: 8, spd: 1.5, critChance: 0.15, critMult: 1.7,
+    skills: [
+      { id: 'durchzug', name: 'Durchzug', cooldown: 3, effectType: 'aoe', power: 1.1, target: 'all_players', description: '1.1× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_tagespfeiler_common', xpReward: 80, goldReward: 28, spriteKey: 'ENEMY_HIMMELSRISS',
+  },
+  steinmetz_vorige: {
+    id: 'steinmetz_vorige', name: 'Steinmetz der Vorigen', role: 'melee',
+    hp: 380, atk: 52, def: 13, spd: 1.1, critChance: 0.12, critMult: 1.7,
+    skills: [
+      { id: 'meissel', name: 'Meissel', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
+      { id: 'nachmessen', name: 'Nachmessen', cooldown: 4, effectType: 'buff', power: 9, target: 'self', description: '+9 ATK für 3 Runden' },
+    ],
+    lootTableId: 'loot_tagespfeiler_rare', xpReward: 88, goldReward: 31, spriteKey: 'ENEMY_ECHO_STEINMETZ',
+  },
+  boss_orm: {
+    id: 'boss_orm', name: 'Orm, der Träger des Tages', role: 'boss',
+    hp: 5700, atk: 74, def: 22, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.85, spdMult: 1.3 },
+    skills: [
+      { id: 'tageslast', name: 'Tageslast', cooldown: 3, effectType: 'aoe', power: 1.4, target: 'all_players', description: '1.4× Schaden auf alle' },
+      { id: 'schulterstoss', name: 'Schulterstoss', cooldown: 4, effectType: 'damage', power: 2.8, target: 'player', description: '2.8× Schaden auf 1 Ziel' },
+      { id: 'nachgreifen', name: 'Nachgreifen', cooldown: 5, effectType: 'buff', power: 10, runden: 4, target: 'self', description: '+10 ATK für 4 Runden' },
+    ],
+    lootTableId: 'loot_boss_orm', xpReward: 730, goldReward: 360, spriteKey: 'BOSS_ORM',
+  },
+
   // ── Ocean Enemies ──
   deep_sea_angler: {
     id: 'deep_sea_angler',
@@ -1353,6 +1491,80 @@ export const ENEMY_LORE: Record<string, { lore: string; route: string; skillDesc
     route: 'morgentor',
     lore: 'Sunna öffnet das Tor, durch das der Tag kommt, und schliesst es hinter ihm, jeden Morgen, seit dem ersten. Sie hat noch nie zu spät geöffnet und noch nie jemanden vorgelassen. Wer die Sonnenuhr anfasst, bekommt beides zu spüren.',
     skillDescriptions: { erstes_licht: 'Das erste Licht trifft alle (1.3x AOE)', sonnenschwert: 'Ein Strahl wie ein Schwert, auf einen (2.7x Schaden)', morgentau: 'Trinkt den Morgentau, heilt 260' },
+  },
+
+  // ── Die Erste Stadt ──
+  schildtraeger_vorige: {
+    route: 'erste_stadt',
+    lore: 'Er stand vorne, als die Vorigen hinaufgingen, und er steht immer noch vorne. Hinter ihm ist niemand mehr, aber das hat ihm keiner gesagt. Auf seinem Schild ist ein Löwe, derselbe wie auf Broms altem.',
+    skillDescriptions: { schildstoss: 'Der Schild geht einmal rundum (1.0x AOE)' },
+  },
+  bogenschuetzin_vorige: {
+    route: 'erste_stadt',
+    lore: 'Sie hat dieselbe Haltung wie Lia, nur tausend Jahre länger geübt. Sie trifft, und sie macht danach keine Bemerkung dazu. Das ist der Unterschied.',
+    skillDescriptions: { gezielter_schuss: 'Ein Pfeil, ein Ziel (2.1x Schaden)' },
+  },
+  messerstecher_vorige: {
+    route: 'erste_stadt',
+    lore: 'Ein Echo, das schneller ist als sein Schatten. Er wetzt die Klinge zwischen zwei Stichen, aus Gewohnheit; danach ist sie drei Runden lang schärfer, dann wetzt er wieder.',
+    skillDescriptions: { kehlschnitt: 'Kurz und gezielt (1.6x Schaden)', klinge_wetzen: 'Wetzt die Klinge (+7 ATK, 3 Runden)' },
+  },
+  stadtheilerin_vorige: {
+    route: 'erste_stadt',
+    lore: 'Sie hat die Vorigen zusammengeflickt, bis keiner mehr da war, und flickt jetzt die Echos. Sie heilt, wer am schlechtesten aussieht, und das sind meistens nicht wir.',
+    skillDescriptions: { russwolke: 'Russ in alle Augen (0.8x AOE)', wundsalbe: 'Salbt den Schwächsten gesund, heilt 135' },
+  },
+  wachfeuerwicht: {
+    route: 'erste_stadt',
+    lore: 'Ein Funke, der sich zu lange nicht hinsetzen durfte. Er hütet die Wachfeuer der Stadt und wirft, wenn ihm jemand zu nahe kommt, mit allem, was brennt. Seit kurzem hütet er eins mehr als früher.',
+    skillDescriptions: { funkenregen: 'Funken auf alle (1.0x AOE)' },
+  },
+  steingeselle: {
+    route: 'erste_stadt',
+    lore: 'Alrunas Geselle, aus Tagstein gehauen, damit er nie müde wird. Er mauert Lücken zu, auch solche, die ihr gerade in ihn geschlagen habt, und schlägt danach fester zu, als hätte er sich damit Mut gemacht.',
+    skillDescriptions: { mauerschlag: 'Eine Wand, die zurückschlägt (1.8x Schaden)', nachmauern: 'Mauert die Lücke zu, niemand kommt dazu (+8 ATK, 4 Runden)' },
+  },
+  boss_alruna: {
+    route: 'erste_stadt',
+    lore: 'Die erste Gildenmeisterin. Sie hat Magic City gegründet, den Saal gebaut und das Schild über dem Tor geschrieben, und sie hat eine Liste geführt, was ihre Gilde falsch gemacht hat. Sie wartet seit tausend Jahren auf eine Gilde, an der sie die Liste prüfen kann.',
+    skillDescriptions: { ruf_zur_wache: 'Ruft die ganze Wache (1.3x AOE)', meisterstreich: 'Ein Streich wie aus dem Lehrbuch, weil sie es geschrieben hat (2.7x Schaden)', alte_gildenregel: 'Erinnert sich an die Regeln (+10 ATK, 3 Runden)' },
+  },
+
+  // ── Die Pfeiler des Tages ──
+  schlusssteinwaechter: {
+    route: 'tagespfeiler',
+    lore: 'Er war der Schlussstein eines Pfeilers, bevor er Beine bekam. Seitdem bewacht er die Stelle, an der er fehlt, und lässt niemanden hin, der nicht wie ein Schlussstein aussieht.',
+    skillDescriptions: { gewoelbeschlag: 'Das Gewölbe schlägt zurück (1.0x AOE)' },
+  },
+  gewoelbefledermaus: {
+    route: 'tagespfeiler',
+    lore: 'Sie hängt kopfüber unter dem Tag und hält jeden, der einen Pfeiler anfasst, für jemanden, der ihr Zuhause abreisst. Meistens hat sie recht.',
+    skillDescriptions: { kopfueber: 'Lässt sich fallen, auf einen (2.1x Schaden)' },
+  },
+  fugenspinne: {
+    route: 'tagespfeiler',
+    lore: 'Sie wohnt in den Fugen zwischen den Steinen und frisst den Mörtel, der sie hält. Dass sie damit ihr eigenes Haus abträgt, hat ihr niemand gesagt; sie würde es auch nicht glauben.',
+    skillDescriptions: { fugenbiss: 'Durch Fuge und Rüstung (1.7x Schaden)' },
+  },
+  moertelgeist: {
+    route: 'tagespfeiler',
+    lore: 'Er hat die Fugen zwischen den Steinen verfugt, bis die Steine weg waren. Jetzt verfugt er, wer gerade umfällt.',
+    skillDescriptions: { kalkstaub: 'Kalk in alle Augen (0.85x AOE)', ausfugen: 'Fugt den Schwächsten wieder zusammen, heilt 150' },
+  },
+  himmelsriss: {
+    route: 'tagespfeiler',
+    lore: 'Wo ein Pfeiler fehlt, reisst der Tag, und durch den Riss zieht es. Der Riss findet das gemütlich und will nicht geflickt werden.',
+    skillDescriptions: { durchzug: 'Es zieht, auf alle (1.1x AOE)' },
+  },
+  steinmetz_vorige: {
+    route: 'tagespfeiler',
+    lore: 'Er hat die Pfeiler herausgebrochen, Stein für Stein, für eine Stadt weiter unten, die heute Magic City heisst. Er misst noch immer nach, ob es reicht. Es reicht nie.',
+    skillDescriptions: { meissel: 'Ein Meissel, gezielt (1.8x Schaden)', nachmessen: 'Misst nach, schlägt fester (+9 ATK, 3 Runden)' },
+  },
+  boss_orm: {
+    route: 'tagespfeiler',
+    lore: 'Er trägt den Tag, wo die Vorigen Pfeiler gebrochen haben, seit tausend Jahren auf den Schultern. Er hat nie gefragt, wer ihn darum gebeten hat, aber er hat sich jeden gemerkt, der seither einen Pfeiler angefasst hat.',
+    skillDescriptions: { tageslast: 'Das Gewicht des Tages auf alle (1.4x AOE)', schulterstoss: 'Eine Schulter, die den Tag trägt (2.8x Schaden)', nachgreifen: 'Greift nach, niemand kommt dazu (+10 ATK, 4 Runden)' },
   },
 
   // ── Ocean ──

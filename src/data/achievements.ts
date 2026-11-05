@@ -9,6 +9,7 @@
  * tests/erfolgeErreichbar.test.ts.
  */
 
+import { ANBAU_AB_EBENE } from './auftragsbrett';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
 import { MAX_SCHMIEDE_STUFE } from './schmiede';
 
@@ -49,14 +50,18 @@ function erfolg(
 /** Beendete Expeditionen: Siege, Niederlagen und Rückzüge (total_expeditions zählt schon beim Start) */
 export const BEENDETE_EXPEDITIONEN = ['total_victories', 'total_defeats', 'total_retreats'];
 
-/** Sockel im Trophäensaal: einer je Boss-Dungeon der Karte, so viele Kapitel hat auch die Kette «Der Saal der Gilde» */
-export const SAAL_SOCKEL = DUNGEON_GRAPH.filter(n => ROUTE_DEFS[n.routeId]?.bossId).length;
-/** Drei Sterne je Sockel (Boss, ganzes Set, Prunkstück); «Glanz des Saals» will die Hälfte davon */
-const SAAL_STERNE = 3 * SAAL_SOCKEL;
+/** Sockel im Trophäensaal: einer je Boss-Dungeon der Karte, im Saal (bis Ebene 10) und im Anbau (ab Ebene 11) */
+const BOSS_EBENEN = DUNGEON_GRAPH.filter(n => ROUTE_DEFS[n.routeId]?.bossId).map(n => ROUTE_DEFS[n.routeId].tier);
+/** Sockel im Saal: so viele Kapitel hat die Kette «Der Saal der Gilde» (data/auftragsbrett.ts, ANBAU_AB_EBENE) */
+export const SAAL_SOCKEL = BOSS_EBENEN.filter(t => t < ANBAU_AB_EBENE).length;
+/** Sockel im Anbau des Saals */
+export const ANBAU_SOCKEL = BOSS_EBENEN.length - SAAL_SOCKEL;
+/** Drei Sterne je Sockel in Saal und Anbau (Boss, ganzes Set, Prunkstück); «Glanz des Saals» will die Hälfte davon */
+const SAAL_STERNE = 3 * BOSS_EBENEN.length;
 const SAAL_HALBER_GLANZ = Math.ceil(SAAL_STERNE / 2);
 
-/** Die sechs Gipfel-Taten (systems/GipfelTaten.ts): je Dungeon über dem Vulkankern dreimal das Risiko, Boss trotzdem tot */
-export const GIPFEL_TATEN = ['tat_hort', 'tat_archiv', 'tat_esse', 'tat_schlund', 'tat_pfand', 'tat_uhr'];
+/** Die acht Gipfel-Taten (systems/GipfelTaten.ts): je Dungeon über dem Vulkankern dreimal das Risiko, Boss trotzdem tot */
+export const GIPFEL_TATEN = ['tat_hort', 'tat_archiv', 'tat_esse', 'tat_schlund', 'tat_pfand', 'tat_uhr', 'tat_feuer', 'tat_pfeiler'];
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // ── Stadt (die Gildenstadt: Händler und vier Werkstätten, docs/GILDENSTADT.md) ──
@@ -76,6 +81,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('gildenrang_5', 'Gilde', '👑', 'Gildenmeister', 'Erreiche Gildenrang V und trage den Titel Gildenmeister.', 'gildenrang', 5),
   erfolg('zettel_10', 'Gilde', '📌', 'Fleissige Gilde', 'Erledige 10 Zettel am Auftragsbrett.', 'zettel_erledigt', 10),
   erfolg('saal_kette', 'Gilde', '🏺', 'Alle Sockel voll', 'Stelle alle Prunkstücke der Kette «Der Saal der Gilde» in den Trophäensaal.', 'saal_prunkstuecke', SAAL_SOCKEL),
+  erfolg('anbau_kette', 'Gilde', '🧱', 'Angebaut', 'Stelle auch die Prunkstücke im Anbau des Saals auf, die Kohle der Ersten und den Keil des Trägers.', 'anbau_prunkstuecke', ANBAU_SOCKEL),
   erfolg('saal_glanz', 'Gilde', '🌟', 'Glanz des Saals', `Sammle ${SAAL_HALBER_GLANZ} der ${SAAL_STERNE} Sterne im Trophäensaal.`, 'saal_sterne', SAAL_HALBER_GLANZ),
   erfolg('rangliste_pokal', 'Gilde', '🥉', 'Aufs Treppchen', 'Gewinne einen Pokal in der Wochenwertung der Rangliste (Platz 1 bis 3).', 'rangliste_pokale', 1),
   erfolg('gipfel_1', 'Gilde', '🏔️', 'Gipfelstürmer', 'Führe die Gipfel-Rangliste an, vor allen Rivalen-Gilden.', 'gipfel_spitze', 1),
@@ -105,8 +111,11 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('gipfel_schlund', 'Gipfel-Taten', '⛏️', 'Sternenmetzger', 'Aus allen drei gefangenen Sternen Sternenstahl geschlagen und Nyxar trotzdem besiegt. Die Bäckerin findet drei Sterne verdächtig blass.', 'tat_schlund', 1),
   erfolg('gipfel_pfand', 'Gipfel-Taten', '✍️', 'Pfandleiher des Jahres', 'Alle drei Pfandzettel unterschrieben und Argentis trotzdem besiegt. Der Mondvogt prüft noch, wie.', 'tat_pfand', 1),
   erfolg('gipfel_uhr', 'Gipfel-Taten', '🕛', 'Zeitumstellung', 'Die Sonnenuhr dreimal vorgestellt und Sunna trotzdem besiegt. Sie hatte schon gefrühstückt und war entsprechend gelaunt.', 'tat_uhr', 1),
-  erfolg('gipfel_alle', 'Gipfel-Taten', '🐲', 'Hat alles', 'Alle sechs Gipfel-Taten vollbracht. Ignarax hatte alles. Jetzt habt ihr es.', GIPFEL_TATEN, GIPFEL_TATEN.length),
+  erfolg('gipfel_feuer', 'Gipfel-Taten', '🏮', 'Mit blossen Händen', 'Dreimal ins Wachfeuer gegriffen und Alruna trotzdem besiegt. Sie hat es auf ihrer Liste abgehakt, unter «Was wir auch gemacht haben».', 'tat_feuer', 1),
+  erfolg('gipfel_pfeiler', 'Gipfel-Taten', '🏛️', 'Abrissunternehmen', 'Alle drei Pfeiler herausgebrochen und Orm trotzdem besiegt. Alruna hat es auf ihre Liste geschrieben, ganz oben, mit einem neuen Stift.', 'tat_pfeiler', 1),
+  erfolg('gipfel_alle', 'Gipfel-Taten', '🐲', 'Hat alles', 'Alle acht Gipfel-Taten vollbracht. Ignarax hatte alles. Jetzt habt ihr es, und Alruna hat es aufgeschrieben.', GIPFEL_TATEN, GIPFEL_TATEN.length),
   erfolg('gipfel_kleingedrucktes', 'Gipfel-Taten', '🧾', 'Kleingedrucktes', 'Alle drei Pfandzettel unterschrieben und Argentis nicht besiegt. Das Pfand behält der Mondvogt, die Quittung dürft ihr behalten.', 'tat_kleingedrucktes', 1),
+  erfolg('gipfel_einsturz', 'Gipfel-Taten', '🧱', 'Einsturzgefahr', 'Alle drei Pfeiler herausgebrochen und Orm nicht besiegt. Er trägt jetzt etwas mehr. Er hat es sich gemerkt.', 'tat_einsturz', 1),
 
   // ── Sammeln ──
   erfolg('ganzes_set', 'Sammeln', '🧩', 'Komplett', 'Ein Held trägt alle drei Teile eines Dungeon-Sets.', 'ganze_sets', 1),

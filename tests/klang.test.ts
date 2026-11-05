@@ -33,7 +33,7 @@ describe('Klang-Zuordnung', () => {
   test('Musik je Biom wie in docs/KLANG.md', () => {
     const tabelle = Object.fromEntries(Object.values(ROUTE_DEFS).map(r => [biomFuerRoute(r), musikFuerRoute(r)]));
     expect(tabelle).toEqual({
-      Wald: 'ambient_forest', Himmel: 'ambient_forest', Sterne: 'ambient_forest', Mond: 'ambient_forest', Belagerung: 'ambient_forest',
+      Wald: 'ambient_forest', Himmel: 'ambient_forest', Sterne: 'ambient_forest', Mond: 'ambient_forest', Taglicht: 'ambient_forest', Belagerung: 'ambient_forest',
       Sumpf: 'ambient_swamp', Unterwasser: 'ambient_swamp', Ruinen: 'ambient_swamp',
       Höhle: 'Ecambient_cave', Vulkan: 'Ecambient_cave', Frost: 'Ecambient_cave', Drachengipfel: 'Ecambient_cave',
     });
@@ -45,6 +45,8 @@ describe('Klang-Zuordnung', () => {
     expect(biomFuerRoute(ROUTE_DEFS.cave_deep)).toBe('Höhle');
     expect(biomFuerRoute(ROUTE_DEFS.ocean_depths)).toBe('Unterwasser');
     expect(biomFuerRoute(ROUTE_DEFS.drachenhort)).toBe('Drachengipfel');
+    expect(biomFuerRoute(ROUTE_DEFS.erste_stadt)).toBe('Taglicht');
+    expect(biomFuerRoute(ROUTE_DEFS.tagespfeiler)).toBe('Taglicht');
   });
 
   test('Bildschirme: Stadtmusik, Kampf ändert nichts', () => {

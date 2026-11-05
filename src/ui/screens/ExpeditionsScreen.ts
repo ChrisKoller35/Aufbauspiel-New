@@ -50,7 +50,7 @@ function getRouteImageStyle(routeId: string): string {
 }
 
 const BIOM_KLASSE: Record<Biom, string> = {
-  Drachengipfel: 'tag-gipfel', Himmel: 'tag-himmel', Sterne: 'tag-sterne', Mond: 'tag-mond',
+  Drachengipfel: 'tag-gipfel', Himmel: 'tag-himmel', Sterne: 'tag-sterne', Mond: 'tag-mond', Taglicht: 'tag-licht',
   Unterwasser: 'tag-unterwasser', Belagerung: 'tag-belagerung', Vulkan: 'tag-vulkan', Ruinen: 'tag-ruinen',
   Sumpf: 'tag-sumpf', Frost: 'tag-frost', Höhle: 'tag-hoehle', Wald: 'tag-wald',
 };

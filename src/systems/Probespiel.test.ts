@@ -5,6 +5,7 @@ import { ProbeStufe, istProbespiel, probespielNeu, probespielStufe, richteProbes
 import { SaveSystem, nutzeProbespiel } from './SaveSystem';
 import { istSchmiedbar, schmieden, schmiedeStufe } from './Schmiede';
 import { ITEM_DEFS } from '../data/items';
+import { ENEMY_DEFS } from '../data/enemies';
 import { MUSTER_SETS, MUSTER_TEAMS } from '../data/musterteams';
 import { ROUTE_DEFS, isRouteAvailable, getRouteLockReasons } from '../data/routes';
 import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
@@ -47,6 +48,10 @@ describe('Probespiel', () => {
     expect(probespielNeu('?probe=sterne')).toBe(true);
     expect(probespielNeu('?probe=mond')).toBe(true);
     expect(probespielNeu('?probe=morgen')).toBe(true);
+    expect(probespielNeu('?probe=stadt')).toBe(true);
+    expect(probespielNeu('?probe=pfeiler')).toBe(true);
+    expect(probespielStufe('?probe=stadt')).toBe('stadt');
+    expect(probespielStufe('?probe=pfeiler')).toBe('pfeiler');
     expect(probespielStufe('?probe=sterne')).toBe('sterne');
     expect(probespielStufe('?probe=mond')).toBe('mond');
     expect(probespielStufe('?probe=morgen')).toBe('morgen');
@@ -145,6 +150,40 @@ describe('Probespiel', () => {
       expect(schmiedeStufe(state, itemId), itemId).toBe(5);
     }
     for (const [itemId, menge] of Object.entries(state.globalStock)) expect(menge, itemId).toBeGreaterThanOrEqual(0);
+  });
+
+  it('?probe=stadt: Sina in Sunnas Morgengabe auf +5 vor der Ersten Stadt, mit Tagstein für Alrunas Wachfeuer', () => {
+    const state = probespiel('stadt');
+    for (const f of state.fighters) expect(f.gear).toEqual(MUSTER_SETS.morgen5.gear[f.name]);
+    expect(state.guildStats.bossesDefeatedIds).toContain('boss_sunna');
+    expect(state.guildStats.bossesDefeatedIds).not.toContain('boss_alruna');
+    expect(isRouteAvailable(ROUTE_DEFS.erste_stadt, state)).toBe(true);
+    expect(getRouteLockReasons(ROUTE_DEFS.tagespfeiler, state)).toEqual([`Besiege: ${ENEMY_DEFS.boss_alruna.name}`]);
+    const feuer = setTeilIds(setFuerRoute('erste_stadt')!);
+    for (const id of feuer) state.globalStock[id] = 1;
+    for (const itemId of feuer) {
+      while (schmieden(state, itemId) !== null);
+      expect(schmiedeStufe(state, itemId), itemId).toBe(5);
+    }
+    for (const [itemId, menge] of Object.entries(state.globalStock)) expect(menge, itemId).toBeGreaterThanOrEqual(0);
+  });
+
+  it('?probe=pfeiler: Grimm in Alrunas Wachfeuer auf +5 vor den Pfeilern, Alrunas Kelle liegt im Lager', () => {
+    const state = probespiel('pfeiler');
+    for (const f of state.fighters) expect(f.gear).toEqual(MUSTER_SETS.stadt5.gear[f.name]);
+    expect(state.fighters.find(f => f.name === 'Grimm')!.gear.mainHand).toBe('set_wachfeuer_hammer');
+    expect(state.guildStats.bossesDefeatedIds).toContain('boss_alruna');
+    expect(isRouteAvailable(ROUTE_DEFS.tagespfeiler, state)).toBe(true);
+    // Die Kelle ist da, aber nicht angelegt: Brom behält den Amtsstab, der Vergleich steht im Lager
+    expect(state.globalStock.alrunas_kelle).toBe(1);
+    expect(state.fighters.some(f => Object.values(f.gear).includes('alrunas_kelle'))).toBe(false);
+    expect(state.fighters.find(f => f.name === 'Brom')!.gear.mainHand).toBe('amtsstab_des_mondvogts');
+    const tagwerk = setTeilIds(setFuerRoute('tagespfeiler')!);
+    for (const id of tagwerk) state.globalStock[id] = 1;
+    for (const itemId of tagwerk) {
+      while (schmieden(state, itemId) !== null);
+      expect(schmiedeStufe(state, itemId), itemId).toBe(5);
+    }
   });
 
   it('?probe=morgen: Brom im Pfand des Mondvogts mit dem Amtsstab auf +5 vor dem offenen Morgentor, mit Mondsilber für Sunnas Morgengabe', () => {

@@ -112,7 +112,7 @@ describe('Das System schaut zu: der Erfolge-Bildschirm verrät nichts', () => {
     const state = createNewGameState();
     const html = inhaltHtml(state, []);
     expect(html).toContain(`🏅 Freigeschaltet: 0/${ACHIEVEMENT_DEFS.length}`);
-    expect(ACHIEVEMENT_DEFS.length).toBe(51);
+    expect(ACHIEVEMENT_DEFS.length).toBe(55);
     expect(html).toContain('👁️ Das System verschweigt noch 6 Erfolge.');
     expect(html).toContain('Das System schaut zu<span class="erf-gruppe-zahl">0/6</span>');
     expect(html.match(/ach-versteckt/g)).toHaveLength(6);

@@ -37,8 +37,15 @@ export interface AuftragsVorlage {
 /** Unter Wasser, in der Glut und über den Wolken: Dort zieht keine Karawane durch, und dort gräbt niemand */
 export const FERNE_DUNGEONS = [
   'ocean_depths', 'ocean_abyss', 'volcano_core', 'magma_caverns', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund',
-  'mondhof', 'morgentor',
+  'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler',
 ];
+
+/**
+ * Dungeons ohne Zettel «ohne Gefallene»: Dort fällt fast in jedem Sieg ein Held, auch mit der besten Ausrüstung
+ * (Musterlauf am 5.11.2026, 400 Läufe vorsichtig: Erste Stadt mit Sunnas Morgengabe oder Alrunas Wachfeuer kein
+ * makelloser Sieg, mit «Was den Tag trug» 18; Pfeiler des Tages keiner). Kommt ein Dungeon dazu, nachmessen.
+ */
+export const OHNE_MAKELLOS = ['erste_stadt', 'tagespfeiler'];
 
 /** Die Zettel für Dungeons; Lieferungen stehen bei ihrer Ware (LIEFER_WAREN) */
 export const AUFTRAGS_VORLAGEN: AuftragsVorlage[] = [
@@ -197,15 +204,27 @@ export const SPLITTER_MENGE = 3;
 
 // ── Die Kette: Der Saal der Gilde ──
 
+/**
+ * Was ein Kapitel verlangt: wie die Zettel 'sieg', 'makellos' (kein Held fällt, auch nicht für kurz) und 'set';
+ * dazu 'heimkehr': bezwingen, und am Ende stehen alle (wer am Feuer oder durch «Wiedergeburt» wieder aufstand,
+ * zählt mit). Makellos ist ab Ebene 11 kaum zu schaffen (OHNE_MAKELLOS), daher dort 'heimkehr'.
+ */
+export type KapitelArt = 'sieg' | 'makellos' | 'set' | 'heimkehr';
+
 export interface SaalKapitel {
   /** Der Boss-Dungeon */
   routeId: string;
-  art: 'sieg' | 'makellos' | 'set';
+  art: KapitelArt;
   ziel: number;
   /** Was auf den Sockel kommt */
   prunkstueck: string;
   /** Das alte Messingschild vor dem Sockel */
   schild: string;
+  /**
+   * Das Schild vor dem ersten Sieg im Dungeon, wenn «schild» vorwegnimmt, was erst der Sieg erzählt (wie vorSieg):
+   * lesbar ist nur der Anfang, «warum» sagt, was den Rest verdeckt
+   */
+  schildVorSieg?: { lesbar: string; warum: string };
   text: string;
   /** Text, solange die Gilde den Dungeon noch nie bezwungen hat (wenn «text» schon den ersten Sieg kennt) */
   vorSieg?: string;
@@ -221,6 +240,27 @@ export const SAAL_SCHLUSS = 'Alle Sockel sind voll. Als das letzte Prunkstück a
 
 /** Siegel für das letzte Prunkstück, zusätzlich zur Belohnung des Kapitels */
 export const SAAL_SCHLUSS_SIEGEL = 15;
+
+// ── Der Anbau des Saals (ab Ebene 11) ──
+// Die Bosse über dem Morgentor bekommen keinen Sockel im alten Saal, sondern im Anbau: eine eigene Folge der
+// Kette mit eigener Einleitung und eigenem Schluss. So zählt der Saal seine 16 Sockel weiter, und die
+// Schluss-Siegel des Saals kommen nicht ein zweites Mal, wenn oben Dungeons dazukommen. Kommt ein Dungeon
+// über Ebene 12 dazu, braucht es einen neuen Teil der Kette, sonst gäbe es die Siegel des Anbaus zweimal.
+
+/** Ab dieser Ebene steht der Sockel eines Bosses im Anbau */
+export const ANBAU_AB_EBENE = 11;
+
+export const ANBAU_EINLEITUNG = 'Neben der Platte «Für die Nächsten» war noch Platz, und eines Morgens standen dort {anzahl} neue Sockel '
+  + 'aus hellem Stein, den es in Magic City nicht gibt. Die Schilder sind in derselben Schrift wie die Platte, nur frischer, und das erste '
+  + 'ist verrusst, als hätte es lange neben einem Feuer gestanden. Jorinde sagt, jemand habe angebaut. Ich sage, jemand habe uns '
+  + 'zugetraut, dass wir weiter hinaufkommen als bis zum Morgentor.';
+
+export const ANBAU_SCHLUSS = 'Auch der Anbau ist voll. Alruna ist heruntergekommen, hat sich ihre Kohle und Orms Keil angesehen und mit '
+  + 'Kreide ein Wort unter die Platte «Für die Nächsten» geschrieben: «Besser.» Jorinde hat die Kreide mit Firnis überzogen, damit es '
+  + 'niemand wegwischt, auch Alruna nicht. Hinter dem Anbau ist noch Platz.';
+
+/** Siegel für das letzte Prunkstück im Anbau */
+export const ANBAU_SCHLUSS_SIEGEL = 10;
 
 /** Ein Kapitel je Boss; die Reihenfolge der Kette kommt von der Dungeon-Karte (von unten nach oben) */
 export const SAAL_KAPITEL: SaalKapitel[] = [
@@ -342,5 +382,29 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
       + 'angelaufen ist; Jorinde meint, Messing laufe nicht an, wenn jeden Morgen die Sonne darauf fällt, aber hier fällt keine. '
       + 'In jedes Teil ihrer Morgengabe hat Sunna den ersten Strahl des Tages gefasst, an dem es gemacht wurde. Bringt ein Teil heim: '
       + 'Das Teil bleibt euch, der Strahl kommt auf den Sockel, und dann ist es in diesem Saal zum ersten Mal hell.',
+  },
+
+  // ── Der Anbau (ab Ebene 11) ──
+  {
+    routeId: 'erste_stadt', art: 'heimkehr', ziel: 1, prunkstueck: 'Eine Kohle aus dem ersten Wachfeuer',
+    schild: 'Die Erste. Sie hat diesen Saal gebaut.',
+    // Wer den Saal gebaut hat, fragt Jorinde seit der Einleitung des Saals; die Antwort gibt erst die Erste Stadt
+    schildVorSieg: { lesbar: 'Die Erste. Sie hat …', warum: 'Der Rest ist verrusst.' },
+    text: 'Der erste Sockel im Anbau meint Alruna, und das Schild hat sie selbst geschrieben. Auf den Sockel gehört eine Kohle aus '
+      + 'ihrem ersten Wachfeuer. Sie gibt sie nur einer Gilde, die alle wieder heimbringt; ihre eigene kam nicht heim, und das steht '
+      + 'auf ihrer Liste ganz oben. Jorinde hat gefragt, ob zählt, wer am Feuer wieder aufsteht. Alruna sagt, genau dafür brennen '
+      + 'die Feuer, auch das, das man mitnehmen kann.',
+    vorSieg: 'Der erste Sockel im Anbau hat ein Schild in der Schrift der Platte «Für die Nächsten», und es meint jemanden in der '
+      + 'Stadt hinter dem Morgentor, die Jorinde durchs Fernrohr gesehen hat. Auf den Sockel gehört eine Kohle aus dem ersten Wachfeuer '
+      + 'dort oben. Wer sie holt, muss alle wieder heimbringen; wer unterwegs fällt und am Feuer wieder aufsteht, zählt mit.',
+  },
+  {
+    routeId: 'tagespfeiler', art: 'sieg', ziel: 2, prunkstueck: 'Ein Keil aus Tagstein, mit Kreide gezählt',
+    schild: 'Der Träger. Er hat nie gefragt, wer ihn darum bat.',
+    text: 'Der zweite Sockel im Anbau meint Orm. Alruna sagt, das Schild sei nicht von ihr, aber die Schrift ist ihre, nur jünger. '
+      + 'Auf den Sockel gehört ein Keil aus Tagstein, wie man ihn unter einen Pfeiler schlägt. Orm gibt einen her, wenn wir zweimal '
+      + 'oben waren und er zweimal liegen geblieben ist; einmal, sagt er, könne Zufall sein.',
+    vorSieg: 'Der zweite Sockel im Anbau meint jemanden über der Ersten Stadt, der etwas trägt, das Alruna nicht beim Namen nennen will. '
+      + 'Auf den Sockel gehört ein Keil aus Tagstein, und wer ihn holt, muss zweimal hinauf.',
   },
 ];

@@ -2,8 +2,9 @@
 // Der Saal hinter dem Gildenhaus: ein Sockel je Boss, von unten nach oben wie
 // auf der Dungeon-Karte. Jede Trophäe hat drei Sterne: Boss bezwungen, Set des
 // Dungeons komplett, Prunkstück aus der Kette «Der Saal der Gilde» (Auftragsbrett).
-// Dazu die Sets aller Dungeons, die Pokale der Rangliste und das Gildenbuch.
-// Der Saal zeigt nur, er verändert keine Kampfwerte.
+// Die Bosse ab Ebene 11 stehen im Anbau; den zeigt der Saal erst, wenn er dasteht
+// (saalAnsicht). Dazu die Sets aller Dungeons, die Pokale der Rangliste und das
+// Gildenbuch. Der Saal zeigt nur, er verändert keine Kampfwerte.
 // ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
@@ -14,7 +15,7 @@ import { ENEMY_DEFS } from '../data/enemies';
 import { DungeonSetDef, setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { bezwungeneDungeons } from './Bezwungen';
 import { gesammelteTeile } from './DungeonSets';
-import { brettStand, saalKapitel } from './Auftragsbrett';
+import { KettenTeil, alleKapitel, brettStand, kapitelDesTeils, kapitelSchild, kettenTeil } from './Auftragsbrett';
 import { ranglisteKurz } from './Rangliste';
 
 /**
@@ -63,28 +64,65 @@ export interface BossTrophaee {
   set: DungeonSetDef | undefined;
   setTeile: number;
   prunkstueck: string;
+  /** Das Messingschild, so weit es lesbar ist (kapitelSchild), und was den Rest verdeckt */
   schild: string;
+  schildWarum?: string;
+  /** Saal (bis Ebene 10) oder Anbau */
+  teil: KettenTeil;
 }
 
-/** Die Sockel des Saals, von unten nach oben wie die Kette */
+/** Die Sockel des Saals und seines Anbaus, von unten nach oben wie die Kette */
 export function bossTrophaeen(state: GameState, jetzt: number): BossTrophaee[] {
   const stand = trophaeenStand(state);
   const brett = brettStand(state, jetzt);
   const merker = bezwungeneDungeons(state);
-  return saalKapitel().map(k => {
+  return alleKapitel().map(k => {
     const route = ROUTE_DEFS[k.routeId];
     const boss = ENEMY_DEFS[route.bossId ?? ''];
     const set = setFuerRoute(k.routeId);
     const setTeile = set ? gesammelteTeile(state, set).length : 0;
+    const bezwungen = k.routeId in merker || (stand.siege[k.routeId] ?? 0) > 0;
+    const schild = kapitelSchild(state, k, bezwungen);
     return {
       routeId: k.routeId, boss: boss?.name ?? route.bossId ?? '', dungeon: route.name, ebene: route.tier,
       spriteKey: boss?.spriteKey ?? '', siege: stand.siege[k.routeId] ?? 0,
-      bezwungen: k.routeId in merker || (stand.siege[k.routeId] ?? 0) > 0,
+      bezwungen,
       setKomplett: !!set && setTeile >= setTeilIds(set).length,
       prunk: brett.kette.fertig.includes(k.routeId),
-      set, setTeile, prunkstueck: k.prunkstueck, schild: k.schild,
+      set, setTeile, prunkstueck: k.prunkstueck, schild: schild.text,
+      ...(schild.warum ? { schildWarum: schild.warum } : {}),
+      teil: kettenTeil(k),
     };
   });
+}
+
+export interface SaalAnsicht {
+  /** Die 16 Sockel des Saals */
+  saal: BossTrophaee[];
+  /** Die Sockel des Anbaus; leer, solange er nicht dasteht */
+  anbau: BossTrophaee[];
+  /** Das letzte Prunkstück des Saals liegt (Ottokars Schluss mit der Platte «Für die Nächsten») */
+  saalVoll: boolean;
+  anbauVoll: boolean;
+  /** Glanz der Sockel, die zu sehen sind */
+  glanz: { sterne: number; max: number };
+}
+
+/**
+ * Was der Trophäensaal zeigt. Der Anbau steht erst, wenn der Saal voll ist (so erzählt es die Kette), oder schon
+ * früher, sobald einer seiner Sockel einen Stern hat (ein Sieg dort oben): Eine verdiente Trophäe bleibt nie
+ * unsichtbar. Darum zählt der Glanz der sichtbaren Sockel dieselben Sterne wie der aller Sockel (saalSterne).
+ */
+export function saalAnsicht(state: GameState, jetzt: number): SaalAnsicht {
+  const alle = bossTrophaeen(state, jetzt);
+  const fertig = brettStand(state, jetzt).kette.fertig;
+  const voll = (teil: KettenTeil): boolean => kapitelDesTeils(teil).every(k => fertig.includes(k.routeId));
+  const saal = alle.filter(t => t.teil === 'saal');
+  const anbauSockel = alle.filter(t => t.teil === 'anbau');
+  const saalVoll = voll('saal');
+  const anbauDa = saalVoll || anbauSockel.some(t => t.bezwungen || t.setKomplett || t.prunk);
+  const anbau = anbauDa ? anbauSockel : [];
+  return { saal, anbau, saalVoll, anbauVoll: anbau.length > 0 && voll('anbau'), glanz: saalGlanz([...saal, ...anbau]) };
 }
 
 /** Glanz des Saals: gesammelte Sterne aller Sockel */

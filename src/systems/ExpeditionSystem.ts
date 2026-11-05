@@ -363,6 +363,18 @@ export class ExpeditionSystem {
   private applyEncounterChoice(run: ExpeditionRun, choice: EncounterChoice): void {
     const aliveParty = run.party.filter(u => u.hp > 0);
 
+    // Wachfeuer: Gefallene stehen auf, bevor die Option heilt (die Heilung trifft nur, wer schon stand)
+    if (choice.wecken) {
+      const gefallen = run.party.filter(u => u.hp <= 0);
+      for (const unit of gefallen) {
+        unit.hp = Math.max(1, Math.floor(unit.maxHp * choice.wecken / 100));
+        unit.geweckt = (unit.geweckt ?? 0) + 1;
+      }
+      if (gefallen.length > 0) {
+        run.combatLog.push(`>> ${choice.label}: ${gefallen.map(u => u.name).join(', ')} ${gefallen.length === 1 ? 'steht' : 'stehen'} mit ${choice.wecken}% HP wieder auf.`);
+      }
+    }
+
     switch (choice.effect) {
       case 'heal': {
         for (const unit of aliveParty) {
@@ -448,7 +460,10 @@ export class ExpeditionSystem {
     if (choice.bossWutFrueher) {
       run.bossWutFrueher = (run.bossWutFrueher ?? 0) + choice.bossWutFrueher;
       const wut = bossWut(ROUTE_DEFS[run.routeId]?.bossId ?? undefined);
-      run.combatLog.push(`>> Das hat seinen Preis: ${this.bossKurzname(run.routeId, 'Der Boss')} wird ab Runde ${wutAbRunde(wut, run)} wütend.`);
+      const boss = this.bossKurzname(run.routeId, 'Der Boss');
+      run.combatLog.push(choice.bossWutFrueher > 0
+        ? `>> Das hat seinen Preis: ${boss} wird ab Runde ${wutAbRunde(wut, run)} wütend.`
+        : `>> Ihr gewinnt Zeit: ${boss} wird erst ab Runde ${wutAbRunde(wut, run)} wütend.`);
     }
 
     if (choice.gier) this.hortGierWaechst(run, choice.gier);
@@ -827,7 +842,7 @@ export class ExpeditionSystem {
       }
       case 'buff':
       case 'summon': {
-        const rounds = skill.effectType === 'summon' ? 4 : 3;
+        const rounds = skill.runden ?? (skill.effectType === 'summon' ? 4 : 3);
         unit.atk += skill.power;
         unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: rounds });
         result = `${unit.name} wirkt ${skill.name} → +${skill.power} ATK für ${rounds} Runden!`;

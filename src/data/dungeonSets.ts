@@ -58,26 +58,27 @@ export interface DungeonSetDef {
 // Seelenbrecher, Drachenfürstplatte, Aetherkristall-Herz …), damit ein Set-Teil nie ein
 // Rückschritt ist. Die Set-Boni kommen obendrauf und machen den Unterschied.
 // Ebene 7 und 8 (Sternenschmiede, Sternenschlund) setzen die Reihen im selben Schritt fort,
-// Ebene 9 und 10 (Mondhof, Morgentor) ebenso. Ein Dungeon auf Ebene 11 braucht je eine Zahl mehr in jeder Reihe.
+// Ebene 9 und 10 (Mondhof, Morgentor) ebenso, Ebene 11 und 12 (Erste Stadt, Pfeiler des Tages) auch.
+// Ein Dungeon auf Ebene 13 braucht je eine Zahl mehr in jeder Reihe.
 
 /** Die höchste Ebene, für die es Werte gibt */
-export const HOECHSTE_EBENE = 10;
+export const HOECHSTE_EBENE = 12;
 
-type Reihe = [number, number, number, number, number, number, number, number, number, number];
+type Reihe = [number, number, number, number, number, number, number, number, number, number, number, number];
 
 const ART_WERTE: Record<SetTeilArt, Partial<Record<'atk' | 'def' | 'hp' | 'spd' | 'critChance', Reihe>>> = {
-  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18, 20, 22], def: [0, 0, 0, 2, 2, 3, 3, 4, 4, 5], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14, 0.15, 0.16] },
-  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17, 19, 21], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22] },
-  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25, 28, 31], hp: [4, 6, 10, 15, 20, 25, 30, 35, 40, 45], def: [0, 1, 2, 3, 3, 4, 5, 6, 7, 8] },
-  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17, 19, 21], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3] },
-  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15, 17, 19], hp: [5, 8, 12, 18, 24, 30, 36, 42, 48, 54], def: [0, 0, 2, 3, 4, 5, 6, 7, 8, 9], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14] },
-  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20, 22, 24], hp: [2, 4, 10, 15, 26, 30, 35, 40, 45, 50], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20, 22, 24], hp: [4, 8, 15, 20, 26, 32, 38, 44, 50, 56], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15, 17, 19], hp: [5, 7, 12, 14, 18, 22, 26, 30, 34, 38], atk: [0, 1, 1, 2, 3, 4, 5, 6, 7, 8], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22] },
-  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44, 50, 56], atk: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22] },
-  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7, 8, 9], def: [0, 1, 2, 2, 3, 4, 5, 5, 6, 6], hp: [3, 4, 5, 12, 16, 20, 24, 28, 32, 36], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12, 0.12, 0.14] },
-  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8, 9, 10], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18, 0.2, 0.22] },
-  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9, 10, 11], hp: [4, 6, 8, 15, 18, 22, 26, 30, 34, 38] },
+  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 24, 26], def: [0, 0, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18] },
+  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17, 19, 21, 23, 25], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22, 0.23, 0.24] },
+  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37], hp: [4, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], def: [0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10] },
+  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17, 19, 21, 23, 25], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25, 0.25, 0.3], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34] },
+  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23], hp: [5, 8, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66], def: [0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14, 0.14, 0.16] },
+  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20, 22, 24, 26, 28], hp: [2, 4, 10, 15, 26, 30, 35, 40, 45, 50, 55, 60], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
+  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20, 22, 24, 26, 28], hp: [4, 8, 15, 20, 26, 32, 38, 44, 50, 56, 62, 68], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15, 17, 19, 21, 23], hp: [5, 7, 12, 14, 18, 22, 26, 30, 34, 38, 42, 46], atk: [0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22, 0.23, 0.24] },
+  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44, 50, 56, 62, 68], atk: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26] },
+  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11], def: [0, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 7], hp: [3, 4, 5, 12, 16, 20, 24, 28, 32, 36, 40, 44], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14, 0.14, 0.16], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12, 0.12, 0.14, 0.14, 0.16] },
+  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26] },
+  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13], hp: [4, 6, 8, 15, 18, 22, 26, 30, 34, 38, 42, 46] },
 };
 
 /**
@@ -113,7 +114,7 @@ const ART_PLATZ: Record<SetTeilArt, { slot: NonNullable<ItemDef['gearSlot']>; ha
 };
 
 /** Grundpreis je Ebene (wie die übrigen Gegenstände derselben Ebene) */
-const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160, 180, 200];
+const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160, 180, 200, 220, 240];
 
 // ── Die Sets, in der Reihenfolge der Dungeon-Karte von unten nach oben ──
 
@@ -540,7 +541,40 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
       effekte: [{ id: 'sonnenstich', anteil: 0.05, max: 60, power: 0.6 }],
     },
   },
+
+  // ── Über dem Morgentor, im Taglicht (das Hammer-Set für den Kämpfer) ──
+  {
+    id: 'wachfeuer', routeId: 'erste_stadt', name: 'Alrunas Wachfeuer', zeichen: '🏮', tier: 11,
+    teile: [
+      { art: 'hammer', name: 'Glutkelle', bild: 'ITEM_SET_WACHFEUER_HAMMER', text: 'Ein Hammer, der eine Kelle war, bis jemand fand, dass man mit Kellen zu langsam baut. Er ist noch warm vom Feuer, in dem er lag.' },
+      { art: 'platte', name: 'Harnisch der Nachtwache', bild: 'ITEM_SET_WACHFEUER_PLATTE', text: 'Getragen von jemandem, der tausend Jahre nicht geschlafen hat. Die Polsterung ist wie neu. Er hatte keine Zeit, sie abzunutzen.' },
+      { art: 'talisman', name: 'Glut der Vorigen', bild: 'ITEM_SET_WACHFEUER_TALISMAN', text: 'Eine Kohle aus dem ersten Wachfeuer. Sie wärmt immer, auch wenn man gerade lieber nicht auffallen möchte.' },
+    ],
+    zweiTeile: { atk: 11, hp: 40 },
+    dreiTeile: {
+      name: 'Wachfeuer',
+      text: 'Fällt ein Held, steht er sofort mit 30 % seiner Leben wieder auf, einmal je Kampf fürs ganze Team. Fällt der Träger zuerst, weckt das Feuer ihn selbst.',
+      effekte: [{ id: 'wachfeuer', anteil: 0.3, name: 'Wachfeuer' }],
+    },
+  },
+
+  // ── Über der Ersten Stadt (das Bogen-Set für die Schützin) ──
+  {
+    id: 'tagwerk', routeId: 'tagespfeiler', name: 'Was den Tag trug', zeichen: '🏛️', tier: 12,
+    teile: [
+      { art: 'bogen', name: 'Bogen aus dem Strebebogen', bild: 'ITEM_SET_TAGWERK_BOGEN', text: 'Ein Strebebogen hält einen Pfeiler. Dieser hält eine Sehne. Er nimmt das als Rückschritt.' },
+      { art: 'leder', name: 'Mantel des Trägers', bild: 'ITEM_SET_TAGWERK_LEDER', text: 'Orm trug ihn als Polster zwischen Schulter und Tag. Er ist sehr flach und sehr geduldig.' },
+      { art: 'ring', name: 'Ring aus dem Schlussring', bild: 'ITEM_SET_TAGWERK_RING', text: 'Aus dem Ring geschnitten, in dem alle Bögen zusammenlaufen. Ohne ihn fiele etwas herunter, vermutlich ihr.' },
+    ],
+    zweiTeile: { atk: 12, critChance: 0.12 },
+    dreiTeile: {
+      name: 'Tragkraft',
+      text: 'Solange der Träger steht, hat die ganze Gruppe am Ende jeder Runde 6 Angriff mehr, bis Kampfende höchstens +42. Was einer trägt, tragen alle.',
+      effekte: [{ id: 'tragkraft', power: 6, max: 42, name: 'Tragkraft' }],
+    },
+  },
 ];
+
 
 // ── Abgeleitete Daten ──
 

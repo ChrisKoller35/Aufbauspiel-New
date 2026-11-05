@@ -14,7 +14,21 @@ export function rangFreischaltungen(rank: number, state?: GameState): string[] {
   const def = GUILD_RANK_DEFS.find(r => r.rank === rank);
   if (!def) return [];
   const zeilen: string[] = [];
-  const namen = (routen: RouteDef[]): string => routen.map(r => r.name).join(', ');
+  // Lange Listen (der höchste Rang öffnet alles darüber) brechen in Zeilen um, damit die Bilanz lesbar bleibt
+  const zeilenMit = (anfang: string, routen: RouteDef[]): string[] => {
+    const raus: string[] = [];
+    let zeile = `${anfang}: `;
+    let leer = true;
+    for (const r of routen) {
+      if (!leer && zeile.length + r.name.length + 2 > 110) {
+        raus.push(`${zeile},`);
+        zeile = `… ${r.name}`;
+      } else zeile += `${leer ? '' : ', '}${r.name}`;
+      leer = false;
+    }
+    raus.push(zeile);
+    return raus;
+  };
 
   // Dungeons von unten nach oben wie auf der Karte
   const dungeons = [...DUNGEON_GRAPH]
@@ -25,9 +39,9 @@ export function rangFreischaltungen(rank: number, state?: GameState): string[] {
     const titel = dungeons.length === 1 ? 'Neuer Dungeon' : `Neue Dungeons (${dungeons.length})`;
     const offen = state ? dungeons.filter(r => isRouteAvailable(r, state)) : dungeons;
     const spaeter = dungeons.filter(r => !offen.includes(r));
-    if (spaeter.length === 0) zeilen.push(`${titel}: ${namen(offen)}`);
-    else if (offen.length === 0) zeilen.push(`${titel}, nach Bosssiegen: ${namen(spaeter)}`);
-    else zeilen.push(`${titel}, gleich offen: ${namen(offen)}`, `Nach Bosssiegen: ${namen(spaeter)}`);
+    if (spaeter.length === 0) zeilen.push(...zeilenMit(titel, offen));
+    else if (offen.length === 0) zeilen.push(...zeilenMit(`${titel}, nach Bosssiegen`, spaeter));
+    else zeilen.push(...zeilenMit(`${titel}, gleich offen`, offen), ...zeilenMit('Nach Bosssiegen', spaeter));
   }
 
   const gebaeude = Object.values(BUILDING_DEFS).filter(b => b.freischaltung?.gildenrang === rank);

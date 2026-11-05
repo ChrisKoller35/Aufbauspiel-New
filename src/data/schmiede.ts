@@ -83,6 +83,11 @@ export const SCHMIEDE_MATERIALIEN: SchmiedeMaterialDef[] = [
     routen: ['mondhof', 'morgentor'],
     text: 'Wird bei Vollmond geschlagen und bei Neumond gezählt. Dazwischen fehlt immer eins.',
   },
+  {
+    id: 'mat_tagstein', name: 'Tagstein', ausGebiet: 'aus dem Taglicht', bild: 'MAT_TAGSTEIN',
+    routen: ['erste_stadt', 'tagespfeiler'],
+    text: 'Die Vorigen haben damit gebaut. Er ist warm, solange die Sonne scheint, und schwer, sobald jemand ihn wegtragen will.',
+  },
 ];
 
 // ── Stufen und Werte ──

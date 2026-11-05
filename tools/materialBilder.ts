@@ -4,6 +4,8 @@
 // Zeichnet die Materialien der Schmiede (src/data/schmiede.ts) als SVG und
 // speichert sie mit sharp als PNG (128 × 128, durchsichtig) unter
 // public/assets/sprites/final/. Keine KI, kein Netz, kostet nichts.
+// Dazu einige Gegenstände, für die kein vorhandenes Bild passt (Schlussstein,
+// Alrunas Kelle, Glut der Vorigen, Ring aus dem Schlussring).
 //
 // Nutzung:
 //   npm run material-bilder            # alle Materialien
@@ -305,6 +307,158 @@ const BILDER: Record<string, string> = {
     </g>
     ${funkeln(96, 44, 8, '#e0f2fe')}${funkeln(104, 84, 5, '#ffffff')}${funkeln(92, 104, 4, '#e0f2fe')}
     <circle cx="86" cy="64" r="1.8" fill="#ffffff"/><circle cx="100" cy="24" r="1.6" fill="#e0f2fe"/>`,
+
+  // Tagstein: ein honiggelber Quader aus den Pfeilern über dem Morgentor, innen hell wie Mittag
+  MAT_TAGSTEIN: `
+    <defs>${defs('ta', '#fde047')}
+      <linearGradient id="ta-oben" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef9c3"/><stop offset="100%" stop-color="#fcd34d"/>
+      </linearGradient>
+      <linearGradient id="ta-links" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#fbbf24"/><stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+      <linearGradient id="ta-rechts" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#d97706"/><stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="66" r="56" fill="url(#ta-schein)"/>
+    <g filter="url(#ta-schatten)">
+      <path d="M64 22 L106 42 L64 62 L22 42Z" fill="url(#ta-oben)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M22 42 L64 62 L64 110 L22 90Z" fill="url(#ta-links)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M106 42 L64 62 L64 110 L106 90Z" fill="url(#ta-rechts)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M30 56 L56 69 M32 74 L48 82" stroke="#92400e" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+      <path d="M76 74 L96 64 M80 90 L92 84" stroke="#451a03" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+      <path d="M44 40 L64 31 L76 37" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.85" fill="none"/>
+      <circle cx="64" cy="42" r="6" fill="#fffbeb" opacity="0.9"/>
+    </g>
+    ${funkeln(104, 22, 8, '#fef9c3')}${funkeln(20, 26, 5, '#ffffff')}${funkeln(112, 104, 4, '#fde68a')}`,
+
+  // Der Schlussstein (Erstsieg-Beute bei Orm): ein Keilstein aus Tagstein, oben breit, unten schmal,
+  // mit einer eingemeisselten Sonne. Kein Material, aber aus demselben Stein, darum hier gezeichnet.
+  ITEM_DER_SCHLUSSSTEIN: `
+    <defs>${defs('sl', '#fbbf24')}
+      <linearGradient id="sl-k" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef3c7"/><stop offset="45%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#92400e"/>
+      </linearGradient>
+      <linearGradient id="sl-s" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#b45309"/><stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="62" r="56" fill="url(#sl-schein)"/>
+    <g filter="url(#sl-schatten)">
+      <path d="M18 22 L110 22 L86 108 L42 108Z" fill="url(#sl-k)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M110 22 L116 28 L92 112 L86 108Z" fill="url(#sl-s)" stroke="${LINIE}" stroke-width="3" stroke-linejoin="round"/>
+      <path d="M86 108 L92 112 L48 112 L42 108Z" fill="#78350f" stroke="${LINIE}" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="64" cy="58" r="13" fill="#fef9c3" stroke="#92400e" stroke-width="3"/>
+      <g stroke="#92400e" stroke-width="3" stroke-linecap="round">
+        <path d="M64 37 L64 31"/><path d="M64 79 L64 85"/><path d="M43 58 L37 58"/><path d="M85 58 L91 58"/>
+        <path d="M49 43 L45 39"/><path d="M79 43 L83 39"/><path d="M49 73 L45 77"/><path d="M79 73 L83 77"/>
+      </g>
+      <path d="M26 28 L70 28" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.8"/>
+      <path d="M50 96 L58 92 M70 98 L78 94" stroke="#78350f" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+    </g>
+    ${funkeln(108, 10, 7, '#fef9c3')}${funkeln(14, 88, 5, '#ffffff')}`,
+  // Alrunas Kelle (Erstsieg-Beute bei Alruna): eine Maurerkelle, Spitze unten links, gekröpfter Hals,
+  // Holzgriff mit Messingzwinge, eine Sonne im Blatt. Vorher ein umgefärbtes Eisenschwert (Leihbild).
+  ITEM_ALRUNAS_KELLE: `
+    <defs>${defs('ke', '#fbbf24')}
+      <linearGradient id="ke-blatt" x1="0" y1="1" x2="1" y2="0">
+        <stop offset="0%" stop-color="#64748b"/><stop offset="45%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#94a3b8"/>
+      </linearGradient>
+      <linearGradient id="ke-griff" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#b45309"/><stop offset="55%" stop-color="#78350f"/><stop offset="100%" stop-color="#451a03"/>
+      </linearGradient>
+      <linearGradient id="ke-zwinge" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef3c7"/><stop offset="50%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#92400e"/>
+      </linearGradient>
+    </defs>
+    <circle cx="60" cy="68" r="56" fill="url(#ke-schein)"/>
+    <g filter="url(#ke-schatten)">
+      <path d="M14 114 Q24 76 50 46 L84 80 Q54 104 14 114Z" fill="url(#ke-blatt)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M22 104 Q32 78 48 58" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.8" fill="none"/>
+      <path d="M67 63 C70 54 72 50 79 45" stroke="${LINIE}" stroke-width="10" stroke-linecap="round" fill="none"/>
+      <path d="M67 63 C70 54 72 50 79 45" stroke="#cbd5e1" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+      <path d="M76 40 L86 50 L118 18 C121 15 121 11 118 8 C115 5 111 5 108 8Z" fill="url(#ke-griff)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M100 18 L111 9" stroke="#fbbf24" stroke-width="2.5" stroke-linecap="round" opacity="0.55"/>
+      <path d="M72 44 L82 34 L92 44 L82 54Z" fill="url(#ke-zwinge)" stroke="${LINIE}" stroke-width="3.5" stroke-linejoin="round"/>
+      <circle cx="46" cy="84" r="6.5" fill="#fde68a" stroke="#92400e" stroke-width="2.2"/>
+      <g stroke="#92400e" stroke-width="2" stroke-linecap="round">
+        <path d="M46 74 L46 70"/><path d="M46 94 L46 98"/><path d="M36 84 L32 84"/><path d="M56 84 L60 84"/>
+        <path d="M39 77 L36.5 74.5"/><path d="M53 77 L55.5 74.5"/><path d="M39 91 L36.5 93.5"/><path d="M53 91 L55.5 93.5"/>
+      </g>
+    </g>
+    ${funkeln(104, 50, 7, '#fef9c3')}${funkeln(20, 30, 5, '#ffffff')}${funkeln(112, 96, 4, '#fde68a')}`,
+
+  // Glut der Vorigen (Wachfeuer-Set): eine Kohle aus dem ersten Wachfeuer in einem eisernen Käfig an
+  // einer Kette, wie die Laterne im Set-Zeichen. Vorher der Phönix des Amuletts der Wiedergeburt.
+  ITEM_SET_WACHFEUER_TALISMAN: `
+    <defs>${defs('gl', '#f97316')}
+      <radialGradient id="gl-kohle" cx="58%" cy="66%" r="70%">
+        <stop offset="0%" stop-color="#c2410c"/><stop offset="35%" stop-color="#7c2d12"/><stop offset="75%" stop-color="#292524"/><stop offset="100%" stop-color="#0c0a09"/>
+      </radialGradient>
+      <radialGradient id="gl-glut" cx="50%" cy="55%" r="55%">
+        <stop offset="0%" stop-color="#fef08a"/><stop offset="45%" stop-color="#f97316"/><stop offset="100%" stop-color="#7c2d12" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="gl-eisen" x1="0" x2="1">
+        <stop offset="0%" stop-color="#57534e"/><stop offset="50%" stop-color="#a8a29e"/><stop offset="100%" stop-color="#44403c"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="76" r="58" fill="url(#gl-schein)"/>
+    <g fill="none" stroke="${LINIE}" stroke-width="3.5">
+      <ellipse cx="64" cy="12" rx="6" ry="8"/><ellipse cx="64" cy="26" rx="5" ry="7" transform="rotate(90 64 26)"/>
+    </g>
+    <g fill="none" stroke="#a8a29e" stroke-width="1.6">
+      <ellipse cx="64" cy="12" rx="6" ry="8"/><ellipse cx="64" cy="26" rx="5" ry="7" transform="rotate(90 64 26)"/>
+    </g>
+    <g filter="url(#gl-schatten)">
+      <ellipse cx="64" cy="80" rx="30" ry="28" fill="url(#gl-glut)"/>
+      <path d="M44 76 C42 64 52 56 62 58 C70 52 84 58 84 70 C90 78 86 94 74 98 C64 104 48 100 44 90 C38 86 40 80 44 76Z"
+        fill="url(#gl-kohle)" stroke="${LINIE}" stroke-width="3.5" stroke-linejoin="round"/>
+      <path d="M48 70 L56 74 L60 82 L54 92 M60 82 L70 84 L76 94 M70 84 L76 74 L82 72 M56 74 L62 64 L70 62" stroke="#ea580c" stroke-width="3.6" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="M48 70 L56 74 L60 82 L54 92 M60 82 L70 84 L76 94 M70 84 L76 74 L82 72 M56 74 L62 64 L70 62" stroke="#fde047" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <ellipse cx="66" cy="86" rx="6" ry="4" fill="#fef08a" opacity="0.65"/>
+      <ellipse cx="64" cy="40" rx="20" ry="6" fill="url(#gl-eisen)" stroke="${LINIE}" stroke-width="3.5"/>
+      <ellipse cx="64" cy="112" rx="18" ry="5.5" fill="url(#gl-eisen)" stroke="${LINIE}" stroke-width="3.5"/>
+      <g stroke="${LINIE}" stroke-width="6.5" stroke-linecap="round" fill="none">
+        <path d="M46 42 C30 62 32 94 48 110"/><path d="M82 42 C98 62 96 94 80 110"/><path d="M64 46 L64 106"/>
+      </g>
+      <g stroke="url(#gl-eisen)" stroke-width="3" stroke-linecap="round" fill="none">
+        <path d="M46 42 C30 62 32 94 48 110"/><path d="M82 42 C98 62 96 94 80 110"/><path d="M64 46 L64 106"/>
+      </g>
+      <path d="M64 34 L64 30" stroke="${LINIE}" stroke-width="4"/>
+    </g>
+    <circle cx="96" cy="58" r="2.5" fill="#fdba74"/><circle cx="102" cy="44" r="1.8" fill="#fde68a"/><circle cx="30" cy="54" r="2" fill="#fb923c"/>
+    ${funkeln(104, 30, 6, '#fed7aa')}${funkeln(24, 100, 4, '#fde68a')}`,
+
+  // Ring aus dem Schlussring (Tagwerk-Set): ein goldener Reif mit einem Keilstein aus Tagstein obenauf,
+  // dieselbe Sonne wie im Schlussstein. Vorher ein umgefärbter Anhänger.
+  ITEM_SET_TAGWERK_RING: `
+    <defs>${defs('ri', '#fde047')}
+      <radialGradient id="ri-kranz" cx="50%" cy="50%" r="50%">
+        <stop offset="0%" stop-color="#fde047" stop-opacity="0"/><stop offset="60%" stop-color="#fde047" stop-opacity="0.45"/><stop offset="100%" stop-color="#fde047" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="ri-reif" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef3c7"/><stop offset="40%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#78350f"/>
+      </linearGradient>
+      <linearGradient id="ri-stein" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef9c3"/><stop offset="50%" stop-color="#fcd34d"/><stop offset="100%" stop-color="#b45309"/>
+      </linearGradient>
+    </defs>
+    <circle cx="64" cy="70" r="58" fill="url(#ri-kranz)"/>
+    <g filter="url(#ri-schatten)">
+      <path fill-rule="evenodd" d="M64 44 C92 44 112 60 112 80 C112 100 92 116 64 116 C36 116 16 100 16 80 C16 60 36 44 64 44Z
+        M64 58 C44 58 30 68 30 81 C30 94 44 104 64 104 C84 104 98 94 98 81 C98 68 84 58 64 58Z"
+        fill="url(#ri-reif)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M26 72 C32 60 46 52 60 50" stroke="#ffffff" stroke-width="4" stroke-linecap="round" opacity="0.75" fill="none"/>
+      <path d="M40 14 L88 14 L78 54 L50 54Z" fill="url(#ri-stein)" stroke="${LINIE}" stroke-width="4" stroke-linejoin="round"/>
+      <path d="M44 50 L84 50 L80 60 L48 60Z" fill="#b45309" stroke="${LINIE}" stroke-width="3" stroke-linejoin="round"/>
+      <circle cx="64" cy="32" r="7" fill="#fef9c3" stroke="#92400e" stroke-width="2.5"/>
+      <g stroke="#92400e" stroke-width="2.2" stroke-linecap="round">
+        <path d="M64 21 L64 18"/><path d="M53 32 L50 32"/><path d="M75 32 L78 32"/><path d="M56 24 L54 22"/><path d="M72 24 L74 22"/>
+      </g>
+      <path d="M46 19 L70 19" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
+    </g>
+    ${funkeln(104, 26, 7, '#fef9c3')}${funkeln(18, 34, 5, '#ffffff')}${funkeln(110, 106, 4, '#fde68a')}`,
 };
 
 async function zeichne(key: string): Promise<void> {

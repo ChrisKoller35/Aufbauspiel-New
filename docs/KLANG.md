@@ -40,7 +40,7 @@ nächsten Rechnen im Audio-Thread noch den alten Wert, im angehaltenen Kontext (
 stehen. Sonst würde ein verlassenes Stück bei zwei schnellen Wechseln hörbar, oder ein neues begänne nach einer
 Unterbrechung laut. Geprüft ohne Browser in `tests/klangSystem.test.ts`.
 
-**Musik je Biom:** Wald, Himmel, Sterne, Mond, Belagerung → `ambient_forest` (offen, unter freiem Himmel; Belagerung liegt vor der Stadt). Sumpf, Unterwasser, Ruinen → `ambient_swamp` (nass bzw. düster-verfallen). Höhle, Vulkan, Frost, Drachengipfel → `Ecambient_cave` (Gestein, Glut, Eis, Drachenhort im Berg).
+**Musik je Biom:** Wald, Himmel, Sterne, Mond, Taglicht, Belagerung → `ambient_forest` (offen, unter freiem Himmel; Belagerung liegt vor der Stadt). Sumpf, Unterwasser, Ruinen → `ambient_swamp` (nass bzw. düster-verfallen). Höhle, Vulkan, Frost, Drachengipfel → `Ecambient_cave` (Gestein, Glut, Eis, Drachenhort im Berg).
 
 **Gleiche Stücke (md5):**
 - `ambient_city.mp3` = `ambient_forest.mp3` (`bb074cd0e440d86e672bc84397e1b3f8`)

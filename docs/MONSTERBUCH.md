@@ -86,9 +86,13 @@ Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei Beschwörung Verstärkung
 | Flächenschaden | «Trifft alle Helden mit dem 0,5-fachen Schaden …» | jeder lebende Held, nie die Kriegsmaschine |
 | Heilung | «Heilt den Verbündeten mit den wenigsten Leben um 24, auch sich selbst.» | Gegner mit den wenigsten Leben, um die Stärke der Fähigkeit (trifft ihn ein Held mit Wundfluch, nur halb) |
 | Heilung (kämpft immer allein, z. B. jeder Boss) | «Heilt sich um 36 Leben.» | wie oben, er ist der einzige |
-| Stärkung | «Gibt sich selbst 5 Angriff mehr, 3 Runden lang.» | Angriff, nie Abwehr |
+| Stärkung | «Gibt sich selbst 5 Angriff mehr, 3 Runden lang.» | Angriff, nie Abwehr; mit `runden` länger (Nachmauern und Orms Nachgreifen: 4 Runden) |
 | Beschwörung | «Ruft niemanden herbei, sondern gibt sich selbst 3 Angriff mehr, 4 Runden lang.» | keine neuen Gegner |
 | Luftraub | «Zieht 10 Luft aus dem Luftschild, ohne Schaden.» | `luftsauger` 10, `blasenstoss` 8 (Tabelle in `processCombat`) |
+
+Neue Gegner, die sich nur stärken, bekommen `effectType: 'buff'` (mit `runden`, wenn es länger als 3 Runden halten
+soll), nicht `'summon'`: Eine Beschwörung meldet im Kampf «Verstärkung beschworen!», obwohl niemand kommt. Nachmauern
+(Steingeselle) und Nachgreifen (Orm) waren am 5.11.2026 so falsch eingetragen; die Zahlen sind gleich geblieben.
 
 Bei Stärke 1 heisst es «mit dem Schaden eines normalen Angriffs» statt «mit dem 1-fachen …»
 (Säure, Dreifachbiss, Steinschlag, Magmawelle und Torschlag, alle fünf Flächenschaden).

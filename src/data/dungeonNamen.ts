@@ -45,6 +45,8 @@ export const DUNGEON_IM_SATZ: Record<string, DungeonImSatz> = {
   sternenschlund: { wo: 'im Sternenschlund', wen: 'den Sternenschlund' },
   mondhof: { wo: 'im Mondhof', wen: 'den Mondhof' },
   morgentor: { wo: 'am Morgentor', wen: 'das Morgentor' },
+  erste_stadt: { wo: 'in der Ersten Stadt', wen: 'die Erste Stadt' },
+  tagespfeiler: { wo: 'an den Pfeilern des Tages', wen: 'die Pfeiler des Tages' },
 };
 
 /**

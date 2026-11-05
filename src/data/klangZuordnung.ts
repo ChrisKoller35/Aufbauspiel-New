@@ -5,6 +5,7 @@ import type { ScreenId } from '../ui/ScreenRouter';
 /** Offen und hell → Wald, nass → Sumpf, eng und dunkel → Höhle (Begründung in docs/KLANG.md). */
 const MUSIK_JE_BIOM: Record<Biom, string> = {
   Wald: 'ambient_forest', Himmel: 'ambient_forest', Sterne: 'ambient_forest', Mond: 'ambient_forest',
+  Taglicht: 'ambient_forest',
   Belagerung: 'ambient_forest',
   Sumpf: 'ambient_swamp', Unterwasser: 'ambient_swamp', Ruinen: 'ambient_swamp',
   Höhle: 'Ecambient_cave', Vulkan: 'Ecambient_cave', Frost: 'Ecambient_cave', Drachengipfel: 'Ecambient_cave',

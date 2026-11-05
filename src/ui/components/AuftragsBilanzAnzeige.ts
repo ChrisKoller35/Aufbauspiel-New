@@ -22,5 +22,6 @@ export function auftragsZeilen(b: AuftragsBilanz, neueTrophaee: boolean): Bilanz
   }
   if (b.tagesbonus > 0) zeilen.push({ text: `📜 Alle Zettel von heute erledigt: Tagesbonus +${b.tagesbonus} Siegel`, farbe: '#4ade80' });
   if (b.saalVoll) zeilen.push({ text: '🏛️ Alle Sockel im Saal sind voll. Im Gildenhaus liegt eine Notiz von Ottokar.', farbe: '#fde68a' });
+  if (b.anbauVoll) zeilen.push({ text: '🏛️ Auch der Anbau ist voll. Im Gildenhaus steht jetzt ein Wort mehr auf der Platte.', farbe: '#fde68a' });
   return zeilen;
 }

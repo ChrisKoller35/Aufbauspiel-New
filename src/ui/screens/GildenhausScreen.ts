@@ -1,7 +1,8 @@
 // ─── Magic City – Gildenhaus ────────────────────────────────────
 // Zwei Reiter: das Auftragsbrett (drei Zettel am Tag, die Kette «Der Saal der
-// Gilde», Siegel einlösen) und der Trophäensaal (Sockel je Boss, Pokale, Sets,
-// Gildenbuch). Regeln: systems/Auftragsbrett.ts und systems/Trophaeensaal.ts.
+// Gilde», Siegel einlösen) und der Trophäensaal (Sockel je Boss im Saal und, sobald
+// er dasteht, im Anbau; Pokale, Sets, Gildenbuch). Regeln: systems/Auftragsbrett.ts
+// und systems/Trophaeensaal.ts.
 // ────────────────────────────────────────────────────────────────
 
 import '../html/gildenhaus.css';
@@ -16,11 +17,11 @@ import { renderHeader, zeigeKopfHinweis } from './HeaderRenderer';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { escapeAttr } from '../components/SchmiedeAnzeige';
 import {
-  belohnungText, brettGesehen, brettStand, einloesbareMaterialien, einloesbareSets, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelText,
-  laufendesKapitel, liefern, materialEinloesen, saalEinleitung, saalKapitel, SAAL_SCHLUSS, setTeilEinloesen, setTeilKosten, splitterEinloesen,
+  belohnungText, brettGesehen, brettStand, einloesbareMaterialien, einloesbareSets, istSpielbar, kannLiefern, kapitelBelohnungVon, kapitelSchild, kapitelText,
+  ANBAU_SCHLUSS, kapitelDesTeils, kettenTeil, ketteEinleitung, laufendesKapitel, liefern, materialEinloesen, SAAL_SCHLUSS, setTeilEinloesen, setTeilKosten, splitterEinloesen,
   tagVon, tauschen, tauschUebrig, zettelText, zielText,
 } from '../../systems/Auftragsbrett';
-import { bossTrophaeen, gildenbuch, pokale, saalGlanz, setSammlung } from '../../systems/Trophaeensaal';
+import { BossTrophaee, gildenbuch, pokale, saalAnsicht, setSammlung } from '../../systems/Trophaeensaal';
 import { besitz } from '../../systems/DungeonSets';
 
 type Reiter = 'brett' | 'saal';
@@ -98,31 +99,41 @@ function zettelHtml(state: GameState, stand: AuftragsbrettStand, a: Auftrag, i: 
     </article>`;
 }
 
+/** Das Messingschild eines Kapitels; ist ein Teil verdeckt (schildVorSieg), steht darunter, was ihn verdeckt */
+function schildHtml(schild: { text: string; warum?: string }): string {
+  return `<p class="gh-schild">«${schild.text}»</p>${schild.warum ? `<p class="gh-schild-warum">${schild.warum}</p>` : ''}`;
+}
+
 function ketteHtml(state: GameState, stand: AuftragsbrettStand): string {
-  const alle = saalKapitel();
   const kapitel = laufendesKapitel(stand);
   if (!kapitel) {
+    const anbau = kapitelDesTeils('anbau');
     return `
       <article class="gh-kette gh-kette-voll">
-        <div class="gh-kette-kopf">Kette · Der Saal der Gilde · alle ${alle.length} Sockel voll</div>
-        <p class="gh-text">${SAAL_SCHLUSS}</p>
+        <div class="gh-kette-kopf">Kette · Der Anbau des Saals · alle ${anbau.length} Sockel voll</div>
+        <p class="gh-text">${ANBAU_SCHLUSS}</p>
       </article>`;
   }
-  const nr = stand.kette.fertig.length + 1;
+  const teil = kettenTeil(kapitel);
+  const alle = kapitelDesTeils(teil);
+  const fertig = alle.filter(k => stand.kette.fertig.includes(k.routeId)).length;
   const route = ROUTE_DEFS[kapitel.routeId];
   const offen = istSpielbar(state, kapitel.routeId);
   const weg = offen
     ? `<button class="gh-knopf" data-gh-hin="${kapitel.routeId}">Zum Dungeon</button>`
     : `<span class="gh-gesperrt">🔒 ${getRouteLockReasons(route, state).join(' · ') || 'Noch nicht erreichbar'}</span>`;
-  const einleitung = stand.kette.fertig.length === 0 ? `<p class="gh-text gh-einleitung">${saalEinleitung()}</p>` : '';
+  // Zu Beginn des Anbaus steht zuerst noch der Schluss des Saals da: Er erzählt, wie es zum Anbau kam
+  const einleitung = fertig > 0 ? ''
+    : teil === 'saal' ? `<p class="gh-text gh-einleitung">${ketteEinleitung('saal')}</p>`
+      : `<p class="gh-text gh-einleitung">${SAAL_SCHLUSS}</p><p class="gh-text gh-einleitung">${ketteEinleitung('anbau')}</p>`;
   return `
     <article class="gh-kette">
       <span class="gh-wachs" aria-hidden="true"></span>
-      <div class="gh-kette-kopf">Kette · Der Saal der Gilde · Kapitel ${nr} von ${alle.length}</div>
+      <div class="gh-kette-kopf">Kette · ${teil === 'saal' ? 'Der Saal der Gilde' : 'Der Anbau des Saals'} · Kapitel ${fertig + 1} von ${alle.length}</div>
       ${einleitung}
       <h3 class="gh-titel">${kapitel.prunkstueck}</h3>
       <div class="gh-ort">📍 ${route.name} · Ebene ${route.tier}</div>
-      <p class="gh-schild">«${kapitel.schild}»</p>
+      ${schildHtml(kapitelSchild(state, kapitel))}
       <p class="gh-text">${kapitelText(state, kapitel)}</p>
       <div class="gh-ziel">${zielText(kapitel.art, kapitel.routeId, kapitel.ziel)}</div>
       ${balkenHtml(stand.kette.stand, kapitel.ziel)}
@@ -210,15 +221,11 @@ function brettHtml(state: GameState, jetzt: number): string {
 
 // ── Trophäensaal ──
 
-function saalHtml(state: GameState, jetzt: number): string {
-  const trophaeen = bossTrophaeen(state, jetzt);
-  const glanz = saalGlanz(trophaeen);
-  const p = pokale(state, jetzt);
-  const sockel = trophaeen.map(t => {
-    const sterne = [t.bezwungen, t.setKomplett, t.prunk];
-    const stufe = sterne.filter(Boolean).length;
-    const sternTitel = ['Boss bezwungen', 'Set komplett', 'Prunkstück aus der Kette'];
-    return `
+function sockelHtml(t: BossTrophaee): string {
+  const sterne = [t.bezwungen, t.setKomplett, t.prunk];
+  const stufe = sterne.filter(Boolean).length;
+  const sternTitel = ['Boss bezwungen', 'Set komplett', 'Prunkstück aus der Kette'];
+  return `
       <figure class="gh-sockel gh-stufe-${stufe}${t.bezwungen ? '' : ' gh-unbekannt'}">
         <div class="gh-trophaee">
           <img src="assets/sprites/final/${t.spriteKey}.png" alt="" onerror="this.style.visibility='hidden'">
@@ -228,11 +235,37 @@ function saalHtml(state: GameState, jetzt: number): string {
           <span class="gh-sockel-ort">${t.dungeon} · Ebene ${t.ebene}</span>
           <span class="gh-sterne">${sterne.map((s, i) => `<span class="${s ? 'an' : ''}" title="${sternTitel[i]}">★</span>`).join('')}</span>
           <span class="gh-sockel-info">${t.siege > 0 ? `${t.siege} ${t.siege === 1 ? 'Sieg' : 'Siege'}` : 'noch nicht bezwungen'}${t.set ? ` · Set ${t.setTeile}/3` : ''}</span>
-          <span class="gh-sockel-schild">«${t.schild}»</span>
+          <span class="gh-sockel-schild">«${t.schild}»${t.schildWarum ? ` <span class="gh-sockel-warum">${t.schildWarum}</span>` : ''}</span>
           ${t.prunk ? `<span class="gh-prunk">🏺 ${t.prunkstueck}</span>` : ''}
         </figcaption>
       </figure>`;
-  }).join('');
+}
+
+/**
+ * Der Anbau, sobald er dasteht: Zwischen Saal und Anbau steht die Platte aus dem Schluss des Saals, nach dem
+ * letzten Prunkstück im Anbau mit Alrunas Kreide darunter. Steht er schon, bevor der Saal voll ist (ein Sieg dort
+ * oben), sagt Ottokar nur, dass die Sockel da sind.
+ */
+function anbauHtml(ansicht: ReturnType<typeof saalAnsicht>): string {
+  if (ansicht.anbau.length === 0) return '';
+  const voll = ansicht.anbau.filter(t => t.prunk).length;
+  const platte = ansicht.saalVoll
+    ? `<p class="gh-platte">«Für die Nächsten. Macht es besser als wir.»${ansicht.anbauVoll ? '<span class="gh-kreide">Besser.</span>' : ''}</p>`
+    : '<p class="gh-anbau-text">Neben dem Saal stehen schon Sockel aus hellem Stein, obwohl im Saal noch Platz ist. Jorinde sagt, '
+      + 'wer so weit oben war, darf ausser der Reihe ausstellen; die Prunkstücke dafür gibt es trotzdem erst, wenn der Saal voll ist.</p>';
+  return `
+    <section class="gh-block gh-anbau">
+      <h2 class="gh-h2">Der Anbau <span class="gh-h2-info">${voll} von ${ansicht.anbau.length} Prunkstücken</span></h2>
+      ${platte}
+      <div class="gh-saal gh-saal-anbau">${ansicht.anbau.map(sockelHtml).join('')}</div>
+    </section>`;
+}
+
+function saalHtml(state: GameState, jetzt: number): string {
+  const ansicht = saalAnsicht(state, jetzt);
+  const glanz = ansicht.glanz;
+  const p = pokale(state, jetzt);
+  const sockel = ansicht.saal.map(sockelHtml).join('');
   const sets = setSammlung(state).map(s => `
     <div class="gh-set${s.teile === 3 ? ' gh-set-komplett' : ''}">
       <span class="gh-set-zeichen">${s.set.zeichen}</span>
@@ -250,6 +283,7 @@ function saalHtml(state: GameState, jetzt: number): string {
       </div>
     </div>
     <div class="gh-saal">${sockel}</div>
+    ${anbauHtml(ansicht)}
     <section class="gh-block">
       <h2 class="gh-h2">Pokale der Rangliste</h2>
       <div class="gh-pokale">

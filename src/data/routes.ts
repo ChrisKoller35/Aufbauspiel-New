@@ -42,7 +42,7 @@ export interface RouteDef {
   /** Ob eine Kriegsmaschine zwingend benötigt wird */
   requiresWarMachine?: boolean;
   /** Gebiet über dem Vulkankern: bestimmt Farbe und Schild auf Karte und Routenliste */
-  gebiet?: 'gipfel' | 'himmel' | 'sterne' | 'mond';
+  gebiet?: 'gipfel' | 'himmel' | 'sterne' | 'mond' | 'licht';
   /** Eigene Regel dieses Dungeons in einem Satz (Karte, Routenliste) */
   besonderheit?: string;
   /** Hort-Gier: jeder Punkt (EncounterChoice.gier) macht den Boss um diese Anteile stärker, Punkte unter 0 schwächer */
@@ -109,7 +109,9 @@ export const DUNGEON_GRAPH: DungeonGraphNode[] = [
   { routeId: 'sternenschmiede',    x: 390, y: -1300, leadsTo: ['sternenschlund'], isMainPath: true },
   { routeId: 'sternenschlund',     x: 510, y: -1800, leadsTo: ['mondhof'], isMainPath: true },
   { routeId: 'mondhof',            x: 400, y: -2300, leadsTo: ['morgentor'], isMainPath: true },
-  { routeId: 'morgentor',          x: 530, y: -2800, leadsTo: [], isMainPath: true },
+  { routeId: 'morgentor',          x: 530, y: -2800, leadsTo: ['erste_stadt'], isMainPath: true },
+  { routeId: 'erste_stadt',        x: 400, y: -3300, leadsTo: ['tagespfeiler'], isMainPath: true },
+  { routeId: 'tagespfeiler',       x: 520, y: -3800, leadsTo: [], isMainPath: true },
 ];
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -519,6 +521,88 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     recommendedLevel: 'Stufe 15, Sets auf +5 und das Pfand des Mondvogts',
     unlockCondition: { bossesDefeated: ['boss_argentis'] },
   },
+  // Ebene 11: kein Rastplatz. Die Wachfeuer (Raum 2, 8, 14) geben Tagstein oder ein Set-Teil gegen Leben, das
+  // keine Rast zurückbringt; wer sich wärmt, heilt wenig, aber Gefallene stehen wieder auf (wecken).
+  erste_stadt: {
+    id: 'erste_stadt',
+    name: 'Die Erste Stadt',
+    tier: 11,
+    rooms: 16,
+    gebiet: 'licht',
+    besonderheit: 'Die Wachfeuer: Hier rastet niemand. Wer ins Feuer greift, bekommt Tagstein, wenn Alruna fällt, und verliert Leben, das keine Rast zurückbringt. Wer sich wärmt, weckt die Gefallenen.',
+    ersterSiegBeute: 'alrunas_kelle',
+    encounters: [
+      { type: 'combat', enemies: ['bogenschuetzin_vorige', 'schildtraeger_vorige'] },
+      { type: 'combat', enemies: ['messerstecher_vorige', 'stadtheilerin_vorige'] },
+      { type: 'find', wahl: {
+        a: { label: 'Ins Wachfeuer greifen (+5 Tagstein, wenn ihr siegt; −8% HP)', flavorText: 'Das Feuer brennt mit allem, was man hineinlegt. Die Vorigen haben viel hineingelegt.', effect: 'item', value: 5, itemId: 'mat_tagstein', nachSieg: true, kostetLeben: 8 },
+        b: { label: 'Sich am Feuer wärmen (+5% HP; Gefallene stehen mit 30% HP auf)', flavorText: 'Es ist das erste Feuer seit dem Vulkankern, das euch wärmen will. Wer am Boden liegt, setzt sich auf.', effect: 'heal', value: 5, wecken: 30 },
+      } },
+      { type: 'combat', enemies: ['wachfeuerwicht', 'schildtraeger_vorige', 'stadtheilerin_vorige'] },
+      { type: 'hazard', damage: 24 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['wachfeuerwicht', 'messerstecher_vorige'] },
+      { type: 'combat', enemies: ['steingeselle', 'stadtheilerin_vorige'] },
+      { type: 'find', wahl: {
+        a: { label: 'Alrunas Ausgabe aus der Glut holen (+1 Set-Teil, wenn ihr siegt; −8% HP)', flavorText: 'Im Feuer der Wachstube liegen eine Kelle, ein Harnisch und eine Kohle, alles noch heiss. Jemand hat es dort aufbewahrt, wo kein Dieb hinlangt. Fast keiner.', effect: 'kein', value: 0, setTeil: true, kostetLeben: 8 },
+        b: { label: 'In der Wachstube wärmen (+5% HP; Gefallene stehen mit 30% HP auf)', flavorText: 'In jeden Hocker ist ein Zeichen geschnitzt: Schild, Bogen, Messer, Salbentopf. Die Besitzer habt ihr unterwegs schon getroffen. Sie standen lieber.', effect: 'heal', value: 5, wecken: 30 },
+      } },
+      { type: 'combat', enemies: ['bogenschuetzin_vorige', 'bogenschuetzin_vorige', 'schildtraeger_vorige'] },
+      { type: 'hazard', damage: 26 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['steingeselle', 'messerstecher_vorige', 'wachfeuerwicht'] },
+      { type: 'combat', enemies: ['schildtraeger_vorige', 'stadtheilerin_vorige', 'bogenschuetzin_vorige'] },
+      { type: 'find', wahl: {
+        a: { label: 'Das letzte Feuer ausräumen (+9 Tagstein, wenn ihr siegt; −8% HP)', flavorText: 'Unter der Asche liegt Tagstein, sauber gestapelt und beschriftet: «Für den Saal». Der Saal ist seit tausend Jahren fertig.', effect: 'item', value: 9, itemId: 'mat_tagstein', nachSieg: true, kostetLeben: 8 },
+        b: { label: 'Am letzten Feuer wärmen (+10% HP; Gefallene stehen mit 30% HP auf)', flavorText: 'Das letzte Feuer ist das grösste. Dahinter brennt Licht in Alrunas Haus, und sie hat euch längst gesehen.', effect: 'heal', value: 10, wecken: 30 },
+      } },
+      { type: 'boss', enemies: ['boss_alruna'] },
+    ],
+    bossId: 'boss_alruna',
+    recommendedLevel: 'Stufe 15, Sets auf +5 und Sunnas Morgengabe',
+    unlockCondition: { bossesDefeated: ['boss_sunna'] },
+  },
+  // Ebene 12: Die Pfeiler (Raum 2, 8, 14). Herausbrechen gibt Tagstein oder ein Set-Teil und zieht Orms Wut
+  // um 2 Runden vor; Stützen kostet Leben und schiebt sie um 1 Runde hinaus. Wut ab Runde 4 bis 13.
+  tagespfeiler: {
+    id: 'tagespfeiler',
+    name: 'Die Pfeiler des Tages',
+    tier: 12,
+    rooms: 16,
+    gebiet: 'licht',
+    besonderheit: 'Die Pfeiler: Wer einen herausbricht, bekommt Tagstein, wenn Orm fällt, und Orm wird früher wütend. Wer ihn stützt, zahlt mit Leben und gewinnt Zeit.',
+    ersterSiegBeute: 'der_schlussstein',
+    encounters: [
+      { type: 'combat', enemies: ['gewoelbefledermaus', 'schlusssteinwaechter'] },
+      { type: 'combat', enemies: ['fugenspinne', 'moertelgeist'] },
+      { type: 'find', wahl: {
+        a: { label: 'Den Pfeiler herausbrechen (+6 Tagstein, wenn ihr siegt; Orms Wut 2 Runden früher)', flavorText: 'Der Pfeiler kommt leichter heraus, als ein Pfeiler sollte. Oben knirscht es, und irgendwo seufzt jemand sehr Grosses.', effect: 'item', value: 6, itemId: 'mat_tagstein', nachSieg: true, bossWutFrueher: 2 },
+        b: { label: 'Den Pfeiler stützen (Orms Wut 1 Runde später; −5% HP)', flavorText: 'Ein Keil aus Tagstein und ein paar Schläge, und der Pfeiler steht wieder. Oben wird es einen Atemzug lang still.', effect: 'kein', value: 0, bossWutFrueher: -1, kostetLeben: 5 },
+      } },
+      { type: 'combat', enemies: ['schlusssteinwaechter', 'himmelsriss', 'moertelgeist'] },
+      { type: 'hazard', damage: 26 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['steinmetz_vorige', 'fugenspinne', 'fugenspinne'] },
+      { type: 'rest', healPercent: 15 },
+      { type: 'find', wahl: {
+        a: { label: 'Den Tragstein herausbrechen (+1 Set-Teil, wenn ihr siegt; Orms Wut 2 Runden früher)', flavorText: 'Im Tragstein steckt ein Teil, das die Vorigen beim Herausbrechen hier vergessen haben. Man muss den Pfeiler brechen, um es zu bekommen.', effect: 'kein', value: 0, setTeil: true, bossWutFrueher: 2 },
+        b: { label: 'Den Pfeiler stützen (+2 Tagstein; Orms Wut 1 Runde später; −5% HP)', flavorText: 'Unter dem Pfeiler liegen zwei Brocken, die schon heruntergefallen sind. Die darf man nehmen, ohne dass oben jemand zählt.', effect: 'item', value: 2, itemId: 'mat_tagstein', bossWutFrueher: -1, kostetLeben: 5 },
+      } },
+      { type: 'combat', enemies: ['gewoelbefledermaus', 'gewoelbefledermaus', 'steinmetz_vorige'] },
+      { type: 'hazard', damage: 28 },
+      { type: 'checkpoint' },
+      { type: 'combat', enemies: ['himmelsriss', 'fugenspinne', 'schlusssteinwaechter'] },
+      { type: 'combat', enemies: ['steinmetz_vorige', 'gewoelbefledermaus', 'moertelgeist'] },
+      { type: 'find', wahl: {
+        a: { label: 'Den letzten Pfeiler herausbrechen (+10 Tagstein, wenn ihr siegt; Orms Wut 2 Runden früher)', flavorText: 'Der letzte Pfeiler vor Orm. Wer ihn bricht, hört ihn nicht nur seufzen.', effect: 'item', value: 10, itemId: 'mat_tagstein', nachSieg: true, bossWutFrueher: 2 },
+        b: { label: 'Am letzten Pfeiler mitdrücken (Orms Wut 1 Runde später; −5% HP)', flavorText: 'Ihr stellt euch an den Pfeiler und drückt mit. Es hilft nicht viel, aber Orm merkt es.', effect: 'kein', value: 0, bossWutFrueher: -1, kostetLeben: 5 },
+      } },
+      { type: 'boss', enemies: ['boss_orm'] },
+    ],
+    bossId: 'boss_orm',
+    recommendedLevel: 'Stufe 15, Sets auf +5 und Alrunas Wachfeuer',
+    unlockCondition: { bossesDefeated: ['boss_alruna'] },
+  },
 
   // ── Siege Routes ──
   siege_walls: {
@@ -874,6 +958,9 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   // Platzhalter, bis es ein eigenes Routenbild gibt (docs/NEUE-DUNGEONS.md, Bilder nur mit Christophs Okay)
   mondhof: 'exp_sternenschlund',
   morgentor: 'exp_sternenschmiede',
+  // Leihbilder (tools/leihbilder.ts): Magic City in Gold und die Ruinentiefen in Gold, bis Christoph eigene zeichnet
+  erste_stadt: 'exp_erste_stadt',
+  tagespfeiler: 'exp_tagespfeiler',
 };
 
 
@@ -886,7 +973,7 @@ export function isRouteAvailable(route: RouteDef, state: RouteProgress): boolean
   return getRouteLockReasons(route, state).length === 0;
 }
 
-export type Biom = 'Drachengipfel' | 'Himmel' | 'Sterne' | 'Mond' | 'Unterwasser' | 'Belagerung'
+export type Biom = 'Drachengipfel' | 'Himmel' | 'Sterne' | 'Mond' | 'Taglicht' | 'Unterwasser' | 'Belagerung'
   | 'Vulkan' | 'Ruinen' | 'Sumpf' | 'Frost' | 'Höhle' | 'Wald';
 
 /** Das Biom einer Route: Etikett in der Routenübersicht (ExpeditionsScreen.ts) und Musik (data/klangZuordnung.ts). */
@@ -896,6 +983,7 @@ export function biomFuerRoute(route: RouteDef): Biom {
   if (route.gebiet === 'himmel') return 'Himmel';
   if (route.gebiet === 'sterne') return 'Sterne';
   if (route.gebiet === 'mond') return 'Mond';
+  if (route.gebiet === 'licht') return 'Taglicht';
   if (route.isUnderwater) return 'Unterwasser';
   if (route.isSiegeRoute) return 'Belagerung';
   if (id.includes('volcano') || id.includes('obsidian') || id.includes('ash') || id.includes('magma')) return 'Vulkan';

@@ -6,13 +6,13 @@
 // erledigt, gibt es Siegel dazu. Siegel löst die Gilde am Brett gegen Set-Teile,
 // Material und Kristallsplitter ein. Daneben hängt die Kette «Der Saal der Gilde»:
 // ein Kapitel je Boss, von unten nach oben, jedes bringt ein Prunkstück in den
-// Trophäensaal. Der Zufall ist fest: Neu laden würfelt nichts neu.
+// Trophäensaal; ab Ebene 11 geht sie im Anbau des Saals weiter. Der Zufall ist fest: Neu laden würfelt nichts neu.
 // Zahlen und Texte: data/auftragsbrett.ts, Anleitung: docs/AUFTRAGSBRETT.md.
 // ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
 import { Auftrag, AuftragsArt, AuftragsBelohnung, AuftragsbrettStand } from '../models/AuftragsbrettStand';
-import { ExpeditionRun, dungeonBezwungen } from '../models/ExpeditionRun';
+import { ExpeditionRun, alleStehen, dungeonBezwungen, einHeldGefallen } from '../models/ExpeditionRun';
 import { DUNGEON_GRAPH, ROUTE_DEFS, isRouteAvailable, isRouteCompleted } from '../data/routes';
 import { ENEMY_DEFS } from '../data/enemies';
 import { LOOT_TABLE_DEFS } from '../data/lootTables';
@@ -21,8 +21,8 @@ import { DungeonSetDef, setFuerRoute, setVonItem } from '../data/dungeonSets';
 import { SCHMIEDE_MATERIALIEN, SchmiedeMaterialDef } from '../data/schmiede';
 import { dungeonWen, imDungeon } from '../data/dungeonNamen';
 import {
-  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, GOLD_ANTEIL, LIEFER_WAREN, LieferWare, MATERIAL_PREIS, SAAL_EINLEITUNG,
-  SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, SaalKapitel,
+  AUFTRAGGEBER, AUFTRAGS_VORLAGEN, GOLD_ANTEIL, KapitelArt, LIEFER_WAREN, LieferWare, MATERIAL_PREIS, OHNE_MAKELLOS, SAAL_EINLEITUNG,
+  ANBAU_AB_EBENE, ANBAU_EINLEITUNG, ANBAU_SCHLUSS, ANBAU_SCHLUSS_SIEGEL, SAAL_KAPITEL, SAAL_SCHLUSS, SAAL_SCHLUSS_SIEGEL, SIEGEL_JE_ART, SPLITTER_MENGE, SPLITTER_PREIS, SaalKapitel,
   TAGESBONUS_SIEGEL, TAUSCH_JE_TAG, ZETTEL_JE_TAG, setTeilPreis,
 } from '../data/auftragsbrett';
 import { BUILDING_DEFS } from '../data/buildings';
@@ -124,9 +124,13 @@ function belohnung(art: AuftragsArt, routeId: string): AuftragsBelohnung {
   return { siegel: SIEGEL_JE_ART[art], gold: rund5(goldJeLauf(routeId) * GOLD_ANTEIL), dinge };
 }
 
-/** Ein Zettel für einen Dungeon, oder null, wenn die Art dort nicht geht (Set ohne Set, Jagd ohne Rudel) */
+/**
+ * Ein Zettel für einen Dungeon, oder null, wenn die Art dort nicht geht (Set ohne Set, Jagd ohne Rudel,
+ * «ohne Gefallene», wo das kaum je gelingt)
+ */
 function dungeonZettel(art: AuftragsArt, routeId: string, rng: SeededRNG, vergeben: Auftrag[]): Auftrag | null {
   if (vergeben.some(a => a.art === art && a.routeId === routeId)) return null;
+  if (art === 'makellos' && OHNE_MAKELLOS.includes(routeId)) return null;
   const vorlagen = AUFTRAGS_VORLAGEN.filter(v => v.art === art && !v.nichtIn?.includes(routeId) && !vergeben.some(a => a.vorlage === v.id));
   if (vorlagen.length === 0) return null;
   const vorlage = rng.pick(vorlagen).id;
@@ -210,10 +214,10 @@ function zettelDesTages(state: GameState, samen: number, tagId: string): Auftrag
   return zettel;
 }
 
-// ── Die Kette: Der Saal der Gilde ──
+// ── Die Kette: Der Saal der Gilde und sein Anbau ──
 
-/** Alle Kapitel der Kette: je Boss-Dungeon eins, von unten nach oben wie auf der Karte */
-export function saalKapitel(): SaalKapitel[] {
+/** Alle Kapitel der Kette: je Boss-Dungeon eins, von unten nach oben wie auf der Karte (zuerst der Saal, dann der Anbau) */
+export function alleKapitel(): SaalKapitel[] {
   return [...DUNGEON_GRAPH]
     .filter(n => ROUTE_DEFS[n.routeId]?.bossId)
     .sort((a, b) => b.y - a.y)
@@ -225,39 +229,68 @@ export function saalKapitel(): SaalKapitel[] {
     });
 }
 
-/** Das Kapitel, das gerade am Brett hängt; null, wenn der Saal voll ist */
+export type KettenTeil = 'saal' | 'anbau';
+
+/** Saal (bis Ebene 10) oder Anbau (ab ANBAU_AB_EBENE) */
+export function kettenTeil(kapitel: SaalKapitel): KettenTeil {
+  return (ROUTE_DEFS[kapitel.routeId]?.tier ?? 1) >= ANBAU_AB_EBENE ? 'anbau' : 'saal';
+}
+
+/** Die Kapitel eines Teils der Kette, von unten nach oben */
+export function kapitelDesTeils(teil: KettenTeil): SaalKapitel[] {
+  return alleKapitel().filter(k => kettenTeil(k) === teil);
+}
+
+/** Die Kapitel im Saal der Gilde (bis Ebene 10) */
+export function saalKapitel(): SaalKapitel[] {
+  return kapitelDesTeils('saal');
+}
+
+/** Das Kapitel, das gerade am Brett hängt; null, wenn Saal und Anbau voll sind */
 export function laufendesKapitel(stand: AuftragsbrettStand): SaalKapitel | null {
-  return saalKapitel().find(k => !stand.kette.fertig.includes(k.routeId)) ?? null;
+  return alleKapitel().find(k => !stand.kette.fertig.includes(k.routeId)) ?? null;
 }
 
-/** Einleitung der Kette mit der Zahl der Sockel */
+const ZAHLWORT = ['Null', 'Ein', 'Zwei', 'Drei', 'Vier', 'Fünf', 'Sechs', 'Sieben', 'Acht', 'Neun', 'Zehn', 'Elf', 'Zwölf',
+  'Dreizehn', 'Vierzehn', 'Fünfzehn', 'Sechzehn', 'Siebzehn', 'Achtzehn', 'Neunzehn', 'Zwanzig'];
+
+/** Einleitung eines Teils der Kette mit der Zahl seiner Sockel */
+export function ketteEinleitung(teil: KettenTeil): string {
+  const anzahl = kapitelDesTeils(teil).length;
+  const zahl = ZAHLWORT[anzahl] ?? String(anzahl);
+  return teil === 'saal' ? SAAL_EINLEITUNG.replace('{anzahl}', zahl) : ANBAU_EINLEITUNG.replace('{anzahl}', zahl.toLowerCase());
+}
+
+/** Einleitung des Saals (16 Sockel bis Ebene 10) */
 export function saalEinleitung(): string {
-  const zahl = ['Null', 'Ein', 'Zwei', 'Drei', 'Vier', 'Fünf', 'Sechs', 'Sieben', 'Acht', 'Neun', 'Zehn', 'Elf', 'Zwölf',
-    'Dreizehn', 'Vierzehn', 'Fünfzehn', 'Sechzehn', 'Siebzehn', 'Achtzehn', 'Neunzehn', 'Zwanzig'][saalKapitel().length];
-  return SAAL_EINLEITUNG.replace('{anzahl}', zahl ?? String(saalKapitel().length));
+  return ketteEinleitung('saal');
 }
 
-export { SAAL_SCHLUSS };
+export { SAAL_SCHLUSS, ANBAU_SCHLUSS };
 
-/** Belohnung eines Kapitels; das letzte bringt die Siegel für den vollen Saal dazu */
+/** Belohnung eines Kapitels; das letzte eines Teils bringt die Siegel für den vollen Saal oder Anbau dazu */
 function kapitelBelohnung(kapitel: SaalKapitel, letztes: boolean): AuftragsBelohnung {
   const ebene = ROUTE_DEFS[kapitel.routeId]?.tier ?? 1;
   const material = materialJeSieg(kapitel.routeId);
+  const schluss = kettenTeil(kapitel) === 'saal' ? SAAL_SCHLUSS_SIEGEL : ANBAU_SCHLUSS_SIEGEL;
   return {
-    siegel: 3 + Math.ceil(ebene / 2) + (letztes ? SAAL_SCHLUSS_SIEGEL : 0),
+    siegel: 3 + Math.ceil(ebene / 2) + (letztes ? schluss : 0),
     gold: rund5(goldJeLauf(kapitel.routeId)),
     dinge: material ? { [material.material.id]: material.menge * 2 } : {},
   };
 }
 
-/** Ist dieses Kapitel das letzte, das noch fehlt? */
+/**
+ * Ist dieses Kapitel das letzte, das in seinem Teil noch fehlt? Je Teil gibt es das nur einmal: Der Anbau
+ * öffnet den vollen Saal nicht wieder, also kommen die Schluss-Siegel des Saals kein zweites Mal.
+ */
 function letztesKapitel(stand: AuftragsbrettStand, kapitel: SaalKapitel): boolean {
-  return saalKapitel().every(k => k.routeId === kapitel.routeId || stand.kette.fertig.includes(k.routeId));
+  return kapitelDesTeils(kettenTeil(kapitel)).every(k => k.routeId === kapitel.routeId || stand.kette.fertig.includes(k.routeId));
 }
 
-/** Name eines Kapitels in Listen: «Der Saal der Gilde (Ein Zweig des Uralten)» */
+/** Name eines Kapitels in Listen: «Der Saal der Gilde (Ein Zweig des Uralten)», im Anbau «Der Anbau des Saals (…)» */
 export function kettenTitel(kapitel: SaalKapitel): string {
-  return `Der Saal der Gilde (${kapitel.prunkstueck})`;
+  return `${kettenTeil(kapitel) === 'saal' ? 'Der Saal der Gilde' : 'Der Anbau des Saals'} (${kapitel.prunkstueck})`;
 }
 
 /** Belohnung des laufenden Kapitels (für die Anzeige am Brett) */
@@ -268,6 +301,15 @@ export function kapitelBelohnungVon(stand: AuftragsbrettStand, kapitel: SaalKapi
 /** Der Text des Stadtschreibers zum Kapitel; vor dem ersten Sieg im Dungeon einer, der ihn noch nicht kennt */
 export function kapitelText(state: GameState, kapitel: SaalKapitel): string {
   return kapitel.vorSieg && !(kapitel.routeId in bezwungeneDungeons(state)) ? kapitel.vorSieg : kapitel.text;
+}
+
+/** Das Messingschild, so weit die Gilde es lesen kann: vor dem ersten Sieg im Dungeon nur den Anfang (schildVorSieg) */
+export function kapitelSchild(
+  state: GameState, kapitel: SaalKapitel, bezwungen = kapitel.routeId in bezwungeneDungeons(state),
+): { text: string; warum?: string } {
+  return kapitel.schildVorSieg && !bezwungen
+    ? { text: kapitel.schildVorSieg.lesbar, warum: kapitel.schildVorSieg.warum }
+    : { text: kapitel.schild };
 }
 
 /** Stellt das laufende Kapitel ein; der Stand gilt nur für das Kapitel, zu dem er gehört */
@@ -321,18 +363,15 @@ function tagesbonusPruefen(stand: AuftragsbrettStand): number {
 
 // ── Fortschritt ──
 
-/** Fiel ein Held? Auch einer, den «Wiedergeburt» wieder aufstehen liess (sie ist dann verbraucht) */
-function einHeldGefallen(run: ExpeditionRun): boolean {
-  return run.party.some(u => u.hp <= 0 || !!u.specialEffects?.some(e => e.id === 'revive' && e.usesLeft === 0));
-}
-
-/** Wie viel ein Lauf zu einem Ziel beiträgt */
-function beitrag(art: AuftragsArt, routeId: string, gegnerId: string | undefined, run: ExpeditionRun): number {
+/** Wie viel ein Lauf zu einem Ziel beiträgt (Zettel oder Kapitel der Kette) */
+function beitrag(art: AuftragsArt | KapitelArt, routeId: string, gegnerId: string | undefined, run: ExpeditionRun): number {
   switch (art) {
     case 'sieg':
       return run.routeId === routeId && dungeonBezwungen(run) ? 1 : 0;
     case 'makellos':
       return run.routeId === routeId && dungeonBezwungen(run) && !einHeldGefallen(run) ? 1 : 0;
+    case 'heimkehr':
+      return run.routeId === routeId && dungeonBezwungen(run) && alleStehen(run) ? 1 : 0;
     case 'set':
       return run.routeId === routeId ? [run.setTeil, run.setTeilExtra].filter(id => !!id).length : 0;
     case 'jagd':
@@ -359,6 +398,8 @@ export interface AuftragsBilanz {
   tagesbonus: number;
   /** Das letzte Prunkstück steht im Saal */
   saalVoll: boolean;
+  /** Das letzte Prunkstück steht im Anbau */
+  anbauVoll: boolean;
 }
 
 /**
@@ -370,7 +411,7 @@ export interface AuftragsBilanz {
 export function auftraegeNachExpedition(state: GameState, run: ExpeditionRun, jetzt: number): AuftragsBilanz {
   const stand = state.auftragsbrett ?? brettStand(state, jetzt);
   ketteNachziehen(stand);
-  const bilanz: AuftragsBilanz = { meldungen: [], tagesbonus: 0, saalVoll: false };
+  const bilanz: AuftragsBilanz = { meldungen: [], tagesbonus: 0, saalVoll: false, anbauVoll: false };
   for (const a of stand.auftraege) {
     if (a.fertig) continue;
     const dazu = beitrag(a.art, a.routeId, a.gegnerId, run);
@@ -396,7 +437,10 @@ export function auftraegeNachExpedition(state: GameState, run: ExpeditionRun, je
         const b = kapitelBelohnungVon(stand, kapitel);
         stand.kette.fertig.push(kapitel.routeId);
         ketteNachziehen(stand);
-        bilanz.saalVoll = laufendesKapitel(stand) === null;
+        const teil = kettenTeil(kapitel);
+        const voll = kapitelDesTeils(teil).every(k => stand.kette.fertig.includes(k.routeId));
+        bilanz.saalVoll = voll && teil === 'saal';
+        bilanz.anbauVoll = voll && teil === 'anbau';
         gutschreiben(state, stand, b);
         meldung.belohnung = b;
         meldung.prunkstueck = kapitel.prunkstueck;
@@ -531,11 +575,12 @@ function zettelTitel(a: Auftrag): string {
 }
 
 /** Was ein Ziel verlangt, z. B. «Bezwingt den Vulkankern, ohne dass ein Held fällt» */
-export function zielText(art: AuftragsArt, routeId: string, ziel: number, gegnerId?: string, itemId?: string): string {
+export function zielText(art: AuftragsArt | KapitelArt, routeId: string, ziel: number, gegnerId?: string, itemId?: string): string {
   const mal = ziel > 1 ? ` ${ziel}-mal` : '';
   switch (art) {
     case 'sieg': return `Bezwingt ${dungeonWen(routeId)}${mal}`;
     case 'makellos': return `Bezwingt ${dungeonWen(routeId)}${mal}, ohne dass ein Held fällt`;
+    case 'heimkehr': return `Bezwingt ${dungeonWen(routeId)}${mal} und bringt alle Helden heim (wer wieder aufsteht, zählt mit)`;
     case 'set': return `Erbeutet ${ziel > 1 ? `${ziel} Teile` : 'ein Teil'} aus dem Set «${setFuerRoute(routeId)?.name ?? ''}»`;
     case 'jagd': return `Besiegt ${ziel}× ${ENEMY_DEFS[gegnerId ?? '']?.name ?? gegnerId} (zu finden ${imDungeon(routeId)})`;
     case 'lieferung': return `Gebt ${ziel}× ${ITEM_DEFS[itemId ?? '']?.name ?? itemId} am Brett ab`;

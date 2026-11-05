@@ -119,7 +119,7 @@ Was niemand von selbst zählt, schreibt `kennzahlenAktualisieren(state)` vor jed
 `state.statistics` (jeweils der höchste je erreichte Wert, kein Balken fällt zurück):
 `stadtstufe`, `helden_anzahl`, `helden_mit_weg`, `helden_meister`, `ganze_sets`,
 `monsterbuch_entdeckt`, `gildenrang`, `werkstaetten` (stehende Werkstätten), `werkstatt_hoechste_stufe`,
-`zettel_erledigt`, `saal_prunkstuecke`, `saal_sterne`, `rangliste_pokale`, `schmiede_hoechste_stufe`.
+`zettel_erledigt`, `saal_prunkstuecke`, `anbau_prunkstuecke`, `saal_sterne`, `rangliste_pokale`, `schmiede_hoechste_stufe`.
 
 Die Funktion liest nur. Sie legt kein Auftragsbrett, keine Rangliste und keinen Trophäensaal an
 (das täten `brettStand`, `ranglisteStand` und `bossTrophaeen` nebenbei). Die Sterne im Saal zählt
@@ -150,7 +150,7 @@ ist sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
 
 ## Liste
 
-51 Erfolge, die sechs versteckten stehen im Abschnitt «Das System schaut zu». Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
+55 Erfolge, die sechs versteckten stehen im Abschnitt «Das System schaut zu». Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
 Die IDs stehen in Spielständen (`state.achievements`) und dürfen sich nicht ändern. Unbekannte IDs (wie die
 gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `bauplan_1`) überspringt das Spiel.
 
@@ -170,7 +170,8 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Gilde | 👑 | Gildenmeister (neu) | Gildenrang V, Titel Gildenmeister | `gildenrang` ≥ 5 | `gildenrang_5` |
 | Gilde | 📌 | Fleissige Gilde (neu) | 10 Zettel am Auftragsbrett erledigt | `zettel_erledigt` ≥ 10 | `zettel_10` |
 | Gilde | 🏺 | Alle Sockel voll (neu) | alle 16 Prunkstücke der Kette «Der Saal der Gilde» | `saal_prunkstuecke` ≥ 16 | `saal_kette` |
-| Gilde | 🌟 | Glanz des Saals (neu) | 24 der 48 Sterne im Trophäensaal | `saal_sterne` ≥ 24 | `saal_glanz` |
+| Gilde | 🧱 | Angebaut (neu) | auch die 2 Prunkstücke im Anbau des Saals (Erste Stadt, Pfeiler des Tages) | `anbau_prunkstuecke` ≥ 2 | `anbau_kette` |
+| Gilde | 🌟 | Glanz des Saals (neu) | 27 der 54 Sterne im Trophäensaal (Saal und Anbau) | `saal_sterne` ≥ 27 | `saal_glanz` |
 | Gilde | 🥉 | Aufs Treppchen (neu) | ein Pokal der Wochenwertung (Platz 1 bis 3) | `rangliste_pokale` ≥ 1 | `rangliste_pokal` |
 | Gilde | 🏔️ | Gipfelstürmer (neu) | Platz 1 der Gipfel-Rangliste nach einer Expedition | `gipfel_spitze` ≥ 1 | `gipfel_1` |
 | Helden | 🛡️ | Armeeführer | 10 Helden in der Gilde | `helden_anzahl` ≥ 10 | `army_builder` |
@@ -179,7 +180,7 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Dungeons | 🗺️ | Abenteuerlust | 1 Expedition gestartet | `total_expeditions` ≥ 1 | `first_expedition` |
 | Dungeons | 🏆 | Siegreich | 1 Expedition gewonnen | `total_victories` ≥ 1 | `first_victory` |
 | Dungeons | ⚔️ | Veteran | 10 Expeditionen beendet (Sieg, Niederlage oder Rückzug) | `total_victories` + `total_defeats` + `total_retreats` ≥ 10 | `veteran_explorer` |
-| Dungeons | 💎 | Perfektionist | ein Sieg, ohne dass ein Held fällt | `total_flawless_victories` ≥ 1 | `perfectionist` |
+| Dungeons | 💎 | Perfektionist | ein Sieg, ohne dass ein Held fällt (auch nicht für kurz: wer am Wachfeuer oder durch «Wiedergeburt» wieder aufstand, ist gefallen; `einHeldGefallen`) | `total_flawless_victories` ≥ 1 | `perfectionist` |
 | Dungeons | 💀 | Bossbekämpfer | 1 Boss besiegt | `total_bosses_killed` ≥ 1 | `first_boss` |
 | Dungeons | 🔥 | Bosskiller | 5 Bosse besiegt | `total_bosses_killed` ≥ 5 | `boss_slayer` |
 | Dungeons | 🐉 | Bossjäger (neu) | 10 Bosse besiegt | `total_bosses_killed` ≥ 10 | `bosse_10` |
@@ -193,8 +194,11 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Gipfel-Taten | ⛏️ | Sternenmetzger (neu) | Sternenschlund: dreimal das Risiko, Nyxar besiegt | `tat_schlund` ≥ 1 | `gipfel_schlund` |
 | Gipfel-Taten | ✍️ | Pfandleiher des Jahres (neu) | Mondhof: dreimal das Risiko, Argentis besiegt | `tat_pfand` ≥ 1 | `gipfel_pfand` |
 | Gipfel-Taten | 🕛 | Zeitumstellung (neu) | Morgentor: dreimal das Risiko, Sunna besiegt | `tat_uhr` ≥ 1 | `gipfel_uhr` |
-| Gipfel-Taten | 🐲 | Hat alles (neu) | alle sechs Gipfel-Taten | `tat_hort` + … + `tat_uhr` ≥ 6 | `gipfel_alle` |
+| Gipfel-Taten | 🏮 | Mit blossen Händen (neu) | Erste Stadt: dreimal ins Wachfeuer gegriffen, Alruna besiegt | `tat_feuer` ≥ 1 | `gipfel_feuer` |
+| Gipfel-Taten | 🏛️ | Abrissunternehmen (neu) | Pfeiler des Tages: alle drei Pfeiler gebrochen, Orm besiegt | `tat_pfeiler` ≥ 1 | `gipfel_pfeiler` |
+| Gipfel-Taten | 🐲 | Hat alles (neu) | alle acht Gipfel-Taten | `tat_hort` + … + `tat_pfeiler` ≥ 8 | `gipfel_alle` |
 | Gipfel-Taten | 🧾 | Kleingedrucktes (neu) | Mondhof: dreimal das Risiko, Argentis nicht besiegt | `tat_kleingedrucktes` ≥ 1 | `gipfel_kleingedrucktes` |
+| Gipfel-Taten | 🧱 | Einsturzgefahr (neu) | Pfeiler des Tages: alle drei Pfeiler gebrochen, Orm nicht besiegt | `tat_einsturz` ≥ 1 | `gipfel_einsturz` |
 | Sammeln | 🧩 | Komplett (neu) | ein Held trägt ein ganzes Dungeon-Set (3 Teile) | `ganze_sets` ≥ 1 | `ganzes_set` |
 | Sammeln | 🎒 | Sammler (neu) | Helden tragen 3 verschiedene ganze Sets | `ganze_sets` ≥ 3 | `ganze_sets_3` |
 | Sammeln | ⚒️ | Am Amboss (neu) | ein Set-Teil in der Schmiede verbessert | `schmiede_hoechste_stufe` ≥ 1 | `schmiede_1` |
@@ -202,21 +206,25 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Sammeln | 📖 | Monsterkundler (neu) | 25 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 25 | `monsterbuch_25` |
 | Sammeln | 📚 | Monstergelehrter (neu) | 50 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 50 | `monsterbuch_50` |
 
-Die Zahlen 16 (Sockel), 24 und 48 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
-Boss-Dungeon der Karte (`SAAL_SOCKEL`), drei Sterne je Sockel, die Hälfte davon für «Glanz des
-Saals», `MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ändert die Ziele mit.
+Die Zahlen 16 und 2 (Sockel), 27 und 54 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
+Boss-Dungeon der Karte, bis Ebene 10 im Saal (`SAAL_SOCKEL`), ab Ebene 11 im Anbau (`ANBAU_SOCKEL`,
+`ANBAU_AB_EBENE`), drei Sterne je Sockel in beiden, die Hälfte davon für «Glanz des Saals»,
+`MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ab Ebene 13 ändert «Angebaut» und den Glanz mit; «Alle Sockel
+voll» bleibt bei sechzehn, auch wer den Saal schon voll hatte, behält den Erfolg.
 
 ## Gipfel-Taten
 
-- **Regel:** In den sechs Dungeons über dem Vulkankern in allen drei festen Wahl-Räumen die erste Option (das
+- **Regel:** In den acht Dungeons über dem Vulkankern in allen drei festen Wahl-Räumen die erste Option (das
   Risiko) nehmen und den Boss besiegen (`dungeonBezwungen`). Ein Sieg am Rundenlimit zählt nicht, der Boss lebt.
 - **Aus der Chronik gezählt** (`src/systems/GipfelTaten.ts`, am Ende in `finalizeExpeditionProgress`): Die Wahl
   steht nur dort, als Satz `nachklang.a` oder `nachklang.b`; ein eigenes Feld im Lauf gibt es nicht.
-- Jede Tat setzt ihren Zähler auf 1, nie höher: Sechsmal dieselbe Tat bringt nicht «Hat alles».
+- Jede Tat setzt ihren Zähler auf 1, nie höher: Achtmal dieselbe Tat bringt nicht «Hat alles».
 - **Kleingedrucktes:** Im Mondhof alle drei Pfandzettel unterschrieben, Argentis lebt: jeder Rückzug nach dem
   dritten Pfandzettel (am letzten Kontrollpunkt «Raum 15 von 16» oder im Bosskampf mit «Rückzug» statt
   «Kampf starten!»), Niederlage oder Rundenlimit (dann steht über der Bilanz «SIEG»).
-- Die Bilanz zeigt bei diesen acht Erfolgen Name und Satz («🏅 Erfolg: Name – Beschreibung», `erfolgBilanzZeile`).
+- **Einsturzgefahr:** dasselbe bei den Pfeilern des Tages: alle drei Pfeiler gebrochen, Orm lebt. Wer bricht,
+  holt Orms Wut auf Runde 4; die Tat ist also eher ein Unfall als ein Plan, darum steht sie neben «Kleingedrucktes».
+- Die Bilanz zeigt bei diesen elf Erfolgen Name und Satz («🏅 Erfolg: Name – Beschreibung», `erfolgBilanzZeile`).
   Einen Hinweis in der Kopfzeile gibt es dafür nicht (Ende der Expedition, `hinweis: false`, wie unter
   «Wann geprüft wird»); dort steigt nur die Zahl am 🏅.
 - Gezählt wird erst ab jetzt; frühere Läufe holt kein Spielstand nach.
@@ -264,9 +272,9 @@ ganz gerechnet; fällt darin ein Gegner, gibt es kein «Kalte Füsse».
 
 `tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (beim Händler kaufen, Bauen,
 Ausbauen, Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
-zu setzen: Eine starke Gilde schafft alle 51 Erfolge in 42 Tagen und 260 Expeditionen (Grenze im Test: unter 60
+zu setzen: Eine starke Gilde schafft alle 55 Erfolge in 41 Tagen und 255 Expeditionen (Grenze im Test: unter 60
 Tagen und unter 400 Expeditionen). In Wahl-Räumen nimmt sie immer das Risiko, für «Kleingedrucktes» kehrt sie einmal
-im Mondhof am letzten Kontrollpunkt um. Die versteckten holt `versteckteTaten()` mit sieben Expeditionen: an Tag 1
+im Mondhof am letzten Kontrollpunkt um, für «Einsturzgefahr» einmal bei den Pfeilern des Tages. Die versteckten holt `versteckteTaten()` mit sieben Expeditionen: an Tag 1
 «Ohne Hose» (von selbst beim ersten Boss), «Kalte Füsse», «Keine Zeugen», «Unentschieden» und «Schlafstörung», an
 Tag 2 «Wörtlich genommen» (ein frisch angeheuerter Held). Für «Unentschieden» kämpft der Guardian einmal ohne
 Angriff (für eine Gruppe, die den Boss nicht klein kriegt). Dazu hat
@@ -276,9 +284,9 @@ dort eine Zeile.
 - Bauten: 4 Neubauten (die Werkstätten) und 9 Ausbauten, also höchstens 13 für «Baumeister»; Werkstätten höchstens
   4 auf Stufe 3.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
-- Sets: 29 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
-- Trophäensaal: 16 Sockel mit je 3 Sternen.
-- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 29 Dungeons der Karte.
+- Sets: 31 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
+- Trophäensaal: 16 Sockel im Saal und 2 im Anbau, je mit 3 Sternen.
+- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 31 Dungeons der Karte.
 - Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg

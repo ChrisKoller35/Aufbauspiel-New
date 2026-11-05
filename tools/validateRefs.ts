@@ -17,7 +17,7 @@ import * as path from "path";
 import { fileURLToPath } from "url";
 import { LOOT_TABLE_DEFS } from "../src/data/lootTables.js";
 import { ITEM_DEFS, getItemSpriteKey } from "../src/data/items.js";
-import { ROUTE_DEFS } from "../src/data/routes.js";
+import { ROUTE_DEFS, ROUTE_IMAGE_MAP } from "../src/data/routes.js";
 import { ENEMY_DEFS } from "../src/data/enemies.js";
 
 // ─── Typen ────────────────────────────────────────────────────
@@ -147,6 +147,37 @@ function checkItemSprites(): { errors: ValidationError[]; checkedCount: number }
 
 // ─── Ausgabe ──────────────────────────────────────────────────
 
+// ─── Check 5: Bilder der Gegner und Routen ───────────────────
+// Gegner laden ihr Bild direkt aus sprites/final/<spriteKey>.png, Routen aus tiles/<Bild>.png.
+// Fehlt eines, bleibt der Kampf oder die Karte leer (Leihbild: tools/leihbilder.ts).
+
+function checkGegnerUndRoutenBilder(): { errors: ValidationError[]; checkedCount: number } {
+  const errors: ValidationError[] = [];
+  let checkedCount = 0;
+  const assets = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../public/assets");
+
+  for (const [enemyId, enemy] of Object.entries(ENEMY_DEFS)) {
+    checkedCount++;
+    if (!fs.existsSync(path.join(assets, "sprites/final", `${enemy.spriteKey}.png`))) {
+      errors.push({
+        source: `Enemy '${enemyId}'`,
+        message: `Bild '${enemy.spriteKey}.png' fehlt in public/assets/sprites/final/ (Leihbild: tools/leihbilder.ts)`,
+      });
+    }
+  }
+  for (const [routeId, bild] of Object.entries(ROUTE_IMAGE_MAP)) {
+    checkedCount++;
+    if (!fs.existsSync(path.join(assets, "tiles", `${bild}.png`))) {
+      errors.push({
+        source: `Route '${routeId}'`,
+        message: `Bild '${bild}.png' fehlt in public/assets/tiles/ (Leihbild: tools/leihbilder.ts, ordner 'tiles')`,
+      });
+    }
+  }
+
+  return { errors, checkedCount };
+}
+
 function printErrors(label: string, errors: ValidationError[]) {
   if (errors.length === 0) return;
 
@@ -166,16 +197,18 @@ function main() {
   const check2 = checkRouteEnemies();
   const check3 = checkEnemyLootTables();
   const check4 = checkItemSprites();
+  const check5 = checkGegnerUndRoutenBilder();
 
   const allErrors = [
     ...check1.errors,
     ...check2.errors,
     ...check3.errors,
     ...check4.errors,
+    ...check5.errors,
   ];
 
   const totalChecked =
-    check1.checkedCount + check2.checkedCount + check3.checkedCount + check4.checkedCount;
+    check1.checkedCount + check2.checkedCount + check3.checkedCount + check4.checkedCount + check5.checkedCount;
 
   // Fehler ausgeben
   if (check1.errors.length > 0) {
@@ -198,6 +231,11 @@ function main() {
     printErrors("Fehler", check4.errors);
   }
 
+  if (check5.errors.length > 0) {
+    console.log("\nCheck 5: Bilder der Gegner und Routen");
+    printErrors("Fehler", check5.errors);
+  }
+
   // Zusammenfassung
   console.log("\n" + "=".repeat(60));
 
@@ -205,7 +243,7 @@ function main() {
     console.log(
       `FEHLER: ${allErrors.length} ungueltige Referenz(en) gefunden` +
       ` (${check1.checkedCount} Items, ${check2.checkedCount} Enemies/find-Items, ${check3.checkedCount} LootTables,` +
-      ` ${check4.checkedCount} Item-Bilder geprueft)`
+      ` ${check4.checkedCount} Item-Bilder, ${check5.checkedCount} Gegner-/Routenbilder geprueft)`
     );
     console.log("Bitte Datei-Referenzen pruefen (items.ts / enemies.ts / lootTables.ts / sprites/final).");
     process.exit(1);
@@ -213,7 +251,7 @@ function main() {
     console.log(
       `✓ Alle Referenzen valide` +
       ` (${check1.checkedCount} LootTable-Eintraege, ${check2.checkedCount} Route-Enemies/Items, ${check3.checkedCount} Enemy-LootTables,` +
-      ` ${check4.checkedCount} Item-Bilder geprueft)`
+      ` ${check4.checkedCount} Item-Bilder, ${check5.checkedCount} Gegner-/Routenbilder geprueft)`
     );
     process.exit(0);
   }

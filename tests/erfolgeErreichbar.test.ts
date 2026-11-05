@@ -16,7 +16,7 @@ import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter } from '../src/models/GuildRoster';
 import { createBuildingInstance } from '../src/models/Building';
-import { ACHIEVEMENT_DEFS, SAAL_SOCKEL } from '../src/data/achievements';
+import { ACHIEVEMENT_DEFS, ANBAU_SOCKEL, SAAL_SOCKEL } from '../src/data/achievements';
 import { BUILDING_DEFS, BUILD_MENU_ORDER } from '../src/data/buildings';
 import { kaufpreis } from '../src/data/haendler';
 import { stadtStufeVon } from '../src/data/stadtstufen';
@@ -36,7 +36,7 @@ import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { besitz, getrageneSets, setBeute } from '../src/systems/DungeonSets';
 import { materialFuerTeil, schmiedeBeute, schmiedeFehlt, schmiedeKosten, schmiedeStufe, schmieden } from '../src/systems/Schmiede';
 import { ausbauen, ausbauInfo, maxStufe, MAX_STUFE_WERKSTATT } from '../src/systems/Ausbau';
-import { brettStand, istSpielbar, laufendesKapitel, liefern, saalKapitel, splitterEinloesen } from '../src/systems/Auftragsbrett';
+import { alleKapitel, brettStand, istSpielbar, kapitelDesTeils, laufendesKapitel, liefern, saalKapitel, splitterEinloesen } from '../src/systems/Auftragsbrett';
 import { belohnungenAbholen, TAG_MS } from '../src/systems/Rangliste';
 import { bezwungeneDungeons } from '../src/systems/Bezwungen';
 import { albtraumBeute, merkeHaertegrad } from '../src/systems/Haertegrade';
@@ -296,6 +296,11 @@ function musterspiel(): { state: GameState; expeditionen: number; tage: number }
       expedition(state, system, 'mondhof', trupp, true);
       expeditionen++;
     }
+    // «Einsturzgefahr»: bei den Pfeilern des Tages dreimal brechen und vor Orm umkehren
+    if (istSpielbar(state, 'tagespfeiler') && !state.achievements.includes('gipfel_einsturz')) {
+      expedition(state, system, 'tagespfeiler', trupp, true);
+      expeditionen++;
+    }
     expeditionen += versteckteTaten(state, system, trupp);
     for (let i = 0; i < 5; i++) {
       state.day++;
@@ -320,7 +325,7 @@ describe('Erfolge: mit den echten Regeln erreichbar', () => {
     // Die Sterne zählt der Erfolg wie der Trophäensaal sie zeigt
     const glanz = saalGlanz(bossTrophaeen(state, Date.now()));
     expect(saalSterne(state)).toBe(glanz.sterne);
-    expect(glanz.max).toBe(3 * SAAL_SOCKEL);
+    expect(glanz.max).toBe(3 * (SAAL_SOCKEL + ANBAU_SOCKEL));
   }, 30_000);
 });
 
@@ -343,7 +348,9 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       gildenrang: GUILD_RANK_DEFS.length,
       zettel_erledigt: Infinity,
       saal_prunkstuecke: saalKapitel().length,
-      saal_sterne: 3 * saalKapitel().length,
+      anbau_prunkstuecke: kapitelDesTeils('anbau').length,
+      // Glanz: drei Sterne je Sockel, im Saal und im Anbau
+      saal_sterne: 3 * alleKapitel().length,
       rangliste_pokale: Infinity,
       gipfel_spitze: 1,
       // Je Klasse ein Held (Anheuern), Wege und Meister unter ihnen
@@ -369,7 +376,10 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       tat_schlund: 1,
       tat_pfand: 1,
       tat_uhr: 1,
+      tat_feuer: 1,
+      tat_pfeiler: 1,
       tat_kleingedrucktes: 1,
+      tat_einsturz: 1,
       // Das System schaut zu: je Tat höchstens 1, Albtraum in jedem Dungeon der Karte
       kalte_fuesse: 1,
       unentschieden: 1,
@@ -400,6 +410,8 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
 
   test('die Sockel des Saals sind die Kapitel der Kette', () => {
     expect(SAAL_SOCKEL).toBe(saalKapitel().length);
+    expect(ANBAU_SOCKEL).toBe(kapitelDesTeils('anbau').length);
+    expect(ACHIEVEMENT_DEFS.find(d => d.id === 'anbau_kette')!.ziel).toBe(ANBAU_SOCKEL);
     expect(ACHIEVEMENT_DEFS.find(d => d.id === 'saal_kette')!.ziel).toBe(saalKapitel().length);
     expect(saalKapitel().every(k => setVonItem(setTeilIds(setFuerRoute(k.routeId)!)[0]))).toBe(true);
   });
