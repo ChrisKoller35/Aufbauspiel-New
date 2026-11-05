@@ -93,7 +93,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
    hochgeschmiedet ist.
 7. **Eigene Bilder** für Set-Teile nur mit Christophs Okay (Kosten-Regel). Bis dahin tragen sie Bilder
    vorhandener Gegenstände mit dem Set-Zeichen darauf, oder ein Leihbild (`npm run leihbilder`, umgefärbt aus
-   einem vorhandenen Bild, eigener Dateiname; so die Sets des Taglichts).
+   einem vorhandenen Bild, eigener Dateiname; so die Sets des Taglichts). Passt kein vorhandenes Bild, eine
+   Zeichnung aus Code (`npm run material-bilder -- KEY`, `tools/materialBilder.ts`, kostet nichts): die Glut
+   der Vorigen (eine Kohle im Käfig statt des Phönix vom Amulett der Wiedergeburt) und der Ring aus dem
+   Schlussring (ein Reif statt eines Anhängers).
 
 ## Stärke (Eichung)
 
@@ -234,5 +237,5 @@ Die Tabelle oben ist der Stand danach.
   `SPECIAL_EFFECT_DEFS` nicht gibt und die darum nichts tun und nirgends angezeigt werden:
   `magic_resist` (T3-Platte), `piercing` (T4-Waffe), `evasion` (T4-Leder), `spell_amplify` (T4-Robe),
   `slow_on_hit` und `air_decay_resist` (Abyss-Gegenstände in `src/data/items.ts`).
-- **Eigene Set-Bilder:** 93 Teile (alle 31 Sets, die zwei des Taglichts tragen Leihbilder), etwa 0.06 USD je
-  Bild, nur mit Christophs Okay.
+- **Eigene Set-Bilder:** 93 Teile (alle 31 Sets, die zwei des Taglichts tragen Leihbilder und Zeichnungen aus
+  Code), etwa 0.06 USD je Bild, nur mit Christophs Okay.

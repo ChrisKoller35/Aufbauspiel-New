@@ -362,7 +362,7 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
 
   // --- Ebene 11: Beute der ersten Gildenmeisterin (erster Sieg garantiert). Einhändig, mit der Gezeitenwelle:
   //     alle 3 Runden heilt der verletzteste Verbündete 15 % seiner Leben. Die Alternative zum Amtsstab
-  //     (Letzte Bastion) für ein Team ohne Heiler. Leihbild: tools/leihbilder.ts ---
+  //     (Letzte Bastion) für ein Team ohne Heiler. Bild aus Code, eine Maurerkelle (tools/materialBilder.ts) ---
   alrunas_kelle: {
     id: 'alrunas_kelle', name: 'Alrunas Kelle', type: 'gear',
     stackSize: 1, baseValue: 250, gearSlot: 'mainHand', weaponSlotType: '1h', tier: 11,

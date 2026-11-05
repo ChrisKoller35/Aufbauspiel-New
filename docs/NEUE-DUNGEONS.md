@@ -27,20 +27,29 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   (Silberschreiber, Mondwache, Zollgeist, Mondkalb, Argentis) Bilder anderer Gegner, am Morgentor ebenso
   (Lichtküster, Torhüter aus Messing, Dämmerfalke, Morgenhahn, Sunna). Im Taglicht sind alle Bilder
   **Leihbilder** (`npm run leihbilder`, `tools/leihbilder.ts`): vorhandene Bilder, umgefärbt und neu gespeichert,
-  ohne ein neues Bild zu erzeugen. Die vier Echos der Vorigen tragen Bilder unserer eigenen Helden, sepia und
-  blasser (der Schildträger den alten Wächter, die Bogenschützin die Waldläuferin, der Messerstecher die
-  Assassine, die Stadtheilerin die Klerikerin), weil sie die Gilde vor uns sind; Wachfeuerwicht, Steingeselle,
-  Schlusssteinwächter, Gewölbefledermaus, Mörtelgeist, Himmelsriss, Steinmetz und die Bosse tragen aufgehellte
-  Gegnerbilder (Alruna die Festungswächterin in Gold, Orm den Kristallgolem in Sandstein), die Fugenspinne die
-  Riesenspinne. `npm run validate-refs` prüft, dass jedes Gegner- und Routenbild als Datei da ist (Check 5).
+  ohne ein neues Bild zu erzeugen. Die Echos der Vorigen tragen die alten Bilder unserer Klassen, weil sie die
+  Gilde vor uns sind (der Schildträger den alten Wächter, die Bogenschützin die Waldläuferin, der Messerstecher
+  die Assassine, die Stadtheilerin die Klerikerin, in den Pfeilern der Steinmetz den Berserker), ganz in Sepia,
+  verblasst und gespiegelt: Unsere Helden erscheinen im Kampf mit ihren Bildnissen, die Echos als blasse
+  Spiegelbilder, so hält sie niemand für die eigenen. Wachfeuerwicht, Steingeselle, Schlusssteinwächter,
+  Gewölbefledermaus, Mörtelgeist, Himmelsriss und die Bosse tragen aufgehellte Gegnerbilder (Alruna die
+  Festungswächterin in Gold, Orm den Kristallgolem in Sandstein), die Fugenspinne die Riesenspinne.
+  `npm run validate-refs` prüft, dass jedes Gegner- und Routenbild als Datei da ist (Check 5).
+  Gegenstände: Glutkelle, Harnisch der Nachtwache, Bogen aus dem Strebebogen und Mantel des Trägers sind
+  Leihbilder; Alrunas Kelle, die Glut der Vorigen und der Ring aus dem Schlussring sind aus Code gezeichnet
+  (`npm run material-bilder -- KEY`, wie der Schlussstein), weil kein vorhandenes Bild eine Kelle, eine Kohle
+  oder einen Ring zeigt (vorher: ein umgefärbtes Schwert, der Phönix des Amuletts der Wiedergeburt, ein Anhänger).
 - **Routenbilder:** `exp_drachenhort`, `exp_himmelsarchiv`, `exp_sternenschmiede` und `exp_sternenschlund`
   (Karte, Routenliste, Kampf). Der Mondhof zeigt bis zu einem eigenen Bild `exp_sternenschlund`, das
   Morgentor `exp_sternenschmiede`. Die Erste Stadt und die Pfeiler des Tages haben eigene Dateien
   (`exp_erste_stadt`, `exp_tagespfeiler`), aber nur als Leihbild: die Häuser der Stadtkarte (`tile_buildings`)
-  und die Tiefen Ruinen (`exp_ruins_depths`), beide golden umgefärbt. **Schwäche:** Man sieht ihnen an, dass es
-  dieselben Bilder sind wie weiter unten, nur heller; die Ruinen bleiben Ruinen, ein Pfeiler ist nicht zu sehen.
-  Bei Gegnern fällt das kaum auf, bei einem Routenbild, das die Expedition einen ganzen Lauf lang zeigt, schon.
-  Dafür braucht es zwei echte Bilder, und die gibt es nur mit Christophs Okay (Kosten-Regel).
+  und die Tiefen Ruinen (`exp_ruins_depths`), beide golden umgefärbt. **Schwächen:** Den Routenbildern sieht man
+  an, dass es dieselben Bilder sind wie weiter unten, nur heller; die Pfeiler des Tages sind die Säulenhalle der
+  Tiefen Ruinen, keine Pfeiler, die den Himmel tragen. Bei einem Routenbild, das die Expedition einen ganzen Lauf
+  lang zeigt, fällt das am meisten auf. Weniger bei den Gegnern: Alruna ist die Festungswächterin in Gold, eine
+  Rüstung ohne Gesicht, der Steingeselle ein Moosgolem in Sepia, Orm ein Kristallgolem. Die gezeichneten
+  Gegenstände sind schlichter als die gemalten daneben. Für alles das braucht es echte Bilder, und die gibt es
+  nur mit Christophs Okay (Kosten-Regel); am meisten bringen die zwei Routenbilder und Alruna.
 - **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen besonderen Gegenstand dazu.
   Drachenhort und Himmelsarchiv geben je ein T5-Stück; die drei T5-Stücke wurden dafür so verstärkt, dass
   sie je etwas besser sind als das beste T4-Stück für denselben Platz. Korrund gibt seinen Hammer (T7,

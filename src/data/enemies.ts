@@ -726,7 +726,8 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // Die Vorigen: Echos der Gilde vor der Gilde, gebaut wie unsere (Schild, Bogen, Messer, Heilerin), dazu ein
   // Wicht aus den Wachfeuern und Alrunas Geselle aus Tagstein. Werte: die Wachen des Morgentors, Angriff ×1,12,
   // Leben nur ×1,05, weil es keine Rast gibt (Entwurf; Eichung in docs/NEUE-DUNGEONS.md, «Im Taglicht»).
-  // Die Bilder sind Leihbilder (tools/leihbilder.ts): die eigenen Helden in Sepia, Alruna golden.
+  // Die Bilder sind Leihbilder (tools/leihbilder.ts): die alten Bilder unserer Klassen, ganz Sepia, verblasst und
+  // gespiegelt, damit sie niemand für die eigenen Helden hält; Alruna golden.
   schildtraeger_vorige: {
     id: 'schildtraeger_vorige', name: 'Schildträger der Vorigen', role: 'melee',
     hp: 630, atk: 38, def: 25, spd: 0.6, critChance: 0.05, critMult: 1.5,

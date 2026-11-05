@@ -39,6 +39,10 @@ interface Leihbild {
   helligkeit?: number;
   /** Farbkanäle mischen, vor dem Drehen */
   mischung?: Mischung;
+  /** Zum hellen Grau hin verblassen, nach Mischen und Drehen: 0 = gar nicht, 0,4 = Kontrast auf 60 % */
+  verblassen?: number;
+  /** Waagrecht spiegeln (die Echos der Vorigen schauen andersherum als unsere Helden) */
+  spiegeln?: boolean;
   /** 'tiles': Vorlage und Ziel in public/assets/tiles/ (Routenbilder); sonst sprites/final/ */
   ordner?: 'tiles';
 }
@@ -52,8 +56,11 @@ function sepia(anteil: number): Mischung {
 }
 // Graustufen, golden getönt (Helligkeit × 1,25 / 1,0 / 0,55): Tagstein, Gold der Ersten Stadt
 const GOLDTON: Mischung = [[0.375, 0.7375, 0.1375], [0.3, 0.59, 0.11], [0.165, 0.3245, 0.0605]];
-// Warm, aber nicht ganz grau: Ocker und Staub (Harnisch der Nachtwache, Mantel des Trägers)
+// Warm, aber nicht ganz grau: Ocker und Staub (Mantel des Trägers)
 const OCKER: Mischung = [[0.6, 0.4, 0.1], [0.25, 0.6, 0.1], [0.1, 0.2, 0.5]];
+// Grüner Kachelgrund wird Orange, Stahl bleibt grau (Zeilen ergeben je 1): Harnisch der Nachtwache.
+// OCKER machte aus dem Grün ein trübes Oliv.
+const GRUEN_ZU_ORANGE: Mischung = [[0, 1, 0], [0.35, 0.5, 0.15], [0.5, 0, 0.5]];
 
 // Ergibt jede Zeile zusammen 1, bleibt Grau grau (Stahl, Silber, Glas).
 // Blau wird Türkis: Grün und Blau mischen sich, Rot bleibt. Den Farbton drehen reicht bei blauen Vorlagen
@@ -89,29 +96,30 @@ export const LEIHBILDER: Record<string, Leihbild> = {
   ITEM_TIDE_ROBE: { quelle: 'ITEM_BATTLE_ROBE', mischung: BLAU_ZU_TUERKIS },
   ITEM_ABYSS_AMULET: { quelle: 'ITEM_ARCANE_AMULET', farbton: 250 },
 
-  // Ebene 11, Die Erste Stadt: die Vorigen sind blasse Echos der eigenen Helden (Sepia),
-  // Alruna und ihr Geselle aus Tagstein golden; das Wachfeuer-Set warm
-  ENEMY_ECHO_SCHILDTRAEGER: { quelle: 'HERO_GUARDIAN_OLD', mischung: sepia(0.6) },
-  ENEMY_ECHO_BOGENSCHUETZIN: { quelle: 'HERO_RANGER', mischung: sepia(0.6) },
-  ENEMY_ECHO_MESSERSTECHER: { quelle: 'HERO_ASSASSIN', mischung: sepia(0.6), helligkeit: 1.25 },
-  ENEMY_ECHO_STADTHEILERIN: { quelle: 'HERO_CLERIC', mischung: sepia(0.6) },
+  // Ebene 11, Die Erste Stadt: die Vorigen sind Echos der Gilde vor uns, mit den alten Bildern unserer
+  // Klassen, aber ganz Sepia, verblasst und gespiegelt, damit niemand sie für die eigenen Helden hält.
+  // Alruna und ihr Geselle aus Tagstein golden; das Wachfeuer-Set warm. Alrunas Kelle und die Glut der
+  // Vorigen sind gezeichnet (tools/materialBilder.ts): ein Schwert war keine Kelle, der Phönix gehört
+  // schon dem Amulett der Wiedergeburt.
+  ENEMY_ECHO_SCHILDTRAEGER: { quelle: 'HERO_GUARDIAN_OLD', mischung: sepia(1), verblassen: 0.4, spiegeln: true },
+  ENEMY_ECHO_BOGENSCHUETZIN: { quelle: 'HERO_RANGER', mischung: sepia(1), verblassen: 0.4, spiegeln: true },
+  ENEMY_ECHO_MESSERSTECHER: { quelle: 'HERO_ASSASSIN', mischung: sepia(1), verblassen: 0.4, spiegeln: true },
+  ENEMY_ECHO_STADTHEILERIN: { quelle: 'HERO_CLERIC', mischung: sepia(1), verblassen: 0.4, spiegeln: true },
   ENEMY_WACHFEUERWICHT: { quelle: 'ENEMY_FOREST_WISP', farbton: -30 },
   ENEMY_STEINGESELLE: { quelle: 'ENEMY_MOSS_GOLEM', mischung: sepia(0.9) },
   BOSS_ALRUNA: { quelle: 'BOSS_FORTRESS_WARDEN', mischung: GOLDTON, helligkeit: 1.8 },
-  ITEM_ALRUNAS_KELLE: { quelle: 'ITEM_IRON_SWORD', farbton: -80 },
   ITEM_SET_WACHFEUER_HAMMER: { quelle: 'ITEM_WAR_HAMMER', mischung: GOLDTON, helligkeit: 1.4 },
-  ITEM_SET_WACHFEUER_PLATTE: { quelle: 'ITEM_CHAIN_ARMOR', mischung: OCKER, helligkeit: 1.1 },
-  ITEM_SET_WACHFEUER_TALISMAN: { quelle: 'ITEM_AMULET_OF_REBIRTH', farbton: -20, saettigung: 1.2 },
+  ITEM_SET_WACHFEUER_PLATTE: { quelle: 'ITEM_CHAIN_ARMOR', mischung: GRUEN_ZU_ORANGE, saettigung: 1.2 },
   // Ebene 12, Die Pfeiler des Tages: heller, sonnenwarmer Stein
   ENEMY_SCHLUSSSTEINWAECHTER: { quelle: 'ENEMY_CAVE_GOLEM_SHARD', mischung: sepia(0.9), helligkeit: 1.3 },
   ENEMY_GEWOELBEFLEDERMAUS: { quelle: 'ENEMY_STALACTITE_BAT', mischung: sepia(0.8), helligkeit: 1.2 },
   ENEMY_MOERTELGEIST: { quelle: 'ENEMY_TOMB_WRAITH', mischung: sepia(0.4) },
   ENEMY_HIMMELSRISS: { quelle: 'ENEMY_CURSED_WISP', saettigung: 0.6, helligkeit: 1.25 },
-  ENEMY_ECHO_STEINMETZ: { quelle: 'HERO_BERSERKER', mischung: sepia(0.6) },
+  ENEMY_ECHO_STEINMETZ: { quelle: 'HERO_BERSERKER', mischung: sepia(1), verblassen: 0.4, spiegeln: true },
   BOSS_ORM: { quelle: 'BOSS_CRYSTAL_GOLEM', mischung: sepia(0.8), helligkeit: 1.45 },
   ITEM_SET_TAGWERK_BOGEN: { quelle: 'ITEM_LONGBOW', farbton: 150 },
   ITEM_SET_TAGWERK_LEDER: { quelle: 'ITEM_BANDIT_KINGS_CLOAK', mischung: OCKER, helligkeit: 1.4 },
-  ITEM_SET_TAGWERK_RING: { quelle: 'ITEM_CRYSTAL_PENDANT', farbton: 150 },
+  // Der Ring aus dem Schlussring ist gezeichnet (tools/materialBilder.ts), ein Anhänger war kein Ring
   // Routenbilder, bis Christoph eigene zeichnet: die Erste Stadt ist Magic City in Gold,
   // die Pfeiler die Ruinentiefen in Gold
   exp_erste_stadt: { quelle: 'tile_buildings', mischung: GOLDTON, helligkeit: 1.3, ordner: 'tiles' },
@@ -129,12 +137,13 @@ async function main(): Promise<void> {
     const datei = path.join(zielOrdner ?? quellOrdner, `${key}.png`);
     if (fs.existsSync(datei) && !ueberschreiben) continue;
     let bild = sharp(path.join(quellOrdner, `${b.quelle}.png`));
-    // sharp mischt immer zuerst die Kanäle und dreht danach, egal in welcher Reihenfolge aufgerufen
+    // sharp hält eine feste Reihenfolge, egal wie aufgerufen: spiegeln, Kanäle mischen, drehen, verblassen
+    if (b.spiegeln) bild = bild.flop();
     if (b.mischung) bild = bild.recomb(b.mischung);
-    await bild
-      .modulate({ hue: b.farbton ?? 0, saturation: b.saettigung ?? 1, brightness: b.helligkeit ?? 1 })
-      .png()
-      .toFile(datei);
+    bild = bild.modulate({ hue: b.farbton ?? 0, saturation: b.saettigung ?? 1, brightness: b.helligkeit ?? 1 });
+    // a·Wert + b auf Rot, Grün und Blau; die Durchsichtigkeit bleibt
+    if (b.verblassen) bild = bild.linear(1 - b.verblassen, Math.round(212 * b.verblassen));
+    await bild.png().toFile(datei);
     console.log(`  ${key} ← ${b.quelle}`);
     neu++;
   }
