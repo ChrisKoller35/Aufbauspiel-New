@@ -702,6 +702,21 @@ export function gegnerGestorben(gestorben: CombatUnit, party: CombatUnit[], log:
 export function rundenEnde(
   party: CombatUnit[], gegner: CombatUnit[], runde: number, rng: SeededRNG, log: Log,
 ): void {
+  // Tragkraft (Set «Was den Tag trug»): Solange der Träger steht, trägt die ganze Gruppe mit, jede Runde
+  // etwas mehr Angriff bis Kampfende, mit Höchstwert. Mehrere Träger tragen nicht doppelt (der stärkste zählt).
+  const traeger = staerksterTraeger(party, 'tragkraft');
+  if (traeger && lebendig(gegner).length > 0) {
+    const kraft = effekt(traeger, 'tragkraft')!;
+    const max = kraft.max ?? 42;
+    let gewachsen = 0;
+    for (const h of lebendig(party)) {
+      const alt = bonus(h, 'tragkraft', 'atk');
+      const neu = Math.min(max, alt + staerke(traeger, 'tragkraft'));
+      if (neu > alt) setzeBonus(h, 'tragkraft', 'atk', neu);
+      gewachsen = Math.max(gewachsen, neu > alt ? neu : 0);
+    }
+    if (gewachsen > 0) log(`✦ ${traeger.name} setzt ${anzeigeName(kraft)} ein → die ganze Gruppe +${gewachsen} Angriff bis Kampfende`);
+  }
   for (const u of [...lebendig(party), ...lebendig(gegner)]) {
     if (!u.gift) continue;
     u.hp -= u.gift.schaden;
@@ -765,17 +780,6 @@ export function rundenEnde(
         treffer.push(`${ziel.name} −${wucht}`);
       }
       log(`  ★ ${u.name}: ${u.skelette === 1 ? 'Sein Skelett schlägt' : `${u.skelette} Skelette schlagen`} zu → ${treffer.join(', ')}`);
-    }
-
-    // Tragkraft (Set «Was den Tag trug»): jede Runde mehr Angriff für den Träger, bis Kampfende, mit Höchstwert
-    const kraft = effekt(u, 'tragkraft');
-    if (kraft && lebendig(gegner).length > 0) {
-      const alt = bonus(u, 'tragkraft', 'atk');
-      const neu = Math.min(kraft.max ?? 24, alt + staerke(u, 'tragkraft'));
-      if (neu > alt) {
-        setzeBonus(u, 'tragkraft', 'atk', neu);
-        log(`✦ ${u.name} setzt ${anzeigeName(kraft)} ein → +${neu} Angriff bis Kampfende`);
-      }
     }
 
     const fussnote = effekt(u, 'fussnote');

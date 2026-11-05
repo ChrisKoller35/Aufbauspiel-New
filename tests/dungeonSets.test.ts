@@ -2,7 +2,7 @@ import { describe, test, expect } from 'vitest';
 import { existsSync } from 'node:fs';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter, GuildFighter } from '../src/models/GuildRoster';
-import { CombatUnit, EncounterRoom, ExpeditionRun } from '../src/models/ExpeditionRun';
+import { CombatSkill, CombatUnit, EncounterRoom, ExpeditionRun } from '../src/models/ExpeditionRun';
 import { CombatEngine } from '../src/systems/CombatEngine';
 import { GearSystem } from '../src/systems/GearSystem';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
@@ -536,6 +536,52 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(runde(run, 1)).toContain('  Yeti setzt aus (Einfrieren).');
     // Nach dem Aussetzen greift der Yeti in der nächsten Runde an
     expect(runde(run, 2).some(l => l.startsWith('Yeti greift'))).toBe(true);
+  });
+
+  test('Wachfeuer: ein Gefallener steht mit 30 % wieder auf, einmal je Kampf fürs ganze Team, auch nach einer Gegner-Fähigkeit', () => {
+    // Der Träger fällt selbst als Erster: das Feuer weckt ihn, beim zweiten Mal nicht mehr
+    const traeger = einheit(heldMitSet('wachfeuer'), { spd: 0.1 });
+    const run = kampf([traeger], [gegner('Henker', { atk: 900, spd: 5 })]);
+    const feuer = run.combatLog.filter(l => l.includes('setzt Wachfeuer ein'));
+    expect(feuer).toEqual([`✦ ${traeger.name} setzt Wachfeuer ein → ${traeger.name} steht mit ${Math.floor(traeger.maxHp * 0.3)} Leben wieder auf`]);
+    expect(traeger.geweckt).toBe(1);
+    expect(traeger.hp).toBeLessThanOrEqual(0);
+
+    // Ein Begleiter fällt an einer Fähigkeit (Flächenschaden), nicht an einem Grundangriff: das Feuer weckt ihn trotzdem
+    const waechter = einheit(heldMitSet('wachfeuer'), { hp: 99999, maxHp: 99999, def: 999 });
+    const begleiter = einheit(heldMitSet(null), { hp: 5 });
+    const funken: CombatSkill = { id: 'funken', name: 'Funkenregen', cooldown: 3, currentCooldown: 0, effectType: 'aoe', power: 1, target: 'all_players' };
+    const run2 = kampf([waechter, begleiter], [gegner('Wicht', { atk: 40, spd: 5, skills: [funken] })]);
+    const erstes = run2.combatLog.findIndex(l => l.includes('Funkenregen'));
+    const geweckt = run2.combatLog.findIndex(l => l.includes('setzt Wachfeuer ein'));
+    expect(erstes).toBeGreaterThanOrEqual(0);
+    expect(geweckt).toBeGreaterThan(erstes);
+    expect(run2.combatLog[geweckt]).toBe(`✦ ${waechter.name} setzt Wachfeuer ein → ${begleiter.name} steht mit ${Math.floor(begleiter.maxHp * 0.3)} Leben wieder auf`);
+    expect(run2.combatLog.filter(l => l.includes('setzt Wachfeuer ein'))).toHaveLength(1);
+    expect(begleiter.geweckt).toBe(1);
+    // Nach dem Kampf brennt das Feuer im nächsten wieder
+    expect(waechter.wachfeuerBrannte).toBeFalsy();
+  });
+
+  test('Tragkraft: solange der Träger steht, hat die ganze Gruppe jede Runde 6 Angriff mehr, höchstens +42; zwei tragen nicht doppelt', () => {
+    const traeger = einheit(heldMitSet('tagwerk'));
+    const zweiter = einheit(heldMitSet('tagwerk'));
+    const begleiter = einheit(heldMitSet(null));
+    const atk = begleiter.atk;
+    const run = kampf([traeger, zweiter, begleiter], [gegner('Pfeiler', { hp: 999999, maxHp: 999999, def: 999 })]);
+    const kraft = (nr: number) => runde(run, nr).filter(l => l.includes('Tragkraft'));
+    expect(kraft(1)).toEqual([`✦ ${traeger.name} setzt Tragkraft ein → die ganze Gruppe +6 Angriff bis Kampfende`]);
+    expect(kraft(2)).toEqual([`✦ ${traeger.name} setzt Tragkraft ein → die ganze Gruppe +12 Angriff bis Kampfende`]);
+    expect(kraft(7)).toEqual([`✦ ${traeger.name} setzt Tragkraft ein → die ganze Gruppe +42 Angriff bis Kampfende`]);
+    expect(kraft(8)).toEqual([]);
+    expect(runde(run, 2).some(l => l.startsWith(`${begleiter.name} greift Pfeiler an`))).toBe(true);
+    // Nach dem Kampf ist der Bonus weg
+    expect(begleiter.atk).toBe(atk);
+    // Ohne stehenden Träger wächst nichts
+    const allein = einheit(heldMitSet(null));
+    const gefallen = einheit(heldMitSet('tagwerk'), { hp: 0 });
+    const run2 = kampf([allein, gefallen], [gegner('Pfeiler', { hp: 999999, maxHp: 999999, def: 999 })]);
+    expect(run2.combatLog.some(l => l.includes('Tragkraft'))).toBe(false);
   });
 
   test('eigene Werte der Sets: Wurzelkraft heilt 4, Unbeugsam steht mit 40 % auf, Blutegelbiss heilt 20 %', () => {

@@ -569,8 +569,8 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     zweiTeile: { atk: 12, critChance: 0.12 },
     dreiTeile: {
       name: 'Tragkraft',
-      text: 'Am Ende jeder Runde hat der Träger 3 Angriff mehr, bis Kampfende höchstens +24. Wer lange trägt, wird stark.',
-      effekte: [{ id: 'tragkraft', power: 3, max: 24, name: 'Tragkraft' }],
+      text: 'Solange der Träger steht, hat die ganze Gruppe am Ende jeder Runde 6 Angriff mehr, bis Kampfende höchstens +42. Was einer trägt, tragen alle.',
+      effekte: [{ id: 'tragkraft', power: 6, max: 42, name: 'Tragkraft' }],
     },
   },
 ];

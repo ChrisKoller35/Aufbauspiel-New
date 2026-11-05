@@ -778,7 +778,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_alruna: {
     id: 'boss_alruna', name: 'Alruna, die erste Gildenmeisterin', role: 'boss',
-    hp: 2900, atk: 77, def: 18, spd: 1.0, critChance: 0.14, critMult: 2.0,
+    hp: 5100, atk: 84, def: 18, spd: 1.0, critChance: 0.14, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.5, spdMult: 1.3 },
     skills: [
@@ -794,7 +794,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   // wieder eine Rast). Orm hat keine Heilung: Wer die Pfeiler stützt, verlängert den Kampf (Rundenlimit).
   schlusssteinwaechter: {
     id: 'schlusssteinwaechter', name: 'Schlusssteinwächter', role: 'melee',
-    hp: 700, atk: 42, def: 28, spd: 0.55, critChance: 0.05, critMult: 1.5,
+    hp: 700, atk: 48, def: 28, spd: 0.55, critChance: 0.05, critMult: 1.5,
     skills: [
       { id: 'gewoelbeschlag', name: 'Gewölbeschlag', cooldown: 4, effectType: 'aoe', power: 1.0, target: 'all_players', description: '1.0× Schaden auf alle' },
     ],
@@ -802,7 +802,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   gewoelbefledermaus: {
     id: 'gewoelbefledermaus', name: 'Gewölbefledermaus', role: 'ranged',
-    hp: 455, atk: 55, def: 12, spd: 1.4, critChance: 0.25, critMult: 1.9,
+    hp: 455, atk: 63, def: 12, spd: 1.4, critChance: 0.25, critMult: 1.9,
     skills: [
       { id: 'kopfueber', name: 'Kopfüber', cooldown: 3, effectType: 'damage', power: 2.1, target: 'player', description: '2.1× Schaden auf 1 Ziel' },
     ],
@@ -810,7 +810,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   fugenspinne: {
     id: 'fugenspinne', name: 'Fugenspinne', role: 'melee',
-    hp: 320, atk: 46, def: 9, spd: 1.6, critChance: 0.2, critMult: 1.8,
+    hp: 320, atk: 53, def: 9, spd: 1.6, critChance: 0.2, critMult: 1.8,
     skills: [
       { id: 'fugenbiss', name: 'Fugenbiss', cooldown: 2, effectType: 'damage', power: 1.7, target: 'player', description: '1.7× Schaden auf 1 Ziel' },
     ],
@@ -818,7 +818,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   moertelgeist: {
     id: 'moertelgeist', name: 'Mörtelgeist', role: 'support',
-    hp: 335, atk: 37, def: 10, spd: 1.3, critChance: 0.1, critMult: 1.6,
+    hp: 335, atk: 43, def: 10, spd: 1.3, critChance: 0.1, critMult: 1.6,
     skills: [
       { id: 'kalkstaub', name: 'Kalkstaub', cooldown: 3, effectType: 'aoe', power: 0.85, target: 'all_players', description: '0.85× Schaden auf alle' },
       { id: 'ausfugen', name: 'Ausfugen', cooldown: 4, effectType: 'heal', power: 150, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 150' },
@@ -827,7 +827,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   himmelsriss: {
     id: 'himmelsriss', name: 'Himmelsriss', role: 'ranged',
-    hp: 300, atk: 44, def: 8, spd: 1.5, critChance: 0.15, critMult: 1.7,
+    hp: 300, atk: 51, def: 8, spd: 1.5, critChance: 0.15, critMult: 1.7,
     skills: [
       { id: 'durchzug', name: 'Durchzug', cooldown: 3, effectType: 'aoe', power: 1.1, target: 'all_players', description: '1.1× Schaden auf alle' },
     ],
@@ -835,7 +835,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   steinmetz_vorige: {
     id: 'steinmetz_vorige', name: 'Steinmetz der Vorigen', role: 'melee',
-    hp: 380, atk: 45, def: 13, spd: 1.1, critChance: 0.12, critMult: 1.7,
+    hp: 380, atk: 52, def: 13, spd: 1.1, critChance: 0.12, critMult: 1.7,
     skills: [
       { id: 'meissel', name: 'Meissel', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
       { id: 'nachmessen', name: 'Nachmessen', cooldown: 4, effectType: 'buff', power: 9, target: 'self', description: '+9 ATK für 3 Runden' },
@@ -844,9 +844,9 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_orm: {
     id: 'boss_orm', name: 'Orm, der Träger des Tages', role: 'boss',
-    hp: 3300, atk: 84, def: 22, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    hp: 5700, atk: 74, def: 22, spd: 0.9, critChance: 0.12, critMult: 2.0,
     isBoss: true,
-    enrage: { afterRound: 10, atkMult: 1.6, spdMult: 1.3 },
+    enrage: { afterRound: 10, atkMult: 1.85, spdMult: 1.3 },
     skills: [
       { id: 'tageslast', name: 'Tageslast', cooldown: 3, effectType: 'aoe', power: 1.4, target: 'all_players', description: '1.4× Schaden auf alle' },
       { id: 'schulterstoss', name: 'Schulterstoss', cooldown: 4, effectType: 'damage', power: 2.8, target: 'player', description: '2.8× Schaden auf 1 Ziel' },

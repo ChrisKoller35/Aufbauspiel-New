@@ -646,7 +646,7 @@ const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number
   { routeId: 'morgentor', gegner: 'boss_sunna', text: 'wütet ab Runde 10' },
   { routeId: 'morgentor', gegner: 'boss_sunna', text: 'zieht ihre Wut um 2 Runden vor, dreimal vorgestellt wütet sie schon ab Runde 4', sonnenuhren: 3 },
   { routeId: 'erste_stadt', gegner: 'boss_alruna', text: 'wütet ab Runde 10' },
-  { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'wütet ab Runde 10, Angriff mal 1,6' },
+  { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'wütet ab Runde 10, Angriff mal 1,85' },
   { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'zieht seine Wut um 2 Runden vor, dreimal gebrochen wütet er schon ab Runde 4', sonnenuhren: 3 },
   { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'schiebt sie um 1 Runde hinaus, dreimal gestützt erst ab Runde 13', gestuetzt: 3 },
 ];

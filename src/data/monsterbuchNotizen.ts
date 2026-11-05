@@ -152,10 +152,10 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'erste_stadt',
-    text: 'Der Schildträger der Vorigen hat 25 Abwehr, die höchste in der Ersten Stadt, und der Wachfeuerwicht trifft mit Funkenregen jede vierte Runde alle Helden. Es gibt keinen Rastplatz: Was ihr unterwegs verliert, bringt allein ein Wachfeuer zurück, und wer hineingreift, verliert jedes Mal 8 % Leben dazu. Alruna schlägt mit 77 Angriff zu, stärkt sich mit der Alten Gildenregel nur in Runde 3 und 12 und wütet ab Runde 10.',
+    text: 'Der Schildträger der Vorigen hat 25 Abwehr, die höchste in der Ersten Stadt, und der Wachfeuerwicht trifft mit Funkenregen jede vierte Runde alle Helden. Es gibt keinen Rastplatz: Was ihr unterwegs verliert, bringt allein ein Wachfeuer zurück, und wer hineingreift, verliert jedes Mal 8 % Leben dazu. Alruna schlägt mit 84 Angriff zu, stärkt sich mit der Alten Gildenregel nur in Runde 3 und 12 und wütet ab Runde 10.',
   },
   {
     routeId: 'tagespfeiler',
-    text: 'Der Schlusssteinwächter hat 28 Abwehr, die höchste aller Wachen über dem Vulkankern, und die Fugenspinne beisst mit Fugenbiss jede dritte Runde zu. Orm, der Träger des Tages, schlägt mit 84 Angriff zu und wütet ab Runde 10, Angriff mal 1,6. Jeder gebrochene Pfeiler zieht seine Wut um 2 Runden vor, dreimal gebrochen wütet er schon ab Runde 4; jeder gestützte schiebt sie um 1 Runde hinaus, dreimal gestützt erst ab Runde 13.',
+    text: 'Der Schlusssteinwächter hat 28 Abwehr, die höchste aller Wachen über dem Vulkankern, und die Fugenspinne beisst mit Fugenbiss jede dritte Runde zu. Orm, der Träger des Tages, trägt 5700 Leben, schlägt mit 74 Angriff zu und wütet ab Runde 10, Angriff mal 1,85. Jeder gebrochene Pfeiler zieht seine Wut um 2 Runden vor, dreimal gebrochen wütet er schon ab Runde 4; jeder gestützte schiebt sie um 1 Runde hinaus, dreimal gestützt erst ab Runde 13.',
   },
 ];

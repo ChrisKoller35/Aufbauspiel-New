@@ -114,6 +114,11 @@ schnell 0,6-mal so viele, gemütlich 1,6-mal. Stand 21.10.2026, mit Sternenschmi
 Vorher, mit dem Himmelsarchiv als oberstem Dungeon, war die ganze Karte bei 171 (normal), 99 (schnell) und
 270 (gemütlich). Im Probespiel zwischen den Sternen steht die Muster-Gilde bei 140 (normal) auf der ganzen Karte.
 
+Nachtrag 5.11.2026, mit der Ersten Stadt (Ebene 11, 80 Expeditionen) und den Pfeilern des Tages (Ebene 12, 98
+Expeditionen) als Meilensteinen: Im Probespiel (ab Ebene 4) erreicht die Muster-Gilde die ganze Karte bei 466
+(normal), 277 (schnell) und 743 (gemütlich), jedes Mal danach Platz 1. Die Sturmadler stehen jeweils etwas früher
+bei den Pfeilern (412, 258, 629), das Rennen bleibt also bis zuletzt offen.
+
 Die Spitzengilden bleiben bis zum Schluss knapp vorn oder gleichauf. Endgültig Platz 1 wird man erst mit
 der ganzen Karte: Das ist das ferne Ziel. Kommen neue Dungeons dazu, geht das Rennen weiter.
 

@@ -21,7 +21,7 @@ Erzählt wird sie von Ottokar, dem Stadtschreiber, der auch die Stadtchronik fü
   was übrig bleibt, geht nach dem Lauf ins Lager. Alles andere (Kräuter, Kristalle, Talisman-Fragmente …) kommt in die Beute.
 - **Die Dungeons über dem Vulkankern** haben schon feste Wahl-Räume (Drachenhort: Hort-Gold, Himmelsarchiv: verbotene
   Bücher, Sternenschmiede: Sternenfeuer, Sternenschlund: gefangene Sterne, Mondhof: Pfandzettel, Morgentor: die
-  Sonnenuhr). Dort erzählt die Geschichte über diese Räume, ohne zusätzliche Entscheidungen.
+  Sonnenuhr, Erste Stadt: die Wachfeuer, Pfeiler des Tages: die Pfeiler). Dort erzählt die Geschichte über diese Räume, ohne zusätzliche Entscheidungen.
 - **Nach der Expedition** steht im Bericht die Chronik: ein Satz zu jeder Entscheidung dieses Laufs. Nach dem
   ersten Sieg kommt der Schluss dazu, danach steht er auf der Karte («✓ erlebt»). Der Schluss passt zu jeder Wahl.
 - **Expeditionsfenster:** Im Band über dem Team steht «📜 Geschichte: Titel · 3 Entscheidungen unterwegs».
@@ -88,7 +88,8 @@ Teil der Läufe trifft.
 Ziel: **vorsichtig 0 bis +12 %** (etwas leichter), **gierig −12 bis −25 %** (spürbar schwerer).
 Stand 23.10.2026, 200 Läufe, nach Manager #43 und #44 (20 % Mindestschaden, stärkere Startklassen), nach der
 Eichung der Wege (`docs/SPEZIALISIERUNG.md`) und mit den Werten echter Helden (`docs/AUSBILDUNG.md`, «Eichung
-nach dem Umbau»). Die Dungeons über dem Vulkankern fehlen, sie haben keine eigenen Entscheidungen.
+nach dem Umbau»). Die Dungeons über dem Vulkankern fehlen (bis zu den Pfeilern des Tages), sie haben keine eigenen
+Entscheidungen; ihre Wahl-Räume sind mit den Spielweisen in `docs/NEUE-DUNGEONS.md` geeicht.
 
 | Dungeon | Schwelle ohne Entscheidungen | vorsichtig | gierig |
 |---|---|---|---|

@@ -4,7 +4,7 @@ Christoph (19.10.2026): «Endlos» heisst, dass es auf der Dungeon-Karte immer w
 mit immer neuen, verschiedenen Dungeons. Ab und zu kommen ein oder zwei dazu. Diese Datei hält fest,
 was es schon gibt und wie der nächste Dungeon dazukommt.
 
-## Was es gibt (Stand 22.10.2026)
+## Was es gibt (Stand 5.11.2026)
 
 | Ebene | Dungeon | Gebiet | Räume | Boss | Besonderheit | Erster Sieg bringt |
 |---|---|---|---|---|---|---|
@@ -14,18 +14,33 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 8 | Der Sternenschlund | Sterne | 16 | Nyxar, der Sternenfresser | Gefangene Sterne: Jeder befreite Stern macht Nyxar 10 % schwächer (Angriff und Leben) und kostet 5 % Leben; wer ihn ausschlachtet, bekommt 3 bis 5 Sternenstahl, aber erst mit dem Sieg über Nyxar | Der letzte Stern |
 | 9 | Der Mondhof | Mond | 16 | Argentis, der Mondvogt | Pfandzettel: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Zettel unterschreiben; jeder kostet bis zum Ende 8 % Angriff und bringt erst mit dem Sieg über Argentis Mondsilber (5, dann 9) oder einen Set-Teil mehr. Wer am letzten Kontrollpunkt umkehrt, lässt alle Pfandzettel liegen | Amtsstab des Mondvogts |
 | 10 | Das Morgentor | Mond | 16 | Sunna, die Tagwächterin | Die Sonnenuhr: Dreimal (Raum 2, 8, 14) kann die Gruppe sie vorstellen; jedes Mal kommt Sunnas Wut-Runde 2 Runden früher (ab Runde 10, dreimal gewählt ab Runde 4), und erst mit dem Sieg kommen Mondsilber (6, dann 10) oder ein Set-Teil mehr. Ihre Werte ändern sich nie, nur ihre Geduld; die Kampf-Vorschau zeigt «Wut ab Runde X». Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen | Der Morgenstern |
+| 11 | Die Erste Stadt | Taglicht | 16 | Alruna, die erste Gildenmeisterin | Die Wachfeuer: kein Rastplatz im ganzen Dungeon. Dreimal (Raum 2, 8, 14) kann die Gruppe ins Feuer greifen (Tagstein 5, dann ein Set-Teil, dann Tagstein 9, alles erst mit dem Sieg; jedes Mal 8 % Leben, die keine Rast zurückbringt) oder sich wärmen: 5, 5, dann 10 % Leben, und wer am Boden liegt, steht mit 30 % wieder auf (`wecken`) | Alrunas Kelle |
+| 12 | Die Pfeiler des Tages | Taglicht | 16 | Orm, der Träger des Tages | Die Pfeiler: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Pfeiler brechen (Tagstein 6, dann ein Set-Teil, dann Tagstein 10, erst mit dem Sieg; Orms Wut 2 Runden früher) oder stützen (5 % Leben, Orms Wut 1 Runde später, in Raum 8 dazu 2 Tagstein sofort). Seine Wut wandert so zwischen Runde 4 und 13 | Der Schlussstein |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
   Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund, Mondhof: Nyxar,
-  Morgentor: Argentis). Ebenen über 5 verlangen den höchsten Rang, den es gibt (V).
+  Morgentor: Argentis, Erste Stadt: Sunna, Pfeiler des Tages: Alruna). Ebenen über 5 verlangen den höchsten
+  Rang, den es gibt (V).
 - **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_<route>_*`). Eigene Bilder haben
   Glutwyrmling, Hortkobold und Drachenpriester, Funkenwichtel, Ambossgolem und Korrund, Lichtmotte,
   Leerenkriecher und Nyxar; die übrigen tragen Bilder anderer Gegner. Im Mondhof tragen alle fünf
   (Silberschreiber, Mondwache, Zollgeist, Mondkalb, Argentis) Bilder anderer Gegner, am Morgentor ebenso
-  (Lichtküster, Torhüter aus Messing, Dämmerfalke, Morgenhahn, Sunna).
+  (Lichtküster, Torhüter aus Messing, Dämmerfalke, Morgenhahn, Sunna). Im Taglicht sind alle Bilder
+  **Leihbilder** (`npm run leihbilder`, `tools/leihbilder.ts`): vorhandene Bilder, umgefärbt und neu gespeichert,
+  ohne ein neues Bild zu erzeugen. Die vier Echos der Vorigen tragen Bilder unserer eigenen Helden, sepia und
+  blasser (der Schildträger den alten Wächter, die Bogenschützin die Waldläuferin, der Messerstecher die
+  Assassine, die Stadtheilerin die Klerikerin), weil sie die Gilde vor uns sind; Wachfeuerwicht, Steingeselle,
+  Schlusssteinwächter, Gewölbefledermaus, Mörtelgeist, Himmelsriss, Steinmetz und die Bosse tragen aufgehellte
+  Gegnerbilder (Alruna die Festungswächterin in Gold, Orm den Kristallgolem in Sandstein), die Fugenspinne die
+  Riesenspinne. `npm run validate-refs` prüft, dass jedes Gegner- und Routenbild als Datei da ist (Check 5).
 - **Routenbilder:** `exp_drachenhort`, `exp_himmelsarchiv`, `exp_sternenschmiede` und `exp_sternenschlund`
   (Karte, Routenliste, Kampf). Der Mondhof zeigt bis zu einem eigenen Bild `exp_sternenschlund`, das
-  Morgentor `exp_sternenschmiede`.
+  Morgentor `exp_sternenschmiede`. Die Erste Stadt und die Pfeiler des Tages haben eigene Dateien
+  (`exp_erste_stadt`, `exp_tagespfeiler`), aber nur als Leihbild: die Häuser der Stadtkarte (`tile_buildings`)
+  und die Tiefen Ruinen (`exp_ruins_depths`), beide golden umgefärbt. **Schwäche:** Man sieht ihnen an, dass es
+  dieselben Bilder sind wie weiter unten, nur heller; die Ruinen bleiben Ruinen, ein Pfeiler ist nicht zu sehen.
+  Bei Gegnern fällt das kaum auf, bei einem Routenbild, das die Expedition einen ganzen Lauf lang zeigt, schon.
+  Dafür braucht es zwei echte Bilder, und die gibt es nur mit Christophs Okay (Kosten-Regel).
 - **Erster Sieg:** Der Boss gibt beim ersten Sieg der Gilde garantiert einen besonderen Gegenstand dazu.
   Drachenhort und Himmelsarchiv geben je ein T5-Stück; die drei T5-Stücke wurden dafür so verstärkt, dass
   sie je etwas besser sind als das beste T4-Stück für denselben Platz. Korrund gibt seinen Hammer (T7,
@@ -33,11 +48,17 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   Stern (T8, Schmuck: wer ihn trägt, steht nach dem ersten tödlichen Treffer wieder auf), Argentis seinen
   Amtsstab (T9, einhändig, Letzte Bastion: der Träger zieht zu Beginn jedes Kampfes 2 Runden lang alle
   Angriffe auf sich; der Tooltip warnt davor), Sunna den Morgenstern (T10, zweihändig, Sternenfall: jeder
-  dritte Treffer trifft als Stern alle Gegner mit halbem Schaden, wie das Schlund-Set, nur für den Kämpfer).
+  dritte Treffer trifft als Stern alle Gegner mit halbem Schaden, wie das Schlund-Set, nur für den Kämpfer),
+  Alruna ihre Kelle (T11, einhändig, Gezeitenwelle: alle 3 Runden heilt der verletzteste Verbündete; neben Broms
+  Amtsstab ein Vergleich, kein klarer Ersatz), Orm den Schlussstein (T12, Schmuck, Druckwelle: alle 4 Runden trifft
+  der Träger alle Gegner, dazu Tempo und Krit; das Bild ist ein Schlussstein mit Sonne, aus Code gezeichnet).
 - **Gebiet «Sterne»** (Ebene 7 und 8): violetter Nebel und ein funkelndes Sternenfeld auf der Karte,
   Material für die Schmiede ist Sternenstahl (`docs/SCHMIEDE.md`).
 - **Gebiet «Mond»** (Ebene 9 und 10): silbergrauer Dunst über dem Sternenfeld, Nebel und Sterne hören
   darunter auf. Material für die Schmiede ist Mondsilber (`MAT_MONDSILBER`, Bild aus Code).
+- **Gebiet «Taglicht»** (Ebene 11 und 12): Über dem Morgentor wird die Karte zum Taghimmel, ein Verlauf von
+  Nachtblau über Dämmerviolett in Honiggold mit einem Sonnenschein; darüber gibt es keine Sterne mehr.
+  Biom «Taglicht» (Klang wie Wald, `docs/KLANG.md`), Material Tagstein (`MAT_TAGSTEIN`, Bild aus Code).
 - **Nicht dabei:** Wochen-Herausforderungen (nur bis Ebene 4).
 - **Probespiel:** `?probe=neu` startet mit Gildenrang V und allen Bossen bis zum Vulkankern, der
   Drachenhort ist offen. `?probe=sterne` startet zwischen den Sternen: Team «Stark» (Stufe 15, mit
@@ -47,6 +68,10 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   Meisterstücken und dem Schlund-Set auf +5, alle Bosse bis Nyxar besiegt, im Lager Mondsilber für das
   Pfand des Mondvogts auf +5. `?probe=morgen` startet vor dem Morgentor: dazu Brom im Pfand des Mondvogts
   mit dem Amtsstab auf +5, alle Bosse bis Argentis besiegt, im Lager Mondsilber für Sunnas Morgengabe auf +5.
+  `?probe=stadt` startet vor der Ersten Stadt: dazu Sina in Sunnas Morgengabe auf +5, alle Bosse bis Sunna,
+  Tagstein für Alrunas Wachfeuer. `?probe=pfeiler` startet vor den Pfeilern des Tages: dazu Grimm in Alrunas
+  Wachfeuer auf +5, alle Bosse bis Alruna, Tagstein für «Was den Tag trug», und Alrunas Kelle liegt im Lager,
+  nicht angelegt, damit der Vergleich mit Broms Amtsstab zu sehen ist.
   In allen hat das Gildenhaus Stufe 2, es gehen also vier Helden mit,
   und die Klassen, die diese Bosse freischalten, sind schon frei (der erste Bericht meldet keine «Neue Klasse»).
 
@@ -75,7 +100,8 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    «den Vulkankern»); der Test verlangt sie für jede Route. Rivalen, Ruhm und Wappen rechnen von selbst
    mit (`docs/RANGLISTE.md`). **Gildenhaus:** Ein Dungeon mit Boss braucht ein Kapitel der Kette
    «Der Saal der Gilde» in `SAAL_KAPITEL` (`src/data/auftragsbrett.ts`: Prunkstück, Messingschild, Text);
-   der Test verlangt es. Zettel am Auftragsbrett entstehen von selbst (`docs/AUFTRAGSBRETT.md`).
+   der Test verlangt es. Ab Ebene 11 (`ANBAU_AB_EBENE`) zählt das Kapitel zum «Anbau des Saals», mit eigener
+   Einleitung, eigenem Schluss und eigenen Schluss-Siegeln; der Saal bleibt bei sechzehn Sockeln. Zettel am Auftragsbrett entstehen von selbst (`docs/AUFTRAGSBRETT.md`).
 8. **Bilder** nur mit Christophs Okay (Kosten-Regel): Gegner in `tools/spriteRegistry.ts`, das Routenbild
    in `tools/generateTileImages.ts` und `ROUTE_IMAGE_MAP`. Bis dahin passen vorhandene Bilder.
    Ein neues Gegnerbild (1024 px, Magenta-Hintergrund) als `public/assets/sprites/generated/KEY.png` ablegen
@@ -118,6 +144,12 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   (`wutAbRunde` in `CombatEngine.ts`). Der Preis trifft nicht die Werte, sondern die Zeit: Wer den Boss schnell
   fällt, merkt ihn kaum, wer Kämpfe über 15 Runden gewinnt, zahlt voll. Das Logbuch meldet «Sunna wird ab
   Runde X wütend», die Kampf-Vorschau zeigt bei jedem Boss «Wut ab Runde X» (Morgentor: dreimal 2 Runden).
+- **Spätere Wut** (negatives `bossWutFrueher`): Dieselbe Summe, nur nach hinten; das Logbuch meldet «Ihr
+  gewinnt Zeit: Orm wird erst ab Runde X wütend». Monsterbuch und Bestiarium nennen beide Richtungen
+  (`wutVorziehbar`: «bis auf Runde 4 vorziehen oder bis auf Runde 13 hinausschieben»; Pfeiler des Tages).
+- **Wecken** (`EncounterChoice.wecken`, Prozent): Gefallene stehen mit so viel Leben wieder auf, bevor die
+  Option heilt (die Heilung trifft nur, wer schon stand). Jeder Geweckte zählt in `CombatUnit.geweckt`; ein Sieg
+  ohne Verlust (Auftragsbrett, «makellos») ist es dann nicht mehr (Erste Stadt).
 - **Erstsieg-Beute** (`RouteDef.ersterSiegBeute`).
 
 ## Eichung
@@ -399,6 +431,87 @@ kostet, steht oben: jeder Pfandzettel etwa 20 Punkte Siege, jedes Vorstellen der
 20 bis 50 Punkte (vorsichtig 69, klug mit im Mittel zwei Stunden 50, gierig 1 %; seit dem 23.10. 69 / 52 / 0 %),
 für den Burst-Build nichts.
 
+### Im Taglicht (Ebene 11 und 12)
+
+**Ziele (Entwurf, 5.11.2026, nach der Gegenprüfung):** wie im Mondlicht. Das Set der Ebene darunter auf +5 ist
+der Schlüssel, ohne es fast nichts, das eigene Set ist der Lohn, und der Lohn wirkt gegen den eigenen Boss
+(Wachfeuer gegen Alrunas Ruf zur Wache, Tragkraft gegen Orms langen Kampf). Eintritt heisst: ohne das neue Set
+und mit ihm ohne Stufen (+0). Team «Stark» mit Wegen, 1000 Läufe je Zeile, Siege vorsichtig / klug / gierig;
+unter 5 % der Läufe am Rundenlimit, bei Patt zuerst den Angriff des Bosses ändern (Alruna nie unter 77).
+
+**Gemessen am 5.11.2026** (`npm run dungeon-eichung -- 1000 erste_stadt,tagespfeiler stark`, dieselben Zahlen
+mit einem eigenen Skript, das nur diese Zeilen misst):
+
+| Erste Stadt, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
+|---|---|---|---|---|
+| `pfand5`: ohne Sunnas Morgengabe | höchstens 15 % vorsichtig, 0 % gierig | 0 / 0 / 0 % | 0 % | – |
+| `morgen0`: Morgengabe ohne Stufen, übrige +5 | Eintritt, unter `morgen3` | 6 / 0 / 0 % | 0 % | 0 von 60 |
+| `morgen3`: Morgengabe auf +3 | 25–40 % vorsichtig | 27 / 14 / 0 % | 0 % | 0 von 265 |
+| `morgen5`: alles auf +5 | 60–70 / 35–50 / höchstens 10 % | 69 / 48 / 10 % | 0 % | 176 von 685 / 72 von 480 / 1 von 97 |
+| `stadt0`: Grimm im Wachfeuer ohne Stufen (Lohn) | mindestens 85 % vorsichtig, gierig 30–60 % | 88 / 78 / 38 % | 0 % | 332 von 878 / 187 von 780 / 48 von 376 |
+| Team «Gut» mit `morgen5` | höchstens 5 % | 4 / 1 / 0 % | 0 % | – |
+| Team «Frisch» mit `morgen5` | 0 % | 0 / 0 / 0 % | 0 % | – |
+
+| Pfeiler des Tages, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
+|---|---|---|---|---|
+| `morgen5`: ohne Alrunas Wachfeuer | höchstens 15 % vorsichtig, 0 % gierig | 15 / 1 / 0 % | 0 % | 33 von 145 |
+| `stadt0`: Wachfeuer ohne Stufen, übrige +5 | Eintritt, unter `stadt5` | 56 / 8 / 1 % | 0 % | 348 von 555 / 0 / 0 |
+| `stadt3`: Wachfeuer auf +3 | 20–35 % vorsichtig | 62 / 15 / 2 % | 0 % | 433 von 621 / 1 von 149 / 0 |
+| `stadt5`: alles auf +5 | 65–75 / 35–50 / höchstens 5 % | 72 / 27 / 6 % | 0,3 / 0 / 0 % | 543 von 722 / 0 von 271 / 0 von 57 |
+| `tagwerk0`: Lia in «Was den Tag trug» ohne Stufen (Lohn) | mindestens 85 % vorsichtig, gierig 25–50 % | 94 / 77 / 29 % | 0,1 / 0 / 0 % | 815 von 935 / 0 / 0 |
+| Team «Gut» mit `stadt5` | höchstens 5 % | 3 / 0 / 0 % | 1,2 % | – |
+| Team «Frisch» mit `stadt5` | 0 % | 0 / 0 / 0 % | 0 % | – |
+
+Abstand vorsichtig zu gierig bei den Pfeilern mit `stadt5`: 66 Punkte (Ziel mindestens 60). Gierig fällt kein
+Sieg vor Orms Wut; dreimal gebrochen gewinnt nur, wer seine Wut ab Runde 4 überlebt.
+
+**Was die Zahlen vorher waren** (Werte des Entwurfs, 200 Läufe): Erste Stadt `pfand5` 8 / 1 / 0 %, `morgen3`
+100 / 99 / 67 %, `morgen5` 100 / 100 / 98 %, `stadt0` 100 / 100 / 98 %; Pfeiler `morgen5` 90 / 85 / 30 %,
+`stadt5` 100 / 100 / 96 %. Jeder Lauf kam bis zum Boss und entschied sich dort.
+
+**Was geändert wurde und warum:**
+
+- **Alruna** hat 5100 statt 2900 Leben und 84 statt 77 Angriff. Sunnas Morgengabe ist ein Burst-Build:
+  Sonnenstich brennt bei jedem Treffer bis zu 60 Leben weg, solange der Gegner über 60 % steht. Gegen 2900 Leben
+  fiel Alruna mit der Morgengabe fast immer, bevor sie wütend wurde (194 von 200 Siegen vor Runde 10), ohne sie
+  fast nie. Die Wachen zuerst zu stärken (wie der Entwurf es vorsah) änderte daran wenig (25 % mehr Leben und
+  Alruna mit 3800: `morgen5` noch 100 / 99 / 76 %), weil kein Lauf vor Alruna endete; ihre Leben mussten so weit hinauf, dass der Brand vor Runde 10 nicht mehr reicht. Der höhere
+  Angriff hält die Läufe vom Rundenlimit fern (mit 5400 Leben und 77 Angriff waren es 6 %).
+- **Orm** hat 5700 statt 3300 Leben, 74 statt 84 Angriff und wütet mit Angriff mal 1,85 statt 1,6. Mehr Leben
+  und weniger Angriff verschieben die Kante zwischen vorsichtig (Wut erst ab Runde 13, 75 % der Siege fallen
+  davor) und gierig (Wut ab Runde 4): Wer stützt, schlägt Orm meist vor seiner Wut, wer bricht, muss sie
+  überleben. Die stärkere Wut trifft fast nur die, die brechen. Seine Wachen haben 15 % mehr Angriff
+  (Schlusssteinwächter 48, Gewölbefledermaus 63, Fugenspinne 53, Mörtelgeist 43, Himmelsriss 51, Steinmetz 52),
+  damit eine Gruppe ohne Wachfeuer schon unterwegs mehr verliert (`morgen5` ohne den Aufschlag 22 bis 28 %,
+  mit ihm 9 bis 15 %).
+- **Tragkraft** wirkt für die ganze Gruppe statt nur für den Träger, 6 Angriff je Runde bis höchstens +42
+  (Entwurf: 3 bis +24 nur für Lia). Lias Schaden allein machte gegen Orm keinen Unterschied (`tagwerk0` 49 %,
+  `stadt5` 46 %, mit 5 je Runde bis +40 für Lia allein ebenso): Der Kampf wird durch Orms Treffer entschieden,
+  nicht durch eine Schützin. Eine Gruppe, die von Runde zu Runde härter zuschlägt, beendet den Kampf vor seiner
+  Wut, das ist der Lohn gegen den eigenen Boss.
+- **Nicht geändert:** Wachfeuer (30 %, einmal je Kampf), `kostetLeben` 8 % am Feuer, `wecken` 30 %, die
+  Heilung 5 / 5 / 10 % (das eigentliche Geschenk des Feuers ist das Wecken, nicht die Heilung; ohne Rast heilt
+  sonst nur das Set), `bossWutFrueher` 2 und −1, die Wut-Runde 10 beider Bosse.
+
+**Was nicht erreicht wurde, und warum:**
+
+- **Pfeiler klug 27 % statt 35 bis 50 %, gierig 6 statt höchstens 5 %.** Klug bricht einen Pfeiler, wenn die
+  Gruppe noch 85 % Leben hat, und das ist an den Pfeilern oft: Brechen kostet kein Leben. Klug und gierig gehen
+  zusammen: Mit 5000 Leben und 1,75 Wut waren es 71 / 44 / 11 %, mit 5800 Leben, 72 Angriff und 1,9 Wut 72 / 25 / 4 %. Ein
+  Boss, der klug in 35 bis 50 % fällt, lässt gierig in mindestens 10 % fallen, weil das Wachfeuer auch der
+  gierigen Gruppe einmal je Kampf einen Gefallenen zurückgibt. Gewählt ist die Mitte, die gierig fast im Ziel
+  hält: Brechen soll etwas kosten, und klug zu sein heisst hier, nicht zu brechen.
+- **Wachfeuer auf +3: 62 % statt 20 bis 35 %.** Wie am Morgentor: Zwei Stufen auf drei Teilen sind 10 % Werte,
+  an Orms Treffern ändert das wenig. Der Schlüssel ist das Set selbst (ohne: 15 %), nicht seine Stufe; ohne
+  Stufen sind es schon 56 %. Die Erste Stadt dagegen hält ihr Ziel (+3: 27 %), weil die Morgengabe ein
+  Schadens-Set ist und dort jede Stufe zählt.
+- **Eintritt mit dem neuen Set ohne Stufen** ist sehr ungleich: Morgengabe +0 in der Ersten Stadt 6 %, Wachfeuer
+  +0 an den Pfeilern 56 %. Beides folgt aus demselben Unterschied (Schaden gegen Überleben). Wer in die Erste
+  Stadt will, muss die Morgengabe schmieden; an den Pfeilern reicht das Wachfeuer, wie es fällt.
+
+**Geschichten-Eichung:** nichts zu messen (`wahlen: []`), wie Mondhof und Morgentor; beide Geschichten erzählen
+über die festen Wahl-Räume (Wachfeuer, Pfeiler).
+
 ## Entschieden
 
 - **Endlose Treppe** (20.10.2026, Christoph: «Ganz weg»): entfernt. Die Karte wächst nur mit neuen Dungeons;
@@ -423,12 +536,18 @@ für den Burst-Build nichts.
   «Die Morgengabe». Der Saal der Gilde hat damit sechzehn Sockel, das Morgentor ist der letzte. Bilder: keine,
   alle fünf Gegner und das Routenbild sind Platzhalter. Eigene Probestufe `?probe=morgen`, damit `?probe=mond`
   weiter vor dem Mondhof beginnt.
+- **Die Erste Stadt und die Pfeiler des Tages** (5.11.2026, Entwurf mit Gegenprüfung in 13 Punkten): Ebene 11
+  und 12 im neuen Gebiet «Taglicht», die Kandidaten aus «Später» unten. Die Erste Stadt ohne Rastplatz, mit drei
+  Wachfeuern (neuer Baustein `wecken`), Alruna und dem Set «Alrunas Wachfeuer»; die Pfeiler mit Orm, dem Set
+  «Was den Tag trug» und der Wut in beide Richtungen (`bossWutFrueher` negativ). Der Saal bleibt bei sechzehn
+  Sockeln, dazu kommt die Kette «Der Anbau des Saals» mit zwei Sockeln. Gipfel-Taten «Mit blossen Händen»,
+  «Abrissunternehmen» und «Einsturzgefahr», Erfolg «Angebaut». Bilder: keine neuen, nur Leihbilder (oben).
+  Raum 8 der Ersten Stadt ist eine Wachstube (das Set-Teil liegt im Feuer), der Wachfeuerwicht steht ab Raum 3.
 
 ## Später
 
-Aus den Entwürfen für den Mond bleiben zwei Ideen als Kandidaten für Ebene 11 und 12 liegen, ohne dass die
-Vorgeschichte dazu schon feststeht: **«Erste Stadt / Alruna»**, eine Stadt der Vorigen ohne Rastplatz, in der
-Wachfeuer Gefallene wecken und am Ende Alruna wartet, die den Saal der Gilde gebaut hat; und **«Wut-Runde als
-Preis / Pfeiler»**, ein Dungeon, in dem der Boss nicht stärker, sondern ungeduldiger wird (jeder herausgebrochene
-Pfeiler bringt Material, wenn ihr siegt, und zieht seine Wut-Runde um zwei Runden vor; den Baustein dafür gibt
-es seit dem Morgentor, `bossWutFrueher`, der Pfeiler-Dungeon müsste ihn also anders einsetzen als die Sonnenuhr).
+- **Zwei Routenbilder** für die Erste Stadt und die Pfeiler des Tages (Kosten-Regel: nur mit Christophs Okay).
+  Die Leihbilder sind die sichtbarste Schwäche des Taglichts (oben, «Routenbilder»). Vorschlag: eine helle Stadt
+  aus Sandstein mit Wachfeuern in den Gassen, und eine Halle aus honiggelben Pfeilern, über der der Himmel hell ist.
+- **Ebene 13:** Die Geschichte der Pfeiler endet mit der Karte des Händlers («Hier geht es weiter …») und einer
+  Leiter. Was oben liegt, steht noch nicht fest; der Anbau des Saals hat Platz für mehr Sockel.

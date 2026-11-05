@@ -13,11 +13,14 @@ neuer Dungeon für sie braucht.
   («Es fehlen 48 Glutkern.»), und der Knopf ist aus.
 - **Material:** Jedes Gebiet hat sein eigenes (Tabelle unten). Ein Set-Teil braucht das Material aus dem
   Gebiet seines Dungeons. Ein Sieg bringt die **Grundmenge** der Ebene (2 + Ebene: Ebene 1 bringt 3,
-  Ebene 4 bringt 6, Ebene 8 bringt 10, Ebene 9 bringt 11, Ebene 10 bringt 12). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
+  Ebene 4 bringt 6, Ebene 8 bringt 10, Ebene 9 bringt 11, Ebene 10 bringt 12, Ebene 11 bringt 13, Ebene 12 bringt 14). Im Sternenschlund bringt jeder ausgeschlachtete Stern 3 bis 5
   Sternenstahl dazu, aber erst mit dem Sieg, und Nyxar bleibt stark. Im Mondhof bringen die Pfandzettel aus
   Raum 2 und 14 zusammen 14 Mondsilber dazu, auch erst mit dem Sieg, und jeder kostet bis zum Ende 8 %
   Angriff. Am Morgentor bringt die Sonnenuhr aus Raum 2 und 14 zusammen 16 Mondsilber, auch erst mit dem Sieg,
-  und jedes Vorstellen holt Sunnas Wut-Runde 2 Runden näher. Niederlage oder Rückzug bringen die
+  und jedes Vorstellen holt Sunnas Wut-Runde 2 Runden näher. In der Ersten Stadt bringen die Wachfeuer aus Raum 2
+  und 14 zusammen 14 Tagstein, erst mit dem Sieg, und jeder Griff ins Feuer kostet 8 % Leben. An den Pfeilern des
+  Tages bringen die gebrochenen Pfeiler aus Raum 2 und 14 zusammen 16 Tagstein, erst mit dem Sieg (Orms Wut je
+  2 Runden früher); wer in Raum 8 stützt, nimmt 2 Tagstein sofort mit. Niederlage oder Rückzug bringen die
   Hälfte der Grundmenge, anteilig zu den geschafften Räumen. Das Material liegt in der Truhe mit dem
   Hinweis, wofür es ist («⚒️ Für die Schmiede: Set-Teile aus dem Feuer»).
 - **Stufen +1 bis +5:** Jede Stufe macht alle Werte eines Teils um 10 % stärker, gerundet. Der Hauptwert
@@ -102,10 +105,12 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
 | Himmelstinte | Himmelsarchiv | Das Himmelsarchiv |
 | Sternenstahl | Sterne | Die Sternenschmiede, Der Sternenschlund |
 | Mondsilber | Mond | Der Mondhof, Das Morgentor |
+| Tagstein | Taglicht | Die Erste Stadt, Die Pfeiler des Tages |
 
 Die Dungeon-IDs stehen in `SCHMIEDE_MATERIALIEN` (`src/data/schmiede.ts`). Das Pfand des Mondvogts auf +5
 kostet 990 Mondsilber (Grundmenge 11), Sunnas Morgengabe auf +5 1080 (Grundmenge 12); `?probe=mond` bzw.
-`?probe=morgen` legt das ins Lager.
+`?probe=morgen` legt das ins Lager. Alrunas Wachfeuer auf +5 kostet 1170 Tagstein (Grundmenge 13), «Was den Tag
+trug» 1260 (Grundmenge 14); das legt `?probe=stadt` bzw. `?probe=pfeiler` ins Lager.
 
 ## Wo es steht
 

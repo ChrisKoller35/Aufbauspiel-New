@@ -687,4 +687,172 @@ describe('Dungeons über dem Vulkankern', () => {
       }
     }
   });
+
+  // ── Im Taglicht: Die Erste Stadt (Ebene 11) und Die Pfeiler des Tages (Ebene 12) ──
+
+  it('die Erste Stadt braucht Sunna, die Pfeiler des Tages Alruna', () => {
+    const state = createNewGameState();
+    state.guildStats.rank = 5;
+    state.guildStats.bossesDefeatedIds.push('boss_argentis');
+    expect(getRouteLockReasons(ROUTE_DEFS.erste_stadt, state)).toEqual([`Besiege: ${ENEMY_DEFS.boss_sunna.name}`]);
+    state.guildStats.bossesDefeatedIds.push('boss_sunna');
+    expect(isRouteAvailable(ROUTE_DEFS.erste_stadt, state)).toBe(true);
+    expect(getRouteLockReasons(ROUTE_DEFS.tagespfeiler, state)).toEqual([`Besiege: ${ENEMY_DEFS.boss_alruna.name}`]);
+    state.guildStats.bossesDefeatedIds.push('boss_alruna');
+    expect(isRouteAvailable(ROUTE_DEFS.tagespfeiler, state)).toBe(true);
+    // Die Karte geht weiter nach oben
+    const knoten = (id: string) => DUNGEON_GRAPH.find(n => n.routeId === id)!;
+    expect(knoten('morgentor').leadsTo).toContain('erste_stadt');
+    expect(knoten('erste_stadt').leadsTo).toContain('tagespfeiler');
+    expect(knoten('tagespfeiler').y).toBeLessThan(knoten('erste_stadt').y);
+  });
+
+  it('Erste Stadt: kein Rastplatz, drei Wachfeuer als Fund-Räume in Raum 2, 8 und 14', () => {
+    const route = ROUTE_DEFS.erste_stadt;
+    expect(route.encounters.some(e => e.type === 'rest')).toBe(false);
+    const feuer = route.encounters.map((e, i) => [e, i] as const).filter(([e]) => e.wahl);
+    expect(feuer.map(([, i]) => i)).toEqual([2, 8, 14]);
+    for (const [e] of feuer) {
+      expect(e.type).toBe('find');
+      expect(e.wahl!.a).toMatchObject({ kostetLeben: 8 });
+      expect(e.wahl!.b).toMatchObject({ effect: 'heal', wecken: 30 });
+    }
+    expect(feuer.map(([e]) => e.wahl!.b.value)).toEqual([5, 5, 10]);
+    expect(feuer.map(([e]) => e.wahl!.a.itemId ?? 'setTeil')).toEqual(['mat_tagstein', 'setTeil', 'mat_tagstein']);
+    // Der Wicht steht im dritten Raum, hinter dem ersten Feuer
+    expect(route.encounters[3].enemies).toContain('wachfeuerwicht');
+  });
+
+  it('Wachfeuer: ins Feuer greifen kostet 8 % Leben, der Tagstein kommt mit dem Sieg; wärmen weckt Gefallene mit 30 %', () => {
+    const { state, ids } = musterStand('stark', 7919, 'morgen5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'erste_stadt', ids)!);
+    expect(run.pendingChoice!.roomIndex).toBe(2);
+    const vorher = run.party.map(u => u.hp);
+    system.resolveChoice(run, 0);
+    run.party.forEach((u, i) => expect(u.hp, u.name).toBe(Math.max(1, vorher[i] - Math.floor(u.maxHp * 0.08))));
+    expect(run.combatLog).toContain('>> Das hat seinen Preis: Die Gruppe verliert 8% HP.');
+    expect(run.loot.mat_tagstein ?? 0).toBe(0);
+    expect(run.geschichtsBeute).toEqual([{ raum: run.rooms.length - 1, gold: 0, dinge: { mat_tagstein: 5 } }]);
+
+    // Am zweiten Feuer liegt einer am Boden: Wärmen weckt ihn mit 30 %, die Heilung trifft nur die Stehenden
+    bisZurWahl(state, run);
+    expect(run.pendingChoice!.roomIndex).toBe(8);
+    const [liegt, ...stehen] = run.party;
+    liegt.hp = 0;
+    const stehenVorher = stehen.map(u => u.hp);
+    system.resolveChoice(run, 1);
+    expect(liegt.hp).toBe(Math.floor(liegt.maxHp * 0.3));
+    expect(liegt.geweckt).toBe(1);
+    stehen.forEach((u, i) => expect(u.hp, u.name).toBe(Math.min(u.maxHp, stehenVorher[i] + Math.floor(u.maxHp * 0.05))));
+    expect(run.combatLog.some(l => l.endsWith(`${liegt.name} steht mit 30% HP wieder auf.`))).toBe(true);
+    // Wer geweckt wurde, war gefallen: kein Sieg ohne Verlust
+    expect(run.party.filter(u => (u.geweckt ?? 0) > 0)).toHaveLength(1);
+  });
+
+  it('Pfeiler: brechen zieht Orms Wut je 2 Runden vor, stützen schiebt sie je 1 Runde hinaus und kostet 5 % Leben', () => {
+    const { state, ids } = musterStand('stark', 7919, 'stadt5');
+    const run = bisZurWahl(state, system.startExpedition(state, 'tagespfeiler', ids)!);
+    expect(run.pendingChoice!.roomIndex).toBe(2);
+    expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_tagstein', value: 6, nachSieg: true, bossWutFrueher: 2 });
+    expect(run.pendingChoice!.optionB).toMatchObject({ bossWutFrueher: -1, kostetLeben: 5 });
+    const orm = boss(run);
+    const werte = { hp: orm.hp, atk: orm.atk };
+    system.resolveChoice(run, 1);
+    expect(run.bossWutFrueher).toBe(-1);
+    expect(run.combatLog).toContain('>> Ihr gewinnt Zeit: Orm wird erst ab Runde 11 wütend.');
+    // Raum 8: der gestützte Pfeiler gibt zwei Brocken Tagstein sofort
+    bisZurWahl(state, run);
+    expect(run.pendingChoice!.roomIndex).toBe(8);
+    system.resolveChoice(run, 1);
+    expect(run.loot.mat_tagstein).toBe(2);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 1);
+    expect(run.bossWutFrueher).toBe(-3);
+    expect(wutAbRunde(ENEMY_DEFS.boss_orm.enrage!, run)).toBe(13);
+    expect(run.combatLog).toContain('>> Ihr gewinnt Zeit: Orm wird erst ab Runde 13 wütend.');
+    expect({ hp: orm.hp, atk: orm.atk }).toEqual(werte);
+
+    // Dreimal gebrochen: ab Runde 4, mit Tagstein und Set-Teil erst nach dem Sieg
+    const zwei = musterStand('stark', 7919, 'stadt5');
+    const gier = bisZurWahl(zwei.state, system.startExpedition(zwei.state, 'tagespfeiler', zwei.ids)!);
+    for (let i = 0; i < 3; i++) {
+      if (i > 0) bisZurWahl(zwei.state, gier);
+      system.resolveChoice(gier, 0);
+    }
+    expect(gier.bossWutFrueher).toBe(6);
+    expect(wutAbRunde(ENEMY_DEFS.boss_orm.enrage!, gier)).toBe(4);
+    expect(gier.setTeilVersprochen).toBe(true);
+    expect(gier.loot.mat_tagstein ?? 0).toBe(0);
+    expect(gier.geschichtsBeute).toEqual([{ raum: gier.rooms.length - 1, gold: 0, dinge: { mat_tagstein: 16 } }]);
+  });
+
+  it('im Bosskampf wütet Orm nach drei gestützten Pfeilern erst ab Runde 13', () => {
+    const engine = new CombatEngine(new GearSystem());
+    const wutRunde = (frueher: number | undefined): number => {
+      const orm = engine.enemyToCombatUnit('boss_orm');
+      orm.atk = 1;
+      const held: typeof orm = { ...engine.enemyToCombatUnit('boss_orm'), id: 1, name: 'Testheld', isPlayer: true, atk: 1, hp: 99999, maxHp: 99999 };
+      const room = { index: 0, type: 'boss' as const, enemies: [orm], healPercent: 0, hazardDamage: 0, completed: false };
+      const run: ExpeditionRun = {
+        routeId: 'tagespfeiler', party: [held], rooms: [room], currentRoom: 0, combatLog: [], loot: {}, goldEarned: 0,
+        provisions: [], status: 'exploring', lastCheckpoint: 0, desperateResolveUsed: false, rngSeed: 1,
+        focusTarget: null, focusTargetCooldown: 0, difficulty: 'normal', activeModifier: null, score: 0,
+        totalCombatRounds: 0, enemiesKilled: 0, bossesKilled: 0, abilitiesUsed: {}, bossWutFrueher: frueher,
+      };
+      engine.processCombat(run, room, new SeededRNG(3));
+      const wut = run.combatRoundSnapshots!.find(s => s.logLines.some(l => l === `!! ${orm.name} ENRAGE !!`));
+      expect(wut, `bossWutFrueher ${frueher}`).toBeTruthy();
+      return wut!.round;
+    };
+    expect(wutRunde(undefined)).toBe(10);
+    expect(wutRunde(-3)).toBe(13);
+    expect(wutRunde(6)).toBe(4);
+  });
+
+  it('Alrunas Kelle und Der Schlussstein: die ersten Siege im Taglicht', () => {
+    expect(ITEM_DEFS.alrunas_kelle).toMatchObject({ tier: 11, gearSlot: 'mainHand', weaponSlotType: '1h' });
+    expect(ITEM_DEFS.der_schlussstein).toMatchObject({ tier: 12, gearSlot: 'trinket' });
+    expect(ITEM_DEFS.der_schlussstein.statBonuses).toMatchObject({ spd: 0.16, critChance: 0.16 });
+    expect(ROUTE_DEFS.erste_stadt.ersterSiegBeute).toBe('alrunas_kelle');
+    expect(ROUTE_DEFS.tagespfeiler.ersterSiegBeute).toBe('der_schlussstein');
+  });
+
+  it('die Erste Stadt und die Pfeiler laufen in jeder Spielweise zu Ende', () => {
+    for (const [routeId, sets] of [['erste_stadt', 'morgen5'], ['tagespfeiler', 'stadt5']] as const) {
+      for (const spielweise of ['vorsichtig', 'klug', 'gierig'] as const) {
+        for (let i = 1; i <= 3; i++) {
+          const { state, ids } = musterStand('stark', i * 7919, sets);
+          const run = spieleRoute(state, ids, routeId, spielweise);
+          expect(run.status, `${routeId} ${spielweise}`).not.toBe('exploring');
+          const wahlen = run.rooms.filter(r => r.type === 'find' && r.completed).length;
+          expect(wahlen).toBeGreaterThanOrEqual(1);
+          if (routeId === 'tagespfeiler' && spielweise === 'gierig') expect(run.bossWutFrueher ?? 0).toBe(2 * wahlen);
+          if (routeId === 'tagespfeiler' && spielweise === 'vorsichtig') expect(run.bossWutFrueher ?? 0).toBe(-wahlen);
+          if (routeId === 'erste_stadt') expect(run.bossWutFrueher ?? 0).toBe(0);
+          if (spielweise === 'gierig') expect(run.loot.mat_tagstein ?? 0).toBe(run.bossesKilled > 0 ? (routeId === 'erste_stadt' ? 14 : 16) : 0);
+        }
+      }
+    }
+  });
+
+  // Grobe Eichung im Taglicht (genaue Zahlen: npm run dungeon-eichung, docs/NEUE-DUNGEONS.md «Im Taglicht»)
+  it('Eichung grob Erste Stadt: die Morgengabe auf +5 ist der Schlüssel, ohne sie fällt Alruna nicht, das Wachfeuer ist der Lohn', () => {
+    const morgen = messeLaeufe('erste_stadt', 'stark', 'vorsichtig', 20, 'morgen5');
+    expect(morgen.siege).toBeGreaterThanOrEqual(9);
+    expect(morgen.siege).toBeLessThanOrEqual(18);
+    expect(morgen.rundenlimit).toBe(0);
+    expect(messeLaeufe('erste_stadt', 'stark', 'vorsichtig', 10, 'pfand5').siege).toBeLessThanOrEqual(1);
+    // Gier kostet: dreimal ins Feuer gegriffen gewinnt nur noch etwa jeder zehnte Lauf (die ersten 20 Startwerte haben Glück)
+    expect(messeLaeufe('erste_stadt', 'stark', 'gierig', 100, 'morgen5').siege).toBeLessThanOrEqual(15);
+    expect(messeLaeufe('erste_stadt', 'stark', 'vorsichtig', 20, 'stadt0').siege).toBeGreaterThanOrEqual(15);
+  });
+
+  it('Eichung grob Pfeiler: das Wachfeuer auf +5 ist der Schlüssel, Brechen kostet den Sieg, die Tragkraft ist der Lohn', () => {
+    const stadt = messeLaeufe('tagespfeiler', 'stark', 'vorsichtig', 20, 'stadt5');
+    expect(stadt.siege).toBeGreaterThanOrEqual(11);
+    expect(stadt.rundenlimit).toBeLessThanOrEqual(1);
+    expect(messeLaeufe('tagespfeiler', 'stark', 'vorsichtig', 10, 'morgen5').siege).toBeLessThanOrEqual(3);
+    expect(messeLaeufe('tagespfeiler', 'stark', 'gierig', 20, 'stadt5').siege).toBeLessThanOrEqual(3);
+    expect(messeLaeufe('tagespfeiler', 'stark', 'vorsichtig', 20, 'tagwerk0').siege).toBeGreaterThanOrEqual(stadt.siege);
+  });
 });

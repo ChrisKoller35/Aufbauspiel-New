@@ -52,13 +52,17 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
     `double_strike`, `anti_heal`, `regen`, `aoe_resist`, `spell_power`, `fire_resist`, `stun_strike`.
 - **Set-Boni:** Zwei Teile geben je Ebene etwas mehr (Ebene 1: +1 Angriff, +5 Leben; Ebene 5: +5 Angriff,
   +15 Leben; Ebene 6: +6 Angriff, +20 Leben; Ebene 7: +7 Angriff, +24 Leben; Ebene 8: +8 Angriff, +8 %
-  Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben; Ebene 10: +10 Angriff, +10 % Krit-Chance). Die
+  Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben; Ebene 10: +10 Angriff, +10 % Krit-Chance; Ebene 11: +11
+  Angriff, +40 Leben; Ebene 12: +12 Angriff, +12 % Krit-Chance). Die
   Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort: Drachengier, Gold macht
   stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team; Sternenschlund: Sternenfall,
   jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden; Mondhof: Mondwall, zu Beginn jedes
   Kampfes und alle 3 Runden ein Schild von 15 für jeden im Team, der sich mit anderen Schilden wie der Phalanx
   addiert; Morgentor: Sonnenstich, jeder Treffer auf einen Gegner über 60 % Leben brennt zusätzlich 5 % seiner
-  vollen Leben weg, höchstens 60, also genau bis dorthin, wo die Meuchlerin 2,5-fach trifft).
+  vollen Leben weg, höchstens 60, also genau bis dorthin, wo die Meuchlerin 2,5-fach trifft; Erste Stadt:
+  Wachfeuer, fällt ein Held, steht er sofort mit 30 % seiner Leben wieder auf, einmal je Kampf fürs ganze Team,
+  auch nach einer Fähigkeit der Gegner; Pfeiler des Tages: Tragkraft, solange der Träger steht, hat die ganze
+  Gruppe am Ende jeder Runde 6 Angriff mehr, bis Kampfende höchstens +42).
 
 ## Ein Set für einen neuen Dungeon
 
@@ -67,10 +71,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 2. **Drei Teile** mit verschiedenen Plätzen, damit ein Held alle drei tragen kann: eine Waffe oder ein
    Schild, eine Rüstung und ein Schmuckstück. `bild` ist ein vorhandener Sprite-Key, `text` ein Satz
    mit Witz, der zum Dungeon passt. Die Gegenstände (`set_<set>_<bauart>`) entstehen von selbst.
-3. **Ebene über 10:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
-   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 10. Die neuen Werte an den besten
+3. **Ebene über 12:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
+   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 12. Die neuen Werte an den besten
    gewöhnlichen Gegenständen der Ebene ausrichten; gibt es auf der Ebene keine, die Reihe im selben Schritt
-   fortsetzen (so sind Ebene 7 bis 10 entstanden).
+   fortsetzen (so sind Ebene 7 bis 12 entstanden).
 4. **Set-Boni:** `zweiTeile` etwas über der Ebene darunter. `dreiTeile` mit Name, Text und Effekten.
    Eine neue Fähigkeit braucht ihre Wirkung in `src/systems/Kampfeffekte.ts`, Name und Beschreibung in
    `SPECIAL_EFFECT_DEFS` und, falls ihre Kampfzeile eine eigene Farbe haben soll, `getLogLineColor` in
@@ -82,11 +86,14 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
    um eine Stufe mit dem neuen Set ergänzen, ab den Sternen mit Stufen aus der Schmiede (`schmiede`) und
    der Ebene, ab der die Eichung sie misst (`abEbene`). Stand: `mond5` (ab Ebene 9: dazu Lia im Schlund-Set,
    alles auf +5), `pfand5` (ab Ebene 10: dazu Brom im Pfand des Mondvogts mit dem Amtsstab, alles auf +5) und
-   die Stufen dazwischen (`schlund2`, `pfand2`, `pfand3`, `morgen0`; einzelne Teile auf einer anderen Stufe
+   im Taglicht `morgen5` (ab Ebene 11: dazu Sina in Sunnas Morgengabe), `stadt5` (ab Ebene 12: dazu Grimm in
+   Alrunas Wachfeuer) und `tagwerk0` (Lia in «Was den Tag trug», der Lohn der Pfeiler), und
+   die Stufen dazwischen (`schlund2`, `pfand2`, `pfand3`, `morgen0`, `morgen3`, `stadt0`, `stadt3`; einzelne Teile auf einer anderen Stufe
    über `MusterSet.stufen`), damit die Tabelle zeigt, was das neue Set einer Ebene ausmacht, bevor es ganz
    hochgeschmiedet ist.
 7. **Eigene Bilder** für Set-Teile nur mit Christophs Okay (Kosten-Regel). Bis dahin tragen sie Bilder
-   vorhandener Gegenstände mit dem Set-Zeichen darauf.
+   vorhandener Gegenstände mit dem Set-Zeichen darauf, oder ein Leihbild (`npm run leihbilder`, umgefärbt aus
+   einem vorhandenen Bild, eigener Dateiname; so die Sets des Taglichts).
 
 ## Stärke (Eichung)
 
@@ -101,7 +108,11 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
   dasselbe, Lias Schlund-Set erst auf +2.
 - **Pfand** (`pfand2`, `pfand3` ab Ebene 9 und 10, `pfand5` ab Ebene 10): dazu Brom im Pfand des Mondvogts
   mit dem Amtsstab, das Pfand-Set auf +2, +3 oder +5, die übrigen auf +5.
-- **Morgengabe** (`morgen0`, ab Ebene 10): dazu Sina in Sunnas Morgengabe ohne Stufen, die übrigen auf +5.
+- **Morgengabe** (`morgen0`, ab Ebene 10): dazu Sina in Sunnas Morgengabe ohne Stufen, die übrigen auf +5;
+  `morgen3` und `morgen5` (ab Ebene 11): die Morgengabe auf +3 oder +5.
+- **Wachfeuer** (`stadt0` ab Ebene 11, `stadt3` und `stadt5` ab Ebene 12): dazu Grimm in Alrunas Wachfeuer
+  (statt Korrunds Meisterstücken) ohne Stufen, auf +3 oder +5.
+- **Tagwerk** (`tagwerk0`, ab Ebene 12): dazu Lia in «Was den Tag trug» ohne Stufen (statt des Schlund-Sets).
 
 Stand 23.10.2026, mit den Werten echter Helden (`docs/AUSBILDUNG.md`, «Eichung nach dem Umbau»), den Wegen vom
 21.10. (`docs/SPEZIALISIERUNG.md`) und Manager #43 und #44, Siege von 200 Läufen (vorsichtig / klug / gierig):
@@ -145,6 +156,24 @@ Am 22.10. waren es im Mondhof mit `mond5` 74 / 28 / 2 %, am Morgentor 61 / 31 / 
 
 Dazu die Läufe am Rundenlimit des Bosskampfs und die Siege vor der Wut-Runde: `docs/NEUE-DUNGEONS.md`,
 «Im Mondlicht».
+
+Im Taglicht (Stand 5.11.2026, Team «Stark», 1000 Läufe; Ziele, Rundenlimit und Siege vor der Wut in
+`docs/NEUE-DUNGEONS.md`, «Im Taglicht»). «Gut» schafft mit den Sets der Ebene darunter höchstens jeden
+zwanzigsten Lauf (Erste Stadt `morgen5` 4 %, Pfeiler `stadt5` 3 %), «Frisch» nichts:
+
+| Dungeon | ohne Set der Ebene darunter | dessen Set +0 / +3 / +5 | Lohn ohne Stufen |
+|---|---|---|---|
+| Die Erste Stadt | `pfand5` 0 / 0 / 0 % | Morgengabe 6 / 0 / 0 %, 27 / 14 / 0 %, 69 / 48 / 10 % | Wachfeuer 88 / 78 / 38 % |
+| Die Pfeiler des Tages | `morgen5` 15 / 1 / 0 % | Wachfeuer 56 / 8 / 1 %, 62 / 15 / 2 %, 72 / 27 / 6 % | Tagwerk 94 / 77 / 29 % |
+
+**Alrunas Wachfeuer** (Glutkelle, Harnisch der Nachtwache, Glut der Vorigen; Ebene 11) ist ein Hammer-Set für
+Grimm. Gegen Alruna, deren Ruf zur Wache alle trifft, holt es einmal je Kampf den ersten Gefallenen zurück, auch
+wenn eine Fähigkeit ihn fällt (die Wiedergeburt anderer Gegenstände greift dort nicht). In der Ersten Stadt ist es
+der Lohn (88 % statt 69 % vorsichtig), an den Pfeilern der Schlüssel: ohne es 15 %, ohne Stufen 56 %.
+**Was den Tag trug** (Bogen aus dem Strebebogen, Mantel des Trägers, Ring aus dem Schlussring; Ebene 12) ist ein
+Bogen-Set für Lia. Die Tragkraft gilt für die ganze Gruppe: Wer Orm lange tragen muss, schlägt jede Runde härter
+zu und fällt ihn meist, bevor er wütet (815 von 935 Siegen vor seiner Wut). Die erste Fassung (nur Lia, +3 je
+Runde) brachte gegen Orm nichts, weil der Kampf an seinen Treffern hängt, nicht an einer Schützin.
 
 Vor der Eichung der Wege (21.10.2026) hatte das Team «Gut» im Himmelsarchiv mit Sets aus Ebene 4 54 / 37 / 0 %
 und mit dem Hort-Set 72 / 51 / 0 % (1000 Läufe; nach der Eichung der Wege 32 / 18 / 0 % und 47 / 30 / 0 %, seit
@@ -205,4 +234,5 @@ Die Tabelle oben ist der Stand danach.
   `SPECIAL_EFFECT_DEFS` nicht gibt und die darum nichts tun und nirgends angezeigt werden:
   `magic_resist` (T3-Platte), `piercing` (T4-Waffe), `evasion` (T4-Leder), `spell_amplify` (T4-Robe),
   `slow_on_hit` und `air_decay_resist` (Abyss-Gegenstände in `src/data/items.ts`).
-- **Eigene Set-Bilder:** 81 Teile (27 Sets), etwa 0.06 USD je Bild, nur mit Christophs Okay.
+- **Eigene Set-Bilder:** 93 Teile (alle 31 Sets, die zwei des Taglichts tragen Leihbilder), etwa 0.06 USD je
+  Bild, nur mit Christophs Okay.

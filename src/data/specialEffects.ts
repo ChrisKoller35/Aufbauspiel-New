@@ -298,10 +298,10 @@ export const SPECIAL_EFFECT_DEFS: Record<string, SpecialEffectDef> = {
   tragkraft: {
     id: 'tragkraft',
     name: 'Tragkraft',
-    description: 'Am Ende jeder Runde +3 Angriff für den Träger, bis Kampfende höchstens +24',
+    description: 'Solange der Träger steht: am Ende jeder Runde +6 Angriff für die ganze Gruppe, bis Kampfende höchstens +42',
     trigger: 'on_round_end',
     procChance: 1.0,
-    power: 3,
+    power: 6,
   },
 };
 

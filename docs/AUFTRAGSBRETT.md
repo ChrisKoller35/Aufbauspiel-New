@@ -36,7 +36,11 @@ und was bei neuen Dungeons zu tun ist.
 - **Kette «Der Saal der Gilde».** Hinter dem Gildenhaus steht ein Saal mit einem leeren Sockel je Boss.
   Die Kette hat ein Kapitel je Boss-Dungeon, von unten nach oben wie auf der Karte; jedes bringt ein
   Prunkstück in den Saal. Es hängt immer nur das nächste Kapitel, sein Stand gilt nur für dieses Kapitel.
-  Nach dem letzten liegt im Gildenhaus Ottokars Notiz zum Saal (mit dem «Schild in der Asche»). Hat die Gilde
+  Nach dem letzten liegt im Gildenhaus Ottokars Notiz zum Saal (mit dem «Schild in der Asche»). Die Bosse ab
+  Ebene 11 (`ANBAU_AB_EBENE`) bekommen ihre Sockel im **Anbau** neben der Platte «Für die Nächsten»: zwei
+  Sockel (Erste Stadt, Pfeiler des Tages) mit eigener Einleitung und eigenem Schluss (Alruna schreibt
+  «Besser.» unter die Platte). Der Saal behält so seine 16 Sockel und seinen Schluss; die Kette läuft nach dem
+  Morgentor im Anbau weiter. Hat die Gilde
   den Dungeon eines Kapitels noch nie bezwungen, steht ein Text da, der nichts aus dem Schluss seiner Geschichte
   vorwegnimmt (zum Beispiel den Namen des Ritters in der Krypta).
 - **Siegel einlösen** am Brett: ein Set-Teil nach Wahl aus jedem bezwungenen Dungeon, Material für die
@@ -44,7 +48,7 @@ und was bei neuen Dungeons zu tun ist.
 - **Trophäensaal.** Ein Sockel je Boss mit dem Bild des Bosses; wer noch nicht bezwungen ist, steht als
   Schatten mit «???» da, das Messingschild ist schon lesbar. Jede Trophäe hat drei Sterne: Boss
   bezwungen, Set des Dungeons komplett, Prunkstück aus der Kette. Die Summe ist der «Glanz des Saals»
-  (bei 16 Bossen 48 Sterne), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
+  (bei 18 Bossen 54 Sterne: 16 im Saal, 2 im Anbau), der Rahmen wird mit den Sternen bronzen, silbern, golden. Darunter die Pokale
   der Rangliste, alle Sets der Dungeons (komplett grün) und das Gildenbuch (Expeditionen, Siege, Siege
   ohne Verlust, Gegner, Bosse, bezwungene Dungeons, erledigte Zettel, verdiente Siegel).
   Der Saal zeigt nur; Kampfwerte ändert er nicht.
@@ -64,9 +68,10 @@ Alles in `src/data/auftragsbrett.ts`.
 - **Lieferung:** ein fester Lohn je Ware (`LieferWare.gold`, 24 bis 40 Gold, unter dem Händlerpreis), auf jeder
   Ebene gleich; kein Material. Warum: [Lieferung](#lieferung).
 - **Kapitel der Kette:** 3 + Ebene/2 (aufgerundet) Siegel, das Gold eines ganzen Laufs, das Material von
-  zwei Siegen; das letzte Kapitel 15 Siegel dazu.
-- **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 14 (Ebene 9
-  und 10). Material 3 Siegel für die Menge eines Siegs im höchsten bezwungenen Dungeon seines Gebiets.
+  zwei Siegen; das letzte Kapitel des Saals 15 Siegel dazu (`SAAL_SCHLUSS_SIEGEL`), das letzte des Anbaus
+  10 (`ANBAU_SCHLUSS_SIEGEL`). Jeder Teil zahlt seinen Schluss genau einmal.
+- **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 16 (Ebene 11
+  und 12). Material 3 Siegel für die Menge eines Siegs im höchsten bezwungenen Dungeon seines Gebiets.
   Kristallsplitter 2 Siegel für 3 Stück.
 - **Warum Material 3 Siegel kostet:** Mit 2 hätte ein voller Tag (10 Siegel) das Material von 5 Siegen gebracht,
   dazu das Material der Zettel selbst; wer am Tag 3 bis 5 Läufe macht, hätte in der Schmiede etwa dreimal so
@@ -91,6 +96,8 @@ Alles in `src/data/auftragsbrett.ts`.
 | 14 | Der Sternenschlund | 8 | 1× Sieg | 490 | 7 · 820 · 20 Sternenstahl | 12 |
 | 15 | Der Mondhof | 9 | 2× Sieg | 555 | 8 · 925 · 22 Mondsilber | 14 |
 | 16 | Das Morgentor | 10 | 1 Set-Teil | 605 | 8 · 1010 · 24 Mondsilber | 14 |
+| 17 (Anbau) | Die Erste Stadt | 11 | 1× ohne Gefallene | 695 | 9 · 1160 · 26 Tagstein | 16 |
+| 18 (Anbau) | Die Pfeiler des Tages | 12 | 2× Sieg | 745 | 9 · 1240 · 28 Tagstein | 16 |
 
 «Zettel: Gold» ist das Gold eines Zettels für diesen Dungeon; dazu kommt immer das Material eines Siegs.
 
@@ -154,6 +161,9 @@ Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er 
   Stadtschreibers. Die Reihenfolge der Kette kommt von der Karte, nicht aus der Liste. Ohne Eintrag hängt
   ein schlichtes Kapitel «Ein Andenken an …» (der Test verlangt den Eintrag). `art: 'set'` nur, wenn der
   Dungeon ein Set hat; Spielstände, die die Kette schon beendet haben, bekommen das neue Kapitel als nächstes.
+  Kapitel ab Ebene 11 (`ANBAU_AB_EBENE`) gehören zum Anbau: Die Einleitung zählt seine Sockel von selbst, der
+  Schluss des Anbaus kommt nach seinem letzten Kapitel. Kommt eine Ebene 13 dazu, steht sie im Anbau; der
+  Schluss des Anbaus spricht von Alruna und Orm und wäre dann neu zu schreiben.
 - **Neuer Dungeon ohne Boss:** nichts zu tun; Zettel für ihn entstehen von selbst (Jagd, wenn eine
   Gegnerart mindestens zweimal pro Lauf kommt; Set, wenn er ein Set hat). Liegt er unter Wasser, in der Glut
   oder über den Wolken, gehört er in `FERNE_DUNGEONS`.
