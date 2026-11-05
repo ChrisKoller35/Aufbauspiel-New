@@ -740,11 +740,15 @@ export class CombatEngine {
         effectType: s.effectType,
         power: s.power,
         target: s.target,
+        // Luftentzug zusätzlich zum Schaden (Druckwelle des Leviathans)
+        ...(s.drainAirAmount ? { drainAirAmount: s.drainAirAmount } : {}),
       })),
       buffs: [],
       lootTableId: def.lootTableId,
       spriteKey: def.spriteKey,
       defId: enemyId,
+      // Fernkämpfer der Belagerung schiessen zuerst auf die Kriegsmaschine
+      ...(def.prefersWarMachineTarget ? { prefersWarMachineTarget: true } : {}),
     };
   }
 

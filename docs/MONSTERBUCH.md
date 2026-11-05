@@ -129,19 +129,22 @@ Burgverteidigers «… 2, 10 und 18. … auch in Runde 26.».
 Runde (`wutVorziehbar`, gerechnet wie `CombatEngine.wutAbRunde`): Sunna ab Runde 4 statt 10.
 Bei keinem anderen Boss rückt die Wut.
 
-**Felder, die im Kampf nicht ankommen**: `CombatEngine.enemyToCombatUnit` übernimmt zwei Felder
-aus `enemies.ts` nicht, und das Buch beschreibt, was der Kampf tut:
+**Luftentzug und Kriegsmaschine**: `CombatEngine.enemyToCombatUnit` übernimmt seit dem 05.11.2026
+auch `drainAirAmount` (je Fähigkeit) und `prefersWarMachineTarget` (je Gegner) aus `enemies.ts`:
 
-- Die Druckwelle des Leviathans hat `drainAirAmount: 18`, nimmt im Kampf aber keine Luft. Das Buch
-  nennt bei ihr keine Luft.
-- Mauerschütze, Armbrustschütze und Kampfmagier haben `prefersWarMachineTarget`, greifen im
-  Belagerungsraum aber wie alle anderen die Helden an, nie die Kriegsmaschine. So steht es bei den
-  Fähigkeiten im Fenster («Trifft einen Helden …») und in der Notiz zu den Stadtmauern. Ihr
-  Hintergrund (`ENEMY_LORE`, unverändert) sagt noch, sie zielten auf Kriegsmaschinen; die Notiz
-  nennt das ihren Ruf.
+- Die Druckwelle des Leviathans nimmt zum Schaden 18 Luft aus dem Luftschild. Das Fenster sagt
+  «Trifft alle Helden mit dem 0,9-fachen Schaden eines normalen Angriffs und zieht 18 Luft aus dem
+  Luftschild.»
+- Mauerschütze, Armbrustschütze und Kampfmagier treffen im Belagerungsraum mit Grundangriff und
+  Fähigkeiten nur die Kriegsmaschine, solange sie steht (auch Schnellfeuer trifft dann nur sie),
+  danach und ohne Kriegsmaschine die Helden. Das Fenster hängt an («…; neben einer Kriegsmaschine
+  trifft er nur sie, solange sie steht.»), die Notiz zu den Stadtmauern sagt es auch.
 
-Wird eins davon im Kampf behoben, scheitert der Test «faehigkeitText sagt, was der Kampf tut», bei
-der Kriegsmaschine auch der Test der Notiz; beide zeigen, wo Fenster und Notiz nachziehen.
+Die Siegquoten der Musterteams in Meerestiefen, Stadtmauern und Festung bleiben dabei bei 100 %
+(200 Läufe je Team und Spielweise, auch mit Katapult oder Kanone); spürbar ist es an der Luft am
+Ende der Meerestiefen (im Mittel 13 bis 30 Luft weniger) und am Katapult (es endet mit 80 bis 98 %
+statt 100 % Leben). Die Tests «faehigkeitText sagt, was der Kampf tut», der Test der Notiz und
+`tests/gegnerFaehigkeiten.test.ts` prüfen beide Felder.
 
 Tests «Fähigkeiten im Fenster = Fähigkeiten im Kampf»: Für jeden erreichbaren Gegner kämpft ein
 unverwundbares Team gegen ihn (`processCombat`, für die fünf Gegner aus Belagerungsräumen auch
@@ -260,7 +263,7 @@ nicht auf der Seite steht.
 | `TAKT` | «jede vierte Runde», «nur in Runde 3 und 14» | Runden jedes Einsatzes im echten Kampf; Abstand und genannte Runden passen dazu |
 | `WUT` | «ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3»; Sonnenuhr «dreimal vorgestellt … ab Runde 4» | `bossWut` und `wutAbRunde` mit den Sonnenuhren der Route |
 | `WIRKUNG` | «3 Angriff mehr für drei Runden», «10 Luft» | dieselben Zahlen in der Zeile des Kampfprotokolls beim ersten Einsatz |
-| `KRIEGSMASCHINE` | «sollen es auf die Kriegsmaschine abgesehen haben, schiessen aber auf die Helden» | `processFortificationCombat` mit Katapult: Treffer auf Helden, keiner auf das Katapult |
+| `KRIEGSMASCHINE` | «schiessen nur auf die Kriegsmaschine, solange sie steht» | `processFortificationCombat` mit unverwundbarem Katapult: Treffer auf das Katapult, keiner auf Helden |
 | `JE_LAUF` | «Sechs Giftzahnspinnen je Lauf», «kommen je nur einmal vor», «Von beiden kommen hier je drei», «mindestens zweimal je Lauf» | `begegnungenJeLauf`: so oft steht der Gegner in den Räumen der Route; bei «mindestens» und «keine … seltener als» keiner seltener |
 
 Die Anzahl liest `JE_LAUF` aus dem Text: «einmal», «zweimal» …, sonst die Zahl als Wort oder Ziffer
@@ -275,10 +278,9 @@ anderen Gegner hier» (Spinnenhöhle), «statt einem wie auf dem kurzen Waldpfad
 Lichtung) und «Einen Boss gibt es nicht» (Abyssale Tiefe, Schattenkatakomben). Solche Vergleiche
 fängt die Probe nicht, ebenso wenig eine Anzahl ohne die Wörter oben («Es kommen drei von ihnen»).
 
-Die Morgentor-Notiz nennt die Sonnenuhr (Sunnas Wut bis Runde 4). Die Stadtmauern-Notiz stellt
-den Ruf von Mauerschütze und Armbrustschütze richtig: Ihr Hintergrund im Fenster sagt, sie zielten
-auf Kriegsmaschinen, im Kampf schiessen sie auf die Helden (siehe «Felder, die im Kampf nicht
-ankommen»).
+Die Morgentor-Notiz nennt die Sonnenuhr (Sunnas Wut bis Runde 4). Die Stadtmauern-Notiz sagt, dass
+Mauerschütze und Armbrustschütze nur auf die Kriegsmaschine schiessen, solange sie steht (siehe
+«Luftentzug und Kriegsmaschine»).
 
 ## Bildschirm
 
