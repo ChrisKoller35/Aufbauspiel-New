@@ -220,9 +220,10 @@ export class CombatEngine {
             }
 
             if (skill.effectType === 'buff') {
+              const runden = skill.runden ?? 3;
               unit.atk += skill.power;
-              unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: 3 });
-              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → +${skill.power} ATK für 3 Runden`);
+              unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: runden });
+              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → +${skill.power} ATK für ${runden} Runden`);
               skill.currentCooldown = skill.cooldown;
               usedSkill = true;
               break;
@@ -520,9 +521,10 @@ export class CombatEngine {
               usedSkill = true; break;
             }
             if (skill.effectType === 'buff') {
+              const runden = skill.runden ?? 3;
               unit.atk += skill.power;
-              unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: 3 });
-              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → +${skill.power} ATK für 3 Runden`);
+              unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: runden });
+              run.combatLog.push(`${unit.name} setzt ${skill.name} ein → +${skill.power} ATK für ${runden} Runden`);
               skill.currentCooldown = skill.cooldown;
               usedSkill = true; break;
             }
@@ -743,6 +745,8 @@ export class CombatEngine {
         target: s.target,
         // Luftentzug zusätzlich zum Schaden (Druckwelle des Leviathans)
         ...(s.drainAirAmount ? { drainAirAmount: s.drainAirAmount } : {}),
+        // Stärkungen, die länger als 3 Runden halten (Nachmauern, Nachgreifen)
+        ...(s.runden ? { runden: s.runden } : {}),
       })),
       buffs: [],
       lootTableId: def.lootTableId,

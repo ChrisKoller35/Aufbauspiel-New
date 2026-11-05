@@ -311,7 +311,7 @@ function kaempftAllein(id: string): boolean {
  * Was eine Fähigkeit im Kampf tut, nach der Regel in processCombat und nicht nach ihrer Beschreibung
  * in enemies.ts: Die verspricht bei Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei
  * Beschwörung Verstärkung. Heilung heilt den Gegner mit den wenigsten Leben, Stärkung und
- * Beschwörung geben immer dem Anwender Angriff (3 bzw. 4 Runden). Gegner mit
+ * Beschwörung geben immer dem Anwender Angriff (Stärkung 3 Runden oder EnemySkillDef.runden, Beschwörung 4). Gegner mit
  * prefersWarMachineTarget treffen im Belagerungsraum nur die Kriegsmaschine, solange sie steht,
  * sonst Helden. drainAirAmount (Druckwelle des Leviathans) nimmt zum Schaden Luft. Der Test prüft
  * das am Kampfprotokoll, mit und ohne Katapult.
@@ -339,7 +339,7 @@ export function faehigkeitText(id: string, sk: EnemySkillDef): string {
         ? `Heilt sich um ${zahl(sk.power)} Leben.`
         : `Heilt den Verbündeten mit den wenigsten Leben um ${zahl(sk.power)}, auch sich selbst.`;
     case 'buff':
-      return `Gibt sich selbst ${zahl(sk.power)} Angriff mehr, 3 Runden lang.`;
+      return `Gibt sich selbst ${zahl(sk.power)} Angriff mehr, ${sk.runden ?? 3} Runden lang.`;
     case 'summon':
       return `Ruft niemanden herbei, sondern gibt sich selbst ${zahl(sk.power)} Angriff mehr, 4 Runden lang.`;
     case 'drain_air':

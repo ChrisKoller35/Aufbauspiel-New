@@ -842,7 +842,7 @@ export class ExpeditionSystem {
       }
       case 'buff':
       case 'summon': {
-        const rounds = skill.effectType === 'summon' ? 4 : 3;
+        const rounds = skill.runden ?? (skill.effectType === 'summon' ? 4 : 3);
         unit.atk += skill.power;
         unit.buffs.push({ stat: 'atk', value: skill.power, remainingRounds: rounds });
         result = `${unit.name} wirkt ${skill.name} → +${skill.power} ATK für ${rounds} Runden!`;

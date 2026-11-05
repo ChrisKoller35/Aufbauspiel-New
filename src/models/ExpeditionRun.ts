@@ -190,6 +190,8 @@ export interface CombatSkill {
   target: string;
   /** Optional: Luftentzug zusätzlich zum normalen Schaden (z.B. Leviathan-Druckwelle) */
   drainAirAmount?: number;
+  /** Stärkung ('buff'): so viele Runden hält der Angriff (ohne Angabe 3; EnemySkillDef.runden) */
+  runden?: number;
 }
 
 /**

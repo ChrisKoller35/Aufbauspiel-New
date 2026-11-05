@@ -413,8 +413,9 @@ describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
           expect(text, name).toContain(`um ${sk.power.toLocaleString('de')}`);
         }
         if (sk.effectType === 'buff') {
-          expect(zeilen.some(z => z.includes(`${sk.name} ein → +${sk.power} ATK für 3 Runden`)), name).toBe(true);
-          expect(text, name).toBe(`Gibt sich selbst ${sk.power} Angriff mehr, 3 Runden lang.`);
+          const runden = sk.runden ?? 3;
+          expect(zeilen.some(z => z.includes(`${sk.name} ein → +${sk.power} ATK für ${runden} Runden`)), name).toBe(true);
+          expect(text, name).toBe(`Gibt sich selbst ${sk.power} Angriff mehr, ${runden} Runden lang.`);
         }
         if (sk.effectType === 'summon') {
           expect(zeilen.some(z => z.includes(`${sk.name} ein → Verstärkung beschworen! (+${sk.power} ATK für 4 Runden)`)), name).toBe(true);
@@ -1013,8 +1014,9 @@ describe('Monsterbuch-Bildschirm (HTML ohne Browser)', () => {
     expect(detailHtml(state, ENEMY_DEFS.boss_orm))
       .toContain('Im Dungeon «Die Pfeiler des Tages» können Wahlen unterwegs die Wut bis auf Runde 4 vorziehen oder bis auf Runde 13 hinausschieben.');
     expect(detailHtml(state, ENEMY_DEFS.boss_alruna)).not.toMatch(/vorziehen|hinausschieben/);
-    // Stärkungen und Beschwörungen sagen, was sie tun: Nachgreifen ruft niemanden
-    expect(detailHtml(state, ENEMY_DEFS.boss_orm)).toContain('Ruft niemanden herbei, sondern gibt sich selbst 10 Angriff mehr, 4 Runden lang.');
+    // Stärkungen sagen, was sie tun: Nachgreifen ist eine Stärkung über 4 Runden, keine Beschwörung
+    expect(detailHtml(state, ENEMY_DEFS.boss_orm)).toContain('Gibt sich selbst 10 Angriff mehr, 4 Runden lang.');
+    expect(detailHtml(state, ENEMY_DEFS.boss_orm)).not.toMatch(/Beschwörung|herbei/);
     expect(detailHtml(state, ENEMY_DEFS.boss_alruna)).toContain('Einsatz in Runde 3 und 12.');
   });
 });

@@ -30,6 +30,8 @@ export interface EnemySkillDef {
   power: number;
   target: 'player' | 'self' | 'ally_lowest_hp' | 'all_players';
   description?: string;
+  /** Stärkung ('buff'): so viele Runden hält der Angriff (ohne Angabe 3; 'summon' hält immer 4) */
+  runden?: number;
 }
 
 export const ENEMY_DEFS: Record<string, EnemyDef> = {
@@ -772,7 +774,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     hp: 520, atk: 40, def: 20, spd: 0.8, critChance: 0.08, critMult: 1.6,
     skills: [
       { id: 'mauerschlag', name: 'Mauerschlag', cooldown: 3, effectType: 'damage', power: 1.8, target: 'player', description: '1.8× Schaden auf 1 Ziel' },
-      { id: 'nachmauern', name: 'Nachmauern', cooldown: 5, effectType: 'summon', power: 8, target: 'self', description: '+8 ATK für 4 Runden' },
+      { id: 'nachmauern', name: 'Nachmauern', cooldown: 5, effectType: 'buff', power: 8, runden: 4, target: 'self', description: '+8 ATK für 4 Runden' },
     ],
     lootTableId: 'loot_erste_stadt_rare', xpReward: 82, goldReward: 30, spriteKey: 'ENEMY_STEINGESELLE',
   },
@@ -850,7 +852,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     skills: [
       { id: 'tageslast', name: 'Tageslast', cooldown: 3, effectType: 'aoe', power: 1.4, target: 'all_players', description: '1.4× Schaden auf alle' },
       { id: 'schulterstoss', name: 'Schulterstoss', cooldown: 4, effectType: 'damage', power: 2.8, target: 'player', description: '2.8× Schaden auf 1 Ziel' },
-      { id: 'nachgreifen', name: 'Nachgreifen', cooldown: 5, effectType: 'summon', power: 10, target: 'self', description: '+10 ATK für 4 Runden' },
+      { id: 'nachgreifen', name: 'Nachgreifen', cooldown: 5, effectType: 'buff', power: 10, runden: 4, target: 'self', description: '+10 ATK für 4 Runden' },
     ],
     lootTableId: 'loot_boss_orm', xpReward: 730, goldReward: 360, spriteKey: 'BOSS_ORM',
   },
