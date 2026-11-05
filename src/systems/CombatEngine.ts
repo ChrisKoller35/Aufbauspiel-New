@@ -8,11 +8,10 @@ import { GearSystem } from './GearSystem';
 import type { SchmiedeStufen } from './Schmiede';
 import { SeededRNG } from '../utils/RNG';
 import { DIFFICULTY_DEFS } from '../data/difficulty';
-import { SPECIAL_EFFECT_DEFS } from '../data/specialEffects';
 import {
   grundSchaden, staerke, chance, schadenNehmen, schildText,
   kampfBeginn, kampfEnde, zustandAktualisieren, setztAus, schattenstoss,
-  beimGetroffenWerden, besiegt, nachTreffer, rundenEnde, goldFaktor, neueToteMelden,
+  beimGetroffenWerden, besiegt, nachTreffer, rundenEnde, goldFaktor, neueToteMelden, wiedergeburt,
   zielschuss, wegSchaden, schattentanz, abfangen, schwaechstesZiel, deckung, vergeltung, wutAnfall,
   wegZaehlen, wegAnteileZaehlen, wegZustandDerRunde,
 } from './Kampfeffekte';
@@ -295,6 +294,8 @@ export class CombatEngine {
             run.combatLog.push(`⚠️ ${hero.name} erleidet Sauerstoffmangel! (-5 HP)`);
           }
         }
+        // Wer erstickt, fällt noch in dieser Runde (Wiedergeburt, Wachfeuer), nicht erst nach dem nächsten Zug
+        neueToteMelden(enemies, party, tote, log);
       }
 
       // Clear anti_heal debuffs (they last one round)
@@ -882,16 +883,9 @@ export class CombatEngine {
     }
   }
 
-  /** Check for revive effect on a unit that just died */
+  /** Wiedergeburt gleich beim Treffer; Fähigkeiten, Gift und Luftmangel erreicht sie über neueToteMelden */
   private checkRevive(unit: CombatUnit, run: ExpeditionRun): void {
-    const reviveEffect = unit.specialEffects?.find(e => e.id === 'revive' && e.usesLeft > 0);
-    if (reviveEffect) {
-      reviveEffect.usesLeft--;
-      const anteil = reviveEffect.power ?? SPECIAL_EFFECT_DEFS.revive.power;
-      const reviveHp = Math.max(1, Math.floor(unit.maxHp * anteil));
-      unit.hp = reviveHp;
-      run.combatLog.push(`>> ${unit.name}: WIEDERGEBURT! Steht mit ${reviveHp} HP wieder auf!`);
-    }
+    wiedergeburt(unit, zeile => { run.combatLog.push(zeile); });
   }
 
   private selectTarget(targets: CombatUnit[], rng: SeededRNG): CombatUnit {

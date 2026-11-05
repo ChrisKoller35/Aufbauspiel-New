@@ -171,7 +171,8 @@ zwanzigsten Lauf (Erste Stadt `morgen5` 4 %, Pfeiler `stadt5` 3 %), «Frisch» n
 
 **Alrunas Wachfeuer** (Glutkelle, Harnisch der Nachtwache, Glut der Vorigen; Ebene 11) ist ein Hammer-Set für
 Grimm. Gegen Alruna, deren Ruf zur Wache alle trifft, holt es einmal je Kampf den ersten Gefallenen zurück, auch
-wenn eine Fähigkeit ihn fällt (die Wiedergeburt anderer Gegenstände greift dort nicht). In der Ersten Stadt ist es
+wenn eine Fähigkeit ihn fällt (seit dem 5.11.2026 greift dort auch die «Wiedergeburt» der Gegenstände und von
+«Unbeugsam», zuerst die eigene, dann das Feuer; `Kampfeffekte.wiedergeburt`). In der Ersten Stadt ist es
 der Lohn (88 % statt 69 % vorsichtig), an den Pfeilern der Schlüssel: ohne es 15 %, ohne Stufen 56 %.
 **Was den Tag trug** (Bogen aus dem Strebebogen, Mantel des Trägers, Ring aus dem Schlussring; Ebene 12) ist ein
 Bogen-Set für Lia. Die Tragkraft gilt für die ganze Gruppe: Wer Orm lange tragen muss, schlägt jede Runde härter
