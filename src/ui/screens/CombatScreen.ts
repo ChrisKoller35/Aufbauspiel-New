@@ -12,7 +12,7 @@ import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, ROUTE_IMAGE_MAP } from '../../data/routes';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { ENEMY_DEFS } from '../../data/enemies';
-import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
+import { getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
 import { hpAnzeige, rundeLogZahlen } from '../hpAnzeige';
