@@ -5,6 +5,12 @@
 
 .dmap-legend-knopf { display: none; }
 
+/* Namen, Sterne und Räume der Dungeons mit dunklem Rand: auf dem Taghimmel (Ebene 11 und 12)
+   und über Wegen lesbar. Auf dem Nachthimmel fällt der Rand nicht auf. */
+.dmap-t-name, .dmap-t-sterne, .dmap-t-raeume {
+  paint-order: stroke; stroke: #060810; stroke-opacity: .75; stroke-width: 3px; stroke-linejoin: round;
+}
+
 /* Zwischen den Sternen: einige Sterne funkeln (DungeonMapScreen buildGipfelHimmel) */
 .dmap-funkeln { animation: dmap-funkeln 3.5s ease-in-out infinite; }
 @keyframes dmap-funkeln { 0%, 100% { opacity: .85; } 50% { opacity: .2; } }
@@ -29,6 +35,9 @@
   #s-dungeon .dmap-t-name.boss { font-size: 13px; }
   #s-dungeon .dmap-t-sterne { font-size: 11px; transform: translateY(3px); }
   #s-dungeon .dmap-t-raeume { font-size: 11px; transform: translateY(7px); }
+  /* Langer Name in zwei Zeilen: die zweite Zeile ist hier grösser als am PC, Sterne und Räume rücken nach */
+  #s-dungeon .dmap-t-sterne.zwei { transform: translateY(6px); }
+  #s-dungeon .dmap-t-raeume.zwei { transform: translateY(10px); }
   #s-dungeon .dmap-t-klein { font-size: 11px; letter-spacing: 1px; }
   #s-dungeon .dmap-t-region { font-size: 12px; letter-spacing: 2px; opacity: .35; }
   #s-dungeon .dmap-t-region-maske { font-size: 12px; letter-spacing: 2px; }

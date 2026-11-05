@@ -326,10 +326,10 @@ export class CombatScreen {
       for (const k of Array.from(col.children) as HTMLElement[]) {
         if (!karten.includes(k)) hoehe -= k.offsetHeight + abstand;
       }
-      // Was die Karte um das Bild herum braucht (Rand, Name, Werte, Leben)
+      // Was die Karte um das Bild herum braucht (Rand, Name, Werte, Leben); ein Name in zwei Zeilen macht eine Karte höher
       const bild = karten[0].querySelector<HTMLElement>('.mc-co-sprite, .mc-co-sprite-fallback');
       const randBreite = bild ? karten[0].offsetWidth - bild.offsetWidth : 30;
-      const randHoehe = bild ? karten[0].offsetHeight - bild.offsetHeight : 92;
+      const randHoehe = bild ? Math.max(...karten.map(k => k.offsetHeight)) - bild.offsetHeight : 92;
       // Beste Aufteilung in Spalten und Reihen suchen
       let groesse = BILD_MIN;
       for (let spalten = 1; spalten <= karten.length; spalten++) {
@@ -459,6 +459,8 @@ export class CombatScreen {
     nameEl.className = 'mc-co-unit-name';
     nameEl.style.color = isEnemy ? 'var(--mc-damage)' : 'var(--mc-light)';
     nameEl.textContent = unit.name;
+    // Höchstens zwei Zeilen (magic-city.css); was darüber hinausgeht, steht beim Darüberfahren
+    nameEl.title = unit.name;
 
     const statsEl = document.createElement('div');
     statsEl.className = 'mc-co-unit-stats';

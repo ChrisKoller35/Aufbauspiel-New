@@ -16,6 +16,7 @@ import { finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
 import { setBeute } from '../src/systems/DungeonSets';
 import { setVonItem } from '../src/data/dungeonSets';
 import { MusterSetName, messeLaeufe, musterStand, siegeVon, spieleRoute } from '../src/systems/Musterlauf';
+import { namensZeilen } from '../src/ui/screens/DungeonMapScreen';
 
 const NEUE = Object.values(ROUTE_DEFS).filter(r => r.gebiet);
 const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
@@ -84,6 +85,16 @@ describe('Dungeons über dem Vulkankern', () => {
 
   it('jede Route zeigt so viele Räume, wie sie hat (Karte und Expeditionsliste lesen `rooms`)', () => {
     for (const route of Object.values(ROUTE_DEFS)) expect(route.rooms, route.id).toBe(route.encounters.length);
+  });
+
+  it('auf der Karte steht jeder Name ganz, ein langer in zwei Zeilen statt abgeschnitten', () => {
+    expect(namensZeilen('Die Pfeiler des Tages')).toEqual(['Die Pfeiler', 'des Tages']);
+    expect(namensZeilen('Die Erste Stadt')).toEqual(['Die Erste Stadt']);
+    for (const route of Object.values(ROUTE_DEFS)) {
+      const zeilen = namensZeilen(route.name);
+      expect(zeilen.join(' '), route.id).toBe(route.name);
+      for (const zeile of zeilen) expect(zeile.length, route.id).toBeLessThanOrEqual(20);
+    }
   });
 
   it('Räume, Gegner, Beute und Wahl-Räume sind vollständig beschrieben', () => {

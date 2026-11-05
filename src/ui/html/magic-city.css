@@ -1312,7 +1312,8 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .dmap-wrap::-webkit-scrollbar-track { background: var(--s1); }
 .dmap-wrap::-webkit-scrollbar-thumb { background: var(--bdr); border-radius: 3px; }
 
-.dmap-svg-scroll { display: block; margin: 0 auto; }
+/* overflow visible: Der Himmel über der alten Karte reicht seitlich über das SVG hinaus (HIMMEL_SEITE) */
+.dmap-svg-scroll { display: block; margin: 0 auto; overflow: visible; }
 
 /* Node interaction */
 .dmap-nd { cursor: pointer; }
@@ -1491,7 +1492,11 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   border: 2px solid #1a2540;
 }
 .mc-co-unit-info { min-width: 0; display: flex; flex-direction: column; gap: 2px; align-items: center; width: 100%; }
-.mc-co-unit-name { font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100%; margin-top: 5px; }
+/* Lange Namen («Alruna, die erste Gildenmeisterin», «Bogenschützin der Vorigen») in höchstens zwei Zeilen statt abgeschnitten */
+.mc-co-unit-name {
+  font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 600; line-height: 1.2; max-width: 100%; margin-top: 5px;
+  overflow-wrap: break-word; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; line-clamp: 2; overflow: hidden;
+}
 .mc-co-unit-stats { font-size: 0.75rem; color: var(--mut); }
 .mc-co-unit-wut { color: var(--mc-damage); }
 .mc-co-unit-hp { font-size: 0.82rem; font-family: 'Cinzel', serif; }
@@ -1905,7 +1910,12 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   .mc-co-unit-hp { font-size: 0.62rem; }
   .mc-co-hp-bar { max-width: none; }
   .mc-co-badges { margin-bottom: 0; }
-  .mc-co-col > :not(.mc-co-unit) { min-width: 0; overflow-wrap: anywhere; }
+  /* Gegnerfähigkeiten und Vorräte auf dunklem Grund wie am PC: Auf hellen Routenbildern (Taglicht) wäre die Schrift sonst kaum lesbar */
+  .mc-co-col > :not(.mc-co-unit) {
+    min-width: 0; overflow-wrap: anywhere; padding: 0 8px 6px;
+    background: rgba(12, 18, 32, 0.86); border: 1px solid #242040; border-radius: 6px;
+  }
+  .mc-co-col > :not(.mc-co-unit) > .mc-co-section-divider { border-top: none; margin-top: 0; }
   /* Fähigkeiten, Vorräte, Protokoll und Knöpfe unten, ganz sichtbar */
   .mc-co-preview-strip, .mc-co-log-area { padding: 4px 8px; }
   .mc-co-ability-col { min-width: 0; flex: 1 1 140px; }
