@@ -17,3 +17,7 @@
 .inv-cell-besser .inv-cell-nm { position: static; padding: 0; background: none; text-align: left; font-size: 0.8rem; white-space: normal; }
 .inv-cell-besser .truhe-besser { font-size: 0.74rem; z-index: 1; }
 @media (max-width: 700px) { #hero-detail-ov .nebenhand-frei { width: calc(100% - 16px); margin: 0 8px 10px; } }
+/* Lager: Kacheln mit ⬆ und die Karte sind Knöpfe (öffnen das Heldenfenster mit dem Teil). Rücksetzer der Browser-Stile
+   für Knöpfe, damit sie aussehen wie die übrigen Kacheln (kein padding: das setzen .inv-cell und .inv-cell-gear) */
+button.inv-cell { font: inherit; color: inherit; text-align: inherit; width: 100%; margin: 0; cursor: pointer; }
+button.inv-cell:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
