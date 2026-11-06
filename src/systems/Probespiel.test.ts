@@ -12,6 +12,8 @@ import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { heldenJeExpedition } from './Ausbau';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { raidOffen, raidStand, versuchsLage } from './Raid';
+import { DREIZEHN, ZENIT } from '../data/raids';
+import { LEHRLINGE } from '../data/lehrlinge';
 import { createGuildFighter } from '../models/GuildRoster';
 
 /** Neues Spiel wie in main.ts, dann zum Probespiel gemacht (mit `stufe` wie ?probe=sterne oder ?probe=mond). */
@@ -54,6 +56,8 @@ describe('Probespiel', () => {
     expect(probespielNeu('?probe=pfeiler')).toBe(true);
     expect(probespielNeu('?probe=raid')).toBe(true);
     expect(probespielStufe('?probe=raid')).toBe('raid');
+    expect(probespielNeu('?probe=raid2')).toBe(true);
+    expect(probespielStufe('?probe=raid2')).toBe('raid2');
     expect(probespielStufe('?probe=stadt')).toBe('stadt');
     expect(probespielStufe('?probe=pfeiler')).toBe('pfeiler');
     expect(probespielStufe('?probe=sterne')).toBe('sterne');
@@ -233,6 +237,37 @@ describe('Probespiel', () => {
     expect(versuchsLage(state).moeglich).toBe(true);
     // Ein neu angeheuerter Held bekommt eine neue Id
     expect(createGuildFighter('ranger', 'Neu', { ...brom.baseStats }).id).toBe(11);
+    // Stufe II bleibt zu, bis Zenit einmal angehalten ist
+    expect(raidOffen(state, DREIZEHN)).toBe(false);
+  });
+
+  it('?probe=raid2: dieselbe Gilde mit fünf Lehrlingen, Zenit einmal angehalten, Stufe II offen', () => {
+    const jetzt = Date.now();
+    const state = probespiel('raid2');
+    expect(state.fighters).toHaveLength(15);
+    expect(state.fighters.map(f => f.id)).toEqual(Array.from({ length: 15 }, (_, i) => i + 1));
+    const lehrlinge = state.fighters.filter(f => f.lehrling);
+    expect(lehrlinge).toHaveLength(5);
+    expect(lehrlinge.every(f => LEHRLINGE[f.classId]?.name === f.name)).toBe(true);
+    expect(state.fighters.filter(f => !f.lehrling).every(f => f.level === 15 && !!f.spezialisierung)).toBe(true);
+    for (const f of state.fighters) {
+      for (const itemId of Object.values(f.gear)) {
+        if (itemId) expect(ITEM_DEFS[itemId], itemId).toBeTruthy();
+      }
+    }
+    // Stufe I: einmal gewonnen, in der Woche davor; diese Woche ist dort alles frei
+    expect(state.raid?.siege).toBe(1);
+    expect(raidStand(state, jetzt, ZENIT).woche.versuche).toBe(0);
+    expect(state.globalStock[ZENIT.ersterSiegBeute]).toBe(1);
+    expect(state.statistics.raid_siege).toBe(1);
+    // Stufe II: offen, fünfzehn auf dem Feld, drei Ernstkämpfe frei, Tagstein für bezahlte
+    expect(raidOffen(state, ZENIT)).toBe(true);
+    expect(raidOffen(state, DREIZEHN)).toBe(true);
+    expect(state.globalStock.mat_tagstein).toBeGreaterThanOrEqual(60);
+    expect(Object.keys(raidStand(state, jetzt, DREIZEHN).aufstellung)).toHaveLength(15);
+    expect(versuchsLage(state, jetzt, DREIZEHN).moeglich).toBe(true);
+    expect(state.raidStufen?.dreizehn?.siege).toBe(0);
+    expect(createGuildFighter('ranger', 'Neu', { ...state.fighters[0].baseStats }).id).toBe(16);
   });
 
   it('speichert auf einem eigenen Platz, der richtige Spielstand bleibt unberührt', () => {

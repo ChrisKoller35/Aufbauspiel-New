@@ -2,7 +2,8 @@
 // Zehn Helden auf Stufe 15 mit ihren Wegen, der Massstab für Zenit (tools/raidEichung.ts, tests/raid.test.ts)
 // und die Gilde des Probespiels ?probe=raid. Der Kern sind die vier aus dem Musterteam «Stark» in ihren Sets
 // wie in MUSTER_SETS.tagwerk0 (Lia ohne Stufen, die übrigen +5); die zweite Reihe trägt die Sets, die der Kern
-// unterwegs abgelegt hat. Aufstellungen nach Heldennamen, gezeichnet wie auf dem Feld (Reihe 1 vorn). docs/RAID.md.
+// unterwegs abgelegt hat. Für Stufe II («Die dreizehnte Stunde») kommen fünf Lehrlinge dazu (`anker15`, die Gilde
+// von ?probe=raid2). Aufstellungen nach Heldennamen, gezeichnet wie auf dem Feld (Reihe 1 vorn). docs/RAID.md.
 // ────────────────────────────────────────────────────────────────
 
 import { GuildFighter, createGuildFighter } from '../models/GuildRoster';
@@ -10,6 +11,7 @@ import type { Feld } from '../models/RaidStand';
 import { totalXpForLevel, werteAufStufe } from '../systems/HeroProgression';
 import { istSchmiedbar, SchmiedeStufen } from '../systems/Schmiede';
 import { CLASS_DEFS } from './classes';
+import { LEHRLINGE } from './lehrlinge';
 
 export interface RaidMusterHeld {
   classId: string;
@@ -18,6 +20,8 @@ export interface RaidMusterHeld {
   gear: GuildFighter['gear'];
   /** Schmiede-Stufe seiner Set-Teile */
   stufe: number;
+  /** Ein Lehrling (data/lehrlinge.ts): zweiter Held seiner Klasse, im Bild gespiegelt */
+  lehrling?: boolean;
 }
 
 const T4_TANK = { mainHand: 'soulbreaker', offHand: 'aether_guardian_shield', armor: 'dragonlord_plate', trinket: 'aether_heart' };
@@ -53,13 +57,32 @@ const ZWEITE_REIHE: Omit<RaidMusterHeld, 'stufe'>[] = [
 ];
 
 /**
+ * Die fünf Lehrlinge für Stufe II: ein zweiter Schild und ein zweiter Salbentopf für den dritten Trupp, dazu Bogen,
+ * Lied und Hexe. Stufe 15 mit Weg, in Sets der Stufen 3 und 4 und T4-Ausrüstung, alles ohne Schmiede: was eine
+ * Gilde hat, die ihre Lehrlinge mit dem ausstattet, was im Lager liegt, während der Kern die neuen Sets trägt.
+ */
+const LEHRLINGE_15: RaidMusterHeld[] = [
+  { classId: 'guardian', name: LEHRLINGE.guardian.name, weg: 'guardian_phalanx', stufe: 0, lehrling: true,
+    gear: { mainHand: 'soulbreaker', offHand: 'set_kommandant_schild', armor: 'set_kommandant_platte', trinket: 'set_kommandant_talisman' } },
+  { classId: 'cleric', name: LEHRLINGE.cleric.name, weg: 'cleric_kriegspriester', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_lich_stab', offHand: null, armor: 'set_lich_robe', trinket: 'set_lich_amulett' } },
+  { classId: 'ranger', name: LEHRLINGE.ranger.name, weg: 'ranger_scharfschuetzin', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_hydra_bogen', offHand: null, armor: 'set_hydra_leder', trinket: 'set_hydra_amulett' } },
+  { classId: 'bard', name: LEHRLINGE.bard.name, weg: 'bard_heldenlied', stufe: 0, lehrling: true, gear: { ...T4_BOW } },
+  { classId: 'witch', name: LEHRLINGE.witch.name, weg: 'witch_sturmhexe', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_wyrm_klinge', offHand: null, armor: 'set_wyrm_platte', trinket: 'set_wyrm_amulett' } },
+];
+
+/**
  * Die Varianten der Gilde: `anker` ist der Eichanker (zweite Reihe +3), `sets5`/`sets0` dieselben Sets auf +5 und
  * ohne Stufen, `t4` die zweite Reihe frisch hochgezogen in gewöhnlicher T4-Ausrüstung, `kern` nur die vier.
+ * `anker15` ist der Anker mit den fünf Lehrlingen (Stufe II).
  */
-export type RaidMusterName = 'anker' | 'sets5' | 'sets0' | 't4' | 'kern';
+export type RaidMusterName = 'anker' | 'sets5' | 'sets0' | 't4' | 'kern' | 'anker15';
 
 export function raidMusterHelden(name: RaidMusterName): RaidMusterHeld[] {
   if (name === 'kern') return KERN.map(h => ({ ...h }));
+  if (name === 'anker15') return [...raidMusterHelden('anker'), ...LEHRLINGE_15.map(h => ({ ...h, gear: { ...h.gear } }))];
   if (name === 't4') {
     return [...KERN, ...ZWEITE_REIHE.map(h => ({
       ...h, stufe: 0, gear: { ...(h.classId === 'paladin' ? T4_TANK : h.classId === 'bard' ? T4_BOW : T4_DPS) },
@@ -83,6 +106,7 @@ export function baueRaidGilde(
     held.level = stufe;
     held.xp = totalXpForLevel(stufe);
     held.gear = { ...m.gear };
+    if (m.lehrling) held.lehrling = true;
     if (stufe >= 10) held.spezialisierung = m.weg;
     for (const itemId of Object.values(held.gear)) {
       if (itemId && m.stufe > 0 && istSchmiedbar(itemId)) stufen[itemId] = m.stufe;
@@ -92,7 +116,7 @@ export function baueRaidGilde(
   return { helden, stufen };
 }
 
-/** Feld aus Text: je Reihe sechs Namen oder «.», der Gang «|» zählt nicht */
+/** Feld aus Text: je Reihe sechs (Stufe II: neun) Namen oder «.», die Gänge «|» zählen nicht */
 function raster(...reihen: string[]): Record<string, Feld> {
   const felder: Record<string, Feld> = {};
   reihen.forEach((zeile, reihe) => {
@@ -147,11 +171,58 @@ export type RaidAufstellungName = keyof typeof RAID_AUFSTELLUNGEN;
 export function raidMusterAufstellung(
   name: RaidAufstellungName, helden: GuildFighter[], ohne: string[] = [],
 ): Record<string, Feld> {
-  const plan: Record<string, Feld> = RAID_AUFSTELLUNGEN[name];
+  return nachPlan(RAID_AUFSTELLUNGEN[name], helden, ohne);
+}
+
+function nachPlan(plan: Record<string, Feld>, helden: GuildFighter[], ohne: string[]): Record<string, Feld> {
   const aufstellung: Record<string, Feld> = {};
   for (const held of helden) {
     const feld = plan[held.name];
     if (feld && !ohne.includes(held.name)) aufstellung[String(held.id)] = { ...feld };
   }
   return aufstellung;
+}
+
+/**
+ * Muster-Aufstellungen für Stufe II (neun Spalten, drei Trupps; anker15). `gut`: die Daumenregeln für drei Trupps
+ * (je Trupp ein Tank allein vorn und ein Heiler, jede Spalte besetzt und allein nur, wer den Zeiger aushält, auf E,
+ * wo sich die Zeiger treffen, zwei Zähe, Sina ohne Nachbarn); `profi`: Fund der Aufstellungssuche ab «Gut»;
+ * `lehrbuch`: Tanks vorn Mitte, Heiler dahinter, Schützen hinten, ohne Rücksicht auf die Zeiger; `naiv`: wie die
+ * Startaufstellung (vorne voll, dann Mitte); `zehn`: die besten zehn aus dem Anker ohne Lehrlinge (Fund der
+ * Aufstellungssuche, `npm run raid-eichung -- --suche zehn`): jede Spalte besetzt, fast jede mit nur einem.
+ */
+export const RAID_AUFSTELLUNGEN_DREIZEHN = {
+  gut: raster(
+    'Brom   .      .      | .      Bertram .      | .      Grimm  .',
+    '.      Ewin   Morn   | Moos   Ansgar  Ysra   | Pirmin .      Sina',
+    'Lia    Liedra Mirabell | Benno  .     .      | Wenna  .      .',
+  ),
+  profi: raster(
+    '.      Sina   .      | .      Grimm   .      | .      .      Wenna',
+    'Brom   Lia    Ewin   | .      .       Bertram | Mirabell Morn .',
+    'Moos   Ansgar Ysra   | Liedra .       .      | Pirmin .      Benno',
+  ),
+  lehrbuch: raster(
+    '.      Brom   .      | .      Bertram .      | .      Grimm  .',
+    'Liedra Ewin   .      | Ansgar Moos    .      | Benno  Pirmin .',
+    '.      Lia    Morn   | .      Sina    Ysra   | .      Wenna  Mirabell',
+  ),
+  naiv: raster(
+    'Brom   Grimm  Lia    | Sina   Ansgar  Ewin   | Moos   Liedra Ysra',
+    'Morn   Bertram Pirmin | Wenna  Benno   Mirabell | .   .      .',
+  ),
+  zehn: raster(
+    'Liedra .      Grimm  | Ysra   .       .      | .      Brom   .',
+    '.      .      .      | .      Morn    Ansgar | Moos   .      .',
+    '.      Ewin   .      | .      .       .      | Lia    .      Sina',
+  ),
+} satisfies Record<string, Record<string, Feld>>;
+
+export type RaidAufstellungDreizehn = keyof typeof RAID_AUFSTELLUNGEN_DREIZEHN;
+
+/** Aufstellung für Stufe II (wie raidMusterAufstellung) */
+export function raidMusterAufstellungDreizehn(
+  name: RaidAufstellungDreizehn, helden: GuildFighter[], ohne: string[] = [],
+): Record<string, Feld> {
+  return nachPlan(RAID_AUFSTELLUNGEN_DREIZEHN[name], helden, ohne);
 }

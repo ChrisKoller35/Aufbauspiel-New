@@ -1,4 +1,4 @@
-# Helden-Ausbildung: Training, Lehrbuch, Klassen-Tafel
+# Helden-Ausbildung: Training, Lehrbuch, Klassen-Tafel, Lehrlinge
 
 Ein Held lernt auf drei Wegen: in Expeditionen, im Training (Heldenhaus, Reiter «Trainieren») und im
 Lehrbuch (gleicher Reiter). Alle drei geben XP über `awardXP` (`src/systems/HeroProgression.ts`).
@@ -145,6 +145,40 @@ genau dieser Rechnung frei, Anzeige und Freischaltung können also nicht auseina
 So sieht der Fortschritt aus: «Besiege «Uralter Treant» im Tiefwald: 0/1», «10 gewonnene Expeditionen: 4/10»,
 «Guardian auf Stufe 5: Stufe 3». Sind alle Bedingungen erfüllt, die Klasse aber noch nicht frei (älterer
 Spielstand), steht dort: «Die Klasse wird nach der nächsten Expedition frei.»
+
+## Lehrlinge (Zweitbesetzung, 6.11.2026)
+
+Je Klasse gibt es einen zweiten Helden: den Lehrling. So kann die Gilde bis zu zwanzig Helden haben, zwei
+derselben Klasse in eine Expedition schicken, einer Klasse zwei verschiedene Wege geben und mehr Helden in den
+Raid bringen. Daten: `src/data/lehrlinge.ts`, Regeln: `src/systems/Lehrlinge.ts`, Tests: `tests/lehrlinge.test.ts`.
+
+- **Wann:** Sobald ein Held seiner Klasse Stufe 15 erreicht (`LEHRLING_AB_STUFE`, der Meister ist der Held der
+  Klasse mit der höchsten Stufe, nie der Lehrling). Je Klasse höchstens ein Lehrling.
+- **Preis:** wie jeder neue Held (`anheuerKosten` mit der Zahl der Helden in der Gilde). Aufgenommen wird sofort
+  gespeichert; zu wenig Gold sagt der Knopf («Nicht genug Gold!»).
+- **Start:** Stufe 1, Werte seiner Klasse, ohne Ausrüstung, hinten in der Gilde. Aufholen geht schnell: Das
+  Lehrbuch gibt ihm den Überschuss eines Helden auf Stufe 15 (bis Stufe 15 braucht er 2240 XP), Training und
+  Expeditionen wirken wie bei jedem Helden. Ab Stufe 10 wählt er seinen Weg selbst, gern einen anderen als sein
+  Meister.
+- **Name und Hintergrund:** Jeder Lehrling hat einen eigenen Namen, einen Satz für die Karte und einen
+  Hintergrund im Ton der Klassen (Bertram, Wenna, Pirmin, Ragna, Nix, Gerlinde, Benno, Mirabell, Edgar, Farn).
+  Das Heldenfenster zeigt «Klasse · Lehrling» und seinen Hintergrund (`hintergrundVon`), Karten mit Klassennamen
+  zeigen beim Lehrling seinen Namen und darunter «Lehrling · Klasse» (`kartenName`).
+- **Bild:** das Bild seiner Klasse, gespiegelt (`src/ui/heldBild.ts`, `.lehrling-bild` in `magic-city.css`), in
+  Heldenkarten, Heldenfenster, Expedition, Kampf und Raid. Eigene Bilder gibt es nicht (Kosten-Regel).
+- **Im Kampf** ist der Lehrling ein ganz normaler Held seiner Klasse. Zwei derselben Klasse in einer Gruppe:
+  Teamwirkungen zählen weiterhin nur vom stärkeren Träger (`staerksterTraeger`), Spott hält der, der ihn
+  gewirkt hat.
+- **Raid:** Nach dem ersten Sieg über den Zenit öffnet sich Stufe II «Die dreizehnte Stunde» für 10 bis 15
+  Helden. Mit nur einem Helden je Klasse kommt eine Gilde dort kaum durch; dafür sind die Lehrlinge da
+  (`docs/RAID.md`, Abschnitt Stufe II).
+- **Reiter «Anheuern»:** Unter den Klassen steht der Abschnitt «Lehrlinge · n von 10» mit einer Karte je
+  Klasse, von der die Gilde einen Helden hat: zuerst die, die man aufnehmen kann (Preis und «Aufnehmen»), dann
+  die wartenden («Kommt, sobald Guardian Stufe 15 erreicht (jetzt Stufe 12).»), dann die schon aufgenommenen
+  (mit dem Hinweis, wie weit das Lehrbuch sie gerade bringt). Gibt es keine Klasse mehr anzuheuern, steht der
+  Abschnitt über den Klassen.
+- **Erfolge** (Gruppe «Helden»): «Lehrjahre» (erster Lehrling), «Ausgelernt» (ein Lehrling auf Stufe 15),
+  «Doppelt besetzt» (alle zehn), gezählt in `lehrlinge` und `lehrlinge_ausgelernt`.
 
 ## Heldenkarten und Heldenfenster bedienen
 

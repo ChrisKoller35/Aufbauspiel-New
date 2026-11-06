@@ -1,8 +1,9 @@
-// ─── Magic City – Der Raid «Über dem Tag» im Spielstand ─────────
+// ─── Magic City – Die Raids im Spielstand ───────────────────────
 // Aufstellung, Woche, Ernstkämpfe mit Kosten, Truhen, XP und Erfolgszählern, dazu Alrunas Liste (was an der
-// Aufstellung gefährlich ist) und der Kriegsrat (20 Proben, ändert nichts). Die Rechnung des Kampfs steht rein in
-// RaidKampf.ts, die Zahlen in data/raids.ts, Regeln und Eichung in docs/RAID.md, der Bildschirm in
-// ui/screens/RaidScreen.ts.
+// Aufstellung gefährlich ist) und der Kriegsrat (20 Proben, ändert nichts). Jede Stufe hat ihren eigenen Stand:
+// «Über dem Tag» (Stufe I) in `state.raid`, «Die dreizehnte Stunde» (Stufe II) in `state.raidStufen.dreizehn`.
+// Die Rechnung des Kampfs steht rein in RaidKampf.ts, die Zahlen in data/raids.ts, Regeln und Eichung in
+// docs/RAID.md, der Bildschirm in ui/screens/RaidScreen.ts.
 // ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
@@ -10,7 +11,8 @@ import type { GuildFighter } from '../models/GuildRoster';
 import type { CombatUnit } from '../models/ExpeditionRun';
 import type { Feld, RaidStand } from '../models/RaidStand';
 import {
-  RAID_TEXTE, RaidDef, TRUPP_WIRKUNGEN, TruhenDef, ZENIT, spaltenName, truppKlein, truppName,
+  RAID_DEFS, RAID_TEXTE, RaidDef, TRUPP_WIRKUNGEN, TruhenDef, ZENIT, spaltenName, stufenTexte, truppKlein, truppName,
+  truppRichtung,
 } from '../data/raids';
 import { DUNGEON_SETS, setTeilIds } from '../data/dungeonSets';
 import { LOOT_TABLE_DEFS } from '../data/lootTables';
@@ -26,8 +28,10 @@ import { schmiedeStufen } from './Schmiede';
 import { wocheVon } from './Rangliste';
 import {
   RaidErgebnis, RaidGefallen, Regel, hauptursache, heilFaehigkeit, raidKampf, schlaege, sindNachbarn, spaltenZahl,
-  truppVon, vollsteReihe, zeigerSpalte,
+  treffpunkte, truppVon, vollsteReihe, zeigerRunden,
 } from './RaidKampf';
+import { grundSchaden } from './Kampfeffekte';
+import { hasEffect } from './CombatEngine';
 
 /** So viele Ernstkämpfe behält der Verlauf */
 export const VERLAUF_LAENGE = 10;
@@ -37,9 +41,28 @@ export const kriegsratSamen = (i: number): number => 1000 + i * 7919;
 
 // ── Freischalten, Stand, Woche ──
 
-/** Offen, sobald der Dungeon darunter einmal bezwungen ist (die Pfeiler des Tages) */
+/**
+ * Der gespeicherte Stand einer Stufe: Stufe I (Zenit) wie seit jeher in `state.raid`, jede weitere in
+ * `state.raidStufen[id]`. Fehlt er, gab es dort noch keinen Besuch.
+ */
+export function gespeicherterStand(state: GameState, def: RaidDef = ZENIT): RaidStand | undefined {
+  return def.id === ZENIT.id ? state.raid : state.raidStufen?.[def.id];
+}
+
+function standAblegen(state: GameState, def: RaidDef, stand: RaidStand): void {
+  if (def.id === ZENIT.id) state.raid = stand;
+  else state.raidStufen = { ...state.raidStufen, [def.id]: stand };
+}
+
+/**
+ * Offen, sobald der Dungeon darunter einmal bezwungen ist (die Pfeiler des Tages), und bei einer höheren Stufe
+ * erst nach dem ersten Sieg in der Stufe davor (`freiNachRaid`).
+ */
 export function raidOffen(state: GameState, def: RaidDef = ZENIT): boolean {
-  return isRouteCompleted(def.freiAb, state);
+  if (!isRouteCompleted(def.freiAb, state)) return false;
+  if (!def.freiNachRaid) return true;
+  const davor = RAID_DEFS[def.freiNachRaid];
+  return !!davor && (gespeicherterStand(state, davor)?.siege ?? 0) > 0;
 }
 
 function neueWoche(jetzt: number): RaidStand['woche'] {
@@ -87,13 +110,17 @@ export function startAufstellung(state: GameState, def: RaidDef = ZENIT): Record
  * räumt die Aufstellung auf (entlassene Helden, doppelte Felder).
  */
 export function raidStand(state: GameState, jetzt = Date.now(), def: RaidDef = ZENIT): RaidStand {
-  if (!state.raid) {
-    state.raid = {
+  if (!gespeicherterStand(state, def)) {
+    const neu: RaidStand = {
       aufstellung: startAufstellung(state, def), woche: neueWoche(jetzt), bestRest: null, versucheGesamt: 0, siege: 0,
       verlauf: [], einleitungGelesen: false, schlussGelesen: false,
     };
+    // Eine höhere Stufe legt ihren Stand erst an, wenn sie offen ist (ihre Startaufstellung nimmt dann alle, die es
+    // gibt); bis dahin gilt ein Stand, der nirgends hängt
+    if (def.freiNachRaid && !raidOffen(state, def)) return neu;
+    standAblegen(state, def, neu);
   }
-  const stand = state.raid;
+  const stand = gespeicherterStand(state, def)!;
   // Eine geladene Datei darf den Bestversuch weglassen (SpielstandSchema): dann gibt es noch keinen
   if (stand.bestRest === undefined) stand.bestRest = null;
   const woche = wocheVon(jetzt);
@@ -103,9 +130,10 @@ export function raidStand(state: GameState, jetzt = Date.now(), def: RaidDef = Z
 }
 
 /** Montag-Satz fällig: Es gab Ernstkämpfe in früheren Wochen, und diese Woche wurde er noch nicht gezeigt */
-export function montagSatz(stand: RaidStand): string | null {
+export function montagSatz(stand: RaidStand, def: RaidDef = ZENIT): string | null {
   if (stand.montagGesehen === stand.woche.id || stand.versucheGesamt <= stand.woche.versuche) return null;
-  return stand.siege > 0 ? RAID_TEXTE.montagNachSieg : RAID_TEXTE.montagVorSieg;
+  const texte = stufenTexte(def);
+  return stand.siege > 0 ? texte.montagNachSieg : texte.montagVorSieg;
 }
 
 /** Was der Kartenknoten zeigt (ui/screens/DungeonMapScreen.ts) */
@@ -122,15 +150,26 @@ export interface RaidKartenZustand {
 /** Liest nur: legt keinen Stand an und dreht keine Woche weiter (das tut erst der Raid-Bildschirm) */
 export function raidKartenZustand(state: GameState, jetzt = Date.now(), def: RaidDef = ZENIT): RaidKartenZustand {
   const k = RAID_TEXTE.karte;
-  if (!raidOffen(state, def)) return { offen: false, zeile: k.zu, zwoelf: false, truheWartet: false };
-  const stand = state.raid;
+  const texte = stufenTexte(def);
+  if (!raidOffen(state, def)) return { offen: false, zeile: texte.zu, zwoelf: false, truheWartet: false };
+  const stand = gespeicherterStand(state, def);
   const zwoelf = !!stand && stand.woche.id === wocheVon(jetzt).id && stand.woche.truhe;
   let zeile: string;
   if (zwoelf) zeile = k.besiegtDieseWoche;
   else if (!stand || stand.bestRest == null) zeile = k.keinVersuch; // fehlt er in einer Datei: wie null (raidStand)
-  else if (stand.siege > 0) zeile = k.aufgezogen;
+  else if (stand.siege > 0) zeile = texte.aufgezogen;
   else zeile = k.best(restProzent(stand.bestRest));
   return { offen: true, zeile, zwoelf, truheWartet: !zwoelf };
+}
+
+/** Freie Ernstkämpfe, die diese Woche noch übrig sind (Umschalter der Stufen); liest nur, wie raidKartenZustand */
+export function freiDieseWoche(state: GameState, jetzt = Date.now(), def: RaidDef = ZENIT): number {
+  const stand = gespeicherterStand(state, def);
+  if (!stand) return def.freieVersucheJeWoche;
+  // Wie raidStand: Eine neue Woche beginnt erst, wenn ihr Montag nach dem gespeicherten liegt
+  const woche = wocheVon(jetzt);
+  const neu = woche.id !== stand.woche.id && woche.start > stand.woche.start;
+  return Math.max(0, def.freieVersucheJeWoche - (neu ? 0 : stand.woche.versuche));
 }
 
 /** Die aufgestellten Helden in der Reihenfolge der Gilde */
@@ -146,13 +185,15 @@ export function aufstellungSchluessel(aufstellung: Record<string, Feld>): string
 /**
  * Schlüssel des Kriegsrats: die Felder und die Kampfwerte der Aufgestellten in der Reihenfolge der Gilde, genau was
  * raidKampf liest. Der letzte Rat gilt, solange er gleich bleibt; neue Ausrüstung, Schmiede, Stufe oder Weg eines
- * Aufgestellten ändern ihn, wer auf der Bank sitzt, nicht.
+ * Aufgestellten ändern ihn, wer auf der Bank sitzt, nicht. Höhere Stufen setzen ihre Id davor (gleiche Felder, anderer
+ * Boss).
  */
-export function ratSchluessel(state: GameState, aufstellung: Record<string, Feld>): string {
+export function ratSchluessel(state: GameState, aufstellung: Record<string, Feld>, def: RaidDef = ZENIT): string {
   const engine = new CombatEngine(new GearSystem());
   const stufen = schmiedeStufen(state);
   const einheiten = state.fighters.filter(f => aufstellung[String(f.id)]).map(f => engine.fighterToCombatUnit(f, stufen));
-  return `${aufstellungSchluessel(aufstellung)}|${JSON.stringify(einheiten)}`;
+  const schluessel = `${aufstellungSchluessel(aufstellung)}|${JSON.stringify(einheiten)}`;
+  return def.id === ZENIT.id ? schluessel : `${def.id}#${schluessel}`;
 }
 
 // ── Aufstellen ──
@@ -210,7 +251,7 @@ export function versuchsLage(state: GameState, jetzt = Date.now(), def: RaidDef 
   const frei = freiUebrig > 0;
   const lage: VersuchsLage = { moeglich: true, frei, freiUebrig, kosten: frei ? {} : { ...def.kostenJeVersuch } };
   const t = RAID_TEXTE.bildschirm;
-  if (!raidOffen(state, def)) return { ...lage, moeglich: false, grund: t.nochZu };
+  if (!raidOffen(state, def)) return { ...lage, moeglich: false, grund: stufenTexte(def).nochZu };
   if (state.activeExpedition) return { ...lage, moeglich: false, grund: t.unterwegs };
   if (Object.keys(stand.aufstellung).length < def.minHelden) return { ...lage, moeglich: false, grund: t.mindestens(def.minHelden) };
   for (const [itemId, menge] of Object.entries(lage.kosten)) {
@@ -230,8 +271,12 @@ function hash(...teile: (string | number)[]): number {
   return h >>> 0;
 }
 
-/** Samen des nächsten Ernstkampfs (und seiner Truhen): Spiel-Samen, Woche und Nummer des Versuchs. Neu laden ändert nichts. */
-export function raidSamen(state: GameState, stand: RaidStand, wofuer: 'kampf' | 'truhe' = 'kampf'): number {
+/**
+ * Samen des nächsten Ernstkampfs (und seiner Truhen): Spiel-Samen, Woche und Nummer des Versuchs, bei höheren Stufen
+ * dazu ihre Id. Neu laden ändert nichts.
+ */
+export function raidSamen(state: GameState, stand: RaidStand, wofuer: 'kampf' | 'truhe' = 'kampf', def: RaidDef = ZENIT): number {
+  if (def.id !== ZENIT.id) return hash('raid', def.id, wofuer, state.rngSeed, stand.woche.id, stand.versucheGesamt);
   return hash('raid', wofuer, state.rngSeed, stand.woche.id, stand.versucheGesamt);
 }
 
@@ -338,8 +383,8 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
   if (!lage.moeglich) return null;
   const stand = raidStand(state, jetzt, def);
   const teilnehmer = raidTeilnehmer(state, stand);
-  const samen = raidSamen(state, stand);
-  const rng = new SeededRNG(raidSamen(state, stand, 'truhe'));
+  const samen = raidSamen(state, stand, 'kampf', def);
+  const rng = new SeededRNG(raidSamen(state, stand, 'truhe', def));
   for (const [itemId, menge] of Object.entries(lage.kosten)) state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) - menge;
   stand.woche.versuche++;
   stand.versucheGesamt++;
@@ -359,17 +404,26 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
   const xp = teilnehmer.map(held => ({ heldId: held.id, xp: xpJe, levelUps: awardXP(held, xpJe), stufe: held.level }));
   const neueKlassen = new ClassUnlockSystem().checkUnlocks(state);
 
+  // Zähler je Stufe (docs/ERFOLGE.md): die von Stufe I zählen nur dort (auf Stufe II wären «Punkt zwölf» und
+  // «Mehr als vier» geschenkt), Stufe II zählt ihre Siege und Wochen eigens (raid2_…)
   const stats = state.statistics;
-  stats.raid_versuche = plus(stats.raid_versuche);
-  if (ergebnis.helden === 4) stats.raid_zu_viert = plus(stats.raid_zu_viert);
+  const stufeEins = def.id === ZENIT.id;
+  if (stufeEins) {
+    stats.raid_versuche = plus(stats.raid_versuche);
+    if (ergebnis.helden === 4) stats.raid_zu_viert = plus(stats.raid_zu_viert);
+  }
   if (ergebnis.sieg) {
     stand.siege++;
-    stats.raid_siege = plus(stats.raid_siege);
-    if (ergebnis.runden <= def.regeln.mittagAb) stats.raid_punkt_zwoelf = plus(stats.raid_punkt_zwoelf);
-    if (ergebnis.stehend >= 5) stats.raid_mehr_als_vier = plus(stats.raid_mehr_als_vier);
+    if (stufeEins) {
+      stats.raid_siege = plus(stats.raid_siege);
+      if (ergebnis.runden <= def.regeln.mittagAb) stats.raid_punkt_zwoelf = plus(stats.raid_punkt_zwoelf);
+      if (ergebnis.stehend >= 5) stats.raid_mehr_als_vier = plus(stats.raid_mehr_als_vier);
+    } else {
+      stats.raid2_siege = plus(stats.raid2_siege);
+    }
   }
 
-  // Wochentruhen: «Was vom Pendel fiel» beim ersten Kampf unter der Hälfte, «Zenits Truhe» beim ersten Sieg
+  // Wochentruhen je Stufe: die halbe beim ersten Kampf unter der Hälfte, die ganze beim ersten Sieg der Woche
   const truhen: RaidTruhe[] = [];
   if (!stand.woche.halbeTruhe && ergebnis.zenitRest < def.halbUnter) {
     stand.woche.halbeTruhe = true;
@@ -377,16 +431,16 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
   }
   if (ergebnis.sieg && !stand.woche.truhe) {
     stand.woche.truhe = true;
-    stats.raid_wochen = plus(stats.raid_wochen);
+    if (stufeEins) stats.raid_wochen = plus(stats.raid_wochen);
+    else stats.raid2_wochen = plus(stats.raid2_wochen);
     truhen.push(truheZiehen(state, 'sieg', def.truhen.sieg, teilnehmer, rng));
   }
   const ersterSieg = ergebnis.sieg && stand.siege === 1;
   if (ersterSieg) {
+    const erster = stufenTexte(def).erster;
     gutschreiben(state, { [def.ersterSiegBeute]: 1 });
-    truhen.push({
-      art: 'erster', name: RAID_TEXTE.unruh.name, text: RAID_TEXTE.unruh.text, inhalt: { [def.ersterSiegBeute]: 1 }, hinweise: {},
-    });
-    if ((state.statistics.tat_pfeiler ?? 0) >= 1) ergebnis.ansagen.push(RAID_TEXTE.ansage.abriss);
+    truhen.push({ art: 'erster', name: erster.name, text: erster.text, inhalt: { [def.ersterSiegBeute]: 1 }, hinweise: {} });
+    if (stufeEins && (state.statistics.tat_pfeiler ?? 0) >= 1) ergebnis.ansagen.push(RAID_TEXTE.ansage.abriss);
   }
 
   // Ohne Hinweis in der Kopfzeile: das Ergebnis zeigt sie wie die Bilanz einer Expedition (verrät nichts Verstecktes vorher)
@@ -424,7 +478,7 @@ export function* raidKriegsrat(state: GameState, def: RaidDef = ZENIT, proben = 
   const stand = raidStand(state, Date.now(), def);
   const aufstellung = Object.fromEntries(Object.entries(stand.aufstellung).map(([id, f]) => [id, { ...f }]));
   // Der Stand, für den der Rat gilt: zu Beginn genommen (ändert sich unterwegs etwas, ist er danach schon alt)
-  const schluessel = ratSchluessel(state, aufstellung);
+  const schluessel = ratSchluessel(state, aufstellung, def);
   const teilnehmer = raidTeilnehmer(state, stand);
   const stufen = { ...schmiedeStufen(state) };
   let siege = 0;
@@ -448,7 +502,7 @@ export function* raidKriegsrat(state: GameState, def: RaidDef = ZENIT, proben = 
   const namen = Object.fromEntries(teilnehmer.map(h => [h.id, h.name]));
   return {
     proben, siege, schnittRest: proben > 0 ? rest / proben : 1,
-    ursache: hauptursache(gefallen, namen, mitternacht > proben / 2),
+    ursache: hauptursache(gefallen, namen, mitternacht > proben / 2, def.regeln.gegenzeiger !== undefined),
     meistGefallen: haeufigster(meist), funken: haeufigster(funken), probe: probe!, schluessel,
   };
 }
@@ -522,15 +576,27 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
   const hinweise: RaidHinweis[] = [];
   const felder = (liste: typeof helden): Feld[] => liste.map(h => h.feld);
 
-  // Pendel: je Trupp die vorderste besetzte Reihe
+  // Pendel: je Trupp die vorderste besetzte Reihe. Ein leerer Trupp gibt seine Runden an den nächsten, in dem
+  // jemand steht (pendelTrupp)
   const pendelZiele: number[] = [];
+  const besetzt = (t: number): boolean => helden.some(h => truppVon(h.feld) === t);
+  const naechsterBesetzter = (t: number): number => {
+    for (let k = 1; k < def.truppZahl; k++) if (besetzt((t + k) % def.truppZahl)) return (t + k) % def.truppZahl;
+    return (t + 1) % def.truppZahl;
+  };
   for (let t = 0; t < def.truppZahl; t++) {
     const seite = truppKlein(t, def.truppZahl);
     const imTrupp = helden.filter(h => truppVon(h.feld) === t);
     if (imTrupp.length === 0) {
       if (helden.length > 0) {
-        const andere = truppKlein((t + 1) % def.truppZahl, def.truppZahl);
-        hinweise.push({ art: 'pendel', ok: false, text: L.pendelLeer(seite, andere), felder: [] });
+        const naechster = naechsterBesetzter(t);
+        // Wie oft das Pendel dort dann schlägt: seine eigenen Runden und die aller leeren Trupps, die bei ihm landen
+        const mal = 1 + Array.from({ length: def.truppZahl }, (_, u) => u)
+          .filter(u => !besetzt(u) && naechsterBesetzter(u) === naechster).length;
+        const text = def.truppZahl === 2
+          ? L.pendelLeer(seite, truppKlein(naechster, def.truppZahl))
+          : L.pendelLeerWeiter(seite, truppRichtung(naechster, def.truppZahl), mal);
+        hinweise.push({ art: 'pendel', ok: false, text, felder: [] });
       }
       continue;
     }
@@ -552,23 +618,52 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
     }
   }
 
-  // Zeiger: leere Spalten und zerbrechliche Einzelne
+  // Zeiger (Stufe II auch der Gegenzeiger): leere Spalten, zerbrechliche Einzelne und die Spalte, auf der sich beide
+  // treffen (dort trägt jeder in derselben Runde beide, zuerst den Zeiger, dann den Gegenzeiger)
+  const gegen = def.regeln.gegenzeiger;
+  const bis = def.regeln.mitternacht;
+  const treffen = new Map(treffpunkte(def).map(t => [t.spalte, t.runden]));
+  /** Schaden eines Flächentreffers (wie treffeFlaeche in RaidKampf.ts) */
+  const flaeche = (wucht: number, einheit: CombatUnit): number => {
+    const dmg = grundSchaden(wucht, einheit.def);
+    return einheit.specialEffects && hasEffect(einheit, 'aoe_resist') ? Math.max(1, Math.floor(dmg * schutz)) : dmg;
+  };
   const spaltenLage: RaidLage['spalten'] = [];
   for (let s = 0; s < spalten; s++) {
     const drin = helden.filter(h => h.feld.spalte === s);
+    const name = spaltenName(s);
+    const runden = zeigerRunden(s, spalten, bis);
+    const gegenRunden = gegen === undefined ? [] : zeigerRunden(s, spalten, bis, true);
+    const treffpunkt = treffen.get(s);
     let warnung: 'leer' | 'einzeln' | null = null;
     if (drin.length === 0 && helden.length > 0) {
       warnung = 'leer';
-      const runden = Array.from({ length: def.regeln.mitternacht }, (_, i) => i + 1).filter(r => zeigerSpalte(r, spalten) === s);
-      hinweise.push({ art: 'zeiger', ok: false, text: L.zeigerLeer(spaltenName(s), runden), felder: [] });
-    } else if (drin.length === 1 && schlaege(atk, drin[0].einheit, true, schutz) < 3) {
+      const text = treffpunkt ? L.treffpunktLeer(name, treffpunkt)
+        : gegen === undefined ? L.zeigerLeer(name, runden) : L.zeigerLeerBeide(name, runden, gegenRunden);
+      hinweise.push({ art: 'zeiger', ok: false, text, felder: [] });
+    } else if (treffpunkt && drin.length > 0) {
+      // Ab Mittag beide Zeiger in derselben Runde, geteilt auf die Spalte: wer zwei solche Runden nicht hält, ist zerbrechlich
+      const doppel = (einheit: CombatUnit): number =>
+        flaeche((mittag * def.regeln.zeiger) / drin.length, einheit) + flaeche((mittag * (gegen ?? 0)) / drin.length, einheit);
+      const zerbrechlich = drin.find(h => 2 * doppel(h.einheit) >= h.einheit.maxHp);
+      if (drin.length === 1 && zerbrechlich) {
+        warnung = 'einzeln';
+        hinweise.push({ art: 'zeiger', ok: false, text: L.treffpunktEinzeln(name, treffpunkt, drin[0].held.name), felder: felder(drin) });
+      } else if (zerbrechlich) {
+        hinweise.push({ art: 'zeiger', ok: false, text: L.treffpunktZerbrechlich(name, treffpunkt, zerbrechlich.held.name), felder: felder(drin) });
+      } else {
+        hinweise.push({ art: 'zeiger', ok: true, text: L.treffpunktOk(name, treffpunkt, drin.map(h => h.held.name)), felder: felder(drin) });
+      }
+    } else if (drin.length === 1 && schlaege(atk * Math.max(def.regeln.zeiger, gegen ?? 0), drin[0].einheit, true, schutz) < 3) {
       warnung = 'einzeln';
-      hinweise.push({ art: 'zeiger', ok: false, text: L.zeigerEinzeln(spaltenName(s), drin[0].held.name), felder: felder(drin) });
+      const text = gegen === undefined ? L.zeigerEinzeln(name, drin[0].held.name)
+        : L.zeigerEinzelnBeide(name, drin[0].held.name, runden, gegenRunden);
+      hinweise.push({ art: 'zeiger', ok: false, text, felder: felder(drin) });
     }
     spaltenLage.push({ spalte: s, anzahl: drin.length, warnung, name: drin.length === 1 ? drin[0].held.name : undefined });
   }
   if (helden.length > 0 && spaltenLage.every(s => s.warnung === null)) {
-    hinweise.push({ art: 'zeiger', ok: true, text: L.zeigerOk, felder: [] });
+    hinweise.push({ art: 'zeiger', ok: true, text: gegen === undefined ? L.zeigerOk : L.zeigerOkBeide, felder: [] });
   }
 
   // Glocke: die vollste Reihe
@@ -578,7 +673,9 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
     const dort = helden.filter(h => h.feld.reihe === glockenReihe);
     const namen = dort.map(h => h.held.name);
     const zerbrechlich = dort.find(h => schlaege(mittag, h.einheit, true, schutz) < 2);
-    if (dort.length >= 4) hinweise.push({ art: 'glocke', ok: false, text: L.glockeVoll(glockenReihe + 1, namen), felder: felder(dort) });
+    // Voll ab vier von zehn (Stufe I: 4, Stufe II: 6; mit fünfzehn auf drei Reihen stehen in der vollsten mindestens fünf)
+    const voll = Math.ceil(0.4 * def.maxHelden);
+    if (dort.length >= voll) hinweise.push({ art: 'glocke', ok: false, text: L.glockeVoll(glockenReihe + 1, namen), felder: felder(dort) });
     else if (zerbrechlich) hinweise.push({ art: 'glocke', ok: false, text: L.glockeZerbrechlich(glockenReihe + 1, zerbrechlich.held.name), felder: felder(dort) });
     else hinweise.push({ art: 'glocke', ok: true, text: L.glockeOk(glockenReihe + 1, namen), felder: felder(dort) });
   }
@@ -630,7 +727,7 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
   const moeglich = Math.min(def.maxHelden, state.fighters.length);
   hinweise.push({
     art: 'zahl', ok: helden.length >= def.minHelden && helden.length >= moeglich,
-    text: L.zahl(helden.length, def.maxHelden), felder: [],
+    text: stufenTexte(def).zahl(helden.length, def.maxHelden), felder: [],
   });
 
   return {

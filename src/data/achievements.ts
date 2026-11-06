@@ -12,6 +12,7 @@
 import { ANBAU_AB_EBENE } from './auftragsbrett';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
 import { MAX_SCHMIEDE_STUFE } from './schmiede';
+import { LEHRLINGE } from './lehrlinge';
 
 export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Gipfel-Taten' | 'Sammeln' | 'Das System schaut zu';
 
@@ -90,6 +91,10 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('army_builder', 'Helden', '🛡️', 'Armeeführer', 'Habe 10 Helden in der Gilde.', 'helden_anzahl', 10),
   erfolg('erster_weg', 'Helden', '🧭', 'Wegbereiter', 'Ein Held wählt seinen Weg (ab Stufe 10).', 'helden_mit_weg', 1),
   erfolg('erster_meister', 'Helden', '🥋', 'Meister seines Wegs', 'Ein Held wird Meister seines Wegs (Stufe 15).', 'helden_meister', 1),
+  // Lehrlinge (systems/Lehrlinge.ts): je Klasse einer, sobald ihr Held Stufe 15 erreicht
+  erfolg('erster_lehrling', 'Helden', '🎓', 'Lehrjahre', 'Nimm den ersten Lehrling auf. Er hat dreimal nach dem Weg zur Wachstube gefragt und ist trotzdem pünktlich.', 'lehrlinge', 1),
+  erfolg('lehrling_ausgelernt', 'Helden', '📜', 'Ausgelernt', 'Ein Lehrling erreicht Stufe 15. Seither sagt er «wir Veteranen».', 'lehrlinge_ausgelernt', 1),
+  erfolg('doppelt_besetzt', 'Helden', '👥', 'Doppelt besetzt', `Alle ${Object.keys(LEHRLINGE).length} Klassen haben ihren Lehrling. Alruna hat für die Wachstube neue Hocker bestellt, diesmal genug.`, 'lehrlinge', Object.keys(LEHRLINGE).length),
 
   // ── Dungeons ──
   erfolg('first_expedition', 'Dungeons', '🗺️', 'Abenteuerlust', 'Starte deine erste Expedition.', 'total_expeditions', 1),
@@ -109,6 +114,9 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('raid_punkt_zwoelf', 'Dungeons', '🔔', 'Punkt zwölf', 'Zenit in der zwölften Runde oder früher besiegt. Er wollte gerade Mittag machen.', 'raid_punkt_zwoelf', 1),
   erfolg('raid_mehr_als_vier', 'Dungeons', '🪑', 'Mehr als vier', 'Zenit besiegt, und am Ende standen mindestens fünf. Für die Vorigen gab es vier Hocker. Alruna hat einen fünften dazugestellt.', 'raid_mehr_als_vier', 1),
   erfolg('raid_montage', 'Dungeons', '📅', 'Jeden Montag', 'Zenit in vier verschiedenen Wochen besiegt. Er zieht sich trotzdem jeden Montag wieder auf. Er nennt es Pflicht, Orm nennt es Sturheit.', 'raid_wochen', 4),
+  // Stufe II «Die dreizehnte Stunde» zählt eigens (raid2_…); die Zähler oben zählen nur Stufe I
+  erfolg('raid_dreizehn', 'Dungeons', '🕐', 'Es schlägt nicht dreizehn', 'Zenit auf Stufe II besiegt, mit beiden Zeigern. Jetzt hat die Gilde zwei Unruhen. Orm sagt, er wisse nicht, woher die zweite kam.', 'raid2_siege', 1),
+  erfolg('raid_doppelschicht', 'Dungeons', '🗓️', 'Doppelschicht', 'Die dreizehnte Stunde in vier verschiedenen Wochen gewonnen. Zenit zieht sich jeden Montag wieder auf, jetzt zweimal: einmal für jeden Zeiger.', 'raid2_wochen', 4),
 
   // ── Gipfel-Taten (in allen drei Wahl-Räumen das Risiko, Boss trotzdem besiegt; docs/ERFOLGE.md) ──
   erfolg('gipfel_hort', 'Gipfel-Taten', '🪙', 'Ehrlicher Finder', 'Im Drachenhort Goldhaufen, Edelsteinschale und Drachenkrone eingesteckt und Ignarax trotzdem besiegt. Er hat bis zuletzt nachgezählt.', 'tat_hort', 1),

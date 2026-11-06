@@ -19,7 +19,10 @@ export interface RaidVersuch {
   stehend: number;
 }
 
-/** Fehlt in älteren Spielständen; Raid.raidStand() legt ihn an. */
+/**
+ * Stand einer Raid-Stufe: Stufe I in `GameState.raid`, höhere in `GameState.raidStufen[id]`. Fehlt in älteren
+ * Spielständen; Raid.raidStand() legt ihn an.
+ */
 export interface RaidStand {
   /** Held-Id (als Text) → Feld */
   aufstellung: Record<string, Feld>;
@@ -28,9 +31,9 @@ export interface RaidStand {
     start: number;
     /** Ernstkämpfe in dieser Woche (die ersten drei sind frei) */
     versuche: number;
-    /** «Was vom Pendel fiel» ist diese Woche schon geöffnet */
+    /** Die Truhe ab der Hälfte («Was vom Pendel fiel», Stufe II «Was der Gegenzeiger verlor») ist diese Woche offen */
     halbeTruhe: boolean;
-    /** «Zenits Truhe» ist diese Woche schon geöffnet */
+    /** Die Siegtruhe («Zenits Truhe», Stufe II «Die dreizehnte Truhe») ist diese Woche schon geöffnet */
     truhe: boolean;
   };
   /** Kleinster Zenit-Rest aus allen Ernstkämpfen (0 = besiegt), null = noch keiner */

@@ -1,9 +1,10 @@
-// ─── Magic City – Rechnung des Raids «Über dem Tag» ──────────────
+// ─── Magic City – Rechnung der Raids («Über dem Tag», «Die dreizehnte Stunde») ──────────────
 // Rein: kein Spielstand, kein DOM. Nutzt den Grundangriff, die Regeneration und die Kampfeffekte des normalen
 // Kampfs (CombatEngine, Kampfeffekte), aber mit Orten statt Zielen: Die Helden stehen auf Reihen × Spalten in
-// Trupps zu drei Spalten, der Boss trifft Orte (Pendel: vorderste Reihe eines Trupps, Zeiger: eine Spalte, Glocke:
-// die vollste Reihe, Funken: der beste Schadensmacher und seine Nachbarn im Trupp). Lieder, Segen, Schilde,
-// Heilung und Wachfeuer wirken nur im eigenen Trupp. Regeln und Eichung: docs/RAID.md.
+// Trupps zu drei Spalten, der Boss trifft Orte (Pendel: vorderste Reihe eines Trupps, Zeiger: eine Spalte, auf
+// Stufe II dazu der Gegenzeiger rückwärts, Glocke: die vollste Reihe, Funken: der beste Schadensmacher und seine
+// Nachbarn im Trupp). Lieder, Segen, Schilde, Heilung und Wachfeuer wirken nur im eigenen Trupp. Regeln und
+// Eichung: docs/RAID.md.
 // ─────────────────────────────────────────────────────────────────
 
 import { CombatEngine, buffsAblaufen, hasEffect } from './CombatEngine';
@@ -14,7 +15,7 @@ import {
 } from './Kampfeffekte';
 import { SeededRNG } from '../utils/RNG';
 import { CLASS_DEFS } from '../data/classes';
-import { RAID_TEXTE, RaidDef, SPALTEN_JE_TRUPP, spaltenName, truppKlein } from '../data/raids';
+import { RAID_TEXTE, RaidDef, SPALTEN_JE_TRUPP, spaltenName, stufenTexte, truppKlein } from '../data/raids';
 import type { CombatUnit, ExpeditionRun } from '../models/ExpeditionRun';
 import type { GuildFighter } from '../models/GuildRoster';
 import type { Feld } from '../models/RaidStand';
@@ -23,7 +24,7 @@ import type { SchmiedeStufen } from './Schmiede';
 /** Eigene Id für den Boss, damit nichts mit Helden-Ids zusammenfällt */
 export const ZENIT_ID = 900000;
 
-export type Regel = 'pendel' | 'zeiger' | 'durchschlag' | 'glocke' | 'funken' | 'rest' | 'mitternacht';
+export type Regel = 'pendel' | 'zeiger' | 'gegenzeiger' | 'durchschlag' | 'glocke' | 'funken' | 'rest' | 'mitternacht';
 
 export interface RaidTreffer {
   heldId: number;
@@ -44,6 +45,8 @@ export interface RaidEreignis {
   ansage?: string;
   /** 'aussetzen': der Schlag, der Zenit anhielt (Erschütterungsschlag, Einfrieren …); `quelle` ist der Held dazu */
   grund?: string;
+  /** 'durchschlag': ausgelöst vom Gegenzeiger (Stufe II), nicht vom Zeiger */
+  gegen?: boolean;
 }
 
 export interface RaidRunde {
@@ -104,7 +107,7 @@ export interface RaidOptionen {
 
 // ── Geometrie ──
 
-/** Trupp eines Felds: Spalten 0–2 Trupp 0 (Links), 3–5 Trupp 1 (Rechts) … */
+/** Trupp eines Felds: Spalten 0–2 Trupp 0 (Links), 3–5 Trupp 1 (Rechts, auf Stufe II Mitte), 6–8 Trupp 2 (Rechts) */
 export function truppVon(feld: Feld): number {
   return Math.floor(feld.spalte / SPALTEN_JE_TRUPP);
 }
@@ -116,6 +119,32 @@ export function spaltenZahl(def: RaidDef): number {
 /** Zeiger: Runde 1 Spalte A, 2 B … 6 F, 7 wieder A */
 export function zeigerSpalte(runde: number, spalten: number): number {
   return (runde - 1) % spalten;
+}
+
+/** Gegenzeiger (Stufe II), rückwärts: Runde 1 die letzte Spalte (I), 2 die vorletzte … 9 A, 10 wieder I */
+export function gegenzeigerSpalte(runde: number, spalten: number): number {
+  return spalten - 1 - ((runde - 1) % spalten);
+}
+
+/** Runden 1 bis `bis`, in denen der Zeiger (oder mit `gegen` der Gegenzeiger) auf dieser Spalte steht */
+export function zeigerRunden(spalte: number, spalten: number, bis: number, gegen = false): number[] {
+  const auf = gegen ? gegenzeigerSpalte : zeigerSpalte;
+  return Array.from({ length: bis }, (_, i) => i + 1).filter(r => auf(r, spalten) === spalte);
+}
+
+/**
+ * Wo und wann beide Zeiger auf derselben Spalte stehen (es schlägt dreizehn): bei neun Spalten E in Runde 5, 14
+ * und 23. Ohne Gegenzeiger leer; bei gerader Spaltenzahl kreuzen sie sich zwischen zwei Spalten und treffen sich nie.
+ */
+export function treffpunkte(def: RaidDef): { spalte: number; runden: number[] }[] {
+  if (def.regeln.gegenzeiger === undefined) return [];
+  const spalten = spaltenZahl(def);
+  const nachSpalte = new Map<number, number[]>();
+  for (let r = 1; r <= def.regeln.mitternacht; r++) {
+    const s = zeigerSpalte(r, spalten);
+    if (s === gegenzeigerSpalte(r, spalten)) nachSpalte.set(s, [...(nachSpalte.get(s) ?? []), r]);
+  }
+  return [...nachSpalte].map(([spalte, runden]) => ({ spalte, runden }));
 }
 
 /** Die Reihe mit den meisten Helden; bei Gleichstand die hintere */
@@ -263,9 +292,31 @@ export function raidKampf(
     return treffer;
   };
 
-  // Ansagen zur Grösse der Gruppe
-  if (party.length === 4) ansage('zahl', RAID_TEXTE.ansage.vier);
-  else if (party.length >= 5 && party.length < def.maxHelden) ansage('zahl', RAID_TEXTE.ansage.viele(party.length));
+  /**
+   * Ein Zeiger (oder der Gegenzeiger) auf Spalte s: Wucht = Angriff × faktor, geteilt auf die Lebenden der Spalte;
+   * ist sie leer, Durchschlag auf alle. Gibt das Ereignis zurück (null, wenn niemand mehr steht).
+   */
+  const zeigerSchlag = (s: number, faktor: number, gegen: boolean): RaidEreignis | null => {
+    const l = lebend(party);
+    const inSpalte = l.filter(h => feld.get(h)!.spalte === s);
+    if (inSpalte.length > 0) {
+      const ort = gegen ? RAID_TEXTE.ort.gegenzeiger(spaltenName(s)) : RAID_TEXTE.ort.zeiger(spaltenName(s));
+      const treffer = treffeFlaeche(inSpalte, (zenit.atk * faktor) / inSpalte.length, gegen ? 'gegenzeiger' : 'zeiger', ort);
+      return ereignis({ art: gegen ? 'gegenzeiger' : 'zeiger', spalte: s, treffer });
+    }
+    if (l.length === 0 || ohne.has('durchschlag')) return null;
+    const treffer = treffeFlaeche(l, zenit.atk * regeln.durchschlag, 'durchschlag', RAID_TEXTE.ort.durchschlag(spaltenName(s)));
+    const e = ereignis(gegen ? { art: 'durchschlag', spalte: s, treffer, gegen: true } : { art: 'durchschlag', spalte: s, treffer });
+    const einziger = einzigeDerSpalte.get(s);
+    if (leerBeiBeginn.has(s)) ansage('durchschlag', RAID_TEXTE.ansage.durchschlagLeer(spaltenName(s)), e);
+    else if (einziger) ansage('durchschlag', RAID_TEXTE.ansage.durchschlagGefallen(einziger.name, spaltenName(s)), e);
+    return e;
+  };
+
+  // Ansagen zur Grösse der Gruppe (Texte der Stufe)
+  const stufe = stufenTexte(def);
+  if (party.length === 4) ansage('zahl', stufe.ansage.vier);
+  else if (party.length >= 5 && party.length < def.maxHelden) ansage('zahl', stufe.ansage.viele(party.length));
   const vorBeginn = ereignisse;
 
   let mittag = false;
@@ -392,21 +443,14 @@ export function raidKampf(
         }
       }
       // Zeiger: die Last der Spalte geteilt; leere Spalte → Durchschlag auf alle
-      if (!ohne.has('zeiger')) {
-        const s = zeigerSpalte(runde, spalten);
-        const l = lebend(party);
-        const inSpalte = l.filter(h => feld.get(h)!.spalte === s);
-        if (inSpalte.length > 0) {
-          const treffer = treffeFlaeche(inSpalte, (zenit.atk * regeln.zeiger) / inSpalte.length, 'zeiger',
-            RAID_TEXTE.ort.zeiger(spaltenName(s)));
-          ereignis({ art: 'zeiger', spalte: s, treffer });
-        } else if (l.length > 0 && !ohne.has('durchschlag')) {
-          const treffer = treffeFlaeche(l, zenit.atk * regeln.durchschlag, 'durchschlag', RAID_TEXTE.ort.durchschlag(spaltenName(s)));
-          const e = ereignis({ art: 'durchschlag', spalte: s, treffer });
-          const einziger = einzigeDerSpalte.get(s);
-          if (leerBeiBeginn.has(s)) ansage('durchschlag', RAID_TEXTE.ansage.durchschlagLeer(spaltenName(s)), e);
-          else if (einziger) ansage('durchschlag', RAID_TEXTE.ansage.durchschlagGefallen(einziger.name, spaltenName(s)), e);
-        }
+      if (!ohne.has('zeiger')) zeigerSchlag(zeigerSpalte(runde, spalten), regeln.zeiger, false);
+      // Gegenzeiger (Stufe II): rückwärts, sonst gleich. Auf derselben Spalte wie der Zeiger schlägt er danach, auf
+      // die, die dann noch dort stehen (wer unter dem Zeiger fiel, fehlt: dann schlägt er durch)
+      if (regeln.gegenzeiger !== undefined && !ohne.has('gegenzeiger')) {
+        toteMelden();
+        const s = gegenzeigerSpalte(runde, spalten);
+        const e = zeigerSchlag(s, regeln.gegenzeiger, true);
+        if (s === zeigerSpalte(runde, spalten)) ansage('dreizehn', RAID_TEXTE.ansage.dreizehn(spaltenName(s)), e ?? undefined);
       }
       toteMelden();
     }
@@ -432,10 +476,10 @@ export function raidKampf(
   const stehend = lebend(party).length;
   const mitternacht = !sieg && stehend > 0 && optionen.bisRunde === undefined && gespielt >= regeln.mitternacht;
   if (optionen.bisRunde === undefined) {
-    if (sieg && gespielt === regeln.mittagAb) ansage('ende', RAID_TEXTE.ansage.zwoelf);
-    else if (sieg && gespielt < regeln.mittagAb) ansage('ende', RAID_TEXTE.ansage.vorZwoelf);
+    if (sieg && gespielt === regeln.mittagAb) ansage('ende', stufe.ansage.zwoelf);
+    else if (sieg && gespielt < regeln.mittagAb) ansage('ende', stufe.ansage.vorZwoelf);
     else if (mitternacht) ansage('ende', RAID_TEXTE.ansage.mitternacht);
-    else if (!sieg) ansage('ende', gespielt > 9 ? RAID_TEXTE.ansage.niederlageSpaet(gespielt) : RAID_TEXTE.ansage.niederlageFrueh(gespielt));
+    else if (!sieg) ansage('ende', gespielt > 9 ? stufe.ansage.niederlageSpaet(gespielt) : stufe.ansage.niederlageFrueh(gespielt));
   }
 
   return {
@@ -445,9 +489,12 @@ export function raidKampf(
   };
 }
 
-/** Häufigste Todesursache eines Kampfs oder mehrerer: Regel und Ort, mit dem Satz des Stadtschreibers */
+/**
+ * Häufigste Todesursache eines Kampfs oder mehrerer: Regel und Ort, mit dem Satz des Stadtschreibers. `zweiZeiger`
+ * (Stufe II): Eine leere Spalte schlägt unter beiden Zeigern durch, der Satz zum Durchschlag nennt dann beide.
+ */
 export function hauptursache(
-  gefallen: RaidGefallen[], namen: Record<number, string>, mitternacht = false,
+  gefallen: RaidGefallen[], namen: Record<number, string>, mitternacht = false, zweiZeiger = false,
 ): { regel: Regel; ort: string; satz: string } | null {
   if (mitternacht) return { regel: 'mitternacht', ort: RAID_TEXTE.ort.mitternacht, satz: RAID_TEXTE.hauptursache.mitternacht };
   if (gefallen.length === 0) return null;
@@ -468,7 +515,10 @@ export function hauptursache(
   switch (top.regel) {
     case 'glocke': satz = t.glocke(zahl(top.ort)); break;
     case 'zeiger': satz = new Set(top.helden).size === 1 ? t.zeiger(spalte(top.ort), name) : t.zeigerViele(spalte(top.ort)); break;
-    case 'durchschlag': satz = t.durchschlag(spalte(top.ort)); break;
+    case 'gegenzeiger':
+      satz = new Set(top.helden).size === 1 ? t.gegenzeiger(spalte(top.ort), name) : t.gegenzeigerViele(spalte(top.ort));
+      break;
+    case 'durchschlag': satz = zweiZeiger ? t.durchschlagBeide(spalte(top.ort)) : t.durchschlag(spalte(top.ort)); break;
     case 'pendel': satz = t.pendel(seite(top.ort), top.anzahl); break;
     case 'funken': satz = t.funken(top.ort.match(/um (.+)\)/)?.[1] ?? name); break;
     default: satz = t.rest(name);

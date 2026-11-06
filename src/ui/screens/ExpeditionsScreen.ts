@@ -8,6 +8,7 @@ import { GuildFighter } from '../../models/GuildRoster';
 import { ROUTE_DEFS, RouteDef, ROUTE_IMAGE_MAP, isRouteAvailable, isRouteCompleted, getRouteLockReasons, biomFuerRoute, type Biom } from '../../data/routes';
 import { ITEM_DEFS, PROVISION_ITEMS } from '../../data/items';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
+import { bildKarte } from '../heldBild';
 import { renderHeader } from './HeaderRenderer';
 import { heldenJeExpedition } from '../../systems/Ausbau';
 import { setFuerRoute, DungeonSetDef } from '../../data/dungeonSets';
@@ -234,10 +235,10 @@ function buildTeamHTML(): string {
       const cls = CLASS_DEFS[hero.classId];
       const clsName = cls ? cls.name : hero.classId;
       const heroImg = HERO_IMAGE_MAP[hero.classId];
-      const bgStyle = heroImg ? `background-image:url('assets/heroes/${heroImg}.png')` : '';
+      const bild = bildKarte(hero); // der Lehrling gespiegelt (ui/heldBild.ts)
       const spriteKey = cls ? cls.spriteKey : 'HERO_GUARDIAN';
       slotsHTML += `
-        <div class="exp-slot exp-slot-filled hcard-img" data-slot="${i}" style="${bgStyle}">
+        <div class="exp-slot exp-slot-filled hcard-img ${bild.klasse}" data-slot="${i}" style="${bild.stil}">
           ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
           <div class="hcard-overlay">
             <div class="hc-nm">${escapeAttr(hero.name)}</div>
@@ -261,16 +262,16 @@ function buildTeamHTML(): string {
     const cls = CLASS_DEFS[f.classId];
     const clsName = cls ? cls.name : f.classId;
     const heroImg = HERO_IMAGE_MAP[f.classId];
-    const bgStyle = heroImg ? `background-image:url('assets/heroes/${heroImg}.png')` : '';
+    const bild = bildKarte(f);
     const spriteKey = cls ? cls.spriteKey : '';
     const hpPct = f.baseStats.maxHp > 0 ? Math.round(f.baseStats.hp / f.baseStats.maxHp * 100) : 100;
     const hpColor = hpPct > 60 ? 'var(--grn,#16a34a)' : hpPct > 30 ? '#ca8a04' : 'var(--red,#dc2626)';
     return `
-      <div class="hsm hcard-img" data-hero-id="${f.id}" style="${bgStyle}">
+      <div class="hsm hcard-img ${bild.klasse}" data-hero-id="${f.id}" style="${bild.stil}">
         ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
         <div class="hcard-overlay">
           <div class="hc-nm">${escapeAttr(f.name)}</div>
-          <div class="hsm-meta">${clsName} Lv${f.level}</div>
+          <div class="hsm-meta">${clsName}${f.lehrling ? ' · Lehrling' : ''} Lv${f.level}</div>
           <div class="hc-st">
             <span>\u2694${f.baseStats.atk}</span>
             <span>\uD83D\uDEE1${f.baseStats.def}</span>

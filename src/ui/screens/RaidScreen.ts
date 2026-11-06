@@ -1,8 +1,10 @@
 // ─── Magic City – Raid «Über dem Tag»: der Bildschirm ───────────
-// Ganz oben über der Dungeon-Karte (Knoten in DungeonMapScreen.ts). Am PC drei Spalten: links Alrunas Liste und der
-// Kriegsrat, in der Mitte Zenit (Uhr, Lebensbalken mit den bisherigen Versuchen, Wochentruhen), die Uhrleiste (wann
-// was wo schlägt), das Feld mit 3 Reihen × 6 Spalten in zwei Trupps und die zwei Knöpfe, rechts die Bank. Am Handy
-// steht alles untereinander, der Kriegsrat kommt als Fenster (raid.css).
+// Ganz oben über der Dungeon-Karte (Knoten in DungeonMapScreen.ts). Zwei Stufen mit eigenem Stand: Stufe I «Über dem
+// Tag», Stufe II «Die dreizehnte Stunde» (offen nach dem ersten Sieg auf Stufe I); umgeschaltet wird am PC links über
+// Alrunas Liste, am Handy ganz oben. Am PC drei Spalten: links Alrunas Liste und der Kriegsrat, in der Mitte Zenit (Uhr,
+// Lebensbalken mit den bisherigen Versuchen, Wochentruhen), die Uhrleiste (wann was wo schlägt, auf Stufe II
+// auch der Gegenzeiger), das Feld mit 3 Reihen × 6 Spalten in zwei Trupps (Stufe II: × 9 in drei) und die zwei
+// Knöpfe, rechts die Bank. Am Handy steht alles untereinander, der Kriegsrat kommt als Fenster (raid.css).
 // Aufstellen: Held antippen, dann Feld (besetzt: die beiden tauschen), «Auf die Bank» oder die Bank nimmt ihn zurück;
 // am PC lassen sich Helden auch ziehen. Lange drücken oder Rechtsklick zeigt sein Blatt. Darüberfahren (antippen) auf
 // einem Punkt der Liste leuchtet die Felder, um die es geht.
@@ -17,8 +19,10 @@ import { GameState } from '../../models/GameState';
 import type { GuildFighter } from '../../models/GuildRoster';
 import type { CombatUnit } from '../../models/ExpeditionRun';
 import type { Feld, RaidStand } from '../../models/RaidStand';
-import { RAID_TEXTE, SPALTEN_JE_TRUPP, ZENIT, spaltenName, truppKlein, truppName } from '../../data/raids';
-import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
+import {
+  RAID_DEFS, RAID_STUFEN, RAID_TEXTE, RaidDef, SPALTEN_JE_TRUPP, ZENIT, spaltenName, stufenTexte, truppKlein, truppName,
+} from '../../data/raids';
+import { CLASS_DEFS } from '../../data/classes';
 import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { setTeilIds, setVonItem } from '../../data/dungeonSets';
@@ -29,11 +33,12 @@ import { GearSystem } from '../../systems/GearSystem';
 import { SchmiedeStufen, schmiedeStufen } from '../../systems/Schmiede';
 import {
   ErnstkampfErgebnis, KRIEGSRAT_PROBEN, RaidLage, RaidRat, RaidRolle, VersuchsLage, aufstellungLeeren,
-  ernstkampf, montagSatz, raidKriegsrat, raidLage, raidOffen, raidRolle, raidStand, ratSchluessel, restProzent,
-  setzeHeld, versuchsLage,
+  ernstkampf, freiDieseWoche, gespeicherterStand, montagSatz, raidKartenZustand, raidKriegsrat, raidLage, raidOffen,
+  raidRolle, raidStand, ratSchluessel, restProzent, setzeHeld, versuchsLage,
 } from '../../systems/Raid';
 import {
-  RaidErgebnis, RaidEreignis, RaidRunde, Regel, hauptursache, pendelTrupp, spaltenZahl, truppVon, zeigerSpalte,
+  RaidErgebnis, RaidEreignis, RaidRunde, Regel, gegenzeigerSpalte, hauptursache, pendelTrupp, spaltenZahl, treffpunkte,
+  truppVon, zeigerSpalte,
 } from '../../systems/RaidKampf';
 import { ScreenId, navigateTo } from '../ScreenRouter';
 import { aktualisiereErfolgKnoepfe, renderHeader, zeigeKopfHinweis } from './HeaderRenderer';
@@ -42,7 +47,10 @@ import { haeppchenweise, rechneImHintergrund } from '../components/KriegsratFens
 import { geschichtsText } from '../components/GeschichtsAnzeige';
 import { showChestReveal } from '../components/ChestRevealOverlay';
 import { TruheAnlegen } from '../components/TruheAnlegen';
-import { AUF_ZWOELF, KURZ_VOR_ZWOELF, UhrStellung, stundeAufRunde, zeigerAufSpalte, zenitUhrSvg } from '../components/ZenitUhr';
+import {
+  ANGEHALTEN, AUF_ZWOELF, KURZ_VOR_DREIZEHN, KURZ_VOR_ZWOELF, UhrStellung, stundeAufRunde, zeigerAufSpalte, zenitUhrSvg,
+} from '../components/ZenitUhr';
+import { BildTraeger, bildKarte } from '../heldBild';
 
 const t = RAID_TEXTE.bildschirm;
 const L = RAID_TEXTE.liste;
@@ -60,12 +68,14 @@ const LANG_MS = 520;
 let gameState: GameState | null = null;
 /** Gewählter Held: antippen, dann Feld */
 let gewaehlt: number | null = null;
+/** Die gezeigte Stufe (Umschalter oben); bis zur ersten Wahl die höchste offene */
+let stufeId: string | null = null;
 /** Alrunas Liste am Handy mit allen Punkten, nicht nur den Warnungen */
 let listeAlle = false;
-/** Der letzte fertige Kriegsrat; er gilt, solange die Aufstellung gleich bleibt */
-let letzterRat: RaidRat | null = null;
-/** Ein Kriegsrat, der gerade rechnet (für welche Aufstellung) */
-let ratLauf: { schluessel: string } | null = null;
+/** Der letzte fertige Kriegsrat je Stufe; er gilt, solange die Aufstellung gleich bleibt */
+const letzteRaete = new Map<string, RaidRat>();
+/** Ein Kriegsrat, der gerade rechnet (für welche Stufe und Aufstellung) */
+let ratLauf: { schluessel: string; def: RaidDef } | null = null;
 /** Tempo der Wiedergabe (1×, 2×, 4×) */
 let tempo = 1;
 let hoererGebunden = false;
@@ -82,6 +92,10 @@ let gezogen: number | null = null;
 
 export function initRaidScreen(state: GameState): void {
   gameState = state;
+  // Ein anderer Spielstand: wieder die höchste offene Stufe, kein alter Kriegsrat
+  stufeId = null;
+  letzteRaete.clear();
+  ratLauf = null;
 }
 
 // ── Kleine Helfer ──
@@ -93,10 +107,15 @@ const ROLLE_IC: Record<RaidRolle, string> = { tank: 'schild', heil: 'kreuz', dps
 /** Reihenfolge der Bank: erst die Pendelfänger, dann Heiler, Stützen, Schaden */
 const ROLLEN_FOLGE: RaidRolle[] = ['tank', 'heil', 'stuetze', 'dps'];
 const REGEL_IC: Partial<Record<Regel, string>> = {
-  pendel: 'pendel', zeiger: 'zeiger', durchschlag: 'zeiger', glocke: 'glocke', funken: 'funken', mitternacht: 'zeiger',
+  pendel: 'pendel', zeiger: 'zeiger', gegenzeiger: 'gegen', durchschlag: 'zeiger', glocke: 'glocke', funken: 'funken',
+  mitternacht: 'zeiger',
 };
 const feldName = (f: Feld): string => `${spaltenName(f.spalte)}${f.reihe + 1}`;
-const heldBild = (classId: string): string => `assets/heroes/${HERO_IMAGE_MAP[classId] ?? 'hero_guardian'}.png`;
+/** Bild eines Helden als Hintergrund (der Lehrling gespiegelt: heldBild.ts); `klasse` kommt dazu */
+const heldBildDiv = (held: BildTraeger, tag = 'div', klasse = 'r-bild'): string => {
+  const b = bildKarte(held);
+  return `<${tag} class="${klasse}${b.klasse ? ` ${b.klasse}` : ''}" style="${b.stil}"></${tag}>`;
+};
 const bild = (key: string): string => `assets/sprites/final/${key}.png`;
 const zahl = (n: number): string => Math.round(n).toLocaleString('de-CH');
 const komma = (n: number): string => n.toFixed(1).replace('.', ',');
@@ -104,8 +123,26 @@ const klassenName = (classId: string): string => CLASS_DEFS[classId]?.name ?? cl
 const istHandy = (): boolean => window.matchMedia('(max-width: 700px)').matches;
 /** Spalte des Felds im Gitter: Spalte 1 sind die Reihenköpfe, zwischen den Trupps liegt der Gang */
 const gitterSpalte = (spalte: number): number => spalte + 2 + truppVon({ reihe: 0, spalte });
-const tagstein = (): number => ZENIT.kostenJeVersuch.mat_tagstein ?? 0;
+const tagstein = (def: RaidDef): number => def.kostenJeVersuch.mat_tagstein ?? 0;
 const bildschirm = (): HTMLElement | null => document.getElementById('s-raid');
+const hatGegenzeiger = (def: RaidDef): boolean => def.regeln.gegenzeiger !== undefined;
+/** Name im Feld; lange Namen rücken in den schmalen Spalten von Stufe II am Handy enger zusammen (raid.css) */
+const nameKlasse = (name: string, def: RaidDef): string => (def.truppZahl === 3 && name.length >= 7 ? 'r-name r-lang' : 'r-name');
+
+/** Die Uhr: kurz vor zwölf, diese Woche besiegt auf zwölf; auf Stufe II mit dem Gegenzeiger (vor dreizehn, angehalten) */
+function uhrStellung(def: RaidDef, besiegt: boolean): UhrStellung {
+  if (hatGegenzeiger(def)) return besiegt ? ANGEHALTEN : KURZ_VOR_DREIZEHN;
+  return besiegt ? AUF_ZWOELF : KURZ_VOR_ZWOELF;
+}
+
+/** Die gezeigte Stufe: die gewählte, sonst die höchste offene */
+function aktuelleStufe(state: GameState): RaidDef {
+  const gewaehlteStufe = RAID_STUFEN.find(d => d.id === stufeId);
+  if (gewaehlteStufe) return gewaehlteStufe;
+  const def = [...RAID_STUFEN].reverse().find(d => raidOffen(state, d)) ?? ZENIT;
+  stufeId = def.id;
+  return def;
+}
 
 /** Kampfwerte aller Helden der Gilde (Ausrüstung, Sets, Schmiede, Weg) */
 function kampfwerte(state: GameState): Map<number, CombatUnit> {
@@ -127,6 +164,7 @@ function speichern(sofort = false): void {
 const SYMBOLE = `<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
 <symbol id="i-pendel" viewBox="0 0 16 16"><path d="M4 1.6h8" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/><path d="M8 1.6 5.6 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" fill="none"/><circle cx="5.1" cy="11.9" r="3" fill="currentColor"/></symbol>
 <symbol id="i-zeiger" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5"/><path d="M8 8V3.4M8 8l3.1 1.9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></symbol>
+<symbol id="i-gegen" viewBox="0 0 16 16"><circle cx="8" cy="8" r="6.3" fill="none" stroke="currentColor" stroke-width="1.5" stroke-dasharray="2.2 1.6"/><path d="M8 8V3.4M8 8 4.9 9.9" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" fill="none"/></symbol>
 <symbol id="i-glocke" viewBox="0 0 16 16"><path d="M8 1.4c-2.7 0-4.4 2.1-4.4 4.8v2.7L2.1 11.6h11.8l-1.5-2.7V6.2c0-2.7-1.7-4.8-4.4-4.8z" fill="currentColor"/><circle cx="8" cy="13.6" r="1.7" fill="currentColor"/></symbol>
 <symbol id="i-funken" viewBox="0 0 16 16"><path d="M8 .6 9.8 6.2 15.4 8 9.8 9.8 8 15.4 6.2 9.8.6 8l5.6-1.8z" fill="currentColor"/></symbol>
 <symbol id="i-trupp" viewBox="0 0 16 16"><path d="M3.6 1.4v13.2" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M4.2 2.2h9l-2.4 3.1 2.4 3.1h-9z" fill="currentColor"/></symbol>
@@ -171,27 +209,35 @@ export function renderRaidScreen(container: HTMLElement): void {
   }
 }
 
-/** Beim Hinaufsteigen: die Einleitung beim ersten Mal, der Schluss nach dem ersten Sieg, sonst der Montag-Satz */
+/**
+ * Beim Hinaufsteigen und beim Umschalten auf eine Stufe: ihre Einleitung beim ersten Mal, ihr Schluss nach dem ersten
+ * Sieg, sonst ihr Montag-Satz
+ */
 function beimOeffnen(): void {
   const state = gameState;
   const el = bildschirm();
-  if (!state || !el || !raidOffen(state)) return;
-  const stand = raidStand(state);
+  if (!state || !el || el.querySelector('.r-ov')) return;
+  const def = aktuelleStufe(state);
+  if (!raidOffen(state, def)) return;
+  const stand = raidStand(state, Date.now(), def);
+  const texte = stufenTexte(def);
   if (!stand.einleitungGelesen) {
-    zeigeGeschichte(el, RAID_TEXTE.karte.name, RAID_TEXTE.einleitung, () => {
+    zeigeGeschichte(el, texte.name.toUpperCase(), texte.einleitung, () => {
       stand.einleitungGelesen = true;
       speichern(true);
+      const jetzt = bildschirm();
+      if (jetzt) zeichne(jetzt);
     });
     return;
   }
   if (stand.siege > 0 && !stand.schlussGelesen) {
-    zeigeGeschichte(el, E.sieg, RAID_TEXTE.schluss, () => {
+    zeigeGeschichte(el, texte.sieg, texte.schluss, () => {
       stand.schlussGelesen = true;
       speichern(true);
     });
     return;
   }
-  const montag = montagSatz(stand);
+  const montag = montagSatz(stand, def);
   if (montag) {
     stand.montagGesehen = stand.woche.id;
     speichern(true);
@@ -204,37 +250,77 @@ function zeichne(el: HTMLElement): void {
   const state = gameState;
   const haupt = el.querySelector<HTMLElement>('main.raid');
   if (!state || !haupt) return;
+  // Vor den Pfeilern des Tages ist schon Stufe I zu: kein Umschalter
   if (!raidOffen(state)) {
-    haupt.innerHTML = zuHtml();
+    haupt.classList.remove('r-drei');
+    haupt.innerHTML = zuHtml(ZENIT);
     return;
   }
-  const neu = !state.raid;
-  const stand = raidStand(state);
+  const def = aktuelleStufe(state);
+  haupt.classList.toggle('r-drei', def.truppZahl === 3);
+  if (!raidOffen(state, def)) {
+    haupt.innerHTML = zuHtml(def, stufenHtml(state, def));
+    return;
+  }
+  const neu = !gespeicherterStand(state, def);
+  const stand = raidStand(state, Date.now(), def);
   if (neu) speichern();
   if (gewaehlt !== null && !state.fighters.some(f => f.id === gewaehlt)) gewaehlt = null;
   const bankLinks = haupt.querySelector<HTMLElement>('.r-karten')?.scrollLeft ?? 0;
-  const lage = raidLage(state);
-  const versuch = versuchsLage(state);
-  const schluessel = ratSchluessel(state, stand.aufstellung);
+  const lage = raidLage(state, def);
+  const versuch = versuchsLage(state, Date.now(), def);
+  const schluessel = ratSchluessel(state, stand.aufstellung, def);
   haupt.innerHTML = `
-    <div class="r-links">${listeHtml(lage)}<aside class="r-panel r-rat" data-rat-inhalt>${ratInhalt(state, schluessel)}</aside></div>
-    <div class="r-mitte">${kopfHtml(state, stand, versuch)}${leisteHtml(lage)}${feldHtml(state, stand, lage)}${wahlHinweisHtml(state, stand)}${knoepfeHtml(state, stand, versuch, schluessel)}</div>
-    ${bankHtml(state, stand, kampfwerte(state))}`;
+    <div class="r-links">${stufenHtml(state, def)}${listeHtml(lage)}<aside class="r-panel r-rat" data-rat-inhalt>${ratInhalt(state, schluessel, def)}</aside></div>
+    <div class="r-mitte">${kopfHtml(state, stand, versuch, def)}${leisteHtml(lage, def)}${feldHtml(state, stand, lage, def)}${wahlHinweisHtml(state, stand)}${knoepfeHtml(state, stand, versuch, schluessel, def)}</div>
+    ${bankHtml(state, stand, kampfwerte(state), def)}`;
   const karten = haupt.querySelector<HTMLElement>('.r-karten');
   if (karten) karten.scrollLeft = bankLinks;
   // Ein offenes Kriegsrat-Fenster (Handy) zeigt denselben Stand
-  for (const ziel of Array.from(el.querySelectorAll<HTMLElement>('.r-ov [data-rat-inhalt]'))) ziel.innerHTML = ratInhalt(state, schluessel);
+  for (const ziel of Array.from(el.querySelectorAll<HTMLElement>('.r-ov [data-rat-inhalt]'))) ziel.innerHTML = ratInhalt(state, schluessel, def);
 }
 
-/** Vor den Pfeilern des Tages: die Uhr, der Name und wo die Leiter steht */
-function zuHtml(): string {
-  return `<section class="r-panel r-zu">
-    <div class="r-uhr">${zenitUhrSvg(KURZ_VOR_ZWOELF, 'r-zu-uhr', t.uhr.vor)}</div>
-    <div class="r-kicker">${RAID_TEXTE.karte.klein(ZENIT.minHelden, ZENIT.maxHelden)}</div>
-    <h1 class="r-titel">${t.titel}</h1>
-    <p>${esc(t.nochZu)}</p>
-    <p class="r-mut">${esc(RAID_TEXTE.karte.tooltip)}</p>
-    <button type="button" class="btn-go" data-nav="dungeon">${E.zurKarte}</button>
+/**
+ * Die Stufen zum Umschalten (am PC über Alrunas Liste untereinander, am Handy ganz oben nebeneinander): Name, Helden
+ * und was diese Woche noch offen ist (besiegt, freie Ernstkämpfe; zu: was fehlt). «Neu» an einer offenen Stufe, deren
+ * Einleitung noch niemand gelesen hat. Liest nur, legt keinen Stand an.
+ */
+function stufenHtml(state: GameState, def: RaidDef): string {
+  const jetzt = Date.now();
+  const knoepfe = RAID_STUFEN.map(d => {
+    const texte = stufenTexte(d);
+    const zustand = raidKartenZustand(state, jetzt, d);
+    const neu = zustand.offen && !gespeicherterStand(state, d)?.einleitungGelesen;
+    const frei = freiDieseWoche(state, jetzt, d);
+    const status = !zustand.offen ? `🔒 ${esc(texte.zu)}`
+      : zustand.zwoelf ? `✓ ${esc(RAID_TEXTE.karte.besiegtDieseWoche)}`
+        : frei > 0 ? esc(t.stufeFrei(frei, d.freieVersucheJeWoche)) : esc(t.stufeKosten(tagstein(d)));
+    const klassen = ['r-stufe', d.id === def.id ? 'an' : '', zustand.offen ? '' : 'zu', zustand.zwoelf ? 'besiegt' : ''].filter(Boolean).join(' ');
+    return `<button type="button" class="${klassen}" data-stufe="${d.id}" aria-pressed="${d.id === def.id}">`
+      + `<b class="r-stufe-nr">${t.stufen} ${texte.stufe}</b><span class="r-stufe-name">${esc(texte.name)}</span>`
+      + `${neu ? `<i class="r-stufe-neu">${t.stufeNeuMarke}</i>` : ''}`
+      + `<span class="r-stufe-status">${status}</span><span class="r-stufe-zahl">${t.stufeHelden(d.minHelden, d.maxHelden)}</span></button>`;
+  }).join('');
+  return `<nav class="r-stufen" aria-label="${t.stufenNav}">${knoepfe}</nav>`;
+}
+
+/**
+ * Eine Stufe, die noch zu ist: ihre Uhr, ihr Name und was fehlt (vor den Pfeilern des Tages: wo die Leiter steht).
+ * Über Stufe I geht es zurück zur Karte, über Stufe II zur Stufe davor; `stufen`: der Umschalter, oben im Fenster.
+ */
+function zuHtml(def: RaidDef, stufen = ''): string {
+  const texte = stufenTexte(def);
+  const davor = def.freiNachRaid ? RAID_DEFS[def.freiNachRaid] : undefined;
+  const knopf = davor
+    ? `<button type="button" class="btn-go" data-stufe="${davor.id}">${t.zurStufe(stufenTexte(davor).stufe)}</button>`
+    : `<button type="button" class="btn-go" data-nav="dungeon">${E.zurKarte}</button>`;
+  return `<section class="r-panel r-zu">${stufen}
+    <div class="r-uhr">${zenitUhrSvg(uhrStellung(def, false), 'r-zu-uhr', texte.uhr.vor)}</div>
+    <div class="r-kicker">${RAID_TEXTE.karte.klein(def.minHelden, def.maxHelden)}</div>
+    <h1 class="r-titel">${texte.titel}</h1>
+    <p>${esc(texte.nochZu)}</p>
+    <p class="r-mut">${esc(davor ? RAID_TEXTE.karte.tooltipBeide : RAID_TEXTE.karte.tooltip)}</p>
+    ${knopf}
   </section>`;
 }
 
@@ -242,10 +328,10 @@ function zuHtml(): string {
 
 const prozent = (rest: number): string => (Math.max(0, Math.min(1, rest)) * 100).toFixed(1);
 
-function kopfHtml(state: GameState, stand: RaidStand, versuch: VersuchsLage): string {
-  const def = ZENIT;
+function kopfHtml(state: GameState, stand: RaidStand, versuch: VersuchsLage, def: RaidDef): string {
+  const texte = stufenTexte(def);
   const besiegt = stand.woche.truhe;
-  const uhr = zenitUhrSvg(besiegt ? AUF_ZWOELF : KURZ_VOR_ZWOELF, 'r-kopf-uhr', besiegt ? t.uhr.auf : t.uhr.vor);
+  const uhr = zenitUhrSvg(uhrStellung(def, besiegt), 'r-kopf-uhr', besiegt ? texte.uhr.auf : texte.uhr.vor);
   // Striche: wo die letzten Ernstkämpfe Zenit gelassen haben; golden der Bestversuch (oder wie oft er fiel)
   const best = stand.bestRest;
   let marken = stand.verlauf.filter(v => v.rest !== best).map(v => `<i class="r-marke-v" style="left:${prozent(v.rest)}%"></i>`).join('');
@@ -260,75 +346,94 @@ function kopfHtml(state: GameState, stand: RaidStand, versuch: VersuchsLage): st
     <div class="r-uhr">${uhr}</div>
     <div class="r-kopf-mitte">
       <div class="r-titelzeile">
-        <div><div class="r-kicker">${RAID_TEXTE.karte.klein(def.minHelden, def.maxHelden)}</div><h1 class="r-titel">${t.titel}</h1></div>
+        <div><div class="r-kicker">${RAID_TEXTE.karte.klein(def.minHelden, def.maxHelden)}</div><h1 class="r-titel">${texte.titel}</h1></div>
         <button type="button" class="r-klein-knopf rund r-handy-hilfe" data-hilfe aria-label="${t.hilfe}" title="${t.hilfe}">?</button>
       </div>
       <div class="r-werte"><span>${w.angriff} <b>${def.werte.atk}</b></span><span>${w.abwehr} <b>${def.werte.def}</b></span>
         <span>${w.tempo} <b>${komma(def.werte.spd)}</b></span><span>${w.krit} <b>${Math.round(def.werte.critChance * 100)} %</b></span></div>
       <div class="r-leben" title="${t.lebenTitel}"><div class="r-leben-spur"></div><div class="r-leben-zahl">${t.leben(def.werte.hp)}</div>${marken}</div>
       <div class="r-zeile">${t.freiLabel} <b>${t.freiWert(versuch.freiUebrig, def.freieVersucheJeWoche)}</b>
-        <span class="r-mut">${t.freiDanach(tagstein())}</span><img class="r-tagstein" src="${bild('MAT_TAGSTEIN')}" alt="">
+        <span class="r-mut">${t.freiDanach(tagstein(def))}</span><img class="r-tagstein" src="${bild('MAT_TAGSTEIN')}" alt="">
         <span class="r-mut">${t.lager(state.globalStock.mat_tagstein ?? 0)}</span></div>
     </div>
-    ${truhenHtml(stand)}
+    ${truhenHtml(stand, def)}
   </section>`;
 }
 
-function truhenHtml(stand: RaidStand): string {
+function truhenHtml(stand: RaidStand, def: RaidDef): string {
+  const texte = stufenTexte(def);
   const zeile = (geholt: boolean, sprite: string, name: string, wann: string, inhalt: string): string => (geholt
     ? `<div class="r-truhe geholt"><div class="r-truhe-bild"><img src="${sprite}" alt=""><span class="r-truhe-haken">✓</span></div>
         <div><div class="r-truhe-name">${esc(name)}</div><div class="r-truhe-geholt">✓ ${t.truheGeholt}</div></div></div>`
     : `<div class="r-truhe"><img src="${sprite}" alt="">
         <div><div class="r-truhe-name">${esc(name)} <span class="r-truhe-status">${wann}</span></div><div class="r-truhe-inhalt">${inhalt}</div></div></div>`);
   const unruh = stand.siege > 0
-    ? `<div class="r-truhe geholt"><div class="r-truhe-bild"><img src="${bild(getItemSpriteKey(ZENIT.ersterSiegBeute))}" alt=""><span class="r-truhe-haken">✓</span></div>
-        <div><div class="r-truhe-name">${t.unruhZeile}</div><div class="r-truhe-geholt">✓ ${t.unruhGeholt}</div></div></div>`
-    : `<div class="r-truhe"><img src="${bild(getItemSpriteKey(ZENIT.ersterSiegBeute))}" alt="">
-        <div><div class="r-truhe-name">${t.unruhZeile}</div><div class="r-truhe-inhalt">${t.unruhInhalt}</div></div></div>`;
+    ? `<div class="r-truhe geholt"><div class="r-truhe-bild"><img src="${bild(getItemSpriteKey(def.ersterSiegBeute))}" alt=""><span class="r-truhe-haken">✓</span></div>
+        <div><div class="r-truhe-name">${texte.ersterZeile}</div><div class="r-truhe-geholt">✓ ${t.unruhGeholt}</div></div></div>`
+    : `<div class="r-truhe"><img src="${bild(getItemSpriteKey(def.ersterSiegBeute))}" alt="">
+        <div><div class="r-truhe-name">${texte.ersterZeile}</div><div class="r-truhe-inhalt">${texte.ersterInhalt}</div></div></div>`;
   return `<div class="r-truhen">
     <div class="r-truhen-kopf"><span>${t.wochentruhen}</span><span class="r-mut">${t.kw(Number(stand.woche.id.slice(-2)))}</span></div>
-    ${zeile(stand.woche.halbeTruhe, bild('ISO_TREASURE_CHEST'), ZENIT.truhen.halb.name, t.halbWann, t.halbInhalt)}
-    ${zeile(stand.woche.truhe, bild('ISO_TREASURE_CHEST_V2'), ZENIT.truhen.sieg.name, t.siegWann, t.siegInhalt)}
+    ${zeile(stand.woche.halbeTruhe, bild('ISO_TREASURE_CHEST'), def.truhen.halb.name, t.halbWann, texte.halbInhalt)}
+    ${zeile(stand.woche.truhe, bild('ISO_TREASURE_CHEST_V2'), def.truhen.sieg.name, t.siegWann, texte.siegInhalt)}
     ${unruh}
   </div>`;
 }
 
 // ── Uhrleiste: wann was wo schlägt ──
 
-function leisteHtml(lage: RaidLage): string {
-  const def = ZENIT;
+function leisteHtml(lage: RaidLage, def: RaidDef): string {
   const r = def.regeln;
   const spalten = spaltenZahl(def);
+  const gegen = hatGegenzeiger(def);
+  const treffen = new Set(treffpunkte(def).flatMap(x => x.runden));
   const hatHelden = (trupp: number): boolean => (lage.trupps[trupp]?.anzahl ?? 0) > 0;
+  const farbe = (spalte: number): string => {
+    const warnung = lage.spalten[spalte]?.warnung;
+    return warnung === 'leer' ? ' r-rot' : warnung === 'einzeln' ? ' r-gelb' : '';
+  };
+  // Lage des Pendelstrichs: links und rechts, mit drei Trupps auch die Mitte
+  const pendelLage = (trupp: number): string => (def.truppZahl === 3 ? ['r-l', 'r-m', 'r-r'][trupp] : trupp === 0 ? 'r-l' : 'r-r');
   let runden = '';
   for (let runde = 1; runde <= r.mitternacht; runde++) {
     const s = zeigerSpalte(runde, spalten);
+    const gs = gegen ? gegenzeigerSpalte(runde, spalten) : null;
     const zeichen: string[] = [];
     const extra: string[] = [];
     if (runde % r.funkenAlle === 0) { zeichen.push(`<span class="c-funken">${ic('funken')}</span>`); extra.push(t.legende.funken); }
     if (runde % r.glockeAlle === 0) { zeichen.push(`<span class="c-glocke">${ic('glocke')}</span>`); extra.push(t.legende.glocke); }
+    // Stufe II: Hier stehen beide Zeiger auf derselben Spalte
+    if (treffen.has(runde)) { zeichen.push('<span class="c-gegen r-rd-13">13</span>'); extra.push(t.dreizehnMarke); }
     const zeit = runde === r.mittagAb ? ' r-mittag' : runde > r.mittagAb ? ' r-nach' : '';
-    const warnung = lage.spalten[s]?.warnung;
-    const farbe = warnung === 'leer' ? ' r-rot' : warnung === 'einzeln' ? ' r-gelb' : '';
-    // Das Pendel schwingt reihum; ist ein Trupp leer, trifft es jede Runde den anderen
+    // Das Pendel schwingt reihum; ist ein Trupp leer, trifft es jede Runde den nächsten
     const trupp = lage.helden.length > 0 ? pendelTrupp(runde, def.truppZahl, hatHelden) : (runde - 1) % def.truppZahl;
     const seite = trupp === null ? '' : truppKlein(trupp, def.truppZahl);
-    const pendel = trupp === null ? '' : `<i class="r-rd-pd ${trupp === 0 ? 'r-l' : 'r-r'}"></i>`;
-    runden += `<div class="r-rd${zeit}" title="${esc(t.rundeTitel(runde, spaltenName(s), seite, extra))}">`
+    const pendel = trupp === null ? '' : `<i class="r-rd-pd ${pendelLage(trupp)}"></i>`;
+    const titel = t.rundeTitel(runde, spaltenName(s), seite, extra, gs === null ? undefined : spaltenName(gs));
+    runden += `<div class="r-rd${zeit}${treffen.has(runde) ? ' r-dreizehn' : ''}" title="${esc(titel)}">`
       + `${zeichen.length > 0 ? `<div class="r-rd-ev">${zeichen.join('')}</div>` : ''}`
-      + `<span class="r-rd-nr">${runde}</span><b class="r-rd-sp${farbe}">${spaltenName(s)}</b>${pendel}</div>`;
+      + `<span class="r-rd-nr">${runde}</span><b class="r-rd-sp${farbe(s)}">${spaltenName(s)}</b>`
+      + `${gs === null ? '' : `<b class="r-rd-gg${farbe(gs)}">${spaltenName(gs)}</b>`}${pendel}</div>`;
   }
   const g = t.legende;
-  return `<section class="r-panel r-leiste">
-    <div class="r-leiste-kopf"><span class="r-lk-vm">${t.vormittag}</span><span class="r-lk-mt">${t.mittag}</span><span class="r-lk-mn">${t.mitternacht}</span></div>
+  const seiten = def.truppZahl === 3
+    ? `<span class="r-legende-lang">${g.seitenDreiLang}</span><span class="r-legende-kurz">${g.seitenDreiKurz}</span>`
+    : `<span class="r-legende-lang">${g.seitenLang}</span><span class="r-legende-kurz">${g.seitenKurz}</span>`;
+  const gegenLegende = gegen
+    ? `<span><b class="r-lg-gg">${spaltenName(spalten - 1)}–${spaltenName(0)}</b> ${g.gegenzeiger}</span>
+      <span><span class="r-lg-13">13</span> <span class="r-legende-lang">${g.dreizehnLang}</span><span class="r-legende-kurz">${g.dreizehnKurz}</span></span>`
+    : '';
+  return `<section class="r-panel r-leiste${gegen ? ' r-zwei-zeiger' : ''}${def.truppZahl === 3 ? ' r-drei' : ''}">
+    <div class="r-leiste-kopf"><span class="r-lk-vm">${t.vormittag}</span><span class="r-lk-mt">${t.mittag}</span><span class="r-lk-mn" title="${t.legendeTag}">${t.mitternacht}</span></div>
     <div class="r-runden">${runden}</div>
     <div class="r-legende">
       <span class="c-funken">${ic('funken')}<span class="r-mut">${g.funken}</span></span>
       <span class="c-glocke">${ic('glocke')}<span class="r-mut">${g.glocke}</span></span>
       <span><b class="r-lg-sp">${spaltenName(0)}–${spaltenName(spalten - 1)}</b> ${g.zeiger}</span>
-      <span><i class="r-lg-pd"></i> ${g.pendel} <span class="r-legende-lang">${g.seitenLang}</span><span class="r-legende-kurz">${g.seitenKurz}</span></span>
+      ${gegenLegende}
+      <span><i class="r-lg-pd"></i> ${g.pendel} ${seiten}</span>
       <span><i class="r-lg-mt"></i> <span class="r-legende-lang">${g.mittagLang}</span><span class="r-legende-kurz">${g.mittagKurz}</span></span>
-      <span class="r-legende-lang r-mut">· ${t.legendeTag}</span>
+      <span class="r-legende-lang r-lg-tag r-mut">· ${t.legendeTag}</span>
     </div>
   </section>`;
 }
@@ -340,9 +445,9 @@ function leerenKnopf(anzahl: number): string {
   return `<button type="button" class="r-klein-knopf${sicher ? ' r-sicher' : ''}" data-leeren ${anzahl === 0 ? 'disabled' : ''}>${sicher ? t.leerenSicher : t.leeren}</button>`;
 }
 
-function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage): string {
-  const def = ZENIT;
+function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidDef): string {
   const spalten = spaltenZahl(def);
+  const treffen = new Set(treffpunkte(def).map(x => x.spalte));
   const T = (reihe: number | string, spalte: number | string): string => `grid-row:${reihe};grid-column:${spalte}`;
   const unten = 3 + def.reihen;
   const rechts = 2 + spalten + def.truppZahl - 1;
@@ -360,7 +465,11 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage): string {
   for (const sp of lage.spalten) {
     const farbe = sp.warnung === 'leer' ? ' r-rot' : sp.warnung === 'einzeln' ? ' r-gelb' : '';
     const klein = sp.warnung === 'einzeln' && sp.name ? t.spalteNur(sp.name) : sp.anzahl === 0 ? t.spalteLeer : t.spalteHelden(sp.anzahl);
-    h += `<div class="r-skopf${farbe}" style="${T(2, gitterSpalte(sp.spalte))}">${spaltenName(sp.spalte)}<small>${esc(klein)}</small></div>`;
+    // Stufe II: Auf dieser Spalte treffen sich Zeiger und Gegenzeiger. Die schmalen Spalten kürzen den kleinen Text,
+    // ganz steht er dann im Titel.
+    const dreizehn = treffen.has(sp.spalte) ? `<span class="r-13" title="${esc(t.legende.dreizehnLang)}">13</span>` : '';
+    const titel = def.truppZahl === 3 ? ` title="${esc(`${spaltenName(sp.spalte)}: ${klein}`)}"` : '';
+    h += `<div class="r-skopf${farbe}${dreizehn ? ' r-treff' : ''}" style="${T(2, gitterSpalte(sp.spalte))}"${titel}>${spaltenName(sp.spalte)}<small>${esc(klein)}</small>${dreizehn}</div>`;
   }
   for (let r = 0; r < def.reihen; r++) {
     const glocke = r === lage.glockenReihe;
@@ -387,8 +496,8 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage): string {
           aria-pressed="${held.id === gewaehlt}" title="${esc(t.zelleTitel(held.name, klassenName(held.classId), name))}">
         ${pendel.has(held.id) ? `<span class="r-marke r-m-pendel">${ic('pendel')}</span>` : ''}
         ${held.id === lage.funkenZiel ? `<span class="r-marke r-m-funken">${ic('funken')}</span>` : ''}
-        <div class="r-bild" style="background-image:url('${heldBild(held.classId)}')"></div>
-        <div class="r-name">${esc(held.name)}</div>
+        ${heldBildDiv(held)}
+        <div class="${nameKlasse(held.name, def)}">${esc(held.name)}</div>
         <div class="r-hp">${ic('herz')}${zahl(da.einheit.maxHp)}</div>
       </div>`;
     }
@@ -401,7 +510,7 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage): string {
       <div class="r-knopfgruppe"><span class="r-info">${auswahl ? esc(t.gewaehltKurz(auswahl.name)) : t.tippen}</span>${zurueck}
         <button type="button" class="r-klein-knopf rund" data-hilfe aria-label="${t.hilfe}" title="${t.hilfe}">?</button>
         ${leerenKnopf(Object.keys(stand.aufstellung).length)}</div></div>
-    <div class="r-gitter">${h}</div>
+    <div class="r-gitter${def.truppZahl === 3 ? ' r-drei' : ''}">${h}</div>
   </section>`;
 }
 
@@ -414,19 +523,19 @@ function wahlHinweisHtml(state: GameState, stand: RaidStand): string {
   return `<div class="r-wahl-hinweis"><span class="r-punkt"></span><span>${esc(t.gewaehlt(auswahl.name))}</span>${zurueck}</div>`;
 }
 
-function knoepfeHtml(state: GameState, stand: RaidStand, versuch: VersuchsLage, schluessel: string): string {
-  const def = ZENIT;
+function knoepfeHtml(state: GameState, stand: RaidStand, versuch: VersuchsLage, schluessel: string, def: RaidDef): string {
   const zuWenig = Object.keys(stand.aufstellung).length < def.minHelden;
-  const rat = letzterRat?.schluessel === schluessel ? letzterRat : null;
+  const letzter = letzteRaete.get(def.id);
+  const rat = letzter?.schluessel === schluessel ? letzter : null;
   const laeuft = ratLauf?.schluessel === schluessel;
   const ratPc = zuWenig ? t.mindestens(def.minHelden) : laeuft ? t.ratUnterLaeuft
     : rat ? K.letzter(rat.siege, rat.proben, restProzent(rat.schnittRest)) : t.ratUnterLeer;
   const ratHandy = zuWenig ? t.mindestens(def.minHelden) : laeuft ? t.ratUnterLaeuft : t.ratUnterKurz(rat ? rat.siege : null);
   const hat = state.globalStock.mat_tagstein ?? 0;
   const max = def.freieVersucheJeWoche;
-  const ernstPc = versuch.frei ? t.ernstkampfFrei(versuch.freiUebrig, max) : t.ernstkampfKosten(tagstein());
+  const ernstPc = versuch.frei ? t.ernstkampfFrei(versuch.freiUebrig, max) : t.ernstkampfKosten(tagstein(def));
   const ernstUnterPc = !versuch.moeglich ? versuch.grund ?? ''
-    : versuch.frei ? t.ernstFreiUnter(versuch.freiUebrig, max, tagstein()) : t.ernstKostenUnter(hat);
+    : versuch.frei ? t.ernstFreiUnter(versuch.freiUebrig, max, tagstein(def)) : t.ernstKostenUnter(hat);
   const ernstUnterHandy = !versuch.moeglich ? versuch.grund ?? ''
     : versuch.frei ? t.ernstFreiKurz(versuch.freiUebrig, max) : t.ernstKostenUnter(hat);
   return `<section class="r-knoepfe">
@@ -465,8 +574,9 @@ function listeHtml(lage: RaidLage): string {
 }
 
 /** Inhalt des Kriegsrats (am PC links, am Handy im Fenster): leer, am Rechnen oder mit dem Rat */
-function ratInhalt(state: GameState, schluessel: string): string {
-  const stand = raidStand(state);
+function ratInhalt(state: GameState, schluessel: string, def: RaidDef): string {
+  const stand = raidStand(state, Date.now(), def);
+  const letzterRat = letzteRaete.get(def.id) ?? null;
   const kopf = `<div class="r-kopfzeile"><h2 class="r-h2">${t.kriegsratKurz}</h2><span class="r-info">${t.proben(KRIEGSRAT_PROBEN)}</span></div>`;
   if (ratLauf?.schluessel === schluessel) {
     return `${kopf}<p class="r-rat-text">${K.rechnet}</p>
@@ -475,10 +585,10 @@ function ratInhalt(state: GameState, schluessel: string): string {
   }
   const rat = letzterRat?.schluessel === schluessel ? letzterRat : null;
   if (!rat) {
-    const zuWenig = Object.keys(stand.aufstellung).length < ZENIT.minHelden;
+    const zuWenig = Object.keys(stand.aufstellung).length < def.minHelden;
     const vorige = letzterRat
       ? `<p class="r-rat-text">${esc(t.ratVorige(letzterRat.siege, letzterRat.proben, restProzent(letzterRat.schnittRest)))}</p>` : '';
-    return `${kopf}<p class="r-rat-text">${zuWenig ? t.mindestens(ZENIT.minHelden) : t.ratLeer}</p>${vorige}
+    return `${kopf}<p class="r-rat-text">${zuWenig ? t.mindestens(def.minHelden) : t.ratLeer}</p>${vorige}
       <button type="button" class="btn-kriegsrat" data-rat ${zuWenig ? 'disabled' : ''}>${t.ratBefragen}</button>`;
   }
   const name = (id: number): string => state.fighters.find(f => f.id === id)?.name ?? '?';
@@ -500,14 +610,14 @@ function ratInhalt(state: GameState, schluessel: string): string {
 
 // ── Die Bank ──
 
-function bankHtml(state: GameState, stand: RaidStand, einheiten: Map<number, CombatUnit>): string {
+function bankHtml(state: GameState, stand: RaidStand, einheiten: Map<number, CombatUnit>, def: RaidDef): string {
   const anzahl = Object.keys(stand.aufstellung).length;
   const stufen = schmiedeStufen(state);
   const helden = [...state.fighters].sort((a, b) => ROLLEN_FOLGE.indexOf(raidRolle(a.classId)) - ROLLEN_FOLGE.indexOf(raidRolle(b.classId)));
   const karten = helden.map(held => karteHtml(held, stand.aufstellung[String(held.id)], einheiten.get(held.id), stufen)).join('');
   const legende = ROLLEN_FOLGE.map(r => `<span class="r-nw">${ic(ROLLE_IC[r], `rolle-${r}`)} ${t.rollen[r]}</span>`).join(' · ');
   return `<aside class="r-panel r-bank" data-bank>
-    <div class="r-kopfzeile"><h2 class="r-h2">${t.bank}</h2><span class="r-info">${t.bankZahl(anzahl, ZENIT.maxHelden)}<span class="r-bank-leeren">${leerenKnopf(anzahl)}</span></span></div>
+    <div class="r-kopfzeile"><h2 class="r-h2">${t.bank}</h2><span class="r-info">${t.bankZahl(anzahl, def.maxHelden)}<span class="r-bank-leeren">${leerenKnopf(anzahl)}</span></span></div>
     <p class="r-bank-tipp">${t.bankTipp} ${legende}</p>
     <div class="r-karten">${karten}</div>
     <p class="r-bank-fuss">${t.bankFuss}</p>
@@ -532,7 +642,7 @@ function karteHtml(held: GuildFighter, feld: Feld | undefined, einheit: CombatUn
     : '';
   return `<button type="button" class="r-karte${feld ? ' r-gesetzt' : ''}${held.id === gewaehlt ? ' r-gewaehlt' : ''}" data-held="${held.id}" data-karte draggable="true"
       aria-pressed="${held.id === gewaehlt}" title="${esc(t.karteTitel(held.name, klasse, t.rollen[rolle], feld ? feldName(feld) : null))}">
-    <span class="r-bild" style="background-image:url('${heldBild(held.classId)}')"></span>
+    ${heldBildDiv(held, 'span')}
     <span class="r-karte-text">
       <span class="r-karte-name">${esc(held.name)}<small>St. ${held.level} · ${esc(klasse)}</small></span>
       <span class="r-karte-zeile">${wegText}${setZeile(held, stufen)}</span>
@@ -548,8 +658,8 @@ function karteHtml(held: GuildFighter, feld: Feld | undefined, einheit: CombatUn
 function bindeBildschirm(el: HTMLElement): void {
   el.addEventListener('click', e => klick(el, e));
   el.addEventListener('keydown', e => taste(el, e));
-  el.addEventListener('mouseover', e => hinweisMaus(el, e, true));
-  el.addEventListener('mouseout', e => hinweisMaus(el, e, false));
+  el.addEventListener('pointerover', e => hinweisMaus(el, e, true));
+  el.addEventListener('pointerout', e => hinweisMaus(el, e, false));
   el.addEventListener('pointerdown', e => druckBeginn(el, e));
   el.addEventListener('pointermove', druckBewegt);
   el.addEventListener('pointerup', druckEnde);
@@ -579,6 +689,11 @@ function klick(el: HTMLElement, e: MouseEvent): void {
     return;
   }
   if (!gameState || ziel.closest('button:disabled')) return;
+  const stufeKnopf = ziel.closest<HTMLElement>('[data-stufe]');
+  if (stufeKnopf) {
+    stufeWechseln(el, stufeKnopf.dataset.stufe ?? '');
+    return;
+  }
   if (ziel.closest('[data-hilfe]')) zeigeRegeln(el);
   else if (ziel.closest('[data-leeren]')) leeren(el);
   else if (ziel.closest('[data-zurueck]')) { if (gewaehlt !== null) setze(el, gewaehlt, null); }
@@ -599,6 +714,16 @@ function klick(el: HTMLElement, e: MouseEvent): void {
     // Bank zum Zurücknehmen
     setze(el, gewaehlt, null);
   }
+}
+
+/** Auf eine andere Stufe umschalten: Wahl und laufender Kriegsrat bleiben bei der alten, ihre Einleitung kommt beim ersten Mal */
+function stufeWechseln(el: HTMLElement, id: string): void {
+  if (id === stufeId || !RAID_STUFEN.some(d => d.id === id)) return;
+  stufeId = id;
+  gewaehlt = null;
+  listeAlle = false;
+  zeichne(el);
+  beimOeffnen();
 }
 
 /** Enter und Leertaste auf einem Feld wie ein Tippen (Escape hebt die Wahl auf: Hörer auf document, renderRaidScreen) */
@@ -634,9 +759,10 @@ function feldAntippen(el: HTMLElement, zelle: HTMLElement): void {
 function setze(el: HTMLElement, heldId: number, feld: Feld | null): void {
   const state = gameState;
   if (!state) return;
-  const ok = setzeHeld(state, heldId, feld);
-  if (!ok && feld !== null && Object.keys(raidStand(state).aufstellung).length >= ZENIT.maxHelden) {
-    zeigeKopfHinweis(t.voll(ZENIT.maxHelden));
+  const def = aktuelleStufe(state);
+  const ok = setzeHeld(state, heldId, feld, def);
+  if (!ok && feld !== null && Object.keys(raidStand(state, Date.now(), def).aufstellung).length >= def.maxHelden) {
+    zeigeKopfHinweis(t.voll(def.maxHelden));
   }
   gewaehlt = null;
   if (ok) {
@@ -657,15 +783,17 @@ function leeren(el: HTMLElement): void {
     return;
   }
   leerenBis = 0;
-  aufstellungLeeren(state);
+  aufstellungLeeren(state, aktuelleStufe(state));
   gewaehlt = null;
   ratLauf = null;
   speichern();
   zeichne(el);
 }
 
-// Darüberfahren auf einem Punkt der Liste: seine Felder leuchten
-function hinweisMaus(el: HTMLElement, e: MouseEvent, an: boolean): void {
+// Mit der Maus über einen Punkt der Liste: seine Felder leuchten. Nur die Maus: Ein Finger fährt beim Tippen
+// auch darüber, und dann schaltete der Klick gleich danach das Leuchten wieder aus (klick schaltet es um)
+function hinweisMaus(el: HTMLElement, e: PointerEvent, an: boolean): void {
+  if (e.pointerType !== 'mouse') return;
   const li = (e.target as HTMLElement).closest<HTMLElement>('[data-hinweis]');
   if (!li || li.closest('.r-ov')) return;
   if (!an && e.relatedTarget instanceof Node && li.contains(e.relatedTarget)) return;
@@ -802,8 +930,10 @@ function zeigeGeschichte(el: HTMLElement, titel: string, text: string, gelesen: 
 }
 
 function zeigeRegeln(el: HTMLElement): void {
-  oeffneFenster(el, `<h2 class="r-fenster-titel">${t.hilfe}</h2>
-    <ol class="r-regeln">${RAID_TEXTE.regelBlatt.map(z => `<li>${esc(z)}</li>`).join('')}</ol>
+  if (!gameState) return;
+  const texte = stufenTexte(aktuelleStufe(gameState));
+  oeffneFenster(el, `<h2 class="r-fenster-titel">${t.hilfe}</h2><p class="r-fenster-unter">${esc(t.stufeKnopf(texte.stufe, texte.name))}</p>
+    <ol class="r-regeln">${texte.regelBlatt.map(z => `<li>${esc(z)}</li>`).join('')}</ol>
     ${knopfZeile(`<button type="button" class="btn-go" data-zu>${t.schliessen}</button>`)}`, { label: t.hilfe });
 }
 
@@ -813,7 +943,7 @@ function zeigeBlatt(el: HTMLElement, heldId: number): void {
   const held = state.fighters.find(f => f.id === heldId);
   const einheit = kampfwerte(state).get(heldId);
   if (!held || !einheit) return;
-  const feld = raidStand(state).aufstellung[String(heldId)];
+  const feld = raidStand(state, Date.now(), aktuelleStufe(state)).aufstellung[String(heldId)];
   const rolle = raidRolle(held.classId);
   const weg = getSpezialisierung(held.spezialisierung);
   const sets = getrageneSets(held.gear);
@@ -822,7 +952,7 @@ function zeigeBlatt(el: HTMLElement, heldId: number): void {
     ? sets.map(s => `${s.set.zeichen} ${esc(s.set.name)} (${b.setTeile(s.teile, setTeilIds(s.set).length)})`).join(', ')
     : b.keineSets;
   oeffneFenster(el, `
-    <div class="r-blatt-kopf"><div class="r-bild" style="background-image:url('${heldBild(held.classId)}')"></div>
+    <div class="r-blatt-kopf">${heldBildDiv(held)}
       <div><div class="r-blatt-name">${esc(held.name)}</div><div class="r-blatt-unter">${esc(b.unter(klassenName(held.classId), held.level))}</div></div></div>
     <div class="r-blatt-zeilen">
       <div class="r-blatt-werte"><span>${ic('herz', 'r-hp-i')} ${b.leben} <b>${zahl(einheit.maxHp)}</b></span>
@@ -843,23 +973,25 @@ function zeigeBlatt(el: HTMLElement, heldId: number): void {
 function kriegsrat(el: HTMLElement): void {
   const state = gameState;
   if (!state) return;
-  const stand = raidStand(state);
-  if (Object.keys(stand.aufstellung).length < ZENIT.minHelden) return;
-  const schluessel = ratSchluessel(state, stand.aufstellung);
+  const def = aktuelleStufe(state);
+  const stand = raidStand(state, Date.now(), def);
+  if (Object.keys(stand.aufstellung).length < def.minHelden) return;
+  const schluessel = ratSchluessel(state, stand.aufstellung, def);
   if (istHandy() && !el.querySelector('.r-rat-fenster')) zeigeRatFenster(el);
-  if (letzterRat?.schluessel === schluessel || ratLauf?.schluessel === schluessel) return;
-  ratLauf = { schluessel };
+  if (letzteRaete.get(def.id)?.schluessel === schluessel || ratLauf?.schluessel === schluessel) return;
+  ratLauf = { schluessel, def };
   zeichne(el);
   const lauf = ratLauf;
-  const naechstes = haeppchenweise(raidKriegsrat(state));
+  const naechstes = haeppchenweise(raidKriegsrat(state, def));
   const fortschritt = (k: number): void => {
     for (const b of Array.from(document.querySelectorAll<HTMLElement>('#s-raid [data-rat-balken]'))) b.style.width = `${(100 * k) / KRIEGSRAT_PROBEN}%`;
     for (const z of Array.from(document.querySelectorAll<HTMLElement>('#s-raid [data-rat-zahl]'))) z.textContent = t.ratSiege(k, KRIEGSRAT_PROBEN);
   };
-  rechneImHintergrund(naechstes, () => ratLauf === lauf && ratSchluessel(state, raidStand(state).aufstellung) === schluessel, {
+  const weiter = (): boolean => ratLauf === lauf && ratSchluessel(state, raidStand(state, Date.now(), def).aufstellung, def) === schluessel;
+  rechneImHintergrund(naechstes, weiter, {
     zwischen: fortschritt,
     fertig: rat => {
-      letzterRat = rat;
+      letzteRaete.set(def.id, rat);
       ratLauf = null;
       const jetzt = bildschirm();
       if (jetzt) zeichne(jetzt);
@@ -876,8 +1008,9 @@ function kriegsrat(el: HTMLElement): void {
 function zeigeRatFenster(el: HTMLElement): void {
   const state = gameState;
   if (!state) return;
-  const schluessel = ratSchluessel(state, raidStand(state).aufstellung);
-  const f = oeffneFenster(el, `<div class="r-rat-inhalt" data-rat-inhalt>${ratInhalt(state, schluessel)}</div>
+  const def = aktuelleStufe(state);
+  const schluessel = ratSchluessel(state, raidStand(state, Date.now(), def).aufstellung, def);
+  const f = oeffneFenster(el, `<div class="r-rat-inhalt" data-rat-inhalt>${ratInhalt(state, schluessel, def)}</div>
     ${knopfZeile(`<button type="button" class="r-zweit" data-zu>${t.schliessen}</button>`)}`, { klasse: 'r-rat-fenster', label: t.kriegsratKurz });
   f.ov.addEventListener('click', e => {
     const ziel = e.target as HTMLElement;
@@ -894,28 +1027,32 @@ function zeigeRatFenster(el: HTMLElement): void {
 /** Die erste Probe des Kriegsrats als Wiedergabe (zählt nicht) */
 function probelauf(el: HTMLElement): void {
   const state = gameState;
-  if (!state || !letzterRat || el.querySelector('.r-ov')) return;
-  if (letzterRat.schluessel !== ratSchluessel(state, raidStand(state).aufstellung)) return;
-  zeigeWiedergabe(el, letzterRat.probe, teilnehmerBild(state), 'probe', () => undefined);
+  if (!state || el.querySelector('.r-ov')) return;
+  const def = aktuelleStufe(state);
+  const rat = letzteRaete.get(def.id);
+  if (!rat || rat.schluessel !== ratSchluessel(state, raidStand(state, Date.now(), def).aufstellung, def)) return;
+  zeigeWiedergabe(el, rat.probe, teilnehmerBild(state, def), 'probe', def, () => undefined);
 }
 
 // ── Ernstkampf ──
 
-/** Wer hinaufgeht, wie er vor dem Kampf dasteht (die Wiedergabe braucht Feld und volles Leben) */
-interface WgHeld { id: number; name: string; classId: string; feld: Feld; maxHp: number }
+/** Wer hinaufgeht, wie er vor dem Kampf dasteht (die Wiedergabe braucht Feld, Bild und volles Leben) */
+interface WgHeld { id: number; name: string; classId: string; lehrling?: boolean; feld: Feld; maxHp: number }
 
-function teilnehmerBild(state: GameState): WgHeld[] {
-  const stand = raidStand(state);
+function teilnehmerBild(state: GameState, def: RaidDef): WgHeld[] {
+  const stand = raidStand(state, Date.now(), def);
   const einheiten = kampfwerte(state);
   return state.fighters.filter(f => stand.aufstellung[String(f.id)]).map(f => ({
-    id: f.id, name: f.name, classId: f.classId, feld: { ...stand.aufstellung[String(f.id)] }, maxHp: einheiten.get(f.id)?.maxHp ?? 1,
+    id: f.id, name: f.name, classId: f.classId, lehrling: f.lehrling, feld: { ...stand.aufstellung[String(f.id)] },
+    maxHp: einheiten.get(f.id)?.maxHp ?? 1,
   }));
 }
 
 function ernstkampfStarten(el: HTMLElement): void {
   const state = gameState;
   if (!state || el.querySelector('.r-ov')) return;
-  const lage = versuchsLage(state);
+  const def = aktuelleStufe(state);
+  const lage = versuchsLage(state, Date.now(), def);
   if (!lage.moeglich) {
     zeichne(el);
     return;
@@ -924,7 +1061,7 @@ function ernstkampfStarten(el: HTMLElement): void {
     kaempfen(el);
     return;
   }
-  const kosten = lage.kosten.mat_tagstein ?? tagstein();
+  const kosten = lage.kosten.mat_tagstein ?? tagstein(def);
   const hat = state.globalStock.mat_tagstein ?? 0;
   const f = oeffneFenster(el, `<h2 class="r-fenster-titel">${t.rueckfrageTitel}</h2>
     <p class="r-rueckfrage">${esc(t.rueckfrage(kosten, hat))}</p>
@@ -941,8 +1078,9 @@ function ernstkampfStarten(el: HTMLElement): void {
 function kaempfen(el: HTMLElement): void {
   const state = gameState;
   if (!state) return;
-  const helden = teilnehmerBild(state);
-  const erg = ernstkampf(state);
+  const def = aktuelleStufe(state);
+  const helden = teilnehmerBild(state, def);
+  const erg = ernstkampf(state, Date.now(), def);
   if (!erg) {
     zeichne(el);
     return;
@@ -952,15 +1090,15 @@ function kaempfen(el: HTMLElement): void {
   speichern(true);
   aktualisiereErfolgKnoepfe(state);
   zeichne(el);
-  zeigeWiedergabe(el, erg.ergebnis, helden, 'ernst', () => nachDemKampf(el, erg, helden));
+  zeigeWiedergabe(el, erg.ergebnis, helden, 'ernst', def, () => nachDemKampf(el, erg, helden, def));
 }
 
 /** Nach der Wiedergabe: die Truhe öffnet sich (falls eine da ist), dann das Ergebnis */
-function nachDemKampf(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[]): void {
+function nachDemKampf(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[], def: RaidDef): void {
   const state = gameState;
   if (!state) return;
   if (erg.truhen.length === 0) {
-    zeigeErgebnis(el, erg, helden);
+    zeigeErgebnis(el, erg, helden, def);
     return;
   }
   const beute: Record<string, number> = {};
@@ -985,20 +1123,24 @@ function nachDemKampf(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[]
         // Neue Ausrüstung: die Werte auf der Bank und der Schlüssel des Kriegsrats (ratSchluessel) sind neu
         zeichne(el);
       }
-      zeigeErgebnis(el, erg, helden);
+      zeigeErgebnis(el, erg, helden, def);
     });
 }
 
 // ── Wiedergabe ──
 
 /**
- * Spielt einen Kampf Runde für Runde ab: Uhr (Zeiger auf der Spalte, Pendel zum Trupp, Glocke, Funken), Zenits
- * Leben, die Felder mit Treffern und Heilung, darunter die Laufzeile mit den Sätzen des Stadtschreibers.
- * `ernst`: am Ende geht es von selbst weiter (`fertig`), `probe`: bleibt stehen, bis jemand schliesst.
+ * Spielt einen Kampf Runde für Runde ab: Uhr (Zeiger auf der Spalte, auf Stufe II auch der Gegenzeiger, Pendel zum
+ * Trupp, Glocke, Funken), Zenits Leben, die Felder mit Treffern und Heilung, darunter die Laufzeile mit den Sätzen
+ * des Stadtschreibers. `ernst`: am Ende geht es von selbst weiter (`fertig`), `probe`: bleibt stehen, bis jemand
+ * schliesst.
  */
-function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art: 'ernst' | 'probe', fertig: () => void): void {
-  const def = ZENIT;
+function zeigeWiedergabe(
+  el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art: 'ernst' | 'probe', def: RaidDef, fertig: () => void,
+): void {
   const spalten = spaltenZahl(def);
+  const gegen = hatGegenzeiger(def);
+  const texte = stufenTexte(def);
   const proHeld = new Map(helden.map(h => [h.id, h]));
   const name = (id: number | undefined): string => (id === undefined ? '?' : proHeld.get(id)?.name ?? '?');
   const gang = (s: number): string => (s > 0 && s % SPALTEN_JE_TRUPP === 0 ? '<div></div>' : '');
@@ -1009,8 +1151,8 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
     for (let s = 0; s < spalten; s++) {
       const h = helden.find(x => x.feld.reihe === reihe && x.feld.spalte === s);
       gitter += gang(s) + (h
-        ? `<div class="r-wg-zelle besetzt" data-wg="${h.id}"><div class="r-bild" style="background-image:url('${heldBild(h.classId)}')"></div>`
-          + `<div class="r-name">${esc(h.name)}</div><div class="r-wg-hp"><i style="width:100%"></i></div></div>`
+        ? `<div class="r-wg-zelle besetzt" data-wg="${h.id}">${heldBildDiv(h)}`
+          + `<div class="${nameKlasse(h.name, def)}">${esc(h.name)}</div><div class="r-wg-hp"><i style="width:100%"></i></div></div>`
         : '<div class="r-wg-zelle"></div>');
     }
   }
@@ -1019,16 +1161,17 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
     <div class="r-wg-kopf"><span class="r-wg-art${art === 'probe' ? ' probe' : ''}">${art === 'probe' ? W.probelauf : W.ernstkampf}</span>
       <span class="r-wg-runde" data-wg-runde>${W.start}</span></div>
     <div class="r-wg-oben">
-      <div class="r-wg-uhr" data-wg-uhr>${zenitUhrSvg({ ...KURZ_VOR_ZWOELF, glocke: true, funken: true }, `r-wg-uhr-${art}`, t.uhr.vor)}</div>
+      <div class="r-wg-uhr" data-wg-uhr>${zenitUhrSvg({ ...uhrStellung(def, false), glocke: true, funken: true }, `r-wg-uhr-${art}`, texte.uhr.vor)}</div>
       <div>
-        <div class="r-wg-zenit-name"><span>${t.titel}</span><span data-wg-zenit>${zahl(def.werte.hp)}</span></div>
+        <div class="r-wg-zenit-name"><span>${texte.titel}</span><span data-wg-zenit>${zahl(def.werte.hp)}</span></div>
         <div class="r-wg-zenit-spur"><div class="r-wg-zenit-balken" data-wg-balken style="width:100%"></div></div>
         <div class="r-wg-legende"><span class="c-pendel">${ic('pendel')}${g.pendel}</span><span class="c-zeiger">${ic('zeiger')}${g.zeiger}</span>
+          ${gegen ? `<span class="c-gegen">${ic('gegen')}${g.gegenzeiger}</span>` : ''}
           <span class="c-glocke">${ic('glocke')}${g.glocke}</span><span class="c-funken">${ic('funken')}${g.funken}</span>
           <span class="rolle-heil">${ic('kreuz')}${g.heilung}</span></div>
       </div>
     </div>
-    <div class="r-wg-gitter">${gitter}</div>
+    <div class="r-wg-gitter${def.truppZahl === 3 ? ' r-drei' : ''}">${gitter}</div>
     <div class="r-wg-lauf" data-wg-lauf aria-live="polite"></div>
     <div class="r-fenster-knoepfe r-wg-knoepfe">
       <div class="r-wg-tempo">${[1, 2, 4].map(n => `<button type="button" class="r-zweit${tempo === n ? ' an' : ''}" data-tempo="${n}">${W.tempo(n)}</button>`).join('')}
@@ -1044,7 +1187,7 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
     timer = null;
   };
   const f = oeffneFenster(el, html, {
-    klasse: 'r-wg', label: W.dialog, hintergrund: false,
+    klasse: `r-wg${def.truppZahl === 3 ? ' r-drei' : ''}`, label: W.dialog, hintergrund: false,
     beimSchliessen: () => {
       halt();
       fertig();
@@ -1065,14 +1208,16 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
   const minute = hand('zu-minute');
   const stunde = hand('zu-stunde');
   const pendel = hand('zu-pendel');
+  const gegenHand = hand('zu-gegen');
   const stelle = (s: UhrStellung): void => {
     if (minute) minute.style.transform = `rotate(${s.minute}deg)`;
     if (stunde) stunde.style.transform = `rotate(${s.stunde}deg)`;
     if (pendel) pendel.style.transform = `rotate(${s.pendel}deg)`;
+    if (gegenHand && s.gegen !== undefined) gegenHand.style.transform = `rotate(${s.gegen}deg)`;
     uhrBox.classList.toggle('glocke', !!s.glocke);
     uhrBox.classList.toggle('funken', !!s.funken);
   };
-  stelle({ ...KURZ_VOR_ZWOELF, funken: false });
+  stelle({ ...uhrStellung(def, false), funken: false });
 
   const zellen = new Map<number, HTMLElement>();
   for (const z of Array.from(f.fenster.querySelectorAll<HTMLElement>('[data-wg]'))) zellen.set(Number(z.dataset.wg), z);
@@ -1086,20 +1231,24 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
     rundeEl.textContent = W.runde(rd.runde, regeln.mitternacht, zeit);
     rundeEl.classList.toggle('mittag', rd.runde >= regeln.mittagAb);
     for (const z of zellen.values()) {
-      z.classList.remove('wg-pendel', 'wg-zeiger', 'wg-glocke', 'wg-funken', 'wg-heil');
+      z.classList.remove('wg-pendel', 'wg-zeiger', 'wg-gegen', 'wg-glocke', 'wg-funken', 'wg-heil');
       for (const n of Array.from(z.querySelectorAll('.r-wg-zahl'))) n.remove();
     }
-    for (const k of Array.from(f.fenster.querySelectorAll('.r-wg-kopfzeile, .r-wg-reihe'))) k.classList.remove('an', 'durch');
+    for (const k of Array.from(f.fenster.querySelectorAll('.r-wg-kopfzeile, .r-wg-reihe'))) k.classList.remove('an', 'gegen', 'durch');
     const schaden = new Map<number, number>();
     const heilung = new Map<number, number>();
     const plus = (karte: Map<number, number>, id: number, wert: number): void => { karte.set(id, (karte.get(id) ?? 0) + wert); };
     const zeilen: string[] = [];
-    const uhr: UhrStellung = { minute: zeigerAufSpalte(zeigerSpalte(rd.runde, spalten), spalten), stunde: stundeAufRunde(rd.runde), pendel: 0 };
+    const uhr: UhrStellung = {
+      minute: zeigerAufSpalte(zeigerSpalte(rd.runde, spalten), spalten), stunde: stundeAufRunde(rd.runde), pendel: 0,
+      ...(gegen ? { gegen: zeigerAufSpalte(gegenzeigerSpalte(rd.runde, spalten), spalten) } : {}),
+    };
     for (const e of rd.ereignisse) {
       const treffer = e.treffer ?? [];
       switch (e.art) {
         case 'pendel':
-          uhr.pendel = e.trupp === 0 ? 18 : -18;
+          // Nach links oder rechts; mit drei Trupps hängt es für die Mitte gerade
+          uhr.pendel = def.truppZahl === 3 ? [18, 0, -18][e.trupp ?? 0] ?? 0 : e.trupp === 0 ? 18 : -18;
           for (const x of treffer) { markiere(x.heldId, 'wg-pendel'); plus(schaden, x.heldId, x.wert); }
           if (treffer.length > 0) zeilen.push(`<div>${esc(W.pendel(truppKlein(e.trupp ?? 0, def.truppZahl), trefferText(e)))}</div>`);
           break;
@@ -1108,11 +1257,17 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
           for (const x of treffer) { markiere(x.heldId, 'wg-zeiger'); plus(schaden, x.heldId, x.wert); }
           zeilen.push(`<div>${esc(W.zeiger(spaltenName(e.spalte ?? 0), trefferText(e)))}</div>`);
           break;
+        case 'gegenzeiger':
+          f.fenster.querySelector(`[data-wg-spalte="${e.spalte}"]`)?.classList.add('gegen');
+          for (const x of treffer) { markiere(x.heldId, 'wg-gegen'); plus(schaden, x.heldId, x.wert); }
+          zeilen.push(`<div>${esc(W.gegenzeiger(spaltenName(e.spalte ?? 0), trefferText(e)))}</div>`);
+          break;
         case 'durchschlag': {
           f.fenster.querySelector(`[data-wg-spalte="${e.spalte}"]`)?.classList.add('durch');
-          for (const x of treffer) { markiere(x.heldId, 'wg-zeiger'); plus(schaden, x.heldId, x.wert); }
+          for (const x of treffer) { markiere(x.heldId, e.gegen ? 'wg-gegen' : 'wg-zeiger'); plus(schaden, x.heldId, x.wert); }
           const werte = treffer.map(x => Math.round(x.wert));
-          if (werte.length > 0) zeilen.push(`<div>${esc(W.durchschlag(spaltenName(e.spalte ?? 0), Math.min(...werte), Math.max(...werte)))}</div>`);
+          const zeile = e.gegen ? W.durchschlagGegen : W.durchschlag;
+          if (werte.length > 0) zeilen.push(`<div>${esc(zeile(spaltenName(e.spalte ?? 0), Math.min(...werte), Math.max(...werte)))}</div>`);
           break;
         }
         case 'glocke':
@@ -1177,8 +1332,8 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
     timer = null;
     index++;
     if (index >= r.verlauf.length) {
-      // Zenit auf zwölf, wenn er fiel; am Ende geht der Ernstkampf von selbst zum Ergebnis
-      if (r.sieg) stelle(AUF_ZWOELF);
+      // Zenit auf zwölf (Stufe II: angehalten), wenn er fiel; am Ende geht der Ernstkampf von selbst zum Ergebnis
+      if (r.sieg) stelle(uhrStellung(def, true));
       if (art === 'ernst') timer = setTimeout(() => f.zu(), (RUNDE_MS * 1.3) / tempo);
       return;
     }
@@ -1215,27 +1370,32 @@ function dingHtml(id: string, menge: number, hinweis?: string): string {
     + `${menge > 1 ? `${menge}× ` : ''}${esc(name)}${hinweis ? ` <small class="r-mut">${esc(hinweis)}</small>` : ''}</span>`;
 }
 
-function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[]): void {
+function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[], def: RaidDef): void {
   const state = gameState;
   if (!state) return;
   const r = erg.ergebnis;
-  const def = ZENIT;
+  const texte = stufenTexte(def);
   const namen = Object.fromEntries(helden.map(h => [h.id, h.name])) as Record<number, string>;
   const name = (id: number): string => namen[id] ?? '?';
-  const stand = raidStand(state);
-  const lage = versuchsLage(state);
+  const stand = raidStand(state, Date.now(), def);
+  const lage = versuchsLage(state, Date.now(), def);
 
   const kopf = r.sieg
-    ? `<div class="r-erg-titel">${E.sieg}</div><div class="r-erg-zeile">${E.siegZeile(r.runden, r.stehend, r.helden)}</div>`
+    ? `<div class="r-erg-titel">${texte.sieg}</div><div class="r-erg-zeile">${E.siegZeile(r.runden, r.stehend, r.helden)}</div>`
     : `<div class="r-erg-titel niederlage">${E.niederlage(restProzent(r.zenitRest))}</div><div class="r-erg-zeile">${E.niederlageZeile(r.runden, r.stehend, r.helden)}</div>`;
   const vorher = !r.sieg && erg.bestVorher !== null
     ? `${E.vorher(restProzent(erg.bestVorher))}${erg.neuerBest ? ` <span class="r-erg-best">${E.neuerBest}</span>` : ''} · ` : '';
-  const kosten = erg.frei ? E.frei(lage.freiUebrig, def.freieVersucheJeWoche) : E.bezahlt(erg.kosten.mat_tagstein ?? tagstein());
+  const kosten = erg.frei ? E.frei(lage.freiUebrig, def.freieVersucheJeWoche) : E.bezahlt(erg.kosten.mat_tagstein ?? tagstein(def));
 
-  // Der Schluss der Geschichte beim ersten Sieg
+  // Der Schluss der Geschichte beim ersten Sieg, und was er öffnet (Stufe II nach dem ersten Sieg auf Stufe I)
   let schluss = '';
   if (erg.ersterSieg) {
-    schluss = `<div class="r-erg-abschnitt">${geschichtsText(RAID_TEXTE.schluss)}<div class="gs-sig">${RAID_TEXTE.unterschrift}</div></div>`;
+    const naechste = RAID_STUFEN.find(d => d.freiNachRaid === def.id && raidOffen(state, d));
+    const neu = naechste
+      ? `<div class="r-erg-neu"><span>${esc(t.stufeNeu(stufenTexte(naechste).stufe, naechste.name))}</span>
+          <button type="button" class="r-klein-knopf" data-zur-stufe="${naechste.id}">${t.zurStufe(stufenTexte(naechste).stufe)}</button></div>`
+      : '';
+    schluss = `${neu}<div class="r-erg-abschnitt">${geschichtsText(texte.schluss)}<div class="gs-sig">${RAID_TEXTE.unterschrift}</div></div>`;
     // Gelesen erst, wenn der Raid auch zu sehen ist: sonst kommt der Schluss beim nächsten Hinaufsteigen (beimOeffnen)
     if (el.isConnected && el.getClientRects().length > 0) {
       stand.schlussGelesen = true;
@@ -1255,7 +1415,7 @@ function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[
       <div class="r-erg-truhe-text">${esc(truhe.text)}</div><div class="r-erg-dinge">${dinge}</div></div>`;
   }
   if (!lager) {
-    const satz = r.sieg ? t.nachWochensieg : r.zenitRest >= def.halbUnter ? E.keineTruheHalb : E.halbSchonGeholt;
+    const satz = r.sieg ? texte.nachWochensieg : r.zenitRest >= def.halbUnter ? texte.keineTruheHalb : texte.halbSchonGeholt;
     lager = `<p class="r-erg-truhe-text">${esc(satz)}</p>`;
   }
 
@@ -1279,11 +1439,11 @@ function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[
   const gefallen = r.gefallen.length > 0
     ? r.gefallen.map(x => `<div>${esc(E.gefallenZeile(name(x.heldId), x.ort, x.runde))}</div>`).join('')
     : `<div>${E.keinerGefallen}</div>`;
-  const ursache = hauptursache(r.gefallen, namen, r.mitternacht);
+  const ursache = hauptursache(r.gefallen, namen, r.mitternacht, def.regeln.gegenzeiger !== undefined);
   const chronik = r.ansagen.length > 0
     ? `<div class="r-erg-abschnitt"><h3>${E.chronikKopf}</h3>${r.ansagen.map(geschichtsText).join('')}<div class="gs-sig">${RAID_TEXTE.unterschrift}</div></div>`
     : '';
-  const nochmal = lage.frei ? E.nochmalFrei(lage.freiUebrig, def.freieVersucheJeWoche) : E.nochmalKosten(tagstein());
+  const nochmal = lage.frei ? E.nochmalFrei(lage.freiUebrig, def.freieVersucheJeWoche) : E.nochmalKosten(tagstein(def));
 
   const f = oeffneFenster(el, `
     <div class="r-erg-kopf">${kopf}<div class="r-erg-vorher">${vorher}${esc(kosten)}</div>
@@ -1305,7 +1465,10 @@ function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[
     if (ziel.closest('[data-erg-wg]')) {
       // Nie zwei Fenster übereinander: das Ergebnis geht zu und kommt nach der Wiedergabe wieder
       f.zu();
-      zeigeWiedergabe(el, r, helden, 'ernst', () => zeigeErgebnis(el, erg, helden));
+      zeigeWiedergabe(el, r, helden, 'ernst', def, () => zeigeErgebnis(el, erg, helden, def));
+    } else if (ziel.closest('[data-zur-stufe]')) {
+      f.zu();
+      stufeWechseln(el, ziel.closest<HTMLElement>('[data-zur-stufe]')!.dataset.zurStufe ?? '');
     } else if (ziel.closest('[data-nav-karte]')) {
       f.zu();
       navigateTo('dungeon');

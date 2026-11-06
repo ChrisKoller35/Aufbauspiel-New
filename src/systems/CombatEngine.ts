@@ -1,6 +1,6 @@
 import { ExpeditionRun, CombatUnit, EncounterRoom, FortificationState } from '../models/ExpeditionRun';
 import { GuildFighter } from '../models/GuildRoster';
-import { ENEMY_DEFS } from '../data/enemies';
+import { ENEMY_DEFS, MASCHINE_BEVORZUGT } from '../data/enemies';
 import { LOOT_TABLE_DEFS } from '../data/lootTables';
 import { CLASS_DEFS } from '../data/classes';
 import { ITEM_DEFS } from '../data/items';
@@ -478,15 +478,15 @@ export class CombatEngine {
           }
         } else {
           // ── Gegner greift Party oder Kriegsmaschine an ──
-          let targets: CombatUnit[];
-          if (unit.prefersWarMachineTarget && warMachine && warMachine.hp > 0) {
-            targets = [warMachine];
-          } else {
-            targets = run.party.filter(u => u.hp > 0);
-            // Fallback: greift War Machine wenn Party tot (sollte nicht passieren, aber Sicherheit)
-            if (targets.length === 0 && warMachine && warMachine.hp > 0) {
-              targets = [warMachine];
-            }
+          // Schützen der Belagerung (prefersWarMachineTarget) zielen in zwei von drei Fällen nur auf die
+          // Kriegsmaschine, solange sie steht (MASCHINE_BEVORZUGT), sonst wie alle anderen auf die Helden.
+          // Ohne lebende Helden bleibt nur die Maschine (sollte nicht vorkommen, aber Sicherheit).
+          const lebendeHelden = run.party.filter(u => u.hp > 0);
+          const maschine = warMachine && warMachine.hp > 0 ? warMachine : null;
+          let targets: CombatUnit[] = lebendeHelden;
+          if (maschine && (lebendeHelden.length === 0
+            || (unit.prefersWarMachineTarget && rng.chance(MASCHINE_BEVORZUGT)))) {
+            targets = [maschine];
           }
           if (targets.length === 0) continue;
 
@@ -701,6 +701,8 @@ export class CombatEngine {
       lootTableId: null,
       spriteKey: cls?.spriteKey,
       specialEffects,
+      // nur beim Lehrling, damit Kampfeinheiten (und der Schlüssel des Kriegsrats) sonst gleich bleiben
+      ...(fighter.lehrling ? { lehrling: true } : {}),
     };
   }
 
@@ -749,7 +751,7 @@ export class CombatEngine {
       lootTableId: def.lootTableId,
       spriteKey: def.spriteKey,
       defId: enemyId,
-      // Fernkämpfer der Belagerung schiessen zuerst auf die Kriegsmaschine
+      // Fernkämpfer der Belagerung zielen meist auf die Kriegsmaschine (MASCHINE_BEVORZUGT)
       ...(def.prefersWarMachineTarget ? { prefersWarMachineTarget: true } : {}),
     };
   }

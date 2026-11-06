@@ -81,9 +81,28 @@
 /* Schon in der Gilde: nur das Bild tritt zurück, die Schrift bleibt gut lesbar */
 .kt-karte.in-gilde .kt-bild::before { filter: brightness(.7); }
 
+/* Lehrlinge (KlassenTafel.lehrlingTafelHtml): eigener Abschnitt, Bild der Klasse gespiegelt (.lehrling-bild) */
+.kt-lehrlinge { margin: 4px 0 22px; }
+.kt-titel {
+  margin: 0 18px 6px; font-family: 'Cinzel', serif; font-size: 1.05rem; color: var(--gold); letter-spacing: 1px;
+}
+.kt-unter {
+  display: block; margin-top: 2px; font-family: inherit; font-size: 0.72rem; letter-spacing: 1px;
+  text-transform: uppercase; color: var(--gl);
+}
+.kt-zitat { font-size: 0.85rem; font-style: italic; color: var(--txt); }
+/* Das ::before des Lehrlings trägt sein gespiegeltes Bild (--held-bild, .lehrling-bild in magic-city.css). Die
+   Regeln für gesperrt / in der Gilde oben setzen dort background: inherit und nähmen ihm das Bild: hier zurück.
+   Wartet er noch auf seinen Meister, dimmt nur das Bild, nie der Name darauf (wie bei gesperrt). */
+.kt-karte.kt-lehrling .kt-bild.lehrling-bild::before { background-image: var(--held-bild); }
+.kt-karte.wartet .kt-bild::before { filter: grayscale(.7) brightness(.55); }
+.kt-lehrling .hcard-footer { margin-top: auto; border: none; border-top: 1px solid var(--bdr); border-radius: 0; }
+.kt-lehrling .btn-hire { min-height: 44px; min-width: 44px; }
+
 @media (max-width: 700px) {
   .lehrbuch { margin: 0 10px 14px; padding: 12px; }
   .lb-lbl { min-width: 100%; }
   .lb-wahl { flex: 1 1 140px; }
   .kt-kopf { margin: 0 10px 10px; }
+  .kt-titel { margin: 0 10px 6px; }
 }

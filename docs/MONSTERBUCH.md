@@ -139,21 +139,29 @@ auch `drainAirAmount` (je Fähigkeit) und `prefersWarMachineTarget` (je Gegner) 
 - Die Druckwelle des Leviathans nimmt zum Schaden 18 Luft aus dem Luftschild. Das Fenster sagt
   «Trifft alle Helden mit dem 0,9-fachen Schaden eines normalen Angriffs und zieht 18 Luft aus dem
   Luftschild.»
-- Mauerschütze, Armbrustschütze und Kampfmagier treffen im Belagerungsraum mit Grundangriff und
-  Fähigkeiten nur die Kriegsmaschine, solange sie steht (auch Schnellfeuer trifft dann nur sie),
-  danach und ohne Kriegsmaschine die Helden. Das Fenster hängt an («…; neben einer Kriegsmaschine
-  trifft er nur sie, solange sie steht.»), die Notiz zu den Stadtmauern sagt es auch.
+- Mauerschütze, Armbrustschütze und Kampfmagier zielen im Belagerungsraum bevorzugt auf die
+  Kriegsmaschine (seit 06.11.2026, Entscheidung «nur bevorzugen»): Jeder Angriff, Grundangriff oder
+  Fähigkeit, gilt in zwei von drei Fällen nur ihr, solange sie steht (`MASCHINE_BEVORZUGT` in
+  `enemies.ts`, ein Wurf je Angriff), sonst den Helden wie bei jedem anderen Gegner; Schnellfeuer
+  trifft dann alle Helden. Danach und ohne Kriegsmaschine gelten alle Angriffe den Helden. Das
+  Fenster hängt an («…; neben einer Kriegsmaschine zielt er in zwei von drei Fällen nur auf sie,
+  solange sie steht.»), die Notiz zu den Stadtmauern sagt es auch. Vom 05.11. bis 06.11. trafen
+  sie nur die Kriegsmaschine; die Helden waren vor ihnen sicher, darum die Änderung.
 
 Die Siegquoten der Musterteams in Meerestiefen, Stadtmauern und Festung bleiben dabei bei 100 %
 (200 Läufe je Team und Spielweise, auch mit Katapult oder Kanone); spürbar ist es an der Luft am
 Ende der Meerestiefen (im Mittel 13 bis 30 Luft weniger) und am Katapult (es endet mit 80 bis 98 %
-statt 100 % Leben). Die Tests «faehigkeitText sagt, was der Kampf tut», der Test der Notiz und
+statt 100 % Leben). Mit «nur bevorzugen» (06.11.) bleiben die Siegquoten in Stadtmauern und Festung
+bei 100 % (200 Läufe je Team und Spielweise, ohne, mit Katapult und mit Kanone); das Katapult endet mit
+86 bis 99 % statt 80 bis 98 % Leben, die Helden mit gleich viel Leben wie vorher (90 bis 100 %). Die
+Tests «faehigkeitText sagt, was der Kampf tut», der Test der Notiz und
 `tests/gegnerFaehigkeiten.test.ts` prüfen beide Felder.
 
 Tests «Fähigkeiten im Fenster = Fähigkeiten im Kampf»: Für jeden erreichbaren Gegner kämpft ein
 unverwundbares Team gegen ihn (`processCombat`, für die fünf Gegner aus Belagerungsräumen auch
 `processFortificationCombat` neben einem Katapult), verglichen werden die Runden jedes Einsatzes
-und das Kampfprotokoll (Zahl der Treffer, keiner auf das Katapult, Heilmenge, Angriff und Dauer,
+und das Kampfprotokoll (Zahl der Treffer, keiner auf das Katapult, bei den drei Schützen je Einsatz
+nur das Katapult oder die Helden wie ohne Katapult, Heilmenge, Angriff und Dauer,
 Luft in beide Richtungen). Was keiner der fünf Gegner aus Räumen um eine Befestigung tut (nur dort
 kämpfen, genau in Runde 20 oder erst danach einsetzen), prüft der Test «Einsätze im Fenster …» mit
 erfundenen Abklingzeiten, darunter sechs Fähigkeiten, deren letzte erst in Runde 24 an die Reihe
@@ -267,7 +275,7 @@ nicht auf der Seite steht.
 | `TAKT` | «jede vierte Runde», «nur in Runde 3 und 14» | Runden jedes Einsatzes im echten Kampf; Abstand und genannte Runden passen dazu |
 | `WUT` | «ab Runde 8 wütend, Angriff mal 1,5, Tempo mal 1,3»; Sonnenuhr «dreimal vorgestellt … ab Runde 4» | `bossWut` und `wutAbRunde` mit den Sonnenuhren der Route |
 | `WIRKUNG` | «3 Angriff mehr für drei Runden», «10 Luft» | dieselben Zahlen in der Zeile des Kampfprotokolls beim ersten Einsatz |
-| `KRIEGSMASCHINE` | «schiessen nur auf die Kriegsmaschine, solange sie steht» | `processFortificationCombat` mit unverwundbarem Katapult: Treffer auf das Katapult, keiner auf Helden |
+| `KRIEGSMASCHINE` | «zielen in zwei von drei Fällen nur auf die Kriegsmaschine, solange sie steht» | `processFortificationCombat` mit unverwundbarem Katapult, 30 Runden: jeder Angriff trifft nur das Katapult oder nur Helden, das Katapult in mehr als der Hälfte und weniger als 85 % der Runden |
 | `JE_LAUF` | «Sechs Giftzahnspinnen je Lauf», «kommen je nur einmal vor», «Von beiden kommen hier je drei», «mindestens zweimal je Lauf» | `begegnungenJeLauf`: so oft steht der Gegner in den Räumen der Route; bei «mindestens» und «keine … seltener als» keiner seltener |
 
 Die Anzahl liest `JE_LAUF` aus dem Text: «einmal», «zweimal» …, sonst die Zahl als Wort oder Ziffer
@@ -283,7 +291,7 @@ Lichtung) und «Einen Boss gibt es nicht» (Abyssale Tiefe, Schattenkatakomben).
 fängt die Probe nicht, ebenso wenig eine Anzahl ohne die Wörter oben («Es kommen drei von ihnen»).
 
 Die Morgentor-Notiz nennt die Sonnenuhr (Sunnas Wut bis Runde 4). Die Stadtmauern-Notiz sagt, dass
-Mauerschütze und Armbrustschütze nur auf die Kriegsmaschine schiessen, solange sie steht (siehe
+Mauerschütze und Armbrustschütze in zwei von drei Fällen nur auf die Kriegsmaschine zielen, solange sie steht (siehe
 «Luftentzug und Kriegsmaschine»).
 
 ## Bildschirm

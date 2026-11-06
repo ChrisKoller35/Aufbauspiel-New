@@ -1,12 +1,20 @@
 // ─── Magic City – Raids ganz oben über der Dungeon-Karte ─────────
-// Ein Raid ist ein einziger grosser Kampf mit 4 bis 10 Helden auf einem Feld aus Reihen und Spalten, in
+// Ein Raid ist ein einziger grosser Kampf mit vielen Helden auf einem Feld aus Reihen und Spalten, in
 // Trupps geteilt. Der Boss zielt nicht auf Helden, er trifft Orte (systems/RaidKampf.ts). Kein RouteDef und
-// kein EnemyDef: Sets, Saal, Monsterbuch und Klang hängen nicht daran. Regeln und Eichung: docs/RAID.md.
+// kein EnemyDef: Sets, Saal, Monsterbuch und Klang hängen nicht daran. Es gibt zwei Stufen: «Über dem Tag»
+// (Zenit, 4 bis 10 Helden, zwei Trupps) und, nach dem ersten Sieg dort, «Die dreizehnte Stunde» (Zenit mit
+// einem Gegenzeiger, 10 bis 15 Helden, drei Trupps). Regeln und Eichung: docs/RAID.md.
 // ─────────────────────────────────────────────────────────────────
 
 export interface RaidRegeln {
   /** Zeiger: Wucht = Angriff × zeiger, geteilt durch die lebenden Helden der Spalte */
   zeiger: number;
+  /**
+   * Gegenzeiger (fehlt: gibt es nicht): ein zweiter Zeiger, der rückwärts läuft, Runde 1 die letzte Spalte, Runde 2
+   * die vorletzte … Sonst wie der Zeiger: Wucht = Angriff × gegenzeiger, geteilt durch die lebenden Helden der Spalte,
+   * leere Spalte → Durchschlag. Stehen beide auf derselben Spalte, trifft sie beide, zuerst der Zeiger.
+   */
+  gegenzeiger?: number;
   /** Leere Spalte: Wucht = Angriff × durchschlag auf jeden lebenden Helden */
   durchschlag: number;
   /** Glocke: Wucht = Angriff × glocke auf jeden Helden der vollsten Reihe … */
@@ -70,7 +78,9 @@ export interface RaidDef {
   ersterSiegBeute: string;
   /** Offen, sobald dieser Dungeon einmal bezwungen ist */
   freiAb: string;
-  /** Lage des Knotens auf der Dungeon-Karte */
+  /** Dazu erst nach dem ersten Sieg in diesem Raid (Stufe II nach Stufe I) */
+  freiNachRaid?: string;
+  /** Lage des Knotens auf der Dungeon-Karte (alle Stufen teilen sich den einen Knoten) */
   karte: { x: number; y: number; radius: number };
 }
 
@@ -124,10 +134,63 @@ export const RAID_DEFS: Record<string, RaidDef> = {
     freiAb: 'tagespfeiler',
     karte: { x: 390, y: -4120, radius: 72 },
   },
+  // Stufe II: derselbe Zenit mit Ersatz-Unruh und Gegenzeiger, drei Trupps auf neun Spalten (A bis I). Eigene Woche,
+  // eigene freie Ernstkämpfe, eigene Truhen; offen nach dem ersten Sieg auf Stufe I. Eichung: docs/RAID.md.
+  dreizehn: {
+    id: 'dreizehn',
+    name: 'Die dreizehnte Stunde',
+    bossName: 'Zenit, aufgezogen',
+    werte: { hp: 15250, atk: 110, def: 12, spd: 1.0, critChance: 0.1, critMult: 1.5 },
+    regeln: {
+      zeiger: 1.0, gegenzeiger: 1.0, durchschlag: 0.6, glocke: 1.0, glockeAlle: 4, funken: 1.0, funkenAlle: 3,
+      mittagAb: 12, mittagMal: 1.5, mitternacht: 24, heilFaktor: 2, heilUnter: 0.9, flaechenschutz: 0.7,
+    },
+    reihen: 3,
+    truppZahl: 3,
+    minHelden: 10,
+    maxHelden: 15,
+    freieVersucheJeWoche: 3,
+    kostenJeVersuch: { mat_tagstein: 10 },
+    xp: { sieg: 450, niederlage: 150 },
+    halbUnter: 0.5,
+    truhen: {
+      halb: {
+        name: 'Was der Gegenzeiger verlor',
+        text: 'Zenit kam unter die Hälfte, und der Gegenzeiger hat dabei etwas verloren, rückwärts. Jorinde hat es '
+          + 'aufgehoben, bevor er es wieder einsammelt.',
+        gold: 250,
+        wuerfeAus: [],
+        setTeil: { stufeVon: 6, stufeBis: 10, getrageneAusJederStufe: false, sonstJedeStufe: false },
+        dinge: { mat_tagstein: 8 },
+        ersatz: { crystal_shard: 12 },
+      },
+      sieg: {
+        name: 'Die dreizehnte Truhe',
+        text: 'Hinter dem zweiten Zifferblatt steht eine Truhe, die es um zwölf noch nicht gab. Orm sagt, sie sei schon '
+          + 'offen gewesen. Sie war es nicht.',
+        // je Tabelle sechsmal: deutlich mehr als Zenits Truhe (viermal), dazu Set-Teile der Stufen 10 bis 12
+        wuerfeAus: [
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+        ],
+        setTeil: { stufeVon: 10, stufeBis: 12, getrageneAusJederStufe: true, sonstJedeStufe: true },
+        dinge: { mat_tagstein: 15, crystal_shard: 25 },
+        ersatz: { crystal_shard: 30 },
+      },
+    },
+    ersterSiegBeute: 'die_unruh',
+    freiAb: 'tagespfeiler',
+    freiNachRaid: 'zenit',
+    karte: { x: 390, y: -4120, radius: 72 },
+  },
 };
 
-/** Der eine Raid, den es heute gibt */
+/** Stufe I: «Über dem Tag» (der Spielstand heisst dafür weiter `raid`) */
 export const ZENIT = RAID_DEFS.zenit;
+/** Stufe II: «Die dreizehnte Stunde» (Spielstand: `raidStufen.dreizehn`) */
+export const DREIZEHN = RAID_DEFS.dreizehn;
+/** Die Stufen in ihrer Reihenfolge (Umschalter im Raid-Bildschirm, Knoten auf der Karte) */
+export const RAID_STUFEN: RaidDef[] = [ZENIT, DREIZEHN];
 
 /** Teamwirkungen, die nur im eigenen Trupp wirken (Alrunas Liste nennt sie je Trupp) */
 export const TRUPP_WIRKUNGEN: Record<string, string> = {
@@ -145,19 +208,28 @@ export const TRUPP_WIRKUNGEN: Record<string, string> = {
 };
 
 const SPALTEN_NAMEN = 'ABCDEFGHIJKL';
-/** «A» bis «F» */
+/** «A» bis «F» (Stufe II: bis «I») */
 export function spaltenName(spalte: number): string {
   return SPALTEN_NAMEN[spalte] ?? '?';
 }
-/** «Links», «Rechts» (mehr Trupps im Ausbau: «Mitte») */
+/** «Links», «Rechts»; mit drei Trupps «Links», «Mitte», «Rechts» */
 export function truppName(trupp: number, truppZahl = 2): string {
   if (truppZahl === 2) return trupp === 0 ? 'Links' : 'Rechts';
   return ['Links', 'Mitte', 'Rechts', 'Aussen'][trupp] ?? `Trupp ${trupp + 1}`;
 }
-/** «links», «rechts» für Sätze */
+/** «links», «rechts» für Sätze («Pendel links»); die Mitte bleibt ein Hauptwort («Pendel Mitte») */
 export function truppKlein(trupp: number, truppZahl = 2): string {
-  return truppName(trupp, truppZahl).toLowerCase();
+  const name = truppName(trupp, truppZahl);
+  return name === 'Mitte' ? name : name.toLowerCase();
 }
+/** «nach links», «in die Mitte», «nach rechts» */
+export function truppRichtung(trupp: number, truppZahl = 2): string {
+  const name = truppName(trupp, truppZahl);
+  return name === 'Mitte' ? 'in die Mitte' : `nach ${name.toLowerCase()}`;
+}
+/** «Runde 5, 14 und 23» ohne das Wort «Runde» */
+export const rundenListe = (runden: number[]): string =>
+  runden.length <= 1 ? String(runden[0] ?? '') : `${runden.slice(0, -1).join(', ')} und ${runden[runden.length - 1]}`;
 
 /** Was ein Held hinterlassen hat, nach Klasse (Alrunas Liste: «Wir hatten auch einmal … vorn») */
 function vorigeNachKlasse(classId: string): string {
@@ -200,6 +272,10 @@ export const RAID_TEXTE = {
     aufgezogen: 'Zenit hat sich wieder aufgezogen',
     zwoelf: 'Zenit steht auf zwölf',
     tooltip: 'Zenit, das Uhrwerk über dem Tag. Ein Kampf für bis zu zehn Helden.',
+    /** Sobald Stufe II offen ist */
+    tooltipBeide: 'Zenit, das Uhrwerk über dem Tag. Stufe I für bis zu zehn Helden, Stufe II für bis zu fünfzehn.',
+    /** Zweite Zeile am Knoten, sobald Stufe II offen ist */
+    stufeZeile: (stufe: string, zeile: string) => `Stufe ${stufe} · ${zeile}`,
     leiter: 'Jorindes Leiter. Zehn Sprossen.',
     truhenPunkt: 'Diese Woche wartet noch eine Truhe.',
     zu: 'Erst die Pfeiler des Tages',
@@ -231,10 +307,34 @@ export const RAID_TEXTE = {
       + `Wir hatten auch einmal ${vorigeNachKlasse(classId)} vorn. Einmal.`,
     pendelViele: (seite: string, n: number) => `Vorn ${seite} stehen ${n}. Das Pendel trifft jeden davon.`,
     pendelLeer: (seite: string, andere: string) => `Trupp ${seite} ist leer. Das Pendel schlägt dann jede Runde ${andere}.`,
+    /** Mit drei Trupps: Der leere Trupp gibt seine Pendelrunden an den nächsten ab («nach rechts», «in die Mitte») */
+    pendelLeerWeiter: (seite: string, wohin: string, mal: number) =>
+      `Trupp ${seite} ist leer. Das Pendel nimmt seine Runden dann mit, ${wohin}, und dort schlägt es `
+      + `${mal >= 3 ? 'dreimal' : 'doppelt'} so oft.`,
     zeigerOk: 'Jede Spalte ist besetzt. Der Zeiger findet überall jemanden.',
     zeigerLeer: (spalte: string, runden: number[]) =>
       `Spalte ${spalte} ist leer. Dort schlägt der Zeiger durch, auf alle: Runde ${runden.join(', ')}.`,
     zeigerEinzeln: (spalte: string, name: string) => `Spalte ${spalte} trägt nur ${name}. Fällt ${name}, steht ${spalte} leer.`,
+    // Mit Gegenzeiger (Stufe II): beide Zeiger und ihre Runden, und die Spalte, auf der sie sich treffen
+    zeigerOkBeide: 'Jede Spalte ist besetzt. Zeiger und Gegenzeiger finden überall jemanden.',
+    zeigerLeerBeide: (spalte: string, zeiger: number[], gegen: number[]) =>
+      `Spalte ${spalte} ist leer. Dort schlagen beide durch, auf alle: der Zeiger in Runde ${rundenListe(zeiger)}, `
+      + `der Gegenzeiger in Runde ${rundenListe(gegen)}.`,
+    zeigerEinzelnBeide: (spalte: string, name: string, zeiger: number[], gegen: number[]) =>
+      `Spalte ${spalte} trägt nur ${name}, gegen den Zeiger in Runde ${rundenListe(zeiger)} und den Gegenzeiger in Runde `
+      + `${rundenListe(gegen)}. Fällt ${name}, steht ${spalte} leer.`,
+    treffpunktLeer: (spalte: string, runden: number[]) =>
+      `Auf Spalte ${spalte} treffen sich die Zeiger, in Runde ${rundenListe(runden)}, und dort steht niemand. Dann schlagen `
+      + 'beide durch, auf alle, zweimal in derselben Runde.',
+    treffpunktEinzeln: (spalte: string, runden: number[], name: string) =>
+      `Auf Spalte ${spalte} treffen sich die Zeiger, in Runde ${rundenListe(runden)}. Dort steht nur ${name} und trägt beide. `
+      + `Fällt ${name} unter dem ersten, schlägt der zweite durch.`,
+    treffpunktZerbrechlich: (spalte: string, runden: number[], name: string) =>
+      `Auf Spalte ${spalte} treffen sich die Zeiger, in Runde ${rundenListe(runden)}. ${name} hält ab Mittag keine zwei `
+      + 'solchen Runden.',
+    treffpunktOk: (spalte: string, runden: number[], namen: string[]) =>
+      `Auf Spalte ${spalte} treffen sich die Zeiger, in Runde ${rundenListe(runden)}. `
+      + (namen.length === 1 ? `${namen[0]} trägt dort beide allein und hält es aus.` : `Dort teilen sich ${liste(namen)} beide.`),
     glockeOk: (reihe: number, namen: string[]) => `Die Glocke schlägt in Reihe ${reihe}: ${liste(namen)}.`,
     glockeVoll: (reihe: number, namen: string[]) =>
       `Die Glocke schlägt in Reihe ${reihe}, dort stehen ${namen.length}: ${liste(namen)}. Sie zählt gern.`,
@@ -270,6 +370,7 @@ export const RAID_TEXTE = {
   ort: {
     pendel: (seite: string) => `Pendel (Trupp ${seite})`,
     zeiger: (spalte: string) => `Zeiger (Spalte ${spalte})`,
+    gegenzeiger: (spalte: string) => `Gegenzeiger (Spalte ${spalte})`,
     durchschlag: (spalte: string) => `Durchschlag (Spalte ${spalte} leer)`,
     glocke: (reihe: number) => `Glocke (Reihe ${reihe})`,
     funken: (name: string) => `Funken (um ${name})`,
@@ -283,9 +384,16 @@ export const RAID_TEXTE = {
       + 'und bei uns war dort am meisten los.',
     zeiger: (spalte: string, name: string) => `Der Zeiger drückte Spalte ${spalte}, und ${name} trug sie allein.`,
     zeigerViele: (spalte: string) => `Der Zeiger drückte Spalte ${spalte}, und dort stand zu wenig, um ihn zu tragen.`,
+    gegenzeiger: (spalte: string, name: string) => `Der Gegenzeiger drückte Spalte ${spalte}, und ${name} trug sie allein. `
+      + 'Er kam von der anderen Seite, wie immer.',
+    gegenzeigerViele: (spalte: string) => `Der Gegenzeiger drückte Spalte ${spalte}, und dort stand zu wenig, um ihn zu `
+      + 'tragen. Rückwärts ist er nicht leichter.',
     durchschlag: (spalte: string) => `Spalte ${spalte} stand leer, und der Zeiger ging durch alle. Leere Spalten mag er am liebsten.`,
-    pendel: (seite: string, k: number) => `Das Pendel traf die Front ${seite} ${k}-mal. Am Ende stand dort niemand mehr, `
-      + 'der dafür gebaut war.',
+    /** Stufe II: Auf einer leeren Spalte schlagen beide Zeiger durch; welcher es war, sagt der Satz nicht */
+    durchschlagBeide: (spalte: string) => `Spalte ${spalte} stand leer, und wer von den beiden Zeigern dort vorbeikam, ging `
+      + 'durch alle. Leere Spalten mögen beide am liebsten.',
+    pendel: (seite: string, k: number) => `Das Pendel traf die Front ${seite === 'Mitte' ? 'in der Mitte' : seite} ${k}-mal. `
+      + 'Am Ende stand dort niemand mehr, der dafür gebaut war.',
     funken: (name: string) => `Die Funken trafen ${name} und wer daneben stand. Danach stand niemand mehr daneben.`,
     rest: (name: string) => `${name} fiel am Rundenende. Das System hat es trotzdem Zenit angeschrieben.`,
     mitternacht: 'Mitternacht. Der Tag ist um, und Zenit stellt die Gilde vor die Tür, wie man Stühle hochstellt.',
@@ -300,6 +408,8 @@ export const RAID_TEXTE = {
     durchschlagLeer: (spalte: string) => `Spalte ${spalte} war leer. Der Zeiger hat das als Einladung verstanden.`,
     durchschlagGefallen: (name: string, spalte: string) => `${name} fiel, und Spalte ${spalte} stand leer. Der Zeiger merkt `
       + 'so etwas sofort.',
+    /** Stufe II: Zeiger und Gegenzeiger stehen auf derselben Spalte */
+    dreizehn: (spalte: string) => `Es schlägt dreizehn: Beide Zeiger stehen auf Spalte ${spalte}. Zenit tut, als sei das Absicht.`,
     glocke: (reihe: number, n: number) => `Die Glocke schlägt, wo am meisten los ist. In Reihe ${reihe} standen ${n}. Sie hat `
       + 'nachgezählt.',
     funken: (name: string, nachbarn: string[]) => `Zenit merkt sich, wer ihm am meisten wehtut. ${name} hat gewonnen.`
@@ -417,12 +527,28 @@ export const RAID_TEXTE = {
     freiWert: (frei: number, max: number) => `${frei} von ${max}`,
     freiDanach: (kosten: number) => `diese Woche · danach je ${kosten}`,
     lager: (n: number) => `Tagstein · im Lager ${n}`,
-    rundeTitel: (runde: number, spalte: string, seite: string, extra: string[]) =>
-      `Runde ${runde}: Zeiger ${spalte}${seite ? `, Pendel ${seite}` : ''}${extra.length > 0 ? `, ${extra.join(', ')}` : ''}`,
+    rundeTitel: (runde: number, spalte: string, seite: string, extra: string[], gegen?: string) =>
+      `Runde ${runde}: Zeiger ${spalte}${gegen ? `, Gegenzeiger ${gegen}` : ''}${seite ? `, Pendel ${seite}` : ''}`
+      + `${extra.length > 0 ? `, ${extra.join(', ')}` : ''}`,
+    /** Stufe II: Runde, in der beide Zeiger auf derselben Spalte stehen (Markierung in der Rundenleiste) */
+    dreizehnMarke: 'es schlägt dreizehn',
     legende: {
       funken: 'Funken', glocke: 'Glocke', zeiger: 'Zeiger', pendel: 'Pendel', seitenLang: 'links / rechts', seitenKurz: 'l / r',
       mittagLang: 'ab Mittag × 1,5', mittagKurz: 'Mittag × 1,5', heilung: 'Heilung',
+      gegenzeiger: 'Gegenzeiger', seitenDreiLang: 'links / Mitte / rechts', seitenDreiKurz: 'l / m / r',
+      dreizehnLang: 'beide Zeiger auf einer Spalte', dreizehnKurz: 'dreizehn',
     },
+    /** Umschalter zwischen den Stufen */
+    stufen: 'Stufe',
+    stufenNav: 'Stufen des Raids',
+    stufeKnopf: (stufe: string, name: string) => `Stufe ${stufe} · ${name}`,
+    stufeHelden: (min: number, max: number) => `${min}–${max} Helden`,
+    stufeFrei: (frei: number, max: number) => `Frei: ${frei} von ${max} diese Woche`,
+    stufeKosten: (kosten: number) => `Ernstkampf je ${kosten} Tagstein`,
+    /** Am Umschalter: eine offene Stufe, auf der noch niemand war */
+    stufeNeuMarke: 'neu',
+    stufeNeu: (stufe: string, name: string) => `Neu offen: Stufe ${stufe}, «${name}»`,
+    zurStufe: (stufe: string) => `Zu Stufe ${stufe}`,
     truppZeile: (n: number, heiler: string[]) =>
       `${n === 1 ? '1 Held' : `${n} Helden`} · ${heiler.length > 0 ? `Heiler: ${heiler.join(', ')}` : 'kein Heiler'}`,
     spalteNur: (name: string) => `nur ${name}`,
@@ -487,8 +613,11 @@ export const RAID_TEXTE = {
     zeiten: { vormittag: 'Vormittag', mittag: 'Mittag', nachmittag: 'Nachmittag' },
     pendel: (seite: string, treffer: string) => `Pendel ${seite}: ${treffer}`,
     zeiger: (spalte: string, treffer: string) => `Zeiger ${spalte}: ${treffer}`,
+    gegenzeiger: (spalte: string, treffer: string) => `Gegenzeiger ${spalte}: ${treffer}`,
     durchschlag: (spalte: string, min: number, max: number) =>
       `Durchschlag ${spalte}: alle ${min === max ? `−${min}` : `−${min} bis −${max}`}`,
+    durchschlagGegen: (spalte: string, min: number, max: number) =>
+      `Durchschlag ${spalte}, Gegenzeiger: alle ${min === max ? `−${min}` : `−${min} bis −${max}`}`,
     glocke: (reihe: number, treffer: string) => `Glocke, Reihe ${reihe}: ${treffer}`,
     funken: (treffer: string) => `Funken: ${treffer}`,
     heilung: (heiler: string, name: string, n: number) => `${heiler} heilt ${name} +${n}`,
@@ -518,3 +647,164 @@ export const RAID_TEXTE = {
     text: 'Zum ersten Sieg: Was Zenit am Laufen hielt, weil es nie stillhielt. Er läuft jetzt ohne, und zwar gar nicht.',
   },
 };
+
+/**
+ * Was je Stufe anders heisst und klingt. Stufe I verweist nur auf die Texte oben (dort ändert sich nichts), Stufe II
+ * hat eigene. Alles andere (Liste, Ort, Laufzeile, Bildschirm) teilen sich die Stufen.
+ */
+export interface StufenTexte {
+  /** «I», «II» */
+  stufe: string;
+  /** «Über dem Tag», «Die dreizehnte Stunde» */
+  name: string;
+  /** Kopf des Bildschirms */
+  titel: string;
+  einleitung: string;
+  schluss: string;
+  montagVorSieg: string;
+  montagNachSieg: string;
+  /** Kurz, solange die Stufe zu ist (Kartenzeile, Grund am Knopf) */
+  zu: string;
+  /** Lang, solange die Stufe zu ist (Bildschirm) */
+  nochZu: string;
+  /** Kartenzeile nach dem ersten Sieg, solange die Woche noch nicht besiegt ist */
+  aufgezogen: string;
+  /** Beschriftung der Uhr (vor dem Sieg dieser Woche, danach) */
+  uhr: { vor: string; auf: string };
+  regelBlatt: string[];
+  /** Alrunas Liste: wie viele hinaufgehen */
+  zahl: (n: number, max: number) => string;
+  ansage: {
+    vier: string;
+    viele: (n: number) => string;
+    zwoelf: string;
+    vorZwoelf: string;
+    niederlageSpaet: (runde: number) => string;
+    niederlageFrueh: (runde: number) => string;
+  };
+  /** Überschrift des Ergebnisses beim Sieg */
+  sieg: string;
+  keineTruheHalb: string;
+  halbSchonGeholt: string;
+  nachWochensieg: string;
+  halbInhalt: string;
+  siegInhalt: string;
+  ersterZeile: string;
+  ersterInhalt: string;
+  /** Truhe zum ersten Sieg */
+  erster: { name: string; text: string };
+}
+
+const T = RAID_TEXTE;
+
+export const STUFEN_TEXTE: Record<string, StufenTexte> = {
+  zenit: {
+    stufe: 'I',
+    name: ZENIT.name,
+    titel: T.bildschirm.titel,
+    einleitung: T.einleitung,
+    schluss: T.schluss,
+    montagVorSieg: T.montagVorSieg,
+    montagNachSieg: T.montagNachSieg,
+    zu: T.karte.zu,
+    nochZu: T.bildschirm.nochZu,
+    aufgezogen: T.karte.aufgezogen,
+    uhr: T.bildschirm.uhr,
+    regelBlatt: T.regelBlatt,
+    zahl: T.liste.zahl,
+    ansage: {
+      vier: T.ansage.vier, viele: T.ansage.viele, zwoelf: T.ansage.zwoelf, vorZwoelf: T.ansage.vorZwoelf,
+      niederlageSpaet: T.ansage.niederlageSpaet, niederlageFrueh: T.ansage.niederlageFrueh,
+    },
+    sieg: T.ergebnis.sieg,
+    keineTruheHalb: T.ergebnis.keineTruheHalb,
+    halbSchonGeholt: T.ergebnis.halbSchonGeholt,
+    nachWochensieg: T.bildschirm.nachWochensieg,
+    halbInhalt: T.bildschirm.halbInhalt,
+    siegInhalt: T.bildschirm.siegInhalt,
+    ersterZeile: T.bildschirm.unruhZeile,
+    ersterInhalt: T.bildschirm.unruhInhalt,
+    erster: T.unruh,
+  },
+
+  dreizehn: {
+    stufe: 'II',
+    name: DREIZEHN.name,
+    titel: 'ZENIT, AUFGEZOGEN',
+    einleitung:
+      'Zenit hat sich wieder aufgezogen, mit einer Ersatz-Unruh, und seither hat er zwei Zeiger. Der zweite läuft '
+      + 'rückwärts, von der letzten Spalte zur ersten, und wo sich die beiden treffen, schlägt es dreizehn. Jorinde hat '
+      + 'mitgezählt: dreimal am Tag. Alruna sagt, das seien zweimal zu oft. Die Ersatz-Unruh ist grösser als die alte, und '
+      + 'der Deckel geht nicht mehr ganz zu; Jorinde sagt, man komme jetzt leichter hinein, es sei nur mehr drin. Das Feld '
+      + 'ist breiter geworden, drei Trupps statt zwei, und Alruna besteht darauf, dass jeder seinen eigenen Schild und '
+      + 'seinen eigenen Salbentopf bekommt. Orm sagt, er habe die Ersatz-Unruh nie gesehen. Gefragt hat ihn niemand. Ich '
+      + 'habe im Gildenhaus noch einmal die Hocker gezählt, diesmal mit den Lehrlingen. Es reicht knapp.',
+    schluss:
+      'Zenit steht still, nicht auf zwölf und nicht auf dreizehn, sondern dazwischen, wo es keine Stunde gibt. Jorinde hat '
+      + 'die Ersatz-Unruh mit dem Taschenmesser herausgedreht, und Alruna hat einen Zettel daran gebunden: «Nicht '
+      + 'zurückgeben.» Orm sagt, er habe sie nie gebracht, und sagt es ein wenig zu oft. In der Wachstube reichen die '
+      + 'Hocker nicht mehr; Jorinde hat Bänke bestellt. Alruna hat eine neue Seite angefangen, und der erste Punkt darauf '
+      + 'lautet «Montag». Ich habe ihn aufgeschrieben, diesmal mit Tinte.',
+    montagVorSieg: 'Montag. Drei neue Ernstkämpfe auf Stufe II. Der Gegenzeiger hat die alten rückwärts gezählt und kam auf null.',
+    montagNachSieg: 'Montag. Zenit hat sich wieder aufgezogen, mit beiden Zeigern. Orm sagt, er habe keine Ersatz-Unruh mehr. '
+      + 'Gefragt hat ihn wieder niemand.',
+    zu: 'Erst Zenit einmal anhalten',
+    nochZu: 'Erst Zenit auf Stufe I einmal anhalten. Bis dahin hat er nur einen Zeiger, und Alruna findet, einer reiche '
+      + 'zum Üben.',
+    aufgezogen: 'Zenit hat beide Zeiger wieder',
+    uhr: { vor: 'Zenit, aufgezogen, kurz vor dreizehn', auf: 'Zenit, aufgezogen, angehalten' },
+    regelBlatt: [
+      'Pendel: jede Runde einen Trupp weiter, links, Mitte, rechts. Es trifft alle in der vordersten besetzten Reihe des '
+        + 'Trupps. Spott hilft nicht: Zenit zielt nicht, Zenit schwingt.',
+      'Zeiger: jede Runde eine Spalte weiter, A bis I und wieder A. Seine Last teilt sich auf alle in der Spalte. Ist die '
+        + 'Spalte leer, schlägt er durch, auf alle.',
+      'Gegenzeiger: rückwärts, I bis A und wieder I, sonst wie der Zeiger. In Runde 5, 14 und 23 stehen beide auf Spalte E. '
+        + 'Dann schlägt es dreizehn, und E trägt beide, zuerst den Zeiger, dann den Gegenzeiger.',
+      'Glocke: alle vier Runden, auf jeden in der vollsten Reihe. Bei Gleichstand die hintere.',
+      'Funken: alle drei Runden, auf den, der bisher am meisten Schaden gemacht hat, und auf seine Nachbarn im Trupp: oben, '
+        + 'unten, links, rechts. Über die Gänge springen sie nicht.',
+      'Mittag: Ab Runde 12 schlägt alles anderthalbmal so hart. Mitternacht: Nach Runde 24 ist der Tag um.',
+      'Trupps: Links sind die Spalten A bis C, Mitte D bis F, Rechts G bis I. Lieder, Segen, Schilde und Heilung wirken nur '
+        + 'im eigenen Trupp.',
+      'Hier oben heilen Kleriker, Druiden und Paladine mitten im Kampf: Steht im eigenen Trupp jemand unter neun Zehnteln, '
+        + 'heilen sie den Schwächsten statt anzugreifen und warten dann ihre Abklingzeit.',
+      'Zehn bis fünfzehn Helden. Stufe II hat ihre eigene Woche: drei freie Ernstkämpfe, danach je zehn Tagstein, und ihre '
+        + 'eigenen zwei Truhen.',
+      'Ein Ernstkampf wird beim Klick gerechnet und gebucht. Die Wiedergabe zeigt nur, was geschah.',
+    ],
+    zahl: (n: number, max: number) => {
+      if (n >= max) return 'Fünfzehn gehen hinauf. Für so viele hatte Alruna nie eine Liste. Sie schreibt gerade eine.';
+      if (n >= 10) return `${n} gehen hinauf. Drei Trupps, zwei Zeiger: Jeder mehr ist einer, der mitträgt.`;
+      return 'Mindestens zehn. Drei Trupps wollen gefüllt sein, und der Gegenzeiger zählt nach, rückwärts.';
+    },
+    ansage: {
+      vier: 'Vier gehen hinauf, für drei Trupps. Alruna schlägt die erste Seite auf und sagt, die kenne sie schon.',
+      viele: (n: number) => `${n} gehen hinauf, auf drei Trupps. Alruna zählt mit, Jorinde zählt die Hocker.`,
+      zwoelf: 'Zenit fiel, als es zwölf schlug. Bis dreizehn hat er es nicht mehr geschafft.',
+      vorZwoelf: 'Zenit fiel vor zwölf. Bis dreizehn hat er es nicht mehr geschafft.',
+      niederlageSpaet: (runde: number) => `Ihr kamt bis Runde ${runde}. Der Gegenzeiger hat rückwärts mitgezählt und kam `
+        + 'auf dieselbe Zahl. Alruna schreibt beide auf.',
+      niederlageFrueh: (runde: number) => `Ihr kamt bis Runde ${runde}. Alruna sagt nichts und schreibt sehr ordentlich, `
+        + 'auf eine neue Seite.',
+    },
+    sieg: 'ES SCHLÄGT NICHT DREIZEHN',
+    keineTruheHalb: 'Unter der Hälfte öffnet sich «Was der Gegenzeiger verlor». Diesmal blieb sie zu.',
+    halbSchonGeholt: '«Was der Gegenzeiger verlor» ist diese Woche schon geholt. Beim Sieg wartet noch die dreizehnte Truhe.',
+    nachWochensieg: 'Die dreizehnte Truhe ist diese Woche geleert. Zenit zieht sich am Montag wieder auf, mit beiden Zeigern. '
+      + 'Ernstkämpfe zählen weiter für Erfolge und Erfahrung.',
+    halbInhalt: 'Set-Teil, Gold, Tagstein',
+    siegInhalt: 'Beute von Alruna und Orm, je sechsmal, Set-Teil, Tagstein',
+    ersterZeile: 'Erster Sieg: Ersatz-Unruh',
+    ersterInhalt: 'Schmuck, Stufe 12, nur einmal',
+    erster: {
+      name: 'Die Ersatz-Unruh',
+      text: 'Zum ersten Sieg auf Stufe II: die Unruh, die jemand Zenit gebracht hat. Jorinde hat sie herausgedreht, Alruna '
+        + 'hat «Nicht zurückgeben.» daran gebunden.',
+    },
+  },
+};
+
+/** Die Texte einer Stufe (unbekannt: die von Stufe I) */
+export function stufenTexte(def: RaidDef): StufenTexte {
+  return STUFEN_TEXTE[def.id] ?? STUFEN_TEXTE.zenit;
+}

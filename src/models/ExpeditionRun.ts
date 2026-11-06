@@ -120,6 +120,8 @@ export interface CombatUnit {
   spriteKey?: string;
   /** Class ID for player units (e.g. 'guardian', 'ranger') */
   classId?: string;
+  /** Der Lehrling seiner Klasse (GuildFighter.lehrling): Sein Bild steht gespiegelt (ui/heldBild.ts) */
+  lehrling?: boolean;
   /** Key into ENEMY_DEFS – only set for enemy units */
   defId?: string;
   /** Active special effects from gear (only player units) */

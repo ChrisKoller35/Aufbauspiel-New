@@ -8,6 +8,10 @@ Spiel: Dieselbe Gilde gewinnt mit der naheliegenden «Lehrbuch»-Aufstellung nie
 immer. Diese Datei hält fest, wie der Kampf rechnet, was eine Woche bringt, was Alrunas Liste und der Kriegsrat
 sagen und wie Zenit geeicht ist. Stand 6.11.2026.
 
+Nach dem ersten Sieg öffnet sich Stufe II, «Die dreizehnte Stunde»: Zenit mit einem zweiten Zeiger, der rückwärts läuft,
+gegen 10 bis 15 Helden in drei Trupps. Was hier ohne Stufe steht, gilt für Stufe I («Über dem Tag»); was auf Stufe II
+anders ist, steht im Abschnitt «Stufe II: Die dreizehnte Stunde».
+
 Der Raid ist kein Dungeon (`RouteDef`) und Zenit kein Gegner (`EnemyDef`): Sets, Trophäensaal, Monsterbuch, Klang,
 Rangliste und Härtegrade hängen nicht daran. `raidKampf` benutzt den Grundangriff, die Regeneration und die
 Kampfeffekte des normalen Kampfs, aber mit Orten statt Zielen.
@@ -273,7 +277,8 @@ längsten).
 
 Sechs Erfolge, fünf in der Gruppe «Dungeons» und der versteckte «Zu viert»; Namen, Texte und Bedingungen stehen in
 `docs/ERFOLGE.md`. `ernstkampf` zählt nach jedem Ernstkampf in `state.statistics` hoch und prüft dann die Erfolge, ohne
-Hinweis in der Kopfzeile (das Ergebnis zeigt sie). Kriegsrat und Probeläufe zählen nicht.
+Hinweis in der Kopfzeile (das Ergebnis zeigt sie). Kriegsrat und Probeläufe zählen nicht. Die Zähler unten zählen nur
+Ernstkämpfe auf Stufe I; Stufe II hat zwei eigene Erfolge mit eigenen Zählern (Abschnitt «Stufe II»).
 
 | Zähler | zählt bei jedem Ernstkampf … | Erfolg |
 |---|---|---|
@@ -311,7 +316,10 @@ am Ereignis; die ohne eigenes Ereignis (Grösse der Gruppe, Spott, Ende) stehen 
 
 `npm run raid-eichung` (`tools/raidEichung.ts`) rechnet Zenit gegen die Muster-Gilde in ihren Aufstellungen, 400
 Kämpfe je Zeile mit den Samen i × 7919 (i = 0 bis 399; die ersten 20 sind die des Tests), vergleicht Zenits Truhe
-mit einem Lauf bei Orm (wie unter «Truhen») und prüft die Eichbänder unten. Verfehlt es eines, endet es mit 1. Dazu:
+mit einem Lauf bei Orm (wie unter «Truhen») und prüft die Eichbänder unten; danach dasselbe für Stufe II (Abschnitt
+«Stufe II»). Verfehlt es eines, endet es mit 1. Dazu:
+
+- `npm run raid-eichung -- --stufe I` (oder `II`): nur eine Stufe; mit `--leben` das Leben dieser Stufe.
 
 - `npm run raid-eichung -- --laeufe 1000`: mehr Läufe je Zeile.
 - `npm run raid-eichung -- --leben 13500,14000,14500`: Zenits Leben durchprobieren (ohne Bänder).
@@ -326,7 +334,8 @@ mit einem Lauf bei Orm (wie unter «Truhen») und prüft die Eichbänder unten. 
 Nach Änderungen an Kampf, Klassen, Wegen, Sets, Schmiede, Beute oder Zenit neu laufen lassen und die Tabellen hier
 nachführen; `tests/raid.test.ts` prüft die Bänder mit 20 Samen und meldet Verschiebungen sofort. Stellschraube zuerst
 Zenits Leben, in Schritten von 250, erst danach Wuchten oder Heilfaktor. Gemessen am 6.11.2026; ein Kampf braucht 1,6
-bis 1,8 ms (Node 22.22), das ganze Werkzeug rund 20 Sekunden, mit `--wege` und `--suche t4` rund 70.
+bis 1,8 ms (Node 22.22), das Werkzeug für Stufe I rund 20 Sekunden (mit `--wege` und `--suche t4` rund 70), mit
+Stufe II zusammen rund 45.
 
 ### Muster-Gilde «Anker»
 
@@ -502,6 +511,289 @@ Der Test prüft mit 20 Samen, das Werkzeug mit 400 Läufen. Stand 6.11.2026:
 Alle Bänder sind getroffen. Band 13 hält erst mit je vier Würfen aus der Beute von Alruna und Orm; mit je zwei war die
 Truhe etwa einen Lauf wert.
 
+## Stufe II: Die dreizehnte Stunde
+
+Nach dem ersten Sieg zieht sich Zenit wieder auf, mit einer Ersatz-Unruh, und seither hat er zwei Zeiger. Stufe II ist
+derselbe Raid auf einem breiteren Feld: «Zenit, aufgezogen» gegen 10 bis 15 Helden auf 3 Reihen und 9 Spalten (A bis I)
+in drei Trupps. Alles in den Abschnitten oben gilt auch hier; dieser Abschnitt nennt, was anders ist. Die Zahlen stehen in
+`RAID_DEFS.dreizehn` (`DREIZEHN`), die Texte in `STUFEN_TEXTE.dreizehn` (`src/data/raids.ts`). Stufe I rechnet Zeichen für
+Zeichen wie vorher: Verlauf, Protokoll, Ansagen und Hauptursache von 510 Kämpfen (alle Muster-Gilden und
+-Aufstellungen, mit und ohne einzelne Regeln) haben vor und nach dem Umbau denselben Fingerabdruck, und
+`tests/kampfUnveraendert.test.ts` läuft unverändert.
+
+### So wirkt es im Spiel
+
+- **Offen** nach dem ersten Sieg auf Stufe I (`freiNachRaid: 'zenit'`, dazu wie dort die Pfeiler des Tages). Bis dahin
+  steht Stufe II im Umschalter mit Schloss («Erst Zenit einmal anhalten»), ihr Bildschirm sagt, was fehlt, mit einem
+  Knopf «Zu Stufe I», und der Spielstand bekommt für sie nichts. Das Ergebnis des ersten Siegs auf Stufe I meldet «Neu
+  offen: Stufe II, «Die dreizehnte Stunde»» und führt mit einem Knopf hin.
+- **Erster Besuch:** eine eigene Einleitung (Ersatz-Unruh, Gegenzeiger, drei Trupps, die Hocker im Gildenhaus) und
+  die Startaufstellung wie auf Stufe I: vorne voll, dann die Mitte, die ersten fünfzehn in der Reihenfolge der Gilde.
+- **Eigene Woche:** drei freie Ernstkämpfe, danach je 10 Tagstein, getrennt von Stufe I gezählt. Eigene Truhen, eigener
+  Bestversuch, Verlauf, Montag-Satz und Kriegsrat (sein Schlüssel beginnt mit `dreizehn#`, ein Rat von Stufe I gilt hier
+  nicht). Samen wie auf Stufe I, mit der Id der Stufe gemischt.
+- **10 bis 15 Helden.** Mit einem Helden je Klasse hat eine Gilde genau zehn; mehr bringen die Lehrlinge
+  (`docs/AUSBILDUNG.md`, je Klasse ein zweiter Held). Mit zehn ist Stufe II gewollt kaum zu schaffen (die besten
+  gefundenen zehn: 5 %, Band S5).
+
+### Zenit, aufgezogen
+
+| Leben | Angriff | Abwehr | Tempo | Krit |
+|---|---|---|---|---|
+| 15 250 | 110 | 12 | 1,0 | 10 % × 1,5 |
+
+Die Regeln wie auf Stufe I, dazu `gegenzeiger: 1,0`. Die Abwehr ist halbiert: Die Ersatz-Unruh ist grösser als die alte,
+und der Deckel geht nicht mehr ganz zu. Annahme: Mit Abwehr 24 hätte Zenit für dieselben Siegchancen nur rund 13 000
+Leben gebraucht, weniger als auf Stufe I; mit 12 zählen die Treffer der Lehrlinge, und der grössere Lebensbalken passt
+zur höheren Stufe. XP: 450 beim Sieg, 150 bei der Niederlage, je Teilnehmer.
+
+### Gegenzeiger und dreizehn
+
+- **Gegenzeiger** (jede Runde, gleich nach dem Zeiger): Runde 1 Spalte I, Runde 2 H … Runde 9 A, Runde 10 wieder I
+  (`gegenzeigerSpalte`). Sonst wie der Zeiger: Wucht 110 (ab Mittag 165), geteilt durch die Lebenden der Spalte; ist sie
+  leer, schlägt er durch, Wucht 66 (ab Mittag 99) auf alle. Fehlt `regeln.gegenzeiger`, gibt es ihn nicht (Stufe I);
+  die Eichung schaltet ihn mit `ohne: ['gegenzeiger']` ab.
+- **Es schlägt dreizehn** (Runde 5, 14 und 23, `treffpunkte`): Beide Zeiger stehen auf Spalte E. Zuerst drückt der
+  Zeiger, dann der Gegenzeiger, beide geteilt auf die Lebenden der Spalte. Fällt der Einzige auf E schon unter dem Zeiger,
+  schlägt der Gegenzeiger durch, auf alle. E trägt also nur in drei Runden, dann aber doppelt.
+- **Mittag** (Runde 12): Pendel rechts, Funken, Glocke, Zeiger C und Gegenzeiger G zugleich.
+
+| Spalte | Zeiger in Runde | Gegenzeiger in Runde | Schläge am Tag |
+|---|---|---|---|
+| A | 1, 10, 19 | 9, 18 | 5 |
+| B | 2, 11, 20 | 8, 17 | 5 |
+| C | 3, 12, 21 | 7, 16 | 5 |
+| D | 4, 13, 22 | 6, 15, 24 | 6 |
+| **E** | 5, 14, 23 | 5, 14, 23 | 6, in drei Runden |
+| F | 6, 15, 24 | 4, 13, 22 | 6 |
+| G | 7, 16 | 3, 12, 21 | 5 |
+| H | 8, 17 | 2, 11, 20 | 5 |
+| I | 9, 18 | 1, 10, 19 | 5 |
+
+Die Mitte (D bis F) trägt 18 Zeigerschläge am Tag, jeder Trupp aussen 15.
+
+- **In Wiedergabe, Ursache und Ansagen:** Der Gegenzeiger ist ein eigenes Ereignis (`gegenzeiger`), sein Durchschlag
+  ein `durchschlag` mit `gegen: true`. Gefallene heissen «Gegenzeiger (Spalte E)» oder, wie auf Stufe I, «Durchschlag
+  (Spalte C leer)»; der Satz zum Durchschlag nennt auf Stufe II beide Zeiger («… wer von den beiden Zeigern dort
+  vorbeikam, ging durch alle»), denn eine leere Spalte schlägt unter beiden durch. Die Ansage «Es schlägt dreizehn:
+  Beide Zeiger stehen auf Spalte E. Zenit tut, als sei das Absicht.» kommt einmal je Kampf; Zahl und Ende haben eigene
+  Sätze (`STUFEN_TEXTE.dreizehn.ansage`), mit fünfzehn gibt es keine Zahl-Ansage.
+
+### Drei Trupps
+
+- **Links** A bis C, **Mitte** D bis F, **Rechts** G bis I, dazwischen zwei Gänge. Teamwirkungen, Heilregel, Abfangen
+  und Deckung wirken wie auf Stufe I, je Trupp, und Spott hilft auch hier nicht; die Funken springen über keinen der
+  beiden Gänge.
+- **Pendel** reihum: Runde 1 links, 2 Mitte, 3 rechts, 4 wieder links (`pendelTrupp`). Jede Front fängt es also nur
+  jede dritte Runde (Stufe I: jede zweite). Ein leerer Trupp gibt seine Runden an den nächsten weiter, nach rechts und
+  von rechts wieder nach links; Alrunas Liste sagt dann, wohin, und ob es dort doppelt oder dreimal so oft schlägt.
+
+### Alrunas Liste und Kriegsrat
+
+Die Liste rechnet wie auf Stufe I, mit drei Trupps und zwei Zeigern: Eine leere Spalte nennt die Durchschläge beider
+Zeiger mit ihren Runden, ein Einzelner, der keine drei Zeigerschläge hält, die Runden beider Zeiger. Eine eigene Zeile
+sagt, wer auf E die dreizehn trägt: ☐, wenn dort niemand steht (dann schlagen beide durch), wenn einer allein dort ab
+Mittag keine zwei solchen Runden hält (fällt er unter dem Zeiger, schlägt der Gegenzeiger durch) oder wenn einer von
+mehreren sie nicht hält; sonst ☑. Die Zahl-Zeile kennt zehn bis fünfzehn. Die Liste der Muster-Gilde mit «Gut» (68 %):
+
+```
+☐ Die Glocke schlägt in Reihe 2, dort stehen 7: Sina, Ansgar, Ewin, Moos, Ysra, Morn und Pirmin. Sie zählt gern.
+☑ Pendel links trifft Brom. Brom hält etwa 14 Schläge, ab Mittag 5.
+☑ Pendel Mitte trifft Bertram. Bertram hält etwa 3 Schläge, ab Mittag 2.
+☑ Pendel rechts trifft Grimm. Grimm hält etwa 9 Schläge, ab Mittag 5.
+☑ Auf Spalte E treffen sich die Zeiger, in Runde 5, 14 und 23. Dort teilen sich Ansgar und Bertram beide.
+☑ Jede Spalte ist besetzt. Zeiger und Gegenzeiger finden überall jemanden.
+☑ Funken: wohl Sina. Niemand daneben.
+☑ Links: Mondwall, Phalanx, Tragkraft, Heldenlied, Seuche. Heiler: Ewin.
+☑ Mitte: Hain, Schmiedetakt, Schildwall, Phalanx, Heldenlied. Heiler: Ansgar und Moos.
+☑ Rechts: Wachfeuer, Kriegssegen. Heiler: Pirmin.
+☑ Fünfzehn gehen hinauf. Für so viele hatte Alruna nie eine Liste. Sie schreibt gerade eine.
+```
+
+Auch hier bewertet die Liste nicht: «Gut» hat eine Warnung, «Profi» (99 %) sechs (Wenna allein vorn rechts hält einen
+Schlag, D und H tragen je nur einen, sechs in der Glockenreihe, Lia neben Sina, die Mitte ohne Heiler), «Lehrbuch» (0 %)
+sechs, «Naiv» neun. Der Kriegsrat (20 Proben, Samen wie auf Stufe I):
+
+| Aufstellung | Siege | Zenit im Schnitt | Meist gefallen durch | Am häufigsten gefallen |
+|---|---|---|---|---|
+| anker15 · Gut | 14 von 20 | 1 % | Glocke (Reihe 3) | Morn (20 von 20) |
+| anker15 · Profi | 20 von 20 | 0 % | Pendel (Trupp rechts) | Wenna (20 von 20) |
+| anker15 · Lehrbuch | 0 von 20 | 26 % | Durchschlag (Spalte C leer) | Morn (20 von 20) |
+| anker15 · Naiv (die Startaufstellung) | 0 von 20 | 44 % | Glocke (Reihe 2) | Liedra (20 von 20) |
+| Anker · die besten zehn | 3 von 20 | 16 % | Durchschlag (Spalte A leer) | Liedra (20 von 20) |
+
+Die ersten Funken trafen in allen fünf Sina, in jeder Probe. Rechenzeit 60 bis 160 ms für die 20 Proben (Node 22.22).
+
+### Truhen, Erster Sieg, Erfolge
+
+| Truhe | Wann | Inhalt |
+|---|---|---|
+| **Was der Gegenzeiger verlor** | der erste Ernstkampf der Woche auf Stufe II, nach dem Zenit unter 50 % steht | 250 Gold, 8 Tagstein und ein Set-Teil der Stufen 6 bis 10, das der Gilde fehlt; fehlt dort keins mehr, 12 Kristallsplitter statt des Teils |
+| **Die dreizehnte Truhe** | der erste Sieg der Woche auf Stufe II | je sechs Würfe aus der Beute von Alruna und Orm (Stufe I: je vier), ein Set-Teil, das der Gilde fehlt (gewählt wie bei Zenits Truhe, aber aus den Stufen 10 bis 12 statt 9 bis 12), 15 Tagstein, 25 Kristallsplitter; fehlt keins mehr, 30 Kristallsplitter statt des Teils |
+| **Die Ersatz-Unruh** | der erste Sieg auf Stufe II | ein zweiter Schmuck `die_unruh` (Stufe 12, legendär), nur einmal |
+
+- **Wert** (4000-mal gezogen, die Gilde ohne Set-Teile; Gold und Grundwert der Gegenstände, ohne Set-Teile und
+  Tagstein): Die dreizehnte Truhe Ø 9046 (Gold 5521, 8,1 Stück Ausrüstung), Zenits Truhe Ø 6003 (Gold 3680, 5,4 Stück),
+  also das 1,5-Fache und dazu ein höheres Set-Teil. «Was der Gegenzeiger verlor» Ø 250 gegen 150.
+- **Wochenchance:** Drei freie Versuche machen aus 68 % («Gut») 97 %, aus 5 % (die besten zehn) 14 %.
+- **Erfolge** (Gruppe «Dungeons», `docs/ERFOLGE.md`): 🕐 «Es schlägt nicht dreizehn» (`raid2_siege` ≥ 1) und 🗓️
+  «Doppelschicht» (`raid2_wochen` ≥ 4, die dreizehnte Truhe in vier verschiedenen Wochen). Die sechs Zähler von Stufe I
+  zählen nur Ernstkämpfe auf Stufe I: Auf Stufe II gewinnt «Profi» in 96 % bis Runde 12 mit Ø 6,6 Stehenden, «Punkt
+  zwölf» und «Mehr als vier» wären dort geschenkt, und vier Helden gibt es dort nicht. Ein Erfolg «alle fünfzehn
+  stehen» wäre unerreichbar (0 % in jeder Zeile, auch mit «Profi»).
+
+### Spielstand
+
+`raidStufen` (freiwillig): je höherer Stufe ein `RaidStand` wie `raid`, nach Id (`raidStufen.dreizehn`); Stufe I bleibt
+in `raid`, `gespeicherterStand` wählt das Feld. `raidStand` legt den Eintrag erst an, wenn die Stufe offen ist, vorher
+gibt es einen Stand, der nirgends hängt; Karte und Umschalter lesen nur (`raidKartenZustand`, `freiDieseWoche`). Ältere
+Spielstände laden unverändert, keine neue SaveVersion. `SpielstandSchema` prüft jeden Eintrag wie `raid`.
+
+### Bildschirm und Karte
+
+- **Umschalter** «Stufe I» / «Stufe II» (`.r-stufen`): am PC links über Alrunas Liste, am Handy oben, auf einer
+  gesperrten Stufe über dem Hinweis, was fehlt. Jeder Knopf nennt Stufe, Name, Helden und den Stand der Woche
+  (Schloss mit Grund; frei n von 3; Ernstkampf je 10 Tagstein; ✓ diese Woche besiegt) und trägt «neu», bis die
+  Einleitung der Stufe gelesen ist. Beim Öffnen gilt die höchste offene Stufe, die Wahl hält bis zum Neuladen.
+  Wechseln hebt die Wahl eines Helden auf; jede Stufe hat ihren eigenen Kriegsrat und merkt sich ihren letzten Rat.
+- **Alles nach der Stufe:** Titel «ZENIT, AUFGEZOGEN», Uhr, Werte, Truhen, Liste, Kriegsrat, Regeln, Wiedergabe,
+  Ergebnis und Bank lesen die gewählte Stufe. Feld, Bank, Blatt und Wiedergabe zeigen die Helden mit ihrem Bild
+  (`bildKarte` aus `src/ui/heldBild.ts`; Lehrlinge gespiegelt).
+- **Feld** mit 9 Spalten und zwei Gängen, am PC (1400 × 900) und am Handy (390 px) ohne seitliches Scrollen: am Handy
+  Zellen von 34 × 50 Pixeln, Namen in Crimson Text, lange Namen enger. Spalte E trägt im Kopf eine «13».
+- **Uhrleiste** mit zwei Zeilen je Runde (Zeiger, Gegenzeiger in Türkis), Runde 5, 14 und 23 als «13» markiert, Pendel
+  links, Mitte, rechts.
+- **Uhr:** ein zweiter, türkiser Zeiger. Kurz vor dreizehn, bis Zenit auf Stufe II in dieser Woche besiegt ist, dann
+  angehalten zwischen zwölf und dreizehn. In der Wiedergabe läuft der Gegenzeiger rückwärts über die Spalten.
+- **Karte:** Bis Stufe II offen ist, bleibt der Knoten wie oben beschrieben. Danach zeigt er die Uhr von Stufe II,
+  «RAID · 4 BIS 15 HELDEN» und zwei Zeilen, «Stufe I · …» und «Stufe II · …» (grün, wenn Stufe II diese Woche
+  besiegt ist); der goldene Punkt pulsiert, solange auf einer der beiden Stufen die Siegtruhe der Woche wartet.
+- **Probespiel** `?probe=raid2`: wie `?probe=raid`, dazu die fünf Lehrlinge (Gilde `anker15`, 15 Helden), Zenit auf
+  Stufe I in der Woche davor einmal besiegt (die Unruh liegt im Lager), 60 Tagstein; Stufe II ist offen und noch nicht
+  besucht.
+
+### Eichung von Stufe II
+
+`npm run raid-eichung` rechnet nach Stufe I dieselben Tabellen für Stufe II; `-- --stufe II` nur diese, mit
+`--leben` deren Leben, `-- --suche zehn` sucht die besten zehn neu (600 Schritte ab «zehn»). `tests/raid.test.ts` prüft
+die Bänder mit den 20 Samen.
+
+**Muster-Gilde «anker15»** (`raidMusterHelden('anker15')`): der Anker und fünf Lehrlinge auf Stufe 15 mit Weg, ohne
+Schmiede-Stufen, in dem, was im Lager lag, während der Kern die neuen Sets bekam: Bertram (Wächter, Phalanx) im
+Rüstzeug des Eisernen Kommandanten mit Seelenbrecher, Pirmin (Kleriker, Kriegspriester) im Nachlass des Schattenlichs,
+Wenna (Waldläuferin, Scharfschützin) in den Köpfen der Hydra, Benno (Barde, Heldenlied) in T4 (Bogen der Ewigen Jagd,
+Schattenjäger-Rüstung, Arkan-Amulett), Mirabell (Hexe, Sturmhexe) in der Glut des Magma-Wyrms. Ein zweiter Schild und
+ein zweiter Salbentopf für den dritten Trupp, dazu Bogen, Lied und Hexe.
+
+Die Aufstellungen (`RAID_AUFSTELLUNGEN_DREIZEHN`, Reihe 1 vorn, «|» sind die Gänge):
+
+```
+«Gut» (Daumenregeln für drei Trupps)
+     A        B        C        | D        E        F        | G        H        I
+ 1   Brom     .        .        | .        Bertram  .        | .        Grimm    .
+ 2   .        Ewin     Morn     | Moos     Ansgar   Ysra     | Pirmin   .        Sina
+ 3   Lia      Liedra   Mirabell | Benno    .        .        | Wenna    .        .
+
+«Profi» (Fund der Aufstellungssuche ab «Gut»)
+     A        B        C        | D        E        F        | G        H        I
+ 1   .        Sina     .        | .        Grimm    .        | .        .        Wenna
+ 2   Brom     Lia      Ewin     | .        .        Bertram  | Mirabell Morn     .
+ 3   Moos     Ansgar   Ysra     | Liedra   .        .        | Pirmin   .        Benno
+
+«Lehrbuch» (Tanks vorn, Heiler dahinter, ohne Rücksicht auf die Zeiger)
+     A        B        C        | D        E        F        | G        H        I
+ 1   .        Brom     .        | .        Bertram  .        | .        Grimm    .
+ 2   Liedra   Ewin     .        | Ansgar   Moos     .        | Benno    Pirmin   .
+ 3   .        Lia      Morn     | .        Sina     Ysra     | .        Wenna    Mirabell
+
+«Naiv» (die Startaufstellung: vorne voll, dann Mitte)
+     A        B        C        | D        E        F        | G        H        I
+ 1   Brom     Grimm    Lia      | Sina     Ansgar   Ewin     | Moos     Liedra   Ysra
+ 2   Morn     Bertram  Pirmin   | Wenna    Benno    Mirabell | .        .        .
+
+«die besten zehn» (Anker ohne Lehrlinge, Fund der Aufstellungssuche)
+     A        B        C        | D        E        F        | G        H        I
+ 1   Liedra   .        Grimm    | Ysra     .        .        | .        Brom     .
+ 2   .        .        .        | .        Morn     Ansgar   | Moos     .        .
+ 3   .        Ewin     .        | .        .        .        | Lia      .        Sina
+```
+
+- **Gut:** je Trupp ein Tank allein vorn und ein Heiler, jede Spalte besetzt, auf E zwei Zähe (Bertram und Ansgar), Sina
+  in der Ecke ohne Nachbarn. Schwäche: sieben in der Glockenreihe.
+- **Profi:** Die Suche stellt Sina und Wenna allein nach vorn: Wenna hält das Pendel rechts etwa einen Schlag lang
+  (sie fällt in jeder Probe des Kriegsrats), danach trifft es die Reihe dahinter; Grimm trägt auf E die dreizehn allein.
+  Nicht naheliegend, wie auf Stufe I.
+- **Lehrbuch:** vier Spalten mit nur einem (A, C, G, I), die Funken treffen Sina, Moos und Ysra.
+- **Die besten zehn:** fast jede Spalte mit nur einem; die Suche ab hier findet in 600 Schritten nichts Besseres (5 %,
+  Zenit bei 16 %).
+
+**Gemessen** (400 Läufe je Zeile, Samen i × 7919; Ø Runde und Ø stehend im Schnitt der Siege):
+
+| Gilde · Aufstellung | Sieg | Ø Runde | Zenit-Rest | Zenit < 50 % | Sieg ≤ R12 | alle 15 stehen | Ø stehend | Mitternacht |
+|---|---|---|---|---|---|---|---|---|
+| anker15 · Gut | 68 % | 13,3 | 1 % | 100 % | 20 % | 0 % | 4,4 | 0 % |
+| anker15 · Profi | 99 % | 11,5 | 0 % | 100 % | 96 % | 0 % | 6,6 | 0 % |
+| anker15 · Lehrbuch | 0 % | – | 24 % | 100 % | 0 % | 0 % | – | 0 % |
+| anker15 · Naiv (vorne voll) | 0 % | – | 44 % | 93 % | 0 % | 0 % | – | 0 % |
+| Anker (10, ohne Lehrlinge) · die besten zehn | 5 % | 13,6 | 16 % | 100 % | 0 % | 0 % | 1,9 | 0 % |
+
+**Mit den 20 Samen des Tests:** Gut 16 von 20 (Ø Runde 13,1), Profi 19, Lehrbuch 0 (Zenit bei 25 %), Naiv 0 (Zenit bei
+44 %, unter 50 % in 19), die besten zehn 2 (Zenit bei 14 %).
+
+**Je eine Regel aus** (400 Läufe, anker15 · Gut; der Zeiger nimmt nur seinen eigenen Durchschlag mit, der Gegenzeiger
+seinen):
+
+| Ohne | anker15 · Gut | gegenüber Gut | Zenit-Rest | Mitternacht |
+|---|---|---|---|---|
+| Pendel | 100 % | +32 | 0 % | 0 % |
+| Zeiger (mit Durchschlag) | 100 % | +32 | 0 % | 0 % |
+| Gegenzeiger (mit Durchschlag) | 100 % | +32 | 0 % | 0 % |
+| Durchschlag | 99 % | +31 | 0 % | 0 % |
+| Glocke | 100 % | +32 | 0 % | 0 % |
+| Funken | 100 % | +32 | 0 % | 0 % |
+| Mittag | 96 % | +28 | 0 % | 0 % |
+| Heilregel | 0 % | −68 | 9 % | 0 % |
+
+**Zenits Leben** (`--stufe II --leben`, 400 Läufe je Feld; die Bänder gelten für 15 250):
+
+| Leben | anker15 · Gut | anker15 · Profi | anker15 · Lehrbuch | anker15 · Naiv | Anker · die besten zehn |
+|---|---|---|---|---|---|
+| 14 750 | 96 % | 100 % | 0 % | 0 % | 17 % |
+| 15 000 | 86 % | 99 % | 0 % | 0 % | 10 % |
+| **15 250** | **68 %** | **99 %** | **0 %** | **0 %** | **5 %** |
+| 15 500 | 42 % | 98 % | 0 % | 0 % | 0 % |
+| 15 750 | 21 % | 97 % | 0 % | 0 % | 0 % |
+
+Um 15 250 herum bewegen 250 Leben «Gut» um 18 bis 26 Punkte, wie auf Stufe I.
+
+**Eichbänder von Stufe II** (Stand 6.11.2026):
+
+| # | Zeile | Test (20 Samen) | gemessen | Werkzeug (400 Läufe) | gemessen |
+|---|---|---|---|---|---|
+| S1 | anker15 · Gut | 11 bis 18 Siege, Ø Runde 12 bis 15 | 16, Ø 13,1 | 55 bis 75 % | 68 % ✓ |
+| S2 | anker15 · Profi | mindestens 18 Siege | 19 | mindestens 90 % | 99 % ✓ |
+| S3 | anker15 · Lehrbuch | höchstens 2 Siege, Zenit im Schnitt bei 15 bis 35 % | 0, 25 % | höchstens 10 % | 0 % ✓ |
+| S4 | anker15 · Naiv | kein Sieg, Zenit im Schnitt bei mindestens 35 % | 0, 44 % | kein Sieg | 0 % ✓ |
+| S5 | Anker · die besten zehn (ohne Lehrlinge) | höchstens 3 Siege | 2 | höchstens 15 %; Suche ab «zehn» (`--suche zehn`) höchstens 15 % | 5 %; 5 % ✓ |
+| S6 | Mitternacht | höchstens einmal je Aufstellung | nie | höchstens 2 % in jeder Zeile | nie ✓ |
+| S7 | Ohne Gegenzeiger | | | anker15 · Gut mindestens 20 Punkte mehr | +32 ✓ |
+| S8 | Ohne Heilregel | | | anker15 · Gut höchstens 5 % | 0 % ✓ |
+| S9 | Die dreizehnte Truhe | | | Wert 1,4- bis 2-mal Zenits Truhe | 1,5-mal ✓ |
+
+Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind nach dem Umbau gleich geblieben.
+
+### Grenzen von Stufe II
+
+- **Ohne Lehrlinge zehn Helden:** Mit einem Helden je Klasse kommt eine Gilde kaum durch (Band S5). Stufe II braucht
+  die Lehrlinge: Heldenhaus, Reiter «Anheuern», sobald der Meister einer Klasse Stufe 15 hat; das Lehrbuch bringt sie
+  mit dem Überschuss der Meister hoch (`docs/AUSBILDUNG.md`).
+- **Steile Kurve** wie auf Stufe I: Der Kampf entscheidet sich um Mittag, 250 Leben bewegen «Gut» um 18 bis 26 Punkte.
+- **«Profi» ist nicht naheliegend:** zwei Zerbrechliche allein vorn, sechs Warnungen in der Liste. Liste, Kriegsrat und
+  Ursachen-Satz gehören zusammen.
+- **Handy:** Neun Spalten auf 390 Pixeln machen die Felder 34 Pixel breit, schmaler als die übrigen Knöpfe des Spiels.
+  Ziehen gibt es am Handy nicht, man tippt Held und Feld.
+- **Wege** sind für Stufe II nicht einzeln geeicht (`--wege` rechnet nur Stufe I).
+
 ## Grenzen
 
 - **Steile Kurve.** Zehn Helden über 16 Runden heisst wenig Zufall: 250 Leben mehr oder weniger bewegen «Gut» um 20
@@ -524,15 +816,15 @@ Truhe etwa einen Lauf wert.
 
 ## Ausbau
 
-- **15 und 20 Helden** kommen mit einer Zweitbesetzung (je Klasse ein zweiter Held, etwa als Lohn des ersten
-  Zenit-Siegs). Das braucht einen eigenen Schritt: Anheuern, der Spott-Rückfall im Kampf und die Klassen-Freischaltung
-  nehmen heute einen Helden je Klasse an.
-- **Der Raid-Code ist schon allgemein:** Spalten = 3 × `truppZahl`, das Pendel geht reihum (`(Runde − 1) mod
-  truppZahl`), der Zeiger fährt alle Spalten ab, `truppName` kennt «Links», «Mitte», «Rechts» und «Aussen», die
-  Spaltennamen reichen bis L. Ein 15er (3 Trupps, 9 Spalten, Leben etwa × 1,6) und ein 20er (4 Trupps, 12 Spalten,
-  Leben etwa × 2,2) sind Daten und Eichung. Ein zweiter Raid braucht im Spielstand einen Stand je Raid (heute das eine
-  Feld `raid`), und die Zeile «Das Pendel schlägt dann jede Runde …» der Liste nimmt bei mehr als zwei Trupps nur den
-  nächsten Trupp an.
+- **15 Helden** gibt es mit Stufe II; die Zweitbesetzung sind die Lehrlinge (`docs/AUSBILDUNG.md`, je Klasse ein
+  zweiter Held). **20 Helden** (4 Trupps, 12 Spalten) hat eine Gilde mit allen zehn Lehrlingen schon: Platz für eine
+  Stufe III, ohne neue Helden.
+- **Der Raid-Code ist allgemein:** Spalten = 3 × `truppZahl`, das Pendel geht reihum (`(Runde − 1) mod truppZahl`, ein
+  leerer Trupp gibt seine Runden weiter), der Zeiger fährt alle Spalten ab, der Gegenzeiger ist eine Regel
+  (`gegenzeiger`), `truppName` kennt «Links», «Mitte», «Rechts» und «Aussen», die Spaltennamen reichen bis L. Eine
+  weitere Stufe ist ein Eintrag in `RAID_DEFS`, `RAID_STUFEN` und `STUFEN_TEXTE` mit eigener Eichung; ihr Stand kommt
+  nach `raidStufen`, Umschalter, Liste, Kriegsrat und Ergebnis lesen die Stufe. Nur der Kartenknoten zeigt fest zwei
+  Stufen.
 - **Ideen aus dem Konzept:** ein Kuckuck über dem Gang (Zielwahl), Raid-Befehle (einmal je Kampf eine Fähigkeit je
   Trupp, etwa Spott lenkt das Pendel eine Runde), Heil-Wege in der Heilregel stärker (heute Ewin als Kriegspriester
   74 % gegen 67 % als Lichtbringer), Sockel im Trophäensaal, Rivalen in der Rangliste, Monsterbuch, Fundbuch,
@@ -542,21 +834,21 @@ Truhe etwa einen Lauf wert.
 
 | Datei | Inhalt |
 |---|---|
-| `src/data/raids.ts` | Zenit: Werte, Regeln, Truhen, Kosten, Freischaltung, Teamwirkungen je Trupp, alle Texte (`RAID_TEXTE`) |
-| `src/data/raidMuster.ts` | Muster-Gilde mit Varianten und die Muster-Aufstellungen |
-| `src/models/RaidStand.ts` | Was der Spielstand vom Raid speichert |
-| `src/systems/RaidKampf.ts` | Rechnung des Kampfs (rein: kein Spielstand), Hauptursache |
-| `src/systems/Raid.ts` | Stand, Woche, Aufstellen, Ernstkampf, Truhen, XP, Zähler, Kriegsrat, Alrunas Liste, Rollen |
+| `src/data/raids.ts` | Beide Stufen (`RAID_DEFS`, `RAID_STUFEN`): Werte, Regeln, Truhen, Kosten, Freischaltung; Teamwirkungen je Trupp, alle Texte (`RAID_TEXTE`, je Stufe `STUFEN_TEXTE`) |
+| `src/data/raidMuster.ts` | Muster-Gilde mit Varianten (`anker15` mit fünf Lehrlingen) und die Muster-Aufstellungen beider Stufen |
+| `src/models/RaidStand.ts` | Was der Spielstand je Stufe vom Raid speichert |
+| `src/systems/RaidKampf.ts` | Rechnung des Kampfs (rein: kein Spielstand) mit Gegenzeiger und dreizehn, Hauptursache |
+| `src/systems/Raid.ts` | Stand je Stufe, Freischalten, Woche, Aufstellen, Ernstkampf, Truhen, XP, Zähler, Kriegsrat, Alrunas Liste, Rollen |
 | `src/systems/CombatEngine.ts`, `src/systems/Kampfeffekte.ts` | Grundangriff, Regeneration und Buff-Ablauf für den Raid; `rundenEnde` mit `gegnerGift` |
-| `src/systems/SpielstandSchema.ts` | Prüfung des Felds `raid` beim Laden einer Datei |
-| `src/data/items.ts` | «Die Unruh» (`die_unruh`) |
-| `src/data/achievements.ts` | die sechs Erfolge des Raids |
-| `src/ui/screens/RaidScreen.ts`, `src/ui/html/raid.css` | der Raid-Bildschirm: Liste, Kriegsrat, Kopf, Uhrleiste, Feld, Bank, Wiedergabe, Ergebnis |
-| `src/ui/components/ZenitUhr.ts` | Zenits Uhr, aus Code gezeichnet (Kopf, Karte, Wiedergabe) |
-| `src/ui/screens/DungeonMapScreen.ts`, `src/ui/html/dungeonkarte.css` | Kartenknoten, Jorindes Leiter und der Nachthimmel über den Pfeilern |
-| `src/systems/Probespiel.ts` | `?probe=raid` |
-| `tools/raidEichung.ts` | Eichung |
-| `tests/raid.test.ts` | Regeln, Heilregel, Trupps, Bestimmtheit, Kriegsrat, Freischalten, Woche, Truhen, XP, Zähler, Liste, Speichern, Eichbänder |
+| `src/systems/SpielstandSchema.ts` | Prüfung der Felder `raid` und `raidStufen` beim Laden einer Datei |
+| `src/data/items.ts` | «Die Unruh» (`die_unruh`; zum ersten Sieg auf Stufe II ein zweites Mal) |
+| `src/data/achievements.ts` | die acht Erfolge des Raids (sechs für Stufe I, zwei für Stufe II) |
+| `src/ui/screens/RaidScreen.ts`, `src/ui/html/raid.css` | der Raid-Bildschirm: Umschalter der Stufen, Liste, Kriegsrat, Kopf, Uhrleiste, Feld, Bank, Wiedergabe, Ergebnis |
+| `src/ui/components/ZenitUhr.ts` | Zenits Uhr mit Gegenzeiger, aus Code gezeichnet (Kopf, Karte, Wiedergabe) |
+| `src/ui/screens/DungeonMapScreen.ts`, `src/ui/html/dungeonkarte.css` | Kartenknoten (eine oder beide Stufen), Jorindes Leiter und der Nachthimmel über den Pfeilern |
+| `src/systems/Probespiel.ts` | `?probe=raid`, `?probe=raid2` |
+| `tools/raidEichung.ts` | Eichung beider Stufen |
+| `tests/raid.test.ts` | Regeln, Heilregel, Trupps, Bestimmtheit, Kriegsrat, Freischalten, Woche, Truhen, XP, Zähler, Liste, Speichern, Eichbänder; dasselbe für Stufe II mit Gegenzeiger und drei Trupps |
 
 ## Spielstand
 
@@ -567,7 +859,8 @@ SaveVersion. Die Zähler stehen in `state.statistics`, die Unruh im Lager. `Spie
 Laden einer Datei; Pflicht sind `aufstellung`, `woche`, `versucheGesamt`, `siege` und `verlauf`. Was die Prüfung
 durchlässt, aber nicht ins Raster passt (halbe Felder, Felder neben dem Raster, doppelt belegte Felder, entlassene
 Helden), räumt `raidStand` beim nächsten Aufruf weg. Fehlt `bestRest`, trägt `raidStand` null nach (noch kein
-Versuch), und die Karte liest es schon vorher so.
+Versuch), und die Karte liest es schon vorher so. Stufe II hat ihren eigenen Stand in `raidStufen.dreizehn`
+(Abschnitt «Stufe II»).
 
 ## Bildschirm und Karte
 
@@ -585,6 +878,7 @@ Versuch), und die Karte liest es schon vorher so.
   Die Karte liest den Spielstand nur, sie legt keinen Raid-Stand an.
 - Klick auf das Sechseck öffnet den Raid (`navigateTo('raid')`), auch gesperrt: Dann steht dort, was fehlt. Zurück
   auf der Karte steht der Raid in der Mitte.
+- Ist Stufe II offen, zeigt der Knoten beide Stufen (Abschnitt «Stufe II»).
 
 ### Die Uhr (`src/ui/components/ZenitUhr.ts`)
 - Aus Code gezeichnet (kein Bild): Zifferblatt, Zeiger, Glocke oben, Pendel unten, Zahnräder, Strahlen. Sie steht im
@@ -616,6 +910,8 @@ Versuch), und die Karte liest es schon vorher so.
   der Seite. Fenster kommen von unten, die Wiedergabe füllt den ganzen Bildschirm.
 - Erster Besuch: ein Einleitungsfenster. In einer neuen Woche nach früheren Ernstkämpfen kommt ein Satz in der
   Kopfzeile (Montag). «?» öffnet die Regeln («Wie Zenit schlägt»).
+- Über allem (am PC links über der Liste) der Umschalter der Stufen, Stufe II bis zum ersten Sieg mit Schloss
+  (Abschnitt «Stufe II»).
 
 ### Wiedergabe, Truhe und Ergebnis
 - Wiedergabe Runde für Runde (Tempo 1×, 2×, 4×, Pause): Zenits Leben, Uhr, die Lebensbalken der Helden, getroffene
@@ -634,3 +930,5 @@ Versuch), und die Karte liest es schon vorher so.
 - `?probe=raid`: alle Bosse bis Ebene 12 besiegt (die Leiter steht), die Muster-Gilde «anker» (zehn Helden auf Stufe
   15 mit Ausrüstung und Schmiede-Stufen, Ids 1 bis 10) und 40 Tagstein, in einem eigenen Speicherplatz. Der Raid ist
   offen, die Aufstellung ist die Startaufstellung.
+- `?probe=raid2`: dasselbe mit den fünf Lehrlingen (Gilde «anker15», 15 Helden) und 60 Tagstein, Stufe I einmal
+  gewonnen; Stufe II ist offen und noch nicht besucht.
