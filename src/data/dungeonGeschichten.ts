@@ -1429,7 +1429,7 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           b: 'Wir stützten den ersten Pfeiler mit einem Keil, und ich zählte ihn mit Kreide: einer, der steht.',
         },
       },
-      8: {
+      6: {
         titel: 'Der Tragstein',
         text: 'Im Tragstein eines Pfeilers steckt ein Teil, das die Vorigen beim Herausbrechen vergessen haben, so fest, dass man den Pfeiler brechen muss, um es zu bekommen. '
           + 'Ein Steinmetz der Vorigen steht daneben, mit Meissel, und wartet darauf, dass jemand es tut, damit er nicht der Einzige war. '

@@ -162,12 +162,13 @@ Dazu die Läufe am Rundenlimit des Bosskampfs und die Siege vor der Wut-Runde: `
 
 Im Taglicht (Stand 5.11.2026, Team «Stark», 1000 Läufe; Ziele, Rundenlimit und Siege vor der Wut in
 `docs/NEUE-DUNGEONS.md`, «Im Taglicht»). «Gut» schafft mit den Sets der Ebene darunter höchstens jeden
-zwanzigsten Lauf (Erste Stadt `morgen5` 4 %, Pfeiler `stadt5` 3 %), «Frisch» nichts:
+zwanzigsten Lauf (Erste Stadt `morgen5` 4 %, Pfeiler `stadt5` 2 %), «Frisch» nichts. Die Pfeiler sind am
+6.11.2026 nachgeeicht (zweiter Pfeiler vor dem Rastplatz, Stützen 6 % Leben), daher ihre Zahlen:
 
 | Dungeon | ohne Set der Ebene darunter | dessen Set +0 / +3 / +5 | Lohn ohne Stufen |
 |---|---|---|---|
 | Die Erste Stadt | `pfand5` 0 / 0 / 0 % | Morgengabe 6 / 0 / 0 %, 27 / 14 / 0 %, 69 / 48 / 10 % | Wachfeuer 88 / 78 / 38 % |
-| Die Pfeiler des Tages | `morgen5` 14 / 1 / 0 % | Wachfeuer 56 / 8 / 1 %, 62 / 15 / 2 %, 72 / 27 / 6 % | Tagwerk 94 / 77 / 29 % |
+| Die Pfeiler des Tages (seit 6.11.) | `morgen5` 11 / 8 / 0 % | Wachfeuer 53 / 22 / 1 %, 60 / 29 / 2 %, 67 / 46 / 4,5 % | Tagwerk 90 / 85 / 31 % |
 
 **Alrunas Wachfeuer** (Glutkelle, Harnisch der Nachtwache, Glut der Vorigen; Ebene 11) ist ein Hammer-Set für
 Grimm. Gegen Alruna, deren Ruf zur Wache alle trifft, holt es einmal je Kampf den ersten Gefallenen zurück, auch

@@ -15,7 +15,9 @@
 //         Zenits Leben durchprobieren: npm run raid-eichung -- --leben 13500,14000,14500   (ohne Bänder)
 //         Regeln zusammen abschalten:  npm run raid-eichung -- --ohne glocke,funken       (eine Zeile mehr)
 //         je ein Weg anders:           npm run raid-eichung -- --wege                     (Profi ≥ 90 %, sonst
-//                                      eine Aufstellungssuche ab «Gut», 300 Schritte, mit ≥ 90 %)
+//                                      eine Aufstellungssuche ab «Gut», 300 Schritte, mit ≥ 90 %; auf Stufe II
+//                                      mit anker15, jeder der fünfzehn einzeln, 600 Schritte; die Suche setzt
+//                                      dort in drei von zehn Schritten zwei Helden)
 //         Aufstellungssuche:           npm run raid-eichung -- --suche t4                 (T4 ≤ 65 %)
 //         nur eine Stufe:              npm run raid-eichung -- --stufe II                 (I oder II; mit --leben:
 //                                      das Leben dieser Stufe durchprobieren)
@@ -316,15 +318,26 @@ if (STUFE_EINS) {
 /** Proben je Schritt der Suche, mit eigenen Samen (100000 + i) · 7919 */
 const SUCH_PROBEN = 40;
 
-/** Ein Held auf ein zufälliges Feld; steht dort schon jemand, tauschen die beiden */
+/**
+ * Auf Stufe II zieht die Suche in drei von zehn Schritten zwei Helden statt einem: 15 Helden auf 27 Feldern, einzeln
+ * bleibt sie dort stecken (Sina als Schattentänzerin: 33 % nach 300 Schritten; mit zwei Helden 90 % nach 300 und
+ * 96 % nach 600). Stufe I zieht wie bisher einen, ihre Funde bleiben gleich.
+ */
+const ZWEI_HELDEN_ANTEIL = (def: RaidDef): number => (def.truppZahl > 2 ? 0.3 : 0);
+
+/** Ein Held (auf Stufe II manchmal zwei) auf ein zufälliges Feld; steht dort schon jemand, tauschen die beiden */
 function mutiere(aufstellung: Record<string, Feld>, rng: SeededRNG, def: RaidDef = ZENIT): Record<string, Feld> {
   const neu = Object.fromEntries(Object.entries(aufstellung).map(([id, f]) => [id, { ...f }]));
   const ids = Object.keys(neu);
-  const id = rng.pick(ids);
-  const ziel = { reihe: rng.nextInt(0, def.reihen - 1), spalte: rng.nextInt(0, spaltenZahl(def) - 1) };
-  const besetzer = ids.find(k => k !== id && neu[k].reihe === ziel.reihe && neu[k].spalte === ziel.spalte);
-  if (besetzer) neu[besetzer] = { ...neu[id] };
-  neu[id] = ziel;
+  const anteil = ZWEI_HELDEN_ANTEIL(def);
+  const zuege = anteil > 0 && rng.next() < anteil ? 2 : 1;
+  for (let zug = 0; zug < zuege; zug++) {
+    const id = rng.pick(ids);
+    const ziel = { reihe: rng.nextInt(0, def.reihen - 1), spalte: rng.nextInt(0, spaltenZahl(def) - 1) };
+    const besetzer = ids.find(k => k !== id && neu[k].reihe === ziel.reihe && neu[k].spalte === ziel.spalte);
+    if (besetzer) neu[besetzer] = { ...neu[id] };
+    neu[id] = ziel;
+  }
   return neu;
 }
 
@@ -365,6 +378,8 @@ function aufstellungsSuche(start: Aufbau, schritte: number): Record<string, Feld
 
 /** Schritte der Suche für einen Weg, mit dem «Profi» unter 90 % bleibt */
 const WEG_SUCHE_SCHRITTE = 300;
+/** Auf Stufe II doppelt so viele: Nach 300 Schritten lag Sina als Schattentänzerin bei 90 %, knapp am Band */
+const WEG_SUCHE_SCHRITTE_ZWEI = 600;
 
 if (WEGE && STUFE_EINS) {
   // Bleibt «Profi» mit dem anderen Weg unter 90 %, passt vielleicht nur die Aufstellung nicht: dann sucht das Werkzeug
@@ -551,6 +566,44 @@ if (STUFE_ZWEI) {
   console.log(`  ${DREIZEHN.truhen.halb.name}: ${beuteZeile(halbZwei)} · ${ZENIT.truhen.halb.name}: ${beuteZeile(halbEins)}`);
   const mal = truheZwei.wert / truheEins.wert;
   band(`Stufe II · ${DREIZEHN.truhen.sieg.name}: Wert 1,4- bis 2-mal ${ZENIT.truhen.sieg.name}`, mal, 1.4, 2, `${komma(mal)}-mal`);
+}
+
+// ── Stufe II: je ein Weg anders (--wege) ──
+
+if (WEGE && STUFE_ZWEI) {
+  // Wie auf Stufe I, mit anker15: jeder der fünfzehn einzeln mit dem anderen Weg seiner Klasse, auch die Lehrlinge
+  console.log(`\nStufe II, je ein Weg anders als in anker15 (${LAEUFE} Läufe; bleibt «Profi» unter 90 %, sucht das Werkzeug `
+    + `ab «Gut» eine Aufstellung, ${WEG_SUCHE_SCHRITTE_ZWEI} Schritte zu ${SUCH_PROBEN} Proben, in drei von zehn zwei Helden)\n`);
+  console.log('| Held | Weg | anker15 · Gut | anker15 · Profi | mit Aufstellungssuche |');
+  console.log('|---|---|---|---|---|');
+  const funde: string[] = [];
+  for (const held of baueRaidGilde('anker15').helden) {
+    for (const weg of wegeDerKlasse(held.classId)) {
+      if (weg.id === held.spezialisierung) continue;
+      const mitWeg = (name: RaidAufstellungDreizehn): Aufbau => {
+        const a = aufbauZwei('anker15', name);
+        a.helden.find(h => h.name === held.name)!.spezialisierung = weg.id;
+        return a;
+      };
+      const gut = fasse(laeufe(mitWeg('gut')), DREIZEHN);
+      const profi = fasse(laeufe(mitWeg('profi')), DREIZEHN);
+      let gesucht: Messung | null = null;
+      if (profi.sieg < 0.90) {
+        const start = mitWeg('gut');
+        const gefunden: Aufbau = { ...start, aufstellung: aufstellungsSuche(start, WEG_SUCHE_SCHRITTE_ZWEI) };
+        gesucht = fasse(laeufe(gefunden), DREIZEHN);
+        funde.push(`${held.name} als ${weg.name}, gefunden ab «Gut»: Sieg ${prozent(gesucht.sieg)}, `
+          + `Zenit-Rest ${prozent(gesucht.rest)}, Ø Runde ${komma(gesucht.siegRunde)}`, '',
+        ...raster(gefunden.helden, gefunden.aufstellung, DREIZEHN), '');
+      }
+      console.log(`| ${held.name}${held.lehrling ? ' (Lehrling)' : ''} | ${weg.name} | ${prozent(gut.sieg)} | `
+        + `${prozent(profi.sieg)} | ${gesucht ? prozent(gesucht.sieg) : '–'} |`);
+      band(`Stufe II · Weg ${weg.name} für ${held.name}: anker15 · Profi oder mit Aufstellungssuche mindestens 90 %`,
+        Math.max(profi.sieg, gesucht?.sieg ?? 0), 0.90, 1,
+        gesucht ? `${prozent(profi.sieg)}, mit Aufstellungssuche ${prozent(gesucht.sieg)}` : prozent(profi.sieg));
+    }
+  }
+  if (funde.length > 0) console.log(`\n${funde.join('\n').trimEnd()}`);
 }
 
 // ── Die besten zehn neu suchen (--suche zehn) ──

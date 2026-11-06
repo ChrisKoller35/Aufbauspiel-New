@@ -154,6 +154,9 @@
   display: grid; grid-template-columns: 58px repeat(3, minmax(0, 1fr)) 30px repeat(3, minmax(0, 1fr));
   grid-template-rows: 22px 26px repeat(3, minmax(104px, auto)); column-gap: 6px; row-gap: 6px; position: relative;
 }
+/* Lage im Gitter aus RaidScreen feldHtml (--gr/--gc); Reihenköpfe und Glockenband je Trupp nur am Handy auf Stufe II */
+.r-gitter > * { grid-row: var(--gr); grid-column: var(--gc); }
+.r-gitter .r-nur-stapel { display: none; }
 .r-trupp-name {
   font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: 3px; color: var(--txt); text-align: center;
   align-self: end; padding-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -705,24 +708,35 @@
   .r-zwei-zeiger .r-legende > span { white-space: nowrap; }
   .r-lg-gg { font-size: 11px; }
 
-  /* Neun Spalten auf 358 px: schmale Gänge, kleine Bilder, Namen in der schmaleren Schrift ganz bis an den Rand */
-  .raid.r-drei .r-feld { padding-left: 3px; padding-right: 3px; }
+  /* Drei Trupps untereinander (feldHtml setzt --hr/--hc): je Trupp Name, Spaltenköpfe und drei Reihen über die ganze
+     Breite, Felder gut 100 Pixel breit; im Feld das Bild links, Name und Leben rechts. Neun Spalten nebeneinander
+     waren 34 Pixel schmal. */
   .r-gitter.r-drei {
-    grid-template-columns: 10px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr));
-    grid-template-rows: 15px 18px repeat(3, 50px); column-gap: 2px;
+    grid-template-columns: 16px repeat(3, minmax(0, 1fr));
+    grid-template-rows: repeat(3, 24px 20px 44px 44px 44px); column-gap: 4px; row-gap: 3px;
   }
-  .r-gitter.r-drei .r-zelle { padding: 3px 0 1px; }
-  .r-gitter.r-drei .r-zelle .r-bild { width: 28px; height: 28px; border-radius: 3px; }
-  .r-gitter.r-drei .r-zelle .r-name { font-family: 'Crimson Text', serif; font-size: 11px; font-weight: 400; letter-spacing: -.3px; margin-top: 2px; }
-  .r-gitter.r-drei .r-zelle .r-name.r-lang, .r-wg-gitter.r-drei .r-wg-zelle .r-name.r-lang { letter-spacing: -.65px; }
-  .r-gitter.r-drei .r-trupp-name { letter-spacing: 1px; }
-  .r-gitter.r-drei .r-skopf { font-size: 11px; gap: 2px; }
-  .r-gitter.r-drei .r-skopf .r-13 { font-size: 8px; padding: 1px 2px; border-radius: 6px; }
-  .r-gitter.r-drei .r-rkopf b { font-size: 11px; }
-  .r-gitter.r-drei .r-marke { width: 14px; height: 14px; }
-  .r-gitter.r-drei .r-marke svg { width: 8px; height: 8px; }
-  .r-gitter.r-drei .r-marke.r-m-pendel { top: -6px; left: -4px; }
-  .r-gitter.r-drei .r-marke.r-m-funken { top: -6px; right: -4px; }
+  .r-gitter.r-drei > * { grid-row: var(--hr, var(--gr)); grid-column: var(--hc, var(--gc)); }
+  .r-gitter.r-drei .r-nur-stapel { display: flex; }
+  .r-gitter.r-drei .r-reihenband.r-nur-stapel { display: block; }
+  .r-gitter.r-drei .r-gang { display: none; }
+  .r-gitter.r-drei .r-trupp-name { text-align: left; padding-left: 2px; }
+  .r-gitter.r-drei .r-trupp-name small { display: inline; font-size: 11px; letter-spacing: .5px; }
+  .r-gitter.r-drei .r-skopf small { display: inline; font-size: 11px; }
+  .r-gitter.r-drei .r-skopf .r-13 { font-size: 9px; padding: 1px 3px; border-radius: 6px; }
+  /* Namen in der schmaleren Schrift: «Nekromant» passt auf 390 Pixeln ganz hinein */
+  .r-gitter.r-drei .r-zelle {
+    display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 4px;
+    align-content: center; padding: 2px 4px;
+  }
+  .r-gitter.r-drei .r-zelle.r-pendel { padding-top: 0; }
+  .r-gitter.r-drei .r-zelle .r-bild { grid-row: 1 / 3; width: 30px; height: 30px; border-radius: 4px; }
+  .r-gitter.r-drei .r-zelle .r-name {
+    font-family: 'Crimson Text', serif; font-size: 13px; font-weight: 600; letter-spacing: 0; margin-top: 0;
+    align-self: end; text-align: left;
+  }
+  .r-gitter.r-drei .r-zelle .r-name.r-lang { letter-spacing: -.3px; }
+  .r-gitter.r-drei .r-zelle .r-hp { display: flex; font-size: 11px; align-self: start; }
+  .r-wg-gitter.r-drei .r-wg-zelle .r-name.r-lang { letter-spacing: -.65px; }
 
   .r-wg-gitter.r-drei {
     grid-template-columns: 12px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)); gap: 2px;

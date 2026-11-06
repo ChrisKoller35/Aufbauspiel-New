@@ -326,16 +326,18 @@ mit einem Lauf bei Orm (wie unter «Truhen») und prüft die Eichbänder unten; 
 - `npm run raid-eichung -- --ohne glocke,funken`: mehrere Regeln zusammen aus, als Zeile mehr unter «Je eine Regel aus».
 - `npm run raid-eichung -- --wege`: je ein Held mit dem anderen Weg seiner Klasse. Bleibt «Profi» damit unter 90 %,
   sucht das Werkzeug ab «Gut» eine Aufstellung für diese Gilde (dieselbe Suche wie `--suche`, 300 Schritte) und zeigt
-  sie.
+  sie. Auf Stufe II mit `anker15`, jeder der fünfzehn einzeln, auch die Lehrlinge.
 - `npm run raid-eichung -- --suche t4`: Aufstellungssuche für eine Gilde. Ab «Gut» setzt sie 200-mal einen Helden auf
   ein zufälliges Feld (ist es besetzt, tauschen die beiden) und behält die neue Aufstellung, wenn sie in 40 Proben
-  mindestens so gut abschneidet (zuerst die Siege, dann Zenits Rest); die beste misst sie am Ende mit 400 Läufen.
+  mindestens so gut abschneidet (zuerst die Siege, dann Zenits Rest); die beste misst sie am Ende mit 400 Läufen. Auf
+  Stufe II (15 Helden, 27 Felder) setzt sie in drei von zehn Schritten zwei Helden statt einem; einzeln blieb sie dort
+  stecken (Abschnitt «Eichung von Stufe II», «Je ein Weg anders»).
 
 Nach Änderungen an Kampf, Klassen, Wegen, Sets, Schmiede, Beute oder Zenit neu laufen lassen und die Tabellen hier
 nachführen; `tests/raid.test.ts` prüft die Bänder mit 20 Samen und meldet Verschiebungen sofort. Stellschraube zuerst
 Zenits Leben, in Schritten von 250, erst danach Wuchten oder Heilfaktor. Gemessen am 6.11.2026; ein Kampf braucht 1,6
 bis 1,8 ms (Node 22.22), das Werkzeug für Stufe I rund 20 Sekunden (mit `--wege` und `--suche t4` rund 70), mit
-Stufe II zusammen rund 45.
+Stufe II zusammen rund 45; `--stufe II --wege` braucht rund zwei Minuten (15 Helden, eine Suche über 600 Schritte).
 
 ### Muster-Gilde «Anker»
 
@@ -659,8 +661,13 @@ Spielstände laden unverändert, keine neue SaveVersion. `SpielstandSchema` prü
 - **Alles nach der Stufe:** Titel «ZENIT, AUFGEZOGEN», Uhr, Werte, Truhen, Liste, Kriegsrat, Regeln, Wiedergabe,
   Ergebnis und Bank lesen die gewählte Stufe. Feld, Bank, Blatt und Wiedergabe zeigen die Helden mit ihrem Bild
   (`bildKarte` aus `src/ui/heldBild.ts`; Lehrlinge gespiegelt).
-- **Feld** mit 9 Spalten und zwei Gängen, am PC (1400 × 900) und am Handy (390 px) ohne seitliches Scrollen: am Handy
-  Zellen von 34 × 50 Pixeln, Namen in Crimson Text, lange Namen enger. Spalte E trägt im Kopf eine «13».
+- **Feld** mit 9 Spalten und zwei Gängen, am PC (1400 × 900) nebeneinander. Am Handy (390 px) stehen die drei Trupps
+  untereinander, je Trupp Name (mit Heilern), Spaltenköpfe und drei Reihen über die ganze Breite, mit Reihenköpfen und
+  Glockenband je Trupp: Zellen von 105 × 44 Pixeln (vorher 34 × 50, neun Spalten nebeneinander), Bild links, Name und
+  Leben rechts, Namen in Crimson Text; «Nekromant», der längste Klassenname, passt ganz hinein. Das Feld ist am Handy
+  so rund 585 statt 195 Pixel hoch. Das Gitter liest seine Lage aus Variablen (`--gr`/`--gc`, am Handy `--hr`/`--hc`,
+  `feldHtml` in `RaidScreen.ts`). Stufe I bleibt am Handy nebeneinander (sechs Spalten, Zellen um 52 Pixel). Spalte E
+  trägt im Kopf eine «13».
 - **Uhrleiste** mit zwei Zeilen je Runde (Zeiger, Gegenzeiger in Türkis), Runde 5, 14 und 23 als «13» markiert, Pendel
   links, Mitte, rechts.
 - **Uhr:** ein zweiter, türkiser Zeiger. Kurz vor dreizehn, bis Zenit auf Stufe II in dieser Woche besiegt ist, dann
@@ -766,6 +773,47 @@ seinen):
 
 Um 15 250 herum bewegen 250 Leben «Gut» um 18 bis 26 Punkte, wie auf Stufe I.
 
+**Je ein Weg anders** (`--stufe II --wege`, 400 Läufe; jeder der fünfzehn aus anker15 einzeln mit dem anderen Weg
+seiner Klasse, auch die Lehrlinge; bleibt «Profi» unter 90 %, sucht das Werkzeug ab «Gut» eine Aufstellung, 600
+Schritte zu 40 Proben, in drei von zehn Schritten zwei Helden):
+
+| Held | Weg | anker15 · Gut | anker15 · Profi | mit Aufstellungssuche |
+|---|---|---|---|---|
+| Brom | Vergelter | 68 % | 98 % | – |
+| Grimm | Schlächter | 54 % | 99 % | – |
+| Lia | Fährtenleserin | 100 % | 100 % | – |
+| Sina | Schattentänzerin | 1 % | 8 % | 96 % |
+| Ansgar | Kreuzritter | 75 % | 92 % | – |
+| Ewin | Kriegspriester | 74 % | 92 % | – |
+| Moos | Bärengestalt | 81 % | 99 % | – |
+| Liedra | Schmählied | 100 % | 100 % | – |
+| Ysra | Sturmhexe | 8 % | 98 % | – |
+| Morn | Knochenherr | 62 % | 99 % | – |
+| Bertram (Lehrling) | Vergelter | 69 % | 99 % | – |
+| Pirmin (Lehrling) | Lichtbringer | 100 % | 99 % | – |
+| Wenna (Lehrling) | Fährtenleserin | 100 % | 100 % | – |
+| Benno (Lehrling) | Schmählied | 100 % | 100 % | – |
+| Mirabell (Lehrling) | Fluchweberin | 48 % | 99 % | – |
+
+Vierzehn von fünfzehn Wegen halten «Profi» bei 92 bis 100 %; «Gut» schwankt stärker (Ysra als Sturmhexe 8 %,
+Mirabell als Fluchweberin 48 %). **Sina als Schattentänzerin** passt wie auf Stufe I in keine der festen
+Aufstellungen (Gut 1 %, Profi 8 %): Ihr fehlt der Meister-Effekt der Meuchlerin (2,5-facher Schaden, sobald Zenit
+unter 60 % ist). Mit «Profi» macht Sina als Meuchlerin im Schnitt rund 5900 der 15 250 Leben, als Schattentänzerin
+rund 3500 (mit «Gut» 3100 gegen 2100; je 100 Läufe). Die Suche ab «Gut» findet eine Aufstellung mit 96 % (Zenit-Rest
+0 %, Ø Runde 12,8):
+
+```
+  .        Moos     .        | .        .        Bertram  | .        Grimm    .
+  .        Ewin     Ysra     | Brom     Benno    Ansgar   | Liedra   .        Pirmin
+  Lia      Wenna    Mirabell | .        Morn     .        | .        Sina     .
+```
+
+Die Suche von Stufe I (ein Held je Schritt, 300 Schritte) blieb hier bei 33 % stecken: 15 Helden auf 27 Feldern
+sind ein grösseres Feld als 10 auf 18. Mit zwei Helden in drei von zehn Schritten kam sie nach 300 Schritten auf
+90 %, nach 600 auf 96 %; Probesuchen mit anderen Samen und ab «Profi» (1000 Schritte) auf 91 bis 100 %. Dieselbe
+Suche ab «zehn» (`--suche zehn`) findet für die besten zehn ohne Lehrlinge weiterhin nichts Besseres als 5 %; auch
+vier Probesuchen über 1000 Schritte mit anderen Samen blieben dort (Band S5 hält).
+
 **Eichbänder von Stufe II** (Stand 6.11.2026):
 
 | # | Zeile | Test (20 Samen) | gemessen | Werkzeug (400 Läufe) | gemessen |
@@ -779,6 +827,7 @@ Um 15 250 herum bewegen 250 Leben «Gut» um 18 bis 26 Punkte, wie auf Stufe I.
 | S7 | Ohne Gegenzeiger | | | anker15 · Gut mindestens 20 Punkte mehr | +32 ✓ |
 | S8 | Ohne Heilregel | | | anker15 · Gut höchstens 5 % | 0 % ✓ |
 | S9 | Die dreizehnte Truhe | | | Wert 1,4- bis 2-mal Zenits Truhe | 1,5-mal ✓ |
+| S10 | Je ein Weg anders | | | anker15 · Profi mindestens 90 %, sonst mit Aufstellungssuche ab «Gut» mindestens 90 % (`--stufe II --wege`, je Held ein Band) | 92 bis 100 %; Sina als Schattentänzerin 8 %, mit Aufstellungssuche 96 % ✓ |
 
 Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind nach dem Umbau gleich geblieben.
 
@@ -790,9 +839,13 @@ Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind na
 - **Steile Kurve** wie auf Stufe I: Der Kampf entscheidet sich um Mittag, 250 Leben bewegen «Gut» um 18 bis 26 Punkte.
 - **«Profi» ist nicht naheliegend:** zwei Zerbrechliche allein vorn, sechs Warnungen in der Liste. Liste, Kriegsrat und
   Ursachen-Satz gehören zusammen.
-- **Handy:** Neun Spalten auf 390 Pixeln machen die Felder 34 Pixel breit, schmaler als die übrigen Knöpfe des Spiels.
-  Ziehen gibt es am Handy nicht, man tippt Held und Feld.
-- **Wege** sind für Stufe II nicht einzeln geeicht (`--wege` rechnet nur Stufe I).
+- **Handy:** Die Trupps stehen untereinander (Felder 105 × 44 Pixel). Dafür ist das Feld rund 585 Pixel hoch, zwischen
+  Bank und Feld rollt man weiter als auf Stufe I, und Reihe 1 von «Mitte» steht unter Reihe 3 von «Links»: «vorn» heisst
+  je Trupp oben. Ziehen gibt es am Handy nicht, man tippt Held und Feld. Auf 360 Pixeln (Zellen 95 Pixel) kürzt nur
+  «Nekromant» mit «…», alle übrigen Klassen- und Lehrlingsnamen passen.
+- **Wege:** Alle fünfzehn Wege sind einzeln gemessen (Band S10). Mit Sina als Schattentänzerin passt wie auf Stufe I
+  keine der festen Aufstellungen; die gesuchte gewinnt 96 %, ist aber nicht naheliegend. Liste und Kriegsrat helfen,
+  eine passende zu finden; einen Weg wechseln kann ein Held nicht.
 
 ## Grenzen
 

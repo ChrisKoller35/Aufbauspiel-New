@@ -15,7 +15,7 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 9 | Der Mondhof | Mond | 16 | Argentis, der Mondvogt | Pfandzettel: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Zettel unterschreiben; jeder kostet bis zum Ende 8 % Angriff und bringt erst mit dem Sieg über Argentis Mondsilber (5, dann 9) oder einen Set-Teil mehr. Wer am letzten Kontrollpunkt umkehrt, lässt alle Pfandzettel liegen | Amtsstab des Mondvogts |
 | 10 | Das Morgentor | Mond | 16 | Sunna, die Tagwächterin | Die Sonnenuhr: Dreimal (Raum 2, 8, 14) kann die Gruppe sie vorstellen; jedes Mal kommt Sunnas Wut-Runde 2 Runden früher (ab Runde 10, dreimal gewählt ab Runde 4), und erst mit dem Sieg kommen Mondsilber (6, dann 10) oder ein Set-Teil mehr. Ihre Werte ändern sich nie, nur ihre Geduld; die Kampf-Vorschau zeigt «Wut ab Runde X». Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen | Der Morgenstern |
 | 11 | Die Erste Stadt | Taglicht | 16 | Alruna, die erste Gildenmeisterin | Die Wachfeuer: kein Rastplatz im ganzen Dungeon. Dreimal (Raum 2, 8, 14) kann die Gruppe ins Feuer greifen (Tagstein 5, dann ein Set-Teil, dann Tagstein 9, alles erst mit dem Sieg; jedes Mal 8 % Leben, die keine Rast zurückbringt) oder sich wärmen: 5, 5, dann 10 % Leben, und wer am Boden liegt, steht mit 30 % wieder auf (`wecken`) | Alrunas Kelle |
-| 12 | Die Pfeiler des Tages | Taglicht | 16 | Orm, der Träger des Tages | Die Pfeiler: Dreimal (Raum 2, 8, 14) kann die Gruppe einen Pfeiler brechen (Tagstein 6, dann ein Set-Teil, dann Tagstein 10, erst mit dem Sieg; Orms Wut 2 Runden früher) oder stützen (5 % Leben, Orms Wut 1 Runde später, in Raum 8 dazu 2 Tagstein sofort). Seine Wut wandert so zwischen Runde 4 und 13 | Der Schlussstein |
+| 12 | Die Pfeiler des Tages | Taglicht | 16 | Orm, der Träger des Tages | Die Pfeiler: Dreimal (Raum 2, 6, 14) kann die Gruppe einen Pfeiler brechen (Tagstein 6, dann ein Set-Teil, dann Tagstein 10, erst mit dem Sieg; Orms Wut 2 Runden früher) oder stützen (6 % Leben, Orms Wut 1 Runde später, in Raum 6 dazu 2 Tagstein sofort). Seine Wut wandert so zwischen Runde 4 und 13. Der zweite Pfeiler steht vor dem Rastplatz | Der Schlussstein |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
   Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund, Mondhof: Nyxar,
@@ -465,18 +465,34 @@ mit einem eigenen Skript, das nur diese Zeilen misst):
 | Team «Gut» mit `morgen5` | höchstens 5 % | 4 / 1 / 0 % | 0 % | – |
 | Team «Frisch» mit `morgen5` | 0 % | 0 / 0 / 0 % | 0 % | – |
 
-| Pfeiler des Tages, Ausrüstung | Ziel | gemessen | am Rundenlimit | Siege vor der Wut |
-|---|---|---|---|---|
-| `morgen5`: ohne Alrunas Wachfeuer | höchstens 15 % vorsichtig, 0 % gierig | 14 / 1 / 0 % | 0 % | 33 von 145 / 0 von 6 / – |
-| `stadt0`: Wachfeuer ohne Stufen, übrige +5 | Eintritt, unter `stadt5` | 56 / 8 / 1 % | 0 % | 348 von 555 / 0 von 78 / 0 von 9 |
-| `stadt3`: Wachfeuer auf +3 | 20–35 % vorsichtig | 62 / 15 / 2 % | 0 % | 433 von 621 / 0 von 149 / 0 von 23 |
-| `stadt5`: alles auf +5 | 65–75 / 35–50 / höchstens 5 % | 72 / 27 / 6 % | 0,3 / 0 / 0 % | 543 von 722 / 0 von 271 / 0 von 57 |
-| `tagwerk0`: Lia in «Was den Tag trug» ohne Stufen (Lohn) | mindestens 85 % vorsichtig, gierig 25–50 % | 94 / 77 / 29 % | 0,1 / 0 / 0 % | 815 von 935 / 0 von 768 / 0 von 292 |
-| Team «Gut» mit `stadt5` | höchstens 5 % | 3 / 0 / 0 % | 1,2 % | – |
-| Team «Frisch» mit `stadt5` | 0 % | 0 / 0 / 0 % | 0 % | – |
+| Pfeiler des Tages, Ausrüstung | Ziel | gemessen (6.11.) | am Rundenlimit | Siege vor der Wut | bis 6.11. |
+|---|---|---|---|---|---|
+| `morgen5`: ohne Alrunas Wachfeuer | höchstens 15 % vorsichtig, 0 % gierig | 11 / 8 / 0 % | 0 % | 25 von 108 / 0 von 84 / – | 14 / 1 / 0 % |
+| `stadt0`: Wachfeuer ohne Stufen, übrige +5 | Eintritt, unter `stadt5` | 53 / 22 / 1 % | 0 % | 331 von 531 / 0 von 219 / 0 von 10 | 56 / 8 / 1 % |
+| `stadt3`: Wachfeuer auf +3 | 20–35 % vorsichtig | 60 / 29 / 2 % | 0 % | 414 von 595 / 0 von 289 / 0 von 20 | 62 / 15 / 2 % |
+| `stadt5`: alles auf +5 | 65–75 / 35–50 / höchstens 5 % | 67 / 46 / 4,5 % | 0,4 / 0 / 0 % | 539 von 674 / 1 von 459 / 0 von 45 | 72 / 27 / 6 % |
+| `tagwerk0`: Lia in «Was den Tag trug» ohne Stufen (Lohn) | mindestens 85 % vorsichtig, gierig 25–50 % | 90 / 85 / 31 % | 0,1 / 0 / 0 % | 799 von 903 / 296 von 845 / 0 von 305 | 94 / 77 / 29 % |
+| Team «Gut» mit `stadt5` | höchstens 5 % | 2 / 0,5 / 0 % | 0,4 / 0,1 / 0 % | – | 3 / 0 / 0 % |
+| Team «Frisch» mit `stadt5` | 0 % | 0 / 0 / 0 % | 0 % | – | 0 / 0 / 0 % |
 
-Abstand vorsichtig zu gierig bei den Pfeilern mit `stadt5`: 66 Punkte (Ziel mindestens 60). Gierig fällt kein
+Abstand vorsichtig zu gierig bei den Pfeilern mit `stadt5`: 63 Punkte (Ziel mindestens 60). Gierig fällt kein
 Sieg vor Orms Wut; dreimal gebrochen gewinnt nur, wer seine Wut ab Runde 4 überlebt.
+
+**Nachgeeicht am 6.11.2026** (`npm run dungeon-eichung -- 1000 tagespfeiler stark` und ein Skript, das nur diese
+Zeilen misst, 1000 Läufe je Zeile). Bis dahin lag klug fast bei gierig, weil der Rastplatz (15 %) direkt vor dem
+zweiten Pfeiler stand: Klug kam mit 92 % Leben hin und brach in 996 von 1000 Läufen die ersten zwei Pfeiler
+(Orms Wut ab Runde 7). Jetzt steht der zweite Pfeiler, der Tragstein, in Raum 6 gleich hinter dem Kontrollpunkt,
+vor dem Kampf mit dem Steinmetz und vor dem Rastplatz. Klug kommt mit etwa 84 % Leben hin, bricht ihn in 42 % der
+Läufe (dann gewinnt es 32 %) und stützt ihn sonst (dann gewinnt es 56 %). Vorsichtig und gierig wählen nicht nach Leben, für sie
+ändert die Reihenfolge fast nichts. Stützen kostet 6 statt 5 % Leben: Mit 5 % lag klug bei 50 %, am oberen Rand,
+mit 6 % in der Mitte, vorsichtig bleibt im Ziel. Verworfen, gemessen mit derselben Zahl Läufe:
+
+- **Brechen kostet Leben** (5 bis 20 %): gierig fällt ins Ziel, aber klug sinkt weiter (19 bis 25 %), weil es den
+  ersten Pfeiler trotzdem bricht, und die Tragkraft verliert ihren Lohn (gierig mit `tagwerk0` 0 bis 5 % statt
+  25 bis 50 %).
+- **Rastplatz hinter den zweiten Pfeiler** (Pfeiler in Raum 7): klug 59 %, zu viel.
+- **Erste Gefahr weicher** (Schaden 20 oder 22 statt 26): klug 42 bis 45 %, aber ohne das Wachfeuer (`morgen5`)
+  gewinnt vorsichtig 22 bis 23 % statt höchstens 15.
 
 Nach der Gegenprüfung (Nachmauern und Nachgreifen stärken 4 Runden lang, statt etwas zu beschwören) mit 1000
 Läufen je Zeile nachgemessen: Zeichen für Zeichen dieselben Zahlen. Zwei Angaben waren falsch übertragen: Die
@@ -513,13 +529,15 @@ kein Sieg vor Orms Wut (dort stand 1).
 
 **Was nicht erreicht wurde, und warum:**
 
-- **Pfeiler klug 27 % statt 35 bis 50 %, gierig 6 statt höchstens 5 %.** Klug bricht einen Pfeiler, wenn die
+- **Pfeiler klug 27 % statt 35 bis 50 %, gierig 6 statt höchstens 5 %** (seit dem 6.11. erreicht: 46 und 4,5 %, siehe
+  «Nachgeeicht am 6.11.2026» oben; die Erklärung hier ist die vom 5.11.). Klug bricht einen Pfeiler, wenn die
   Gruppe noch 85 % Leben hat, und das ist an den Pfeilern oft: Brechen kostet kein Leben. Klug und gierig gehen
   zusammen: Mit 5000 Leben und 1,75 Wut waren es 71 / 44 / 11 %, mit 5800 Leben, 72 Angriff und 1,9 Wut 72 / 25 / 4 %. Ein
   Boss, der klug in 35 bis 50 % fällt, lässt gierig in mindestens 10 % fallen, weil das Wachfeuer auch der
   gierigen Gruppe einmal je Kampf einen Gefallenen zurückgibt. Gewählt ist die Mitte, die gierig fast im Ziel
   hält: Brechen soll etwas kosten, und klug zu sein heisst hier, nicht zu brechen.
-- **Wachfeuer auf +3: 62 % statt 20 bis 35 %.** Wie am Morgentor: Zwei Stufen auf drei Teilen sind 10 % Werte,
+- **Wachfeuer auf +3: 62 % statt 20 bis 35 %** (seit dem 6.11. 60 %; vorsichtig bricht nie, die neue Raumfolge
+  ändert daran nichts). Wie am Morgentor: Zwei Stufen auf drei Teilen sind 10 % Werte,
   an Orms Treffern ändert das wenig. Der Schlüssel ist das Set selbst (ohne: 14 %), nicht seine Stufe; ohne
   Stufen sind es schon 56 %. Die Erste Stadt dagegen hält ihr Ziel (+3: 27 %), weil die Morgengabe ein
   Schadens-Set ist und dort jede Stufe zählt.
