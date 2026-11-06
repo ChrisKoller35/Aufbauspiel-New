@@ -10,11 +10,25 @@ export function hpZahl(hp: number): number {
 }
 
 /**
- * Angriff und Verteidigung auf Zehntel (sie wachsen je Stufe um Zehntel, HeroProgression): So zeigen Heldenfenster,
- * Teamwahl und Kampf dieselbe Zahl, und eine Summe wie 24.6 + 0.2 zeigt nie 24.799999999999997.
+ * Auf Zehntel gerundet (Angriff und Verteidigung wachsen je Stufe um Zehntel, HeroProgression). Ohne Rundung zeigte
+ * 16.8 + 0.1 «16.900000000000002» und 24.6 − 10.6 «14.000000000000002».
  */
 export function zehntel(n: number): number {
   return Math.round(n * 10) / 10;
+}
+
+/**
+ * Angriff oder Verteidigung für die Anzeige: unter 100 auf Zehntel, ab 100 ganz (104 statt 104.3). So zeigen
+ * Heldenfenster, Heldenkarte, Teamwahl, Kampf und das Blatt im Raid dieselbe Zahl, und die kleinen Teamkarten am
+ * Handy bleiben einzeilig. Nur Darstellung: Gerechnet wird weiter genau.
+ */
+export function kampfwert(n: number): number {
+  return Math.abs(n) >= 99.95 ? Math.round(n) : zehntel(n);
+}
+
+/** Tempo und Boni auf Hundertstel (0.93, +0.05) */
+export function hundertstel(n: number): number {
+  return Math.round(n * 100) / 100;
 }
 
 /** «aktuell / maximal», beide ganzzahlig. */

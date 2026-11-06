@@ -204,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+    // Strg, Cmd und Alt gehören dem Browser (Strg+A markiert alles, Strg+G sucht weiter), nicht den Kürzeln
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
 
     // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben).
     // Ist ein Fenster offen (Händler, Gebäude, Stadtweg, Spielstand, Fundbuch), fängt dessen Hörer in der

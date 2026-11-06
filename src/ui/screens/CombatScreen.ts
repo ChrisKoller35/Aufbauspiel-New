@@ -15,8 +15,8 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
-import { hpAnzeige, rundeLogZahlen, zehntel } from '../hpAnzeige';
-import { deckknopfElement, tastaturZuletzt } from '../fokus';
+import { hpAnzeige, hundertstel, kampfwert, rundeLogZahlen } from '../hpAnzeige';
+import { deckknopfElement, fokusMerken, fokusZurueck, tastaturZuletzt } from '../fokus';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
@@ -42,7 +42,7 @@ interface UnitEntry {
 
 /** Die Werte-Zeile einer Einheit in der Kampfkarte */
 function statsText(unit: CombatUnit): string {
-  return `ATK:${zehntel(unit.atk)} DEF:${zehntel(unit.def)} SPD:${unit.spd.toFixed(1)}`;
+  return `ATK:${kampfwert(unit.atk)} DEF:${kampfwert(unit.def)} SPD:${hundertstel(unit.spd)}`;
 }
 
 // ─── CSS Shake (replaces Phaser camera.shake) ────────────────
@@ -307,6 +307,17 @@ export class CombatScreen {
   private fokusAufHauptknopf(): void {
     const knopf = this.actionsEl.querySelector<HTMLButtonElement>('.mc-co-fight-btn, .mc-co-continue-btn');
     if (knopf && tastaturZuletzt()) knopf.focus({ preventScroll: true });
+  }
+
+  /**
+   * Zeichnet einen Teil der Vorschau neu (Fähigkeiten nach einer Wahl, Vorräte nach «Nutzen»). Der Fokus bleibt auf
+   * dem gleichwertigen Knopf (data-fokus), ein zweites Enter wählt ab oder nimmt das nächste Brot; ist der Vorrat
+   * aufgebraucht, geht er an «Kampf starten!» statt auf die Seite.
+   */
+  private mitFokus(neuZeichnen: () => void): void {
+    const marke = fokusMerken(this.previewStripEl);
+    neuZeichnen();
+    fokusZurueck(this.el, marke, ['.mc-co-fight-btn']);
   }
 
   hide(): void {
@@ -692,6 +703,7 @@ export class CombatScreen {
   ): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.className = 'mc-co-ability-btn';
+    btn.dataset.fokus = `faehigkeit-${unit.id}-${skill.id}`;
     btn.disabled = !canInteract;
 
     const isSelected = this.selectedAbilities.get(unit.id) === skill.id;
@@ -717,7 +729,7 @@ export class CombatScreen {
         } else {
           this.selectedAbilities.set(unit.id, skill.id);
         }
-        this.buildAbilitySection(run, room);
+        this.mitFokus(() => this.buildAbilitySection(run, room));
       });
     }
 
@@ -834,13 +846,14 @@ export class CombatScreen {
 
       const useBtn = document.createElement('button');
       useBtn.className = 'mc-btn success mc-co-use-btn';
+      useBtn.dataset.fokus = `vorrat-${zeile.itemId}`;
       useBtn.textContent = 'Nutzen';
       useBtn.title = vorratTitel(zeile);
       useBtn.addEventListener('click', () => {
         if (this.phase !== 'preview') return;
         if (!this.expSystem || !this.expState) return;
         this.vorratMeldung = nutzeVorrat(this.expSystem, this.expState, zeile);
-        this.refreshAfterProvision();
+        this.mitFokus(() => this.refreshAfterProvision());
       });
 
       card.append(itemImg, text, itemQty, useBtn);
@@ -1088,7 +1101,7 @@ export class CombatScreen {
       const floaty = document.createElement('div');
       floaty.className = 'mc-co-floaty';
       const diffZahl = Math.max(1, Math.round(Math.abs(diff)));
-      floaty.textContent = diff > 0 ? `-${diffZahl}` : `+${diffZahl}`;
+      floaty.textContent = diff > 0 ? `−${diffZahl}` : `+${diffZahl}`; // echtes Minus (docs/LESBARKEIT.md, Regel 7)
       floaty.style.color = diff > 0 ? 'var(--mc-damage)' : 'var(--mc-heal)';
       floaty.style.fontSize = Math.abs(diff) >= 20 ? '22px' : Math.abs(diff) >= 10 ? '18px' : '16px';
       floaty.style.animationDuration = `${Math.round(900 / spd)}ms`;

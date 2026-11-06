@@ -3,7 +3,9 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import {
   deckknopf, fokusSelektor, fokusMerken, fokusZurueck, eingabeBeobachten, bildschirmVerlassen, bildschirmFokussieren,
+  bildschirmMarke,
 } from '../src/ui/fokus';
+import { fensterTaste, FENSTER_ZIELE } from '../src/ui/components/FensterHilfen';
 
 /**
  * Tastatur (docs/TASTATUR.md): Deckknöpfe über Kacheln und Karten, Fokus über ein Neuzeichnen, Fenster der
@@ -62,6 +64,79 @@ describe('Fokus über ein Neuzeichnen', () => {
     expect(fokusMerken(null)).toBeNull();
     expect(fokusZurueck({ querySelector: () => null } as unknown as ParentNode, null)).toBe(false);
   });
+
+  test('der Preis erkennt den Knopf nicht: Er steigt durch den Klick (TRAINIEREN, ANHEUERN)', () => {
+    const knopf = {
+      dataset: {}, id: '', tagName: 'BUTTON',
+      attributes: [{ name: 'class', value: 'btn' }, { name: 'data-fighter-id', value: '2' }, { name: 'data-cost', value: '140' }],
+    };
+    vi.stubGlobal('document', { activeElement: knopf });
+    expect(fokusMerken({ contains: () => true } as unknown as Element)?.selektor).toBe('button[data-fighter-id="2"]');
+    vi.unstubAllGlobals();
+  });
+
+  test('Knöpfe, deren Preis oder Aufschrift wechselt, tragen einen festen Schlüssel', () => {
+    const helden = lies('ui/screens/HeroesScreen.ts');
+    expect(helden).toContain('data-fokus="trainieren-${fighter.id}"');
+    expect(helden.match(/data-fokus="anheuern-\$\{classDef\.id\}"/g)).toHaveLength(2);
+    expect(lies('ui/components/KlassenTafel.ts')).toContain('data-fokus="lehrling-${c.id}"');
+    const kampf = lies('ui/screens/CombatScreen.ts');
+    expect(kampf).toContain('btn.dataset.fokus = `faehigkeit-${unit.id}-${skill.id}`;');
+    expect(kampf).toContain('useBtn.dataset.fokus = `vorrat-${zeile.itemId}`;');
+    // Wahl einer Fähigkeit und «Nutzen» zeichnen neu, der Fokus bleibt (sonst «Kampf starten!»)
+    expect(kampf).toContain('this.mitFokus(() => this.buildAbilitySection(run, room));');
+    expect(kampf).toContain('this.mitFokus(() => this.refreshAfterProvision());');
+    expect(kampf).toContain("fokusZurueck(this.el, marke, ['.mc-co-fight-btn']);");
+  });
+});
+
+describe('Fenster: Tab-Falle und gehaltene Tasten', () => {
+  class Ziel {
+    constructor(public name: string, public sichtbar = true) {}
+    focus = vi.fn();
+    getClientRects(): unknown[] { return this.sichtbar ? [{}] : []; }
+  }
+  const zu = new Ziel('✕');
+  const geschichte = new Ziel('summary');
+  const versteckt = new Ziel('summary in zugeklappt', false);
+  let gefragt = '';
+  const fenster = Object.assign(new Ziel('fenster'), {
+    querySelectorAll: (sel: string) => { gefragt = sel; return [zu, geschichte, versteckt]; },
+    contains: (el: unknown) => [zu, geschichte, versteckt].includes(el as Ziel),
+  });
+  const taste = (key: string, mehr: Record<string, unknown> = {}) => {
+    const e = { key, shiftKey: false, repeat: false, preventDefault: vi.fn(), stopImmediatePropagation: vi.fn(), ...mehr };
+    fensterTaste(e as unknown as KeyboardEvent, fenster as unknown as HTMLElement, () => {});
+    return e;
+  };
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('Aufklapper zählen: Im Fenster eines gesperrten Knotens erreicht Tab die Geschichte', () => {
+    vi.stubGlobal('HTMLElement', Ziel);
+    expect(FENSTER_ZIELE).toContain('summary:not([tabindex="-1"])');
+    expect(FENSTER_ZIELE).toContain('button:not([disabled]):not([tabindex="-1"])');
+    vi.stubGlobal('document', { activeElement: zu });
+    // Auf ✕ (nicht das letzte Ziel): Der Browser geht weiter zur Geschichte, die Falle greift nicht ein
+    expect(taste('Tab').preventDefault).not.toHaveBeenCalled();
+    expect(gefragt).toBe(FENSTER_ZIELE);
+    // Auf der Geschichte (dem letzten sichtbaren Ziel): zurück zu ✕
+    vi.stubGlobal('document', { activeElement: geschichte });
+    expect(taste('Tab').preventDefault).toHaveBeenCalled();
+    expect(zu.focus).toHaveBeenCalled();
+    // Umschalt+Tab auf ✕: zur Geschichte, nicht in den versteckten Teil
+    vi.stubGlobal('document', { activeElement: zu });
+    taste('Tab', { shiftKey: true });
+    expect(geschichte.focus).toHaveBeenCalled();
+    expect(versteckt.focus).not.toHaveBeenCalled();
+  });
+
+  test('eine gehaltene Taste löst im Fenster nichts ein zweites Mal aus, im Eingabefeld schon', () => {
+    expect(taste('Enter').preventDefault).not.toHaveBeenCalled();
+    expect(taste('Enter', { repeat: true }).preventDefault).toHaveBeenCalled();
+    expect(taste(' ', { repeat: true }).preventDefault).toHaveBeenCalled();
+    const feld = { closest: (sel: string) => (sel.includes('input') ? {} : null) };
+    expect(taste(' ', { repeat: true, target: feld }).preventDefault).not.toHaveBeenCalled();
+  });
 });
 
 describe('Bildschirme benutzen die Bausteine', () => {
@@ -86,7 +161,10 @@ describe('Bildschirme benutzen die Bausteine', () => {
   test('Helden: nach Reiterwechsel bleibt der Fokus, sonst nimmt ihn der aktive Reiter', () => {
     const quelle = lies('ui/screens/HeroesScreen.ts');
     // Eine Rückmeldung auf dem Knopf («✓ Rekrutiert!») sperrt ihn, er verlöre den Fokus: Sie merkt ihn sich vorher
-    expect(quelle).toContain('const fokus = fokusMerken(prev) ?? fokusVorRueckmeldung;');
+    expect(quelle).toContain('const fokus = fokusMerken(prev) ?? (fokusVerloren() ? fokusVorRueckmeldung : null);');
+    // Ist ein anderer Bildschirm vorne, zeichnet die Rückmeldung nicht neu; neu gezeichnet bleibt er, wo und wie er war
+    expect(quelle).toContain("if (!document.getElementById('s-heroes')?.getClientRects().length) {");
+    expect(quelle).toContain('if (stil !== undefined) el.style.cssText = stil;');
     expect(quelle.match(/rueckmeldung\(btn, /g)).toHaveLength(6);
     expect(quelle).toContain("fokusZurueck(el, fokus, ['#s-heroes .tab.active']);");
   });
@@ -100,6 +178,23 @@ describe('Bildschirme benutzen die Bausteine', () => {
     const flow = lies('ui/screens/ExpeditionFlow.ts');
     expect(flow.match(/abbrechen: true/g)).toHaveLength(1);
     expect(flow).toContain("{ label: 'ZURÜCK', abbrechen: true, onClick: () => {} }");
+    // Geht es zu, ohne dass etwas den Fokus nimmt, bekommt ihn der Knopf von vorher zurück
+    expect(dialog).toContain('zurueck.focus({ preventScroll: true })');
+    // Händler: nach einem Kauf der Kauf-Knopf, nicht WEITERZIEHEN
+    expect(flow).toContain('showMerchantDialog(run, i); }');
+    expect(flow).toContain('[...buyButtons, leaveButton], { fokus });');
+  });
+
+  test('Fenster im Raid: Fokus auf den Hauptknopf, bei der Rückfrage auf «Nein», danach zurück', () => {
+    const raid = lies('ui/screens/RaidScreen.ts');
+    expect(raid).toContain("fenster.querySelector<HTMLElement>('.btn-go:not([disabled])')");
+    expect(raid).toContain("{ label: t.rueckfrageTitel, fokus: '[data-zu]' }");
+    expect(raid).toContain('zurueck.focus({ preventScroll: true });');
+  });
+
+  test('Kürzel des Spiels nicht mit Strg, Cmd oder Alt (Strg+A markiert alles)', () => {
+    expect(lies('main.ts')).toContain('if (e.ctrlKey || e.metaKey || e.altKey) return;');
+    expect(lies('ui/screens/MainMenuScreen.ts')).toContain('el.getClientRects().length === 0 || e.ctrlKey || e.metaKey || e.altKey');
   });
 
   test('Kampf: der Hauptknopf jeder Phase nimmt den Fokus, nur nach der Tastatur', () => {
@@ -125,6 +220,16 @@ describe('Bildschirme benutzen die Bausteine', () => {
     expect(karte).toMatch(/<g class="dmap-nd \$\{statusClass\}"[^>]*tabindex="0" role="button"\s+data-fokus="karte-\$\{route\.id\}"/);
     expect(karte).toMatch(/data-raid style="cursor:pointer" tabindex="0"\s+role="button" data-fokus="karte-raid"/);
     expect(karte.match(/\$\{fokusRing\(x, y, r \+ \d\)\}/g)).toHaveLength(2);
+    // Der Ring liegt über dem Schein (sonst färbt ihn die Biomfarbe), unter Bild und Schrift
+    const ring = karte.indexOf('${fokusRing(x, y, r + 7)}');
+    expect(karte.indexOf('${glowRing}')).toBeGreaterThan(0);
+    expect(karte.indexOf('${glowRing}')).toBeLessThan(ring);
+    expect(ring).toBeLessThan(karte.indexOf('${bgHex}', ring - 200));
+    expect(karte.indexOf('class="dmap-glow-ring"/>', karte.indexOf('function buildRaidKnoten')))
+      .toBeLessThan(karte.indexOf('${fokusRing(x, y, r + 9)}'));
+    // Doppelklick: Der zweite Klick schliesst das eben geöffnete Fenster nicht; der Hörer der alten Karte geht
+    expect(karte).toContain("if (target.id === 'dmap-modal-close' || istHintergrundKlick?.(e)) {");
+    expect(karte).toContain('loeseFensterTasten?.();');
     expect(karte).toContain("knoten.dispatchEvent(new MouseEvent('click', { bubbles: true }))");
     expect(karte).toContain("fenster.setAttribute('role', 'dialog')");
     expect(karte).toContain('bindeFensterTasten(modal, fenster, hideRouteModal)');
@@ -140,7 +245,13 @@ describe('Bildschirme benutzen die Bausteine', () => {
     expect(quelle).toContain('deckknopfElement(`${unit.name} als Fokus-Ziel wählen`, `gegner-${unit.id}`)');
     expect(quelle).toContain(".setAttribute('aria-pressed', String(entry.unitId === enemyId))");
     const start = quelle.slice(quelle.indexOf('startCombatAnimation(run: ExpeditionRun'));
-    expect(start.indexOf("querySelectorAll('.deckknopf')")).toBeLessThan(start.indexOf('\n  }\n'));
+    const weg = start.indexOf("querySelectorAll('.deckknopf')");
+    expect(weg).toBeGreaterThan(0);
+    expect(weg).toBeLessThan(start.indexOf('\n  }\n'));
+    // Das Ziel trägt ein Abzeichen, der Tastatur-Rahmen ist gestrichelt: Fokus und Ziel sehen verschieden aus
+    const css = lies('ui/html/magic-city.css');
+    expect(css).toMatch(/\.mc-co-unit\.is-targeted::after \{\s*content: '🎯 Ziel'/);
+    expect(css).toContain('.mc-co-unit > .deckknopf:focus-visible { outline: 2px dashed');
   });
 });
 
@@ -181,11 +292,55 @@ describe('Zurück auf einem Bildschirm', () => {
   test('ist der Knopf von vorhin nicht zu sehen, nimmt der Bildschirm selbst den Fokus', () => {
     aufbauen();
     hoerer.keydown({ key: 'Tab' });
+    bildschirmVerlassen('s-main');
+    seite.activeElement = body;
     neu.getClientRects = () => []; // der Knopf ist nicht zu sehen
     seite.activeElement = body;
     bildschirmFokussieren('s-main');
     expect(neu.focus).not.toHaveBeenCalled();
     expect(haupt.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  test('verlässt man ihn ohne Fokus und ohne Klick darin, gilt die Marke eines früheren Besuchs nicht mehr', () => {
+    aufbauen();
+    hoerer.keydown({ key: 'Enter' });
+    bildschirmVerlassen('s-main'); // erster Besuch: mit der Kachel verlassen
+    seite.activeElement = body;
+    bildschirmVerlassen('s-main'); // zweiter Besuch: ohne Fokus darin verlassen
+    bildschirmFokussieren('s-main');
+    expect(neu.focus).not.toHaveBeenCalled();
+    expect(haupt.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  test('mit der Maus verlassen, mit der Tastatur zurück: der Fokus steht auf der angeklickten Karte', () => {
+    aufbauen();
+    const deck = { classList: { contains: (k: string) => k === 'deckknopf' }, ...knopf };
+    const karte = { matches: () => false, children: [deck], parentElement: haupt };
+    const bild = { closest: () => karte, isConnected: true, matches: () => false, children: [], parentElement: karte };
+    haupt.contains = (el: unknown) => el === bild || el === karte || el === deck;
+    hoerer.pointerdown({ target: bild });
+    seite.activeElement = body;
+    bildschirmVerlassen('s-main');
+    hoerer.keydown({ key: 'Escape' });
+    bildschirmFokussieren('s-main');
+    // Zurück mit der Tastatur darf das Bild zum Knopf scrollen
+    expect(neu.focus).toHaveBeenCalledWith({ preventScroll: false });
+  });
+
+  test('ein neuer Einstieg setzt die Marke selbst: eine Route, oder oben beginnen', () => {
+    aufbauen();
+    hoerer.keydown({ key: 'Enter' });
+    seite.activeElement = body;
+    bildschirmMarke('s-main', 'kachel-heroes');
+    bildschirmFokussieren('s-main');
+    expect(neu.focus).toHaveBeenCalledWith({ preventScroll: false });
+    bildschirmMarke('s-main', null);
+    bildschirmFokussieren('s-main');
+    expect(haupt.focus).toHaveBeenCalledWith({ preventScroll: true });
+    const team = lies('ui/screens/ExpeditionsScreen.ts');
+    const waehle = team.slice(team.indexOf('function selectRoute'));
+    expect(waehle).toContain("bildschirmMarke('s-team', null);");
+    expect(waehle).toContain("bildschirmMarke('s-expeditions', `route-${routeId}`);");
   });
 
   test('nach Maus oder Finger: nichts', () => {

@@ -12,17 +12,21 @@ die Dungeonkarte und über sie der Raid. Maus und Finger bedienen alles wie vorh
 |---|---|
 | Hauptmenü | Tab erreicht nach der Leiste und dem Stadtweg die fünf Kacheln, Enter öffnet sie. Ziffern 1/2/3/0 wechseln den Hintergrund wie bisher. |
 | Expeditionen | Jede Routenkarte ist erreichbar, Enter öffnet das Team. Gesperrte Karten nennen den Sperrgrund, Enter tut dort nichts. |
-| Dungeonkarte | Tab erreicht jeden Knoten (Name, Ebene, offen/geschafft/gesperrt) und zuletzt den Raid ganz oben; der Knoten leuchtet mit goldenem Rahmen. Enter öffnet sein Fenster mit dem Fokus auf «EXPEDITION STARTEN» oder «ERNEUT SPIELEN» (gesperrt: auf ✕), Tab bleibt darin, Escape schliesst es, und der Fokus steht wieder auf dem Knoten. Enter auf dem Raid öffnet den Raid. |
+| Dungeonkarte | Tab erreicht jeden Knoten (Name, Ebene, offen/geschafft/gesperrt) und zuletzt den Raid ganz oben; der Knoten leuchtet mit goldenem Rahmen. Enter öffnet sein Fenster mit dem Fokus auf «EXPEDITION STARTEN» oder «ERNEUT SPIELEN» (gesperrt: auf ✕), Tab bleibt darin und erreicht auch die Geschichte, Escape schliesst es, und der Fokus steht wieder auf dem Knoten. Enter auf dem Raid öffnet den Raid. |
+| Raid | Seine Fenster (Geschichte, Regeln, Blatt, Ergebnis) nehmen den Fokus auf ihrem Hauptknopf, die Rückfrage vor einem Tagstein auf «Nein». Geht ein Fenster zu, steht der Fokus wieder, wo er vorher war. |
 | Team | Jeder Held der Liste («Brom ins Team») und jeder besetzte Platz («Brom aus dem Team nehmen»). Der Fokus folgt dem Helden: Nach Enter steht er auf seinem Platz, nach dem Herausnehmen wieder in der Liste. Nach ± beim Proviant und nach dem Härtegrad bleibt er auf dem Knopf. |
-| Helden | Nach einem Reiterwechsel, Training oder Anheuern bleibt der Fokus beim selben Knopf, sonst auf dem aktiven Reiter. |
-| Fenster unterwegs | Einleitung, Wahl, Kontrollpunkt, Händler und Bilanz nehmen den Fokus (Hauptknopf, sonst der erste), Tab bleibt im Fenster. Escape drückt nur «ZURÜCK» vor dem Aufbruch; in Entscheidungen tut es nichts und geht nie an das Spiel dahinter. |
-| Kampf | «Kampf starten!», «Nächste Runde →» und «Weiter» nehmen nacheinander den Fokus: Ein Kampf ist Enter, warten, Enter. Vor dem Kampf führt Umschalt+Tab zu den Gegnern: Enter wählt das Fokus-Ziel (wie der Klick auf den Gegner). |
+| Helden | Nach einem Reiterwechsel, Training oder Anheuern bleibt der Fokus beim selben Knopf (auch wenn der Preis nach einem Aufstieg steigt), sonst auf dem aktiven Reiter. Steht er inzwischen im Heldenfenster oder auf einem anderen Bildschirm, bleibt er dort. |
+| Fenster unterwegs | Einleitung, Wahl, Kontrollpunkt, Händler und Bilanz nehmen den Fokus (Hauptknopf, sonst der erste), Tab bleibt im Fenster. Escape drückt nur «ZURÜCK» vor dem Aufbruch (danach steht der Fokus wieder auf EXPEDITION STARTEN); in Entscheidungen tut es nichts und geht nie an das Spiel dahinter. Beim Händler bleibt der Fokus nach einem Kauf auf dem Kauf-Knopf. |
+| Kampf | «Kampf starten!», «Nächste Runde →» und «Weiter» nehmen nacheinander den Fokus: Ein Kampf ist Enter, warten, Enter. Vor dem Kampf führt Umschalt+Tab zu Fähigkeiten, Vorräten und Gegnern: Enter wählt eine Fähigkeit, nutzt einen Vorrat oder wählt das Fokus-Ziel (wie der Klick auf den Gegner); der Fokus bleibt danach auf dem Knopf. Das Ziel trägt das Abzeichen «🎯 Ziel», der Tastatur-Rahmen ist gestrichelt. |
 | Truhe | wie bisher: Enter oder Escape überspringt das Video, danach steht der Fokus auf «Einsammeln». |
-| Bildschirmwechsel | Nach einem Wechsel mit der Tastatur (Enter, Escape, K, A, G) beginnt Tab oben im neuen Bildschirm. Zurück auf einem Bildschirm steht der Fokus auf dem Knopf, mit dem man ihn verlassen hat: nach der Expedition auf ihrer Routenkarte, nach Escape auf der Kachel im Hauptmenü, nach dem Raid auf dem Raid-Knoten der Karte. |
+| Bildschirmwechsel | Nach einem Wechsel mit der Tastatur (Enter, Escape, K, A, G) beginnt Tab oben im neuen Bildschirm, das Team für jede Route neu. Zurück auf einem Bildschirm steht der Fokus auf dem Knopf, mit dem man ihn verlassen hat, auch wenn man ihn mit der Maus verliess (dann auf der angeklickten Karte): nach der Expedition auf ihrer Routenkarte (auch wenn sie über die Karte kam), nach Escape auf der Kachel im Hauptmenü, nach dem Raid auf dem Raid-Knoten der Karte. K, A und G wirken nicht mit Strg, Cmd oder Alt (Strg+A markiert alles). |
+| Gehaltene Taste | In einem Fenster löst eine gehaltene Enter- oder Leertaste nur einmal aus: Enter auf einem Knoten öffnet sein Fenster, startet aber nicht gleich die Expedition. |
 
 Geprüft am 6.11. im Browser (Chromium, 1400 × 900): Waldpfad (kurz) mit vier Helden, nur Tab und Enter, vom
-Hauptmenü über Einleitung, fünf Räume, Wahl, Kontrollpunkt, Truhe und Bilanz zurück. Am Handy (390 px) und mit der
-Maus: Antippen wie vorher, kein Springen der Seite, kein Fokusrahmen.
+Hauptmenü über Einleitung, fünf Räume, Wahl, Kontrollpunkt, Truhe und Bilanz zurück; dazu Dungeonkarte, Raid hin
+und zurück und die Befunde einer unabhängigen Prüfung (Fokus über Preisänderungen, Fenster mit Aufklappern,
+gehaltene Tasten, Händler, Fähigkeiten und Vorräte im Kampf). Am Handy (390 und 360 px) und mit der Maus: Antippen
+wie vorher, kein Springen der Seite, kein Fokusrahmen.
 
 ## Wie es gebaut ist
 
@@ -37,8 +41,16 @@ Maus: Antippen wie vorher, kein Springen der Seite, kein Fokusrahmen.
 - **Womit zuletzt bedient wurde** (`eingabeBeobachten`, einmal in `main.ts`): Tasten setzen «Tastatur», jeder
   Zeigerdruck «Zeiger». Nur nach der Tastatur nimmt ein neuer Bildschirm oder der Hauptknopf im Kampf den Fokus.
 - **Zurück auf einem Bildschirm** (`bildschirmVerlassen` im ScreenRouter vor jedem Wechsel, `bildschirmFokussieren`
-  danach): Der Bildschirm, der geht, merkt sich seinen fokussierten Knopf wie beim Neuzeichnen; kommt man mit der
-  Tastatur zurück, bekommt dieser Knopf den Fokus, sonst der Bildschirm selbst.
+  danach): Der Bildschirm, der geht, merkt sich seinen fokussierten Knopf wie beim Neuzeichnen, ohne Fokus den
+  zuletzt angeklickten Knopf (oder den Deckknopf der angeklickten Karte), ohne beides nichts: Dann gilt auch die
+  Marke eines früheren Besuchs nicht mehr. Kommt man mit der Tastatur zurück, bekommt dieser Knopf den Fokus, sonst
+  der Bildschirm selbst. Ein neuer Einstieg setzt die Marke selbst (`bildschirmMarke`): Die Wahl einer Route löscht
+  die des Teams und setzt die der Routenliste auf diese Route.
+- **Schlüssel statt Preis:** Knöpfe, deren `data-`Attribute sich durch den Klick ändern, tragen ein festes
+  `data-fokus` (TRAINIEREN, ANHEUERN, AUFNEHMEN, Fähigkeiten, Vorräte); `data-cost` zählt nie zum Selektor.
+- **Fenster** (`FensterHilfen.ts`): Tab erreicht Knöpfe, Eingabefelder, Aufklapper (`<summary>`), Links und alles mit
+  `tabindex` (`FENSTER_ZIELE`), nur sichtbare. Eine gehaltene Enter- oder Leertaste (`repeat`) wird im Fenster
+  verworfen, ausser in einem Eingabefeld.
 - **Knoten der Dungeonkarte** sind SVG-Gruppen mit `tabindex="0"`, `role="button"` und einem Namen; Enter und
   Leertaste lösen ihren Klick aus (`bindDungeonEvents`). Ihr Rahmen (`fokusRing`) ist ein eigenes Sechseck, denn
   `outline` zeichnet nicht jeder Browser um SVG.

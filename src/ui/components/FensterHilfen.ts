@@ -14,11 +14,22 @@
 // ────────────────────────────────────────────────────────────────
 
 /**
- * Tab und Umschalt+Tab bleiben im Fenster (es ist modal). Ziele sind Knöpfe und Eingabefelder (die Suche
- * im Fundbuch): Sonst entkäme der Fokus aus einem Eingabefeld, nach dem kein Knopf mehr kommt.
+ * Was Tab im Fenster erreicht: Knöpfe, Eingabefelder (die Suche im Fundbuch), Aufklapper (<summary>, etwa die
+ * Geschichte im Fenster der Dungeonkarte oder die Kapitel der Stadtchronik), Links und alles mit tabindex. Nicht
+ * dabei: gesperrte Knöpfe und was tabindex="-1" hat (das erreicht auch der Browser mit Tab nicht).
+ */
+export const FENSTER_ZIELE = [
+  'button:not([disabled])', 'input:not([disabled]):not([hidden]):not([type="hidden"])', 'select:not([disabled])',
+  'textarea:not([disabled])', 'a[href]', 'summary', '[tabindex]',
+].map(ziel => `${ziel}:not([tabindex="-1"])`).join(', ');
+
+/**
+ * Tab und Umschalt+Tab bleiben im Fenster (es ist modal). Am letzten Ziel geht Tab zum ersten, am ersten
+ * Umschalt+Tab zum letzten; dazwischen wandert der Browser selbst. Unsichtbare Ziele (in einem zugeklappten
+ * Teil) zählen nicht, sonst wäre das letzte Ziel eines, auf dem der Fokus nie steht, und Tab entkäme.
  */
 function halteFokusImFenster(e: KeyboardEvent, fenster: HTMLElement): void {
-  const ziele = Array.from(fenster.querySelectorAll<HTMLElement>('button:not([disabled]), input:not([disabled]):not([hidden])'));
+  const ziele = Array.from(fenster.querySelectorAll<HTMLElement>(FENSTER_ZIELE)).filter(z => z.getClientRects().length > 0);
   const aktiv = document.activeElement;
   const draussen = !(aktiv instanceof HTMLElement) || aktiv === fenster || !fenster.contains(aktiv);
   if (ziele.length === 0) {
@@ -37,8 +48,8 @@ function halteFokusImFenster(e: KeyboardEvent, fenster: HTMLElement): void {
  * Tasten, solange ein Fenster offen ist. Gehört auf window in die Capture-Phase, also vor alle
  * anderen: Escape schliesst, Tab bleibt im Fenster. Die Tastenkürzel des Spiels dahinter (K, A, G,
  * Escape in main.ts, 1/2/3/0 im Hauptmenü) bekommen die Taste nicht. Enter und Leertaste auf
- * Knöpfen wirken weiter, sie sind kein Tastenkürzel. F5 geht durch: main.ts speichert damit statt
- * neu zu laden.
+ * Knöpfen wirken weiter, sie sind kein Tastenkürzel, aber nur einmal je Druck (keine Wiederholung beim
+ * Halten). F5 geht durch: main.ts speichert damit statt neu zu laden.
  */
 export function fensterTaste(e: KeyboardEvent, fenster: HTMLElement | null, schliessen: () => void): void {
   if (!fenster || e.key === 'F5') return;
@@ -48,6 +59,10 @@ export function fensterTaste(e: KeyboardEvent, fenster: HTMLElement | null, schl
     schliessen();
   } else if (e.key === 'Tab') {
     halteFokusImFenster(e, fenster);
+  } else if (e.repeat && (e.key === 'Enter' || e.key === ' ') && !(e.target as Element | null)?.closest?.('input, textarea, select')) {
+    // Eine gehaltene Taste löst im Fenster nichts ein zweites Mal aus: Ihre Wiederholung träfe sonst den Knopf, der
+    // eben den Fokus bekam (Enter auf einem Knoten der Karte öffnet das Fenster, die Wiederholung startete die Expedition)
+    e.preventDefault();
   }
 }
 

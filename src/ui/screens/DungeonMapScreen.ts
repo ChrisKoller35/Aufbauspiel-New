@@ -16,7 +16,7 @@ import { anzahlText } from '../../utils/Anzahl';
 import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
 import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
-import { bindeFensterTasten } from '../components/FensterHilfen';
+import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
@@ -98,8 +98,11 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
     fenster.setAttribute('role', 'dialog');
     fenster.setAttribute('aria-modal', 'true');
     fenster.tabIndex = -1;
-    bindeFensterTasten(modal, fenster, hideRouteModal);
+    // Die Karte wird bei jedem Besuch neu gebaut: den Hörer der alten Karte lösen, sonst hielte er sie fest
+    loeseFensterTasten?.();
+    loeseFensterTasten = bindeFensterTasten(modal, fenster, hideRouteModal);
   }
+  istHintergrundKlick = hintergrundKlick(modal);
 
   bindDungeonEvents(el);
   container.appendChild(el);
@@ -668,9 +671,9 @@ function buildDungeonSVG(state: GameState): string {
     nodesHtml += `
       <g class="dmap-nd ${statusClass}" data-route="${route.id}" style="cursor:pointer" tabindex="0" role="button"
          data-fokus="karte-${route.id}" aria-label="${escapeAttr(`${route.name}, Ebene ${route.tier}, ${zustandText}`)}">
-        ${fokusRing(x, y, r + 7)}
         ${glowRing}
         ${bossExtra}
+        ${fokusRing(x, y, r + 7)}
         ${bgHex}
         ${imageLayer}
         ${border}
@@ -825,9 +828,9 @@ function buildRaidKnoten(zustand: RaidKartenZustand, zwei: RaidKartenZustand): s
     <g class="dmap-nd dmap-raid ${offen ? 'dmap-node-open' : 'dmap-node-locked'}" data-raid style="cursor:pointer" tabindex="0"
        role="button" data-fokus="karte-raid" aria-label="${escapeAttr(`${k.name}, Raid${offen ? '' : ', gesperrt'}`)}">
       <title>${beide ? k.tooltipBeide : k.tooltip}</title>
-      ${fokusRing(x, y, r + 9)}
       <polygon points="${hexPoints(x, y, r + 12, 30)}" fill="#fbbf24" opacity="0.1" class="dmap-glow-ring"/>
       <polygon points="${hexPoints(x, y, r + 6, 0)}" fill="none" stroke="#e6c060" stroke-width="1.2" opacity="0.3"/>
+      ${fokusRing(x, y, r + 9)}
       <polygon points="${hexPoints(x, y, r, 30)}" fill="#0c1233" class="dmap-shape"/>
       <polygon points="${hexPoints(x, y, r - 6, 30)}" fill="none" stroke="#6e5710" stroke-width="1" opacity="${offen ? 1 : 0.5}"/>
       ${uhr}
@@ -1006,6 +1009,10 @@ function showRouteModal(routeId: string, state: GameState): void {
 
 /** Der Knoten, dessen Fenster offen ist: Er bekommt den Fokus zurück, wenn das Fenster zugeht */
 let modalKnoten: SVGElement | HTMLElement | null = null;
+/** Löst die Tasten des Fensters der zuletzt gebauten Karte */
+let loeseFensterTasten: (() => void) | null = null;
+/** Begann der Klick auf dem dunklen Hintergrund (und ist kein Doppelklick)? Nur dann schliesst er das Fenster */
+let istHintergrundKlick: ((e: MouseEvent) => boolean) | null = null;
 
 /** Welche Rivalen-Gilden hier schon gesiegt haben und wer hier gerade ganz oben steht */
 function rivalenHtml(state: GameState, routeId: string): string {
@@ -1061,9 +1068,13 @@ function bindDungeonEvents(el: HTMLElement): void {
       return;
     }
 
-    // Modal close
+    // Fenster zu: ✕ oder ein Klick auf den Hintergrund. Der zweite Klick eines Doppelklicks auf den Knoten trifft
+    // den eben geöffneten Hintergrund und schliesst nicht; der eines Doppelklicks auf ✕ öffnet nichts dahinter
     if (target.id === 'dmap-modal-close' || target.id === 'dmap-modal') {
-      hideRouteModal();
+      if (target.id === 'dmap-modal-close' || istHintergrundKlick?.(e)) {
+        hideRouteModal();
+        schluckeZweitenKlick();
+      }
       return;
     }
 
@@ -1090,7 +1101,10 @@ function bindDungeonEvents(el: HTMLElement): void {
     const node = target.closest<HTMLElement>('.dmap-nd[data-route]');
     if (node && gameState) {
       const routeId = node.dataset.route;
-      if (routeId) showRouteModal(routeId, gameState);
+      if (routeId) {
+        showRouteModal(routeId, gameState);
+        schluckeZweitenKlick();
+      }
       return;
     }
   });

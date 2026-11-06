@@ -30,8 +30,8 @@ import { bildKarte } from '../heldBild';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gedruecktUm } from '../components/Druckzeit';
 import '../html/beutevergleich.css';
-import { fokusMerken, fokusZurueck, type FokusMarke } from '../fokus';
-import { zehntel } from '../hpAnzeige';
+import { fokusMerken, fokusVerloren, fokusZurueck, type FokusMarke } from '../fokus';
+import { kampfwert, zehntel } from '../hpAnzeige';
 import { besserFuerAlle, besserText, nebenhandFrei, vergleicher } from '../../systems/Beutevergleich';
 import { Wechsel, ausLagerAusruesten, ausruestPlan } from '../../systems/Ausruesten';
 
@@ -121,7 +121,7 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
 
   const trainingCost = trainingsKosten(fighter.level);
   const actionBtn = mode === 'train'
-    ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}">TRAINIEREN (${trainingCost}G)</button>`
+    ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}" data-fokus="trainieren-${fighter.id}">TRAINIEREN (${trainingCost}G)</button>`
     : '';
   const oeffnen = `<button type="button" class="hcard-oeffnen" aria-label="Heldenfenster: ${escapeAttr(fighter.name)}, ${className}, Stufe ${fighter.level}"></button>`;
 
@@ -164,8 +164,8 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
       <div class="lvbar"><div class="lvfill" style="width:${pct}%"></div></div>
       <div class="hc-xp">${xpLabel}</div>
       <div class="hc-st">
-        <span>\u2694 ${zehntel(werte.atk)}</span>
-        <span>\uD83D\uDEE1 ${zehntel(werte.def)}</span>
+        <span>\u2694 ${kampfwert(werte.atk)}</span>
+        <span>\uD83D\uDEE1 ${kampfwert(werte.def)}</span>
         <span>\u2764 ${werte.maxHp}</span>
       </div>
       ${actionBtn}
@@ -190,7 +190,7 @@ function renderHireCard(classDef: ClassDef, cost: number): string {
         <div class="hcard-footer">
           <span class="hc-cost">\uD83D\uDCB0 ${cost} Gold</span>
           <button class="btn btn-sm btn-hire" data-class-id="${classDef.id}"
-                  data-cost="${cost}">ANHEUERN</button>
+                  data-cost="${cost}" data-fokus="anheuern-${classDef.id}">ANHEUERN</button>
         </div>
       </div>`;
   }
@@ -215,7 +215,7 @@ function renderHireCard(classDef: ClassDef, cost: number): string {
       <div class="hcard-footer">
         <span class="hc-cost">\uD83D\uDCB0 ${cost} Gold</span>
         <button class="btn btn-sm btn-hire" data-class-id="${classDef.id}"
-                data-cost="${cost}">ANHEUERN</button>
+                data-cost="${cost}" data-fokus="anheuern-${classDef.id}">ANHEUERN</button>
       </div>
     </div>`;
 }
@@ -563,8 +563,8 @@ function statsHtml(fighter: GuildFighter): string {
   // Ausrüstung Rundungsrauschen (24.6 − 10.6 = 14.000000000000002)
   return `
     <div class="hdm2-stats" title="Werte mit Ausrüstung, Set-Boni und Weg; die kleine Zahl kommt von dort">
-      ${wertHtml('⚔', 'ATK', String(zehntel(eff.atk)), zehntel(eff.atk - base.atk))}
-      ${wertHtml('🛡', 'DEF', String(zehntel(eff.def)), zehntel(eff.def - base.def))}
+      ${wertHtml('⚔', 'ATK', String(kampfwert(eff.atk)), zehntel(eff.atk - base.atk))}
+      ${wertHtml('🛡', 'DEF', String(kampfwert(eff.def)), zehntel(eff.def - base.def))}
       ${wertHtml('❤', 'HP', String(eff.maxHp), eff.maxHp - base.maxHp)}
       ${wertHtml('⚡', 'SPD', String(Math.round(eff.spd * 100) / 100), spdBonus)}
       ${wertHtml('🎯', 'CRIT', `${Math.round(eff.critChance * 100)}%`, critBonus, `${vorzeichen(critBonus)} %`)}
@@ -896,9 +896,14 @@ export function renderHeroesScreen(container: HTMLElement): void {
   // Remove previous instance to avoid duplicates on re-render
   const prev = document.getElementById('s-heroes');
   // Tastatur: Nach Reiterwechsel, Training oder Anheuern bleibt der Fokus beim selben Knopf (sonst fiele er auf die
-  // Seite und Tab begänne oben); gibt es ihn nicht mehr, nimmt ihn der aktive Reiter
-  const fokus = fokusMerken(prev) ?? fokusVorRueckmeldung;
+  // Seite und Tab begänne oben); gibt es ihn nicht mehr, nimmt ihn der aktive Reiter. Die Marke einer Rückmeldung
+  // gilt nur, solange der Fokus nirgends liegt: Steht er inzwischen im Heldenfenster, bleibt er dort
+  const fokus = fokusMerken(prev) ?? (fokusVerloren() ? fokusVorRueckmeldung : null);
   fokusVorRueckmeldung = null;
+  // Der neue Bildschirm übernimmt Platz und Sichtbarkeit des alten (wie replaceScreen in main.ts): Zeichnet ein
+  // Zeitgeber neu, während ein anderer Bildschirm vorne ist, bleibt er versteckt
+  const stil = prev?.style?.cssText;
+  const danach = prev?.nextSibling ?? null;
   if (prev) prev.remove();
 
   const state = gameState;
@@ -935,7 +940,9 @@ export function renderHeroesScreen(container: HTMLElement): void {
       <div class="tab-content">
         ${tabContent()}
       </div>`;
-  container.appendChild(el);
+  if (stil !== undefined) el.style.cssText = stil;
+  if (danach && danach.parentNode === container) container.insertBefore(el, danach);
+  else container.appendChild(el);
 
   // ─── Event Binding ──────────────────────────────────────────
 
@@ -1401,7 +1408,15 @@ function rueckmeldung(btn: HTMLElement, text: string, ok: boolean, container: HT
   btn.setAttribute('disabled', 'true');
   if (ok) {
     fokusVorRueckmeldung = marke;
-    setTimeout(() => renderHeroesScreen(container), 600);
+    setTimeout(() => {
+      // Inzwischen ist ein anderer Bildschirm vorne: nichts neu zeichnen (der nächste Besuch zeichnet ohnehin neu),
+      // und den Fokus nicht von dort holen
+      if (!document.getElementById('s-heroes')?.getClientRects().length) {
+        fokusVorRueckmeldung = null;
+        return;
+      }
+      renderHeroesScreen(container);
+    }, 600);
     return;
   }
   setTimeout(() => {

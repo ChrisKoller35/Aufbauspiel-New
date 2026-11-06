@@ -32,7 +32,10 @@ export function bildKlasse(held: BildTraeger): string {
  */
 function seitenAdresse(pfad: string): string {
   const basis = typeof document !== 'undefined' ? document.baseURI : undefined;
-  return basis ? new URL(pfad, basis).href : pfad;
+  if (!basis) return pfad;
+  // Die Adresse steht in url('…') in einem style-Attribut: ' beendete das url(), & begänne im HTML ein Zeichen
+  // (/a&not/ würde /a¬/). Kodiert meinen beide dasselbe, der Server liefert dieselbe Datei.
+  return new URL(pfad, basis).href.replace(/'/g, '%27').replace(/&/g, '%26');
 }
 
 /**

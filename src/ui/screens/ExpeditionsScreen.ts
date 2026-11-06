@@ -21,10 +21,10 @@ import { letzterRatHtml, zeigeKriegsrat } from '../components/KriegsratFenster';
 import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../components/HaertegradAnzeige';
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 import { standVon } from '../../systems/Lehrlinge';
-import { deckknopf, fokusMerken, fokusZurueck } from '../fokus';
+import { bildschirmMarke, deckknopf, fokusMerken, fokusZurueck } from '../fokus';
 import { GearSystem } from '../../systems/GearSystem';
 import { schmiedeStufen } from '../../systems/Schmiede';
-import { zehntel } from '../hpAnzeige';
+import { kampfwert } from '../hpAnzeige';
 
 // ── Module state ──
 
@@ -49,7 +49,7 @@ const gearSystem = new GearSystem();
  */
 function kartenWerte(f: GuildFighter): string {
   const w = gearSystem.getEffectiveStats(f, schmiedeStufen(gameState));
-  return `<span>\u2694${zehntel(w.atk)}</span><span>\uD83D\uDEE1${zehntel(w.def)}</span><span>\u2764${Math.round(w.maxHp)}</span>`;
+  return `<span>\u2694${kampfwert(w.atk)}</span><span>\uD83D\uDEE1${kampfwert(w.def)}</span><span>\u2764${Math.round(w.maxHp)}</span>`;
 }
 
 /** Der gewählte Härtegrad, Normal solange der Dungeon nicht bezwungen ist */
@@ -117,6 +117,10 @@ export function setSelectedRoute(routeId: string): void {
 
 function selectRoute(routeId: string): void {
   teamNachOben = true;
+  // Tastatur: Das Team beginnt für jede Route oben, ohne den Knopf eines früheren Besuchs. Zurück in der Routenliste
+  // (nach der Bilanz, mit «← Zurück») steht der Fokus auf dieser Route, auch wenn sie über Karte oder Gildenhaus kam
+  bildschirmMarke('s-team', null);
+  bildschirmMarke('s-expeditions', `route-${routeId}`);
   selectedRouteId = routeId;
   selectedHeroes = [];
   provisions = {};

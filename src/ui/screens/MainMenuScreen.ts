@@ -155,6 +155,9 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
       document.removeEventListener('keydown', keyHandler);
       return;
     }
+    // Nur im sichtbaren Hauptmenü, nicht in einem Eingabefeld und nicht mit Strg, Cmd oder Alt (Strg+1 wechselt den Tab)
+    if (el.getClientRects().length === 0 || e.ctrlKey || e.metaKey || e.altKey) return;
+    if ((e.target as Element | null)?.closest?.('input, textarea, select')) return;
     if (e.key === '1') setBg(1);
     else if (e.key === '2') setBg(2);
     else if (e.key === '3') setBg(3);

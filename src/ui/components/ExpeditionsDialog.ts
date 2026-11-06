@@ -7,6 +7,7 @@
 import { ExpeditionRun } from '../../models/ExpeditionRun';
 import { optionsKnopfHtml } from './GeschichtsAnzeige';
 import { bindeFensterTasten } from './FensterHilfen';
+import { fokusVerloren } from '../fokus';
 
 export interface DialogButton {
   label: string;
@@ -23,13 +24,24 @@ const DIALOG_BTN_BASE = "flex:1 1 140px;min-height:44px;padding:12px;border-radi
 const DIALOG_BTN_PRIMARY = 'background:linear-gradient(135deg,#c8a227,#7a5c08);border:1px solid #c8a227;color:#0f1420;font-weight:700;';
 const DIALOG_BTN_SECONDARY = 'background:none;border:1px solid #6b7280;color:#9ca3af;';
 
+/** Was vor dem Fenster den Fokus hatte. Folgt ein Fenster auf das andere (ein Kauf beim Händler), gilt das erste. */
+let vorDemFenster: HTMLElement | null = null;
+/** Läuft gerade der Klick eines Fensterknopfs? Öffnet er ein nächstes Fenster, behält es vorDemFenster */
+let imKlick = false;
+
 /**
  * Simple modal overlay used for all expedition decisions (checkpoint, merchant, choice).
- * Tastatur: Das Fenster nimmt den Fokus (Hauptknopf, sonst der erste), Tab bleibt darin, Escape drückt nur einen
- * Knopf mit `abbrechen` und geht nie an das Spiel dahinter (FensterHilfen.bindeFensterTasten).
+ * Tastatur: Das Fenster nimmt den Fokus (`optionen.fokus`, sonst der Hauptknopf, sonst der erste), Tab bleibt darin,
+ * Escape drückt nur einen Knopf mit `abbrechen` und geht nie an das Spiel dahinter (FensterHilfen.bindeFensterTasten).
+ * Geht es zu, ohne dass etwas anderes den Fokus nimmt («ZURÜCK» in der Einleitung), bekommt ihn der Knopf zurück,
+ * der ihn vorher hatte (EXPEDITION STARTEN), statt dass er auf die Seite fällt.
  */
-export function showExpeditionDialog(icon: string, title: string, bodyHtml: string, buttons: DialogButton[]): void {
-  document.getElementById('expedition-dialog')?.remove();
+export function showExpeditionDialog(icon: string, title: string, bodyHtml: string, buttons: DialogButton[],
+  optionen: { fokus?: number } = {}): void {
+  const aktiv = document.activeElement as HTMLElement | null;
+  const altesFenster = document.getElementById('expedition-dialog');
+  if (!imKlick && !(aktiv && altesFenster?.contains(aktiv))) vorDemFenster = aktiv && aktiv !== document.body ? aktiv : null;
+  altesFenster?.remove();
 
   const overlay = document.createElement('div');
   overlay.id = 'expedition-dialog';
@@ -67,7 +79,16 @@ export function showExpeditionDialog(icon: string, title: string, bodyHtml: stri
       if (b.disabled) return;
       loeseTasten();
       overlay.remove();
-      b.onClick();
+      const zurueck = vorDemFenster;
+      imKlick = true;
+      try {
+        b.onClick();
+      } finally {
+        imKlick = false;
+      }
+      if (document.getElementById('expedition-dialog')) return; // ein nächstes Fenster hat den Fokus
+      vorDemFenster = null;
+      if (zurueck?.isConnected && zurueck.getClientRects().length > 0 && fokusVerloren()) zurueck.focus({ preventScroll: true });
     });
     row.appendChild(btn);
   }
@@ -78,7 +99,8 @@ export function showExpeditionDialog(icon: string, title: string, bodyHtml: stri
   const knoepfe = Array.from(row.querySelectorAll<HTMLButtonElement>('button'));
   const abbrechen = buttons.findIndex(b => b.abbrechen && !b.disabled);
   const loeseTasten = bindeFensterTasten(overlay, box, () => { if (abbrechen >= 0) knoepfe[abbrechen].click(); });
-  const start = knoepfe[buttons.findIndex(b => b.primary && !b.disabled)] ?? knoepfe.find(k => !k.disabled);
+  const gewuenscht = optionen.fokus !== undefined && !buttons[optionen.fokus]?.disabled ? knoepfe[optionen.fokus] : undefined;
+  const start = gewuenscht ?? knoepfe[buttons.findIndex(b => b.primary && !b.disabled)] ?? knoepfe.find(k => !k.disabled);
   (start ?? box).focus({ preventScroll: true });
 }
 

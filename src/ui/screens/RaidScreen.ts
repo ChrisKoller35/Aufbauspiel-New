@@ -43,6 +43,8 @@ import {
 import { ScreenId, navigateTo } from '../ScreenRouter';
 import { aktualisiereErfolgKnoepfe, renderHeader, zeigeKopfHinweis } from './HeaderRenderer';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
+import { fokusVerloren } from '../fokus';
+import { hundertstel, kampfwert } from '../hpAnzeige';
 import { haeppchenweise, rechneImHintergrund } from '../components/KriegsratFenster';
 import { geschichtsText } from '../components/GeschichtsAnzeige';
 import { showChestReveal } from '../components/ChestRevealOverlay';
@@ -119,7 +121,9 @@ const heldBildDiv = (held: BildTraeger, tag = 'div', klasse = 'r-bild'): string 
 };
 const bild = (key: string): string => `assets/sprites/final/${key}.png`;
 const zahl = (n: number): string => Math.round(n).toLocaleString('de-CH');
-const komma = (n: number): string => n.toFixed(1).replace('.', ',');
+/** Im Raid mit Dezimalkomma: Angriff und Verteidigung wie im Heldenfenster (kampfwert), Tempo auf Hundertstel */
+const kampfKomma = (n: number): string => String(kampfwert(n)).replace('.', ',');
+const tempoKomma = (n: number): string => String(hundertstel(n)).replace('.', ',');
 const klassenName = (classId: string): string => CLASS_DEFS[classId]?.name ?? classId;
 const istHandy = (): boolean => window.matchMedia('(max-width: 700px)').matches;
 /** Spalte des Felds im Gitter: Spalte 1 sind die Reihenköpfe, zwischen den Trupps liegt der Gang */
@@ -351,7 +355,7 @@ function kopfHtml(state: GameState, stand: RaidStand, versuch: VersuchsLage, def
         <button type="button" class="r-klein-knopf rund r-handy-hilfe" data-hilfe aria-label="${t.hilfe}" title="${t.hilfe}">?</button>
       </div>
       <div class="r-werte"><span>${w.angriff} <b>${def.werte.atk}</b></span><span>${w.abwehr} <b>${def.werte.def}</b></span>
-        <span>${w.tempo} <b>${komma(def.werte.spd)}</b></span><span>${w.krit} <b>${Math.round(def.werte.critChance * 100)} %</b></span></div>
+        <span>${w.tempo} <b>${tempoKomma(def.werte.spd)}</b></span><span>${w.krit} <b>${Math.round(def.werte.critChance * 100)} %</b></span></div>
       <div class="r-leben" title="${t.lebenTitel}"><div class="r-leben-spur"></div><div class="r-leben-zahl">${t.leben(def.werte.hp)}</div>${marken}</div>
       <div class="r-zeile">${t.freiLabel} <b>${t.freiWert(versuch.freiUebrig, def.freieVersucheJeWoche)}</b>
         <span class="r-mut">${t.freiDanach(tagstein(def))}</span><img class="r-tagstein" src="${bild('MAT_TAGSTEIN')}" alt="">
@@ -917,11 +921,15 @@ interface Fenster { ov: HTMLElement; fenster: HTMLElement; zu: () => void }
 /**
  * Öffnet ein Fenster über dem Raid. Escape schliesst, Tab bleibt drin (FensterHilfen), der dunkle Rand schliesst
  * nur, wo `hintergrund` (nicht in der Wiedergabe). `beimSchliessen` läuft nach dem Schliessen, auf jedem Weg.
+ * Tastatur: Der Fokus geht auf den Hauptknopf (`fokus`, sonst der goldene, sonst «Schliessen»), Enter geht also
+ * gleich weiter. Beim Schliessen kommt er zurück, wo er vorher war (sonst auf den Raid), statt auf die Seite zu fallen.
  */
 function oeffneFenster(
   el: HTMLElement, html: string,
-  { klasse = '', label, beimSchliessen, hintergrund = true }: { klasse?: string; label: string; beimSchliessen?: () => void; hintergrund?: boolean },
+  { klasse = '', label, beimSchliessen, hintergrund = true, fokus }:
+  { klasse?: string; label: string; beimSchliessen?: () => void; hintergrund?: boolean; fokus?: string },
 ): Fenster {
+  const vorher = document.activeElement as HTMLElement | null;
   const ov = document.createElement('div');
   ov.className = 'r-ov';
   ov.innerHTML = `<div class="r-fenster ${klasse}" role="dialog" aria-modal="true" aria-label="${esc(label)}" tabindex="-1">${html}</div>`;
@@ -932,9 +940,15 @@ function oeffneFenster(
     if (!offen) return;
     offen = false;
     loesen();
+    const fokusDrin = ov.contains(document.activeElement);
     ov.remove();
     schluckeZweitenKlick();
     beimSchliessen?.();
+    // Hat beimSchliessen den Fokus schon vergeben (ein nächstes Fenster), bleibt er dort
+    if (!fokusDrin || !fokusVerloren()) return;
+    const zurueck = vorher && vorher !== document.body && vorher.isConnected && vorher.getClientRects().length > 0 ? vorher : el;
+    if (zurueck === el && !el.hasAttribute('tabindex')) el.tabIndex = -1;
+    zurueck.focus({ preventScroll: true });
   };
   const loesen = bindeFensterTasten(ov, fenster, zu);
   const aufHintergrund = hintergrundKlick(ov);
@@ -943,7 +957,9 @@ function oeffneFenster(
     else if ((e.target as HTMLElement).closest('[data-zu]')) zu();
   });
   schluckeZweitenKlick();
-  fenster.focus();
+  const start = (fokus ? fenster.querySelector<HTMLElement>(fokus) : null)
+    ?? fenster.querySelector<HTMLElement>('.btn-go:not([disabled])') ?? fenster.querySelector<HTMLElement>('[data-zu]');
+  (start ?? fenster).focus({ preventScroll: true });
   return { ov, fenster, zu };
 }
 
@@ -981,9 +997,9 @@ function zeigeBlatt(el: HTMLElement, heldId: number): void {
       <div><div class="r-blatt-name">${esc(held.name)}</div><div class="r-blatt-unter">${esc(b.unter(klassenName(held.classId), held.level))}</div></div></div>
     <div class="r-blatt-zeilen">
       <div class="r-blatt-werte"><span>${ic('herz', 'r-hp-i')} ${b.leben} <b>${zahl(einheit.maxHp)}</b></span>
-        <span>${ic('abwehr', 'r-def-i')} ${b.abwehr} <b>${zahl(einheit.def)}</b></span>
-        <span>${ic('klinge', 'r-atk-i')} ${b.angriff} <b>${zahl(einheit.atk)}</b></span>
-        <span>${b.tempo} <b>${komma(einheit.spd)}</b></span></div>
+        <span>${ic('abwehr', 'r-def-i')} ${b.abwehr} <b>${kampfKomma(einheit.def)}</b></span>
+        <span>${ic('klinge', 'r-atk-i')} ${b.angriff} <b>${kampfKomma(einheit.atk)}</b></span>
+        <span>${b.tempo} <b>${tempoKomma(einheit.spd)}</b></span></div>
       <div>${b.weg} <b>${weg ? `${weg.zeichen} ${esc(weg.name)}` : b.keinWeg}</b>${weg ? ` · ${esc(weg.kurz)}` : ''}</div>
       <div>${b.sets} <b>${setText}</b></div>
       <div>${b.rolle} <b>${ic(ROLLE_IC[rolle], `rolle-${rolle}`)} ${t.rollen[rolle]}</b> · ${t.rollenText[rolle]}</div>
@@ -1091,7 +1107,7 @@ function ernstkampfStarten(el: HTMLElement): void {
   const f = oeffneFenster(el, `<h2 class="r-fenster-titel">${t.rueckfrageTitel}</h2>
     <p class="r-rueckfrage">${esc(t.rueckfrage(kosten, hat))}</p>
     ${knopfZeile(`<button type="button" class="r-zweit" data-zu>${t.rueckfrageNein}</button><button type="button" class="btn-go" data-ja>${t.rueckfrageJa}</button>`)}`,
-  { label: t.rueckfrageTitel });
+  { label: t.rueckfrageTitel, fokus: '[data-zu]' });
   f.ov.addEventListener('click', e => {
     if (!(e.target as HTMLElement).closest('[data-ja]')) return;
     f.zu();

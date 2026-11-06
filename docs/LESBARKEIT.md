@@ -28,9 +28,11 @@ Die Rangfolge bleibt: Titel `--gl`/`--txt` sind heller als `--mut`, Beschreibung
 5. **Finger ≥ 44 px** Tippfläche bei `(max-width: 700px)` bzw. `(pointer: coarse)`.
 6. **Tastatur:** Was man antippt, erreicht auch Tab (Deckknopf über Karten, Fokus bleibt beim Neuzeichnen);
    siehe `docs/TASTATUR.md`.
-7. **Zahlen ohne Rundungsreste:** Leben ganz (`hpAnzeige`), Angriff und Verteidigung auf Zehntel (`zehntel` in
-   `src/ui/hpAnzeige.ts`), Tempo und Boni auf Hundertstel; Minus als «−» (U+2212), nicht «-». Die Teamwahl zeigt
-   wie Heldenfenster und Kampf die Werte mit Ausrüstung.
+7. **Zahlen ohne Rundungsreste** (`src/ui/hpAnzeige.ts`): Leben ganz (`hpAnzeige`); Angriff und Verteidigung unter
+   100 auf Zehntel, ab 100 ganz (`kampfwert`: 42.8, aber 104); Tempo und Boni auf Hundertstel (`hundertstel`);
+   Minus als «−» (U+2212), nicht «-», auch bei den Schadenszahlen im Kampf. Heldenfenster, Heldenkarte, Teamwahl,
+   Kampf und das Blatt im Raid zeigen dieselbe Zahl mit Ausrüstung. Ausnahme: Die schmalen Karten der Raid-Bank
+   runden auf ganze Zahlen (das Blatt daneben zeigt sie genau). Der Raid schreibt Dezimalen mit Komma (89,8).
 
 ## Ausnahmen
 
@@ -58,6 +60,8 @@ Die Rangfolge bleibt: Titel `--gl`/`--txt` sind heller als `--mut`, Beschreibung
 | «alle 12 ▾» in Alrunas Liste (Raid, Handy) | Treffer 38 px (der erste Punkt deckte ihn) | 44 px |
 | «📜 Geschichte» im Fenster der Dungeonkarte (`.gs-karte summary`) | 18 px hoch | 44 px |
 | Kapitel der Stadtchronik, «Einsetzen» im Stadtweg | 41 / 38 px hoch | 44 px |
+| Werte auf dem Platz im Team (Handy 375–455 px) | Zeichen und Zahl brachen um, Zeile 28 statt 16 px | einzeilig (`white-space: nowrap`, ab 100 ganze Zahl) |
+| Kampfkopf im Bossraum (Handy 320–330 px, Finger) | 72 px hoch, «BOSS KAMPF!» zweizeilig | 57 px wie in jedem Raum (Titel bis 340 px enger) |
 
 Die Messwerte «gemessen» stammen aus der Recherche (Bildschirmfoto), die übrigen sind aus den CSS-Farben gerechnet.
 Nachmessen im Browser (PC, Handy 390 und 320 px) macht der prüfende Thread.
