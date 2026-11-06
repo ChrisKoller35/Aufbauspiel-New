@@ -310,6 +310,13 @@ describe('Stufe III im Spielstand', () => {
     const nix = state.fighters.find(f => f.name === 'Nix')!;
     expect([sina.spezialisierung, nix.spezialisierung]).toEqual(['assassin_meuchlerin', 'assassin_schattentaenzerin']);
     expect(warnt(state)).toBe(false);
+    // Es zählt nur, wer oben steht: Sina auf der Bank, Warnung
+    const stand = raidStand(state, Date.now(), KUCKUCK);
+    const sinaFeld = stand.aufstellung[String(sina.id)];
+    delete stand.aufstellung[String(sina.id)];
+    expect(warnt(state)).toBe(true);
+    stand.aufstellung[String(sina.id)] = sinaFeld;
+    expect(warnt(state)).toBe(false);
     // Beide Schattentänzerin: Warnung, mit dem Klingen-Zeichen
     sina.spezialisierung = 'assassin_schattentaenzerin';
     expect(warnt(state)).toBe(true);
@@ -325,30 +332,50 @@ describe('Stufe III im Spielstand', () => {
     expect(warnt(state, DREIZEHN)).toBe(false);
   });
 
-  test('Alrunas Liste: je Gang, wen der Kuckuck zuerst pickt; Warnung nur bei einem Hieb ab Mittag ohne Ausweichen', () => {
+  test('Alrunas Liste: je Gang, wen der Kuckuck laut Probelauf zuerst pickt, und ob ihn der erste Hieb fällt', () => {
     const L = RAID_TEXTE.liste;
     const zeilen = (state: GameState) => hinweise(state, KUCKUCK).filter(h => h.art === 'kuckuck');
-    // «Gut» hält die Daumenregel: am Gang die Kleinsten, aber alle weichen manchmal aus (Morn 106, Liedra 106, Wenna 95)
-    const gut = stufeDreiSpielstand('gut');
     const feldVon = (state: GameState, name: string) =>
       raidStand(state, Date.now(), KUCKUCK).aufstellung[String(state.fighters.find(f => f.name === name)!.id)];
+    // «Gut»: am Gang die Kleinsten, alle entgehen dem Schnabel manchmal. Wenna (95 Leben) teilt sich aber in Runde 3 den
+    // Gegenzeiger auf J mit Farn, kurz bevor der Kuckuck kommt (49 übrig, ein Hieb 57): Warnung, und Warnungen zuerst
+    const gut = stufeDreiSpielstand('gut');
     expect(zeilen(gut)).toEqual([
+      { art: 'kuckuck', ok: false, text: L.kuckuckFaellt('rechts', 'Wenna', true), felder: [feldVon(gut, 'Wenna')] },
       { art: 'kuckuck', ok: true, text: L.kuckuckOk('links', 'Morn', 2, 2, true), felder: [feldVon(gut, 'Morn')] },
       { art: 'kuckuck', ok: true, text: L.kuckuckOk('Mitte', 'Liedra', 2, 2, true), felder: [feldVon(gut, 'Liedra')] },
-      { art: 'kuckuck', ok: true, text: L.kuckuckOk('rechts', 'Wenna', 2, 2, true), felder: [feldVon(gut, 'Wenna')] },
     ]);
-    // Wie im Kampf: die wenigsten Leben am Gang (C und D), nicht die vorderste Reihe
-    const naiv = stufeDreiSpielstand('naiv');
-    expect(zeilen(naiv)[0].text).toBe(L.kuckuckOk('links', 'Lia', 3, 2, true));
-    // Eine schwache Gilde (Stufe 1): Benno weicht nicht aus und fällt ab Mittag beim ersten Hieb; Warnungen vorn
-    const schwach = stufeDreiSpielstand('profi', 1);
-    const warnung = hinweise(schwach, KUCKUCK).find(h => h.art === 'kuckuck' && !h.ok)!;
-    expect(warnung).toEqual({ art: 'kuckuck', ok: false, text: L.kuckuckZerbrechlich('Mitte', 'Benno', 2), felder: [feldVon(schwach, 'Benno')] });
-    expect(warnung.text).toContain('ab Mittag fällt Benno beim ersten');
+    expect(zeilen(gut)[0].text).toContain('ist der erste Schnabelhieb, der trifft, auch der letzte');
+    // Wie im Kampf nach den Leben am Ende der Runde, nicht nach den vollen: In «Profi» trifft das Pendel in Runde 2
+    // Bertram auf F (168 auf 92), dann pickt der Kuckuck ihn und nicht Benno (102); Ansgar fängt den Hieb ab
+    const profi = stufeDreiSpielstand('profi');
+    expect(zeilen(profi).find(h => h.text.includes('Gang Mitte'))).toEqual(
+      { art: 'kuckuck', ok: true, text: L.kuckuckOk('Mitte', 'Bertram', 5, 3, false), felder: [feldVon(profi, 'Bertram')] });
+    // Mit fünfzehn fällt Wenna allein auf J schon unter dem Gegenzeiger (99 auf 95): Der Kuckuck nimmt Ewin
+    expect(zeilen(stufeDreiSpielstand('fuenfzehn')).find(h => h.text.includes('Gang rechts'))?.text)
+      .toBe(L.kuckuckOk('rechts', 'Ewin', 4, 3, false));
+    // Eine schwache Gilde (Stufe 1): Gerlinde entgeht nie und fällt ab Mittag beim ersten Hieb (Warnung); Morn hält ab
+    // Mittag auch nur einen, entgeht aber manchmal (keine Warnung)
+    const schwach = stufeDreiSpielstand('gut', 1);
+    expect(zeilen(schwach)).toEqual([
+      { art: 'kuckuck', ok: false, text: L.kuckuckZerbrechlich('Mitte', 'Gerlinde', 2), felder: [feldVon(schwach, 'Gerlinde')] },
+      { art: 'kuckuck', ok: false, text: L.kuckuckFaellt('rechts', 'Wenna', true), felder: [feldVon(schwach, 'Wenna')] },
+      { art: 'kuckuck', ok: true, text: L.kuckuckOk('links', 'Morn', 2, 1, true), felder: [feldVon(schwach, 'Morn')] },
+    ]);
+    expect(zeilen(schwach)[0].text).toContain('ab Mittag fällt Gerlinde beim ersten');
+    expect(zeilen(schwach)[2].text).toContain('ab Mittag einen, und entgeht dem Schnabel manchmal');
+    // Morn allein am Gang links, vorn auf C: Das Pendel fällt ihn in Runde 1, bevor der Kuckuck kommt
+    const schwachStand = raidStand(schwach, Date.now(), KUCKUCK);
+    for (const [id, feld] of Object.entries(schwachStand.aufstellung)) {
+      if (gangSpalten(0).includes(feld.spalte)) delete schwachStand.aufstellung[id];
+    }
+    schwachStand.aufstellung[String(schwach.fighters.find(f => f.name === 'Morn')!.id)] = { reihe: 0, spalte: 2 };
+    expect(zeilen(schwach).find(h => h.text.includes('Gang links'))).toEqual(
+      { art: 'kuckuck', ok: false, text: L.kuckuckNiemandMehr('links'), felder: [{ reihe: 0, spalte: 2 }] });
     // Leerer Gang: er geht wieder hinein (der Zeiger warnt eigens für die leeren Spalten)
     const stand = raidStand(gut, Date.now(), KUCKUCK);
     for (const [id, feld] of Object.entries(stand.aufstellung)) if (gangSpalten(0).includes(feld.spalte)) delete stand.aufstellung[id];
-    expect(zeilen(gut)[0]).toEqual({ art: 'kuckuck', ok: true, text: L.kuckuckLeer('links'), felder: [] });
+    expect(zeilen(gut).find(h => h.text.includes('Gang links'))).toEqual({ art: 'kuckuck', ok: true, text: L.kuckuckLeer('links'), felder: [] });
     // Nur auf Stufe III
     raidStand(gut, Date.now(), DREIZEHN).aufstellung = raidMusterAufstellungDreizehn('profi', gut.fighters);
     expect(hinweise(gut, DREIZEHN).some(h => h.art === 'kuckuck')).toBe(false);

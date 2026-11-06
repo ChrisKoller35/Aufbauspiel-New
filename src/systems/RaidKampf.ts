@@ -87,6 +87,12 @@ export interface RaidErgebnis {
   funkenZiel: number | null;
   /** Wer neben dem Ziel der ersten Funken stand */
   funkenNachbarn: number[];
+  /**
+   * Kuckuck (Stufe III), für Alrunas Liste: wen er beim ersten Besuch je Gang pickte (null: niemand da), wie viele Leben
+   * der da noch hatte, ob der Hieb ihn traf (nicht ausgewichen, nicht umgelenkt) und ob er daran fiel. Er pickt am Ende
+   * der Runde nach den wenigsten Leben, also nach Pendel und Zeigern dieser Runde
+   */
+  kuckuckErste: { gang: number; heldId: number | null; leben: number; getroffen: boolean; fiel: boolean }[];
   /** Ansagen des Stadtschreibers in Reihenfolge */
   ansagen: string[];
   /** Für die Wiedergabe (fehlt mit `knapp`) */
@@ -253,6 +259,7 @@ export function raidKampf(
   let ereignisse: RaidEreignis[] = [];
   let funkenZiel: number | null = null;
   let funkenNachbarn: number[] = [];
+  const kuckuckErste: RaidErgebnis['kuckuckErste'] = [];
   // Wer Zenit zuletzt betäubt hat: sein nächster Zug fällt aus, und mit ihm das Pendel
   let betaeubtVon: CombatUnit | null = null;
   // Spalten, die schon zu Kampfbeginn leer waren (Ansage beim ersten Durchschlag)
@@ -337,7 +344,9 @@ export function raidKampf(
     const name = RAID_TEXTE.gangName(gang, def.truppZahl);
     const amGang = gangSpalten(gang);
     const nest = lebend(party).filter(h => amGang.includes(feld.get(h)!.spalte));
+    const erster = !kuckuckErste.some(k => k.gang === gang);
     if (nest.length === 0) {
+      if (erster) kuckuckErste.push({ gang, heldId: null, leben: 0, getroffen: false, fiel: false });
       const e = ereignis({ art: 'kuckuck', gang, treffer: [] });
       ansage('kuckuckLeer', RAID_TEXTE.ansage.kuckuckLeer(name), e);
       return;
@@ -364,6 +373,10 @@ export function raidKampf(
       merkeFall(u, hp, 'kuckuck', ort);
     }
     if (treffer.length === 0) treffer.push({ heldId: ziel.id, wert: 0 });
+    if (erster) {
+      const leben = vorher.get(ziel)!;
+      kuckuckErste.push({ gang, heldId: ziel.id, leben, getroffen: ziel.hp < leben, fiel: ziel.hp <= 0 });
+    }
     const e = ereignis({ art: 'kuckuck', gang, quelle: ziel.id, spalte: feld.get(ziel)!.spalte, treffer });
     ansage('kuckuck', RAID_TEXTE.ansage.kuckuck(name, ziel.name), e);
   };
@@ -545,7 +558,7 @@ export function raidKampf(
 
   return {
     sieg, runden: gespielt, zenitRest: Math.max(0, zenit.hp) / zenit.maxHp, helden: party.length, stehend, mitternacht,
-    gefallen, schaden, geheilt, funkenZiel, funkenNachbarn, ansagen,
+    gefallen, schaden, geheilt, funkenZiel, funkenNachbarn, kuckuckErste, ansagen,
     verlauf: knapp ? [] : verlauf, protokoll: knapp ? [] : run.combatLog,
   };
 }

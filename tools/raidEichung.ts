@@ -348,13 +348,13 @@ if (STUFE_EINS) {
 const SUCH_PROBEN = 40;
 
 /**
- * Auf Stufe II zieht die Suche in drei von zehn Schritten zwei Helden statt einem: 15 Helden auf 27 Feldern, einzeln
- * bleibt sie dort stecken (Sina als Schattentänzerin: 33 % nach 300 Schritten; mit zwei Helden 90 % nach 300 und
- * 96 % nach 600). Stufe I zieht wie bisher einen, ihre Funde bleiben gleich.
+ * Ab drei Trupps (Stufe II und III) zieht die Suche in drei von zehn Schritten zwei Helden statt einem: Auf Stufe II
+ * (15 Helden auf 27 Feldern) blieb sie einzeln stecken (Sina als Schattentänzerin: 33 % nach 300 Schritten; mit zwei
+ * Helden 90 % nach 300 und 96 % nach 600). Stufe I zieht wie bisher einen, ihre Funde bleiben gleich.
  */
 const ZWEI_HELDEN_ANTEIL = (def: RaidDef): number => (def.truppZahl > 2 ? 0.3 : 0);
 
-/** Ein Held (auf Stufe II manchmal zwei) auf ein zufälliges Feld; steht dort schon jemand, tauschen die beiden */
+/** Ein Held (ab drei Trupps manchmal zwei) auf ein zufälliges Feld; steht dort schon jemand, tauschen die beiden */
 function mutiere(aufstellung: Record<string, Feld>, rng: SeededRNG, def: RaidDef = ZENIT): Record<string, Feld> {
   const neu = Object.fromEntries(Object.entries(aufstellung).map(([id, f]) => [id, { ...f }]));
   const ids = Object.keys(neu);
@@ -407,7 +407,10 @@ function aufstellungsSuche(start: Aufbau, schritte: number): Record<string, Feld
 
 /** Schritte der Suche für einen Weg, mit dem «Profi» unter 90 % bleibt */
 const WEG_SUCHE_SCHRITTE = 300;
-/** Auf Stufe II doppelt so viele: Nach 300 Schritten lag Sina als Schattentänzerin bei 90 %, knapp am Band */
+/**
+ * Auf Stufe II und III doppelt so viele: Auf Stufe II lag Sina als Schattentänzerin nach 300 Schritten bei 90 %, knapp
+ * am Band
+ */
 const WEG_SUCHE_SCHRITTE_ZWEI = 600;
 
 if (WEGE && STUFE_EINS) {

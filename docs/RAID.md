@@ -156,7 +156,7 @@ Leben geteilt durch den Schaden eines Treffers, aufgerundet, bei Flächenschaden
 | Zeiger (je Spalte) | «Jede Spalte ist besetzt», wenn keine Spalte warnt | eine Spalte ist leer (mit den Runden, in denen er dort durchschlägt); ein Einzelner hält weniger als 3 ganze Zeiger-Schläge (110) |
 | Glocke | die vollste Reihe mit Namen | dort stehen 4 oder mehr; jemand dort hält ab Mittag keine 2 Glockenschläge (165) |
 | Funken | wer sie wohl bekommt: Probelauf bis Runde 3 mit dem Samen der ersten Kriegsrat-Probe (1000) | das Ziel hat Nachbarn im Trupp (nach Feld, auch wer im Probelauf schon fiel) |
-| Kuckuck (je Gang, nur Stufe III) | wen er zuerst pickt (die wenigsten Leben direkt am Gang, Gleichstand vorn, dann links, wie im Kampf) und wie viele Schnabelhiebe (66, ab Mittag 99) der hält, ob er ausweicht; am leeren Gang «geht beleidigt wieder hinein» | der Erste hält ab Mittag nur einen Hieb und weicht nicht aus (Ausweichen oder Schattentanz). Wen er im Kampf wirklich fällt, hängt an Pendel, Zeiger und Heilung; das misst der Kriegsrat |
+| Kuckuck (je Gang, nur Stufe III) | wen er beim ersten Besuch wohl zuerst pickt: Er nimmt am Ende der Runde die wenigsten Leben direkt am Gang, also nach Pendel und Zeigern dieser Runde; das sagt ein Probelauf ohne Krit bis Runde 3 (jeder Gang einmal, Samen der ersten Kriegsrat-Probe). Dazu, wie viele Schnabelhiebe (66, ab Mittag 99) der mit vollem Leben hält und ob er ihm manchmal entgeht (Ausweichen, Schattentanz oder Deckung); am leeren Gang «geht beleidigt wieder hinein» | der Erste fällt im Probelauf am ersten Hieb (wich er aus, zählen seine Leben gegen einen Hieb ohne Krit: «der erste Schnabelhieb, der trifft, ist auch der letzte»); er hält mit vollem Leben schon vor Mittag nur einen Hieb, oder ab Mittag nur einen und entgeht ihm nie; beim ersten Besuch steht am Gang niemand mehr. Wen er im ganzen Kampf fällt, hängt an Heilung und Zufall; das misst der Kriegsrat |
 | Trupp (je Trupp) | Teamwirkungen und Heiler | kein Heiler; dieselbe Teamwirkung zweimal, von der nur die stärkere zählt |
 | Klinge (nur Stufe III) | nur als Warnung | oben steht keine Meisterin der Meuchlerinnen (Weg Meuchlerin, Stufe 15); siehe «Je ein Weg anders» bei Stufe III |
 | Zahl | wie viele hinaufgehen | weniger als vier, oder weniger, als die Gilde Helden hat (höchstens zehn) |
@@ -328,8 +328,10 @@ mit einem Lauf bei Orm (wie unter «Truhen») und prüft die Eichbänder unten; 
 - `npm run raid-eichung -- --leben 13500,14000,14500`: Zenits Leben durchprobieren (ohne Bänder).
 - `npm run raid-eichung -- --ohne glocke,funken`: mehrere Regeln zusammen aus, als Zeile mehr unter «Je eine Regel aus».
 - `npm run raid-eichung -- --wege`: je ein Held mit dem anderen Weg seiner Klasse. Bleibt «Profi» damit unter 90 %,
-  sucht das Werkzeug ab «Gut» eine Aufstellung für diese Gilde (dieselbe Suche wie `--suche`, 300 Schritte) und zeigt
-  sie. Auf Stufe II mit `anker15`, jeder der fünfzehn einzeln, auch die Lehrlinge.
+  sucht das Werkzeug eine Aufstellung für diese Gilde (dieselbe Suche wie `--suche`) und zeigt sie: auf Stufe I ab
+  «Gut» mit 300 Schritten, auf Stufe II mit `anker15` (jeder der fünfzehn einzeln, auch die Lehrlinge) ab «Gut» mit
+  600, auf Stufe III mit `anker20` (jeder der zwanzig) ab «Profi» mit 600. Auf Stufe III gilt ohne Meuchlerin in der
+  Gilde ein Band von 60 %, und der Tausch Sina/Nix hat ein eigenes von 90 % (Abschnitt «Eichung von Stufe III»).
 - `npm run raid-eichung -- --suche t4`: Aufstellungssuche für eine Gilde. Ab «Gut» setzt sie 200-mal einen Helden auf
   ein zufälliges Feld (ist es besetzt, tauschen die beiden) und behält die neue Aufstellung, wenn sie in 40 Proben
   mindestens so gut abschneidet (zuerst die Siege, dann Zenits Rest); die beste misst sie am Ende mit 400 Läufen. Auf
@@ -341,6 +343,8 @@ nachführen; `tests/raid.test.ts` prüft die Bänder mit 20 Samen und meldet Ver
 Zenits Leben, in Schritten von 250, erst danach Wuchten oder Heilfaktor. Gemessen am 6.11.2026; ein Kampf braucht 1,6
 bis 1,8 ms (Node 22.22), das Werkzeug für Stufe I rund 20 Sekunden (mit `--wege` und `--suche t4` rund 70), mit
 Stufe II zusammen rund 45; `--stufe II --wege` braucht rund zwei Minuten (15 Helden, eine Suche über 600 Schritte).
+`--stufe III --wege` braucht 10 bis 15 Minuten: über hunderttausend Kämpfe mit zwanzig Helden zu 5,5 bis 8 ms, die
+meisten in den Suchen über 600 Schritte (gemessen am 6.11.2026 in einem Container).
 
 ### Muster-Gilde «Anker»
 
@@ -894,12 +898,17 @@ nicht dreizehn. XP: 600 beim Sieg, 200 bei der Niederlage, je Teilnehmer.
 - **Was er verlangt:** Jede Spalte bleibt besetzt (sonst schlägt der Zeiger durch), aber an den sechs Gang-Spalten
   stehen Zähe, Ausweichende oder Geheilte, keine Zerbrechlichen. Die Ordnung von Stufe II, auf vier Trupps verlängert
   («Lehrbuch»), gewinnt nie, auch ohne Kuckuck nicht.
-- **Alrunas Liste** nennt je Gang, wen er zuerst pickt und wie viele Schnabelhiebe der hält. Gemessen (300 Kämpfe je
-  Aufstellung, anker20): Auch in den besten Aufstellungen fällt er je Kampf im Schnitt 1,5 («Profi») bis 1,7 («Gut»)
-  Helden, meist Wenna (54 und 66 % der Kämpfe). Wer zuerst dran ist, ist nicht immer, wer fällt: Mit «Lehrbuch» pickt
-  er am Gang rechts zuerst Gerlinde, es fällt aber Mirabell (84 %), die allein Spalte I trägt und in der Reihe der
-  Glocke steht. Darum warnt die Liste nur im klaren Fall (ab Mittag ein Hieb und kein Ausweichen); den Rest zeigt der
-  Kriegsrat.
+- **Alrunas Liste** nennt je Gang, wen er beim ersten Besuch wohl zuerst pickt, und warnt, wenn ihn dort schon der
+  erste Hieb fällt. Das sagt ein Probelauf ohne Krit bis Runde 3, denn er nimmt die wenigsten Leben am Ende der Runde:
+  Mit «Profi» trifft das Pendel in Runde 2 Bertram auf F (168 auf 92), dann pickt der Kuckuck ihn und nicht Benno
+  (102 volle Leben). Ohne Krit, weil sonst ein seltener Krit entscheidet: Über 40 Samen bleibt so jede Zeile der fünf
+  Muster-Aufstellungen auf Stufe 15 gleich, bis auf «Profi» am Gang Mitte (Bertram in 33 von 40, sonst Benno; mit Krit
+  30 von 40). Mit «Gut» und «Profi» teilt sich Wenna in Runde 3 den Gegenzeiger auf J (95 auf 49 bis 51), und dann
+  ist der erste Schnabelhieb, der trifft (55 bis 57), auch der letzte: Auch die beste gefundene Aufstellung bekommt
+  diese Warnung, sie gewinnt trotzdem. Gemessen (300 Kämpfe je Aufstellung, anker20): Auch in den besten Aufstellungen
+  fällt er je Kampf im Schnitt 1,5 («Profi») bis 1,7 («Gut») Helden, meist Wenna (54 und 66 % der Kämpfe). Wer zuerst
+  dran ist, ist nicht immer, wer fällt: Mit «Lehrbuch» pickt er am Gang rechts zuerst Gerlinde, es fällt aber Mirabell
+  (84 %), die allein Spalte I trägt und in der Reihe der Glocke steht. Den ganzen Kampf zeigt der Kriegsrat.
 
 ### Truhen und erster Sieg
 

@@ -565,7 +565,8 @@ export const namenListe = (namen: string[]): string =>
 
 /**
  * Was an der Aufstellung gefährlich ist: Pendel je Trupp, Zeiger je Spalte, Glocke, Funken (Probelauf bis Runde 3),
- * Kuckuck je Gang (Stufe III), Trupps (Heiler, doppelte Teamwirkungen) und die Zahl. Warnungen zuerst. Ändert nichts.
+ * Kuckuck je Gang (Stufe III, Probelauf ohne Krit bis Runde 3), Trupps (Heiler, doppelte Teamwirkungen), die Klinge
+ * (Stufe III ohne Meisterin der Meuchlerinnen) und die Zahl. Warnungen zuerst. Ändert nichts.
  */
 export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
   const stand = raidStand(state, Date.now(), def);
@@ -686,7 +687,7 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
     else hinweise.push({ art: 'glocke', ok: true, text: L.glockeOk(glockenReihe + 1, namen), felder: felder(dort) });
   }
 
-  // Funken: Probelauf bis Runde 3 mit dem Samen der ersten Kriegsrat-Probe
+  // Funken: Probelauf bis Runde 3 mit dem Samen der ersten Kriegsrat-Probe (die man sich dort ansehen kann)
   let funkenZiel: number | null = null;
   let funkenNachbarn: number[] = [];
   if (helden.length > 0) {
@@ -705,11 +706,18 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
     }
   }
 
-  // Kuckuck (Stufe III): je Gang, wen er zuerst pickt (die wenigsten Leben direkt am Gang; Gleichstand vorn, dann links,
-  // wie in RaidKampf). Warnung nur, wenn der Erste ab Mittag keinen zweiten Schnabelhieb hält und nicht ausweicht:
-  // Wen er im Kampf wirklich fällt, hängt an allem anderen (Pendel, Zeiger, Heilung) und misst der Kriegsrat
+  // Kuckuck (Stufe III): je Gang, wen er beim ersten Besuch pickt. Er nimmt am Ende der Runde die wenigsten Leben, also
+  // nach Pendel und Zeigern: Das weiss nur ein Probelauf, hier einer ohne Krit bis Runde 3 (jeder Gang einmal), damit
+  // kein seltener Krit entscheidet, wer dran ist. Warnung, wenn der Erste dort fällt (traf der Hieb nicht, weil er
+  // auswich oder in Deckung blieb: wenn seine Leben dann für keinen gewöhnlichen Hieb reichen), wenn er mit vollem Leben
+  // vor Mittag keinen zweiten Hieb hält, ab Mittag ohne Entkommen (Ausweichen, Schattentanz, Deckung) keinen zweiten,
+  // oder wenn am Gang schon niemand mehr steht. Wen er im ganzen Kampf fällt, hängt an allem anderen (Heilung, Zufall)
+  // und misst der Kriegsrat
   const kuckuck = def.regeln.kuckuck;
   if (kuckuck !== undefined && helden.length > 0) {
+    const probe = raidKampf(def, helden.map(h => h.held), stufen, stand.aufstellung, kriegsratSamen(0), {
+      bisRunde: def.truppZahl - 1, knapp: true, werte: { critChance: 0 },
+    });
     for (let gang = 0; gang < def.truppZahl - 1; gang++) {
       const name = RAID_TEXTE.gangName(gang, def.truppZahl);
       const amGang = helden.filter(h => gangSpalten(gang).includes(h.feld.spalte));
@@ -717,17 +725,24 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
         hinweise.push({ art: 'kuckuck', ok: true, text: L.kuckuckLeer(name), felder: [] });
         continue;
       }
-      const ziel = amGang.reduce((a, b) => {
-        if (b.einheit.maxHp !== a.einheit.maxHp) return b.einheit.maxHp < a.einheit.maxHp ? b : a;
-        if (b.feld.reihe !== a.feld.reihe) return b.feld.reihe < a.feld.reihe ? b : a;
-        return b.feld.spalte < a.feld.spalte ? b : a;
-      });
+      // Kam er nicht dorthin oder pickte niemanden, fielen alle am Gang schon vorher
+      const erste = probe.kuckuckErste.find(k => k.gang === gang);
+      const ziel = amGang.find(h => h.held.id === erste?.heldId);
+      if (!erste || !ziel) {
+        hinweise.push({ art: 'kuckuck', ok: false, text: L.kuckuckNiemandMehr(name), felder: felder(amGang) });
+        continue;
+      }
       const vor = schlaege(atk * kuckuck, ziel.einheit, false);
       const nach = schlaege(mittag * kuckuck, ziel.einheit, false);
-      const weicht = (ziel.einheit.specialEffects ?? []).some(e => e.id === 'dodge' || e.id === 'schattentanz');
-      hinweise.push(nach <= 1 && !weicht
-        ? { art: 'kuckuck', ok: false, text: L.kuckuckZerbrechlich(name, ziel.held.name, vor), felder: [ziel.feld] }
-        : { art: 'kuckuck', ok: true, text: L.kuckuckOk(name, ziel.held.name, vor, nach, weicht), felder: [ziel.feld] });
+      const entgeht = (ziel.einheit.specialEffects ?? []).some(e => ['dodge', 'schattentanz', 'deckung'].includes(e.id));
+      const held = ziel.held.name;
+      // Die ersten Besuche sind Runde 1 bis 3, vor Mittag
+      const letzter = erste.getroffen ? erste.fiel : entgeht && erste.leben <= grundSchaden(atk * kuckuck, ziel.einheit.def);
+      hinweise.push(letzter
+        ? { art: 'kuckuck', ok: false, text: L.kuckuckFaellt(name, held, entgeht), felder: [ziel.feld] }
+        : vor <= 1 || (nach <= 1 && !entgeht)
+          ? { art: 'kuckuck', ok: false, text: L.kuckuckZerbrechlich(name, held, vor), felder: [ziel.feld] }
+          : { art: 'kuckuck', ok: true, text: L.kuckuckOk(name, held, vor, nach, entgeht), felder: [ziel.feld] });
     }
   }
 
@@ -756,7 +771,7 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
   }
 
   // Stufe III braucht eine Meisterin der Meuchlerinnen: Ohne sie fanden die Suchen 64 und 78 %, keine 90 % (docs/RAID.md)
-  if (def.regeln.kuckuck !== undefined && helden.length > 0
+  if (kuckuck !== undefined && helden.length > 0
     && !helden.some(h => istMeister(h.held) && h.held.spezialisierung === 'assassin_meuchlerin')) {
     hinweise.push({ art: 'klinge', ok: false, text: L.ohneMeuchlerin, felder: [] });
   }

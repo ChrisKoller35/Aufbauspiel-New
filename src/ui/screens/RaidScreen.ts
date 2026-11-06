@@ -292,7 +292,9 @@ function zeichne(el: HTMLElement): void {
   const stand = raidStand(state, Date.now(), def);
   if (neu) speichern();
   if (gewaehlt !== null && !state.fighters.some(f => f.id === gewaehlt)) gewaehlt = null;
+  // Wo die Bank steht, bleibt beim Neuzeichnen: am Handy quer (.r-karten), am PC hoch (.r-bank läuft dort selbst)
   const bankLinks = haupt.querySelector<HTMLElement>('.r-karten')?.scrollLeft ?? 0;
+  const bankOben = haupt.querySelector<HTMLElement>('.r-bank')?.scrollTop ?? 0;
   const lage = raidLage(state, def);
   const versuch = versuchsLage(state, Date.now(), def);
   const schluessel = ratSchluessel(state, stand.aufstellung, def);
@@ -302,6 +304,8 @@ function zeichne(el: HTMLElement): void {
     ${bankHtml(state, stand, kampfwerte(state), def)}`;
   const karten = haupt.querySelector<HTMLElement>('.r-karten');
   if (karten) karten.scrollLeft = bankLinks;
+  const bank = haupt.querySelector<HTMLElement>('.r-bank');
+  if (bank) bank.scrollTop = bankOben;
   // Ein offenes Kriegsrat-Fenster (Handy) zeigt denselben Stand
   for (const ziel of Array.from(el.querySelectorAll<HTMLElement>('.r-ov [data-rat-inhalt]'))) ziel.innerHTML = ratInhalt(state, schluessel, def);
 }
