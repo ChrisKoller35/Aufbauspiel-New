@@ -1,22 +1,28 @@
-// ─── Der Raid «Über dem Tag» ────────────────────────────────────
+// ─── Der Raid «Über dem Tag» und seine Stufe II ─────────────────
 // Die Regeln des Uhrwerks auf kleinen Probefeldern mit zähen Helden (systems/RaidKampf.ts), Heilregel und
 // Trupps, Bestimmtheit und Kriegsrat, dann der Raid im Spielstand (systems/Raid.ts): Freischalten, Aufstellen,
-// Woche und Kosten, Truhen, XP, Zähler, Bestversuch, Alrunas Liste, Speichern. Zum Schluss die Eichbänder mit
-// 20 festen Samen (i · 7919) an der Muster-Gilde (data/raidMuster.ts); die 400 Läufe rechnet
-// tools/raidEichung.ts. Regeln und Zahlen: docs/RAID.md.
+// Woche und Kosten, Truhen, XP, Zähler, Bestversuch, Alrunas Liste, Speichern. Danach Stufe II, «Die dreizehnte
+// Stunde»: Gegenzeiger und drei Trupps, eigener Stand, eigene Woche, eigene Truhen, Liste, Kriegsrat, Speichern.
+// Zum Schluss die Eichbänder beider Stufen mit 20 festen Samen (i · 7919) an der Muster-Gilde
+// (data/raidMuster.ts); die 400 Läufe rechnet tools/raidEichung.ts. Regeln und Zahlen: docs/RAID.md.
 // ────────────────────────────────────────────────────────────────
 
 import { describe, test, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createNewGameState, GameState } from '../src/models/GameState';
 import { createGuildFighter, GuildFighter } from '../src/models/GuildRoster';
 import type { Feld, RaidStand } from '../src/models/RaidStand';
-import { RAID_TEXTE, TRUPP_WIRKUNGEN, ZENIT, truppKlein } from '../src/data/raids';
+import {
+  DREIZEHN, RAID_TEXTE, STUFEN_TEXTE, TRUPP_WIRKUNGEN, ZENIT, rundenListe, spaltenName, truppKlein, truppName,
+} from '../src/data/raids';
 import { DUNGEON_SETS, setTeilIds, setVonItem } from '../src/data/dungeonSets';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
-import { RaidAufstellungName, RaidMusterName, baueRaidGilde, raidMusterAufstellung } from '../src/data/raidMuster';
 import {
-  RaidEreignis, RaidErgebnis, hauptursache, heilFaehigkeit, pendelTrupp, raidKampf, sindNachbarn, vollsteReihe,
-  zeigerSpalte,
+  RAID_AUFSTELLUNGEN_DREIZEHN, RaidAufstellungDreizehn, RaidAufstellungName, RaidMusterName, baueRaidGilde,
+  raidMusterAufstellung, raidMusterAufstellungDreizehn,
+} from '../src/data/raidMuster';
+import {
+  RaidEreignis, RaidErgebnis, gegenzeigerSpalte, hauptursache, heilFaehigkeit, pendelTrupp, raidKampf, sindNachbarn,
+  spaltenZahl, treffpunkte, vollsteReihe, zeigerRunden, zeigerSpalte,
 } from '../src/systems/RaidKampf';
 import {
   ErnstkampfErgebnis, KRIEGSRAT_PROBEN, VERLAUF_LAENGE, aufstellungLeeren, aufstellungSchluessel, ernstkampf,
@@ -969,6 +975,411 @@ describe('Speichern und Laden', () => {
     expect(geladen.raid!.bestRest).toBe(e.ergebnis.zenitRest);
     expect(raidKartenZustand(geladen).zeile).not.toContain('NaN');
   });
+
+  test('Stufe II kommt unverändert zurück, Felder neben ihrem Raster fallen weg; eine Datei ohne raidStufen lädt', () => {
+    const saveSystem = new SaveSystem();
+    const state = stufeZweiSpielstand('gut');
+    ernstkampf(state, Date.now(), DREIZEHN);
+    expect(saveSystem.save(state)).toBe(true);
+    const geladen = saveSystem.load()!;
+    expect(geladen.raidStufen).toEqual(state.raidStufen);
+    expect(geladen.raid).toEqual(state.raid);
+
+    // Eine Datei: Sina auf einer zehnten Spalte, die es nicht gibt
+    const datei = JSON.parse(saveSystem.spielstandText()!) as GameState;
+    datei.raidStufen!.dreizehn.aufstellung[String(heldNamens(state, 'Sina').id)] = { reihe: 1, spalte: 9 };
+    expect(saveSystem.schreibeSpielstandText(JSON.stringify(datei)).ok).toBe(true);
+    expect(raidStand(saveSystem.load()!, Date.now(), DREIZEHN).aufstellung)
+      .toEqual(raidMusterAufstellungDreizehn('gut', state.fighters, ['Sina']));
+
+    // Eine Datei von vor Stufe II, ohne raidStufen: Stufe I bleibt, wie sie war, Stufe II beginnt beim ersten Besuch
+    hebeSperreNachLadenAuf(); // im Spiel: die Seite lädt neu
+    delete datei.raidStufen;
+    expect(saveSystem.schreibeSpielstandText(JSON.stringify(datei)).ok).toBe(true);
+    const alt = saveSystem.load()!;
+    expect(alt.raidStufen).toBeUndefined();
+    expect(alt.raid).toEqual(state.raid);
+    expect(raidKartenZustand(alt, Date.now(), DREIZEHN)).toEqual({
+      offen: true, zeile: RAID_TEXTE.karte.keinVersuch, zwoelf: false, truheWartet: true,
+    });
+    expect(alt.raidStufen).toBeUndefined();
+    expect(raidStand(alt, Date.now(), DREIZEHN)).toMatchObject({ aufstellung: startAufstellung(alt, DREIZEHN), versucheGesamt: 0, siege: 0 });
+    expect(alt.raidStufen?.dreizehn).toBeDefined();
+  });
+});
+
+// ── Stufe II: Die dreizehnte Stunde ──
+
+const D = STUFEN_TEXTE.dreizehn;
+
+/** Nur die genannten Regeln schlagen zu, mit dem Gegenzeiger der Stufe II (wie nurDie) */
+const nurDieZwei = (...bleiben: string[]) =>
+  (['pendel', 'zeiger', 'gegenzeiger', 'durchschlag', 'glocke', 'funken', 'mittag'] as const).filter(r => !bleiben.includes(r));
+
+/**
+ * Das Probefeld der Stufe II: neun Spalten, drei Trupps, zähe Helden. Spalte H ist leer; auf E, wo sich die Zeiger
+ * treffen, stehen zwei.
+ *          A    B    C   |  D    E    F   |  G    H    I
+ *   vorn   Aa   Bb   Cc  |  Dd   .    Ff  |  Gg   .    Ii
+ *   Mitte  .    .    .   |  .    Ee   .   |  .    .    .
+ *   hinten .    .    .   |  .    Ez   .   |  .    .    .
+ */
+function probefeldZwei(): { helden: GuildFighter[]; aufstellung: Record<string, Feld> } {
+  return {
+    helden: [
+      held(1, 'guardian', 'Aa'), held(2, 'berserker', 'Bb'), held(3, 'ranger', 'Cc'), held(4, 'assassin', 'Dd'),
+      held(5, 'witch', 'Ee'), held(6, 'bard', 'Ez'), held(7, 'necromancer', 'Ff'), held(8, 'guardian', 'Gg'),
+      held(9, 'berserker', 'Ii'),
+    ],
+    aufstellung: felder([1, 0, 0], [2, 0, 1], [3, 0, 2], [4, 0, 3], [5, 1, 4], [6, 2, 4], [7, 0, 5], [8, 0, 6], [9, 0, 8]),
+  };
+}
+
+/** Jede Spalte mit einem Helden vorn, nur auf E steht Halm (mit `leben`) in der Mitte */
+function jedeSpalteEiner(leben: number): { helden: GuildFighter[]; aufstellung: Record<string, Feld> } {
+  const klassen = ['guardian', 'berserker', 'ranger', 'assassin', 'witch', 'bard', 'necromancer', 'guardian', 'berserker'];
+  const helden = klassen.map((k, i) => held(i + 1, k, i === 4 ? 'Halm' : `S${spaltenName(i)}`, i === 4 ? { hp: leben, maxHp: leben } : {}));
+  return { helden, aufstellung: felder(...helden.map((h, i): [number, number, number] => [h.id, i === 4 ? 1 : 0, i])) };
+}
+
+/**
+ * Spielstand mit der Muster-Gilde «anker15» (Stufe 15, sonst `stufe`), die Pfeiler bezwungen, Zenit auf Stufe I einmal
+ * besiegt (Stufe II offen), Stufe II nach Muster aufgestellt
+ */
+function stufeZweiSpielstand(aufstellung: RaidAufstellungDreizehn, stufe = 15): GameState {
+  const state = createNewGameState();
+  state.rngSeed = 4711;
+  const { helden, stufen } = baueRaidGilde('anker15', { stufe });
+  state.fighters = helden;
+  state.schmiede = { stufen };
+  state.globalStock.mat_tagstein = 0;
+  merkeBezwungen(state, 'tagespfeiler', 1);
+  raidStand(state).siege = 1;
+  raidStand(state, Date.now(), DREIZEHN).aufstellung = raidMusterAufstellungDreizehn(aufstellung, helden);
+  return state;
+}
+
+describe('Stufe II: die Regeln mit Gegenzeiger und drei Trupps', () => {
+  test('Gegenzeiger I bis A und wieder I; mit dem Zeiger auf E in Runde 5, 14 und 23; Pendel reihum über drei Trupps', () => {
+    expect(spaltenZahl(DREIZEHN)).toBe(9);
+    expect(Array.from({ length: 19 }, (_, i) => gegenzeigerSpalte(i + 1, 9)))
+      .toEqual([8, 7, 6, 5, 4, 3, 2, 1, 0, 8, 7, 6, 5, 4, 3, 2, 1, 0, 8]);
+    expect(zeigerRunden(4, 9, 24)).toEqual([5, 14, 23]);
+    expect(zeigerRunden(4, 9, 24, true)).toEqual([5, 14, 23]);
+    expect(zeigerRunden(0, 9, 24, true)).toEqual([9, 18]);
+    expect(zeigerRunden(8, 9, 24, true)).toEqual([1, 10, 19]);
+    expect(treffpunkte(DREIZEHN)).toEqual([{ spalte: 4, runden: [5, 14, 23] }]);
+    // Stufe I hat keinen Gegenzeiger (und mit sechs Spalten träfen sich zwei Zeiger nie auf einer)
+    expect(ZENIT.regeln.gegenzeiger).toBeUndefined();
+    expect(treffpunkte(ZENIT)).toEqual([]);
+    expect(treffpunkte({ ...ZENIT, regeln: { ...ZENIT.regeln, gegenzeiger: 1 } })).toEqual([]);
+
+    expect([0, 1, 2].map(t => truppName(t, 3))).toEqual(['Links', 'Mitte', 'Rechts']);
+    expect([1, 2, 3, 4].map(r => pendelTrupp(r, 3, () => true))).toEqual([0, 1, 2, 0]);
+    // Ist die Mitte leer, nimmt das Pendel ihre Runden mit nach rechts
+    expect([1, 2, 3, 4].map(r => pendelTrupp(r, 3, t => t !== 1))).toEqual([0, 2, 2, 0]);
+  });
+
+  test('auf dem Probefeld II: Zeiger vorwärts, Gegenzeiger rückwärts, auf E beide nacheinander, leere Spalte H von beiden', () => {
+    const { helden, aufstellung } = probefeldZwei();
+    const r = raidKampf(DREIZEHN, helden, {}, aufstellung, 42, { ohne: nurDieZwei('zeiger', 'gegenzeiger', 'durchschlag', 'mittag') });
+    expect(r).toMatchObject({ sieg: false, runden: 24, mitternacht: true, helden: 9, stehend: 9, gefallen: [] });
+
+    const jedeRunde = (spalte: (runde: number) => number): number[][] =>
+      Array.from({ length: 24 }, (_, i) => [i + 1, spalte(i + 1)]).filter(([, s]) => s !== 7);
+    expect(ereignisse(r, 'zeiger').map(e => [e.runde, e.spalte])).toEqual(jedeRunde(runde => (runde - 1) % 9));
+    expect(ereignisse(r, 'gegenzeiger').map(e => [e.runde, e.spalte])).toEqual(jedeRunde(runde => 8 - ((runde - 1) % 9)));
+    // H ist leer: Durchschlag, vom Gegenzeiger in Runde 2, 11 und 20, vom Zeiger in Runde 8 und 17; ab Mittag × 1,5
+    expect(ereignisse(r, 'durchschlag').map(e => [e.runde, e.spalte, e.gegen === true, werte(e)])).toEqual([
+      [2, 7, true, Array(9).fill(66)], [8, 7, false, Array(9).fill(66)], [11, 7, true, Array(9).fill(66)],
+      [17, 7, false, Array(9).fill(99)], [20, 7, true, Array(9).fill(99)],
+    ]);
+
+    // Runde 5: Es schlägt dreizehn. Zuerst der Zeiger, dann der Gegenzeiger, beide geteilt auf Ee und Ez
+    const fuenf = r.verlauf[4].ereignisse.filter(e => e.art === 'zeiger' || e.art === 'gegenzeiger');
+    expect(fuenf.map(e => [e.art, e.spalte, ids(e), werte(e)])).toEqual([
+      ['zeiger', 4, [5, 6], [55, 55]], ['gegenzeiger', 4, [5, 6], [55, 55]],
+    ]);
+    expect(fuenf[1].ansage).toBe(A.dreizehn('E'));
+    expect(werte(inRunde(r, 'gegenzeiger', 14))).toEqual([82.5, 82.5]);
+    // Allein trägt einer die ganze Wucht: Ii in Runde 1 (I), Ff in Runde 13 (F, ab Mittag)
+    expect([ids(inRunde(r, 'gegenzeiger', 1)), werte(inRunde(r, 'gegenzeiger', 1))]).toEqual([[9], [110]]);
+    expect([ids(inRunde(r, 'gegenzeiger', 13)), werte(inRunde(r, 'gegenzeiger', 13))]).toEqual([[7], [165]]);
+    expect(r.ansagen).toEqual([D.ansage.viele(9), A.durchschlagLeer('H'), A.dreizehn('E'), A.mittag, A.mitternacht]);
+  });
+
+  test('wer auf E den Zeiger hält, kann am Gegenzeiger fallen; fällt er schon am Zeiger, schlägt der Gegenzeiger durch', () => {
+    const ohne = nurDieZwei('zeiger', 'gegenzeiger', 'durchschlag');
+    const zaeh = jedeSpalteEiner(150);
+    const r = raidKampf(DREIZEHN, zaeh.helden, {}, zaeh.aufstellung, 7, { ohne, bisRunde: 6 });
+    expect(r.gefallen).toEqual([{ heldId: 5, runde: 5, ursache: 'gegenzeiger', ort: RAID_TEXTE.ort.gegenzeiger('E') }]);
+    expect(RAID_TEXTE.ort.gegenzeiger('E')).toBe('Gegenzeiger (Spalte E)');
+    expect(hauptursache(r.gefallen, { 5: 'Halm' })).toEqual({
+      regel: 'gegenzeiger', ort: 'Gegenzeiger (Spalte E)', satz: RAID_TEXTE.hauptursache.gegenzeiger('E', 'Halm'),
+    });
+    expect(ereignisse(r, 'durchschlag')).toEqual([]);
+
+    const duenn = jedeSpalteEiner(100);
+    const d = raidKampf(DREIZEHN, duenn.helden, {}, duenn.aufstellung, 7, { ohne, bisRunde: 5 });
+    expect(d.gefallen).toEqual([{ heldId: 5, runde: 5, ursache: 'zeiger', ort: RAID_TEXTE.ort.zeiger('E') }]);
+    expect(ereignisse(d, 'durchschlag').map(e => [e.runde, e.spalte, e.gegen, ids(e), werte(e)])).toEqual([
+      [5, 4, true, [1, 2, 3, 4, 6, 7, 8, 9], Array(8).fill(66)],
+    ]);
+    expect(inRunde(d, 'durchschlag', 5).ansage).toBe(`${A.durchschlagGefallen('Halm', 'E')} ${A.dreizehn('E')}`);
+
+    // Eine leere Spalte schlägt unter beiden Zeigern durch: Auf Stufe II nennt der Satz beide, auf Stufe I bleibt er
+    const leer = [{ heldId: 1, runde: 8, ursache: 'durchschlag' as const, ort: RAID_TEXTE.ort.durchschlag('H') }];
+    expect(hauptursache(leer, {})?.satz).toBe(RAID_TEXTE.hauptursache.durchschlag('H'));
+    expect(hauptursache(leer, {}, false, true)?.satz).toBe(RAID_TEXTE.hauptursache.durchschlagBeide('H'));
+  });
+
+  test('Stufe I bleibt ohne Gegenzeiger: kein Ereignis, kein Durchschlag von ihm, keine dreizehn', () => {
+    const { helden, aufstellung } = probefeld();
+    const r = raidKampf(ZENIT, helden, {}, aufstellung, 42);
+    expect(ereignisse(r, 'gegenzeiger')).toEqual([]);
+    expect(ereignisse(r, 'durchschlag').every(e => e.gegen === undefined)).toBe(true);
+    expect(r.ansagen).not.toContain(A.dreizehn('E'));
+    expect(r.ansagen[0]).toBe(A.viele(6));
+  });
+});
+
+describe('Stufe II im Spielstand', () => {
+  test('offen erst nach dem ersten Sieg auf Stufe I; bis dahin legt sie keinen Stand an', () => {
+    const state = createNewGameState();
+    state.rngSeed = 4711;
+    const { helden, stufen } = baueRaidGilde('anker15');
+    state.fighters = helden;
+    state.schmiede = { stufen };
+    merkeBezwungen(state, 'tagespfeiler', 1);
+    expect(raidOffen(state)).toBe(true);
+    expect(raidOffen(state, DREIZEHN)).toBe(false);
+    expect(versuchsLage(state, Date.now(), DREIZEHN)).toMatchObject({ moeglich: false, grund: D.nochZu });
+    expect(ernstkampf(state, Date.now(), DREIZEHN)).toBeNull();
+    expect(raidKartenZustand(state, Date.now(), DREIZEHN)).toEqual({ offen: false, zeile: D.zu, zwoelf: false, truheWartet: false });
+    expect(setzeHeld(state, helden[0].id, { reihe: 2, spalte: 8 }, DREIZEHN)).toBe(true); // wirkt nirgends
+    expect(state.raidStufen).toBeUndefined();
+
+    // Der erste Sieg auf Stufe I öffnet sie («Profi» gewinnt fast immer, sonst der nächste freie Versuch)
+    raidStand(state).aufstellung = raidMusterAufstellung('profi', helden);
+    let sieg: ErnstkampfErgebnis | null = null;
+    for (let i = 0; i < 3 && !sieg; i++) {
+      const e = ernstkampf(state)!;
+      if (e.ergebnis.sieg) sieg = e;
+    }
+    expect(sieg?.ersterSieg).toBe(true);
+    expect(raidOffen(state, DREIZEHN)).toBe(true);
+    expect(raidKartenZustand(state, Date.now(), DREIZEHN)).toEqual({
+      offen: true, zeile: RAID_TEXTE.karte.keinVersuch, zwoelf: false, truheWartet: true,
+    });
+    // Erster Besuch: alle fünfzehn, wie sie in der Gilde stehen, vorne voll, dann die Mitte (wie «Naiv»)
+    expect(raidStand(state, Date.now(), DREIZEHN).aufstellung).toEqual(raidMusterAufstellungDreizehn('naiv', helden));
+    expect(state.raidStufen?.dreizehn?.woche.id).toBe('2026-W43');
+    expect(versuchsLage(state, Date.now(), DREIZEHN)).toEqual({ moeglich: true, frei: true, freiUebrig: 3, kosten: {} });
+  });
+
+  test('eigene Woche, eigene Versuche und Kosten; mindestens zehn, höchstens fünfzehn, neun Spalten', () => {
+    // Auf Stufe 1 bringt die Gilde Zenit nie unter die Hälfte: keine Truhe, kein Tagstein dazwischen
+    const state = stufeZweiSpielstand('naiv', 1);
+    const jetzt = Date.now();
+    for (let i = 0; i < 3; i++) {
+      expect(versuchsLage(state, jetzt, DREIZEHN)).toEqual({ moeglich: true, frei: true, freiUebrig: 3 - i, kosten: {} });
+      expect(ernstkampf(state, jetzt, DREIZEHN)).toMatchObject({ frei: true, kosten: {}, truhen: [] });
+    }
+    expect(versuchsLage(state, jetzt, DREIZEHN)).toEqual({
+      moeglich: false, frei: false, freiUebrig: 0, kosten: { mat_tagstein: 10 }, grund: B.zuWenigTagstein(0, 10),
+    });
+    // Stufe I hat ihre eigene Woche
+    expect(versuchsLage(state, jetzt)).toEqual({ moeglich: true, frei: true, freiUebrig: 3, kosten: {} });
+    state.globalStock.mat_tagstein = 25;
+    expect(ernstkampf(state, jetzt, DREIZEHN)).toMatchObject({ frei: false, kosten: { mat_tagstein: 10 } });
+    expect(state.globalStock.mat_tagstein).toBe(15);
+    expect(state.raidStufen!.dreizehn).toMatchObject({ versucheGesamt: 4, woche: { versuche: 4 } });
+    expect(state.raid!).toMatchObject({ versucheGesamt: 0, woche: { versuche: 0 } });
+
+    // Ein Sechzehnter bleibt auf der Bank; Felder gibt es bis Spalte I, auf Stufe I nur bis F
+    const sechzehn = held(300, 'cleric', 'Sechzehn');
+    state.fighters.push(sechzehn);
+    const feld = (): Feld | undefined => raidStand(state, jetzt, DREIZEHN).aufstellung[String(sechzehn.id)];
+    expect(feld()).toBeUndefined();
+    expect(setzeHeld(state, sechzehn.id, { reihe: 2, spalte: 8 }, DREIZEHN)).toBe(false);
+    expect(setzeHeld(state, sechzehn.id, { reihe: 2, spalte: 9 }, DREIZEHN)).toBe(false);
+    expect(setzeHeld(state, sechzehn.id, { reihe: 2, spalte: 8 })).toBe(false);
+    for (const h of state.fighters.slice(9, 15)) setzeHeld(state, h.id, null, DREIZEHN);
+    expect(versuchsLage(state, jetzt, DREIZEHN)).toMatchObject({ moeglich: false, grund: B.mindestens(10) });
+    expect(setzeHeld(state, sechzehn.id, { reihe: 2, spalte: 8 }, DREIZEHN)).toBe(true);
+    expect(feld()).toEqual({ reihe: 2, spalte: 8 });
+    expect(versuchsLage(state, jetzt, DREIZEHN).moeglich).toBe(true);
+  });
+
+  test('am Montag beginnen beide Wochen neu; der Montag-Satz der Stufe II; eigener Samen, nach dem Neuladen derselbe', () => {
+    const state = stufeZweiSpielstand('naiv', 1);
+    for (let i = 0; i < 3; i++) ernstkampf(state, Date.now(), DREIZEHN);
+    expect(montagSatz(raidStand(state, Date.now(), DREIZEHN), DREIZEHN)).toBeNull();
+    vi.setSystemTime(START + WOCHE);
+    const zwei = raidStand(state, Date.now(), DREIZEHN);
+    expect(zwei.woche).toMatchObject({ id: '2026-W44', versuche: 0 });
+    expect(montagSatz(zwei, DREIZEHN)).toBe(D.montagVorSieg);
+    expect(montagSatz(raidStand(state))).toBeNull(); // auf Stufe I gab es keinen Ernstkampf
+
+    const gut = stufeZweiSpielstand('gut');
+    const eins = raidStand(gut);
+    const stand = raidStand(gut, Date.now(), DREIZEHN);
+    expect([eins.woche.id, eins.versucheGesamt]).toEqual([stand.woche.id, stand.versucheGesamt]);
+    const samen = raidSamen(gut, stand, 'kampf', DREIZEHN);
+    expect(samen).not.toBe(raidSamen(gut, eins));
+    expect(raidSamen(gut, stand, 'truhe', DREIZEHN)).not.toBe(samen);
+    const geladen = JSON.parse(JSON.stringify(gut)) as GameState;
+    const a = ernstkampf(gut, Date.now(), DREIZEHN)!;
+    const b = ernstkampf(geladen, Date.now(), DREIZEHN)!;
+    expect(b.ergebnis).toEqual(a.ergebnis);
+    expect(b.truhen).toEqual(a.truhen);
+    expect(a.ergebnis).toEqual(raidKampf(DREIZEHN, gut.fighters, gut.schmiede!.stufen, stand.aufstellung, samen));
+  });
+
+  test('eigene Truhen: «Was der Gegenzeiger verlor», «Die dreizehnte Truhe», zum ersten Sieg die Ersatz-Unruh', () => {
+    const state = stufeZweiSpielstand('profi');
+    state.globalStock.die_unruh = 1; // vom ersten Sieg auf Stufe I
+    const goldVorher = state.globalStock.gold ?? 0;
+    const erste = ernstkampf(state, Date.now(), DREIZEHN)!;
+    expect([erste.ergebnis.sieg, erste.ersterSieg]).toEqual([true, true]);
+    expect(arten(erste)).toEqual(['halb', 'sieg', 'erster']);
+    const [halb, sieg, erster] = erste.truhen;
+    expect(halb).toMatchObject({ name: DREIZEHN.truhen.halb.name, text: DREIZEHN.truhen.halb.text });
+    const [teil] = setTeile(halb.inhalt);
+    expect(setVonItem(teil)!.tier).toBeGreaterThanOrEqual(6);
+    expect(setVonItem(teil)!.tier).toBeLessThanOrEqual(10);
+    expect(halb.inhalt).toEqual({ gold: 250, [teil]: 1, mat_tagstein: 8 });
+
+    expect(sieg).toMatchObject({ name: DREIZEHN.truhen.sieg.name, text: DREIZEHN.truhen.sieg.text });
+    expect(sieg.inhalt.mat_tagstein).toBe(15);
+    expect(sieg.inhalt.crystal_shard).toBeGreaterThanOrEqual(25);
+    // Zwölf Würfe, je sechs auf Alrunas und Orms Beute, mit dem festen Gold ihrer Tabellen
+    const wuerfeAus = DREIZEHN.truhen.sieg.wuerfeAus;
+    expect(['loot_boss_alruna', 'loot_boss_orm'].map(id => wuerfeAus.filter(w => w === id).length)).toEqual([6, 6]);
+    expect(wuerfeAus).toHaveLength(12);
+    const wuerfe = wuerfeAus.map(id => LOOT_TABLE_DEFS[id].guaranteedGold);
+    expect(sieg.inhalt.gold).toBeGreaterThanOrEqual(wuerfe.reduce((s, g) => s + g.min, 0));
+    expect(sieg.inhalt.gold).toBeLessThanOrEqual(wuerfe.reduce((s, g) => s + g.max, 0));
+    expect(setTeile(sieg.inhalt)).toHaveLength(1);
+    expect(erster).toMatchObject({ art: 'erster', name: D.erster.name, text: D.erster.text, inhalt: { die_unruh: 1 } });
+    expect(state.globalStock.die_unruh).toBe(2);
+    expect(state.globalStock.gold - goldVorher).toBe(erste.truhen.reduce((s, t) => s + (t.inhalt.gold ?? 0), 0));
+    expect(erste.ergebnis.ansagen).not.toContain(A.abriss);
+    // Die Truhen der Stufe I warten diese Woche weiter
+    expect(state.raid!.woche).toMatchObject({ halbeTruhe: false, truhe: false });
+
+    const zweite = ernstkampf(state, Date.now(), DREIZEHN)!;
+    expect([zweite.ersterSieg, zweite.truhen]).toEqual([false, []]);
+    vi.setSystemTime(START + WOCHE);
+    const naechste = ernstkampf(state, Date.now(), DREIZEHN)!;
+    expect(arten(naechste)).toEqual(naechste.ergebnis.sieg ? ['halb', 'sieg'] : ['halb']);
+    expect(state.globalStock.die_unruh).toBe(2);
+  });
+
+  test('XP 450 beim Sieg, 150 bei der Niederlage; Stufe II zählt eigens, die Zähler der Stufe I bleiben stehen', () => {
+    const state = stufeZweiSpielstand('profi');
+    const sieg = ernstkampf(state, Date.now(), DREIZEHN)!;
+    expect(sieg.ergebnis.sieg).toBe(true);
+    expect(sieg.xp.map(x => x.xp)).toEqual(Array(15).fill(450));
+    expect(state.statistics).toMatchObject({ raid2_siege: 1, raid2_wochen: 1 });
+    for (const id of ['raid_versuche', 'raid_siege', 'raid_punkt_zwoelf', 'raid_mehr_als_vier', 'raid_wochen', 'raid_zu_viert']) {
+      expect(state.statistics[id] ?? 0, id).toBe(0);
+    }
+    expect(sieg.neueErfolge).toContain('raid_dreizehn');
+    expect(sieg.neueErfolge).not.toContain('raid_sieg');
+
+    const schwach = stufeZweiSpielstand('naiv', 1);
+    const niederlage = ernstkampf(schwach, Date.now(), DREIZEHN)!;
+    expect(niederlage.ergebnis.sieg).toBe(false);
+    expect(niederlage.xp.map(x => x.xp)).toEqual(Array(15).fill(150));
+    expect(schwach.statistics.raid2_siege ?? 0).toBe(0);
+
+    // «Doppelschicht»: die dreizehnte Truhe in vier verschiedenen Wochen, nur der erste Sieg einer Woche zählt
+    ernstkampf(state, Date.now(), DREIZEHN);
+    expect(state.statistics.raid2_wochen).toBe(1);
+    for (let woche = 1; woche < 4; woche++) {
+      vi.setSystemTime(START + woche * WOCHE);
+      for (let i = 0; i < 3 && !raidStand(state, Date.now(), DREIZEHN).woche.truhe; i++) ernstkampf(state, Date.now(), DREIZEHN);
+      expect(state.statistics.raid2_wochen).toBe(woche + 1);
+    }
+    expect(state.achievements).toContain('raid_doppelschicht');
+  });
+
+  test('Alrunas Liste auf Stufe II: beide Zeiger mit ihren Runden, der Treffpunkt E, drei Trupps, eine leere Mitte', () => {
+    const gut = stufeZweiSpielstand('gut');
+    const vorher = JSON.stringify(gut);
+    const lage = raidLage(gut, DREIZEHN);
+    expect(JSON.stringify(gut)).toBe(vorher);
+    const id = (name: string): number => heldNamens(gut, name).id;
+    expect(lage.pendelZiele).toEqual([id('Brom'), id('Bertram'), id('Grimm')]);
+    expect(lage.spalten).toHaveLength(9);
+    expect(lage.trupps.map(t => [t.anzahl, t.heiler])).toEqual([[6, ['Ewin']], [5, ['Ansgar', 'Moos']], [4, ['Pirmin']]]);
+    const treffen = treffpunkte(DREIZEHN)[0].runden;
+    expect(lage.hinweise).toContainEqual(expect.objectContaining({ art: 'zeiger', ok: true, text: L.treffpunktOk('E', treffen, ['Ansgar', 'Bertram']) }));
+    expect(lage.hinweise).toContainEqual({ art: 'zeiger', ok: true, text: L.zeigerOkBeide, felder: [] });
+    expect(lage.hinweise).toContainEqual(expect.objectContaining({
+      art: 'glocke', ok: false, text: L.glockeVoll(2, ['Sina', 'Ansgar', 'Ewin', 'Moos', 'Ysra', 'Morn', 'Pirmin']),
+    }));
+    expect(lage.hinweise).toContainEqual(expect.objectContaining({ art: 'trupp', ok: true, text: expect.stringMatching(/^Mitte: /) }));
+    expect(lage.hinweise[lage.hinweise.length - 1]).toEqual({ art: 'zahl', ok: true, text: D.zahl(15, 15), felder: [] });
+
+    // Profi: Grimm allein auf E hält beide; D und H tragen je nur einen, gegen beide Zeiger
+    const profi = hinweise(stufeZweiSpielstand('profi'), DREIZEHN);
+    expect(profi).toContainEqual(expect.objectContaining({ ok: true, text: L.treffpunktOk('E', treffen, ['Grimm']) }));
+    expect(profi).toContainEqual(expect.objectContaining({ ok: false, text: L.zeigerEinzelnBeide('D', 'Liedra', [4, 13, 22], [6, 15, 24]) }));
+    expect(profi).toContainEqual(expect.objectContaining({ ok: false, text: L.zeigerEinzelnBeide('H', 'Morn', [8, 17], [2, 11, 20]) }));
+    expect(profi).toContainEqual(expect.objectContaining({ ok: false, text: L.truppOhneHeiler('Mitte') }));
+    // Naiv: Benno hält auf E ab Mittag keine zwei Doppelrunden
+    expect(hinweise(stufeZweiSpielstand('naiv'), DREIZEHN))
+      .toContainEqual(expect.objectContaining({ ok: false, text: L.treffpunktZerbrechlich('E', treffen, 'Benno') }));
+
+    // Ysra auf die Bank: F ist leer; ohne Ansgar und Bertram ist E leer; ohne Moos und Benno die ganze Mitte
+    setzeHeld(gut, id('Ysra'), null, DREIZEHN);
+    expect(hinweise(gut, DREIZEHN)).toContainEqual({ art: 'zeiger', ok: false, text: L.zeigerLeerBeide('F', [6, 15, 24], [4, 13, 22]), felder: [] });
+    for (const name of ['Ansgar', 'Bertram']) setzeHeld(gut, id(name), null, DREIZEHN);
+    expect(hinweise(gut, DREIZEHN)).toContainEqual({ art: 'zeiger', ok: false, text: L.treffpunktLeer('E', treffen), felder: [] });
+    for (const name of ['Moos', 'Benno']) setzeHeld(gut, id(name), null, DREIZEHN);
+    const leer = hinweise(gut, DREIZEHN);
+    expect(leer).toContainEqual({ art: 'pendel', ok: false, text: L.pendelLeerWeiter('Mitte', 'nach rechts', 2), felder: [] });
+    expect(leer).toContainEqual({ art: 'zahl', ok: false, text: D.zahl(10, 15), felder: [] });
+  });
+
+  test('der Kriegsrat der Stufe II hat seinen eigenen Schlüssel und zeigt im Probelauf den Gegenzeiger', () => {
+    const state = stufeZweiSpielstand('gut');
+    const stand = raidStand(state, Date.now(), DREIZEHN);
+    const schluessel = ratSchluessel(state, stand.aufstellung, DREIZEHN);
+    expect(schluessel.startsWith('dreizehn#')).toBe(true);
+    expect(schluessel.slice('dreizehn#'.length)).toBe(ratSchluessel(state, stand.aufstellung));
+    const vorher = JSON.stringify(state);
+    const rat = kriegsratRechnen(state, DREIZEHN, 3);
+    expect(JSON.stringify(state)).toBe(vorher);
+    expect([rat.proben, rat.schluessel]).toEqual([3, schluessel]);
+    expect(rat.probe).toEqual(raidKampf(DREIZEHN, state.fighters, state.schmiede!.stufen, stand.aufstellung, kriegsratSamen(0)));
+    expect(ereignisse(rat.probe, 'gegenzeiger').length).toBeGreaterThan(0);
+  });
+
+  test('das Regelblatt der Stufe II nennt die Zahlen aus den Daten; die Muster-Aufstellungen passen zur Gilde', () => {
+    const blatt = D.regelBlatt.join(' ');
+    const [treffen] = treffpunkte(DREIZEHN);
+    expect(blatt).toContain(`In Runde ${rundenListe(treffen.runden)} stehen beide auf Spalte ${spaltenName(treffen.spalte)}`);
+    expect(blatt).toContain(`A bis ${spaltenName(spaltenZahl(DREIZEHN) - 1)}`);
+    expect(blatt).toContain(`Ab Runde ${DREIZEHN.regeln.mittagAb}`);
+    expect(blatt).toContain(`Nach Runde ${DREIZEHN.regeln.mitternacht}`);
+    expect([DREIZEHN.minHelden, DREIZEHN.maxHelden, DREIZEHN.freieVersucheJeWoche, DREIZEHN.kostenJeVersuch]).toEqual([10, 15, 3, { mat_tagstein: 10 }]);
+    expect(blatt).toContain('Zehn bis fünfzehn Helden');
+    expect(blatt).toContain('drei freie Ernstkämpfe, danach je zehn Tagstein');
+
+    const { helden } = baueRaidGilde('anker15');
+    expect(helden.filter(h => h.lehrling).map(h => h.name)).toEqual(['Bertram', 'Pirmin', 'Wenna', 'Benno', 'Mirabell']);
+    for (const [name, plan] of Object.entries(RAID_AUFSTELLUNGEN_DREIZEHN)) {
+      const felderDesPlans = Object.values(plan).map(f => `${f.reihe}:${f.spalte}`);
+      expect(new Set(felderDesPlans).size, name).toBe(felderDesPlans.length);
+      expect(Object.values(plan).every(f => f.reihe < DREIZEHN.reihen && f.spalte < spaltenZahl(DREIZEHN)), name).toBe(true);
+      expect(Object.keys(raidMusterAufstellungDreizehn(name as RaidAufstellungDreizehn, helden)), name)
+        .toHaveLength(name === 'zehn' ? 10 : 15);
+    }
+    expect(Object.keys(RAID_AUFSTELLUNGEN_DREIZEHN.zehn).some(n => helden.find(h => h.name === n)!.lehrling)).toBe(false);
+  });
 });
 
 // ── Eichbänder ──
@@ -1073,6 +1484,67 @@ describe('Eichbänder: 20 feste Samen an der Muster-Gilde', () => {
     ];
     for (const [gilde, aufstellung, ohne] of zeilen) {
       expect(messe(gilde, aufstellung, ohne).mitternacht, `${gilde} ${aufstellung}`).toBeLessThanOrEqual(1);
+    }
+  });
+});
+
+interface MessungZwei {
+  siege: number;
+  siegRunde: number;
+  rest: number;
+  mitternacht: number;
+}
+
+const gemessenZwei = new Map<string, MessungZwei>();
+
+/** Stufe II: 20 Kämpfe mit den Samen i · 7919 an «anker15» (die besten zehn: «anker», ohne Lehrlinge) */
+function messeZwei(aufstellung: RaidAufstellungDreizehn): MessungZwei {
+  const fertig = gemessenZwei.get(aufstellung);
+  if (fertig) return fertig;
+  const { helden, stufen } = baueRaidGilde(aufstellung === 'zehn' ? 'anker' : 'anker15');
+  const felderDerGilde = raidMusterAufstellungDreizehn(aufstellung, helden);
+  const kaempfe = Array.from({ length: 20 }, (_, i) => raidKampf(DREIZEHN, helden, stufen, felderDerGilde, i * 7919, { knapp: true }));
+  const siege = kaempfe.filter(k => k.sieg);
+  const messung: MessungZwei = {
+    siege: siege.length,
+    siegRunde: siege.length > 0 ? siege.reduce((s, k) => s + k.runden, 0) / siege.length : 0,
+    rest: kaempfe.reduce((s, k) => s + k.zenitRest, 0) / kaempfe.length,
+    mitternacht: kaempfe.filter(k => k.mitternacht).length,
+  };
+  gemessenZwei.set(aufstellung, messung);
+  return messung;
+}
+
+describe('Eichbänder Stufe II: 20 feste Samen an der Muster-Gilde mit fünf Lehrlingen', () => {
+  test('Anker15 + Gut: 11 bis 18 Siege, im Schnitt in Runde 12 bis 15', () => {
+    const m = messeZwei('gut');
+    zwischen(m.siege, 11, 18, 'Siege');
+    zwischen(m.siegRunde, 12, 15, 'Siegrunde');
+  });
+
+  test('Anker15 + Profi: mindestens 18 Siege', () => {
+    expect(messeZwei('profi').siege).toBeGreaterThanOrEqual(18);
+  });
+
+  test('Anker15 + Lehrbuch: höchstens 2 Siege, Zenit im Schnitt bei 15 bis 35 %', () => {
+    const m = messeZwei('lehrbuch');
+    expect(m.siege).toBeLessThanOrEqual(2);
+    zwischen(m.rest, 0.15, 0.35, 'Rest');
+  });
+
+  test('Anker15 + Naiv: kein Sieg, Zenit im Schnitt bei mindestens 35 %', () => {
+    const m = messeZwei('naiv');
+    expect(m.siege).toBe(0);
+    expect(m.rest).toBeGreaterThanOrEqual(0.35);
+  });
+
+  test('die besten zehn ohne Lehrlinge: höchstens 3 Siege', () => {
+    expect(messeZwei('zehn').siege).toBeLessThanOrEqual(3);
+  });
+
+  test('Mitternacht höchstens einmal je Aufstellung', () => {
+    for (const aufstellung of ['gut', 'profi', 'lehrbuch', 'naiv', 'zehn'] as const) {
+      expect(messeZwei(aufstellung).mitternacht, aufstellung).toBeLessThanOrEqual(1);
     }
   });
 });

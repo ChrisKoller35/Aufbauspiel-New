@@ -11,8 +11,10 @@
 // einer Expedition; «Ohne Hose» kommt von selbst (beim ersten Boss trägt noch keiner Rüstung); für
 // «Unentschieden» kämpft der Guardian einmal ohne Angriff (er steht für eine Gruppe, die den Boss nicht klein kriegt).
 // Über den Pfeilern des Tages wartet der Raid: Wer dort aufgestellt ist, wird so stark wie der Trupp; einmal gehen
-// genau vier hinein, danach alle, bis Zenits Truhe in vier Wochen offen war. Fehlt nur noch der Raid, zieht die
-// Gilde nicht mehr aus und wartet auf den nächsten Montag.
+// genau vier hinein, danach alle, bis Zenits Truhe in vier Wochen offen war. Nach dem ersten Sieg ist Stufe II offen
+// (ab zehn Helden): dort alle aus ihrer Startaufstellung, bis die dreizehnte Truhe in vier Wochen offen war. Beim
+// Anheuern nimmt die Gilde auch jeden Lehrling auf, sobald sein Meister Stufe 15 hat, und bringt ihn mit dem
+// Lehrbuch hoch. Fehlt nur noch der Raid, zieht die Gilde nicht mehr aus und wartet auf den nächsten Montag.
 // ────────────────────────────────────────────────────────────────
 
 import { describe, test, expect, vi, beforeAll, afterAll } from 'vitest';
@@ -54,6 +56,7 @@ import { ernstkampf, raidOffen, raidStand, setzeHeld } from '../src/systems/Raid
 import { lehrlingAufnehmen } from '../src/systems/Lehrlinge';
 import { lehrbuchLernen } from '../src/systems/Ausbildung';
 import { MAX_HERO_LEVEL } from '../src/systems/HeroProgression';
+import { DREIZEHN, RaidDef, ZENIT } from '../src/data/raids';
 
 /** Montag, 19. Oktober 2026, 9 Uhr: Auftragsbrett (Tage) und Rangliste (Wochen) gehen nach dieser Uhr */
 const START = new Date(2026, 9, 19, 9, 0).getTime();
@@ -265,17 +268,17 @@ function versteckteTaten(state: GameState, system: ExpeditionSystem, trupp: numb
 }
 
 /**
- * Der Raid «Über dem Tag» (systems/Raid.ts), sobald die Pfeiler des Tages bezwungen sind, in der Startaufstellung.
- * Wer aufgestellt ist, wird so stark wie der Trupp (eine Frage der Eichung, nicht der Regeln). Einmal kämpfen genau
- * vier, danach alle, bis Zenits Truhe diese Woche offen ist. Gibt die Zahl der Ernstkämpfe zurück.
+ * Der Raid über den Pfeilern des Tages (systems/Raid.ts), sobald sie bezwungen sind, je Stufe in der
+ * Startaufstellung. Wer aufgestellt ist, wird so stark wie der Trupp (eine Frage der Eichung, nicht der Regeln).
+ * Auf Stufe I kämpfen einmal genau vier, danach alle, bis Zenits Truhe diese Woche offen ist; Stufe II (offen nach
+ * dem ersten Sieg dort, mit mindestens zehn Helden) ebenso bis zur dreizehnten Truhe. Gibt die Zahl der
+ * Ernstkämpfe zurück.
  */
 function raid(state: GameState, jetzt: number): number {
   if (!raidOffen(state)) return 0;
-  const stand = raidStand(state, jetzt);
-  for (const held of state.fighters) {
-    if (stand.aufstellung[String(held.id)]) held.baseStats = { ...STARK };
-  }
   let kaempfe = 0;
+  const stand = raidStand(state, jetzt);
+  stark(state, stand.aufstellung);
   if (!state.achievements.includes('raid_zu_viert')) {
     const alle = { ...stand.aufstellung };
     for (const id of Object.keys(alle).slice(4)) setzeHeld(state, Number(id), null);
@@ -283,9 +286,26 @@ function raid(state: GameState, jetzt: number): number {
     kaempfe++;
     for (const [id, feld] of Object.entries(alle)) setzeHeld(state, Number(id), feld);
   }
+  kaempfe += bisZurTruhe(state, jetzt, ZENIT);
+  if (raidOffen(state, DREIZEHN) && state.fighters.length >= DREIZEHN.minHelden) {
+    stark(state, raidStand(state, jetzt, DREIZEHN).aufstellung);
+    kaempfe += bisZurTruhe(state, jetzt, DREIZEHN);
+  }
+  return kaempfe;
+}
+
+function stark(state: GameState, aufstellung: Record<string, unknown>): void {
+  for (const held of state.fighters) {
+    if (aufstellung[String(held.id)]) held.baseStats = { ...STARK };
+  }
+}
+
+/** Ernstkämpfe auf einer Stufe, bis ihre Siegtruhe diese Woche offen ist (höchstens vier) */
+function bisZurTruhe(state: GameState, jetzt: number, def: RaidDef): number {
+  const stand = raidStand(state, jetzt, def);
+  let kaempfe = 0;
   while (!stand.woche.truhe && kaempfe < 4) {
-    const ergebnis = ernstkampf(state, jetzt);
-    expect(ergebnis, 'Ernstkampf möglich').not.toBeNull();
+    expect(ernstkampf(state, jetzt, def), `Ernstkampf möglich (${def.name})`).not.toBeNull();
     kaempfe++;
   }
   return kaempfe;
@@ -443,13 +463,15 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       keine_zeugen: 1,
       ohne_hose: 1,
       albtraum_dungeons: DUNGEON_GRAPH.length,
-      // Raid: jeder Ernstkampf zählt (systems/Raid.ts), Wochen mit offener Zenits Truhe auch
+      // Raid: jeder Ernstkampf zählt (systems/Raid.ts), Wochen mit offener Zenits Truhe auch; Stufe II eigens
       raid_versuche: Infinity,
       raid_siege: Infinity,
       raid_punkt_zwoelf: Infinity,
       raid_mehr_als_vier: Infinity,
       raid_wochen: Infinity,
       raid_zu_viert: Infinity,
+      raid2_siege: Infinity,
+      raid2_wochen: Infinity,
     };
   }
 

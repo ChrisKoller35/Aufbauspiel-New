@@ -1,15 +1,17 @@
 /* ============================================================
    Magic City – Raid «Über dem Tag» (ui/screens/RaidScreen.ts)
    Farben, Schriften, Rahmen aus magic-city.css (--s1 … --gold, --gl, --gd, --txt, --mut, --bdr, --bdr2).
-   Markierungen: Pendel rot, Funken orange, Glocke hellgold, Zeiger blassblau, in Ordnung grün.
-   Am PC drei Spalten (Liste und Kriegsrat | Zenit, Uhrleiste, Feld, Knöpfe | Bank), am Handy (bis 700 px)
-   alles untereinander, die Knopfleiste klebt unten. Docs: docs/RAID.md.
+   Markierungen: Pendel rot, Funken orange, Glocke hellgold, Zeiger blassblau, Gegenzeiger (Stufe II) türkis,
+   in Ordnung grün. Am PC drei Spalten (Stufen, Liste und Kriegsrat | Zenit, Uhrleiste, Feld, Knöpfe | Bank), am
+   Handy (bis 700 px) alles untereinander, die Knopfleiste klebt unten. Stufe II (neun Spalten, drei Trupps) steht
+   am Ende der Datei. Docs: docs/RAID.md.
    ============================================================ */
 #s-raid {
   --pendel: #dc2626; --pendel-t: #f87171;
   --funken: #f08a24; --funken-t: #fdba74;
   --glocke: #e6c060;
   --zeiger: #7aa2f7;
+  --gegen: #2dd4bf; --gegen-t: #5eead4;
   --ok: #16a34a; --ok-t: #4ade80;
   --warn: #f59e0b; --warn-t: #fcd34d;
   --stuetze: #a78bfa;
@@ -570,5 +572,163 @@
   .r-erg-titel { font-size: 1.15rem; }
 }
 @media (pointer: coarse) {
-  .r-zelle, .r-karte { touch-action: manipulation; }
+  .r-zelle, .r-karte, .r-stufe { touch-action: manipulation; }
+}
+
+/* ═══════════ Stufen und Stufe II «Die dreizehnte Stunde» ═══════════
+   Der Umschalter steht am PC über Alrunas Liste (die Stufen untereinander), am Handy ganz oben und im Fenster einer
+   Stufe, die noch zu ist (nebeneinander). Stufe II: Gegenzeiger türkis, Spalte E mit «13» (dort treffen sich die
+   Zeiger), neun Spalten in drei Trupps (.r-drei) auf Feld und Wiedergabe. */
+#s-raid .c-gegen { color: var(--gegen-t); }
+
+.r-stufen { display: flex; flex-direction: column; gap: 6px; }
+.r-stufe {
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto; grid-template-areas: "nr name name" "status status zahl";
+  column-gap: 8px; row-gap: 2px; align-items: baseline; width: 100%; min-width: 0; margin: 0; text-align: left;
+  padding: 7px 11px 7px 12px; border-radius: 8px; cursor: pointer; font: inherit; color: var(--txt); position: relative;
+  background: rgba(12, 18, 32, .93); border: 1px solid var(--bdr);
+}
+.r-stufe:hover { border-color: var(--gd); }
+.r-stufe:focus-visible { outline: 2px solid var(--gl); outline-offset: 2px; }
+.r-stufe.an {
+  border-color: var(--gd); cursor: default;
+  background: linear-gradient(90deg, rgba(200, 162, 39, .2), rgba(12, 18, 32, .95) 75%);
+  box-shadow: inset 3px 0 0 var(--gl), 0 0 14px rgba(230, 192, 96, .18);
+}
+.r-stufe-nr { grid-area: nr; font-family: 'Cinzel', serif; font-size: .7rem; font-weight: 700; letter-spacing: 2px; color: var(--gold); white-space: nowrap; text-transform: uppercase; }
+.r-stufe-name {
+  grid-area: name; font-family: 'Cinzel', serif; font-size: .8rem; font-weight: 600; letter-spacing: .5px; color: var(--txt);
+  line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.r-stufe.an .r-stufe-name { color: var(--gl); }
+/* «Neu» sitzt wie ein Etikett auf der oberen Kante */
+.r-stufe-neu {
+  position: absolute; top: -7px; right: 10px; font-style: normal; font-family: 'Cinzel', serif; font-size: .6rem; font-weight: 700;
+  letter-spacing: 1px; text-transform: uppercase; color: #1a1205; background: var(--gl); border-radius: 3px; padding: 1px 5px;
+  line-height: 1.3; box-shadow: 0 0 8px rgba(230, 192, 96, .6);
+}
+.r-stufe-status { grid-area: status; font-size: .8rem; color: var(--mut); line-height: 1.25; min-width: 0; }
+.r-stufe.an .r-stufe-status { color: #cbbd9f; }
+.r-stufe.besiegt .r-stufe-status { color: var(--ok-t); }
+.r-stufe-zahl { grid-area: zahl; font-size: .76rem; color: var(--mut); white-space: nowrap; }
+.r-stufe.zu .r-stufe-name, .r-stufe.zu .r-stufe-nr { opacity: .6; }
+/* Im Fenster einer Stufe, die noch zu ist: nebeneinander, über der Uhr */
+.r-zu .r-stufen { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-bottom: 4px; }
+.r-zu .r-stufe { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "nr zahl" "name name" "status status"; }
+.r-zu .r-stufe-zahl { justify-self: end; }
+
+/* Uhrleiste mit zwei Zeigern: oben der Zeiger (blau), darunter der Gegenzeiger (türkis) */
+.r-zwei-zeiger .r-rd { height: 50px; }
+.r-rd-gg { font-family: 'Cinzel', serif; font-weight: 700; font-size: .78rem; color: var(--gegen-t); line-height: 1; margin-top: 3px; }
+.r-rd-gg.r-gelb { color: var(--warn-t); text-shadow: 0 0 6px rgba(245, 158, 11, .7); }
+.r-rd-gg.r-rot { color: var(--pendel-t); text-shadow: 0 0 6px rgba(220, 38, 38, .8); }
+/* Es schlägt dreizehn: beide Zeiger auf derselben Spalte */
+.r-rd.r-dreizehn { border-color: var(--gegen); box-shadow: 0 0 9px rgba(45, 212, 191, .4), inset 0 0 0 1px rgba(45, 212, 191, .35); }
+.r-rd-ev .r-rd-13 { font-family: 'Cinzel', serif; font-size: 7.5px; font-weight: 700; line-height: 1; letter-spacing: -.3px; }
+.r-drei .r-rd-pd { width: 30%; }
+.r-rd-pd.r-m { left: 50%; transform: translateX(-50%); }
+.r-lg-gg { font-family: 'Cinzel', serif; font-weight: 700; color: var(--gegen-t); font-size: .74rem; }
+.r-lg-13 {
+  display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%;
+  border: 1px solid var(--gegen-t); background: #0a0f22; color: var(--gegen-t); font-family: 'Cinzel', serif;
+  font-size: 7.5px; font-weight: 700; letter-spacing: -.3px;
+}
+
+/* Feld: Spalte E trägt beide Zeiger */
+.r-skopf .r-13 {
+  flex-shrink: 0; font-family: 'Cinzel', serif; font-size: .62rem; font-weight: 700; line-height: 1; color: var(--gegen-t);
+  border: 1px solid var(--gegen-t); border-radius: 8px; padding: 2px 4px; background: #0a0f22;
+}
+.r-skopf.r-treff:not(.r-gelb):not(.r-rot) { border-color: rgba(45, 212, 191, .55); box-shadow: inset 0 -2px 0 rgba(45, 212, 191, .55); }
+
+/* Wiedergabe: Gegenzeiger auf Kopfzeile, Feldern und Uhr */
+.r-wg-uhr .zu-gegen { transform-box: view-box; transform-origin: 100px 100px; transition: transform .45s ease-in-out; }
+@media (prefers-reduced-motion: reduce) {
+  .r-wg-uhr .zu-gegen { transition: none; }
+}
+.r-wg-kopfzeile.gegen { background: rgba(45, 212, 191, .22); color: var(--gegen-t); }
+.r-wg-kopfzeile.an.gegen { background: linear-gradient(90deg, rgba(122, 162, 247, .32), rgba(45, 212, 191, .32)); color: #e0f2fe; }
+.r-wg-zelle.wg-gegen { border-color: var(--gegen); box-shadow: 0 0 0 1px var(--gegen), 0 0 12px rgba(45, 212, 191, .55); }
+.r-wg-zelle.wg-zeiger.wg-gegen { border-color: var(--zeiger); box-shadow: 0 0 0 1px var(--zeiger), 0 0 0 3px var(--gegen), 0 0 14px rgba(45, 212, 191, .5); }
+.r-wg.r-drei { max-width: 880px; }
+.r-wg-gitter.r-drei {
+  grid-template-columns: 18px repeat(3, minmax(0, 1fr)) 10px repeat(3, minmax(0, 1fr)) 10px repeat(3, minmax(0, 1fr));
+}
+
+/* Ergebnis: Stufe II ist neu offen */
+.r-erg-neu {
+  display: flex; align-items: center; justify-content: space-between; gap: 8px 12px; flex-wrap: wrap; margin-top: 4px;
+  padding: 8px 12px; border-radius: 6px; background: rgba(230, 192, 96, .1); border: 1px solid var(--gd);
+  font-family: 'Cinzel', serif; font-size: .82rem; letter-spacing: 1px; color: var(--gl);
+}
+
+/* Bilder in Feld und Wiedergabe schrumpfen mit, wenn die Spalten schmal werden (neun Spalten) */
+.r-drei .r-zelle .r-bild, .r-wg-gitter.r-drei .r-bild { max-width: 100%; }
+
+/* PC: Stufe II mit neun Spalten braucht die Mitte, Liste und Bank werden etwas schmaler */
+@media (min-width: 701px) {
+  .raid.r-drei { grid-template-columns: 284px minmax(0, 1fr) 256px; }
+  /* Die Legende bleibt einzeilig: «nach Runde 24 ist der Tag um» steht dann nur noch an «Mitternacht» */
+  .r-zwei-zeiger .r-lg-tag { display: none; }
+  .r-gitter.r-drei {
+    grid-template-columns: 44px repeat(3, minmax(0, 1fr)) 20px repeat(3, minmax(0, 1fr)) 20px repeat(3, minmax(0, 1fr));
+    grid-template-rows: 22px 34px repeat(3, minmax(94px, auto)); column-gap: 5px;
+  }
+  .r-gitter.r-drei .r-zelle .r-bild { width: 52px; height: 52px; }
+  .r-gitter.r-drei .r-zelle .r-name { font-size: .72rem; letter-spacing: .3px; }
+  .r-gitter.r-drei .r-zelle .r-hp { font-size: .7rem; }
+  /* Spaltenköpfe zweizeilig: oben Buchstabe (und «13»), darunter ganz, was in der Spalte steht */
+  .r-gitter.r-drei .r-skopf { flex-wrap: wrap; align-content: center; column-gap: 4px; row-gap: 0; padding: 1px 3px; min-width: 0; line-height: 1.1; }
+  .r-gitter.r-drei .r-skopf small { flex-basis: 100%; order: 2; text-align: center; font-size: .72rem; min-width: 0; }
+  .r-gitter.r-drei .r-skopf .r-13 { order: 1; }
+  .r-gitter.r-drei .r-trupp-name { letter-spacing: 2px; }
+  .r-gitter.r-drei .r-trupp-name small { margin-left: 4px; }
+  .r-gitter.r-drei .r-rkopf small { letter-spacing: 1px; }
+  .r-gitter.r-drei .r-gang span { letter-spacing: 2px; }
+}
+
+@media (max-width: 700px) {
+  .r-stufen { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+  .r-stufe { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "nr zahl" "name name" "status status"; padding: 6px 9px 7px; column-gap: 6px; }
+  .r-stufe-zahl { justify-self: end; }
+  .r-stufe.an { box-shadow: inset 0 -3px 0 var(--gl), 0 0 12px rgba(230, 192, 96, .18); background: linear-gradient(180deg, rgba(200, 162, 39, .2), rgba(12, 18, 32, .95) 80%); }
+  .r-stufe-nr { font-size: 11px; letter-spacing: 1.5px; }
+  .r-stufe-zahl { font-size: 12px; }
+  .r-stufe-neu { font-size: 10px; }
+  .r-stufe-name { font-size: 12.5px; white-space: normal; }
+  .r-stufe-status { font-size: 12px; }
+  .r-zu { margin: 16px 0; padding: 16px 12px; }
+
+  .r-zwei-zeiger .r-rd { height: 44px; }
+  .r-rd-gg { font-size: 12px; margin-top: 2px; }
+  .r-zwei-zeiger .r-legende { flex-wrap: wrap; white-space: normal; row-gap: 3px; }
+  .r-zwei-zeiger .r-legende > span { white-space: nowrap; }
+  .r-lg-gg { font-size: 11px; }
+
+  /* Neun Spalten auf 358 px: schmale Gänge, kleine Bilder, Namen in der schmaleren Schrift ganz bis an den Rand */
+  .raid.r-drei .r-feld { padding-left: 3px; padding-right: 3px; }
+  .r-gitter.r-drei {
+    grid-template-columns: 10px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr));
+    grid-template-rows: 15px 18px repeat(3, 50px); column-gap: 2px;
+  }
+  .r-gitter.r-drei .r-zelle { padding: 3px 0 1px; }
+  .r-gitter.r-drei .r-zelle .r-bild { width: 28px; height: 28px; border-radius: 3px; }
+  .r-gitter.r-drei .r-zelle .r-name { font-family: 'Crimson Text', serif; font-size: 11px; font-weight: 400; letter-spacing: -.3px; margin-top: 2px; }
+  .r-gitter.r-drei .r-zelle .r-name.r-lang, .r-wg-gitter.r-drei .r-wg-zelle .r-name.r-lang { letter-spacing: -.65px; }
+  .r-gitter.r-drei .r-trupp-name { letter-spacing: 1px; }
+  .r-gitter.r-drei .r-skopf { font-size: 11px; gap: 2px; }
+  .r-gitter.r-drei .r-skopf .r-13 { font-size: 8px; padding: 1px 2px; border-radius: 6px; }
+  .r-gitter.r-drei .r-rkopf b { font-size: 11px; }
+  .r-gitter.r-drei .r-marke { width: 14px; height: 14px; }
+  .r-gitter.r-drei .r-marke svg { width: 8px; height: 8px; }
+  .r-gitter.r-drei .r-marke.r-m-pendel { top: -6px; left: -4px; }
+  .r-gitter.r-drei .r-marke.r-m-funken { top: -6px; right: -4px; }
+
+  .r-wg-gitter.r-drei {
+    grid-template-columns: 12px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)); gap: 2px;
+  }
+  .r-wg-gitter.r-drei .r-wg-zelle { min-height: 52px; padding: 3px 1px 4px; }
+  .r-wg-gitter.r-drei .r-wg-zelle .r-bild { width: 26px; height: 26px; }
+  .r-wg-gitter.r-drei .r-wg-zelle .r-name { font-family: 'Crimson Text', serif; font-size: 11px; font-weight: 400; letter-spacing: -.3px; }
+  .r-wg-gitter.r-drei .r-wg-kopfzeile, .r-wg-gitter.r-drei .r-wg-reihe { font-size: 11px; }
 }

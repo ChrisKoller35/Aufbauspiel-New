@@ -114,6 +114,9 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('raid_punkt_zwoelf', 'Dungeons', '🔔', 'Punkt zwölf', 'Zenit in der zwölften Runde oder früher besiegt. Er wollte gerade Mittag machen.', 'raid_punkt_zwoelf', 1),
   erfolg('raid_mehr_als_vier', 'Dungeons', '🪑', 'Mehr als vier', 'Zenit besiegt, und am Ende standen mindestens fünf. Für die Vorigen gab es vier Hocker. Alruna hat einen fünften dazugestellt.', 'raid_mehr_als_vier', 1),
   erfolg('raid_montage', 'Dungeons', '📅', 'Jeden Montag', 'Zenit in vier verschiedenen Wochen besiegt. Er zieht sich trotzdem jeden Montag wieder auf. Er nennt es Pflicht, Orm nennt es Sturheit.', 'raid_wochen', 4),
+  // Stufe II «Die dreizehnte Stunde» zählt eigens (raid2_…); die Zähler oben zählen nur Stufe I
+  erfolg('raid_dreizehn', 'Dungeons', '🕐', 'Es schlägt nicht dreizehn', 'Zenit auf Stufe II besiegt, mit beiden Zeigern. Jetzt hat die Gilde zwei Unruhen. Orm sagt, er wisse nicht, woher die zweite kam.', 'raid2_siege', 1),
+  erfolg('raid_doppelschicht', 'Dungeons', '🗓️', 'Doppelschicht', 'Die dreizehnte Stunde in vier verschiedenen Wochen gewonnen. Zenit zieht sich jeden Montag wieder auf, jetzt zweimal: einmal für jeden Zeiger.', 'raid2_wochen', 4),
 
   // ── Gipfel-Taten (in allen drei Wahl-Räumen das Risiko, Boss trotzdem besiegt; docs/ERFOLGE.md) ──
   erfolg('gipfel_hort', 'Gipfel-Taten', '🪙', 'Ehrlicher Finder', 'Im Drachenhort Goldhaufen, Edelsteinschale und Drachenkrone eingesteckt und Ignarax trotzdem besiegt. Er hat bis zuletzt nachgezählt.', 'tat_hort', 1),

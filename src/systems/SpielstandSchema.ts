@@ -116,6 +116,7 @@ export const SPIELSTAND = objekt({
   trophaeen: objekt({ siege: ZAEHLER }, ['siege']),
   haertegrade: tabelle(einerVon('hard', 'nightmare')),
   raid: RAID,
+  raidStufen: tabelle(RAID),
 }, ['buildings', 'globalStock', 'fighters', 'day']);
 
 /**
