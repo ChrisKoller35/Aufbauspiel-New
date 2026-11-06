@@ -449,20 +449,36 @@ function leerenKnopf(anzahl: number): string {
 function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidDef): string {
   const spalten = spaltenZahl(def);
   const treffen = new Set(treffpunkte(def).map(x => x.spalte));
-  const T = (reihe: number | string, spalte: number | string): string => `grid-row:${reihe};grid-column:${spalte}`;
+  // Lage im Gitter als Variablen, raid.css setzt sie: --gr/--gc nebeneinander (PC, und Stufe I auch am Handy). Mit drei
+  // Trupps stehen die Trupps am Handy untereinander (--hr/--hc), je Trupp Name, Spaltenköpfe und Reihen über die ganze
+  // Breite: Felder gut 100 statt 34 Pixel breit. Reihenköpfe und Glockenband gibt es dafür je Trupp (.r-nur-stapel).
+  const stapel = def.truppZahl === 3;
+  const block = 2 + def.reihen;
+  const T = (reihe: number | string, spalte: number | string, handy?: [number | string, number | string]): string =>
+    `--gr:${reihe};--gc:${spalte}${stapel && handy ? `;--hr:${handy[0]};--hc:${handy[1]}` : ''}`;
+  const handySpalte = (spalte: number): number => (spalte % SPALTEN_JE_TRUPP) + 2;
+  const handyZeile = (trupp: number, zeile: number): number => trupp * block + zeile;
   const unten = 3 + def.reihen;
   const rechts = 2 + spalten + def.truppZahl - 1;
+  const handyBreite = `2 / ${2 + SPALTEN_JE_TRUPP}`;
   let h = '';
   for (const trupp of lage.trupps) {
     const von = 2 + trupp.trupp * (SPALTEN_JE_TRUPP + 1);
     const bis = von + SPALTEN_JE_TRUPP;
     const ohneHeiler = trupp.anzahl > 0 && trupp.heiler.length === 0;
-    h += `<div class="r-trupp-name" style="${T(1, `${von} / ${bis}`)}">${truppName(trupp.trupp, def.truppZahl).toUpperCase()}`
+    h += `<div class="r-trupp-name" style="${T(1, `${von} / ${bis}`, [handyZeile(trupp.trupp, 1), handyBreite])}">${truppName(trupp.trupp, def.truppZahl).toUpperCase()}`
       + `<small${ohneHeiler ? ' class="r-warn-t"' : ''}>${esc(t.truppZeile(trupp.anzahl, trupp.heiler))}</small></div>`;
-    h += `<div class="r-trupp-rahmen" style="${T(`2 / ${unten}`, `${von} / ${bis}`)}"></div>`;
+    h += `<div class="r-trupp-rahmen" style="${T(`2 / ${unten}`, `${von} / ${bis}`, [`${handyZeile(trupp.trupp, 2)} / ${handyZeile(trupp.trupp, 3 + def.reihen)}`, handyBreite])}"></div>`;
     if (trupp.trupp > 0) h += `<div class="r-gang" style="${T(`2 / ${unten}`, von - 1)}"><span>${t.gang}</span></div>`;
   }
-  if (lage.glockenReihe !== null) h += `<div class="r-reihenband" style="${T(lage.glockenReihe + 3, `2 / ${rechts}`)}"></div>`;
+  if (lage.glockenReihe !== null) {
+    h += `<div class="r-reihenband" style="${T(lage.glockenReihe + 3, `2 / ${rechts}`, [lage.glockenReihe + 3, handyBreite])}"></div>`;
+    if (stapel) {
+      for (let tr = 1; tr < def.truppZahl; tr++) {
+        h += `<div class="r-reihenband r-nur-stapel" style="${T(lage.glockenReihe + 3, `2 / ${rechts}`, [handyZeile(tr, lage.glockenReihe + 3), handyBreite])}"></div>`;
+      }
+    }
+  }
   for (const sp of lage.spalten) {
     const farbe = sp.warnung === 'leer' ? ' r-rot' : sp.warnung === 'einzeln' ? ' r-gelb' : '';
     const klein = sp.warnung === 'einzeln' && sp.name ? t.spalteNur(sp.name) : sp.anzahl === 0 ? t.spalteLeer : t.spalteHelden(sp.anzahl);
@@ -470,20 +486,28 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidD
     // ganz steht er dann im Titel.
     const dreizehn = treffen.has(sp.spalte) ? `<span class="r-13" title="${esc(t.legende.dreizehnLang)}">13</span>` : '';
     const titel = def.truppZahl === 3 ? ` title="${esc(`${spaltenName(sp.spalte)}: ${klein}`)}"` : '';
-    h += `<div class="r-skopf${farbe}${dreizehn ? ' r-treff' : ''}" style="${T(2, gitterSpalte(sp.spalte))}"${titel}>${spaltenName(sp.spalte)}<small>${esc(klein)}</small>${dreizehn}</div>`;
+    const handy: [number, number] = [handyZeile(Math.floor(sp.spalte / SPALTEN_JE_TRUPP), 2), handySpalte(sp.spalte)];
+    h += `<div class="r-skopf${farbe}${dreizehn ? ' r-treff' : ''}" style="${T(2, gitterSpalte(sp.spalte), handy)}"${titel}>${spaltenName(sp.spalte)}<small>${esc(klein)}</small>${dreizehn}</div>`;
   }
   for (let r = 0; r < def.reihen; r++) {
     const glocke = r === lage.glockenReihe;
     const klein = r === 0 ? t.vorn : r === def.reihen - 1 ? t.hinten : '';
-    h += `<div class="r-rkopf${glocke ? ' r-glockenreihe' : ''}" style="${T(r + 3, 1)}"><b>${r + 1}</b>${klein ? `<small>${klein}</small>` : ''}`
-      + `${glocke ? `<span class="r-glocke" title="${t.legende.glocke}">${ic('glocke')}</span>` : ''}</div>`;
+    const inhalt = `<b>${r + 1}</b>${klein ? `<small>${klein}</small>` : ''}`
+      + `${glocke ? `<span class="r-glocke" title="${t.legende.glocke}">${ic('glocke')}</span>` : ''}`;
+    const klasse = `r-rkopf${glocke ? ' r-glockenreihe' : ''}`;
+    h += `<div class="${klasse}" style="${T(r + 3, 1, [r + 3, 1])}">${inhalt}</div>`;
+    if (stapel) {
+      for (let tr = 1; tr < def.truppZahl; tr++) {
+        h += `<div class="${klasse} r-nur-stapel" style="${T(r + 3, 1, [handyZeile(tr, r + 3), 1])}" aria-hidden="true">${inhalt}</div>`;
+      }
+    }
   }
   const pendel = new Set(lage.pendelZiele);
   const nachbarn = new Set(lage.funkenNachbarn);
   const aufFeld = new Map(lage.helden.map(x => [`${x.feld.reihe}:${x.feld.spalte}`, x]));
   for (let r = 0; r < def.reihen; r++) {
     for (let s = 0; s < spalten; s++) {
-      const pos = T(r + 3, gitterSpalte(s));
+      const pos = T(r + 3, gitterSpalte(s), [handyZeile(Math.floor(s / SPALTEN_JE_TRUPP), r + 3), handySpalte(s)]);
       const name = feldName({ reihe: r, spalte: s });
       const da = aufFeld.get(`${r}:${s}`);
       if (!da) {

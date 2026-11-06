@@ -562,8 +562,10 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     recommendedLevel: 'Stufe 15, Sets auf +5 und Sunnas Morgengabe',
     unlockCondition: { bossesDefeated: ['boss_sunna'] },
   },
-  // Ebene 12: Die Pfeiler (Raum 2, 8, 14). Herausbrechen gibt Tagstein oder ein Set-Teil und zieht Orms Wut
-  // um 2 Runden vor; Stützen kostet Leben und schiebt sie um 1 Runde hinaus. Wut ab Runde 4 bis 13.
+  // Ebene 12: Die Pfeiler (Raum 2, 6, 14). Herausbrechen gibt Tagstein oder ein Set-Teil und zieht Orms Wut
+  // um 2 Runden vor; Stützen kostet Leben und schiebt sie um 1 Runde hinaus. Wut ab Runde 4 bis 13. Der zweite
+  // Pfeiler steht vor dem Rastplatz: Wer dort wählt, trägt die Kämpfe seit dem ersten noch mit sich, und klug
+  // spielen heisst hier, nicht jeden Pfeiler zu brechen (docs/NEUE-DUNGEONS.md, «Im Taglicht»).
   tagespfeiler: {
     id: 'tagespfeiler',
     name: 'Die Pfeiler des Tages',
@@ -577,17 +579,17 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['fugenspinne', 'moertelgeist'] },
       { type: 'find', wahl: {
         a: { label: 'Den Pfeiler herausbrechen (+6 Tagstein, wenn ihr siegt; Orms Wut 2 Runden früher)', flavorText: 'Der Pfeiler kommt leichter heraus, als ein Pfeiler sollte. Oben knirscht es, und irgendwo seufzt jemand sehr Grosses.', effect: 'item', value: 6, itemId: 'mat_tagstein', nachSieg: true, bossWutFrueher: 2 },
-        b: { label: 'Den Pfeiler stützen (Orms Wut 1 Runde später; −5% HP)', flavorText: 'Ein Keil aus Tagstein und ein paar Schläge, und der Pfeiler steht wieder. Oben wird es einen Atemzug lang still.', effect: 'kein', value: 0, bossWutFrueher: -1, kostetLeben: 5 },
+        b: { label: 'Den Pfeiler stützen (Orms Wut 1 Runde später; −6% HP)', flavorText: 'Ein Keil aus Tagstein und ein paar Schläge, und der Pfeiler steht wieder. Oben wird es einen Atemzug lang still.', effect: 'kein', value: 0, bossWutFrueher: -1, kostetLeben: 6 },
       } },
       { type: 'combat', enemies: ['schlusssteinwaechter', 'himmelsriss', 'moertelgeist'] },
       { type: 'hazard', damage: 26 },
       { type: 'checkpoint' },
-      { type: 'combat', enemies: ['steinmetz_vorige', 'fugenspinne', 'fugenspinne'] },
-      { type: 'rest', healPercent: 15 },
       { type: 'find', wahl: {
         a: { label: 'Den Tragstein herausbrechen (+1 Set-Teil, wenn ihr siegt; Orms Wut 2 Runden früher)', flavorText: 'Im Tragstein steckt ein Teil, das die Vorigen beim Herausbrechen hier vergessen haben. Man muss den Pfeiler brechen, um es zu bekommen.', effect: 'kein', value: 0, setTeil: true, bossWutFrueher: 2 },
-        b: { label: 'Den Pfeiler stützen (+2 Tagstein; Orms Wut 1 Runde später; −5% HP)', flavorText: 'Unter dem Pfeiler liegen zwei Brocken, die schon heruntergefallen sind. Die darf man nehmen, ohne dass oben jemand zählt.', effect: 'item', value: 2, itemId: 'mat_tagstein', bossWutFrueher: -1, kostetLeben: 5 },
+        b: { label: 'Den Pfeiler stützen (+2 Tagstein; Orms Wut 1 Runde später; −6% HP)', flavorText: 'Unter dem Pfeiler liegen zwei Brocken, die schon heruntergefallen sind. Die darf man nehmen, ohne dass oben jemand zählt.', effect: 'item', value: 2, itemId: 'mat_tagstein', bossWutFrueher: -1, kostetLeben: 6 },
       } },
+      { type: 'combat', enemies: ['steinmetz_vorige', 'fugenspinne', 'fugenspinne'] },
+      { type: 'rest', healPercent: 15 },
       { type: 'combat', enemies: ['gewoelbefledermaus', 'gewoelbefledermaus', 'steinmetz_vorige'] },
       { type: 'hazard', damage: 28 },
       { type: 'checkpoint' },
@@ -595,7 +597,7 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
       { type: 'combat', enemies: ['steinmetz_vorige', 'gewoelbefledermaus', 'moertelgeist'] },
       { type: 'find', wahl: {
         a: { label: 'Den letzten Pfeiler herausbrechen (+10 Tagstein, wenn ihr siegt; Orms Wut 2 Runden früher)', flavorText: 'Der letzte Pfeiler vor Orm. Wer ihn bricht, hört ihn nicht nur seufzen.', effect: 'item', value: 10, itemId: 'mat_tagstein', nachSieg: true, bossWutFrueher: 2 },
-        b: { label: 'Am letzten Pfeiler mitdrücken (Orms Wut 1 Runde später; −5% HP)', flavorText: 'Ihr stellt euch an den Pfeiler und drückt mit. Es hilft nicht viel, aber Orm merkt es.', effect: 'kein', value: 0, bossWutFrueher: -1, kostetLeben: 5 },
+        b: { label: 'Am letzten Pfeiler mitdrücken (Orms Wut 1 Runde später; −6% HP)', flavorText: 'Ihr stellt euch an den Pfeiler und drückt mit. Es hilft nicht viel, aber Orm merkt es.', effect: 'kein', value: 0, bossWutFrueher: -1, kostetLeben: 6 },
       } },
       { type: 'boss', enemies: ['boss_orm'] },
     ],

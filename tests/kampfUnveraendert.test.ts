@@ -3,6 +3,8 @@
 // (CombatEngine.buffsAblaufen, rundenEnde mit gegnerGift). Jede Route mit dem Musterteam «Stark» und den Sets
 // von tagwerk0, drei Samen, Spielweise «klug»: Alle Kampfprotokolle hintereinander ergeben einen Hash (FNV-1a).
 // Aufgenommen auf master 2061d8d vor dem Raid und gleich auf dem Raid-Stand.
+// Neu eingetragen am 6.11.2026: Die Pfeiler des Tages haben den zweiten Pfeiler vor dem Rastplatz und Stützen kostet
+// 6 % Leben (docs/NEUE-DUNGEONS.md, «Im Taglicht»); ohne diese Route ist die Prüfsumme gleich geblieben.
 //
 // Schlägt der Test fehl, hat sich ein Kampf verändert. Ist das gewollt (neue Route, Gegner, Ausrüstung,
 // Balance), den Hash aus der Fehlermeldung hier eintragen. Sonst ist etwas im Kampf ungewollt anders.
@@ -10,7 +12,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ROUTE_DEFS } from '../src/data/routes';
 import { musterStand, spieleRoute } from '../src/systems/Musterlauf';
 
-const ERWARTET = { hash: '18922bb0', routen: 31, zeilen: 11994 };
+const ERWARTET = { hash: 'f8635e5e', routen: 31, zeilen: 12021 };
 const SAMEN = [1, 7919, 15838];
 
 /** FNV-1a über die Zeichen eines Texts, fortgesetzt ab `h` */

@@ -125,7 +125,7 @@ describe('Woher: Fund-Räume', () => {
     for (const r of fundorte('mat_sternenstahl').fundRaeume) expect(r.nachSieg).toBe(true);
     expect(fundorte('mat_mondsilber').fundRaeume.some(r => r.art === 'fest' && !r.nachSieg)).toBe(true);
     expect(fundorte('old_coin').fundRaeume.every(r => r.art === 'zufall')).toBe(true);
-    // Tagstein: Wachfeuer und gebrochene Pfeiler zahlen erst nach dem Sieg, der gestützte Pfeiler in Raum 8 sofort
+    // Tagstein: Wachfeuer und gebrochene Pfeiler zahlen erst nach dem Sieg, der gestützte Pfeiler in Raum 6 sofort
     const tag = fundorte('mat_tagstein').fundRaeume.filter(r => r.art === 'fest');
     expect(new Set(tag.map(r => r.routeId))).toEqual(new Set(['erste_stadt', 'tagespfeiler']));
     expect(tag.filter(r => !r.nachSieg).map(r => r.routeId)).toEqual(['tagespfeiler']);

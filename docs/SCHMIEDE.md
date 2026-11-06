@@ -20,7 +20,7 @@ neuer Dungeon für sie braucht.
   und jedes Vorstellen holt Sunnas Wut-Runde 2 Runden näher. In der Ersten Stadt bringen die Wachfeuer aus Raum 2
   und 14 zusammen 14 Tagstein, erst mit dem Sieg, und jeder Griff ins Feuer kostet 8 % Leben. An den Pfeilern des
   Tages bringen die gebrochenen Pfeiler aus Raum 2 und 14 zusammen 16 Tagstein, erst mit dem Sieg (Orms Wut je
-  2 Runden früher); wer in Raum 8 stützt, nimmt 2 Tagstein sofort mit. Niederlage oder Rückzug bringen die
+  2 Runden früher); wer in Raum 6 stützt, nimmt 2 Tagstein sofort mit. Niederlage oder Rückzug bringen die
   Hälfte der Grundmenge, anteilig zu den geschafften Räumen. Das Material liegt in der Truhe mit dem
   Hinweis, wofür es ist («⚒️ Für die Schmiede: Set-Teile aus dem Feuer»).
 - **Stufen +1 bis +5:** Jede Stufe macht alle Werte eines Teils um 10 % stärker, gerundet. Der Hauptwert

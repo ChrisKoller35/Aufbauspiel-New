@@ -760,20 +760,21 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(run.party.filter(u => (u.geweckt ?? 0) > 0)).toHaveLength(1);
   });
 
-  it('Pfeiler: brechen zieht Orms Wut je 2 Runden vor, stützen schiebt sie je 1 Runde hinaus und kostet 5 % Leben', () => {
+  it('Pfeiler: brechen zieht Orms Wut je 2 Runden vor, stützen schiebt sie je 1 Runde hinaus und kostet 6 % Leben', () => {
     const { state, ids } = musterStand('stark', 7919, 'stadt5');
     const run = bisZurWahl(state, system.startExpedition(state, 'tagespfeiler', ids)!);
     expect(run.pendingChoice!.roomIndex).toBe(2);
     expect(run.pendingChoice!.optionA).toMatchObject({ effect: 'item', itemId: 'mat_tagstein', value: 6, nachSieg: true, bossWutFrueher: 2 });
-    expect(run.pendingChoice!.optionB).toMatchObject({ bossWutFrueher: -1, kostetLeben: 5 });
+    expect(run.pendingChoice!.optionB).toMatchObject({ bossWutFrueher: -1, kostetLeben: 6 });
     const orm = boss(run);
     const werte = { hp: orm.hp, atk: orm.atk };
     system.resolveChoice(run, 1);
     expect(run.bossWutFrueher).toBe(-1);
     expect(run.combatLog).toContain('>> Ihr gewinnt Zeit: Orm wird erst ab Runde 11 wütend.');
-    // Raum 8: der gestützte Pfeiler gibt zwei Brocken Tagstein sofort
+    // Raum 6, vor dem Rastplatz: der gestützte Pfeiler gibt zwei Brocken Tagstein sofort
     bisZurWahl(state, run);
-    expect(run.pendingChoice!.roomIndex).toBe(8);
+    expect(run.pendingChoice!.roomIndex).toBe(6);
+    expect(run.rooms[8].type).toBe('rest');
     system.resolveChoice(run, 1);
     expect(run.loot.mat_tagstein).toBe(2);
     bisZurWahl(state, run);
@@ -889,5 +890,13 @@ describe('Dungeons über dem Vulkankern', () => {
     expect(messeLaeufe('tagespfeiler', 'stark', 'vorsichtig', 10, 'morgen5').siege).toBeLessThanOrEqual(3);
     expect(messeLaeufe('tagespfeiler', 'stark', 'gierig', 20, 'stadt5').siege).toBeLessThanOrEqual(3);
     expect(messeLaeufe('tagespfeiler', 'stark', 'vorsichtig', 20, 'tagwerk0').siege).toBeGreaterThanOrEqual(stadt.siege);
+  });
+
+  // Der zweite Pfeiler steht vor dem Rastplatz: «klug» bricht den ersten und kommt an den zweiten mit etwa 84 %
+  // Leben, bricht ihn also nur in vier von zehn Läufen. Stand die Rast davor, brach es fast immer zweimal (27 %).
+  it('Eichung grob Pfeiler: klug liegt klar zwischen vorsichtig und gierig', () => {
+    const klug = messeLaeufe('tagespfeiler', 'stark', 'klug', 100, 'stadt5').siege;
+    expect(klug).toBeGreaterThanOrEqual(35);
+    expect(klug).toBeLessThanOrEqual(58);
   });
 });
