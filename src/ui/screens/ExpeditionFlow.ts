@@ -341,6 +341,15 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
     body += line(`${escapeAttr(h.name)}: +${h.xp} XP${h.levelUps > 0 ? ` · Level ${h.level}!` : ''}${weg}`, farbe);
     const wirkung = held ? wegWirkungZeile(held, h.wegWirkung) : '';
     if (wirkung) body += `<div class="weg-wirkung-zeile">${wirkung}</div>`;
+    // Lehrling mit seinem Meister unterwegs, und wer eben ausgelernt hat (systems/Lehrlinge.ts)
+    if (h.lehrstunde) {
+      body += `<div class="bilanz-lehrling">📖 Lehrstunde bei ${escapeAttr(h.lehrstunde.meister)}: davon +${h.lehrstunde.bonus} XP`
+        + `<span class="bilanz-lehrling-satz">${escapeAttr(h.lehrstunde.satz)}</span></div>`;
+    }
+    if (h.geselle) {
+      body += `<div class="bilanz-lehrling bilanz-geselle">🎓 ${escapeAttr(h.name)} ist jetzt Geselle.`
+        + `<span class="bilanz-lehrling-satz">${escapeAttr(h.geselle)}</span></div>`;
+    }
   }
   if (rankUp) {
     // Was der Rang öffnet (rangFreischaltungen): Dungeons, Gebäude, Ausbau, Titel

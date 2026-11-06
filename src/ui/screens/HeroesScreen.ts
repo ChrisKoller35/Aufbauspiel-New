@@ -18,19 +18,20 @@ import { bindSchmiedeTab, schmiedeTabHtml, schmiedeTabVerlassen, schmiedeZeigeTe
 import { wegAbzeichen, wegBereichHtml } from '../components/WegAnzeige';
 import { waehleWeg } from '../../systems/Spezialisierung';
 import { navigateTo } from '../ScreenRouter';
-import { renderHeader } from './HeaderRenderer';
+import { renderHeader, zeigeKopfHinweis } from './HeaderRenderer';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { anheuerKosten } from '../../systems/Empfehlung';
 import { xpProgress, ueberschuss, MAX_HERO_LEVEL } from '../../systems/HeroProgression';
 import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausbildung';
 import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
 import { klassenTafelHtml } from '../components/KlassenTafel';
-import { hintergrundVon, kartenName, lehrlingAufnehmen } from '../../systems/Lehrlinge';
+import { gesellenSatz, hintergrundVon, istGeselle, kartenName, lehrlingAufnehmen, standVon } from '../../systems/Lehrlinge';
 import { bildKarte } from '../heldBild';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gedruecktUm } from '../components/Druckzeit';
 import '../html/beutevergleich.css';
 import { besserFuerAlle, besserText, nebenhandFrei, vergleicher } from '../../systems/Beutevergleich';
+import { Wechsel, ausLagerAusruesten, ausruestPlan } from '../../systems/Ausruesten';
 
 const gearSystem = new GearSystem();
 
@@ -125,7 +126,8 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
   const hasImage = !!HERO_IMAGE_MAP[fighter.classId];
   // Der Lehrling zeigt seinen Namen und das Bild der Klasse gespiegelt (ui/heldBild.ts)
   const bild = bildKarte(fighter);
-  const lehrlingZeile = fighter.lehrling ? `<span class="hc-lehrling">Lehrling · ${className}</span>` : '';
+  // Ab Stufe 15 heisst der Lehrling Geselle (systems/Lehrlinge.ts)
+  const lehrlingZeile = fighter.lehrling ? `<span class="hc-lehrling">${standVon(fighter)} · ${className}</span>` : '';
 
   if (hasImage) {
     // Image card: full illustration background, name overlay at bottom
@@ -262,6 +264,8 @@ let auswahl: Auswahl | null = null;
 let inventarOffen = false;
 /** Weg, dessen Wahl im Heldenfenster gerade bestätigt werden soll */
 let wegFrage: string | null = null;
+/** Was «Aus dem Lager ausrüsten» eben angelegt hat: steht einmal im Fenster, das nächste Neuzeichnen nimmt es weg */
+let ausruestMeldung: { heldId: number; text: string } | null = null;
 /**
  * Kurz nach der Frage zum Weg nimmt «Ja, für immer» keinen Klick an, wo und womit auch gedrückt wird (auch Enter
  * nicht): Die Wahl gilt für immer, die Frage soll gelesen sein. Gemessen wird bis zum Druck (gedruecktUm), nicht
@@ -493,6 +497,53 @@ export function nebenhandHinweisHtml(fighter: GuildFighter): string {
     + ` Einhandwaffe oder ein Schild zählt dort voll.<span class="truhe-besser">⬆ ${gearName(frei.itemId)} aus dem Lager: ${frei.besser.teile.slice(0, 3).join(' · ')}</span></button>`;
 }
 
+/** Gleiche Namen nebeneinander zusammen: «2× Wyrmzahnklinge» (dieselbe Einhandwaffe in beiden Händen) */
+function zusammengefasst(namen: string[]): string[] {
+  const liste: { name: string; n: number }[] = [];
+  for (const name of namen) {
+    const letzter = liste[liste.length - 1];
+    if (letzter?.name === name) letzter.n++;
+    else liste.push({ name, n: 1 });
+  }
+  return liste.map(e => (e.n > 1 ? `${e.n}× ${e.name}` : e.name));
+}
+
+/** Ein Platz nach «Aus dem Lager ausrüsten»: «Langschwert statt Kurzschwert», «Holzschild», «Holzschild ins Lager» */
+function wechselText(w: Wechsel): string {
+  if (!w.neu) return `${gearName(w.alt)} ins Lager`;
+  return w.alt ? `${gearName(w.neu)} statt ${gearName(w.alt)}` : gearName(w.neu);
+}
+
+/** Was nach dem Tipp im Fenster steht: «✔ Angelegt: Langschwert, Holzschild. Kurzschwert liegt jetzt im Lager.» */
+export function ausruestMeldungText(wechsel: Wechsel[]): string {
+  const neu = wechsel.map(w => w.neu).filter((id): id is string => !!id);
+  const alt = wechsel.map(w => w.alt).filter((id): id is string => !!id);
+  // Ein Teil, das nur die Hand gewechselt hat, ist weder neu angelegt noch im Lager
+  for (const id of [...alt]) {
+    if (!neu.includes(id)) continue;
+    neu.splice(neu.indexOf(id), 1);
+    alt.splice(alt.indexOf(id), 1);
+  }
+  const angelegt = zusammengefasst(neu.map(gearName));
+  const abgelegt = zusammengefasst(alt.map(gearName));
+  return `✔ Angelegt: ${angelegt.join(', ')}.`
+    + (abgelegt.length > 0 ? ` ${abgelegt.join(', ')} ${abgelegt.length === 1 ? 'liegt' : 'liegen'} jetzt im Lager.` : '');
+}
+
+/**
+ * Knopf «Aus dem Lager ausrüsten» mit dem, was er anlegen würde (systems/Ausruesten.ts); keiner, wenn im Lager
+ * nichts Passendes oder Besseres liegt. Nach dem Tipp steht an seiner Stelle einmal, was angelegt wurde.
+ */
+export function ausruestHtml(fighter: GuildFighter): string {
+  const meldung = ausruestMeldung?.heldId === fighter.id
+    ? `<div class="hdm2-ausruesten-meldung" role="status">${ausruestMeldung.text}</div>` : '';
+  const plan = gameState ? ausruestPlan(gameState, fighter) : [];
+  if (plan.length === 0) return meldung;
+  return `${meldung}<button type="button" class="hdm2-ausruesten" id="hdm2-ausruesten">${BESSER_PFEIL}`
+    + `<span class="hdm2-ausruesten-titel">Aus dem Lager ausrüsten</span>`
+    + `<span class="hdm2-ausruesten-teile">${zusammengefasst(plan.map(wechselText)).join(' · ')}</span></button>`;
+}
+
 /** Wert mit dem Anteil aus Ausrüstung und Sets: «ATK 22 +12» */
 function wertHtml(symbol: string, name: string, wert: string, bonus: number, bonusText?: string): string {
   const plus = bonus !== 0 ? ` <small class="${bonus > 0 ? 'wert-plus' : 'wert-minus'}">${bonusText ?? vorzeichen(bonus)}</small>` : '';
@@ -550,8 +601,12 @@ function renderDetailModal(fighter: GuildFighter): string {
 
   // Der Lehrling hat seinen eigenen Hintergrund (data/lehrlinge.ts)
   const hintergrund = hintergrundVon(fighter);
+  // Der Geselle trägt dazu seinen Satz vom Auslernen («Ausgelernt»)
+  const geselle = istGeselle(fighter) ? gesellenSatz(fighter, 0) : null;
   const bgHtml = hintergrund
-    ? `<div class="hdm2-sidebar"><div class="lbl">Hintergrund</div><p>${hintergrund.replace(/\n/g, '<br>')}</p></div>`
+    ? `<div class="hdm2-sidebar"><div class="lbl">Hintergrund</div><p>${hintergrund.replace(/\n/g, '<br>')}</p>`
+      + (geselle ? `<div class="lbl hdm2-geselle-lbl">Ausgelernt</div><p class="hdm2-geselle">${escapeAttr(geselle)}</p>` : '')
+      + '</div>'
     : '';
   const portrait = bildKarte(fighter);
 
@@ -573,7 +628,7 @@ function renderDetailModal(fighter: GuildFighter): string {
         <button type="button" class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle" aria-expanded="${inventarOffen}">🎒 Inventar</button>
         <div class="hdm2-header">
           <div class="hdm2-name" id="hdm2-name" tabindex="-1">${escapeAttr(fighter.name)}</div>
-          <div class="hdm2-sub">${className}${fighter.lehrling ? ' · Lehrling' : ''} · Lv ${fighter.level}</div>
+          <div class="hdm2-sub">${className}${fighter.lehrling ? ` · ${standVon(fighter)}` : ''} · Lv ${fighter.level}</div>
         </div>
         <div class="hdm2-portrait-area">
           <div class="hdm2-gear-col hdm2-gear-left">
@@ -590,7 +645,7 @@ function renderDetailModal(fighter: GuildFighter): string {
             <span class="hdm2-slot-label">${gearSlots[3].label}</span>
           </div>
         </div>
-        ${nebenhandHinweisHtml(fighter)}${auswahlHtml(fighter)}
+        ${ausruestHtml(fighter)}${nebenhandHinweisHtml(fighter)}${auswahlHtml(fighter)}
         <div class="hdm2-xp-row">
           <div class="hdm2-xpbar"><div class="hdm2-xpfill" style="width:${pct}%"></div></div>
           <div class="hdm2-xplabel">${xpLabel}</div>
@@ -1028,6 +1083,7 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
 
   const wrapper = document.createElement('div');
   wrapper.innerHTML = renderDetailModal(fighter);
+  ausruestMeldung = null; // steht nur einmal da (ausruestHtml)
   const overlay = wrapper.firstElementChild as HTMLElement;
   overlay.classList.add('on');
   container.appendChild(overlay);
@@ -1175,6 +1231,19 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
     fokussiere(container, [`#s-heroes [data-teil="${itemId}"]`]);
   });
 
+  // Aus dem Lager ausrüsten: legt an, was der Knopf zeigt. Der Fokus geht an die Meldung (sie sagt, was angelegt
+  // wurde), nicht an einen Knopf, der danach unter dem Finger liegt
+  overlay.querySelector('#hdm2-ausruesten')?.addEventListener('click', () => {
+    if (!gameState) return;
+    const wechsel = ausLagerAusruesten(gameState, fighter);
+    if (wechsel.length === 0) return;
+    auswahl = null;
+    ausruestMeldung = { heldId: fighter.id, text: ausruestMeldungText(wechsel) };
+    erfolgePruefen(gameState); // ein ganzes Set angelegt: gleich zählen, nicht erst beim Tageswechsel
+    window.dispatchEvent(new Event('mc:speichern'));
+    neuZeichnen(['.hdm2-ausruesten-meldung', '#hdm2-name']);
+  });
+
   // Anlegen oder Ablegen. Der Fokus geht danach auf den Platz (mit dem Gegenstand oder leer), nicht zurück auf den
   // Knopf: Der heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das Teil gleich wieder ab. Ein
   // langsamer zweiter Druck mit Finger oder Maus auf ABLEGEN, das eben noch ANLEGEN war (oder das nach dem Antippen
@@ -1232,6 +1301,7 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
   if (!fighter || fighter.level >= MAX_HERO_LEVEL) return;
 
   // Gold und XP über systems/Ausbildung.ts: Aufstiege bringen die Klassen-Boni (awardXP)
+  const stufeVorher = fighter.level;
   const ergebnis = trainieren(gameState, fighter);
 
   // Not enough gold — show error feedback on button
@@ -1251,6 +1321,9 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
 
   erfolgePruefen(gameState);
   window.dispatchEvent(new Event('mc:speichern'));
+  // Ein Lehrling hat ausgelernt: Seine Karte verschwindet aus diesem Reiter, die Kopfzeile sagt warum (sein Satz
+  // steht im Heldenfenster unter «Ausgelernt»)
+  if (gesellenSatz(fighter, stufeVorher)) zeigeKopfHinweis(`🎓 ${fighter.name} ist jetzt Geselle`);
 
   // Show success feedback, then re-render
   const successText = ergebnis.neueKlassen.length > 0 ? '\u2605 Neue Klasse frei!'

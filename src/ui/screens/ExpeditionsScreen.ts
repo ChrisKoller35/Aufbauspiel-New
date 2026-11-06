@@ -20,6 +20,7 @@ import { zeigeGildenhaus } from './GildenhausScreen';
 import { letzterRatHtml, zeigeKriegsrat } from '../components/KriegsratFenster';
 import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../components/HaertegradAnzeige';
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
+import { standVon } from '../../systems/Lehrlinge';
 
 // ── Module state ──
 
@@ -271,7 +272,7 @@ function buildTeamHTML(): string {
         ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
         <div class="hcard-overlay">
           <div class="hc-nm">${escapeAttr(f.name)}</div>
-          <div class="hsm-meta">${clsName}${f.lehrling ? ' · Lehrling' : ''} Lv${f.level}</div>
+          <div class="hsm-meta">${clsName}${f.lehrling ? ` · ${standVon(f)}` : ''} Lv${f.level}</div>
           <div class="hc-st">
             <span>\u2694${f.baseStats.atk}</span>
             <span>\uD83D\uDEE1${f.baseStats.def}</span>

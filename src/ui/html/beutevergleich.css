@@ -21,3 +21,18 @@
    für Knöpfe, damit sie aussehen wie die übrigen Kacheln (kein padding: das setzen .inv-cell und .inv-cell-gear) */
 button.inv-cell { font: inherit; color: inherit; text-align: inherit; width: 100%; margin: 0; cursor: pointer; }
 button.inv-cell:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+/* Heldenfenster: «Aus dem Lager ausrüsten» (systems/Ausruesten.ts), darunter, was er anlegt; nach dem Tipp die Meldung */
+.hdm2-ausruesten { position: relative; display: block; width: calc(100% - 32px); margin: 0 16px 12px; padding: 8px 12px 8px 40px;
+  min-height: 44px; cursor: pointer; background: var(--s2); border: 1px solid #4ade8088; border-radius: 8px; color: var(--txt);
+  font: inherit; text-align: left; }
+.hdm2-ausruesten:hover { border-color: #4ade80; }
+.hdm2-ausruesten:focus-visible { outline: 2px solid var(--gold); outline-offset: 2px; }
+.hdm2-ausruesten .besser-pfeil { top: 50%; left: 12px; right: auto; transform: translateY(-50%); }
+.hdm2-ausruesten-titel { display: block; color: #4ade80; font-weight: 700; font-size: 0.82rem; line-height: 1.3; }
+.hdm2-ausruesten-teile { display: block; margin-top: 2px; font-size: 0.76rem; line-height: 1.4; overflow-wrap: anywhere; }
+.hdm2-ausruesten-meldung { margin: 0 16px 12px; padding: 6px 10px; border-left: 3px solid #4ade80; border-radius: 4px;
+  background: var(--s2); color: var(--txt); font-size: 0.78rem; line-height: 1.4; overflow-wrap: anywhere; }
+@media (max-width: 700px) {
+  #hero-detail-ov .hdm2-ausruesten { width: calc(100% - 16px); margin: 0 8px 10px; }
+  #hero-detail-ov .hdm2-ausruesten-meldung { margin: 0 8px 10px; }
+}

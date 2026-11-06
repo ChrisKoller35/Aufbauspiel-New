@@ -23,15 +23,28 @@ import { wegBilanzDazu } from './Spezialisierung';
 import { RanglistenBilanz, ranglisteNachExpedition } from './Rangliste';
 import { AuftragsBilanz, auftraegeNachExpedition } from './Auftragsbrett';
 import { trophaeeNachExpedition } from './Trophaeensaal';
+import { LEHRSTUNDEN, Lehrstunde, gesellenSatz, lehrstunde, lehrstundenSatz } from './Lehrlinge';
 
 /** Bonus XP per hero for winning the run */
 export const VICTORY_XP_BONUS = 10;
+
+/** XP eines Helden aus einer Expedition, ohne Lehrstunde: verdiente XP plus Siegbonus (auch für den Kriegsrat) */
+export function expeditionsXp(run: ExpeditionRun, heldId: number): number {
+  return (run.xpEarned?.[heldId] ?? 0) + (run.status === 'victory' ? VICTORY_XP_BONUS : 0);
+}
+
 const SCOREBOARD_LIMIT = 100;
 
 export interface ExpeditionProgress {
   entry: ScoreboardEntry;
-  /** wegWirkung: was der Weg des Helden in dieser Expedition bewirkt hat */
-  xp: { id: number; name: string; xp: number; level: number; levelUps: number; wegWirkung?: WegWirkung }[];
+  /**
+   * wegWirkung: was der Weg des Helden in dieser Expedition bewirkt hat. lehrstunde: der Lehrling war mit seinem
+   * Meister unterwegs (bonus ist in xp enthalten, satz sein Satz dazu); geselle: er hat eben ausgelernt (sein Satz)
+   */
+  xp: {
+    id: number; name: string; xp: number; level: number; levelUps: number; wegWirkung?: WegWirkung;
+    lehrstunde?: { meister: string; bonus: number; satz: string }; geselle?: string;
+  }[];
   rankUp: { newRank: number; title: string; unlocks: string[] } | null;
   newClasses: string[];
   newAchievements: string[];
@@ -62,17 +75,35 @@ export function finalizeExpeditionProgress(
   const neueTrophaee = trophaeeNachExpedition(state, run);
 
   // ── XP to heroes (CombatUnit.id === GuildFighter.id) ──
-  const xpMap = run.xpEarned ?? {};
+  // Lehrstunden zuerst, mit den Stufen vor der Expedition (systems/Lehrlinge.ts)
+  const gruppe = run.party.map(u => u.id);
   const xp: ExpeditionProgress['xp'] = [];
+  const stunden = new Map<number, Lehrstunde>();
+  for (const unit of run.party) {
+    const fighter = state.fighters.find(f => f.id === unit.id);
+    const stunde = fighter && lehrstunde(state, gruppe, fighter, expeditionsXp(run, unit.id));
+    if (stunde) stunden.set(unit.id, stunde);
+  }
   for (const unit of run.party) {
     const fighter = state.fighters.find(f => f.id === unit.id);
     if (!fighter) continue;
-    const earned = (xpMap[unit.id] ?? 0) + (victory ? VICTORY_XP_BONUS : 0);
+    const stunde = stunden.get(unit.id);
+    const earned = expeditionsXp(run, unit.id) + (stunde?.bonus ?? 0);
+    const stufeVorher = fighter.level;
     const levelUps = awardXP(fighter, earned);
     wegBilanzDazu(fighter, unit.wegWirkung);
+    let lehrstundeZeile: { meister: string; bonus: number; satz: string } | undefined;
+    if (stunde) {
+      const nummer = state.statistics[LEHRSTUNDEN] ?? 0;
+      state.statistics[LEHRSTUNDEN] = nummer + 1;
+      lehrstundeZeile = { meister: stunde.meisterName, bonus: stunde.bonus, satz: lehrstundenSatz(fighter, stunde.meisterName, nummer) };
+    }
+    const geselle = gesellenSatz(fighter, stufeVorher);
     xp.push({
       id: fighter.id, name: fighter.name, xp: earned, level: fighter.level, levelUps,
       ...(unit.wegWirkung ? { wegWirkung: unit.wegWirkung } : {}),
+      ...(lehrstundeZeile ? { lehrstunde: lehrstundeZeile } : {}),
+      ...(geselle ? { geselle } : {}),
     });
   }
 

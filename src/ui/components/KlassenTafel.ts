@@ -17,7 +17,7 @@ import { DUNGEON_IM_SATZ } from '../../data/dungeonNamen';
 import { FreischaltSchritt, fortschritt } from '../../systems/ClassUnlockSystem';
 import { anheuerKosten } from '../../systems/Empfehlung';
 import { LEHRLINGE } from '../../data/lehrlinge';
-import { LEHRLING_AB_STUFE, LehrlingLage, lehrlingLage } from '../../systems/Lehrlinge';
+import { LEHRLING_AB_STUFE, LehrlingLage, lehrlingLage, standVon } from '../../systems/Lehrlinge';
 import { lehrbuchVorschau } from '../../systems/Ausbildung';
 import { bildKarte } from '../heldBild';
 import { escapeAttr } from './SchmiedeAnzeige';
@@ -144,7 +144,7 @@ export function lehrlingTafelHtml(state: GameState): string {
     return `
       <article class="kt-karte kt-lehrling ${art}" data-kt-lehrling="${c.id}">
         <div class="kt-bild ${bild.klasse}" style="${bild.stil}">
-          <span class="kt-name">${escapeAttr(def.name)}<small class="kt-unter">Lehrling · ${escapeAttr(c.name)}</small></span>
+          <span class="kt-name">${escapeAttr(def.name)}<small class="kt-unter">${lage.art === 'da' ? standVon(lage.lehrling) : 'Lehrling'} · ${escapeAttr(c.name)}</small></span>
         </div>
         <div class="kt-info">
           <p class="kt-zitat">${escapeAttr(def.kurz)}</p>

@@ -106,3 +106,16 @@
   .kt-kopf { margin: 0 10px 10px; }
   .kt-titel { margin: 0 10px 6px; }
 }
+
+/* Bilanz nach der Expedition: Lehrstunde und Auslernen (ExpeditionFlow.showExpeditionSummary, systems/Lehrlinge.ts) */
+.bilanz-lehrling {
+  margin: -2px 0 8px; padding-left: 8px; border-left: 3px solid #86efac;
+  font-size: 0.82rem; line-height: 1.4; color: #86efac; overflow-wrap: anywhere;
+}
+.bilanz-geselle { border-left-color: var(--gold); color: var(--gl); }
+/* Der Satz in der Schrift der Geschichten: Die Bilanz steht in Cinzel, das nur Grossbuchstaben kennt */
+.bilanz-lehrling-satz { display: block; margin-top: 2px; font-family: 'Crimson Text', serif; font-size: 0.95rem; font-style: italic;
+  line-height: 1.35; letter-spacing: 0; text-transform: none; color: var(--txt); }
+/* Heldenfenster: der Satz des Gesellen unter seinem Hintergrund */
+.hdm2-geselle-lbl { margin-top: 10px; }
+.hdm2-geselle { font-style: italic; }

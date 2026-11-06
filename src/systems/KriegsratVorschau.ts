@@ -14,7 +14,8 @@ import { materialFuerRoute } from '../data/schmiede';
 import { besitz, gesammelteTeile, setBeute } from './DungeonSets';
 import { SPLITTER, schmiedeBeute } from './Schmiede';
 import { albtraumBeute } from './Haertegrade';
-import { VICTORY_XP_BONUS } from './ExpeditionFinalizer';
+import { expeditionsXp } from './ExpeditionFinalizer';
+import { lehrstunde } from './Lehrlinge';
 import { MAX_HERO_LEVEL, awardXP, totalXpForLevel } from './HeroProgression';
 
 export interface HeldVorschau {
@@ -94,11 +95,18 @@ export function vorschauNachLauf(v: Vorschau, kopie: GameState, run: ExpeditionR
       v.ausruestung.set(itemId, (v.ausruestung.get(itemId) ?? 0) + 1);
     }
   }
+  // Mit Lehrstunde wie in der Bilanz (ExpeditionFinalizer): alle mit den Stufen vor dem Lauf
+  const gruppe = run.party.map(u => u.id);
+  const xpJe = new Map(v.helden.map(held => {
+    const fighter = kopie.fighters.find(f => f.id === held.id);
+    const xp = expeditionsXp(run, held.id);
+    return [held.id, xp + ((fighter && lehrstunde(kopie, gruppe, fighter, xp)?.bonus) ?? 0)];
+  }));
   for (const held of v.helden) {
     const unit = run.party.find(u => u.id === held.id);
     const fighter = kopie.fighters.find(f => f.id === held.id);
     if (!unit || !fighter) continue;
-    const xp = (run.xpEarned?.[held.id] ?? 0) + (run.status === 'victory' ? VICTORY_XP_BONUS : 0);
+    const xp = xpJe.get(held.id) ?? 0;
     held.xpSchnitt += xp;
     if (awardXP(fighter, xp) > 0) held.aufstiege++;
     held.besteStufe = Math.max(held.besteStufe, fighter.level);

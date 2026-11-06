@@ -8,8 +8,11 @@ import { awardXP, MAX_HERO_LEVEL, totalXpForLevel } from '../src/systems/HeroPro
 import { anheuerKosten } from '../src/systems/Empfehlung';
 import { lehrbuchLernen } from '../src/systems/Ausbildung';
 import {
-  LEHRLING_AB_STUFE, hintergrundVon, kartenName, lehrlingAufnehmen, lehrlingDerKlasse, lehrlingLage, meisterDerKlasse,
+  LEHRLING_AB_STUFE, LEHRSTUNDE_ANTEIL, LEHRSTUNDEN, gesellenSatz, hintergrundVon, istGeselle, kartenName, lehrlingAufnehmen,
+  lehrlingDerKlasse, lehrlingLage, lehrstunde, lehrstundenSatz, meisterDerKlasse, standVon,
 } from '../src/systems/Lehrlinge';
+import { ExpeditionProgress, finalizeExpeditionProgress } from '../src/systems/ExpeditionFinalizer';
+import { neueVorschau, vorschauNachLauf } from '../src/systems/KriegsratVorschau';
 import { kennzahlenAktualisieren } from '../src/systems/AchievementSystem';
 import { CombatEngine } from '../src/systems/CombatEngine';
 import { GearSystem } from '../src/systems/GearSystem';
@@ -54,6 +57,19 @@ describe('Lehrlinge: Daten', () => {
       expect(l.hintergrund).toContain('\n\nMotivation: ');
       // Schweizer Schreibweise
       expect(`${l.kurz} ${l.hintergrund}`).not.toMatch(/ß/);
+    }
+  });
+
+  test('jeder Lehrling hat drei eigene Sätze zur Lehrstunde und einen zum Auslernen', () => {
+    const alle = Object.values(LEHRLINGE).flatMap(l => [...l.lehrstunde, l.geselle]);
+    expect(new Set(alle).size).toBe(alle.length);
+    for (const l of Object.values(LEHRLINGE)) {
+      expect(l.lehrstunde).toHaveLength(3);
+      // mindestens einer nennt den Meister
+      expect(l.lehrstunde.some(satz => satz.includes('{meister}'))).toBe(true);
+      expect(l.geselle.length).toBeGreaterThan(20);
+      expect(l.geselle).not.toContain('{meister}');
+      expect([...l.lehrstunde, l.geselle].join(' ')).not.toMatch(/ß/);
     }
   });
 });
@@ -187,6 +203,124 @@ describe('Lehrlinge im Kampf, im Raid und im Spielstand', () => {
     const kaputt = JSON.parse(text);
     kaputt.fighters[1].lehrling = 'ja';
     expect(pruefeSpielstandText(JSON.stringify(kaputt)).ok).toBe(false);
+  });
+});
+
+/** Eine Expedition auf dem Waldpfad mit festen XP (ohne Kampf), abgeschlossen wie in main.ts */
+function lauf(state: GameState, gruppe: number[], xp: number, status: 'victory' | 'retreat' = 'victory'): ExpeditionProgress {
+  const system = new ExpeditionSystem(new GearSystem(), new ProvisionSystem());
+  const run = system.startExpedition(state, 'forest_short', gruppe)!;
+  run.status = status;
+  run.xpEarned = Object.fromEntries(gruppe.map(id => [id, xp]));
+  const bilanz = finalizeExpeditionProgress(state, run, system);
+  state.activeExpedition = null;
+  return bilanz;
+}
+
+describe('Lehrstunde: mit dem Meister unterwegs', () => {
+  test('mit dem Meister in der Gruppe die Hälfte mehr XP (aufgerundet), sonst nicht', () => {
+    expect(LEHRSTUNDE_ANTEIL).toBe(0.5);
+    const m = meister('guardian');
+    const state = gilde(5000, m, neuerHeld('cleric'));
+    const l = lehrlingAufnehmen(state, 'guardian')!;
+    expect(lehrstunde(state, [m.id, l.id], l, 31)).toEqual({ meisterId: m.id, meisterName: m.name, bonus: 16 });
+    expect(lehrstunde(state, [l.id, 2], l, 31)).toBeNull(); // ohne Meister
+    expect(lehrstunde(state, [m.id, l.id], m, 31)).toBeNull(); // der Meister selbst
+    expect(lehrstunde(state, [m.id, l.id], l, 0)).toBeNull();
+    // Hat er die Stufe des Meisters, lernt er bei ihm nichts mehr dazu
+    awardXP(l, totalXpForLevel(MAX_HERO_LEVEL));
+    expect(lehrstunde(state, [m.id, l.id], l, 31)).toBeNull();
+  });
+
+  test('der Meister ist der beste Held der Klasse, nicht irgendeiner', () => {
+    const m = meister('guardian');
+    const zweiter = neuerHeld('guardian');
+    zweiter.level = 3;
+    const state = gilde(5000, m, zweiter);
+    const l = lehrlingAufnehmen(state, 'guardian')!;
+    expect(lehrstunde(state, [zweiter.id, l.id], l, 20)).toBeNull();
+    expect(lehrstunde(state, [m.id, l.id], l, 20)?.bonus).toBe(10);
+  });
+
+  test('Sätze reihum, mit dem Namen des Meisters', () => {
+    const m = meister('bard');
+    const state = gilde(5000, m);
+    const l = lehrlingAufnehmen(state, 'bard')!;
+    const saetze = [0, 1, 2, 3].map(n => lehrstundenSatz(l, 'Brom', n));
+    expect(new Set(saetze.slice(0, 3)).size).toBe(3);
+    expect(saetze[3]).toBe(saetze[0]);
+    for (const satz of saetze) {
+      expect(satz).toContain('Brom');
+      expect(satz).not.toContain('{meister}');
+    }
+  });
+
+  test('Bilanz: die Lehrstunde kommt zu seinen XP dazu, mit Satz; der Zähler wählt den nächsten Satz', () => {
+    const m = meister('guardian');
+    const state = gilde(5000, m, neuerHeld('cleric'));
+    const l = lehrlingAufnehmen(state, 'guardian')!;
+    const vorher = { m: m.xp, l: l.xp, k: state.fighters[1].xp };
+    const b1 = lauf(state, [m.id, l.id, 2], 20);
+    const zeile = b1.xp.find(x => x.id === l.id)!;
+    // 20 + 10 für den Sieg, dazu die Hälfte davon
+    expect(zeile.xp).toBe(45);
+    expect(l.xp - vorher.l).toBe(45);
+    expect(zeile.lehrstunde).toEqual({ meister: m.name, bonus: 15, satz: lehrstundenSatz(l, m.name, 0) });
+    // Meister und die anderen wie bisher
+    expect(b1.xp.find(x => x.id === m.id)).not.toHaveProperty('lehrstunde');
+    expect(m.xp - vorher.m).toBe(30);
+    expect(state.fighters[1].xp - vorher.k).toBe(30);
+    expect(state.statistics[LEHRSTUNDEN]).toBe(1);
+    expect(lauf(state, [m.id, l.id], 20).xp.find(x => x.id === l.id)!.lehrstunde!.satz).toBe(lehrstundenSatz(l, m.name, 1));
+    // ohne Meister keine Lehrstunde, der Zähler bleibt
+    expect(lauf(state, [l.id, 2], 20).xp.find(x => x.id === l.id)).not.toHaveProperty('lehrstunde');
+    expect(state.statistics[LEHRSTUNDEN]).toBe(2);
+  });
+
+  test('der Kriegsrat rechnet die Lehrstunde mit, wie die Bilanz', () => {
+    const m = meister('guardian');
+    const state = gilde(5000, m);
+    const l = lehrlingAufnehmen(state, 'guardian')!;
+    const kopie = structuredClone(state);
+    const v = neueVorschau(kopie, 'forest_short', [m.id, l.id]);
+    const run = new ExpeditionSystem(new GearSystem(), new ProvisionSystem()).startExpedition(kopie, 'forest_short', [m.id, l.id])!;
+    run.status = 'victory';
+    run.xpEarned = { [m.id]: 20, [l.id]: 20 };
+    vorschauNachLauf(v, kopie, run);
+    expect(v.helden.map(h => h.xpSchnitt)).toEqual([30, 45]);
+  });
+});
+
+describe('Geselle: ein Lehrling auf Stufe 15', () => {
+  test('heisst Geselle, bleibt aber der Lehrling seiner Klasse', () => {
+    const m = meister('guardian');
+    const state = gilde(5000, m);
+    const l = lehrlingAufnehmen(state, 'guardian')!;
+    expect([standVon(l), standVon(m), istGeselle(l), istGeselle(m)]).toEqual(['Lehrling', '', false, false]);
+    awardXP(l, totalXpForLevel(MAX_HERO_LEVEL));
+    expect([standVon(l), istGeselle(l)]).toEqual(['Geselle', true]);
+    expect(lehrlingDerKlasse(state, 'guardian')).toBe(l);
+    expect(lehrlingLage(state, 'guardian').art).toBe('da');
+    initHeroesScreen(state);
+    expect(renderHeroCard(l, 'my')).toContain(`<span class="hc-lehrling">Geselle · ${CLASS_DEFS.guardian.name}</span>`);
+  });
+
+  test('sein Satz kommt einmal, beim Auslernen in der Bilanz; nie beim Meister', () => {
+    const m = meister('guardian');
+    const state = gilde(5000, m);
+    const l = lehrlingAufnehmen(state, 'guardian')!;
+    awardXP(l, totalXpForLevel(MAX_HERO_LEVEL) - 5);
+    expect(l.level).toBe(MAX_HERO_LEVEL - 1);
+    // Rückzug: 10 XP, mit Lehrstunde 15
+    const b = lauf(state, [m.id, l.id], 10, 'retreat');
+    expect(l.level).toBe(MAX_HERO_LEVEL);
+    expect(b.xp.find(x => x.id === l.id)!.geselle).toBe(LEHRLINGE.guardian.geselle);
+    expect(b.xp.find(x => x.id === m.id)).not.toHaveProperty('geselle');
+    // schon Geselle: kein zweites Mal
+    expect(lauf(state, [m.id, l.id], 10).xp.find(x => x.id === l.id)).not.toHaveProperty('geselle');
+    expect(gesellenSatz(l, MAX_HERO_LEVEL)).toBeNull();
+    expect(gesellenSatz(l, MAX_HERO_LEVEL - 1)).toBe(LEHRLINGE.guardian.geselle);
+    expect(gesellenSatz(m, MAX_HERO_LEVEL - 1)).toBeNull();
   });
 });
 

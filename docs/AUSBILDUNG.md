@@ -156,14 +156,27 @@ Raid bringen. Daten: `src/data/lehrlinge.ts`, Regeln: `src/systems/Lehrlinge.ts`
   Klasse mit der höchsten Stufe, nie der Lehrling). Je Klasse höchstens ein Lehrling.
 - **Preis:** wie jeder neue Held (`anheuerKosten` mit der Zahl der Helden in der Gilde). Aufgenommen wird sofort
   gespeichert; zu wenig Gold sagt der Knopf («Nicht genug Gold!»).
-- **Start:** Stufe 1, Werte seiner Klasse, ohne Ausrüstung, hinten in der Gilde. Aufholen geht schnell: Das
-  Lehrbuch gibt ihm den Überschuss eines Helden auf Stufe 15 (bis Stufe 15 braucht er 2240 XP), Training und
-  Expeditionen wirken wie bei jedem Helden. Ab Stufe 10 wählt er seinen Weg selbst, gern einen anderen als sein
-  Meister.
+- **Start:** Stufe 1, Werte seiner Klasse, ohne Ausrüstung, hinten in der Gilde. Ein Tipp auf «Aus dem Lager
+  ausrüsten» im Heldenfenster legt ihm an, was im Lager liegt und passt (Abschnitt unten). Aufholen geht schnell:
+  Das Lehrbuch gibt ihm den Überschuss eines Helden auf Stufe 15 (bis Stufe 15 braucht er 2240 XP), Training und
+  Expeditionen wirken wie bei jedem Helden, mit dem Meister unterwegs noch schneller (Lehrstunde). Ab Stufe 10
+  wählt er seinen Weg selbst, gern einen anderen als sein Meister.
+- **Lehrstunde:** Ist der Lehrling mit dem Meister seiner Klasse auf derselben Expedition und hat er dessen Stufe
+  noch nicht, bekommt er die Hälfte seiner XP dazu, aufgerundet (`LEHRSTUNDE_ANTEIL`, `lehrstunde`). Es zählen
+  die Stufen vor der Expedition; im Raid gibt es keine Lehrstunde. Die Bilanz zeigt unter seiner Zeile
+  «📖 Lehrstunde bei ‹Meister›: davon +N XP» und einen seiner Sätze (reihum, gezählt in `lehrstunden`). Der
+  Kriegsrat rechnet sie mit. Beispiel: 20 XP aus den Kämpfen + 10 für den Sieg = 30, mit Lehrstunde 45.
+- **Geselle:** Auf Stufe 15 hat der Lehrling ausgelernt und heisst Geselle (`istGeselle`, `standVon`): auf den
+  Karten «Geselle · Klasse», im Heldenfenster «Klasse · Geselle» und unter dem Hintergrund «Ausgelernt» mit
+  seinem Satz. Der Satz kommt einmal, dort, wo er ausgelernt hat: in der Bilanz der Expedition, in der Meldung
+  des Lehrbuchs, im Ergebnis des Raids; nach TRAINIEREN sagt es die Kopfzeile («🎓 Bertram ist jetzt
+  Geselle»). Er bleibt der zweite Held seiner Klasse (`lehrling` bleibt gesetzt, die Klasse bekommt keinen
+  neuen Lehrling), der Spielstand ändert sich nicht.
 - **Name und Hintergrund:** Jeder Lehrling hat einen eigenen Namen, einen Satz für die Karte und einen
   Hintergrund im Ton der Klassen (Bertram, Wenna, Pirmin, Ragna, Nix, Gerlinde, Benno, Mirabell, Edgar, Farn).
   Das Heldenfenster zeigt «Klasse · Lehrling» und seinen Hintergrund (`hintergrundVon`), Karten mit Klassennamen
-  zeigen beim Lehrling seinen Namen und darunter «Lehrling · Klasse» (`kartenName`).
+  zeigen beim Lehrling seinen Namen und darunter «Lehrling · Klasse» (`kartenName`). Dazu hat jeder drei Sätze
+  zur Lehrstunde (`{meister}` wird zum Namen des Meisters) und einen zum Auslernen.
 - **Bild:** das Bild seiner Klasse, gespiegelt (`src/ui/heldBild.ts`, `.lehrling-bild` in `magic-city.css`), in
   Heldenkarten, Heldenfenster, Expedition, Kampf und Raid. Eigene Bilder gibt es nicht (Kosten-Regel).
 - **Im Kampf** ist der Lehrling ein ganz normaler Held seiner Klasse. Zwei derselben Klasse in einer Gruppe:
@@ -180,6 +193,31 @@ Raid bringen. Daten: `src/data/lehrlinge.ts`, Regeln: `src/systems/Lehrlinge.ts`
 - **Erfolge** (Gruppe «Helden»): «Lehrjahre» (erster Lehrling), «Ausgelernt» (ein Lehrling auf Stufe 15),
   «Doppelt besetzt» (alle zehn), gezählt in `lehrlinge` und `lehrlinge_ausgelernt`.
 
+### Aus dem Lager ausrüsten
+
+Im Heldenfenster steht unter dem Helden der Knopf «Aus dem Lager ausrüsten», sobald im Lager etwas liegt, das in
+einen leeren Platz passt oder den Helden stärker macht. Darunter steht, was er anlegt («Stahlschwert · Stahlschild
+· Lederrüstung», bei einem Tausch «Stahlschwert statt Eisenschwert»). Gedacht für den Lehrling, der ohne
+Ausrüstung kommt; er wirkt bei jedem Helden. Code: `src/systems/Ausruesten.ts`, Tests:
+`tests/ausLagerAusruesten.test.ts` und `tests/heldenfenster.test.ts`.
+
+1. **Leere Plätze**, die Haupthand zuerst: das passende Teil mit der Haltung der Klasse (`preferredWeaponSetup`:
+   Einhand mit Schild bei Guardian und Paladin, Zweihand bei Ranger und Hexe, zwei Einhandwaffen bei Berserker
+   und Assassine), dann der höchsten Ebene, dann dem höheren Wert. Klassen ohne Haltung nehmen die höchste
+   Ebene. Für einen leeren Platz wird nichts abgelegt: eine Zweihandwaffe nur bei freier Nebenhand.
+2. **Getragenes** tauscht er nur gegen ein Teil, mit dem kein Wert sinkt und keine Eigenschaft wegfällt (der
+   grüne Pfeil, `docs/BEUTEVERGLEICH.md`), das mit dem grössten Zugewinn zuerst, bis keines mehr besser ist.
+   Wird dabei ein Platz frei, kommt Schritt 1 noch einmal: Nach einem Tipp findet ein zweiter nichts mehr.
+
+Er nimmt nur aus dem Lager, nie einem anderen Helden etwas weg; Abgelegtes liegt danach im Lager. Nach dem Tipp
+steht an seiner Stelle, was angelegt wurde («✔ Angelegt: Stahlschwert. Eisenschwert liegt jetzt im Lager.»), die
+Meldung hat den Fokus. Der Spielstand wird gleich gesichert, Set-Erfolge zählen sofort. Er rechnet einige
+Millisekunden, auch mit jedem Teil des Spiels im Lager.
+
+Grenzen: Er kennt keine Rollen (ein Heiler ohne Haltung nimmt die stärkste Waffe, auch einen Bogen) und legt kein
+Set zusammen, wenn die Teile einzeln schwächer sind. Wer es anders will, legt von Hand an; der Knopf zeigt vorher,
+was er tun würde.
+
 ## Heldenkarten und Heldenfenster bedienen
 
 Code: `src/ui/screens/HeroesScreen.ts`, Stile in `src/ui/html/magic-city.css` (Abschnitte «Hero Cards» und
@@ -192,8 +230,9 @@ Tastenhörer, den zweiten Klick, den langsamen zweiten Druck, die Sperren und di
 - **Im Heldenfenster** nimmt beim Öffnen der Name des Helden den Fokus. Plätze und Gegenstände im Inventar
   sind Knöpfe (Tab, Enter); nach jedem Antippen bleibt der Fokus auf dem Knopf. Nach ANLEGEN und ABLEGEN
   steht er auf dem Platz: Der Knopf heisst nach ANLEGEN ABLEGEN, ein zweites oder gehaltenes Enter legte das
-  Teil sonst gleich wieder ab. Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen
-  es, und der Fokus kehrt auf die Karte zurück.
+  Teil sonst gleich wieder ab. Nach «Aus dem Lager ausrüsten» steht er auf der Meldung, was angelegt wurde.
+  Tab bleibt im Fenster. Escape, ✕ und ein Klick auf den dunklen Rand schliessen es, und der Fokus kehrt auf
+  die Karte zurück.
 - **Scrollen:** Ist das Fenster höher als der Bildschirm (mit Auswahl, in einem flachen Fenster, am Handy),
   scrollt es in sich, mit Mausrad und Finger. Die Seite dahinter bleibt stehen und rückt auch nicht zur
   Seite, wenn ihr Scrollbalken dabei verschwindet (am PC bleibt rechts ein Rand, so breit wie er). Das ✕
