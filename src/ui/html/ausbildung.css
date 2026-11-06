@@ -91,7 +91,11 @@
   text-transform: uppercase; color: var(--gl);
 }
 .kt-zitat { font-size: 0.85rem; font-style: italic; color: var(--txt); }
-.kt-karte.wartet .kt-bild { filter: grayscale(.7) brightness(.55); }
+/* Das ::before des Lehrlings trägt sein gespiegeltes Bild (--held-bild, .lehrling-bild in magic-city.css). Die
+   Regeln für gesperrt / in der Gilde oben setzen dort background: inherit und nähmen ihm das Bild: hier zurück.
+   Wartet er noch auf seinen Meister, dimmt nur das Bild, nie der Name darauf (wie bei gesperrt). */
+.kt-karte.kt-lehrling .kt-bild.lehrling-bild::before { background-image: var(--held-bild); }
+.kt-karte.wartet .kt-bild::before { filter: grayscale(.7) brightness(.55); }
 .kt-lehrling .hcard-footer { margin-top: auto; border: none; border-top: 1px solid var(--bdr); border-radius: 0; }
 .kt-lehrling .btn-hire { min-height: 44px; min-width: 44px; }
 
