@@ -9,8 +9,9 @@ immer. Diese Datei hält fest, wie der Kampf rechnet, was eine Woche bringt, was
 sagen und wie Zenit geeicht ist. Stand 6.11.2026.
 
 Nach dem ersten Sieg öffnet sich Stufe II, «Die dreizehnte Stunde»: Zenit mit einem zweiten Zeiger, der rückwärts läuft,
-gegen 10 bis 15 Helden in drei Trupps. Was hier ohne Stufe steht, gilt für Stufe I («Über dem Tag»); was auf Stufe II
-anders ist, steht im Abschnitt «Stufe II: Die dreizehnte Stunde».
+gegen 10 bis 15 Helden in drei Trupps. Nach dem ersten Sieg dort öffnet sich Stufe III, «Das Kuckucksei»: Zenit mit
+beiden Zeigern und einem Kuckuck, der an den Gängen pickt, gegen 15 bis 20 Helden in vier Trupps. Was hier ohne Stufe
+steht, gilt für Stufe I («Über dem Tag»); was auf den höheren Stufen anders ist, steht in ihren Abschnitten.
 
 Der Raid ist kein Dungeon (`RouteDef`) und Zenit kein Gegner (`EnemyDef`): Sets, Trophäensaal, Monsterbuch, Klang,
 Rangliste und Härtegrade hängen nicht daran. `raidKampf` benutzt den Grundangriff, die Regeneration und die
@@ -847,6 +848,152 @@ Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind na
   keine der festen Aufstellungen; die gesuchte gewinnt 96 %, ist aber nicht naheliegend. Liste und Kriegsrat helfen,
   eine passende zu finden; einen Weg wechseln kann ein Held nicht.
 
+## Stufe III: Das Kuckucksei
+
+Zenit stand still, bis ihm jemand ein Ei ins Gehäuse gelegt hat. Stufe III ist derselbe Raid auf dem breitesten Feld:
+«Zenit, mit Kuckuck» gegen 15 bis 20 Helden auf 3 Reihen und 12 Spalten (A bis L) in vier Trupps (Links A bis C,
+Halblinks D bis F, Halbrechts G bis I, Rechts J bis L). Alles von Stufe II gilt auch hier, mit Gegenzeiger; neu ist
+der Kuckuck. Zahlen in `RAID_DEFS.kuckuck` (`KUCKUCK`), Texte in `STUFEN_TEXTE.kuckuck` (`src/data/raids.ts`). Die
+Regel steht nur im Pfad des Raids: Stufe I und II rechnen Zeichen für Zeichen wie vorher, und
+`tests/kampfUnveraendert.test.ts` läuft unverändert.
+
+### So wirkt es im Spiel
+
+- **Offen** nach dem ersten Sieg auf Stufe II (`freiNachRaid: 'dreizehn'`). Bis dahin steht Stufe III im Umschalter mit
+  Schloss («Erst Zenit auf Stufe II anhalten»), und der Spielstand bekommt für sie nichts.
+- **Erster Besuch:** eigene Einleitung (das Ei, die Türen über den Gängen, zwanzig Bänke) und die Startaufstellung wie
+  auf den anderen Stufen: vorne voll, dann die Mitte.
+- **Eigene Woche:** drei freie Ernstkämpfe, danach je 10 Tagstein; eigene Truhen, Bestversuch, Verlauf, Montag-Satz und
+  Kriegsrat (Schlüssel `kuckuck#`).
+- **15 bis 20 Helden.** Zwanzig hat eine Gilde mit allen zehn Lehrlingen. Mit fünfzehn ist Stufe III gewollt nicht zu
+  schaffen (die beste gesuchte Ordnung: 0 %, Band K5).
+
+### Zenit, mit Kuckuck
+
+| Leben | Angriff | Abwehr | Tempo | Krit |
+|---|---|---|---|---|
+| 19 000 | 110 | 12 | 1,0 | 10 % × 1,5 |
+
+Die Regeln wie auf Stufe II, dazu `kuckuck: 0,6`. Auf zwölf Spalten treffen sich Zeiger und Gegenzeiger nie: Es schlägt
+nicht dreizehn. XP: 600 beim Sieg, 200 bei der Niederlage, je Teilnehmer.
+
+### Der Kuckuck
+
+- **Wann und wo:** jede Runde, nach dem Gegenzeiger, über einem Gang, reihum links, Mitte, rechts
+  (`kuckuckGang`: Runde 1 links, 2 Mitte, 3 rechts, 4 wieder links). Am Gang stehen die zwei Spalten links und rechts
+  davon: C und D, F und G, I und J (`gangSpalten`).
+- **Wen:** den Lebenden mit den wenigsten Leben in diesen zwei Spalten; bei Gleichstand den weiter vorn, dann den
+  weiter links. Er zielt also, anders als Pendel und Zeiger: Wer am Gang steht, sollte nicht der Kleinste sein.
+- **Wie hart:** ein Grundangriff mit 0,6 × Angriff (66, ab Mittag 99), mit Krit, Ausweichen, Schutzherr und Deckung
+  wie beim Pendel. Steht am Gang niemand, geht er wieder hinein (Ereignis ohne Treffer, Ansage
+  «…schaut beleidigt…»).
+- **Fällt einer daran**, heisst die Ursache «Kuckuck (Gang links)»; die Hauptursache nennt den Gang, bei mehreren
+  Gefallenen am selben Gang die Zahl.
+- **Was er verlangt:** Jede Spalte bleibt besetzt (sonst schlägt der Zeiger durch), aber an den sechs Gang-Spalten
+  stehen Zähe, Ausweichende oder Geheilte, keine Zerbrechlichen. Die Ordnung von Stufe II, auf vier Trupps verlängert
+  («Lehrbuch»), gewinnt nie, auch ohne Kuckuck nicht.
+
+### Truhen und erster Sieg
+
+| Truhe | Wann | Inhalt |
+|---|---|---|
+| **Was aus dem Nest fiel** | der erste Ernstkampf der Woche auf Stufe III, nach dem Zenit unter 50 % steht | 350 Gold, 10 Tagstein und ein Set-Teil der Stufen 8 bis 12, das der Gilde fehlt; fehlt dort keins mehr, 15 Kristallsplitter statt des Teils |
+| **Das Nest** | der erste Sieg der Woche auf Stufe III | je acht Würfe aus der Beute von Alruna und Orm, ein Set-Teil (wie bei der dreizehnten Truhe aus den Stufen 10 bis 12), 20 Tagstein, 35 Kristallsplitter; fehlt keins mehr, 40 Kristallsplitter statt des Teils |
+| **Das Kuckucksei** | der erste Sieg auf Stufe III | ein dritter Schmuck `die_unruh` (Stufe 12, legendär), nur einmal: Im Ei war kein Küken |
+
+- **Wert** (4000-mal gezogen): Das Nest Ø 12 095 (Gold 7362, 10,7 Stück Ausrüstung), die dreizehnte Truhe Ø 9046,
+  also das 1,3-Fache. «Was aus dem Nest fiel» Ø 350 gegen 250. Die Muster-Gilde trägt alle Set-Teile der Stufen 8 bis
+  12 schon; sie bekommt dort den Ersatz.
+- **Wochenchance:** Drei freie Versuche machen aus 67 % («Gut») 96 %.
+- **Keine Erfolge.** Stufe III zählt eigens (`raid3_siege`, `raid3_wochen`), die Zähler von Stufe I und II bleiben
+  stehen; kein Erfolg liest `raid3_…`. Annahme: Erfolge für Stufe III kommen später, zusammen mit den Erfolgen, die
+  auszahlen.
+
+### Spielstand
+
+`raidStufen.kuckuck`, ein `RaidStand` wie die anderen; ältere Spielstände laden unverändert, keine neue SaveVersion.
+
+### Bildschirm und Karte
+
+- **Umschalter** mit drei Stufen; Titel «ZENIT, MIT KUCKUCK».
+- **Feld** mit 12 Spalten und drei Gängen; im Gang am PC ein kleiner Vogel, die sechs Gang-Spalten tragen ihn im Kopf,
+  mit rosa Rand unten und dem Titel «Am Gang links pickt der Kuckuck den mit den wenigsten Leben.». Am Handy stehen die
+  vier Trupps untereinander wie auf Stufe II.
+- **Uhrleiste:** je Runde ein rosa Punkt über dem Gang des Kuckucks (bei einem, zwei und drei Vierteln der Breite), in
+  der Legende «Kuckuck am Gang links / Mitte / rechts».
+- **Wiedergabe:** Wen er pickt, leuchtet rosa; über dem Gang erscheint der Vogel in der Kopfzeile; die Laufzeile sagt
+  «Kuckuck am Gang links: Nix −66» oder «niemand da, er geht wieder hinein».
+- **Probespiel** `?probe=raid3`: die Gilde mit allen zehn Lehrlingen (`anker20`, 20 Helden), Zenit auf Stufe I und II
+  in der Woche davor je einmal besiegt (die Unruh liegt zweimal im Lager), 80 Tagstein; Stufe III ist offen.
+
+### Eichung von Stufe III
+
+`npm run raid-eichung -- --stufe III` (ohne `--stufe` nach Stufe I und II); mit `--leben` das Leben dieser Stufe.
+`tests/raidKuckuck.test.ts` prüft die Bänder mit den 20 Samen.
+
+**Muster-Gilde «anker20»:** `anker15` und die übrigen fünf Lehrlinge auf Stufe 15 mit Weg, ohne Schmiede-Stufen, in
+dem, was im Lager lag: Ragna (Berserker, Zorn) im Obsidianpanzer mit Seelenbrecher, Nix (Assassine, Schattentänzerin)
+im Frostwanderer, Gerlinde (Paladin, Kreuzritter) im Eid des Gefallenen Ritters mit Arkan-Amulett, Edgar (Nekromant,
+Seuchenbringer) im Aschewanderer, Farn (Druide, Bärengestalt) in den Schuppen des Leviathan.
+
+Die Aufstellungen (`RAID_AUFSTELLUNGEN_KUCKUCK`, Reihe 1 vorn, «|» sind die Gänge):
+
+```
+«Gut» (je Trupp ein Tank allein vorn; jede Spalte besetzt; an den Gängen keine Zerbrechlichen)
+     A      B      C      | D      E       F        | G        H      I      | J      K      L
+ 1   .      Brom   .      | .      Bertram .        | .        Grimm  .      | .      Ragna  .
+ 2   .      Benno  Lia    | Morn   .       Gerlinde | Liedra   .      Nix    | Wenna  .      Mirabell
+ 3   Sina   .      Pirmin | Ansgar .       Ewin     | Ysra     .      Moos   | Farn   .      Edgar
+
+«Profi» (Fund der Aufstellungssuche)
+ 1   .      Ysra   .      | .      Ewin    Bertram  | .        Grimm  .      | .      Liedra .
+ 2   .      Morn   Lia    | Edgar  .       Mirabell | Benno    .      Nix    | Pirmin .      .
+ 3   Sina   Brom   Farn   | Ansgar .       .        | .        .      Gerlinde | Wenna Moos  Ragna
+
+«Lehrbuch» (die Ordnung von Stufe II, auf vier Trupps verlängert)
+ 1   .      Brom   .      | .      Bertram .        | .        Grimm  .        | .        Ragna  .
+ 2   Liedra Ewin   .      | Ansgar Moos    .        | Benno    Pirmin .        | Gerlinde Farn   .
+ 3   .      Lia    Morn   | .      Sina    Ysra     | .        Wenna  Mirabell | .        Nix    Edgar
+
+«fünfzehn» (anker15, die beste von 400 Schritten der Suche)
+ 1   .      Brom   .      | .      Pirmin  .        | .        Grimm  .      | .      .       .
+ 2   .      Moos   Lia    | Morn   .       .        | Mirabell .      .      | .      .       Liedra
+ 3   Sina   Benno  Ysra   | .      .       Ansgar   | .        .      Ewin   | Wenna  Bertram .
+```
+
+«Naiv» ist die Startaufstellung: alle zwanzig der Reihe nach, vorne voll, dann die Mitte.
+
+**Gemessen** (400 Läufe je Zeile, Samen i · 7919):
+
+| Gilde · Aufstellung | Sieg | Ø Runde | Zenit-Rest | Sieg ≤ R12 | Ø stehend | Mitternacht |
+|---|---|---|---|---|---|---|
+| anker20 · Gut | 67 % | 13,1 | 1 % | 30 % | 8,1 | 0 % |
+| anker20 · Profi | 97 % | 12,2 | 0 % | 84 % | 13,3 | 0 % |
+| anker20 · Lehrbuch | 0 % | – | 29 % | 0 % | – | 0 % |
+| anker20 · Naiv | 0 % | – | 35 % | 0 % | – | 0 % |
+| anker15 · fünfzehn | 0 % | – | 15 % | 0 % | – | 0 % |
+
+Mit den 20 Samen des Tests: Gut 12/20 (Ø Runde 13,1), Profi 20/20, Lehrbuch 0/20 (Rest 29 %), Naiv 0/20 (Rest 36 %),
+fünfzehn 0/20 (Rest 16 %).
+
+**Je eine Regel aus** (anker20 · Gut, daneben Lehrbuch): Pendel 98 % (+31), Zeiger 100 % (+33), Gegenzeiger 100 %
+(+33), **Kuckuck 98 % (+31)**, Glocke 100 % (+33), Funken 80 % (+13), Mittag 90 % (+23), Heilregel 0 % (−67). Lehrbuch
+bleibt ohne jede einzelne Regel bei 0 % (ohne Glocke 5 %).
+
+**Eichbänder** (`tools/raidEichung.ts`, alle getroffen): K1 Gut 55 bis 75 % (67 %), K2 Profi ≥ 90 % (97 %), K3
+Lehrbuch ≤ 10 % (0 %), K4 Naiv 0 %, K5 fünfzehn ≤ 10 % (0 %), K6 Mitternacht ≤ 2 % in jeder Zeile (keine), K7 ohne
+Kuckuck Gut mindestens 15 Punkte mehr (+31), K8 ohne Heilregel Gut ≤ 5 % (0 %), K9 Das Nest 1,2- bis 1,6-mal die
+dreizehnte Truhe (1,3).
+
+### Grenzen von Stufe III
+
+- **Nur mit Lehrlingen:** Zwanzig Helden gibt es nur mit allen zehn Lehrlingen; mit fünfzehn kommt keine gesuchte
+  Ordnung durch. Das ist gewollt, heisst aber: Stufe III ist das Ziel für eine voll ausgebildete Gilde.
+- **Wege nicht einzeln gemessen:** Anders als auf Stufe I und II gibt es für Stufe III noch keine Messung «je ein Weg
+  anders» (`--wege`). Annahme: Wie auf Stufe II findet die Suche für jeden Weg eine Ordnung; geprüft ist das nicht.
+- **Handy:** vier Trupps untereinander, das Feld ist rund ein Drittel höher als auf Stufe II.
+- **Keine Erfolge** für Stufe III (siehe oben).
+
 ## Grenzen
 
 - **Steile Kurve.** Zehn Helden über 16 Runden heisst wenig Zufall: 250 Leben mehr oder weniger bewegen «Gut» um 20
@@ -887,10 +1034,10 @@ Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind na
 
 | Datei | Inhalt |
 |---|---|
-| `src/data/raids.ts` | Beide Stufen (`RAID_DEFS`, `RAID_STUFEN`): Werte, Regeln, Truhen, Kosten, Freischaltung; Teamwirkungen je Trupp, alle Texte (`RAID_TEXTE`, je Stufe `STUFEN_TEXTE`) |
-| `src/data/raidMuster.ts` | Muster-Gilde mit Varianten (`anker15` mit fünf Lehrlingen) und die Muster-Aufstellungen beider Stufen |
+| `src/data/raids.ts` | Alle drei Stufen (`RAID_DEFS`, `RAID_STUFEN`): Werte, Regeln, Truhen, Kosten, Freischaltung; Teamwirkungen je Trupp, alle Texte (`RAID_TEXTE`, je Stufe `STUFEN_TEXTE`) |
+| `src/data/raidMuster.ts` | Muster-Gilde mit Varianten (`anker15` mit fünf Lehrlingen, `anker20` mit zehn) und die Muster-Aufstellungen aller Stufen |
 | `src/models/RaidStand.ts` | Was der Spielstand je Stufe vom Raid speichert |
-| `src/systems/RaidKampf.ts` | Rechnung des Kampfs (rein: kein Spielstand) mit Gegenzeiger und dreizehn, Hauptursache |
+| `src/systems/RaidKampf.ts` | Rechnung des Kampfs (rein: kein Spielstand) mit Gegenzeiger, dreizehn und Kuckuck, Hauptursache |
 | `src/systems/Raid.ts` | Stand je Stufe, Freischalten, Woche, Aufstellen, Ernstkampf, Truhen, XP, Zähler, Kriegsrat, Alrunas Liste, Rollen |
 | `src/systems/CombatEngine.ts`, `src/systems/Kampfeffekte.ts` | Grundangriff, Regeneration und Buff-Ablauf für den Raid; `rundenEnde` mit `gegnerGift` |
 | `src/systems/SpielstandSchema.ts` | Prüfung der Felder `raid` und `raidStufen` beim Laden einer Datei |
@@ -899,9 +1046,10 @@ Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind na
 | `src/ui/screens/RaidScreen.ts`, `src/ui/html/raid.css` | der Raid-Bildschirm: Umschalter der Stufen, Liste, Kriegsrat, Kopf, Uhrleiste, Feld, Bank, Wiedergabe, Ergebnis |
 | `src/ui/components/ZenitUhr.ts` | Zenits Uhr mit Gegenzeiger, aus Code gezeichnet (Kopf, Karte, Wiedergabe) |
 | `src/ui/screens/DungeonMapScreen.ts`, `src/ui/html/dungeonkarte.css` | Kartenknoten (eine oder beide Stufen), Jorindes Leiter und der Nachthimmel über den Pfeilern |
-| `src/systems/Probespiel.ts` | `?probe=raid`, `?probe=raid2` |
-| `tools/raidEichung.ts` | Eichung beider Stufen |
+| `src/systems/Probespiel.ts` | `?probe=raid`, `?probe=raid2`, `?probe=raid3` |
+| `tools/raidEichung.ts` | Eichung aller Stufen |
 | `tests/raid.test.ts` | Regeln, Heilregel, Trupps, Bestimmtheit, Kriegsrat, Freischalten, Woche, Truhen, XP, Zähler, Liste, Speichern, Eichbänder; dasselbe für Stufe II mit Gegenzeiger und drei Trupps |
+| `tests/raidKuckuck.test.ts`, `tests/raidVierTrupps.test.ts` | Stufe III: Kuckuck, Spielstand, Truhen, Zähler, Texte, Muster, Eichbänder; vier Trupps, Uhr, Kartenknoten, Umschalter |
 
 ## Spielstand
 
@@ -985,3 +1133,5 @@ Versuch), und die Karte liest es schon vorher so. Stufe II hat ihren eigenen Sta
   offen, die Aufstellung ist die Startaufstellung.
 - `?probe=raid2`: dasselbe mit den fünf Lehrlingen (Gilde «anker15», 15 Helden) und 60 Tagstein, Stufe I einmal
   gewonnen; Stufe II ist offen und noch nicht besucht.
+- `?probe=raid3`: dasselbe mit allen zehn Lehrlingen (Gilde «anker20», 20 Helden) und 80 Tagstein, Stufe I und II je
+  einmal gewonnen; Stufe III ist offen und noch nicht besucht.

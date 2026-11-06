@@ -16,6 +16,8 @@
 // Muster-Gilde des Raids (data/raidMuster.ts, Variante «anker») und 40 Tagstein. ?probe=raid2 beginnt
 // unter Stufe II, «Die dreizehnte Stunde»: dieselbe Gilde mit ihren fünf Lehrlingen (Variante «anker15»),
 // Zenit auf Stufe I einmal besiegt (in der Woche davor, die Unruh liegt im Lager) und 60 Tagstein.
+// ?probe=raid3 beginnt unter Stufe III: die Gilde mit allen zehn Lehrlingen (Variante «anker20»), Zenit auf
+// Stufe I und II je einmal besiegt und 80 Tagstein.
 // Das Gildenhaus ist ausgebaut, damit alle vier Helden mitgehen. Es hat einen eigenen
 // Speicherplatz (SaveSystem.nutzeProbespiel), der richtige Spielstand bleibt unberührt.
 // Hinweis im Hauptmenü: ui/components/ProbespielHinweis.ts.
@@ -31,7 +33,7 @@ import { MUSTER_SETS, MUSTER_TEAMS, musterWerte } from '../data/musterteams';
 import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { MAX_SCHMIEDE_STUFE } from '../data/schmiede';
 import { RaidMusterName, baueRaidGilde } from '../data/raidMuster';
-import { ZENIT } from '../data/raids';
+import { DREIZEHN, RaidDef, ZENIT } from '../data/raids';
 import { raidStand } from './Raid';
 import { wocheVon } from './Rangliste';
 import { totalXpForLevel } from './HeroProgression';
@@ -43,25 +45,28 @@ import { bezwungeneDungeons } from './Bezwungen';
  * Wo das Probespiel beginnt: vor dem Drachenhort, der Sternenschmiede, dem Mondhof, dem Morgentor, der Ersten Stadt,
  * den Pfeilern, unter dem Raid oder unter seiner Stufe II
  */
-export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen' | 'stadt' | 'pfeiler' | 'raid' | 'raid2';
-const OBEN: ProbeStufe[] = ['sterne', 'mond', 'morgen', 'stadt', 'pfeiler', 'raid', 'raid2'];
+export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen' | 'stadt' | 'pfeiler' | 'raid' | 'raid2' | 'raid3';
+const OBEN: ProbeStufe[] = ['sterne', 'mond', 'morgen', 'stadt', 'pfeiler', 'raid', 'raid2', 'raid3'];
 
 /**
  * ?probe=raid: alle Bosse bis Ebene 12, zehn Helden aus der Muster-Gilde des Raids, Tagstein für bezahlte Ernstkämpfe.
  * ?probe=raid2: dieselbe Gilde mit fünf Lehrlingen, Stufe I einmal gewonnen (Stufe II offen), mehr Tagstein.
+ * ?probe=raid3: dieselbe Gilde mit allen zehn Lehrlingen, Stufe I und II je einmal gewonnen (Stufe III offen).
  */
-const RAID_PROBE: Record<'raid' | 'raid2', { bisEbene: number; gilde: RaidMusterName; tagstein: number }> = {
+type RaidProbe = 'raid' | 'raid2' | 'raid3';
+const RAID_PROBE: Record<RaidProbe, { bisEbene: number; gilde: RaidMusterName; tagstein: number }> = {
   raid: { bisEbene: 12, gilde: 'anker', tagstein: 40 },
   raid2: { bisEbene: 12, gilde: 'anker15', tagstein: 60 },
+  raid3: { bisEbene: 12, gilde: 'anker20', tagstein: 80 },
 };
-const istRaid = (stufe: ProbeStufe): stufe is 'raid' | 'raid2' => stufe === 'raid' || stufe === 'raid2';
+const istRaid = (stufe: ProbeStufe): stufe is RaidProbe => stufe in RAID_PROBE;
 
 /**
  * Die Stufen über dem Drachenhort: bis zu welcher Ebene die Bosse besiegt sind, welche Sets
  * der Eichung das Team trägt und welcher Dungeon das nächste Set bringt (sein Material liegt
  * zum Schmieden bis +5 im Lager).
  */
-const STUFEN: Record<Exclude<ProbeStufe, 'neu' | 'raid' | 'raid2'>, {
+const STUFEN: Record<Exclude<ProbeStufe, 'neu' | RaidProbe>, {
   bisEbene: number; sets: 'sterne3' | 'mond5' | 'pfand5' | 'morgen5' | 'stadt5'; naechstesSet: string; lager?: Record<string, number>;
 }> = {
   sterne: { bisEbene: 6, sets: 'sterne3', naechstesSet: 'sternenschmiede' },
@@ -95,7 +100,8 @@ export function probespielNeu(search: string): boolean {
 /**
  * Wo das Probespiel beginnt: ?probe=sterne vor der Sternenschmiede, ?probe=mond vor dem Mondhof,
  * ?probe=morgen vor dem Morgentor, ?probe=stadt vor der Ersten Stadt, ?probe=pfeiler vor den Pfeilern
- * des Tages, ?probe=raid unter dem Raid, ?probe=raid2 unter seiner Stufe II, sonst vor dem Drachenhort
+ * des Tages, ?probe=raid unter dem Raid, ?probe=raid2 und raid3 unter seiner Stufe II und III, sonst vor dem
+ * Drachenhort
  */
 export function probespielStufe(search: string): ProbeStufe {
   const wert = new URLSearchParams(search).get('probe') as ProbeStufe;
@@ -110,7 +116,7 @@ export function probespielStufe(search: string): ProbeStufe {
  * Die Gilde hat den höchsten Rang und alle Bosse bis Ebene 4 besiegt: Als Nächstes
  * warten die Dungeons über dem Vulkankern (Drachenhort, dann Himmelsarchiv).
  * Mit `stufe` 'sterne', 'mond', 'morgen', 'stadt' oder 'pfeiler' die Varianten weiter oben (richteStufeEin),
- * mit 'raid' die Gilde unter dem Raid, mit 'raid2' unter seiner Stufe II (richteRaidEin).
+ * mit 'raid' die Gilde unter dem Raid, mit 'raid2' und 'raid3' unter seiner Stufe II und III (richteRaidEin).
  */
 export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu'): void {
   state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };
@@ -156,7 +162,7 @@ export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu')
  * 10, die Set-Teile in der Schmiede auf ihrer Stufe), dazu Tagstein für bezahlte Ernstkämpfe. Der Merker der
  * bezwungenen Dungeons entsteht gleich aus den besiegten Bossen: Erst damit steht die Leiter auf den Pfeilern.
  */
-function richteRaidEin(state: GameState, stufe: 'raid' | 'raid2'): void {
+function richteRaidEin(state: GameState, stufe: RaidProbe): void {
   const probe = RAID_PROBE[stufe];
   const gilde = baueRaidGilde(probe.gilde, { ersteId: 1 });
   state.fighters = gilde.helden;
@@ -166,25 +172,26 @@ function richteRaidEin(state: GameState, stufe: 'raid' | 'raid2'): void {
   state.globalStock.mat_tagstein = (state.globalStock.mat_tagstein ?? 0) + probe.tagstein;
   state.bezwungen = undefined;
   bezwungeneDungeons(state);
-  if (stufe === 'raid2') zenitEinmalBesiegt(state);
+  if (stufe === 'raid2' || stufe === 'raid3') einmalBesiegt(state, ZENIT, 10, ['raid_versuche', 'raid_siege', 'raid_mehr_als_vier', 'raid_wochen']);
+  if (stufe === 'raid3') einmalBesiegt(state, DREIZEHN, 15, ['raid2_siege', 'raid2_wochen']);
 }
 
 /**
- * ?probe=raid2: Zenit auf Stufe I einmal besiegt, in der Woche davor (diese Woche ist dort alles frei, und der
- * Montag-Satz erzählt von der Ersatz-Unruh). Die Unruh vom ersten Sieg liegt im Lager, die Zähler stehen, wie ein
- * Ernstkampf sie gesetzt hätte. Damit ist Stufe II offen (Raid.raidOffen).
+ * ?probe=raid2 und raid3: Zenit auf der Stufe darunter einmal besiegt, in der Woche davor (diese Woche ist dort alles
+ * frei, und der Montag-Satz erzählt vom Aufziehen). Die Beute vom ersten Sieg liegt im Lager, die Zähler stehen, wie
+ * ein Ernstkampf sie gesetzt hätte. Damit ist die Stufe darüber offen (Raid.raidOffen).
  */
-function zenitEinmalBesiegt(state: GameState, jetzt = Date.now()): void {
-  const stand = raidStand(state, jetzt, ZENIT);
+function einmalBesiegt(state: GameState, def: RaidDef, helden: number, zaehlerListe: string[], jetzt = Date.now()): void {
+  const stand = raidStand(state, jetzt, def);
   const vorige = wocheVon(jetzt - 7 * 24 * 60 * 60 * 1000).id;
   stand.siege = 1;
   stand.versucheGesamt = 1;
   stand.bestRest = 0;
   stand.einleitungGelesen = true;
   stand.schlussGelesen = true;
-  stand.verlauf = [{ zeit: jetzt - 7 * 24 * 60 * 60 * 1000, woche: vorige, sieg: true, rest: 0, runden: 15, helden: 10, stehend: 6 }];
-  state.globalStock[ZENIT.ersterSiegBeute] = (state.globalStock[ZENIT.ersterSiegBeute] ?? 0) + 1;
-  for (const zaehler of ['raid_versuche', 'raid_siege', 'raid_mehr_als_vier', 'raid_wochen']) {
+  stand.verlauf = [{ zeit: jetzt - 7 * 24 * 60 * 60 * 1000, woche: vorige, sieg: true, rest: 0, runden: 15, helden, stehend: 6 }];
+  state.globalStock[def.ersterSiegBeute] = (state.globalStock[def.ersterSiegBeute] ?? 0) + 1;
+  for (const zaehler of zaehlerListe) {
     state.statistics[zaehler] = Math.max(state.statistics[zaehler] ?? 0, 1);
   }
 }

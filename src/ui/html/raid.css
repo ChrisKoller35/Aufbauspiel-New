@@ -2,9 +2,9 @@
    Magic City – Raid «Über dem Tag» (ui/screens/RaidScreen.ts)
    Farben, Schriften, Rahmen aus magic-city.css (--s1 … --gold, --gl, --gd, --txt, --mut, --bdr, --bdr2).
    Markierungen: Pendel rot, Funken orange, Glocke hellgold, Zeiger blassblau, Gegenzeiger (Stufe II) türkis,
-   in Ordnung grün. Am PC drei Spalten (Stufen, Liste und Kriegsrat | Zenit, Uhrleiste, Feld, Knöpfe | Bank), am
-   Handy (bis 700 px) alles untereinander, die Knopfleiste klebt unten. Stufe II (neun Spalten, drei Trupps) steht
-   am Ende der Datei. Docs: docs/RAID.md.
+   Kuckuck (Stufe III) rosa, in Ordnung grün. Am PC drei Spalten (Stufen, Liste und Kriegsrat | Zenit, Uhrleiste, Feld, Knöpfe | Bank), am
+   Handy (bis 700 px) alles untereinander, die Knopfleiste klebt unten. Stufe II (neun Spalten, drei Trupps) und
+   Stufe III (zwölf Spalten, vier Trupps) stehen am Ende der Datei. Docs: docs/RAID.md.
    ============================================================ */
 #s-raid {
   --pendel: #dc2626; --pendel-t: #f87171;
@@ -15,6 +15,7 @@
   --ok: #16a34a; --ok-t: #4ade80;
   --warn: #f59e0b; --warn-t: #fcd34d;
   --stuetze: #a78bfa;
+  --kuckuck: #f472b6; --kuckuck-t: #f9a8d4;
 }
 /* Grund mit Sternen: über dem Tag ist es wieder Nacht (die Hintergrundfarbe des Bildschirms setzt der Router) */
 .raid-grund {
@@ -584,7 +585,8 @@
 /* ═══════════ Stufen und Stufe II «Die dreizehnte Stunde» ═══════════
    Der Umschalter steht am PC über Alrunas Liste (die Stufen untereinander), am Handy ganz oben und im Fenster einer
    Stufe, die noch zu ist (nebeneinander). Stufe II: Gegenzeiger türkis, Spalte E mit «13» (dort treffen sich die
-   Zeiger), neun Spalten in drei Trupps (.r-drei) auf Feld und Wiedergabe. */
+   Zeiger), neun Spalten in drei Trupps auf Feld und Wiedergabe. Ab drei Trupps (.r-viele) gelten die schmalen Spalten
+   und am Handy die Trupps untereinander; .r-drei (neun Spalten) und .r-vier (zwölf, Stufe III) setzen nur das Raster. */
 #s-raid .c-gegen { color: var(--gegen-t); }
 
 .r-stufen { display: flex; flex-direction: column; gap: 6px; }
@@ -622,6 +624,10 @@
 .r-zu .r-stufen { display: grid; grid-template-columns: 1fr 1fr; width: 100%; margin-bottom: 4px; }
 .r-zu .r-stufe { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "nr zahl" "name name" "status status"; }
 .r-zu .r-stufe-zahl { justify-self: end; }
+/* Drei Stufen nebeneinander: Nummer, Helden, Name und Stand untereinander */
+.r-zu .r-stufen.r-stufen-drei { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.r-zu .r-stufen-drei .r-stufe { grid-template-columns: minmax(0, 1fr); grid-template-areas: "nr" "zahl" "name" "status"; }
+.r-zu .r-stufen-drei .r-stufe-zahl { justify-self: start; }
 
 /* Uhrleiste mit zwei Zeigern: oben der Zeiger (blau), darunter der Gegenzeiger (türkis) */
 .r-zwei-zeiger .r-rd { height: 50px; }
@@ -633,6 +639,9 @@
 .r-rd-ev .r-rd-13 { font-family: 'Cinzel', serif; font-size: 7.5px; font-weight: 700; line-height: 1; letter-spacing: -.3px; }
 .r-drei .r-rd-pd { width: 30%; }
 .r-rd-pd.r-m { left: 50%; transform: translateX(-50%); }
+/* Vier Trupps: vier kurze Striche, links, halblinks, halbrechts, rechts */
+.r-vier .r-rd-pd { width: 21%; }
+.r-rd-pd.r-hl { left: 27%; } .r-rd-pd.r-hr { right: 27%; }
 .r-lg-gg { font-family: 'Cinzel', serif; font-weight: 700; color: var(--gegen-t); font-size: .74rem; }
 .r-lg-13 {
   display: inline-flex; align-items: center; justify-content: center; width: 15px; height: 15px; border-radius: 50%;
@@ -656,9 +665,15 @@
 .r-wg-kopfzeile.an.gegen { background: linear-gradient(90deg, rgba(122, 162, 247, .32), rgba(45, 212, 191, .32)); color: #e0f2fe; }
 .r-wg-zelle.wg-gegen { border-color: var(--gegen); box-shadow: 0 0 0 1px var(--gegen), 0 0 12px rgba(45, 212, 191, .55); }
 .r-wg-zelle.wg-zeiger.wg-gegen { border-color: var(--zeiger); box-shadow: 0 0 0 1px var(--zeiger), 0 0 0 3px var(--gegen), 0 0 14px rgba(45, 212, 191, .5); }
-.r-wg.r-drei { max-width: 880px; }
+.r-wg.r-viele { max-width: 880px; }
+.r-wg.r-vier { max-width: 980px; }
 .r-wg-gitter.r-drei {
   grid-template-columns: 18px repeat(3, minmax(0, 1fr)) 10px repeat(3, minmax(0, 1fr)) 10px repeat(3, minmax(0, 1fr));
+}
+.r-wg-gitter.r-vier {
+  grid-template-columns: 18px repeat(3, minmax(0, 1fr)) 8px repeat(3, minmax(0, 1fr)) 8px repeat(3, minmax(0, 1fr))
+    8px repeat(3, minmax(0, 1fr));
+  gap: 3px;
 }
 
 /* Ergebnis: Stufe II ist neu offen */
@@ -669,34 +684,49 @@
 }
 
 /* Bilder in Feld und Wiedergabe schrumpfen mit, wenn die Spalten schmal werden (neun Spalten) */
-.r-drei .r-zelle .r-bild, .r-wg-gitter.r-drei .r-bild { max-width: 100%; }
+.r-viele .r-zelle .r-bild, .r-wg-gitter.r-viele .r-bild { max-width: 100%; }
 
 /* PC: Stufe II mit neun Spalten braucht die Mitte, Liste und Bank werden etwas schmaler */
 @media (min-width: 701px) {
-  .raid.r-drei { grid-template-columns: 284px minmax(0, 1fr) 256px; }
+  .raid.r-viele { grid-template-columns: 284px minmax(0, 1fr) 256px; }
   /* Die Legende bleibt einzeilig: «nach Runde 24 ist der Tag um» steht dann nur noch an «Mitternacht» */
   .r-zwei-zeiger .r-lg-tag { display: none; }
+  .r-gitter.r-viele { grid-template-rows: 22px 34px repeat(3, minmax(94px, auto)); column-gap: 5px; }
   .r-gitter.r-drei {
     grid-template-columns: 44px repeat(3, minmax(0, 1fr)) 20px repeat(3, minmax(0, 1fr)) 20px repeat(3, minmax(0, 1fr));
-    grid-template-rows: 22px 34px repeat(3, minmax(94px, auto)); column-gap: 5px;
   }
-  .r-gitter.r-drei .r-zelle .r-bild { width: 52px; height: 52px; }
-  .r-gitter.r-drei .r-zelle .r-name { font-size: .72rem; letter-spacing: .3px; }
-  .r-gitter.r-drei .r-zelle .r-hp { font-size: .7rem; }
+  /* Stufe III: zwölf Spalten in vier Trupps, Liste und Bank geben noch etwas Breite ab */
+  .raid.r-vier { grid-template-columns: 268px minmax(0, 1fr) 240px; }
+  .r-gitter.r-vier {
+    grid-template-columns: 40px repeat(3, minmax(0, 1fr)) 14px repeat(3, minmax(0, 1fr)) 14px repeat(3, minmax(0, 1fr))
+      14px repeat(3, minmax(0, 1fr));
+    column-gap: 4px;
+  }
+  .r-gitter.r-vier .r-zelle { padding: 5px 2px 4px; }
+  .r-gitter.r-vier .r-zelle .r-bild { width: 44px; height: 44px; }
+  .r-gitter.r-vier .r-zelle .r-name { font-size: .66rem; letter-spacing: 0; }
+  .r-gitter.r-vier .r-trupp-name { letter-spacing: 1px; }
+  .r-gitter.r-vier .r-gang span { letter-spacing: 1px; }
+  .r-gitter.r-viele .r-zelle .r-bild { width: 52px; height: 52px; }
+  .r-gitter.r-viele .r-zelle .r-name { font-size: .72rem; letter-spacing: .3px; }
+  .r-gitter.r-viele .r-zelle .r-hp { font-size: .7rem; }
   /* Spaltenköpfe zweizeilig: oben Buchstabe (und «13»), darunter ganz, was in der Spalte steht */
-  .r-gitter.r-drei .r-skopf { flex-wrap: wrap; align-content: center; column-gap: 4px; row-gap: 0; padding: 1px 3px; min-width: 0; line-height: 1.1; }
-  .r-gitter.r-drei .r-skopf small { flex-basis: 100%; order: 2; text-align: center; font-size: .72rem; min-width: 0; }
-  .r-gitter.r-drei .r-skopf .r-13 { order: 1; }
-  .r-gitter.r-drei .r-trupp-name { letter-spacing: 2px; }
-  .r-gitter.r-drei .r-trupp-name small { margin-left: 4px; }
-  .r-gitter.r-drei .r-rkopf small { letter-spacing: 1px; }
-  .r-gitter.r-drei .r-gang span { letter-spacing: 2px; }
+  .r-gitter.r-viele .r-skopf { flex-wrap: wrap; align-content: center; column-gap: 4px; row-gap: 0; padding: 1px 3px; min-width: 0; line-height: 1.1; }
+  .r-gitter.r-viele .r-skopf small { flex-basis: 100%; order: 2; text-align: center; font-size: .72rem; min-width: 0; }
+  .r-gitter.r-viele .r-skopf .r-13 { order: 1; }
+  .r-gitter.r-viele .r-trupp-name { letter-spacing: 2px; }
+  .r-gitter.r-viele .r-trupp-name small { margin-left: 4px; }
+  .r-gitter.r-viele .r-rkopf small { letter-spacing: 1px; }
+  .r-gitter.r-viele .r-gang span { letter-spacing: 2px; }
 }
 
 @media (max-width: 700px) {
   .r-stufen { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
   .r-stufe { grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "nr zahl" "name name" "status status"; padding: 6px 9px 7px; column-gap: 6px; }
   .r-stufe-zahl { justify-self: end; }
+  .r-stufen.r-stufen-drei { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 5px; }
+  .r-stufen-drei .r-stufe { grid-template-columns: minmax(0, 1fr); grid-template-areas: "nr" "zahl" "name" "status"; padding: 6px 7px 7px; }
+  .r-stufen-drei .r-stufe-zahl { justify-self: start; }
   .r-stufe.an { box-shadow: inset 0 -3px 0 var(--gl), 0 0 12px rgba(230, 192, 96, .18); background: linear-gradient(180deg, rgba(200, 162, 39, .2), rgba(12, 18, 32, .95) 80%); }
   .r-stufe-nr { font-size: 11px; letter-spacing: 1.5px; }
   .r-stufe-zahl { font-size: 12px; }
@@ -714,38 +744,69 @@
   /* Drei Trupps untereinander (feldHtml setzt --hr/--hc): je Trupp Name, Spaltenköpfe und drei Reihen über die ganze
      Breite, Felder gut 100 Pixel breit; im Feld das Bild links, Name und Leben rechts. Neun Spalten nebeneinander
      waren 34 Pixel schmal. */
-  .r-gitter.r-drei {
-    grid-template-columns: 16px repeat(3, minmax(0, 1fr));
-    grid-template-rows: repeat(3, 24px 20px 44px 44px 44px); column-gap: 4px; row-gap: 3px;
-  }
-  .r-gitter.r-drei > * { grid-row: var(--hr, var(--gr)); grid-column: var(--hc, var(--gc)); }
-  .r-gitter.r-drei .r-nur-stapel { display: flex; }
-  .r-gitter.r-drei .r-reihenband.r-nur-stapel { display: block; }
-  .r-gitter.r-drei .r-gang { display: none; }
-  .r-gitter.r-drei .r-trupp-name { text-align: left; padding-left: 2px; }
-  .r-gitter.r-drei .r-trupp-name small { display: inline; font-size: 11px; letter-spacing: .5px; }
-  .r-gitter.r-drei .r-skopf small { display: inline; font-size: 11px; }
-  .r-gitter.r-drei .r-skopf .r-13 { font-size: 9px; padding: 1px 3px; border-radius: 6px; }
+  .r-gitter.r-viele { grid-template-columns: 16px repeat(3, minmax(0, 1fr)); column-gap: 4px; row-gap: 3px; }
+  .r-gitter.r-drei { grid-template-rows: repeat(3, 24px 20px 44px 44px 44px); }
+  .r-gitter.r-vier { grid-template-rows: repeat(4, 24px 20px 44px 44px 44px); }
+  .r-gitter.r-viele > * { grid-row: var(--hr, var(--gr)); grid-column: var(--hc, var(--gc)); }
+  .r-gitter.r-viele .r-nur-stapel { display: flex; }
+  .r-gitter.r-viele .r-reihenband.r-nur-stapel { display: block; }
+  .r-gitter.r-viele .r-gang { display: none; }
+  .r-gitter.r-viele .r-trupp-name { text-align: left; padding-left: 2px; }
+  .r-gitter.r-viele .r-trupp-name small { display: inline; font-size: 11px; letter-spacing: .5px; }
+  .r-gitter.r-viele .r-skopf small { display: inline; font-size: 11px; }
+  .r-gitter.r-viele .r-skopf .r-13 { font-size: 9px; padding: 1px 3px; border-radius: 6px; }
   /* Namen in der schmaleren Schrift: «Nekromant» passt auf 390 Pixeln ganz hinein */
-  .r-gitter.r-drei .r-zelle {
+  .r-gitter.r-viele .r-zelle {
     display: grid; grid-template-columns: 30px minmax(0, 1fr); grid-template-rows: auto auto; column-gap: 4px;
     align-content: center; padding: 2px 4px;
   }
-  .r-gitter.r-drei .r-zelle.r-pendel { padding-top: 0; }
-  .r-gitter.r-drei .r-zelle .r-bild { grid-row: 1 / 3; width: 30px; height: 30px; border-radius: 4px; }
-  .r-gitter.r-drei .r-zelle .r-name {
+  .r-gitter.r-viele .r-zelle.r-pendel { padding-top: 0; }
+  .r-gitter.r-viele .r-zelle .r-bild { grid-row: 1 / 3; width: 30px; height: 30px; border-radius: 4px; }
+  .r-gitter.r-viele .r-zelle .r-name {
     font-family: 'Crimson Text', serif; font-size: 13px; font-weight: 600; letter-spacing: 0; margin-top: 0;
     align-self: end; text-align: left;
   }
-  .r-gitter.r-drei .r-zelle .r-name.r-lang { letter-spacing: -.3px; }
-  .r-gitter.r-drei .r-zelle .r-hp { display: flex; font-size: 11px; align-self: start; }
-  .r-wg-gitter.r-drei .r-wg-zelle .r-name.r-lang { letter-spacing: -.65px; }
+  .r-gitter.r-viele .r-zelle .r-name.r-lang { letter-spacing: -.3px; }
+  .r-gitter.r-viele .r-zelle .r-hp { display: flex; font-size: 11px; align-self: start; }
+  .r-wg-gitter.r-viele .r-wg-zelle .r-name.r-lang { letter-spacing: -.65px; }
 
   .r-wg-gitter.r-drei {
     grid-template-columns: 12px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)) 5px repeat(3, minmax(0, 1fr)); gap: 2px;
   }
-  .r-wg-gitter.r-drei .r-wg-zelle { min-height: 52px; padding: 3px 1px 4px; }
-  .r-wg-gitter.r-drei .r-wg-zelle .r-bild { width: 26px; height: 26px; }
-  .r-wg-gitter.r-drei .r-wg-zelle .r-name { font-family: 'Crimson Text', serif; font-size: 11px; font-weight: 400; letter-spacing: -.3px; }
-  .r-wg-gitter.r-drei .r-wg-kopfzeile, .r-wg-gitter.r-drei .r-wg-reihe { font-size: 11px; }
+  /* Vier Trupps: zwölf schmale Spalten, im Feld nur noch das Bild (die Zeilen darunter nennen die Namen) */
+  .r-wg-gitter.r-vier {
+    grid-template-columns: 10px repeat(3, minmax(0, 1fr)) 3px repeat(3, minmax(0, 1fr)) 3px repeat(3, minmax(0, 1fr))
+      3px repeat(3, minmax(0, 1fr));
+    gap: 1px;
+  }
+  .r-wg-gitter.r-vier .r-wg-zelle { min-height: 44px; padding: 2px 0 3px; }
+  .r-wg-gitter.r-vier .r-wg-zelle .r-bild { width: 22px; height: 22px; }
+  .r-wg-gitter.r-vier .r-wg-zelle .r-name { display: none; }
+  .r-wg-gitter.r-viele .r-wg-zelle { min-height: 52px; padding: 3px 1px 4px; }
+  .r-wg-gitter.r-viele .r-wg-zelle .r-bild { width: 26px; height: 26px; }
+  .r-wg-gitter.r-viele .r-wg-zelle .r-name { font-family: 'Crimson Text', serif; font-size: 11px; font-weight: 400; letter-spacing: -.3px; }
+  .r-wg-gitter.r-viele .r-wg-kopfzeile, .r-wg-gitter.r-viele .r-wg-reihe { font-size: 11px; }
+}
+
+/* ── Stufe III: der Kuckuck (rosa) pickt an den Gängen ── */
+#s-raid .c-kuckuck { color: var(--kuckuck-t); }
+/* Uhrleiste: Punkt über dem Gang dieser Runde (links, Mitte, rechts zwischen den vier Trupps) */
+.r-rd-kk {
+  position: absolute; bottom: 3px; width: 5px; height: 5px; border-radius: 50%; background: var(--kuckuck);
+  transform: translateX(-50%); box-shadow: 0 0 4px rgba(244, 114, 182, .8);
+}
+.r-rd-kk.r-g0 { left: 25%; } .r-rd-kk.r-g1 { left: 50%; } .r-rd-kk.r-g2 { left: 75%; }
+.r-lg-kk { width: 6px; height: 6px; border-radius: 50%; background: var(--kuckuck); display: inline-block; box-shadow: 0 0 4px rgba(244, 114, 182, .8); }
+/* Feld: Spaltenköpfe am Gang und der Vogel im Gang */
+.r-skopf .r-kk { flex-shrink: 0; line-height: 0; font-size: .78rem; }
+.r-skopf .r-kk-l { order: -1; }
+.r-skopf.r-amgang:not(.r-gelb):not(.r-rot) { border-color: rgba(244, 114, 182, .5); box-shadow: inset 0 -2px 0 rgba(244, 114, 182, .55); }
+.r-gang .r-gang-kk { line-height: 0; font-size: .85rem; padding-top: 4px; }
+/* Wiedergabe: Wen er pickt, und über welchem Gang er herausschaut */
+.r-wg-zelle.wg-kuckuck { border-color: var(--kuckuck); box-shadow: 0 0 0 1px var(--kuckuck), 0 0 14px rgba(244, 114, 182, .65); }
+.r-wg-gang { display: flex; align-items: center; justify-content: center; min-width: 0; }
+.r-wg-gang span { opacity: 0; transition: opacity .25s; line-height: 0; font-size: .72rem; }
+.r-wg-gang.an span { opacity: 1; }
+@media (max-width: 700px) {
+  .r-gitter.r-viele .r-skopf .r-kk { order: 1; font-size: .7rem; }
 }
