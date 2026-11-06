@@ -734,20 +734,26 @@ export function renderInventarTab(): string {
         setTooltip(item.id),
         item.def.flavorText,
         isEquipped ? 'Ausger\u00FCstet' : '',
-        b?.besteWahl ? '' : zeile,
+        zeile,
       ].filter(Boolean).join('\n');
 
       const isGear = item.def.type === 'gear';
+      // Kacheln mit ⬆ und die Karte sind Knöpfe: Antippen öffnet das Heldenfenster des Helden aus der grünen Zeile
+      // mit dem Teil (oeffneAusLager). Name wie im Heldenfenster, die grüne Zeile steht am Ende des title
+      const tag = b ? 'button' : 'div';
+      const knopf = b
+        ? ` type="button" data-lager-teil="${item.id}" data-held="${b.beste.held.id}" data-platz="${b.beste.platz ?? item.def.gearSlot ?? ''}" aria-label="${gearName(item.id)}${item.qty > 1 ? `, ${item.qty} Stück` : ''}"`
+        : '';
 
       return `
-        <div class="inv-cell ${rc}${isEquipped ? ' inv-cell-eq' : ''}${isGear ? ' inv-cell-gear' : ''}${b?.besteWahl ? ' inv-cell-besser' : ''}" title="${tooltip}">
+        <${tag} class="inv-cell ${rc}${isEquipped ? ' inv-cell-eq' : ''}${isGear ? ' inv-cell-gear' : ''}${b?.besteWahl ? ' inv-cell-besser' : ''}"${knopf} title="${tooltip}">
           <img src="assets/sprites/final/${getItemSpriteKey(item.id)}.png" class="${isGear ? 'inv-cell-bg' : 'inv-cell-img'}"
                onerror="this.style.display='none'">
           ${isStackable && item.qty > 1 ? `<span class="inv-cell-qty">\u00D7${item.qty}</span>` : ''}
           ${isEquipped ? '<span class="inv-cell-eqbadge">E</span>' : ''}
           ${setAbzeichen(item.id)}${stufeAbzeichen(stufen(), item.id)}${b && !b.besteWahl ? BESSER_PFEIL : ''}
           <span class="inv-cell-nm">${gearName(item.id)}</span>${b?.besteWahl ? `<span class="truhe-besser">${zeile}</span>` : ''}
-        </div>`;
+        </${tag}>`;
     }).join('');
 
     html += `
@@ -915,11 +921,19 @@ export function renderHeroesScreen(container: HTMLElement): void {
       auswahl = null;
       inventarOffen = false;
       wegFrage = null;
+      lagerTeil = null;
       openDetailModal(fighter, container);
       // Der zweite Klick eines Doppelklicks träfe sonst das eben geöffnete Fenster (Hintergrund, Ausrüstung)
       schluckeZweitenKlick();
     });
   }
+
+  // Lager: Kachel mit ⬆ oder Karte antippen öffnet das Heldenfenster mit dem Teil
+  el.querySelectorAll<HTMLElement>('[data-lager-teil]').forEach(k => {
+    k.addEventListener('click', () => {
+      oeffneAusLager(k.dataset.lagerTeil!, Number(k.dataset.held), (k.dataset.platz || undefined) as EquipSlot | undefined, container);
+    });
+  });
 
   // Train buttons
   const trainBtns = el.querySelectorAll('.btn-train');
@@ -1028,9 +1042,18 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
   fokussiere(overlay, fokus);
 
   // Schliessen: Fokus zurück auf die Karte, die das Fenster geöffnet hat. Sie kann neu gezeichnet sein (nach der
-  // Wahl eines Wegs) oder fehlen (Reiter Trainieren, der Held ist inzwischen auf Stufe 15): dann auf den Reiter
+  // Wahl eines Wegs) oder fehlen (Reiter Trainieren, der Held ist inzwischen auf Stufe 15): dann auf den Reiter.
+  // Aus dem Lager geöffnet: Lager neu zeichnen (nach ANLEGEN stimmen ⬆ und Karten nicht mehr), Fokus auf die
+  // Kachel oder, wenn sie weg ist, auf den Reiter. Nur im Reiter Inventar, sonst bleibt alles wie bisher
   const schliessen = (): void => {
     entferneDetailModal(container);
+    const teil = lagerTeil;
+    lagerTeil = null;
+    if (teil && activeTab === 'inventar') {
+      renderHeroesScreen(container);
+      fokussiere(container, [`#s-heroes [data-lager-teil="${teil}"]`, '#s-heroes .tab.active']);
+      return;
+    }
     fokussiere(container, [`#s-heroes .hcard[data-fighter-id="${fighter.id}"] .hcard-oeffnen`, '#s-heroes .tab.active']);
   };
   // Escape schliesst, Tab bleibt im Fenster, und die Tasten gehen nicht an main.ts (dort wechselte Escape
@@ -1177,6 +1200,31 @@ function openDetailModal(fighter: GuildFighter, container: HTMLElement, fokus: s
 }
 
 // ─── Actions ────────────────────────────────────────────────────
+
+/** Das Teil, mit dem das offene Heldenfenster aus dem Lager geöffnet wurde (null: von einer Heldenkarte) */
+let lagerTeil: string | null = null;
+
+/**
+ * Lager: Kachel mit ⬆ oder Karte angetippt. Öffnet das Heldenfenster des Helden aus der grünen Zeile, Inventar offen,
+ * das Teil gewählt für den Platz aus der Zeile (passt es dort gerade nicht, wie ein Antippen im Inventar ohne Platz).
+ * Der Fokus geht an das Teil im Inventar, nicht an ANLEGEN: Ein zweites Enter legt so nicht gleich an. ANLEGEN
+ * kommt ins Bild (am Handy liegt es unter dem Helden), der zweite Klick eines Doppeltipps wird geschluckt
+ */
+function oeffneAusLager(itemId: string, heldId: number, platz: EquipSlot | undefined, container: HTMLElement): void {
+  const fighter = gameState?.fighters.find(f => f.id === heldId);
+  if (!fighter) return;
+  const passt = platz && mitGegenstand(fighter, itemId, platz)?.gear[platz] === itemId ? platz : undefined;
+  auswahl = { art: 'inventar', itemId, platz: passt };
+  inventarOffen = true;
+  wegFrage = null;
+  lagerTeil = itemId;
+  const teil = `.hdm2-inv-slot[data-item-id="${itemId}"]`;
+  openDetailModal(fighter, container, [teil]);
+  schluckeZweitenKlick();
+  // Erst das Teil im Raster des Inventars (sofort), dann ANLEGEN sanft ins Bild
+  container.querySelector<HTMLElement>(`#hero-detail-ov ${teil}`)?.scrollIntoView({ block: 'nearest' });
+  container.querySelector<HTMLElement>('#hero-detail-ov .hdm2-aktion')?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+}
 
 function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement): void {
   if (!gameState) return;

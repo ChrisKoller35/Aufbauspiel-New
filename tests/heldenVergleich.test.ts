@@ -104,7 +104,8 @@ describe('Grüner Pfeil im Heldenfenster und Lager', () => {
       '⬆ Besser für Brom (Haupthand): CRIT +5 % · ATK +6 · DEF +1 · auch für 2 weitere',
     ]);
     expect(besserText(besserFuer(state, 'set_hort_klinge')!)).toBe('⬆ Besser für Grimm (Nebenhand): ATK +16 · CRIT +13 % · DEF +3 · auch für 2 weitere');
-    const klinge = html.split('<div class="inv-cell ').find(k => k.includes('inv-cell-nm">Wyrmzahnklinge'))!;
+    // Kacheln mit ⬆ sind Knöpfe, die übrigen <div>: getrennt wird an der Klasse
+    const klinge = html.split(' class="inv-cell ').find(k => k.includes('inv-cell-nm">Wyrmzahnklinge'))!;
     expect(klinge).toContain(PFEIL);
     expect(klinge.match(/title="([^"]*)"/)![1].split('\n').pop()).toBe('⬆ Besser für Grimm (Nebenhand): ATK +10 · CRIT +8 % · DEF +2 · auch für 1 weiteren');
     expect(html.split(PFEIL).length - 1).toBe(1);
@@ -116,6 +117,34 @@ describe('Grüner Pfeil im Heldenfenster und Lager', () => {
     const einmal = besserFuerAlle(state, ['set_wyrm_klinge']).get('set_wyrm_klinge');
     expect(einmal?.besteWahl).toBe(true);
     expect(besserFuerAlle(state, ['set_wyrm_klinge', 'set_wyrm_klinge']).get('set_wyrm_klinge')).toEqual(einmal);
+  });
+
+  test('f3. sterne: Kacheln mit ⬆ und die Karten sind Knöpfe mit Name wie im Heldenfenster, die übrigen <div>', () => {
+    const state = stand('sterne');
+    for (const id of ['amtsstab_des_mondvogts', 'set_hort_klinge', 'korrunds_hammer']) state.globalStock[id] = 1;
+    const html = renderInventarTab();
+    const teile = html.split(' class="inv-cell ');
+    const knoepfe: string[] = [];
+    for (let i = 1; i < teile.length; i++) {
+      const tag = teile[i - 1].match(/<(\w+)$/)![1];
+      const zelle = teile[i];
+      if (zelle.includes(PFEIL) || zelle.includes('truhe-besser')) {
+        expect(tag).toBe('button');
+        expect(zelle).toMatch(/^[^>]*" type="button" data-lager-teil="[^"]+" data-held="\d+" data-platz="[a-zA-Z]+" aria-label="[^"]+"/);
+        // Auch bei der Karte endet der title mit der grünen Zeile
+        expect(zelle.match(/title="([^"]*)"/)![1].split('\n').pop()).toMatch(/^⬆ Besser für /);
+        knoepfe.push(zelle);
+      } else {
+        expect(tag).toBe('div');
+        expect(zelle).not.toContain('data-lager-teil');
+      }
+    }
+    expect(knoepfe).toHaveLength(3);
+    const klinge = knoepfe.find(k => k.includes('data-lager-teil="set_wyrm_klinge"'))!;
+    expect(klinge).toContain(`data-held="${held(state, 'Grimm').id}" data-platz="offHand" aria-label="Wyrmzahnklinge, 2 Stück"`);
+    for (const k of knoepfe.filter(k => k.includes('truhe-besser'))) {
+      expect(k.match(/title="([^"]*)"/)![1].split('\n').pop()).toBe(k.match(/<span class="truhe-besser">([^<]*)</)![1]);
+    }
   });
 
   test('g. Werte eines Helden einmal je Zeichnen, nicht je Teil', () => {
