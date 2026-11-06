@@ -11,6 +11,8 @@ import { ROUTE_DEFS, isRouteAvailable, getRouteLockReasons } from '../data/route
 import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { heldenJeExpedition } from './Ausbau';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
+import { raidOffen, raidStand, versuchsLage } from './Raid';
+import { createGuildFighter } from '../models/GuildRoster';
 
 /** Neues Spiel wie in main.ts, dann zum Probespiel gemacht (mit `stufe` wie ?probe=sterne oder ?probe=mond). */
 function probespiel(stufe: ProbeStufe = 'neu'): GameState {
@@ -50,6 +52,8 @@ describe('Probespiel', () => {
     expect(probespielNeu('?probe=morgen')).toBe(true);
     expect(probespielNeu('?probe=stadt')).toBe(true);
     expect(probespielNeu('?probe=pfeiler')).toBe(true);
+    expect(probespielNeu('?probe=raid')).toBe(true);
+    expect(probespielStufe('?probe=raid')).toBe('raid');
     expect(probespielStufe('?probe=stadt')).toBe('stadt');
     expect(probespielStufe('?probe=pfeiler')).toBe('pfeiler');
     expect(probespielStufe('?probe=sterne')).toBe('sterne');
@@ -206,6 +210,29 @@ describe('Probespiel', () => {
       expect(schmiedeStufe(state, itemId), itemId).toBe(5);
     }
     for (const [itemId, menge] of Object.entries(state.globalStock)) expect(menge, itemId).toBeGreaterThanOrEqual(0);
+  });
+
+  it('?probe=raid: zehn Helden der Muster-Gilde unter dem offenen Raid, mit Tagstein und eigenen Ids', () => {
+    const state = probespiel('raid');
+    expect(state.fighters).toHaveLength(10);
+    expect(state.fighters.map(f => f.id)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+    expect(state.fighters.every(f => f.level === 15 && !!f.spezialisierung)).toBe(true);
+    expect(state.guildStats.bossesDefeatedIds).toContain(ROUTE_DEFS.tagespfeiler.bossId);
+    expect(raidOffen(state)).toBe(true);
+    expect(state.globalStock.mat_tagstein).toBeGreaterThanOrEqual(40);
+    for (const f of state.fighters) {
+      for (const itemId of Object.values(f.gear)) {
+        if (itemId) expect(ITEM_DEFS[itemId], itemId).toBeTruthy();
+      }
+    }
+    // Die Set-Teile stehen in der Schmiede auf ihrer Stufe (Brom +5, Lia ohne Stufen)
+    const brom = state.fighters.find(f => f.name === 'Brom')!;
+    expect(schmiedeStufe(state, brom.gear.armor!)).toBe(5);
+    // Alle zehn stehen schon auf dem Feld, drei Ernstkämpfe sind frei
+    expect(Object.keys(raidStand(state).aufstellung)).toHaveLength(10);
+    expect(versuchsLage(state).moeglich).toBe(true);
+    // Ein neu angeheuerter Held bekommt eine neue Id
+    expect(createGuildFighter('ranger', 'Neu', { ...brom.baseStats }).id).toBe(11);
   });
 
   it('speichert auf einem eigenen Platz, der richtige Spielstand bleibt unberührt', () => {

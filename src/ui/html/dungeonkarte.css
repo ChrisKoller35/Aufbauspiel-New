@@ -11,6 +11,12 @@
   paint-order: stroke; stroke: #060810; stroke-opacity: .75; stroke-width: 3px; stroke-linejoin: round;
 }
 
+/* Raid «Über dem Tag» (DungeonMapScreen buildRaidKnoten): Name und Zustand rechts neben dem Knoten, mit dunklem Rand
+   wie die Namen der Dungeons; die Uhr fängt keine Klicks (der ganze Knoten ist die Tippfläche) */
+.dmap-raid-t { paint-order: stroke; stroke: #060810; stroke-opacity: .8; stroke-width: 3px; stroke-linejoin: round; }
+.dmap-raid-uhr { pointer-events: none; }
+.dmap-raid .dmap-glow-ring { transition: opacity .2s; }
+
 /* Zwischen den Sternen: einige Sterne funkeln (DungeonMapScreen buildGipfelHimmel) */
 .dmap-funkeln { animation: dmap-funkeln 3.5s ease-in-out infinite; }
 @keyframes dmap-funkeln { 0%, 100% { opacity: .85; } 50% { opacity: .2; } }
@@ -41,6 +47,9 @@
   #s-dungeon .dmap-t-klein { font-size: 11px; letter-spacing: 1px; }
   #s-dungeon .dmap-t-region { font-size: 12px; letter-spacing: 2px; opacity: .35; }
   #s-dungeon .dmap-t-region-maske { font-size: 12px; letter-spacing: 2px; }
+  #s-dungeon .dmap-raid-name { font-size: 16px; letter-spacing: 1px; }
+  #s-dungeon .dmap-raid-klein { transform: translateY(-3px); }
+  #s-dungeon .dmap-raid-zeile { font-size: 11.5px; transform: translateY(3px); }
 
   /* Legende: anfangs zu, nur der Knopf «Legende» */
   #s-dungeon .dmap-legend-float {

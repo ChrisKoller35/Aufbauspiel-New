@@ -32,7 +32,8 @@ export interface RaidTreffer {
 }
 
 export interface RaidEreignis {
-  art: Regel | 'angriff' | 'heilung' | 'gefallen' | 'mittag';
+  /** 'ansage': nur ein Satz des Stadtschreibers, ohne Ereignis dazu (Grösse der Gruppe, Spott, Ende) */
+  art: Regel | 'angriff' | 'heilung' | 'gefallen' | 'mittag' | 'ansage';
   trupp?: number;
   reihe?: number;
   spalte?: number;
@@ -217,7 +218,7 @@ export function raidKampf(
     angesagt.add(art);
     ansagen.push(text);
     if (ereignis) ereignis.ansage = ereignis.ansage ? `${ereignis.ansage} ${text}` : text;
-    else if (!knapp) ereignisse.push({ art: 'mittag', ansage: text });
+    else if (!knapp) ereignisse.push({ art: 'ansage', ansage: text });
   };
   const ereignis = (e: RaidEreignis): RaidEreignis => {
     if (!knapp) ereignisse.push(e);

@@ -21,7 +21,7 @@ import { GearSystem } from './GearSystem';
 import { awardXP } from './HeroProgression';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { erfolgePruefen } from './AchievementSystem';
-import { besitz, getrageneSets } from './DungeonSets';
+import { besitz, getrageneSets, setTeilHinweis } from './DungeonSets';
 import { schmiedeStufen } from './Schmiede';
 import { wocheVon } from './Rangliste';
 import {
@@ -104,6 +104,31 @@ export function raidStand(state: GameState, jetzt = Date.now(), def: RaidDef = Z
 export function montagSatz(stand: RaidStand): string | null {
   if (stand.montagGesehen === stand.woche.id || stand.versucheGesamt <= stand.woche.versuche) return null;
   return stand.siege > 0 ? RAID_TEXTE.montagNachSieg : RAID_TEXTE.montagVorSieg;
+}
+
+/** Was der Kartenknoten zeigt (ui/screens/DungeonMapScreen.ts) */
+export interface RaidKartenZustand {
+  offen: boolean;
+  /** Zeile unter dem Namen: noch zu, noch kein Versuch, Bestversuch, diese Woche besiegt, wieder aufgezogen */
+  zeile: string;
+  /** Diese Woche besiegt: Die Uhr steht auf zwölf */
+  zwoelf: boolean;
+  /** Zenits Truhe wartet diese Woche noch (Goldpunkt am Knoten) */
+  truheWartet: boolean;
+}
+
+/** Liest nur: legt keinen Stand an und dreht keine Woche weiter (das tut erst der Raid-Bildschirm) */
+export function raidKartenZustand(state: GameState, jetzt = Date.now(), def: RaidDef = ZENIT): RaidKartenZustand {
+  const k = RAID_TEXTE.karte;
+  if (!raidOffen(state, def)) return { offen: false, zeile: k.zu, zwoelf: false, truheWartet: false };
+  const stand = state.raid;
+  const zwoelf = !!stand && stand.woche.id === wocheVon(jetzt).id && stand.woche.truhe;
+  let zeile: string;
+  if (zwoelf) zeile = k.besiegtDieseWoche;
+  else if (!stand || stand.bestRest === null) zeile = k.keinVersuch;
+  else if (stand.siege > 0) zeile = k.aufgezogen;
+  else zeile = k.best(restProzent(stand.bestRest));
+  return { offen: true, zeile, zwoelf, truheWartet: !zwoelf };
 }
 
 /** Die aufgestellten Helden in der Reihenfolge der Gilde */
@@ -202,6 +227,8 @@ export interface RaidTruhe {
   text: string;
   /** Was ins Lager kam (Gold als 'gold') */
   inhalt: Record<string, number>;
+  /** «Teil 2 von 3» zum Set-Teil, gezählt, bevor es ins Lager kam (für die Truhe) */
+  hinweise: Record<string, string>;
 }
 
 export interface ErnstkampfErgebnis {
@@ -277,8 +304,9 @@ export function truheZiehen(
   const teil = fehlendesSetTeil(state, teilnehmer, truhe.setTeil, rng);
   if (teil) dazu(teil, 1);
   for (const [itemId, menge] of Object.entries(teil ? truhe.dinge : { ...truhe.dinge, ...truhe.ersatz })) dazu(itemId, menge);
+  const hinweise = teil ? { [teil]: setTeilHinweis(state, teil) } : {};
   gutschreiben(state, inhalt);
-  return { art, name: truhe.name, text: truhe.text, inhalt };
+  return { art, name: truhe.name, text: truhe.text, inhalt, hinweise };
 }
 
 /** Ein Zähler mehr (Erfolge: docs/ERFOLGE.md) */
@@ -339,7 +367,9 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
   const ersterSieg = ergebnis.sieg && stand.siege === 1;
   if (ersterSieg) {
     gutschreiben(state, { [def.ersterSiegBeute]: 1 });
-    truhen.push({ art: 'erster', name: RAID_TEXTE.unruh.name, text: RAID_TEXTE.unruh.text, inhalt: { [def.ersterSiegBeute]: 1 } });
+    truhen.push({
+      art: 'erster', name: RAID_TEXTE.unruh.name, text: RAID_TEXTE.unruh.text, inhalt: { [def.ersterSiegBeute]: 1 }, hinweise: {},
+    });
     if ((state.statistics.tat_pfeiler ?? 0) >= 1) ergebnis.ansagen.push(RAID_TEXTE.ansage.abriss);
   }
 

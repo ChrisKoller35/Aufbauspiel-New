@@ -21,12 +21,17 @@ import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
 import { haertegradName } from '../../systems/Haertegrade';
 import { haertegradMarke } from '../components/HaertegradAnzeige';
+import { RAID_TEXTE, ZENIT } from '../../data/raids';
+import { raidKartenZustand } from '../../systems/Raid';
+import { AUF_ZWOELF, KURZ_VOR_ZWOELF, zenitUhrSvg } from '../components/ZenitUhr';
 
 
 
 // ── Module state ──
 
 let gameState: GameState | null = null;
+/** Zuletzt ging es von hier hinauf in den Raid: Beim Zurückkommen steht die Karte dort, nicht beim Start */
+let vomRaid = false;
 
 // ── Public API ──
 
@@ -90,12 +95,21 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
   bindDungeonEvents(el);
   container.appendChild(el);
 
-  // Scroll to bottom (start node); on narrow screens also centre horizontally
+  // Scroll to bottom (start node); on narrow screens also centre horizontally.
+  // Zurück aus dem Raid: der Raid-Knoten in der Mitte
   requestAnimationFrame(() => {
     const wrap = document.getElementById('dmap-wrap');
     if (!wrap) return;
     wrap.scrollTop = wrap.scrollHeight;
     wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
+    const raid = vomRaid ? wrap.querySelector('[data-raid]') : null;
+    vomRaid = false;
+    if (raid) {
+      const ort = raid.getBoundingClientRect();
+      const rahmen = wrap.getBoundingClientRect();
+      wrap.scrollTop += ort.top + ort.height / 2 - (rahmen.top + wrap.clientHeight / 2);
+      wrap.scrollLeft += ort.left + ort.width / 2 - (rahmen.left + wrap.clientWidth / 2);
+    }
   });
 
   // Fade scroll hint on first scroll
@@ -348,13 +362,11 @@ function buildGipfelHimmel(width: number, oben: number): string {
 }
 
 /**
- * Über dem obersten Dungeon: ein Weg, der in den Sternen verblasst, und ein leeres
+ * Über dem obersten Knoten (heute der Raid, raidPunkte): ein Weg, der in den Sternen verblasst, und ein leeres
  * Feld mit Fragezeichen. Die Karte wächst nach oben, sobald neue Dungeons dazukommen
  * (docs/NEUE-DUNGEONS.md); dieser Teil rückt dann von selbst mit.
  */
-function buildUnerforscht(width: number): string {
-  const oberster = DUNGEON_GRAPH.reduce((a, b) => (b.y < a.y ? b : a));
-  const radius = ROUTE_DEFS[oberster.routeId]?.bossId ? 80 : 64;
+function buildUnerforscht(width: number, oberster: { x: number; y: number }, radius: number): string {
   const feld = { x: Math.round((oberster.x + width / 2) / 2), y: oberster.y - 230 };
   const vonY = oberster.y - radius - 8;
   const bisY = feld.y + 52;
@@ -412,9 +424,11 @@ function buildDungeonSVG(state: GameState): string {
   const { nodeMap, allEdges } = buildGraphIndex();
   // Rangliste mit Rivalen: Wappen jeder Gilde auf ihrem höchsten bezwungenen Dungeon
   const aufKarte = gildenAufKarte(state, Date.now());
-  // Dungeons über dem Vulkankern haben negative y: so viel Platz kommt oben dazu
-  const minY = Math.min(0, ...DUNGEON_GRAPH.map(n => n.y));
+  // Dungeons über dem Vulkankern haben negative y: so viel Platz kommt oben dazu (bis über den Raid)
+  const raid = raidPunkte();
+  const minY = Math.min(0, ...DUNGEON_GRAPH.map(n => n.y), raid.y);
   const oben = minY < 0 ? GIPFEL_RAND - minY : 0;
+  const raidZustand = raidKartenZustand(state);
 
   let bgHtml = '';
   let pathsHtml = '';
@@ -449,6 +463,7 @@ function buildDungeonSVG(state: GameState): string {
     <rect y="${Math.round(HEIGHT * 0.35)}" width="${WIDTH}" height="${Math.round(HEIGHT * 0.3)}" fill="url(#dmap-mid-glow)"/>
     <rect y="${Math.round(HEIGHT * 0.75)}" width="${WIDTH}" height="${Math.round(HEIGHT * 0.25)}" fill="url(#dmap-bot-glow)"/>
     ${buildGipfelHimmel(WIDTH, oben)}
+    ${buildRaidHimmel(WIDTH, oben)}
   `;
 
   // ── Grid dots for atmosphere ──
@@ -667,10 +682,125 @@ function buildDungeonSVG(state: GameState): string {
         ${bgHtml}
         <defs>${clipDefsHtml}${wegeMaske(schriftzuege, WIDTH, -oben, HEIGHT)}</defs>
         <g class="dmap-paths" mask="url(#dmap-wege-maske)">${pathsHtml}</g>
-        ${oben > 0 ? buildUnerforscht(WIDTH) : ''}
-        <g class="dmap-nodes">${nodesHtml}</g>
+        ${buildUnerforscht(WIDTH, raid, raid.r)}
+        ${buildRaidLeiter(raidZustand.offen)}
+        <g class="dmap-nodes">${nodesHtml}${buildRaidKnoten(raidZustand)}</g>
       </g>
     </svg>`;
+}
+
+// ── Raid «Über dem Tag» (data/raids.ts, systems/Raid.ts, ui/screens/RaidScreen.ts, docs/RAID.md) ──
+
+const r1 = (n: number): number => Math.round(n * 10) / 10;
+
+/** Der Raid-Knoten (data/raids.ts) und der Dungeon darunter, auf dem Jorindes Leiter steht */
+function raidPunkte(): { x: number; y: number; r: number; unten: DungeonGraphNode | undefined } {
+  const { x, y, radius } = ZENIT.karte;
+  return { x, y, r: radius, unten: DUNGEON_GRAPH.find(n => n.routeId === ZENIT.freiAb) };
+}
+
+/**
+ * Über dem Tag ist es wieder Nacht: Von oben bis knapp über die Pfeiler legt sich ein Nachtblau über den Taghimmel,
+ * mit Sternen, die nach unten verblassen, und einem goldenen Schein um Zenit. Hintergrund, unter Wegen und Knoten.
+ */
+function buildRaidHimmel(width: number, oben: number): string {
+  const { x, y, unten } = raidPunkte();
+  if (!unten || oben <= 0) return '';
+  const bis = unten.y - 120;
+  const hoehe = bis + oben;
+  const links = -HIMMEL_SEITE;
+  const breite = width + 2 * HIMMEL_SEITE;
+  let sterne = '';
+  for (let i = 0; i < 70; i++) {
+    const sx = links + ((i * 173 + 29) % breite);
+    const tiefe = ((i * 89) % 100) / 100;
+    const sy = -oben + 12 + tiefe * (hoehe - 140);
+    const hell = (i % 3 ? 0.4 : 0.75) * (1 - tiefe * 0.8);
+    sterne += `<circle cx="${sx}" cy="${r1(sy)}" r="${i % 5 === 0 ? 1.3 : 0.8}" fill="${i % 4 === 0 ? '#fde68a' : '#f3e7c4'}" opacity="${r1(hell * 100) / 100}"/>`;
+  }
+  return `
+    <defs>
+      <linearGradient id="dmap-raid-nacht" gradientUnits="userSpaceOnUse" x1="0" y1="${-oben}" x2="0" y2="${bis}">
+        <stop offset="0" stop-color="#0b1129"/>
+        <stop offset=".6" stop-color="#101a3f" stop-opacity=".88"/>
+        <stop offset="1" stop-color="#101a3f" stop-opacity="0"/>
+      </linearGradient>
+      <radialGradient id="dmap-raid-schein">
+        <stop offset="0" stop-color="#fde68a" stop-opacity=".26"/>
+        <stop offset=".45" stop-color="#fbbf24" stop-opacity=".09"/>
+        <stop offset="1" stop-color="#f59e0b" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect x="${links}" y="${-oben}" width="${breite}" height="${hoehe}" fill="url(#dmap-raid-nacht)"/>
+    <g>${sterne}</g>
+    <ellipse cx="${x}" cy="${y}" rx="280" ry="230" fill="url(#dmap-raid-schein)"/>`;
+}
+
+/** Jorindes Leiter: von der Spitze der Pfeiler bis unter den Raid-Knoten, zwei Holme und zehn Sprossen */
+function buildRaidLeiter(offen: boolean): string {
+  const { x, y, r, unten } = raidPunkte();
+  if (!unten) return '';
+  const a = { x: unten.x, y: unten.y - (ROUTE_DEFS[unten.routeId]?.bossId ? 80 : 64) - 4 };
+  const b = { x, y: y + r + 4 };
+  const dx = b.x - a.x;
+  const dy = b.y - a.y;
+  const laenge = Math.hypot(dx, dy);
+  const nx = (-dy / laenge) * 8;
+  const ny = (dx / laenge) * 8;
+  const holm = (s: number): string => `M${r1(a.x + s * nx)},${r1(a.y + s * ny)} L${r1(b.x + s * nx)},${r1(b.y + s * ny)}`;
+  let sprossen = '';
+  for (let i = 0; i < 10; i++) {
+    const px = a.x + (dx * (i + 0.5)) / 10;
+    const py = a.y + (dy * (i + 0.5)) / 10;
+    sprossen += `M${r1(px - nx)},${r1(py - ny)} L${r1(px + nx)},${r1(py + ny)} `;
+  }
+  const gestrichelt = offen ? '' : ' stroke-dasharray="5 4"';
+  return `
+    <g class="dmap-raid-leiter" opacity="${offen ? 0.95 : 0.4}">
+      <title>${RAID_TEXTE.karte.leiter}</title>
+      ${offen ? `<path d="${holm(0)}" stroke="#fbbf24" stroke-width="26" stroke-linecap="round" opacity=".07"/>` : ''}
+      <path d="${holm(-1)} ${holm(1)}" fill="none" stroke="#e6c060" stroke-width="2.6" stroke-linecap="round"${gestrichelt}/>
+      <path d="${sprossen}" fill="none" stroke="#c8a227" stroke-width="2.2" stroke-linecap="round"/>
+    </g>`;
+}
+
+/**
+ * Der Raid-Knoten: goldenes Sechseck mit Zenits Uhr, die oben (Glocke) und unten (Pendel) darüber hinausragt. Name und
+ * Zustand stehen rechts daneben: Links unten lehnt die Leiter, darüber geht es ins Unerforschte. Klick: Raid-Bildschirm,
+ * auch solange er noch zu ist (dort steht, was fehlt).
+ */
+function buildRaidKnoten(zustand: ReturnType<typeof raidKartenZustand>): string {
+  const { x, y, r } = raidPunkte();
+  const k = RAID_TEXTE.karte;
+  // Uhr: Zifferblatt (Radius 66 im Uhr-Bild) mittig im Sechseck, gut drei Viertel seines Innenkreises
+  const s = (r * 0.87 * 0.8) / 66;
+  const uhr = zenitUhrSvg(zustand.zwoelf ? AUF_ZWOELF : KURZ_VOR_ZWOELF, 'dmap-zenit',
+    zustand.zwoelf ? k.zwoelf : RAID_TEXTE.bildschirm.uhr.vor,
+    `x="${r1(x - 100 * s)}" y="${r1(y - 106 * s)}" width="${r1(200 * s)}" height="${r1(246 * s)}" class="dmap-raid-uhr"`
+      + (zustand.offen ? '' : ' opacity=".3"'));
+  const textX = r1(x + r * 0.87 + 22);
+  const offen = zustand.offen;
+  const punkt = zustand.truheWartet
+    ? `<circle cx="${r1(x + r * 0.87 + 4)}" cy="${r1(y - r * 0.5 - 4)}" r="5.5" fill="#c8a227" class="dmap-pulse-dot"><title>${k.truhenPunkt}</title></circle>`
+    : '';
+  return `
+    <g class="dmap-nd dmap-raid ${offen ? 'dmap-node-open' : 'dmap-node-locked'}" data-raid style="cursor:pointer">
+      <title>${k.tooltip}</title>
+      <polygon points="${hexPoints(x, y, r + 12, 30)}" fill="#fbbf24" opacity="0.1" class="dmap-glow-ring"/>
+      <polygon points="${hexPoints(x, y, r + 6, 0)}" fill="none" stroke="#e6c060" stroke-width="1.2" opacity="0.3"/>
+      <polygon points="${hexPoints(x, y, r, 30)}" fill="#0c1233" class="dmap-shape"/>
+      <polygon points="${hexPoints(x, y, r - 6, 30)}" fill="none" stroke="#6e5710" stroke-width="1" opacity="${offen ? 1 : 0.5}"/>
+      ${uhr}
+      <polygon points="${hexPoints(x, y, r, 30)}" fill="none" stroke="${zustand.zwoelf ? '#f3d27a' : '#c8a227'}" stroke-width="3" class="dmap-shape"/>
+      ${offen ? '' : `<text x="${x}" y="${y + 7}" text-anchor="middle" font-size="20" fill="#555" style="user-select:none">🔒</text>`}
+      <text class="dmap-t-klein dmap-raid-t dmap-raid-klein" x="${textX}" y="${y - 17}" font-size="9" font-family="Cinzel, serif" letter-spacing="2"
+        fill="#c8a227" opacity="${offen ? 0.95 : 0.55}">${k.klein(ZENIT.minHelden, ZENIT.maxHelden)}</text>
+      <text class="dmap-raid-t dmap-raid-name" x="${textX}" y="${y + 3}" font-size="15" font-family="Cinzel, serif" font-weight="700"
+        letter-spacing="1.5" fill="#fde68a" opacity="${offen ? 1 : 0.55}">${k.name}</text>
+      <text class="dmap-raid-t dmap-raid-zeile" x="${textX}" y="${y + 20}" font-size="9.5" font-family="Cinzel, serif"
+        fill="${zustand.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="${offen ? 0.95 : 0.55}">${zustand.zeile}</text>
+      ${punkt}
+    </g>`;
 }
 
 // ── Wappen der Gilden (Rangliste mit Rivalen) ──
@@ -880,6 +1010,13 @@ function bindDungeonEvents(el: HTMLElement): void {
         window.dispatchEvent(new CustomEvent('mc:selectRoute', { detail: { routeId } }));
         navigateTo('team');
       }
+      return;
+    }
+
+    // Raid über den Pfeilern: eigener Bildschirm (zeigt auch, solange er zu ist, was fehlt)
+    if (target.closest('[data-raid]')) {
+      vomRaid = true;
+      navigateTo('raid');
       return;
     }
 
