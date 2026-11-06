@@ -67,5 +67,11 @@ Code: `src/ui/components/TruheAnlegen.ts`, Tests: `tests/truheAnlegen.test.ts`.
 - **Lager (Tab Inventar):** Je Held und Platz steht das Teil mit dem grössten Zugewinn vorne als breite Karte mit der grünen Zeile; sie nennt den
   Helden dieser besten Wahl (die Truhe kennt das Lager nicht und kann einen anderen nennen). Die übrigen besseren Teile tragen das ⬆, die Zeile im `title`.
   Grund (Thread, Musterspiel): gegen leere Nebenhände ist fast alles besser, sonst 17 Karten statt 3.
+- **Lager antippbar:** Kacheln mit ⬆ und die Karten sind `<button type="button">` (`data-lager-teil`, `data-held`, `data-platz` aus
+  der grünen Zeile), alle anderen bleiben `<div>`. Name (`aria-label`) wie im Heldenfenster («Wyrmzahnklinge, 2 Stück»), der `title`
+  endet mit der grünen Zeile, auch bei der Karte. Antippen öffnet das Heldenfenster dieses Helden (`oeffneAusLager`): Inventar
+  offen, das Teil für den Platz der Zeile gewählt, Fokus auf dem Teil (nicht auf ANLEGEN), ANLEGEN im Bild; so sind es 2 Tipps bis
+  angelegt, mit dem ganzen +/−-Vergleich. Schliessen zeichnet das Lager neu (keine veraltete ⬆), Fokus auf die Kachel oder den Reiter.
+  `button.inv-cell` setzt Schrift, Farbe, Ausrichtung, Breite und Rand der Browser-Knöpfe zurück, das Aussehen bleibt gleich.
 - **Leistung:** ein `vergleicher` je Held und Zeichnen, Werte vor Eigenschaften. Gemessen in `?probe=sterne` mit allen 138 Ausrüstungsteilen
   im Lager: Grimms Inventar 160 `getEffectiveStats` + 33 `getSpecialEffects`, das Lager 627 + 93 (2 Karten, 21 ⬆-Kacheln).
