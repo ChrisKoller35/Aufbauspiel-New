@@ -1611,6 +1611,8 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 }
 .mc-co-item-qty { font-family: 'Cinzel', serif; font-size: 0.7rem; color: #c8a227; }
 .mc-co-use-btn { font-size: 0.62rem; padding: 3px 8px; letter-spacing: 1px; }
+/* Name, Wirkung und Meldung nach «Nutzen» nur am Handy (Block «Expedition am Handy»); am PC zeigt der Tooltip «Name: Wirkung» */
+.mc-co-item-text, .mc-co-item-meldung { display: none; }
 
 /* Am PC: Die Karten passen sich dem Platz an (Grösse aus CombatScreen.passeKartenAn),
    Fähigkeiten und Vorräte stehen kompakt nebeneinander, damit das Kampffeld gross bleibt */
@@ -1920,7 +1922,26 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   .mc-co-preview-strip, .mc-co-log-area { padding: 4px 8px; }
   .mc-co-ability-col { min-width: 0; flex: 1 1 140px; }
   .mc-co-ability-btn { white-space: normal; overflow-wrap: anywhere; }
-  .mc-co-item-card { flex-wrap: wrap; }
+  /* Vorräte vor den Fähigkeiten (gelten in jedem Kampf, Fähigkeiten einmal je Mission), damit sie beim Öffnen
+     ganz sichtbar sind: je Vorrat eine Zeile mit Bild, Name, Wirkung, Menge und «Nutzen» (44 px hoch) */
+  .mc-co-preview-strip { display: flex; flex-direction: column; }
+  .mc-co-preview-strip > .mc-co-items-area { order: -1; }
+  .mc-co-items-row { flex-direction: column; flex-wrap: nowrap; gap: 4px; padding: 2px 0 4px; }
+  .mc-co-item-card {
+    display: grid; grid-template-columns: 30px minmax(0, 1fr) auto auto; align-items: center;
+    column-gap: 8px; padding: 3px 4px 3px 6px;
+  }
+  .mc-co-item-card > img { width: 30px; height: 30px; }
+  .mc-co-item-text { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; overflow-wrap: anywhere; }
+  .mc-co-item-name { font-size: 0.8rem; color: var(--mc-light); }
+  .mc-co-item-wirkung { font-size: 0.72rem; color: #9ca3af; }
+  .mc-co-item-wirkung:empty { display: none; }
+  .mc-co-use-btn { min-width: 72px; min-height: 44px; padding: 4px 8px; font-size: 0.68rem; }
+  /* Was der letzte Vorrat bewirkt hat, eine Zeile, zu lang gekürzt mit … */
+  .mc-co-item-meldung {
+    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 0.75rem; color: #86efac; padding: 0 0 4px;
+  }
   /* Fliehen und Kampf starten immer sichtbar, auch wenn Fähigkeiten und Vorräte länger sind als der Bildschirm */
   .mc-co-actions-area {
     position: sticky; bottom: 0; z-index: 4; padding: 8px; gap: 8px;
