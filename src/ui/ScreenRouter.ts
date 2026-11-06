@@ -2,7 +2,7 @@
 // Simple SPA screen navigation using inline styles.
 // ────────────────────────────────────────────────────────────────
 
-import { bildschirmFokussieren } from './fokus';
+import { bildschirmFokussieren, bildschirmVerlassen } from './fokus';
 
 export type ScreenId =
   | 'main'
@@ -72,11 +72,13 @@ export function navigateTo(screen: ScreenId): void {
   const app = document.getElementById('app');
   if (!app) return;
 
+  // Mit der Tastatur zurück auf `prev`: Der Fokus kommt auf diesen Knopf zurück (bildschirmFokussieren)
+  bildschirmVerlassen(`s-${prev}`);
   zeigeNur(app, screen);
 
   navHistory.push(screen);
   window.dispatchEvent(new CustomEvent('mc:navigate', { detail: { screen, prev } }));
-  // Mit der Tastatur: Tab beginnt oben im neuen Bildschirm (nach dem Neuzeichnen durch mc:navigate)
+  // Mit der Tastatur: der Knopf von vorhin, sonst beginnt Tab oben im neuen Bildschirm (nach dem Neuzeichnen durch mc:navigate)
   bildschirmFokussieren(`s-${screen}`);
 }
 
@@ -98,6 +100,7 @@ export function goBack(ersatz: ScreenId = 'main'): void {
   if (!app) return;
 
   navHistory.pop();
+  bildschirmVerlassen(`s-${aktuell}`);
   zeigeNur(app, davor);
   window.dispatchEvent(new CustomEvent('mc:navigate', { detail: { screen: davor, prev: aktuell } }));
   bildschirmFokussieren(`s-${davor}`);

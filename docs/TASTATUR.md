@@ -2,9 +2,9 @@
 
 Stand 6.11.2026. Grundlage ist «Reserve C» der Recherche vom 27.10. (`recherche/lesbarkeit.md`, Abschnitt 11):
 Hauptmenü-Kacheln, Routenkarten und die Heldenwahl im Team gingen nur mit Maus oder Finger, ohne Maus gab es keine
-Expedition. Jetzt geht der ganze Weg vom Hauptmenü bis zur Bilanz mit **Tab** und **Enter** (oder Leertaste).
-Maus und Finger bedienen alles wie vorher. Code: `src/ui/fokus.ts`, `src/ui/html/tastatur.css`,
-Test `tests/tastatur.test.ts`.
+Expedition. Jetzt geht der ganze Weg vom Hauptmenü bis zur Bilanz mit **Tab** und **Enter** (oder Leertaste), dazu
+die Dungeonkarte und über sie der Raid. Maus und Finger bedienen alles wie vorher. Code: `src/ui/fokus.ts`,
+`src/ui/html/tastatur.css` (Rahmen der Kartenknoten in `dungeonkarte.css`), Test `tests/tastatur.test.ts`.
 
 ## Was geht
 
@@ -12,12 +12,13 @@ Test `tests/tastatur.test.ts`.
 |---|---|
 | Hauptmenü | Tab erreicht nach der Leiste und dem Stadtweg die fünf Kacheln, Enter öffnet sie. Ziffern 1/2/3/0 wechseln den Hintergrund wie bisher. |
 | Expeditionen | Jede Routenkarte ist erreichbar, Enter öffnet das Team. Gesperrte Karten nennen den Sperrgrund, Enter tut dort nichts. |
+| Dungeonkarte | Tab erreicht jeden Knoten (Name, Ebene, offen/geschafft/gesperrt) und zuletzt den Raid ganz oben; der Knoten leuchtet mit goldenem Rahmen. Enter öffnet sein Fenster mit dem Fokus auf «EXPEDITION STARTEN» oder «ERNEUT SPIELEN» (gesperrt: auf ✕), Tab bleibt darin, Escape schliesst es, und der Fokus steht wieder auf dem Knoten. Enter auf dem Raid öffnet den Raid. |
 | Team | Jeder Held der Liste («Brom ins Team») und jeder besetzte Platz («Brom aus dem Team nehmen»). Der Fokus folgt dem Helden: Nach Enter steht er auf seinem Platz, nach dem Herausnehmen wieder in der Liste. Nach ± beim Proviant und nach dem Härtegrad bleibt er auf dem Knopf. |
 | Helden | Nach einem Reiterwechsel, Training oder Anheuern bleibt der Fokus beim selben Knopf, sonst auf dem aktiven Reiter. |
 | Fenster unterwegs | Einleitung, Wahl, Kontrollpunkt, Händler und Bilanz nehmen den Fokus (Hauptknopf, sonst der erste), Tab bleibt im Fenster. Escape drückt nur «ZURÜCK» vor dem Aufbruch; in Entscheidungen tut es nichts und geht nie an das Spiel dahinter. |
-| Kampf | «Kampf starten!», «Nächste Runde →» und «Weiter» nehmen nacheinander den Fokus: Ein Kampf ist Enter, warten, Enter. |
+| Kampf | «Kampf starten!», «Nächste Runde →» und «Weiter» nehmen nacheinander den Fokus: Ein Kampf ist Enter, warten, Enter. Vor dem Kampf führt Umschalt+Tab zu den Gegnern: Enter wählt das Fokus-Ziel (wie der Klick auf den Gegner). |
 | Truhe | wie bisher: Enter oder Escape überspringt das Video, danach steht der Fokus auf «Einsammeln». |
-| Bildschirmwechsel | Nach einem Wechsel mit der Tastatur (Enter, Escape, K, A, G) beginnt Tab oben im neuen Bildschirm. |
+| Bildschirmwechsel | Nach einem Wechsel mit der Tastatur (Enter, Escape, K, A, G) beginnt Tab oben im neuen Bildschirm. Zurück auf einem Bildschirm steht der Fokus auf dem Knopf, mit dem man ihn verlassen hat: nach der Expedition auf ihrer Routenkarte, nach Escape auf der Kachel im Hauptmenü, nach dem Raid auf dem Raid-Knoten der Karte. |
 
 Geprüft am 6.11. im Browser (Chromium, 1400 × 900): Waldpfad (kurz) mit vier Helden, nur Tab und Enter, vom
 Hauptmenü über Einleitung, fünf Räume, Wahl, Kontrollpunkt, Truhe und Bilanz zurück. Am Handy (390 px) und mit der
@@ -35,6 +36,12 @@ Maus: Antippen wie vorher, kein Springen der Seite, kein Fokusrahmen.
   scrollt dabei nichts (`preventScroll`).
 - **Womit zuletzt bedient wurde** (`eingabeBeobachten`, einmal in `main.ts`): Tasten setzen «Tastatur», jeder
   Zeigerdruck «Zeiger». Nur nach der Tastatur nimmt ein neuer Bildschirm oder der Hauptknopf im Kampf den Fokus.
+- **Zurück auf einem Bildschirm** (`bildschirmVerlassen` im ScreenRouter vor jedem Wechsel, `bildschirmFokussieren`
+  danach): Der Bildschirm, der geht, merkt sich seinen fokussierten Knopf wie beim Neuzeichnen; kommt man mit der
+  Tastatur zurück, bekommt dieser Knopf den Fokus, sonst der Bildschirm selbst.
+- **Knoten der Dungeonkarte** sind SVG-Gruppen mit `tabindex="0"`, `role="button"` und einem Namen; Enter und
+  Leertaste lösen ihren Klick aus (`bindDungeonEvents`). Ihr Rahmen (`fokusRing`) ist ein eigenes Sechseck, denn
+  `outline` zeichnet nicht jeder Browser um SVG.
 
 ## Neue Bildschirme
 
@@ -44,5 +51,4 @@ Maus: Antippen wie vorher, kein Springen der Seite, kein Fokusrahmen.
 
 ## Noch nur mit Maus oder Finger
 
-- Im Kampf «Klick auf Gegner = Fokus» (ein Ziel vorwählen). Ohne Wahl kämpft das Team wie immer.
 - Ziehen im Raid-Feld. Mit der Tastatur wählt man dort mit Tab und Enter erst den Helden, dann sein Feld (docs/RAID.md).

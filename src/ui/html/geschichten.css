@@ -46,6 +46,8 @@
 /* Routen-Fenster der Dungeon-Karte (aufklappbar) */
 .gs-karte { margin: 8px 0; padding-top: 8px; border-top: 1px solid var(--bdr); }
 .gs-karte summary { cursor: pointer; font-size: 0.85rem; color: #d6c49a; list-style: none; }
+/* Am Finger 44 px hoch (Reste-Suche 6.11.: 18 px) */
+@media (pointer: coarse) { .gs-karte summary { min-height: 44px; padding: 12px 0; } }
 .gs-karte summary::-webkit-details-marker { display: none; }
 .gs-karte summary::after { content: ' ▸'; color: var(--mut); }
 .gs-karte[open] summary::after { content: ' ▾'; }

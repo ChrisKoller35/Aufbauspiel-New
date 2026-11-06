@@ -1,7 +1,9 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, afterEach } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { deckknopf, fokusSelektor, fokusMerken, fokusZurueck } from '../src/ui/fokus';
+import {
+  deckknopf, fokusSelektor, fokusMerken, fokusZurueck, eingabeBeobachten, bildschirmVerlassen, bildschirmFokussieren,
+} from '../src/ui/fokus';
 
 /**
  * Tastatur (docs/TASTATUR.md): Deckknöpfe über Kacheln und Karten, Fokus über ein Neuzeichnen, Fenster der
@@ -109,6 +111,89 @@ describe('Bildschirme benutzen die Bausteine', () => {
   test('Bildschirmwechsel: der neue Bildschirm nimmt den Fokus (nur nach der Tastatur)', () => {
     const router = lies('ui/ScreenRouter.ts');
     expect(router.match(/bildschirmFokussieren\(`s-\$\{(screen|davor)\}`\)/g)).toHaveLength(2);
+    // Vor dem Verstecken merkt sich der Bildschirm, der geht, seinen Knopf
+    for (const [geht, kommt] of [['prev', 'screen'], ['aktuell', 'davor']]) {
+      const merken = router.indexOf(`bildschirmVerlassen(\`s-\${${geht}}\`)`);
+      expect(merken).toBeGreaterThan(0);
+      expect(merken).toBeLessThan(router.indexOf(`zeigeNur(app, ${kommt})`));
+    }
     expect(lies('main.ts')).toContain('eingabeBeobachten();');
+  });
+
+  test('Dungeonkarte: Tab erreicht jeden Knoten und den Raid, Enter öffnet sie, das Fenster hält den Fokus', () => {
+    const karte = lies('ui/screens/DungeonMapScreen.ts');
+    expect(karte).toMatch(/<g class="dmap-nd \$\{statusClass\}"[^>]*tabindex="0" role="button"\s+data-fokus="karte-\$\{route\.id\}"/);
+    expect(karte).toMatch(/data-raid style="cursor:pointer" tabindex="0"\s+role="button" data-fokus="karte-raid"/);
+    expect(karte.match(/\$\{fokusRing\(x, y, r \+ \d\)\}/g)).toHaveLength(2);
+    expect(karte).toContain("knoten.dispatchEvent(new MouseEvent('click', { bubbles: true }))");
+    expect(karte).toContain("fenster.setAttribute('role', 'dialog')");
+    expect(karte).toContain('bindeFensterTasten(modal, fenster, hideRouteModal)');
+    // Hinein beim Öffnen, zurück auf den Knoten beim Schliessen
+    expect(karte).toContain('start?.focus({ preventScroll: true })');
+    expect(karte).toContain('if (fokusDrin && knoten?.isConnected) knoten.focus({ preventScroll: true })');
+    const css = lies('ui/html/dungeonkarte.css');
+    expect(css).toMatch(/\.dmap-nd:focus-visible \.dmap-fokusring\s*\{\s*opacity:\s*1/);
+  });
+
+  test('Kampf: Enter auf einem Gegner wählt das Fokus-Ziel; läuft der Kampf, sind die Knöpfe weg', () => {
+    const quelle = lies('ui/screens/CombatScreen.ts');
+    expect(quelle).toContain('deckknopfElement(`${unit.name} als Fokus-Ziel wählen`, `gegner-${unit.id}`)');
+    expect(quelle).toContain(".setAttribute('aria-pressed', String(entry.unitId === enemyId))");
+    const start = quelle.slice(quelle.indexOf('startCombatAnimation(run: ExpeditionRun'));
+    expect(start.indexOf("querySelectorAll('.deckknopf')")).toBeLessThan(start.indexOf('\n  }\n'));
+  });
+});
+
+describe('Zurück auf einem Bildschirm', () => {
+  const hoerer: Record<string, (e: unknown) => void> = {};
+  const knopf = {
+    dataset: { fokus: 'kachel-heroes' }, id: '', tagName: 'BUTTON', attributes: [{ name: 'data-fokus', value: 'kachel-heroes' }],
+  };
+  const body = {};
+  let neu: { getClientRects: () => unknown[]; focus: ReturnType<typeof vi.fn> };
+  let haupt: Record<string, unknown> & { focus: ReturnType<typeof vi.fn> };
+  let seite: { activeElement: unknown; body: unknown; getElementById: (id: string) => unknown };
+
+  function aufbauen(): void {
+    vi.stubGlobal('window', { addEventListener: (art: string, f: (e: unknown) => void) => { hoerer[art] = f; } });
+    eingabeBeobachten();
+    neu = { getClientRects: () => [{}], focus: vi.fn() };
+    haupt = {
+      contains: (el: unknown) => el === knopf,
+      querySelector: (sel: string) => (sel === '[data-fokus="kachel-heroes"]' ? neu : null),
+      hasAttribute: () => false, focus: vi.fn(),
+    };
+    seite = { activeElement: knopf, body, getElementById: (id: string) => (id === 's-main' ? haupt : null) };
+    vi.stubGlobal('document', seite);
+  }
+  afterEach(() => vi.unstubAllGlobals());
+
+  test('mit der Tastatur: der Fokus steht wieder auf dem Knopf, mit dem man ging (die Kachel)', () => {
+    aufbauen();
+    hoerer.keydown({ key: 'Enter' });
+    bildschirmVerlassen('s-main');
+    seite.activeElement = body; // Hauptmenü versteckt, später wieder gezeigt und neu gezeichnet
+    bildschirmFokussieren('s-main');
+    expect(neu.focus).toHaveBeenCalledWith({ preventScroll: false });
+    expect(haupt.focus).not.toHaveBeenCalled();
+  });
+
+  test('ist der Knopf von vorhin nicht zu sehen, nimmt der Bildschirm selbst den Fokus', () => {
+    aufbauen();
+    hoerer.keydown({ key: 'Tab' });
+    neu.getClientRects = () => []; // der Knopf ist nicht zu sehen
+    seite.activeElement = body;
+    bildschirmFokussieren('s-main');
+    expect(neu.focus).not.toHaveBeenCalled();
+    expect(haupt.focus).toHaveBeenCalledWith({ preventScroll: true });
+  });
+
+  test('nach Maus oder Finger: nichts', () => {
+    aufbauen();
+    hoerer.pointerdown({});
+    seite.activeElement = body;
+    bildschirmFokussieren('s-main');
+    expect(neu.focus).not.toHaveBeenCalled();
+    expect(haupt.focus).not.toHaveBeenCalled();
   });
 });

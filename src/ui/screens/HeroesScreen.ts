@@ -31,6 +31,7 @@ import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../c
 import { gedruecktUm } from '../components/Druckzeit';
 import '../html/beutevergleich.css';
 import { fokusMerken, fokusZurueck, type FokusMarke } from '../fokus';
+import { zehntel } from '../hpAnzeige';
 import { besserFuerAlle, besserText, nebenhandFrei, vergleicher } from '../../systems/Beutevergleich';
 import { Wechsel, ausLagerAusruesten, ausruestPlan } from '../../systems/Ausruesten';
 
@@ -146,7 +147,8 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
       </div>`;
   }
 
-  // Fallback: sprite-based card (for classes without illustrations)
+  // Fallback: sprite-based card (for classes without illustrations). Werte mit Ausrüstung wie in der Teamwahl
+  const werte = gearSystem.getEffectiveStats(fighter, stufen());
   return `
     <div class="hcard" data-fighter-id="${fighter.id}">
       ${oeffnen}
@@ -162,9 +164,9 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
       <div class="lvbar"><div class="lvfill" style="width:${pct}%"></div></div>
       <div class="hc-xp">${xpLabel}</div>
       <div class="hc-st">
-        <span>\u2694 ${fighter.baseStats.atk}</span>
-        <span>\uD83D\uDEE1 ${fighter.baseStats.def}</span>
-        <span>\u2764 ${fighter.baseStats.hp}/${fighter.baseStats.maxHp}</span>
+        <span>\u2694 ${zehntel(werte.atk)}</span>
+        <span>\uD83D\uDEE1 ${zehntel(werte.def)}</span>
+        <span>\u2764 ${werte.maxHp}</span>
       </div>
       ${actionBtn}
     </div>`;
@@ -557,9 +559,8 @@ function statsHtml(fighter: GuildFighter): string {
   const spdBonus = Math.round((eff.spd - base.spd) * 100) / 100;
   const critBonus = Math.round((eff.critChance - base.critChance) * 100);
   const kritSchaden = Math.round(eff.critMult * 100) / 100;
-  // Angriff und Verteidigung wachsen je Stufe um Zehntel: auf 0,1 runden, sonst zeigt der Anteil der
+  // Angriff und Verteidigung wachsen je Stufe um Zehntel: auf 0,1 runden (zehntel), sonst zeigt der Anteil der
   // Ausrüstung Rundungsrauschen (24.6 − 10.6 = 14.000000000000002)
-  const zehntel = (n: number) => Math.round(n * 10) / 10;
   return `
     <div class="hdm2-stats" title="Werte mit Ausrüstung, Set-Boni und Weg; die kleine Zahl kommt von dort">
       ${wertHtml('⚔', 'ATK', String(zehntel(eff.atk)), zehntel(eff.atk - base.atk))}

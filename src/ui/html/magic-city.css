@@ -362,6 +362,8 @@ body {
   overflow: hidden; background-size: cover; background-position: center;
 }
 .exp-slot:hover { border-color: var(--gd); transform: translateY(-2px); }
+/* Ein leerer Platz ist kein Knopf (die Helden wählt man in der Liste darunter): kein Zeiger, kein Anheben */
+.exp-slot-empty, .exp-slot-empty:hover { cursor: default; border-color: var(--bdr); transform: none; }
 .exp-slot-empty {
   border-style: dashed; border-width: 2px;
   font-size: 0.7rem; color: var(--mut); font-family: 'Cinzel', serif;
@@ -2001,6 +2003,8 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 @media (pointer: coarse) {
   .prbtn { width: 44px; height: 44px; font-size: 1.1rem; }
   .btn-go, .mc-btn, .mc-co-speed, .mc-co-ability-btn, .btn-dungeon-map, .chest-collect-btn, .tab { min-height: 44px; }
+  /* Tempo im Kampf: «x1» war nur 30 px breit (Reste-Suche 6.11.) */
+  .mc-co-speed { min-width: 44px; }
   .btn-train, .weg-knopf { min-height: 44px; }
   .btn-back { min-height: 44px; margin-top: -4px; margin-bottom: -4px; }
   /* Heldenfenster: ✕ 44 × 44 px; 🎒 Inventar und ANLEGEN/ABLEGEN 44 px hoch */

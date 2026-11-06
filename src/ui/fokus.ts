@@ -21,6 +21,16 @@ export function deckknopf(label: string, fokus: string, gesperrt = false): strin
     + `${gesperrt ? ' aria-disabled="true"' : ''}></button>`;
 }
 
+/** Derselbe Deckknopf als Element, für Bildschirme, die mit createElement bauen (Gegner im Kampf) */
+export function deckknopfElement(label: string, fokus: string): HTMLButtonElement {
+  const knopf = document.createElement('button');
+  knopf.type = 'button';
+  knopf.className = 'deckknopf';
+  knopf.dataset.fokus = fokus;
+  knopf.setAttribute('aria-label', label);
+  return knopf;
+}
+
 /** Ein fokussierter Knopf, ohne DOM beschrieben */
 export interface FokusBeschreibung {
   /** data-fokus des Knopfs (Deckknöpfe) */
@@ -100,9 +110,23 @@ export function tastaturZuletzt(): boolean {
   return tastatur;
 }
 
+// ── Bildschirmwechsel ──
+
+/** Je Bildschirm der Knopf, der beim Verlassen den Fokus hatte (Kachel, Routenkarte, Knoten der Dungeonkarte) */
+const fokusBeimVerlassen = new Map<string, FokusMarke>();
+
+/** Vor einem Bildschirmwechsel (ScreenRouter): merkt sich den fokussierten Knopf im Bildschirm, der geht */
+export function bildschirmVerlassen(id: string): void {
+  if (typeof document === 'undefined') return;
+  const marke = fokusMerken(document.getElementById(id));
+  if (marke) fokusBeimVerlassen.set(id, marke);
+}
+
 /**
- * Nach einem Bildschirmwechsel mit der Tastatur: Der neue Bildschirm nimmt den Fokus, ohne Rahmen. Der nächste Tab
- * landet auf seinem ersten Knopf, nicht hinter dem alten Bildschirm oder in der Adresszeile. Maus und Finger: nichts.
+ * Nach einem Bildschirmwechsel mit der Tastatur: Zurück auf einem Bildschirm steht der Fokus auf dem Knopf, mit dem
+ * man ihn verlassen hat (nach der Expedition auf ihrer Routenkarte, nach «Zurück» auf der Kachel im Hauptmenü). Ein
+ * neuer Bildschirm nimmt den Fokus selbst, ohne Rahmen: Der nächste Tab landet auf seinem ersten Knopf, nicht hinter
+ * dem alten Bildschirm oder in der Adresszeile. Maus und Finger: nichts.
  */
 export function bildschirmFokussieren(id: string): void {
   if (!tastatur || typeof document === 'undefined') return;
@@ -112,6 +136,7 @@ export function bildschirmFokussieren(id: string): void {
   const aktiv = document.activeElement as HTMLElement | null;
   const verloren = !aktiv || aktiv === document.body || aktiv.getClientRects().length === 0;
   if (!el || !verloren) return;
+  if (fokusZurueck(el, fokusBeimVerlassen.get(id) ?? null)) return;
   if (!el.hasAttribute('tabindex')) el.tabIndex = -1;
   el.focus({ preventScroll: true });
 }

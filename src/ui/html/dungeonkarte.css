@@ -17,6 +17,14 @@
 .dmap-raid-uhr { pointer-events: none; }
 .dmap-raid .dmap-glow-ring { transition: opacity .2s; }
 
+/* Tastatur (docs/TASTATUR.md): Tab erreicht jeden Knoten und den Raid, Enter öffnet sie. Mit dem Fokus leuchtet der
+   Knoten wie beim Darüberfahren, dazu ein goldener Rahmen (DungeonMapScreen fokusRing), nur mit der Tastatur */
+.dmap-nd:focus, .dmap-modal:focus { outline: none; }
+.dmap-fokusring { opacity: 0; pointer-events: none; transition: opacity .15s; }
+.dmap-nd:focus-visible .dmap-fokusring { opacity: 1; }
+.dmap-nd:focus-visible .dmap-glow-ring { opacity: 0.7 !important; }
+.dmap-nd:focus-visible .dmap-shape { filter: brightness(1.35); }
+
 /* Zwischen den Sternen: einige Sterne funkeln (DungeonMapScreen buildGipfelHimmel) */
 .dmap-funkeln { animation: dmap-funkeln 3.5s ease-in-out infinite; }
 @keyframes dmap-funkeln { 0%, 100% { opacity: .85; } 50% { opacity: .2; } }

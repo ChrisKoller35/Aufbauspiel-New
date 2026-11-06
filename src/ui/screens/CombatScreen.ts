@@ -15,8 +15,8 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
-import { hpAnzeige, rundeLogZahlen } from '../hpAnzeige';
-import { tastaturZuletzt } from '../fokus';
+import { hpAnzeige, rundeLogZahlen, zehntel } from '../hpAnzeige';
+import { deckknopfElement, tastaturZuletzt } from '../fokus';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
@@ -42,7 +42,7 @@ interface UnitEntry {
 
 /** Die Werte-Zeile einer Einheit in der Kampfkarte */
 function statsText(unit: CombatUnit): string {
-  return `ATK:${unit.atk} DEF:${unit.def} SPD:${unit.spd.toFixed(1)}`;
+  return `ATK:${zehntel(unit.atk)} DEF:${zehntel(unit.def)} SPD:${unit.spd.toFixed(1)}`;
 }
 
 // ─── CSS Shake (replaces Phaser camera.shake) ────────────────
@@ -435,6 +435,12 @@ export class CombatScreen {
       });
       entry.el.style.cursor = 'pointer';
       entry.el.title = 'Klicken = Fokus-Ziel';
+      // Tastatur: ein Knopf über der Karte (docs/TASTATUR.md), Enter wählt das Ziel; weg, sobald der Kampf läuft
+      if (unit.hp > 0) {
+        const knopf = deckknopfElement(`${unit.name} als Fokus-Ziel wählen`, `gegner-${unit.id}`);
+        knopf.setAttribute('aria-pressed', 'false');
+        entry.el.appendChild(knopf);
+      }
       this.enemyColEl.appendChild(entry.el);
       this.enemyEntries.push(entry);
     }
@@ -568,6 +574,7 @@ export class CombatScreen {
     this.preTargetEnemyId = enemyId;
     for (const entry of this.enemyEntries) {
       entry.el.classList.toggle('is-targeted', entry.unitId === enemyId);
+      entry.el.querySelector('.deckknopf')?.setAttribute('aria-pressed', String(entry.unitId === enemyId));
     }
     this.onPreCombatTarget?.(enemyId);
   }
@@ -884,6 +891,8 @@ export class CombatScreen {
 
   startCombatAnimation(run: ExpeditionRun, room: EncounterRoom): void {
     this.phase = 'animating';
+    // Das Ziel ist gewählt: Die Knöpfe über den Gegnern gehen weg, Tab hält dort nicht mehr
+    for (const knopf of Array.from(this.enemyColEl.querySelectorAll('.deckknopf'))) knopf.remove();
     this.actionsEl.innerHTML = '';
     this.previewStripEl.innerHTML = '';
 

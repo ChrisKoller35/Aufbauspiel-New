@@ -28,6 +28,9 @@ Die Rangfolge bleibt: Titel `--gl`/`--txt` sind heller als `--mut`, Beschreibung
 5. **Finger ≥ 44 px** Tippfläche bei `(max-width: 700px)` bzw. `(pointer: coarse)`.
 6. **Tastatur:** Was man antippt, erreicht auch Tab (Deckknopf über Karten, Fokus bleibt beim Neuzeichnen);
    siehe `docs/TASTATUR.md`.
+7. **Zahlen ohne Rundungsreste:** Leben ganz (`hpAnzeige`), Angriff und Verteidigung auf Zehntel (`zehntel` in
+   `src/ui/hpAnzeige.ts`), Tempo und Boni auf Hundertstel; Minus als «−» (U+2212), nicht «-». Die Teamwahl zeigt
+   wie Heldenfenster und Kampf die Werte mit Ausrüstung.
 
 ## Ausnahmen
 
@@ -50,6 +53,11 @@ Die Rangfolge bleibt: Titel `--gl`/`--txt` sind heller als `--mut`, Beschreibung
 | Heldenname auf dem Bild (Schild .72) | ohne Schild auf hellem Bild < 4,5 | ≥ 5,5 auch auf Weiss |
 | Rang 3 der Rangliste (#e8954a) | 4,10 | 5,49 (auf --s2 7,45) |
 | Rangliste-Erklärung (`.rl-regel summary`), Set-Auswahl | ~26 px / 40 px | ≥ 44 px |
+| Tempo im Kampf x1 / x1.5 / x2 (`.mc-co-speed`, Handy) | 30 / 37 / 32 px breit | ≥ 44 × 44 px |
+| «Einen Probelauf ansehen» im Kriegsrat des Raids | 36 px hoch | 44 px |
+| «alle 12 ▾» in Alrunas Liste (Raid, Handy) | Treffer 38 px (der erste Punkt deckte ihn) | 44 px |
+| «📜 Geschichte» im Fenster der Dungeonkarte (`.gs-karte summary`) | 18 px hoch | 44 px |
+| Kapitel der Stadtchronik, «Einsetzen» im Stadtweg | 41 / 38 px hoch | 44 px |
 
 Die Messwerte «gemessen» stammen aus der Recherche (Bildschirmfoto), die übrigen sind aus den CSS-Farben gerechnet.
 Nachmessen im Browser (PC, Handy 390 und 320 px) macht der prüfende Thread.

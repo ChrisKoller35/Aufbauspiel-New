@@ -9,6 +9,14 @@ export function hpZahl(hp: number): number {
   return Math.ceil(hp - 1e-9);
 }
 
+/**
+ * Angriff und Verteidigung auf Zehntel (sie wachsen je Stufe um Zehntel, HeroProgression): So zeigen Heldenfenster,
+ * Teamwahl und Kampf dieselbe Zahl, und eine Summe wie 24.6 + 0.2 zeigt nie 24.799999999999997.
+ */
+export function zehntel(n: number): number {
+  return Math.round(n * 10) / 10;
+}
+
 /** «aktuell / maximal», beide ganzzahlig. */
 export function hpAnzeige(hp: number, maxHp: number): string {
   return `${hpZahl(hp)} / ${Math.round(maxHp)}`;

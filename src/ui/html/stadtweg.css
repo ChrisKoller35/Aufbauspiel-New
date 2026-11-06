@@ -126,6 +126,8 @@
 .sw-kap.zu { cursor: default; opacity: .55; }
 .sw-kap-titel { font-family: 'Cinzel', serif; font-size: 0.9rem; color: var(--gold); }
 .sw-kap.zu .sw-kap-titel { color: var(--mut); }
+/* Kapitel der Stadtchronik (41 px) und «Einsetzen» (38 px): am Finger 44 px hoch (Reste-Suche 6.11.) */
+@media (pointer: coarse) { .sw-kap summary, .sw-klein-btn { min-height: 44px; } }
 .sw-kap-text { font-size: 1rem; line-height: 1.6; color: #e9ddc3; padding: 10px 12px 2px; }
 .sw-sig { text-align: right; font-style: italic; color: var(--mut); font-size: 0.82rem; padding: 2px 12px 8px; }
 

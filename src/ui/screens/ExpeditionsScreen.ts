@@ -22,6 +22,9 @@ import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../compon
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 import { standVon } from '../../systems/Lehrlinge';
 import { deckknopf, fokusMerken, fokusZurueck } from '../fokus';
+import { GearSystem } from '../../systems/GearSystem';
+import { schmiedeStufen } from '../../systems/Schmiede';
+import { zehntel } from '../hpAnzeige';
 
 // ── Module state ──
 
@@ -37,6 +40,17 @@ const haertegradWahl: Record<string, Haertegrad> = {};
  * ersten Neuzeichnen, bei dem der Bildschirm sichtbar ist (navigateTo zeigt ihn vor mc:navigate).
  */
 let teamNachOben = false;
+
+const gearSystem = new GearSystem();
+
+/**
+ * «⚔42.8 🛡35.4 ❤150» auf den Karten der Teamwahl: die Werte mit Ausrüstung, Sets und Weg, wie im Heldenfenster und
+ * im Kampf (bis 6.11. standen hier die Grundwerte ohne Ausrüstung). Leben immer voll: Jeder zieht gesund los.
+ */
+function kartenWerte(f: GuildFighter): string {
+  const w = gearSystem.getEffectiveStats(f, schmiedeStufen(gameState));
+  return `<span>\u2694${zehntel(w.atk)}</span><span>\uD83D\uDEE1${zehntel(w.def)}</span><span>\u2764${Math.round(w.maxHp)}</span>`;
+}
 
 /** Der gewählte Härtegrad, Normal solange der Dungeon nicht bezwungen ist */
 export function gewaehlterHaertegrad(state: GameState, routeId: string): Haertegrad {
@@ -254,11 +268,7 @@ function buildTeamHTML(): string {
           <div class="hcard-overlay">
             <div class="hc-nm">${escapeAttr(hero.name)}</div>
             <span class="hc-lv">Lv ${hero.level}</span>
-            <div class="hc-st">
-              <span>\u2694${hero.baseStats.atk}</span>
-              <span>\uD83D\uDEE1${hero.baseStats.def}</span>
-              <span>\u2764${hero.baseStats.hp}</span>
-            </div>
+            <div class="hc-st">${kartenWerte(hero)}</div>
           </div>
         </div>`;
     } else {
@@ -275,8 +285,6 @@ function buildTeamHTML(): string {
     const heroImg = HERO_IMAGE_MAP[f.classId];
     const bild = bildKarte(f);
     const spriteKey = cls ? cls.spriteKey : '';
-    const hpPct = f.baseStats.maxHp > 0 ? Math.round(f.baseStats.hp / f.baseStats.maxHp * 100) : 100;
-    const hpColor = hpPct > 60 ? 'var(--grn,#16a34a)' : hpPct > 30 ? '#ca8a04' : 'var(--red,#dc2626)';
     return `
       <div class="hsm hcard-img ${bild.klasse}" data-hero-id="${f.id}" style="${bild.stil}">
         ${deckknopf(`${f.name} ins Team`, `held-${f.id}`)}
@@ -284,11 +292,7 @@ function buildTeamHTML(): string {
         <div class="hcard-overlay">
           <div class="hc-nm">${escapeAttr(f.name)}</div>
           <div class="hsm-meta">${clsName}${f.lehrling ? ` · ${standVon(f)}` : ''} Lv${f.level}</div>
-          <div class="hc-st">
-            <span>\u2694${f.baseStats.atk}</span>
-            <span>\uD83D\uDEE1${f.baseStats.def}</span>
-            <span style="color:${hpColor}">\u2764${f.baseStats.hp}/${f.baseStats.maxHp}</span>
-          </div>
+          <div class="hc-st">${kartenWerte(f)}</div>
         </div>
       </div>`;
   }).join('') || '<div class="hsm-empty">Keine Helden verfügbar</div>';
