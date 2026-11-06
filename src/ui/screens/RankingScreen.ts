@@ -21,6 +21,8 @@ import {
   neuigkeiten, ranglisteStand, ruhmJeSieg, truhenDungeon, wegVorbei, wochenRangliste,
 } from '../../systems/Rangliste';
 import { showChestReveal } from '../components/ChestRevealOverlay';
+import { TruheAnlegen } from '../components/TruheAnlegen';
+import { erfolgePruefen } from '../../systems/AchievementSystem';
 import { schmiedeStufen } from '../../systems/Schmiede';
 import { navigateTo } from '../ScreenRouter';
 import { renderHeader } from './HeaderRenderer';
@@ -376,7 +378,12 @@ export function renderRankingScreen(container: HTMLElement): void {
           else beute[id] = (beute[id] ?? 0) + menge;
         }
       }
-      void showChestReveal(beute, gold, hinweise, truhenTitel(ergebnisse), schmiedeStufen(state)).then(() => {
+      // Gleich anlegen: Die Beute liegt schon im Lager, angelegt wird höchstens die Menge der Truhe
+      const anlegen = new TruheAnlegen(state, beute, 'ruhm');
+      void showChestReveal(beute, gold, hinweise, truhenTitel(ergebnisse), schmiedeStufen(state), anlegen).then(() => {
+        // Wie ANLEGEN im Heldenfenster: Erfolge gleich zählen, dann das Angelegte sichern
+        erfolgePruefen(state);
+        window.dispatchEvent(new Event('mc:speichern'));
         abgeholt = ergebnisse;
         neuZeichnen(el);
       });
