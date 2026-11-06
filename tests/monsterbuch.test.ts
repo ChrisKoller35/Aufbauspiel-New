@@ -18,7 +18,7 @@ import { CombatEngine, bossWut, wutAbRunde } from '../src/systems/CombatEngine';
 import { BestiariumSystem } from '../src/systems/BestiariumSystem';
 import { SeededRNG } from '../src/utils/RNG';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from '../src/data/routes';
-import { ENEMY_DEFS, ENEMY_LORE, EnemySkillDef } from '../src/data/enemies';
+import { ENEMY_DEFS, ENEMY_LORE, EnemySkillDef, MASCHINE_BEVORZUGT } from '../src/data/enemies';
 import { LOOT_TABLE_DEFS } from '../src/data/lootTables';
 import { MONSTERBUCH_NOTIZEN } from '../src/data/monsterbuchNotizen';
 import { musterStand } from '../src/systems/Musterlauf';
@@ -262,11 +262,20 @@ function imKampf(id: string, belagerung = false): { runde: number; zeilen: strin
 }
 
 /** Wie oft der Gegner im Belagerungsraum die Helden und wie oft das Katapult trifft (Fähigkeiten und Grundangriffe) */
-function zieleInBelagerung(id: string): { helden: number; katapult: number } {
+function zieleInBelagerung(id: string): { helden: number; katapult: number; beide: number } {
   const { run, gegner } = pruefKampf(id, true);
-  const treffer = (ziel: string) => run.combatLog.filter(z => (z.startsWith(`${gegner.name} setzt `) && z.includes(`→ ${ziel} erleidet`))
-    || z.startsWith(`${gegner.name} greift ${ziel} an`)).length;
-  return { helden: run.party.reduce((summe, held) => summe + treffer(held.name), 0), katapult: treffer(KATAPULT) };
+  const trifft = (z: string, ziel: string) => (z.startsWith(`${gegner.name} setzt `) && z.includes(`→ ${ziel} erleidet`))
+    || z.startsWith(`${gegner.name} greift ${ziel} an`);
+  // Je Runde greift der Gegner einmal an: Runden, in denen er das Katapult trifft, und Runden, in denen er Helden trifft
+  const runden = (run.combatRoundSnapshots ?? []).map(r => ({
+    katapult: r.logLines.some(z => trifft(z, KATAPULT)),
+    helden: run.party.some(held => r.logLines.some(z => trifft(z, held.name))),
+  }));
+  return {
+    helden: runden.filter(r => r.helden && !r.katapult).length,
+    katapult: runden.filter(r => r.katapult && !r.helden).length,
+    beide: runden.filter(r => r.katapult && r.helden).length,
+  };
 }
 
 describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
@@ -391,17 +400,20 @@ describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
             ? 'mit dem Schaden eines normalen Angriffs'
             : `mit dem ${sk.power.toLocaleString('de')}-fachen Schaden`);
           // So viele Treffer, wie der Text Ziele nennt. Die Kriegsmaschine nennt er genau dann, wenn der
-          // Kampf neben dem Katapult nur sie trifft (prefersWarMachineTarget), dann mit einem Treffer
-          const treffer = zeilen.filter(z => z.startsWith(`${ENEMY_DEFS[id].name} setzt ${sk.name} ein →`) && z.includes('erleidet'));
-          const aufKatapult = treffer.filter(z => z.includes(`→ ${KATAPULT} erleidet`)).length;
-          const nurMaschine = text.includes('neben einer Kriegsmaschine trifft er nur sie');
+          // Kampf neben dem Katapult bevorzugt sie trifft (prefersWarMachineTarget): Jeder Einsatz trifft
+          // dann entweder nur sie (ein Treffer) oder die Helden wie ohne Katapult
+          const nurMaschine = text.includes('neben einer Kriegsmaschine zielt er in zwei von drei Fällen nur auf sie');
           expect(nurMaschine, name).toBe(!!ENEMY_DEFS[id].prefersWarMachineTarget);
-          if (belagerung && nurMaschine) {
-            expect(aufKatapult, name).toBe(1);
-            expect(treffer.length, name).toBe(1);
-          } else {
-            expect(aufKatapult, name).toBe(0);
-            expect(treffer.length, name).toBe(text.startsWith('Trifft alle Helden') ? helden : 1);
+          for (const einsatz of kampf[i]) {
+            const treffer = einsatz.zeilen.filter(z => z.startsWith(`${ENEMY_DEFS[id].name} setzt ${sk.name} ein →`) && z.includes('erleidet'));
+            const aufKatapult = treffer.filter(z => z.includes(`→ ${KATAPULT} erleidet`)).length;
+            if (belagerung && nurMaschine && aufKatapult > 0) {
+              expect(aufKatapult, name).toBe(1);
+              expect(treffer.length, name).toBe(1);
+            } else {
+              expect(aufKatapult, name).toBe(0);
+              expect(treffer.length, name).toBe(text.startsWith('Trifft alle Helden') ? helden : 1);
+            }
           }
           expect(text.startsWith('Trifft alle Helden') || text.startsWith('Trifft einen Helden'), name).toBe(true);
         }
@@ -451,8 +463,10 @@ describe('Fähigkeiten im Fenster = Fähigkeiten im Kampf', () => {
     // drainAirAmount: Die Druckwelle nimmt zum Schaden 18 Luft
     expect(ENEMY_DEFS.boss_leviathan.skills.find(s => s.id === 'druckwelle')!.drainAirAmount).toBe(18);
     expect(text('boss_leviathan', 'druckwelle')).toBe('Trifft alle Helden mit dem 0,9-fachen Schaden eines normalen Angriffs und zieht 18 Luft aus dem Luftschild.');
-    // prefersWarMachineTarget: Der Mauerschütze zielt neben einer Kriegsmaschine nur auf sie
-    expect(text('wall_archer', 'aimed_shot')).toBe('Trifft einen Helden mit dem 1,4-fachen Schaden eines normalen Angriffs; neben einer Kriegsmaschine trifft er nur sie, solange sie steht.');
+    // prefersWarMachineTarget: Der Mauerschütze zielt neben einer Kriegsmaschine meist auf sie (MASCHINE_BEVORZUGT = 2/3)
+    expect(MASCHINE_BEVORZUGT).toBe(2 / 3);
+    expect(text('wall_archer', 'aimed_shot')).toBe('Trifft einen Helden mit dem 1,4-fachen Schaden eines normalen Angriffs; neben einer Kriegsmaschine zielt er in zwei von drei Fällen nur auf sie, solange sie steht.');
+    expect(text('siege_crossbowman', 'rapid_fire')).toBe('Trifft alle Helden mit dem 0,5-fachen Schaden eines normalen Angriffs; neben einer Kriegsmaschine zielt er in zwei von drei Fällen nur auf sie, solange sie steht.');
   });
 
   it('Sonnenuhr: Sunnas Wut kann bis Runde 4 vorrücken; Orms von Runde 4 bis 13 wandern; bei keinem anderen Boss rückt sie', () => {
@@ -666,10 +680,10 @@ const WIRKUNG: { routeId: string; gegner: string; faehigkeit: string; text: stri
 
 /**
  * Was eine Notiz über die Kriegsmaschine sagt: Diese Gegner (prefersWarMachineTarget) greifen im
- * Belagerungsraum nur das Katapult an, solange es steht, und keinen Helden.
+ * Belagerungsraum in zwei von drei Runden nur das Katapult an, solange es steht, sonst die Helden.
  */
 const KRIEGSMASCHINE: { routeId: string; gegner: string[]; text: string }[] = [
-  { routeId: 'siege_walls', gegner: ['wall_archer', 'siege_crossbowman'], text: 'Mauerschütze und Armbrustschütze schiessen nur auf die Kriegsmaschine, solange sie steht' },
+  { routeId: 'siege_walls', gegner: ['wall_archer', 'siege_crossbowman'], text: 'Mauerschütze und Armbrustschütze zielen in zwei von drei Fällen nur auf die Kriegsmaschine, solange sie steht' },
 ];
 
 /**
@@ -846,11 +860,16 @@ describe('Ottokars Randnotizen', () => {
       for (const id of k.gegner) {
         expect(k.text, id).toContain(ENEMY_DEFS[id].name);
         expect(ROUTE_DEFS[k.routeId].encounters.some(enc => enc.type === 'fortification' && enc.enemies?.includes(id)), id).toBe(true);
-        // 30 Runden neben dem (unverwundbaren) Katapult: Fähigkeiten und Grundangriffe treffen nur das Katapult
+        // 30 Runden neben dem (unverwundbaren) Katapult: Jeder Angriff gilt nur dem Katapult oder nur
+        // den Helden, das Katapult trifft es in rund zwei von drei Runden
         expect(ENEMY_DEFS[id].prefersWarMachineTarget, id).toBe(true);
         const ziele = zieleInBelagerung(id);
-        expect(ziele.katapult, id).toBeGreaterThan(0);
-        expect(ziele.helden, id).toBe(0);
+        expect(ziele.beide, id).toBe(0);
+        expect(ziele.helden, id).toBeGreaterThan(0);
+        expect(ziele.katapult + ziele.helden, id).toBe(30);
+        const anteil = ziele.katapult / (ziele.katapult + ziele.helden);
+        expect(anteil, `${id}: ${ziele.katapult} von 30 Runden auf das Katapult`).toBeGreaterThan(0.5);
+        expect(anteil, `${id}: ${ziele.katapult} von 30 Runden auf das Katapult`).toBeLessThan(0.85);
       }
     }
   });

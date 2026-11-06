@@ -312,13 +312,14 @@ function kaempftAllein(id: string): boolean {
  * in enemies.ts: Die verspricht bei Heilung zu kleine Zahlen, bei Stärkung Abwehr und bei
  * Beschwörung Verstärkung. Heilung heilt den Gegner mit den wenigsten Leben, Stärkung und
  * Beschwörung geben immer dem Anwender Angriff (Stärkung 3 Runden oder EnemySkillDef.runden, Beschwörung 4). Gegner mit
- * prefersWarMachineTarget treffen im Belagerungsraum nur die Kriegsmaschine, solange sie steht,
- * sonst Helden. drainAirAmount (Druckwelle des Leviathans) nimmt zum Schaden Luft. Der Test prüft
+ * prefersWarMachineTarget zielen im Belagerungsraum in zwei von drei Fällen nur auf die
+ * Kriegsmaschine, solange sie steht (MASCHINE_BEVORZUGT), sonst auf Helden. drainAirAmount (Druckwelle des Leviathans) nimmt zum Schaden Luft. Der Test prüft
  * das am Kampfprotokoll, mit und ohne Katapult.
  */
-/** Zusatz für Gegner, die im Belagerungsraum auf die Kriegsmaschine zielen (prefersWarMachineTarget) */
+/** Zusatz für Gegner, die im Belagerungsraum bevorzugt auf die Kriegsmaschine zielen (prefersWarMachineTarget) */
 function maschine(id: string): string {
-  return ENEMY_DEFS[id]?.prefersWarMachineTarget ? `; neben einer Kriegsmaschine trifft er nur sie, solange sie steht` : '';
+  return ENEMY_DEFS[id]?.prefersWarMachineTarget
+    ? `; neben einer Kriegsmaschine zielt er in zwei von drei Fällen nur auf sie, solange sie steht` : '';
 }
 
 export function faehigkeitText(id: string, sk: EnemySkillDef): string {

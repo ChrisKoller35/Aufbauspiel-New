@@ -88,7 +88,7 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'siege_walls',
-    text: 'Mauerschütze und Armbrustschütze schiessen nur auf die Kriegsmaschine, solange sie steht. Der Torwächter hat 10 Abwehr, der Eiserne Kommandant wütet ab Runde 9.',
+    text: 'Mauerschütze und Armbrustschütze zielen in zwei von drei Fällen nur auf die Kriegsmaschine, solange sie steht. Der Torwächter hat 10 Abwehr, der Eiserne Kommandant wütet ab Runde 9.',
   },
   {
     routeId: 'frozen_pass',

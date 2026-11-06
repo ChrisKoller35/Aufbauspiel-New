@@ -17,9 +17,18 @@ export interface EnemyDef {
   goldReward?: number;
   lore?: string;
   route?: string;
-  /** Gibt an, dass dieser Gegner bevorzugt die Kriegsmaschine angreift */
+  /**
+   * Belagerungsraum: Dieser Gegner zielt bevorzugt auf die Kriegsmaschine, solange sie steht, nämlich
+   * mit dem Anteil MASCHINE_BEVORZUGT seiner Angriffe (Grundangriff und Fähigkeiten), sonst auf die Helden
+   */
   prefersWarMachineTarget?: boolean;
 }
+
+/**
+ * Belagerungsraum: Anteil der Angriffe eines Gegners mit prefersWarMachineTarget, die nur der
+ * Kriegsmaschine gelten, solange sie steht (zwei von drei; das Monsterbuch sagt es so)
+ */
+export const MASCHINE_BEVORZUGT = 2 / 3;
 
 export interface EnemySkillDef {
   id: string;
