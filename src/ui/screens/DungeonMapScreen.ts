@@ -736,12 +736,16 @@ function buildRaidHimmel(width: number, oben: number): string {
     <ellipse cx="${x}" cy="${y}" rx="280" ry="230" fill="url(#dmap-raid-schein)"/>`;
 }
 
-/** Jorindes Leiter: von der Spitze der Pfeiler bis unter den Raid-Knoten, zwei Holme und zehn Sprossen */
+/**
+ * Jorindes Leiter: von der Spitze der Pfeiler bis an die rechte untere Kante des Raid-Knotens (unten links schwingt
+ * Zenits Pendel), zwei Holme und zehn Sprossen
+ */
 function buildRaidLeiter(offen: boolean): string {
   const { x, y, r, unten } = raidPunkte();
   if (!unten) return '';
   const a = { x: unten.x, y: unten.y - (ROUTE_DEFS[unten.routeId]?.bossId ? 80 : 64) - 4 };
-  const b = { x, y: y + r + 4 };
+  // Mitte der Kante zwischen der rechten unteren Ecke und der unteren Spitze, 4 px davor
+  const b = { x: x + r * 0.433 + 2, y: y + r * 0.75 + 3.5 };
   const dx = b.x - a.x;
   const dy = b.y - a.y;
   const laenge = Math.hypot(dx, dy);

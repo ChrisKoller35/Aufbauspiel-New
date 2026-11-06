@@ -491,11 +491,15 @@ export const RAID_TEXTE = {
     gefallen: (name: string, ursache: string) => `${name} fällt (${ursache})`,
     angriff: (summe: number) => `Die Gilde trifft Zenit: −${summe}`,
     mittag: 'Es schlägt zwölf!',
+    /** Zenit ist betäubt: sein Zug, das Pendel, fällt aus */
+    aussetzen: (grund: string, wer: string | null) =>
+      (wer ? `Zenit setzt aus (${grund} von ${wer}): kein Pendel` : `Zenit setzt aus (${grund}): kein Pendel`),
     ueberspringen: 'Zum Ergebnis',
     schneller: 'Schneller',
     probelauf: 'PROBELAUF · ZÄHLT NICHT',
     ernstkampf: 'ERNSTKAMPF',
-    treffer: (name: string, wert: number) => `${name} −${wert}`,
+    /** Ein Treffer in der Laufzeile; 0: ausgewichen, abgeschirmt oder gedeckt */
+    treffer: (name: string, wert: number) => (wert > 0 ? `${name} −${wert}` : `${name} unversehrt`),
     start: 'Die Gilde steigt die Leiter hinauf …',
     pause: 'Pause',
     weiter: 'Weiter',

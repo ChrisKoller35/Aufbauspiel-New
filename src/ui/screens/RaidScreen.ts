@@ -600,7 +600,7 @@ function klick(el: HTMLElement, e: MouseEvent): void {
   }
 }
 
-/** Enter und Leertaste auf einem Feld wie ein Tippen, Escape hebt die Wahl auf */
+/** Enter und Leertaste auf einem Feld wie ein Tippen (Escape hebt die Wahl auf: Hörer auf document, renderRaidScreen) */
 function taste(el: HTMLElement, e: KeyboardEvent): void {
   const ziel = e.target as HTMLElement;
   if (ziel.closest('.r-ov')) return;
@@ -1131,6 +1131,9 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
         case 'mittag':
           zeilen.push(`<div>${esc(W.mittag)}</div>`);
           break;
+        case 'aussetzen':
+          zeilen.push(`<div>${esc(W.aussetzen(e.grund ?? '', e.quelle === undefined ? null : name(e.quelle)))}</div>`);
+          break;
         default:
           break;
       }
@@ -1146,10 +1149,10 @@ function zeigeWiedergabe(el: HTMLElement, r: RaidErgebnis, helden: WgHeld[], art
         i.classList.toggle('wenig', anteil < 0.3);
       }
       z.classList.toggle('tot', leben <= 0);
-      const minus = schaden.get(id);
-      if (minus) z.insertAdjacentHTML('beforeend', `<span class="r-wg-zahl">−${Math.round(minus)}</span>`);
-      const dazu = heilung.get(id);
-      if (dazu) z.insertAdjacentHTML('beforeend', `<span class="r-wg-zahl plus">+${Math.round(dazu)}</span>`);
+      const minus = Math.round(schaden.get(id) ?? 0);
+      if (minus > 0) z.insertAdjacentHTML('beforeend', `<span class="r-wg-zahl">−${minus}</span>`);
+      const dazu = Math.round(heilung.get(id) ?? 0);
+      if (dazu > 0) z.insertAdjacentHTML('beforeend', `<span class="r-wg-zahl plus">+${dazu}</span>`);
     }
     balken.style.width = `${(100 * Math.max(0, rd.zenitHp)) / def.werte.hp}%`;
     zenitZahl.textContent = zahl(Math.max(0, rd.zenitHp));

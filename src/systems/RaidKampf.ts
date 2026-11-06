@@ -33,7 +33,7 @@ export interface RaidTreffer {
 
 export interface RaidEreignis {
   /** 'ansage': nur ein Satz des Stadtschreibers, ohne Ereignis dazu (Grösse der Gruppe, Spott, Ende) */
-  art: Regel | 'angriff' | 'heilung' | 'gefallen' | 'mittag' | 'ansage';
+  art: Regel | 'angriff' | 'heilung' | 'gefallen' | 'mittag' | 'ansage' | 'aussetzen';
   trupp?: number;
   reihe?: number;
   spalte?: number;
@@ -42,6 +42,8 @@ export interface RaidEreignis {
   treffer?: RaidTreffer[];
   /** Satz des Stadtschreibers, falls diese Art zum ersten Mal kam */
   ansage?: string;
+  /** 'aussetzen': der Schlag, der Zenit anhielt (Erschütterungsschlag, Einfrieren …); `quelle` ist der Held dazu */
+  grund?: string;
 }
 
 export interface RaidRunde {
@@ -205,6 +207,8 @@ export function raidKampf(
   let ereignisse: RaidEreignis[] = [];
   let funkenZiel: number | null = null;
   let funkenNachbarn: number[] = [];
+  // Wer Zenit zuletzt betäubt hat: sein nächster Zug fällt aus, und mit ihm das Pendel
+  let betaeubtVon: CombatUnit | null = null;
   // Spalten, die schon zu Kampfbeginn leer waren (Ansage beim ersten Durchschlag)
   const leerBeiBeginn = new Set(Array.from({ length: spalten }, (_, s) => s).filter(s => !party.some(u => feld.get(u)!.spalte === s)));
   const einzigeDerSpalte = new Map<number, CombatUnit>();
@@ -287,7 +291,11 @@ export function raidKampf(
     for (const u of reihenfolge) {
       if (u.hp <= 0 || zenit.hp <= 0) continue;
       for (const t of trupps) zustandAktualisieren(t, log);
-      if (setztAus(u, log)) continue;
+      const grund = u === zenit ? zenit.betaeubt : undefined;
+      if (setztAus(u, log)) {
+        if (grund && !ohne.has('pendel')) ereignis({ art: 'aussetzen', quelle: betaeubtVon?.id, grund });
+        continue;
+      }
 
       if (u === zenit) {
         if (ohne.has('pendel')) continue;
@@ -331,7 +339,9 @@ export function raidKampf(
         }
         if (faehigkeit) heilCd.set(u, cd - 1);
         const vorher = zenit.hp;
+        const frei = !zenit.betaeubt;
         engine.grundangriff(u, zenit, gegner, truppDes(u), run, rng);
+        if (frei && zenit.betaeubt) betaeubtVon = u;
         const getroffen = Math.max(0, vorher - zenit.hp);
         schaden[u.id] = (schaden[u.id] ?? 0) + getroffen;
         angriffe[u.id] = (angriffe[u.id] ?? 0) + getroffen;
