@@ -1967,7 +1967,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   .mc-co-hp-bar { max-width: none; }
   .mc-co-badges { margin-bottom: 0; }
   /* Ziel-Abzeichen auf den Rand gesetzt, nur das Zeichen: Die schmale Karte hat oben rechts Name und Werte */
-  .mc-co-unit.is-targeted::after { content: '🎯'; top: -9px; right: 4px; padding: 0 4px; font-size: 0.7rem; letter-spacing: 0; }
+  /* Am Handy über der linken oberen Ecke, über dem Bild: rechts träfe es einen langen Namen (320 px). Höchstens 6 px
+     nach oben, so weit wie der Abstand zur Karte darüber */
+  .mc-co-unit.is-targeted::after { content: '🎯'; top: -6px; left: 4px; right: auto; padding: 0 4px; font-size: 0.7rem; letter-spacing: 0; }
   /* Gegnerfähigkeiten und Vorräte auf dunklem Grund wie am PC: Auf hellen Routenbildern (Taglicht) wäre die Schrift sonst kaum lesbar */
   .mc-co-col > :not(.mc-co-unit) {
     min-width: 0; overflow-wrap: anywhere; padding: 0 8px 6px;

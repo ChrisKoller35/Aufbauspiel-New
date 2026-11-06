@@ -900,6 +900,8 @@ export function renderHeroesScreen(container: HTMLElement): void {
   // gilt nur, solange der Fokus nirgends liegt: Steht er inzwischen im Heldenfenster, bleibt er dort
   const fokus = fokusMerken(prev) ?? (fokusVerloren() ? fokusVorRueckmeldung : null);
   fokusVorRueckmeldung = null;
+  const nachbar = nachbarNachRueckmeldung;
+  nachbarNachRueckmeldung = null;
   // Der neue Bildschirm übernimmt Platz und Sichtbarkeit des alten (wie replaceScreen in main.ts): Zeichnet ein
   // Zeitgeber neu, während ein anderer Bildschirm vorne ist, bleibt er versteckt
   const stil = prev?.style?.cssText;
@@ -1046,7 +1048,17 @@ export function renderHeroesScreen(container: HTMLElement): void {
     });
   }
 
-  fokusZurueck(el, fokus, ['#s-heroes .tab.active']);
+  // Nach dem Anheuern oder Aufnehmen ist der Knopf weg (die Klasse steht jetzt unter «Schon in deiner Gilde»): Der
+  // Fokus geht an den Knopf, der jetzt an derselben Stelle steht, sonst an den letzten, erst ohne Knopf an den Reiter
+  fokusZurueck(el, fokus, [...(nachbar ? nachbarKnopf(el, nachbar) : []), '#s-heroes .tab.active']);
+}
+
+/** Selektor des Knopfs derselben Art (anheuern-…, lehrling-…) an derselben Stelle, sonst des letzten freien */
+function nachbarKnopf(el: HTMLElement, { art, stelle }: { art: string; stelle: number }): string[] {
+  const reihe = Array.from(el.querySelectorAll<HTMLElement>('[data-fokus]'))
+    .filter(k => k.dataset.fokus?.startsWith(art) && !(k as HTMLButtonElement).disabled);
+  const ziel = reihe[Math.min(stelle, reihe.length - 1)];
+  return ziel?.dataset.fokus ? [`[data-fokus="${ziel.dataset.fokus}"]`] : [];
 }
 
 // ─── Modal ──────────────────────────────────────────────────────
@@ -1392,6 +1404,8 @@ function handleLehrling(classId: string, container: HTMLElement, btn: HTMLElemen
 
 /** Fokus, den eine Rückmeldung verdrängt hat (ein gesperrter Knopf verliert ihn); das Neuzeichnen setzt ihn zurück */
 let fokusVorRueckmeldung: FokusMarke | null = null;
+/** Art und Stelle des Knopfs, der eben anheuerte oder aufnahm: Er selbst verschwindet beim Neuzeichnen */
+let nachbarNachRueckmeldung: { art: string; stelle: number } | null = null;
 
 /**
  * Rückmeldung auf einem Knopf («Nicht genug Gold!», «✓ Rekrutiert!»), gesperrt, solange sie steht. Ein Fehler
@@ -1408,6 +1422,11 @@ function rueckmeldung(btn: HTMLElement, text: string, ok: boolean, container: HT
   btn.setAttribute('disabled', 'true');
   if (ok) {
     fokusVorRueckmeldung = marke;
+    const art = /^(anheuern|lehrling)-/.exec(btn.dataset.fokus ?? '')?.[0];
+    nachbarNachRueckmeldung = art
+      ? { art, stelle: Array.from(document.querySelectorAll<HTMLElement>('#s-heroes [data-fokus]'))
+        .filter(k => k.dataset.fokus?.startsWith(art)).indexOf(btn) }
+      : null;
     setTimeout(() => {
       // Inzwischen ist ein anderer Bildschirm vorne: nichts neu zeichnen (der nächste Besuch zeichnet ohnehin neu),
       // und den Fokus nicht von dort holen

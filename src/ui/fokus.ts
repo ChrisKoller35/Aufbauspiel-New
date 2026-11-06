@@ -184,17 +184,25 @@ export function bildschirmMarke(id: string, fokus: string | null): void {
  * Nach einem Bildschirmwechsel mit der Tastatur: Zurück auf einem Bildschirm steht der Fokus auf dem Knopf, mit dem
  * man ihn verlassen hat (nach der Expedition auf ihrer Routenkarte, nach «Zurück» auf der Kachel im Hauptmenü). Ein
  * neuer Bildschirm nimmt den Fokus selbst, ohne Rahmen: Der nächste Tab landet auf seinem ersten Knopf, nicht hinter
- * dem alten Bildschirm oder in der Adresszeile. Maus und Finger: nichts.
+ * dem alten Bildschirm oder in der Adresszeile. Nach Maus oder Finger nimmt ihn der Bildschirm ebenso still, aber
+ * nie einen Knopf: Ein späterer Tab beginnt so oben im neuen Bildschirm.
  */
 export function bildschirmFokussieren(id: string): void {
-  if (!tastatur || typeof document === 'undefined') return;
+  if (typeof document === 'undefined') return;
   const el = document.getElementById(id);
   // Nur einen verlorenen Fokus (Seite oder ein Knopf im eben versteckten Bildschirm): Hat der neue Bildschirm schon
   // etwas fokussiert, etwa ein Fenster beim ersten Besuch, bleibt der Fokus dort
-  if (!el || !fokusVerloren()) return;
+  // (Ohne focus, etwa in einer nachgebauten Seite ohne Browser: nichts)
+  if (!el || typeof el.focus !== 'function' || !fokusVerloren()) return;
+  if (!el.hasAttribute('tabindex')) el.tabIndex = -1;
+  // Mit Maus oder Finger: still auf den Bildschirm selbst (ohne Rahmen, .screen:focus, ohne Scrollen). Sonst bliebe der
+  // Startpunkt für Tab auf dem angeklickten Knopf im versteckten Bildschirm, und der erste Tab ginge ins Leere
+  if (!tastatur) {
+    el.focus({ preventScroll: true });
+    return;
+  }
   // Zurück mit der Tastatur: Das Bild darf zum Knopf scrollen, auch wenn man den Bildschirm mit der Maus verliess
   const marke = fokusBeimVerlassen.get(id);
   if (marke && fokusZurueck(el, { ...marke, tastatur: true })) return;
-  if (!el.hasAttribute('tabindex')) el.tabIndex = -1;
   el.focus({ preventScroll: true });
 }

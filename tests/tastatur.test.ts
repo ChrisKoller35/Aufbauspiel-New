@@ -88,6 +88,15 @@ describe('Fokus über ein Neuzeichnen', () => {
     expect(kampf).toContain('this.mitFokus(() => this.refreshAfterProvision());');
     expect(kampf).toContain("fokusZurueck(this.el, marke, ['.mc-co-fight-btn']);");
   });
+
+  test('nach dem Anheuern oder Aufnehmen: der Knopf an derselben Stelle, sonst der letzte, erst dann der Reiter', () => {
+    const helden = lies('ui/screens/HeroesScreen.ts');
+    // Der Knopf selbst verschwindet (die Klasse steht jetzt unter «Schon in deiner Gilde»): Art und Stelle merken
+    expect(helden).toContain('const art = /^(anheuern|lehrling)-/.exec(btn.dataset.fokus ?? \'\')?.[0];');
+    expect(helden).toContain(".filter(k => k.dataset.fokus?.startsWith(art)).indexOf(btn) }");
+    expect(helden).toContain('const ziel = reihe[Math.min(stelle, reihe.length - 1)];');
+    expect(helden).toContain("fokusZurueck(el, fokus, [...(nachbar ? nachbarKnopf(el, nachbar) : []), '#s-heroes .tab.active']);");
+  });
 });
 
 describe('Fenster: Tab-Falle und gehaltene Tasten', () => {
@@ -166,7 +175,7 @@ describe('Bildschirme benutzen die Bausteine', () => {
     expect(quelle).toContain("if (!document.getElementById('s-heroes')?.getClientRects().length) {");
     expect(quelle).toContain('if (stil !== undefined) el.style.cssText = stil;');
     expect(quelle.match(/rueckmeldung\(btn, /g)).toHaveLength(6);
-    expect(quelle).toContain("fokusZurueck(el, fokus, ['#s-heroes .tab.active']);");
+    expect(quelle).toContain("fokusZurueck(el, fokus, [...(nachbar ? nachbarKnopf(el, nachbar) : []), '#s-heroes .tab.active']);");
   });
 
   test('Fenster der Expedition: Dialog, Fokus hinein, Tab bleibt drin, Escape nur auf «ZURÜCK»', () => {
@@ -251,6 +260,8 @@ describe('Bildschirme benutzen die Bausteine', () => {
     // Das Ziel trägt ein Abzeichen, der Tastatur-Rahmen ist gestrichelt: Fokus und Ziel sehen verschieden aus
     const css = lies('ui/html/magic-city.css');
     expect(css).toMatch(/\.mc-co-unit\.is-targeted::after \{\s*content: '🎯 Ziel'/);
+    // Am Handy links oben über dem Bild (rechts traf es lange Namen, 320 px), nicht in die Karte darüber
+    expect(css).toContain(".mc-co-unit.is-targeted::after { content: '🎯'; top: -6px; left: 4px; right: auto;");
     expect(css).toContain('.mc-co-unit > .deckknopf:focus-visible { outline: 2px dashed');
   });
 });
@@ -343,12 +354,25 @@ describe('Zurück auf einem Bildschirm', () => {
     expect(waehle).toContain("bildschirmMarke('s-expeditions', `route-${routeId}`);");
   });
 
-  test('nach Maus oder Finger: nichts', () => {
+  test('nach Maus oder Finger: still der Bildschirm selbst, nie der Knopf (der erste Tab beginnt dann oben)', () => {
     aufbauen();
+    hoerer.keydown({ key: 'Enter' });
+    bildschirmVerlassen('s-main'); // mit der Kachel verlassen: die Marke gäbe es
     hoerer.pointerdown({});
     seite.activeElement = body;
     bildschirmFokussieren('s-main');
     expect(neu.focus).not.toHaveBeenCalled();
+    expect(haupt.focus).toHaveBeenCalledWith({ preventScroll: true });
+    // Ohne Rahmen: .screen:focus hat keinen Umriss
+    expect(lies('ui/html/tastatur.css')).toContain('.screen:focus { outline: none; }');
+  });
+
+  test('nach Maus oder Finger mit Fokus im neuen Bildschirm (ein Fenster): bleibt dort', () => {
+    aufbauen();
+    hoerer.pointerdown({});
+    seite.activeElement = neu; // ein sichtbarer Knopf hat den Fokus: nicht verloren
+    haupt.focus.mockClear();
+    bildschirmFokussieren('s-main');
     expect(haupt.focus).not.toHaveBeenCalled();
   });
 });
