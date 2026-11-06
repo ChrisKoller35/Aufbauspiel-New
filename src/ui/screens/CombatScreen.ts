@@ -15,7 +15,8 @@ import { ENEMY_DEFS } from '../../data/enemies';
 import { getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
-import { hpAnzeige, rundeLogZahlen } from '../hpAnzeige';
+import { hpAnzeige, hundertstel, kampfwert, rundeLogZahlen } from '../hpAnzeige';
+import { deckknopfElement, fokusMerken, fokusZurueck, tastaturZuletzt } from '../fokus';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
@@ -41,7 +42,7 @@ interface UnitEntry {
 
 /** Die Werte-Zeile einer Einheit in der Kampfkarte */
 function statsText(unit: CombatUnit): string {
-  return `ATK:${unit.atk} DEF:${unit.def} SPD:${unit.spd.toFixed(1)}`;
+  return `ATK:${kampfwert(unit.atk)} DEF:${kampfwert(unit.def)} SPD:${hundertstel(unit.spd)}`;
 }
 
 // ─── CSS Shake (replaces Phaser camera.shake) ────────────────
@@ -295,6 +296,28 @@ export class CombatScreen {
       this.el.style.backgroundColor = '#060810';
     }
     this.passeKartenAn();
+    this.fokusAufHauptknopf();
+  }
+
+  /**
+   * Tastatur: Der Hauptknopf der Aktionen («Kampf starten!», «Nächste Runde →», «Weiter») nimmt den Fokus, Enter
+   * führt weiter. Die Aktionen werden in jeder Phase neu gebaut, der Fokus fiele sonst auf die Seite. Maus und
+   * Finger: nichts (ui/fokus.ts).
+   */
+  private fokusAufHauptknopf(): void {
+    const knopf = this.actionsEl.querySelector<HTMLButtonElement>('.mc-co-fight-btn, .mc-co-continue-btn');
+    if (knopf && tastaturZuletzt()) knopf.focus({ preventScroll: true });
+  }
+
+  /**
+   * Zeichnet einen Teil der Vorschau neu (Fähigkeiten nach einer Wahl, Vorräte nach «Nutzen»). Der Fokus bleibt auf
+   * dem gleichwertigen Knopf (data-fokus), ein zweites Enter wählt ab oder nimmt das nächste Brot; ist der Vorrat
+   * aufgebraucht, geht er an «Kampf starten!» statt auf die Seite.
+   */
+  private mitFokus(neuZeichnen: () => void): void {
+    const marke = fokusMerken(this.previewStripEl);
+    neuZeichnen();
+    fokusZurueck(this.el, marke, ['.mc-co-fight-btn']);
   }
 
   hide(): void {
@@ -423,6 +446,12 @@ export class CombatScreen {
       });
       entry.el.style.cursor = 'pointer';
       entry.el.title = 'Klicken = Fokus-Ziel';
+      // Tastatur: ein Knopf über der Karte (docs/TASTATUR.md), Enter wählt das Ziel; weg, sobald der Kampf läuft
+      if (unit.hp > 0) {
+        const knopf = deckknopfElement(`${unit.name} als Fokus-Ziel wählen`, `gegner-${unit.id}`);
+        knopf.setAttribute('aria-pressed', 'false');
+        entry.el.appendChild(knopf);
+      }
       this.enemyColEl.appendChild(entry.el);
       this.enemyEntries.push(entry);
     }
@@ -556,6 +585,7 @@ export class CombatScreen {
     this.preTargetEnemyId = enemyId;
     for (const entry of this.enemyEntries) {
       entry.el.classList.toggle('is-targeted', entry.unitId === enemyId);
+      entry.el.querySelector('.deckknopf')?.setAttribute('aria-pressed', String(entry.unitId === enemyId));
     }
     this.onPreCombatTarget?.(enemyId);
   }
@@ -673,6 +703,7 @@ export class CombatScreen {
   ): HTMLButtonElement {
     const btn = document.createElement('button');
     btn.className = 'mc-co-ability-btn';
+    btn.dataset.fokus = `faehigkeit-${unit.id}-${skill.id}`;
     btn.disabled = !canInteract;
 
     const isSelected = this.selectedAbilities.get(unit.id) === skill.id;
@@ -698,7 +729,7 @@ export class CombatScreen {
         } else {
           this.selectedAbilities.set(unit.id, skill.id);
         }
-        this.buildAbilitySection(run, room);
+        this.mitFokus(() => this.buildAbilitySection(run, room));
       });
     }
 
@@ -815,13 +846,14 @@ export class CombatScreen {
 
       const useBtn = document.createElement('button');
       useBtn.className = 'mc-btn success mc-co-use-btn';
+      useBtn.dataset.fokus = `vorrat-${zeile.itemId}`;
       useBtn.textContent = 'Nutzen';
       useBtn.title = vorratTitel(zeile);
       useBtn.addEventListener('click', () => {
         if (this.phase !== 'preview') return;
         if (!this.expSystem || !this.expState) return;
         this.vorratMeldung = nutzeVorrat(this.expSystem, this.expState, zeile);
-        this.refreshAfterProvision();
+        this.mitFokus(() => this.refreshAfterProvision());
       });
 
       card.append(itemImg, text, itemQty, useBtn);
@@ -872,6 +904,8 @@ export class CombatScreen {
 
   startCombatAnimation(run: ExpeditionRun, room: EncounterRoom): void {
     this.phase = 'animating';
+    // Das Ziel ist gewählt: Die Knöpfe über den Gegnern gehen weg, Tab hält dort nicht mehr
+    for (const knopf of Array.from(this.enemyColEl.querySelectorAll('.deckknopf'))) knopf.remove();
     this.actionsEl.innerHTML = '';
     this.previewStripEl.innerHTML = '';
 
@@ -1067,7 +1101,7 @@ export class CombatScreen {
       const floaty = document.createElement('div');
       floaty.className = 'mc-co-floaty';
       const diffZahl = Math.max(1, Math.round(Math.abs(diff)));
-      floaty.textContent = diff > 0 ? `-${diffZahl}` : `+${diffZahl}`;
+      floaty.textContent = diff > 0 ? `−${diffZahl}` : `+${diffZahl}`; // echtes Minus (docs/LESBARKEIT.md, Regel 7)
       floaty.style.color = diff > 0 ? 'var(--mc-damage)' : 'var(--mc-heal)';
       floaty.style.fontSize = Math.abs(diff) >= 20 ? '22px' : Math.abs(diff) >= 10 ? '18px' : '16px';
       floaty.style.animationDuration = `${Math.round(900 / spd)}ms`;
@@ -1304,6 +1338,7 @@ export class CombatScreen {
     btnRow.appendChild(this.createRetreatButton());
     btnRow.appendChild(btn);
     this.actionsEl.appendChild(btnRow);
+    this.fokusAufHauptknopf();
   }
 
   // ─── State: Result ────────────────────────────────────────
@@ -1357,6 +1392,7 @@ export class CombatScreen {
       this.onComplete?.();
     });
     this.actionsEl.appendChild(btn);
+    this.fokusAufHauptknopf();
   }
 
   // ─── Cleanup ──────────────────────────────────────────────

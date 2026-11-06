@@ -16,6 +16,7 @@ import { CombatScreen } from './ui/screens/CombatScreen';
 import { initExpeditionFlow, startExpeditionFlow } from './ui/screens/ExpeditionFlow';
 import { vorratsZeileHtml, zeigeKopfHinweis } from './ui/screens/HeaderRenderer';
 import { navigateTo, initScreenStyles, ScreenId, setzeNavigationsSperre } from './ui/ScreenRouter';
+import { eingabeBeobachten } from './ui/fokus';
 import { ExpeditionSystem } from './systems/ExpeditionSystem';
 import { GearSystem } from './systems/GearSystem';
 import { ProvisionSystem } from './systems/ProvisionSystem';
@@ -191,6 +192,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // ─── Keyboard Shortcuts ──────────────────────────────────────
 
+  // Tastatur oder Zeiger? Nach einem Wechsel mit der Tastatur beginnt Tab oben im neuen Bildschirm (ui/fokus.ts)
+  eingabeBeobachten();
+
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     // F5 speichert statt neu zu laden, auch in einem Eingabefeld (Suche im Fundbuch, Auswahl im Gildenhaus)
     if (e.key === 'F5') {
@@ -200,6 +204,8 @@ document.addEventListener('DOMContentLoaded', () => {
       return;
     }
     if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement || e.target instanceof HTMLSelectElement) return;
+    // Strg, Cmd und Alt gehören dem Browser (Strg+A markiert alles, Strg+G sucht weiter), nicht den Kürzeln
+    if (e.ctrlKey || e.metaKey || e.altKey) return;
 
     // Während einer Expedition sperrt der Router jeden Wechsel (setzeNavigationsSperre oben).
     // Ist ein Fenster offen (Händler, Gebäude, Stadtweg, Spielstand, Fundbuch), fängt dessen Hörer in der

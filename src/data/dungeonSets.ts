@@ -661,7 +661,7 @@ const STAT_NAMEN: [keyof SetWerte, string, (v: number) => string][] = [
   ['atk', 'Angriff', v => `+${v}`],
   ['def', 'Verteidigung', v => `+${v}`],
   ['hp', 'Leben', v => `+${v}`],
-  ['spd', 'Tempo', v => `${v > 0 ? '+' : ''}${v}`],
+  ['spd', 'Tempo', v => (v < 0 ? `−${Math.abs(v)}` : `${v > 0 ? '+' : ''}${v}`)],
   ['critChance', 'Krit-Chance', v => `+${Math.round(v * 100)} %`],
   ['critMult', 'Krit-Schaden', v => `+${Math.round(v * 100)} %`],
 ];

@@ -30,6 +30,8 @@ import { bildKarte } from '../heldBild';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gedruecktUm } from '../components/Druckzeit';
 import '../html/beutevergleich.css';
+import { fokusMerken, fokusVerloren, fokusZurueck, type FokusMarke } from '../fokus';
+import { kampfwert, zehntel } from '../hpAnzeige';
 import { besserFuerAlle, besserText, nebenhandFrei, vergleicher } from '../../systems/Beutevergleich';
 import { Wechsel, ausLagerAusruesten, ausruestPlan } from '../../systems/Ausruesten';
 
@@ -119,7 +121,7 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
 
   const trainingCost = trainingsKosten(fighter.level);
   const actionBtn = mode === 'train'
-    ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}">TRAINIEREN (${trainingCost}G)</button>`
+    ? `<button class="btn btn-sm btn-train" data-fighter-id="${fighter.id}" data-cost="${trainingCost}" data-fokus="trainieren-${fighter.id}">TRAINIEREN (${trainingCost}G)</button>`
     : '';
   const oeffnen = `<button type="button" class="hcard-oeffnen" aria-label="Heldenfenster: ${escapeAttr(fighter.name)}, ${className}, Stufe ${fighter.level}"></button>`;
 
@@ -145,7 +147,8 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
       </div>`;
   }
 
-  // Fallback: sprite-based card (for classes without illustrations)
+  // Fallback: sprite-based card (for classes without illustrations). Werte mit Ausrüstung wie in der Teamwahl
+  const werte = gearSystem.getEffectiveStats(fighter, stufen());
   return `
     <div class="hcard" data-fighter-id="${fighter.id}">
       ${oeffnen}
@@ -161,9 +164,9 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
       <div class="lvbar"><div class="lvfill" style="width:${pct}%"></div></div>
       <div class="hc-xp">${xpLabel}</div>
       <div class="hc-st">
-        <span>\u2694 ${fighter.baseStats.atk}</span>
-        <span>\uD83D\uDEE1 ${fighter.baseStats.def}</span>
-        <span>\u2764 ${fighter.baseStats.hp}/${fighter.baseStats.maxHp}</span>
+        <span>\u2694 ${kampfwert(werte.atk)}</span>
+        <span>\uD83D\uDEE1 ${kampfwert(werte.def)}</span>
+        <span>\u2764 ${werte.maxHp}</span>
       </div>
       ${actionBtn}
     </div>`;
@@ -187,7 +190,7 @@ function renderHireCard(classDef: ClassDef, cost: number): string {
         <div class="hcard-footer">
           <span class="hc-cost">\uD83D\uDCB0 ${cost} Gold</span>
           <button class="btn btn-sm btn-hire" data-class-id="${classDef.id}"
-                  data-cost="${cost}">ANHEUERN</button>
+                  data-cost="${cost}" data-fokus="anheuern-${classDef.id}">ANHEUERN</button>
         </div>
       </div>`;
   }
@@ -212,7 +215,7 @@ function renderHireCard(classDef: ClassDef, cost: number): string {
       <div class="hcard-footer">
         <span class="hc-cost">\uD83D\uDCB0 ${cost} Gold</span>
         <button class="btn btn-sm btn-hire" data-class-id="${classDef.id}"
-                data-cost="${cost}">ANHEUERN</button>
+                data-cost="${cost}" data-fokus="anheuern-${classDef.id}">ANHEUERN</button>
       </div>
     </div>`;
 }
@@ -556,13 +559,12 @@ function statsHtml(fighter: GuildFighter): string {
   const spdBonus = Math.round((eff.spd - base.spd) * 100) / 100;
   const critBonus = Math.round((eff.critChance - base.critChance) * 100);
   const kritSchaden = Math.round(eff.critMult * 100) / 100;
-  // Angriff und Verteidigung wachsen je Stufe um Zehntel: auf 0,1 runden, sonst zeigt der Anteil der
+  // Angriff und Verteidigung wachsen je Stufe um Zehntel: auf 0,1 runden (zehntel), sonst zeigt der Anteil der
   // Ausrüstung Rundungsrauschen (24.6 − 10.6 = 14.000000000000002)
-  const zehntel = (n: number) => Math.round(n * 10) / 10;
   return `
     <div class="hdm2-stats" title="Werte mit Ausrüstung, Set-Boni und Weg; die kleine Zahl kommt von dort">
-      ${wertHtml('⚔', 'ATK', String(zehntel(eff.atk)), zehntel(eff.atk - base.atk))}
-      ${wertHtml('🛡', 'DEF', String(zehntel(eff.def)), zehntel(eff.def - base.def))}
+      ${wertHtml('⚔', 'ATK', String(kampfwert(eff.atk)), zehntel(eff.atk - base.atk))}
+      ${wertHtml('🛡', 'DEF', String(kampfwert(eff.def)), zehntel(eff.def - base.def))}
       ${wertHtml('❤', 'HP', String(eff.maxHp), eff.maxHp - base.maxHp)}
       ${wertHtml('⚡', 'SPD', String(Math.round(eff.spd * 100) / 100), spdBonus)}
       ${wertHtml('🎯', 'CRIT', `${Math.round(eff.critChance * 100)}%`, critBonus, `${vorzeichen(critBonus)} %`)}
@@ -893,6 +895,17 @@ function pruefeZweitenDruck(wurzel: HTMLElement): void {
 export function renderHeroesScreen(container: HTMLElement): void {
   // Remove previous instance to avoid duplicates on re-render
   const prev = document.getElementById('s-heroes');
+  // Tastatur: Nach Reiterwechsel, Training oder Anheuern bleibt der Fokus beim selben Knopf (sonst fiele er auf die
+  // Seite und Tab begänne oben); gibt es ihn nicht mehr, nimmt ihn der aktive Reiter. Die Marke einer Rückmeldung
+  // gilt nur, solange der Fokus nirgends liegt: Steht er inzwischen im Heldenfenster, bleibt er dort
+  const fokus = fokusMerken(prev) ?? (fokusVerloren() ? fokusVorRueckmeldung : null);
+  fokusVorRueckmeldung = null;
+  const nachbar = nachbarNachRueckmeldung;
+  nachbarNachRueckmeldung = null;
+  // Der neue Bildschirm übernimmt Platz und Sichtbarkeit des alten (wie replaceScreen in main.ts): Zeichnet ein
+  // Zeitgeber neu, während ein anderer Bildschirm vorne ist, bleibt er versteckt
+  const stil = prev?.style?.cssText;
+  const danach = prev?.nextSibling ?? null;
   if (prev) prev.remove();
 
   const state = gameState;
@@ -929,7 +942,9 @@ export function renderHeroesScreen(container: HTMLElement): void {
       <div class="tab-content">
         ${tabContent()}
       </div>`;
-  container.appendChild(el);
+  if (stil !== undefined) el.style.cssText = stil;
+  if (danach && danach.parentNode === container) container.insertBefore(el, danach);
+  else container.appendChild(el);
 
   // ─── Event Binding ──────────────────────────────────────────
 
@@ -1032,6 +1047,18 @@ export function renderHeroesScreen(container: HTMLElement): void {
       renderHeroesScreen(container);
     });
   }
+
+  // Nach dem Anheuern oder Aufnehmen ist der Knopf weg (die Klasse steht jetzt unter «Schon in deiner Gilde»): Der
+  // Fokus geht an den Knopf, der jetzt an derselben Stelle steht, sonst an den letzten, erst ohne Knopf an den Reiter
+  fokusZurueck(el, fokus, [...(nachbar ? nachbarKnopf(el, nachbar) : []), '#s-heroes .tab.active']);
+}
+
+/** Selektor des Knopfs derselben Art (anheuern-…, lehrling-…) an derselben Stelle, sonst des letzten freien */
+function nachbarKnopf(el: HTMLElement, { art, stelle }: { art: string; stelle: number }): string[] {
+  const reihe = Array.from(el.querySelectorAll<HTMLElement>('[data-fokus]'))
+    .filter(k => k.dataset.fokus?.startsWith(art) && !(k as HTMLButtonElement).disabled);
+  const ziel = reihe[Math.min(stelle, reihe.length - 1)];
+  return ziel?.dataset.fokus ? [`[data-fokus="${ziel.dataset.fokus}"]`] : [];
 }
 
 // ─── Modal ──────────────────────────────────────────────────────
@@ -1306,16 +1333,7 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
 
   // Not enough gold — show error feedback on button
   if (!ergebnis.ok) {
-    const originalText = btn.textContent ?? 'TRAINIEREN';
-    const originalBg = btn.style.background;
-    btn.textContent = 'Nicht genug Gold!';
-    btn.style.background = '#991b1b';
-    btn.setAttribute('disabled', 'true');
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.background = originalBg;
-      btn.removeAttribute('disabled');
-    }, 1500);
+    rueckmeldung(btn, 'Nicht genug Gold!', false, container);
     return;
   }
 
@@ -1328,12 +1346,7 @@ function handleTrain(fighterId: number, container: HTMLElement, btn: HTMLElement
   // Show success feedback, then re-render
   const successText = ergebnis.neueKlassen.length > 0 ? '\u2605 Neue Klasse frei!'
     : ergebnis.levelUps > 0 ? '\u2605 Level Up!' : '\u2713 Trainiert!';
-  btn.textContent = successText;
-  btn.style.background = '#166534';
-  btn.setAttribute('disabled', 'true');
-  setTimeout(() => {
-    renderHeroesScreen(container);
-  }, 600);
+  rueckmeldung(btn, successText, true, container);
 }
 
 function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): void {
@@ -1343,16 +1356,7 @@ function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): 
 
   // Not enough gold — show error feedback on button
   if (gold < cost) {
-    const originalText = btn.textContent ?? 'ANHEUERN';
-    const originalBg = btn.style.background;
-    btn.textContent = 'Nicht genug Gold!';
-    btn.style.background = '#991b1b';
-    btn.setAttribute('disabled', 'true');
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.background = originalBg;
-      btn.removeAttribute('disabled');
-    }, 1500);
+    rueckmeldung(btn, 'Nicht genug Gold!', false, container);
     return;
   }
 
@@ -1381,12 +1385,7 @@ function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): 
   window.dispatchEvent(new Event('mc:speichern')); // Held und Gold gleich sichern, nicht erst nach 60 s
 
   // Show success feedback, then re-render
-  btn.textContent = '\u2713 Rekrutiert!';
-  btn.style.background = '#166534';
-  btn.setAttribute('disabled', 'true');
-  setTimeout(() => {
-    renderHeroesScreen(container);
-  }, 600);
+  rueckmeldung(btn, '\u2713 Rekrutiert!', true, container);
 }
 
 /** Nimmt den Lehrling einer Klasse auf (systems/Lehrlinge.ts); reicht das Gold nicht, sagt es der Knopf */
@@ -1394,27 +1393,57 @@ function handleLehrling(classId: string, container: HTMLElement, btn: HTMLElemen
   if (!gameState || btn.hasAttribute('disabled')) return;
   const lehrling = lehrlingAufnehmen(gameState, classId);
   if (!lehrling) {
-    const originalText = btn.textContent ?? 'AUFNEHMEN';
-    const originalBg = btn.style.background;
-    btn.textContent = 'Nicht genug Gold!';
-    btn.style.background = '#991b1b';
-    btn.setAttribute('disabled', 'true');
-    setTimeout(() => {
-      btn.textContent = originalText;
-      btn.style.background = originalBg;
-      btn.removeAttribute('disabled');
-    }, 1500);
+    rueckmeldung(btn, 'Nicht genug Gold!', false, container);
     return;
   }
   erfolgePruefen(gameState); // Lehrlings-Erfolge gleich zählen
   window.dispatchEvent(new Event('mc:speichern')); // Lehrling und Gold gleich sichern
 
-  btn.textContent = '\u2713 Aufgenommen!';
-  btn.style.background = '#166534';
+  rueckmeldung(btn, '\u2713 Aufgenommen!', true, container);
+}
+
+/** Fokus, den eine Rückmeldung verdrängt hat (ein gesperrter Knopf verliert ihn); das Neuzeichnen setzt ihn zurück */
+let fokusVorRueckmeldung: FokusMarke | null = null;
+/** Art und Stelle des Knopfs, der eben anheuerte oder aufnahm: Er selbst verschwindet beim Neuzeichnen */
+let nachbarNachRueckmeldung: { art: string; stelle: number } | null = null;
+
+/**
+ * Rückmeldung auf einem Knopf («Nicht genug Gold!», «✓ Rekrutiert!»), gesperrt, solange sie steht. Ein Fehler
+ * verschwindet nach 1,5 s, der Knopf ist wieder frei und bekommt den Fokus zurück, wenn er ihn hatte. Ein Erfolg
+ * zeichnet nach 0,6 s neu, der Fokus geht an denselben Knopf oder an den aktiven Reiter (renderHeroesScreen).
+ */
+function rueckmeldung(btn: HTMLElement, text: string, ok: boolean, container: HTMLElement): void {
+  const hatteFokus = document.activeElement === btn;
+  const marke = fokusMerken(document.getElementById('s-heroes'));
+  const originalText = btn.textContent ?? '';
+  const originalBg = btn.style.background;
+  btn.textContent = text;
+  btn.style.background = ok ? '#166534' : '#991b1b';
   btn.setAttribute('disabled', 'true');
+  if (ok) {
+    fokusVorRueckmeldung = marke;
+    const art = /^(anheuern|lehrling)-/.exec(btn.dataset.fokus ?? '')?.[0];
+    nachbarNachRueckmeldung = art
+      ? { art, stelle: Array.from(document.querySelectorAll<HTMLElement>('#s-heroes [data-fokus]'))
+        .filter(k => k.dataset.fokus?.startsWith(art)).indexOf(btn) }
+      : null;
+    setTimeout(() => {
+      // Inzwischen ist ein anderer Bildschirm vorne: nichts neu zeichnen (der nächste Besuch zeichnet ohnehin neu),
+      // und den Fokus nicht von dort holen
+      if (!document.getElementById('s-heroes')?.getClientRects().length) {
+        fokusVorRueckmeldung = null;
+        return;
+      }
+      renderHeroesScreen(container);
+    }, 600);
+    return;
+  }
   setTimeout(() => {
-    renderHeroesScreen(container);
-  }, 600);
+    btn.textContent = originalText;
+    btn.style.background = originalBg;
+    btn.removeAttribute('disabled');
+    if (hatteFokus && btn.isConnected && document.activeElement === document.body) btn.focus({ preventScroll: true });
+  }, 1500);
 }
 
 /** Streifen oben, den das klebende ✕ belegt (wie `scroll-padding-top` von #hero-detail-ov) */

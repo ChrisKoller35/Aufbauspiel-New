@@ -525,7 +525,8 @@
   .r-liste-mehr { grid-column: 2; grid-row: 1; display: block; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold);
     position: relative; min-height: 24px; }
   .r-liste-mehr::after { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; height: 44px; }
-  .r-hinweise { margin-top: 4px; gap: 3px; }
+  /* 10 px: Die Tippfläche von «alle 12 ▾» (44 px hoch) reicht sonst in den ersten Punkt hinein, und der nimmt den Tipp */
+  .r-hinweise { margin-top: 10px; gap: 3px; }
   .r-hinweis { font-size: 12.5px; line-height: 1.28; padding: 4px 6px; grid-template-columns: 14px 15px minmax(0, 1fr); column-gap: 5px; }
   .r-liste:not(.r-alle) .r-hinweis.r-ok { display: none; }
   .r-hinweis > .i { width: 15px; height: 15px; margin-top: 1px; }
@@ -576,6 +577,8 @@
 }
 @media (pointer: coarse) {
   .r-zelle, .r-karte, .r-stufe { touch-action: manipulation; }
+  /* «Einen Probelauf ansehen» im Kriegsrat: am Finger 44 px hoch (Reste-Suche 6.11.) */
+  .r-rat .btn-kriegsrat, .r-rat-fenster .btn-kriegsrat { min-height: 44px; }
 }
 
 /* ═══════════ Stufen und Stufe II «Die dreizehnte Stunde» ═══════════

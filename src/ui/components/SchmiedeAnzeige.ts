@@ -67,7 +67,7 @@ const STAT_ZEILEN: [keyof Werte, string, (v: number) => string][] = [
   ['atk', 'ATK', v => `${v}`],
   ['def', 'DEF', v => `${v}`],
   ['hp', 'HP', v => `${v}`],
-  ['spd', 'SPD', v => `${v > 0 ? '+' : ''}${v}`],
+  ['spd', 'SPD', v => (v < 0 ? `−${Math.abs(v)}` : `${v > 0 ? '+' : ''}${v}`)],
   ['critChance', 'CRIT', v => `${Math.round(v * 100)} %`],
 ];
 

@@ -21,6 +21,10 @@ import { letzterRatHtml, zeigeKriegsrat } from '../components/KriegsratFenster';
 import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../components/HaertegradAnzeige';
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 import { standVon } from '../../systems/Lehrlinge';
+import { bildschirmMarke, deckknopf, fokusMerken, fokusZurueck } from '../fokus';
+import { GearSystem } from '../../systems/GearSystem';
+import { schmiedeStufen } from '../../systems/Schmiede';
+import { kampfwert } from '../hpAnzeige';
 
 // ── Module state ──
 
@@ -36,6 +40,17 @@ const haertegradWahl: Record<string, Haertegrad> = {};
  * ersten Neuzeichnen, bei dem der Bildschirm sichtbar ist (navigateTo zeigt ihn vor mc:navigate).
  */
 let teamNachOben = false;
+
+const gearSystem = new GearSystem();
+
+/**
+ * «⚔42.8 🛡35.4 ❤150» auf den Karten der Teamwahl: die Werte mit Ausrüstung, Sets und Weg, wie im Heldenfenster und
+ * im Kampf (bis 6.11. standen hier die Grundwerte ohne Ausrüstung). Leben immer voll: Jeder zieht gesund los.
+ */
+function kartenWerte(f: GuildFighter): string {
+  const w = gearSystem.getEffectiveStats(f, schmiedeStufen(gameState));
+  return `<span>\u2694${kampfwert(w.atk)}</span><span>\uD83D\uDEE1${kampfwert(w.def)}</span><span>\u2764${Math.round(w.maxHp)}</span>`;
+}
 
 /** Der gewählte Härtegrad, Normal solange der Dungeon nicht bezwungen ist */
 export function gewaehlterHaertegrad(state: GameState, routeId: string): Haertegrad {
@@ -102,6 +117,10 @@ export function setSelectedRoute(routeId: string): void {
 
 function selectRoute(routeId: string): void {
   teamNachOben = true;
+  // Tastatur: Das Team beginnt für jede Route oben, ohne den Knopf eines früheren Besuchs. Zurück in der Routenliste
+  // (nach der Bilanz, mit «← Zurück») steht der Fokus auf dieser Route, auch wenn sie über Karte oder Gildenhaus kam
+  bildschirmMarke('s-team', null);
+  bildschirmMarke('s-expeditions', `route-${routeId}`);
   selectedRouteId = routeId;
   selectedHeroes = [];
   provisions = {};
@@ -138,8 +157,12 @@ function buildExpeditionListHTML(): string {
         + `<span class="exp-mat">${materialZeile(route.id)}</span>`
         + haertegradMarke(gameState, route.id)
         + (auftraege.length > 0 ? `<span class="exp-auftrag" title="${escapeAttr(auftraege.join(' · '))}">📜 ${auftraege.join(' · ')}</span>` : '');
+    // Tastatur: Name, Ebene und Räume; eine gesperrte Karte nennt den Sperrgrund, ihr Enter tut nichts
+    const label = `${route.name}, Ebene ${route.tier}, ${routeDescription(route)}`
+      + (locked ? `, gesperrt: ${getRouteLockReasons(route, gameState).join(', ')}` : '');
     return `
       <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
+        ${deckknopf(label, `route-${route.id}`, locked)}
         <div class="exp-card-info">
           <span class="exp-tag ${biome.cls}">${biome.label}</span>
           <span class="exp-name">${route.name}</span>
@@ -213,11 +236,15 @@ export function refreshExpeditionsScreens(): void {
 function refreshTeamScreen(): void {
   const el = document.getElementById('s-team');
   if (!el) return;
+  // Tastatur: Der Fokus bleibt beim gleichwertigen Knopf (± desselben Proviants, gewählter Härtegrad) und folgt
+  // einem Helden vom Team in die Liste und zurück (Deckknopf «held-<id>»), sonst begänne Tab wieder oben
+  const fokus = fokusMerken(el);
   el.innerHTML = buildTeamHTML();
   if (teamNachOben && el.style.display !== 'none') {
     el.scrollTop = 0;
     teamNachOben = false;
   }
+  fokusZurueck(el, fokus);
   // Do NOT re-bind events — the delegated listener on el persists across innerHTML rebuilds
 }
 
@@ -240,15 +267,12 @@ function buildTeamHTML(): string {
       const spriteKey = cls ? cls.spriteKey : 'HERO_GUARDIAN';
       slotsHTML += `
         <div class="exp-slot exp-slot-filled hcard-img ${bild.klasse}" data-slot="${i}" style="${bild.stil}">
+          ${deckknopf(`${hero.name} aus dem Team nehmen`, `held-${hero.id}`)}
           ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
           <div class="hcard-overlay">
             <div class="hc-nm">${escapeAttr(hero.name)}</div>
             <span class="hc-lv">Lv ${hero.level}</span>
-            <div class="hc-st">
-              <span>\u2694${hero.baseStats.atk}</span>
-              <span>\uD83D\uDEE1${hero.baseStats.def}</span>
-              <span>\u2764${hero.baseStats.hp}</span>
-            </div>
+            <div class="hc-st">${kartenWerte(hero)}</div>
           </div>
         </div>`;
     } else {
@@ -265,19 +289,14 @@ function buildTeamHTML(): string {
     const heroImg = HERO_IMAGE_MAP[f.classId];
     const bild = bildKarte(f);
     const spriteKey = cls ? cls.spriteKey : '';
-    const hpPct = f.baseStats.maxHp > 0 ? Math.round(f.baseStats.hp / f.baseStats.maxHp * 100) : 100;
-    const hpColor = hpPct > 60 ? 'var(--grn,#16a34a)' : hpPct > 30 ? '#ca8a04' : 'var(--red,#dc2626)';
     return `
       <div class="hsm hcard-img ${bild.klasse}" data-hero-id="${f.id}" style="${bild.stil}">
+        ${deckknopf(`${f.name} ins Team`, `held-${f.id}`)}
         ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
         <div class="hcard-overlay">
           <div class="hc-nm">${escapeAttr(f.name)}</div>
           <div class="hsm-meta">${clsName}${f.lehrling ? ` · ${standVon(f)}` : ''} Lv${f.level}</div>
-          <div class="hc-st">
-            <span>\u2694${f.baseStats.atk}</span>
-            <span>\uD83D\uDEE1${f.baseStats.def}</span>
-            <span style="color:${hpColor}">\u2764${f.baseStats.hp}/${f.baseStats.maxHp}</span>
-          </div>
+          <div class="hc-st">${kartenWerte(f)}</div>
         </div>
       </div>`;
   }).join('') || '<div class="hsm-empty">Keine Helden verfügbar</div>';

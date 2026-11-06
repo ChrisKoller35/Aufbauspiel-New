@@ -26,6 +26,19 @@ export function bildKlasse(held: BildTraeger): string {
 }
 
 /**
+ * Die ganze Adresse eines Bildes, für `--held-bild`. Eine relative url() in einer CSS-Variablen löst der Browser
+ * gegen das Stylesheet auf, das sie benutzt: im fertigen Spiel (npm run build) liegt es unter /assets/, und das Bild
+ * fehlte (/assets/assets/heroes/…). Gegen die Seite aufgelöst stimmt sie überall. Ohne Seite (Tests) bleibt sie relativ.
+ */
+function seitenAdresse(pfad: string): string {
+  const basis = typeof document !== 'undefined' ? document.baseURI : undefined;
+  if (!basis) return pfad;
+  // Die Adresse steht in url('…') in einem style-Attribut: ' beendete das url(), & begänne im HTML ein Zeichen
+  // (/a&not/ würde /a¬/). Kodiert meinen beide dasselbe, der Server liefert dieselbe Datei.
+  return new URL(pfad, basis).href.replace(/'/g, '%27').replace(/&/g, '%26');
+}
+
+/**
  * Klasse und Stil für eine Karte mit dem Heldenbild als Hintergrund. Ohne Bild beide leer.
  * Der Lehrling bekommt das Bild in `--held-bild` statt in `background-image`.
  */
@@ -33,6 +46,6 @@ export function bildKarte(held: BildTraeger): { klasse: string; stil: string } {
   const pfad = heldBildPfad(held.classId);
   if (!pfad) return { klasse: '', stil: '' };
   return held.lehrling
-    ? { klasse: 'lehrling-bild', stil: `--held-bild:url('${pfad}')` }
+    ? { klasse: 'lehrling-bild', stil: `--held-bild:url('${seitenAdresse(pfad)}')` }
     : { klasse: '', stil: `background-image:url('${pfad}')` };
 }

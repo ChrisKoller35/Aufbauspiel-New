@@ -15,7 +15,8 @@ import { renderHeader } from './HeaderRenderer';
 import { anzahlText } from '../../utils/Anzahl';
 import { setFuerRoute } from '../../data/dungeonSets';
 import { setKurzinfo, setTeileHtml } from '../components/SetAnzeige';
-import { materialZeile } from '../components/SchmiedeAnzeige';
+import { escapeAttr, materialZeile } from '../components/SchmiedeAnzeige';
+import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { kartenGeschichteHtml } from '../components/GeschichtsAnzeige';
 import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
@@ -91,18 +92,31 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
     </div>
   `;
   el.appendChild(modal);
+  // Fenster eines Knotens: Escape schliesst, Tab bleibt drin (FensterHilfen), solange es offen ist
+  const fenster = modal.querySelector<HTMLElement>('.dmap-modal');
+  if (fenster) {
+    fenster.setAttribute('role', 'dialog');
+    fenster.setAttribute('aria-modal', 'true');
+    fenster.tabIndex = -1;
+    // Die Karte wird bei jedem Besuch neu gebaut: den Hörer der alten Karte lösen, sonst hielte er sie fest
+    loeseFensterTasten?.();
+    loeseFensterTasten = bindeFensterTasten(modal, fenster, hideRouteModal);
+  }
+  istHintergrundKlick = hintergrundKlick(modal);
 
   bindDungeonEvents(el);
   container.appendChild(el);
 
   // Scroll to bottom (start node); on narrow screens also centre horizontally.
-  // Zurück aus dem Raid: der Raid-Knoten in der Mitte
+  // Zurück aus dem Raid: der Raid-Knoten in der Mitte. Mit der Tastatur zurück auf einem Knoten (der Fokus kam
+  // mit bildschirmFokussieren auf ihn zurück): dieser Knoten in der Mitte
   requestAnimationFrame(() => {
     const wrap = document.getElementById('dmap-wrap');
     if (!wrap) return;
     wrap.scrollTop = wrap.scrollHeight;
     wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
-    const raid = vomRaid ? wrap.querySelector('[data-raid]') : null;
+    const fokus = document.activeElement;
+    const raid = vomRaid ? wrap.querySelector('[data-raid]') : fokus && fokus !== wrap && wrap.contains(fokus) ? fokus : null;
     vomRaid = false;
     if (raid) {
       const ort = raid.getBoundingClientRect();
@@ -652,10 +666,14 @@ function buildDungeonSVG(state: GameState): string {
       ? `<text x="${x}" y="${y + 6}" text-anchor="middle" font-size="18" fill="#555" style="user-select:none">🔒</text>`
       : '';
 
+    // Tab erreicht jeden Knoten, Enter und Leertaste öffnen ihn wie ein Klick (bindDungeonEvents, docs/TASTATUR.md)
+    const zustandText = isCompleted ? 'geschafft' : isAvailable ? 'offen' : 'gesperrt';
     nodesHtml += `
-      <g class="dmap-nd ${statusClass}" data-route="${route.id}" style="cursor:pointer">
+      <g class="dmap-nd ${statusClass}" data-route="${route.id}" style="cursor:pointer" tabindex="0" role="button"
+         data-fokus="karte-${route.id}" aria-label="${escapeAttr(`${route.name}, Ebene ${route.tier}, ${zustandText}`)}">
         ${glowRing}
         ${bossExtra}
+        ${fokusRing(x, y, r + 7)}
         ${bgHex}
         ${imageLayer}
         ${border}
@@ -693,6 +711,16 @@ function buildDungeonSVG(state: GameState): string {
 // ── Raid «Über dem Tag» (data/raids.ts, systems/Raid.ts, ui/screens/RaidScreen.ts, docs/RAID.md) ──
 
 const r1 = (n: number): number => Math.round(n * 10) / 10;
+
+/**
+ * Rahmen eines Knotens mit dem Fokus der Tastatur (nur :focus-visible, dungeonkarte.css): gold mit dunklem Rand,
+ * damit er auf dem Nacht- wie auf dem Taghimmel zu sehen ist
+ */
+function fokusRing(x: number, y: number, r: number): string {
+  const punkte = hexPoints(x, y, r, 30);
+  return `<g class="dmap-fokusring" aria-hidden="true"><polygon points="${punkte}" fill="none" stroke="#0b0f1a" stroke-width="7"/>`
+    + `<polygon points="${punkte}" fill="none" stroke="#fde68a" stroke-width="3.5"/></g>`;
+}
 
 /** Der Raid-Knoten (data/raids.ts) und der Dungeon darunter, auf dem Jorindes Leiter steht */
 function raidPunkte(): { x: number; y: number; r: number; unten: DungeonGraphNode | undefined } {
@@ -797,10 +825,12 @@ function buildRaidKnoten(zustand: RaidKartenZustand, zwei: RaidKartenZustand): s
         fill="${zwei.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="0.95">${k.stufeZeile(stufenTexte(DREIZEHN).stufe, zwei.zeile)}</text>`
     : '';
   return `
-    <g class="dmap-nd dmap-raid ${offen ? 'dmap-node-open' : 'dmap-node-locked'}" data-raid style="cursor:pointer">
+    <g class="dmap-nd dmap-raid ${offen ? 'dmap-node-open' : 'dmap-node-locked'}" data-raid style="cursor:pointer" tabindex="0"
+       role="button" data-fokus="karte-raid" aria-label="${escapeAttr(`${k.name}, Raid${offen ? '' : ', gesperrt'}`)}">
       <title>${beide ? k.tooltipBeide : k.tooltip}</title>
       <polygon points="${hexPoints(x, y, r + 12, 30)}" fill="#fbbf24" opacity="0.1" class="dmap-glow-ring"/>
       <polygon points="${hexPoints(x, y, r + 6, 0)}" fill="none" stroke="#e6c060" stroke-width="1.2" opacity="0.3"/>
+      ${fokusRing(x, y, r + 9)}
       <polygon points="${hexPoints(x, y, r, 30)}" fill="#0c1233" class="dmap-shape"/>
       <polygon points="${hexPoints(x, y, r - 6, 30)}" fill="none" stroke="#6e5710" stroke-width="1" opacity="${offen ? 1 : 0.5}"/>
       ${uhr}
@@ -968,7 +998,21 @@ function showRouteModal(routeId: string, state: GameState): void {
   }
 
   overlay.classList.add('dmap-modal-on');
+  overlay.querySelector('.dmap-modal')?.setAttribute('aria-label', route.name);
+  // Der Fokus geht ins Fenster (Start, sonst ✕) und beim Schliessen zurück auf den Knoten (hideRouteModal)
+  const knoten = document.activeElement?.closest?.('.dmap-nd');
+  modalKnoten = knoten instanceof SVGElement || knoten instanceof HTMLElement ? knoten : null;
+  const start = actionsEl.querySelector<HTMLButtonElement>('button:not([disabled])')
+    ?? overlay.querySelector<HTMLButtonElement>('#dmap-modal-close');
+  start?.focus({ preventScroll: true });
 }
+
+/** Der Knoten, dessen Fenster offen ist: Er bekommt den Fokus zurück, wenn das Fenster zugeht */
+let modalKnoten: SVGElement | HTMLElement | null = null;
+/** Löst die Tasten des Fensters der zuletzt gebauten Karte */
+let loeseFensterTasten: (() => void) | null = null;
+/** Begann der Klick auf dem dunklen Hintergrund (und ist kein Doppelklick)? Nur dann schliesst er das Fenster */
+let istHintergrundKlick: ((e: MouseEvent) => boolean) | null = null;
 
 /** Welche Rivalen-Gilden hier schon gesiegt haben und wer hier gerade ganz oben steht */
 function rivalenHtml(state: GameState, routeId: string): string {
@@ -985,12 +1029,27 @@ function rivalenHtml(state: GameState, routeId: string): string {
 
 function hideRouteModal(): void {
   const overlay = document.getElementById('dmap-modal');
-  if (overlay) overlay.classList.remove('dmap-modal-on');
+  const knoten = modalKnoten;
+  modalKnoten = null;
+  if (!overlay) return;
+  const aktiv = document.activeElement;
+  const fokusDrin = !!aktiv && overlay.contains(aktiv);
+  overlay.classList.remove('dmap-modal-on');
+  if (fokusDrin && knoten?.isConnected) knoten.focus({ preventScroll: true });
 }
 
 // ── Events ──
 
 function bindDungeonEvents(el: HTMLElement): void {
+  // Tastatur: Enter oder Leertaste auf einem Knoten ist ein Klick (die Knoten sind SVG-Gruppen, keine Knöpfe)
+  el.addEventListener('keydown', (e: KeyboardEvent) => {
+    if (e.key !== 'Enter' && e.key !== ' ') return;
+    const knoten = (e.target as Element | null)?.closest?.('.dmap-nd');
+    if (!knoten || e.repeat) return;
+    e.preventDefault();
+    knoten.dispatchEvent(new MouseEvent('click', { bubbles: true }));
+  });
+
   el.addEventListener('click', (e: MouseEvent) => {
     const target = e.target as HTMLElement;
 
@@ -1009,9 +1068,13 @@ function bindDungeonEvents(el: HTMLElement): void {
       return;
     }
 
-    // Modal close
+    // Fenster zu: ✕ oder ein Klick auf den Hintergrund. Der zweite Klick eines Doppelklicks auf den Knoten trifft
+    // den eben geöffneten Hintergrund und schliesst nicht; der eines Doppelklicks auf ✕ öffnet nichts dahinter
     if (target.id === 'dmap-modal-close' || target.id === 'dmap-modal') {
-      hideRouteModal();
+      if (target.id === 'dmap-modal-close' || istHintergrundKlick?.(e)) {
+        hideRouteModal();
+        schluckeZweitenKlick();
+      }
       return;
     }
 
@@ -1038,7 +1101,10 @@ function bindDungeonEvents(el: HTMLElement): void {
     const node = target.closest<HTMLElement>('.dmap-nd[data-route]');
     if (node && gameState) {
       const routeId = node.dataset.route;
-      if (routeId) showRouteModal(routeId, gameState);
+      if (routeId) {
+        showRouteModal(routeId, gameState);
+        schluckeZweitenKlick();
+      }
       return;
     }
   });

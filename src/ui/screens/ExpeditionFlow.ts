@@ -60,7 +60,7 @@ export function startExpeditionFlow(routeId: string, heroIds: number[], provisio
   const geschichte = ungeleseneEinleitung(state, routeId);
   if (geschichte) {
     showExpeditionDialog('📜', geschichte.titel, einleitungHtml(geschichte), [
-      { label: 'ZURÜCK', onClick: () => {} },
+      { label: 'ZURÜCK', abbrechen: true, onClick: () => {} },
       {
         label: 'AUFBRECHEN', primary: true, onClick: () => {
           einleitungGelesen(state, routeId);
@@ -148,13 +148,20 @@ function showCheckpointDialog(run: ActiveRun): void {
   ]);
 }
 
-function showMerchantDialog(run: ActiveRun): void {
+/**
+ * Der reisende Händler. Nach einem Kauf (`gekauft`: welcher Kauf-Knopf) steht der Fokus wieder auf diesem Knopf,
+ * sonst auf dem nächsten freien, und nicht auf WEITERZIEHEN: Ein zweites Enter für den zweiten Kauf verliesse
+ * sonst den Händler
+ */
+function showMerchantDialog(run: ActiveRun, gekauft?: number): void {
   const purchases = run.merchantPurchases ?? 0;
-  const buyButtons: DialogButton[] = Object.entries(MERCHANT_PRICES).map(([itemId, price]) => ({
+  const buyButtons: DialogButton[] = Object.entries(MERCHANT_PRICES).map(([itemId, price], i) => ({
     label: `${ITEM_DEFS[itemId]?.name ?? itemId} (${price} G)`,
     disabled: run.goldEarned < price || purchases >= MERCHANT_MAX_PURCHASES,
-    onClick: () => { expeditionSystem.merchantBuy(run, itemId); showMerchantDialog(run); },
+    onClick: () => { expeditionSystem.merchantBuy(run, itemId); showMerchantDialog(run, i); },
   }));
+  const frei = buyButtons.map((b, i) => (b.disabled ? -1 : i)).filter(i => i >= 0);
+  const fokus = gekauft === undefined ? undefined : frei.includes(gekauft) ? gekauft : frei.find(i => i > gekauft) ?? frei[0];
   const leaveButton: DialogButton = purchases === 0
     ? { label: 'ABLEHNEN (+15% HP)', primary: true, onClick: () => { expeditionSystem.merchantSkip(run); continueExpedition(run); } }
     : { label: 'WEITERZIEHEN', primary: true, onClick: () => { expeditionSystem.merchantClose(run); continueExpedition(run); } };
@@ -163,7 +170,7 @@ function showMerchantDialog(run: ActiveRun): void {
     <div style="color:#9ca3af;font-size:.85rem;margin-bottom:8px;">Beutegold: ${run.goldEarned} · Käufe: ${purchases}/${MERCHANT_MAX_PURCHASES}</div>
     ${partyHpHtml(run)}
     <div style="color:#6b7280;font-size:.78rem;margin-bottom:20px;">Gekaufte Waren kommen mit der Beute ins Lager. Wer nichts kauft, wird kostenlos geheilt.</div>
-  `, [...buyButtons, leaveButton]);
+  `, [...buyButtons, leaveButton], { fokus });
 }
 
 function showChoiceDialog(run: ActiveRun): void {

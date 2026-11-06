@@ -137,7 +137,7 @@ export function lehrlingTafelHtml(state: GameState): string {
     const knopf = lage.art === 'frei'
       ? `<div class="hcard-footer">
           <span class="hc-cost">\uD83D\uDCB0 ${lage.kosten} Gold</span>
-          <button class="btn btn-sm btn-hire btn-lehrling" data-lehrling-klasse="${c.id}" data-cost="${lage.kosten}"
+          <button class="btn btn-sm btn-hire btn-lehrling" data-lehrling-klasse="${c.id}" data-cost="${lage.kosten}" data-fokus="lehrling-${c.id}"
                   aria-label="${escapeAttr(def.name)} als Lehrling aufnehmen, ${lage.kosten} Gold">AUFNEHMEN</button>
         </div>`
       : '';
