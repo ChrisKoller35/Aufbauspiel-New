@@ -785,7 +785,8 @@ Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind na
 ### Grenzen von Stufe II
 
 - **Ohne Lehrlinge zehn Helden:** Mit einem Helden je Klasse kommt eine Gilde kaum durch (Band S5). Stufe II braucht
-  die Lehrlinge; solange die Gilde keine aufnehmen kann, ist sie ein Ziel für später.
+  die Lehrlinge: Heldenhaus, Reiter «Anheuern», sobald der Meister einer Klasse Stufe 15 hat; das Lehrbuch bringt sie
+  mit dem Überschuss der Meister hoch (`docs/AUSBILDUNG.md`).
 - **Steile Kurve** wie auf Stufe I: Der Kampf entscheidet sich um Mittag, 250 Leben bewegen «Gut» um 18 bis 26 Punkte.
 - **«Profi» ist nicht naheliegend:** zwei Zerbrechliche allein vorn, sechs Warnungen in der Liste. Liste, Kriegsrat und
   Ursachen-Satz gehören zusammen.
@@ -816,7 +817,8 @@ Alle Bänder beider Stufen sind getroffen; die Tabellen von Stufe I oben sind na
 ## Ausbau
 
 - **15 Helden** gibt es mit Stufe II; die Zweitbesetzung sind die Lehrlinge (`docs/AUSBILDUNG.md`, je Klasse ein
-  zweiter Held). **20 Helden** (4 Trupps, 12 Spalten) bräuchten eine dritte Besetzung je Klasse.
+  zweiter Held). **20 Helden** (4 Trupps, 12 Spalten) hat eine Gilde mit allen zehn Lehrlingen schon: Platz für eine
+  Stufe III, ohne neue Helden.
 - **Der Raid-Code ist allgemein:** Spalten = 3 × `truppZahl`, das Pendel geht reihum (`(Runde − 1) mod truppZahl`, ein
   leerer Trupp gibt seine Runden weiter), der Zeiger fährt alle Spalten ab, der Gegenzeiger ist eine Regel
   (`gegenzeiger`), `truppName` kennt «Links», «Mitte», «Rechts» und «Aussen», die Spaltennamen reichen bis L. Eine

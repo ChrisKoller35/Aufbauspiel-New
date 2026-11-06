@@ -169,6 +169,9 @@ Raid bringen. Daten: `src/data/lehrlinge.ts`, Regeln: `src/systems/Lehrlinge.ts`
 - **Im Kampf** ist der Lehrling ein ganz normaler Held seiner Klasse. Zwei derselben Klasse in einer Gruppe:
   Teamwirkungen zählen weiterhin nur vom stärkeren Träger (`staerksterTraeger`), Spott hält der, der ihn
   gewirkt hat.
+- **Raid:** Nach dem ersten Sieg über den Zenit öffnet sich Stufe II «Die dreizehnte Stunde» für 10 bis 15
+  Helden. Mit nur einem Helden je Klasse kommt eine Gilde dort kaum durch; dafür sind die Lehrlinge da
+  (`docs/RAID.md`, Abschnitt Stufe II).
 - **Reiter «Anheuern»:** Unter den Klassen steht der Abschnitt «Lehrlinge · n von 10» mit einer Karte je
   Klasse, von der die Gilde einen Helden hat: zuerst die, die man aufnehmen kann (Preis und «Aufnehmen»), dann
   die wartenden («Kommt, sobald Guardian Stufe 15 erreicht (jetzt Stufe 12).»), dann die schon aufgenommenen
