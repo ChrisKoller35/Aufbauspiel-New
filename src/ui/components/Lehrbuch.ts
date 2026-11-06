@@ -12,6 +12,7 @@ import { CLASS_DEFS } from '../../data/classes';
 import { MAX_HERO_LEVEL, totalXpForLevel, ueberschuss } from '../../systems/HeroProgression';
 import { lehrbuchLernen, lehrbuchVorschau } from '../../systems/Ausbildung';
 import { erfolgePruefen } from '../../systems/AchievementSystem';
+import { gesellenSatz } from '../../systems/Lehrlinge';
 import { escapeAttr } from './SchmiedeAnzeige';
 import { schluckeZweitenKlick } from './FensterHilfen';
 
@@ -150,8 +151,10 @@ export function bindLehrbuch(el: HTMLElement, state: GameState, neuZeichnen: () 
     window.addEventListener('pointerdown', halte, true);
     setTimeout(() => window.removeEventListener('pointerdown', halte, true), SPERRE_MS);
     const neueKlassen = r.neueKlassen.map(id => CLASS_DEFS[id]?.name ?? id);
+    const geselle = gesellenSatz(schueler, r.vonStufe);
     zuletzt = `${name(schueler)} lernt von ${name(lehrer)}: +${r.xp} XP, ${stufenText(r.vonStufe, r.nachStufe, schueler.xp)}.`
-      + (neueKlassen.length ? ` Neu anzuheuern: ${neueKlassen.join(', ')}.` : '');
+      + (neueKlassen.length ? ` Neu anzuheuern: ${neueKlassen.join(', ')}.` : '')
+      + (geselle ? ` 🎓 ${name(schueler)} ist jetzt Geselle. ${escapeAttr(geselle)}` : '');
     erfolgePruefen(state);
     window.dispatchEvent(new Event('mc:speichern'));
     zeichnen('[data-lb-lernen]');

@@ -51,6 +51,7 @@ import {
   ANGEHALTEN, AUF_ZWOELF, KURZ_VOR_DREIZEHN, KURZ_VOR_ZWOELF, UhrStellung, stundeAufRunde, zeigerAufSpalte, zenitUhrSvg,
 } from '../components/ZenitUhr';
 import { BildTraeger, bildKarte } from '../heldBild';
+import { gesellenSatz } from '../../systems/Lehrlinge';
 
 const t = RAID_TEXTE.bildschirm;
 const L = RAID_TEXTE.liste;
@@ -1421,7 +1422,14 @@ function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[
 
   const gilde: string[] = [];
   if (erg.xp.length > 0) gilde.push(E.xp(erg.xp[0].xp, erg.xp.length));
-  for (const x of erg.xp) if (x.levelUps > 0) gilde.push(E.stufe(name(x.heldId), x.stufe));
+  for (const x of erg.xp) {
+    if (x.levelUps <= 0) continue;
+    gilde.push(E.stufe(name(x.heldId), x.stufe));
+    // Ein Lehrling, der eben ausgelernt hat (systems/Lehrlinge.ts)
+    const held = state.fighters.find(f => f.id === x.heldId);
+    const geselle = held ? gesellenSatz(held, x.stufe - x.levelUps) : null;
+    if (geselle) gilde.push(`🎓 ${name(x.heldId)} ist jetzt Geselle. ${geselle}`);
+  }
   for (const k of erg.neueKlassen) gilde.push(E.klasse(klassenName(k)));
   const meister = (werte: Record<number, number>): [number, number] | null => {
     const liste = Object.entries(werte).map(([id, w]): [number, number] => [Number(id), w]).filter(([, w]) => w > 0);

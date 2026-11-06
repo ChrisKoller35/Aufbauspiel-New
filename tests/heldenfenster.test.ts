@@ -6,7 +6,7 @@ import { CLASS_DEFS } from '../src/data/classes';
 import { wegeDerKlasse } from '../src/data/spezialisierungen';
 import { materialFuerTeil, schmiedeStufe } from '../src/systems/Schmiede';
 import { totalXpForLevel } from '../src/systems/HeroProgression';
-import { buildInventoryHtml, initHeroesScreen, renderHeroCard } from '../src/ui/screens/HeroesScreen';
+import { ausruestHtml, ausruestMeldungText, buildInventoryHtml, initHeroesScreen, renderHeroCard } from '../src/ui/screens/HeroesScreen';
 
 // Heldenseite und Heldenfenster ohne Browser: das HTML der Karten und des Inventars (Tastatur, Vorleseprogramme),
 // dazu unten das Fenster in einem kleinen DOM (Tastenhörer, Doppelklick, Sperren, Fokus). Tab im Fenster,
@@ -104,6 +104,52 @@ describe('Heldenfenster: Inventar als Knöpfe', () => {
     const k = knoepfe(buildInventoryHtml(stand(), false));
     expect(k).toHaveLength(2);
     for (const tag of k) expect(tag).toMatch(/ disabled>$/);
+  });
+});
+
+describe('Heldenfenster: «Aus dem Lager ausrüsten»', () => {
+  test('der Knopf nennt, was er anlegt; ohne Passendes im Lager gibt es keinen', () => {
+    const state = createNewGameState();
+    const f = held('guardian', 'Bertram', 1);
+    state.fighters.push(f);
+    state.globalStock = { iron_sword: 1, iron_shield: 1, leather_armor: 1 };
+    initHeroesScreen(state);
+    const html = ausruestHtml(f);
+    expect(knoepfe(html)).toEqual(['<button type="button" class="hdm2-ausruesten" id="hdm2-ausruesten">']);
+    expect(html).toContain('<span class="besser-pfeil" aria-hidden="true"></span>');
+    expect(html).toContain('>Aus dem Lager ausrüsten<');
+    expect(html).toContain('>Eisenschwert · Eisenschild · Lederrüstung<');
+    // Der Knopf zeigt nur: Held und Lager bleiben
+    expect(f.gear.mainHand).toBeNull();
+    expect(state.globalStock.iron_sword).toBe(1);
+
+    f.gear = { mainHand: 'iron_sword', offHand: 'iron_shield', armor: 'leather_armor', trinket: null };
+    state.globalStock = { steel_sword: 1, novizenrobe: 1 };
+    expect(ausruestHtml(f)).toContain('>Stahlschwert statt Eisenschwert<');
+    state.globalStock = { novizenrobe: 1 };
+    expect(ausruestHtml(f)).toBe('');
+
+    // Dieselbe Waffe in beiden Händen: einmal genannt, mit Anzahl
+    const b = held('berserker', 'Ragna', 1);
+    state.fighters.push(b);
+    state.globalStock = { iron_sword: 2 };
+    expect(ausruestHtml(b)).toContain('>2× Eisenschwert<');
+  });
+
+  test('die Meldung nennt, was angelegt wurde und was jetzt im Lager liegt', () => {
+    initHeroesScreen(createNewGameState());
+    expect(ausruestMeldungText([{ platz: 'offHand', neu: 'iron_shield', alt: null }])).toBe('✔ Angelegt: Eisenschild.');
+    expect(ausruestMeldungText([
+      { platz: 'mainHand', neu: 'longbow', alt: 'iron_sword' },
+      { platz: 'offHand', neu: null, alt: 'iron_shield' },
+    ])).toBe('✔ Angelegt: Langbogen. Eisenschwert, Eisenschild liegen jetzt im Lager.');
+    expect(ausruestMeldungText([
+      { platz: 'mainHand', neu: 'iron_sword', alt: null }, { platz: 'offHand', neu: 'iron_sword', alt: null },
+    ])).toBe('✔ Angelegt: 2× Eisenschwert.');
+    // Hat ein Teil nur die Hand gewechselt, liegt es nicht im Lager
+    expect(ausruestMeldungText([
+      { platz: 'mainHand', neu: 'steel_sword', alt: 'iron_sword' }, { platz: 'offHand', neu: 'iron_sword', alt: null },
+    ])).toBe('✔ Angelegt: Stahlschwert.');
   });
 });
 
@@ -597,6 +643,34 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     druck('#hero-detail-ov .hdm2-aktion', hier);
     expect(f.gear.mainHand).toBeNull();
     expect(fokus).toBe(el('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]'));
+  });
+
+  test('«Aus dem Lager ausrüsten»: legt an und sichert; die Meldung hat den Fokus, ein langsamer zweiter Druck dort wirkt nicht', async () => {
+    const { state, held: f } = stand();
+    await heldenseite(state);
+    oeffne(f);
+    vi.advanceTimersByTime(800);
+    const hier: Ort = { x: 300, y: 260 };
+    druck('#hdm2-ausruesten', hier);
+    // Das Schwert in die leere Haupthand; die doppelte Rüstung ist nicht besser
+    expect(f.gear).toMatchObject({ mainHand: SCHWERT, armor: RUESTUNG });
+    expect(state.globalStock[SCHWERT]).toBe(0);
+    expect(state.globalStock[RUESTUNG]).toBe(1);
+    expect(gespeichert).toBe(1);
+    const meldung = el('#hero-detail-ov .hdm2-ausruesten-meldung');
+    expect(meldung.getAttribute('role')).toBe('status');
+    expect(fokus).toBe(meldung);
+    // Nichts mehr zu tun: kein Knopf mehr
+    expect(seite.querySelector('#hdm2-ausruesten')).toBeNull();
+    expect(schlucktZweitenKlick()).toBe(true);
+    // Was das Neuzeichnen unter den Finger geschoben hat, löst ein langsamer zweiter Druck nicht aus
+    vi.advanceTimersByTime(400);
+    druck('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]', { x: 305, y: 262 });
+    expect(el('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]').getAttribute('aria-pressed')).toBe('false');
+    // Ein Druck anderswo wirkt; das Neuzeichnen nimmt die Meldung weg
+    klick('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]');
+    expect(el('#hero-detail-ov .hdm-gear-icon[data-slot="mainHand"]').getAttribute('aria-pressed')).toBe('true');
+    expect(seite.querySelector('#hero-detail-ov .hdm2-ausruesten-meldung')).toBeNull();
   });
 
   test('gibt der Browser die Zeit des Drucks nicht passend mit (ab 1970 oder 0), zählt jetzt', async () => {
