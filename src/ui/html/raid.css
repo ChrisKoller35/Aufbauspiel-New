@@ -118,15 +118,25 @@
 .r-leiste { padding: 7px 14px 8px; }
 .r-leiste-kopf, .r-runden { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); column-gap: 3px; }
 .r-leiste-kopf { font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: 1.5px; color: var(--mut); margin-bottom: 10px; line-height: 1.25; }
-.r-lk-vm { grid-column: 1 / 12; border-bottom: 1px solid var(--bdr); padding-bottom: 2px; }
+/* Alle drei Teile bleiben auf einer Zeile, damit die Linien darunter auf einer Höhe liegen: Was nicht passt, endet
+   mit «…» */
+.r-lk-vm {
+  grid-column: 1 / 12; border-bottom: 1px solid var(--bdr); padding-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 /* Zwei Teile, «Es schlägt zwölf» und «· ab hier alles × 1,5»: Ist die Leiste schmal (Stufe I am kleineren Bildschirm),
    bricht der zweite in eine zweite Zeile um, und die ist abgeschnitten, statt in «Mitternacht» zu laufen (6px
-   Abstand, damit nichts von ihr im unteren Rand durchscheint). Die Legende darunter sagt «ab Mittag × 1,5» ohnehin. */
+   Abstand, damit nichts von ihr im unteren Rand durchscheint). Die Legende darunter sagt «ab Mittag × 1,5» ohnehin.
+   Ist es noch schmaler, endet auch der erste Teil mit «…» */
 .r-lk-mt {
   grid-column: 12 / 21; color: var(--gl); border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap;
   display: flex; flex-wrap: wrap; gap: 6px .4em; height: calc(1.25em + 3px); box-sizing: border-box; overflow: hidden;
 }
-.r-lk-mn { grid-column: 21 / 25; text-align: right; border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap; }
+.r-lk-mt > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.r-lk-mn {
+  grid-column: 21 / 25; text-align: right; border-bottom: 1px solid var(--gd); padding-bottom: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 .r-rd {
   position: relative; height: 38px; border-radius: 4px; background: var(--s2); border: 1px solid var(--bdr);
   display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 4px;

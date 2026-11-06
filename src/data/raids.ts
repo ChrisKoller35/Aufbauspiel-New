@@ -413,17 +413,27 @@ export const RAID_TEXTE = {
       `${seite}: ${wirkungen.length > 0 ? `${wirkungen.join(', ')}. ` : ''}Heiler: ${liste(heiler)}.`,
     truppOhneHeiler: (seite: string) => `${seite} hat keinen Heiler. Bei uns stand der Salbentopf auch auf der falschen Seite.`,
     /**
-     * Nur Stufe III: der Kuckuck je Gang. Er pickt den mit den wenigsten Leben direkt am Gang; die Zahlen sind
-     * Schnabelhiebe (`schlaege` mit Angriff × kuckuck), vor und ab Mittag
+     * Nur Stufe III: der Kuckuck je Gang. Wen er zuerst pickt, sagt ein Probelauf ohne Krit: Er nimmt am Ende der Runde
+     * den mit den wenigsten Leben, also nach Pendel und Zeigern dieser Runde. Die Zahlen sind Schnabelhiebe mit vollem
+     * Leben (`schlaege` mit Angriff × kuckuck), vor und ab Mittag; «entgeht»: Ausweichen, Schattentanz oder Deckung
      */
-    kuckuckOk: (gang: string, name: string, vor: number, nach: number, weicht: boolean) =>
-      `Am Gang ${gang} pickt der Kuckuck zuerst ${name}. ${name} hält etwa ${vor} Schnabelhiebe, ab Mittag ${nach}`
-      + `${weicht ? ', und weicht manchmal aus' : ''}. Er kommt alle drei Runden wieder.`,
+    kuckuckOk: (gang: string, name: string, vor: number, nach: number, entgeht: boolean) =>
+      `Am Gang ${gang} pickt der Kuckuck wohl zuerst ${name}. Mit vollem Leben hält ${name} etwa `
+      + `${vor === 1 ? 'einen Schnabelhieb' : `${vor} Schnabelhiebe`}, ab Mittag ${nach === 1 ? 'einen' : nach}`
+      + `${entgeht ? ', und entgeht dem Schnabel manchmal' : ''}. Der Kuckuck kommt alle drei Runden wieder.`,
     kuckuckZerbrechlich: (gang: string, name: string, vor: number) =>
-      `Am Gang ${gang} pickt der Kuckuck zuerst ${name}. `
+      `Am Gang ${gang} pickt der Kuckuck wohl zuerst ${name}. `
       + (vor <= 1 ? `${name} fällt schon beim ersten Schnabelhieb. `
         : `Vor Mittag hält ${name} ${vor} Schnabelhiebe, ab Mittag fällt ${name} beim ersten. `)
-      + 'Er sucht sich immer den Kleinsten aus. Wir wissen das aus Erfahrung.',
+      + 'Der Kuckuck sucht sich immer den Kleinsten aus. Wir wissen das aus Erfahrung.',
+    /** Im Probelauf fällt der Erste beim ersten Besuch (wich er aus: seine Leben reichen für keinen gewöhnlichen Hieb) */
+    kuckuckFaellt: (gang: string, name: string, entgeht: boolean) =>
+      `Am Gang ${gang} pickt der Kuckuck wohl zuerst ${name}, und so wie ihr steht, ist der erste Schnabelhieb`
+      + `${entgeht ? ', der trifft,' : ''} auch der letzte. Der Kuckuck sucht sich immer den Kleinsten aus. Wir wissen das `
+      + 'aus Erfahrung.',
+    /** Im Probelauf stand am Gang niemand mehr, als er das erste Mal kam (alle schon vorher gefallen) */
+    kuckuckNiemandMehr: (gang: string) =>
+      `Am Gang ${gang} steht wohl niemand mehr, wenn der Kuckuck das erste Mal kommt. Zenit war schneller.`,
     kuckuckLeer: (gang: string) => `Am Gang ${gang} steht niemand. Der Kuckuck geht beleidigt wieder hinein, der Zeiger leider nicht.`,
     /** Nur Stufe III: oben steht keine Meisterin der Meuchlerinnen (docs/RAID.md, «Je ein Weg anders») */
     ohneMeuchlerin: 'Oben steht keine Meisterin der Meuchlerinnen. Unter sechzig Prozent trifft sie Zenit zweieinhalbmal '
