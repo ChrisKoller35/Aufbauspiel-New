@@ -18,7 +18,9 @@
 //         je ein Weg anders:           npm run raid-eichung -- --wege                     (Profi ≥ 90 %, sonst
 //                                      eine Aufstellungssuche ab «Gut», 300 Schritte, mit ≥ 90 %; auf Stufe II
 //                                      mit anker15, jeder der fünfzehn einzeln, 600 Schritte; die Suche setzt
-//                                      dort in drei von zehn Schritten zwei Helden)
+//                                      dort in drei von zehn Schritten zwei Helden; auf Stufe III mit anker20,
+//                                      jeder der zwanzig, 600 Schritte ab «Profi»; ohne Meuchlerin in der
+//                                      Gilde ≥ 60 %, dazu der Tausch Sina/Nix ≥ 90 %)
 //         Aufstellungssuche:           npm run raid-eichung -- --suche t4                 (T4 ≤ 65 %)
 //         nur eine Stufe:              npm run raid-eichung -- --stufe II                 (I, II oder III; mit --leben:
 //                                      das Leben dieser Stufe durchprobieren)
@@ -711,6 +713,77 @@ if (STUFE_DREI) {
   console.log(`  ${KUCKUCK.truhen.halb.name}: ${beuteZeile(halbDrei)} · ${DREIZEHN.truhen.halb.name}: ${beuteZeile(halbZwei)}`);
   const mal3 = truheDrei.wert / truheZwei.wert;
   band(`Stufe III · ${KUCKUCK.truhen.sieg.name}: Wert 1,2- bis 1,6-mal ${DREIZEHN.truhen.sieg.name}`, mal3, 1.2, 1.6, `${komma(mal3)}-mal`);
+}
+
+// ── Stufe III: je ein Weg anders (--wege) ──
+
+/** Der Weg, den Stufe III braucht (siehe unten): die Meuchlerin, Meister oder Lehrling */
+const MEUCHLERIN = 'assassin_meuchlerin';
+
+if (WEGE && STUFE_DREI) {
+  // Wie auf Stufe II, mit anker20: jeder der zwanzig einzeln mit dem anderen Weg seiner Klasse, auch die Lehrlinge.
+  // Die Suche beginnt hier bei «Profi»: Mit zwanzig Helden auf 36 Feldern braucht schon «Gut» eine andere Ordnung,
+  // und gefragt ist, ob die gesuchte Ordnung der Stufe sich an einen anderen Weg anpassen lässt.
+  console.log(`\nStufe III, je ein Weg anders als in anker20 (${LAEUFE} Läufe; bleibt «Profi» unter 90 %, sucht das Werkzeug `
+    + `ab «Profi» eine Aufstellung, ${WEG_SUCHE_SCHRITTE_ZWEI} Schritte zu ${SUCH_PROBEN} Proben, in drei von zehn zwei Helden)\n`);
+  console.log('| Held | Weg | anker20 · Gut | anker20 · Profi | mit Aufstellungssuche |');
+  console.log('|---|---|---|---|---|');
+  const funde: string[] = [];
+  for (const held of baueRaidGilde('anker20').helden) {
+    for (const weg of wegeDerKlasse(held.classId)) {
+      if (weg.id === held.spezialisierung) continue;
+      const mitWeg = (name: RaidAufstellungKuckuck): Aufbau => {
+        const a = aufbauDrei('anker20', name);
+        a.helden.find(h => h.name === held.name)!.spezialisierung = weg.id;
+        return a;
+      };
+      const gut = fasse(laeufe(mitWeg('gut')), KUCKUCK);
+      const profi = fasse(laeufe(mitWeg('profi')), KUCKUCK);
+      let gesucht: Messung | null = null;
+      if (profi.sieg < 0.90) {
+        const start = mitWeg('profi');
+        const gefunden: Aufbau = { ...start, aufstellung: aufstellungsSuche(start, WEG_SUCHE_SCHRITTE_ZWEI) };
+        gesucht = fasse(laeufe(gefunden), KUCKUCK);
+        funde.push(`${held.name} als ${weg.name}, gefunden ab «Profi»: Sieg ${prozent(gesucht.sieg)}, `
+          + `Zenit-Rest ${prozent(gesucht.rest)}, Ø Runde ${komma(gesucht.siegRunde)}`, '',
+        ...raster(gefunden.helden, gefunden.aufstellung, KUCKUCK), '');
+      }
+      console.log(`| ${held.name}${held.lehrling ? ' (Lehrling)' : ''} | ${weg.name} | ${prozent(gut.sieg)} | `
+        + `${prozent(profi.sieg)} | ${gesucht ? prozent(gesucht.sieg) : '–'} |`);
+      // Stufe III braucht eine Meuchlerin (ihr Meister-Effekt trägt den Schaden, wenn Zenit unter 60 % ist): Nimmt der
+      // Wechsel der Gilde die einzige, gilt 60 % statt 90 %, und der Tausch unten (der Lehrling nimmt den Weg) 90 %
+      const ohneMeuchlerin = !mitWeg('profi').helden.some(h => h.spezialisierung === MEUCHLERIN);
+      const mindestens = ohneMeuchlerin ? 0.60 : 0.90;
+      band(`Stufe III · Weg ${weg.name} für ${held.name}: anker20 · Profi oder mit Aufstellungssuche mindestens `
+        + `${prozent(mindestens)}${ohneMeuchlerin ? ' (danach ohne Meuchlerin)' : ''}`,
+        Math.max(profi.sieg, gesucht?.sieg ?? 0), mindestens, 1,
+        gesucht ? `${prozent(profi.sieg)}, mit Aufstellungssuche ${prozent(gesucht.sieg)}` : prozent(profi.sieg));
+    }
+  }
+  if (funde.length > 0) console.log(`\n${funde.join('\n').trimEnd()}`);
+
+  // Der Tausch: Sina als Schattentänzerin, Nix (Lehrling) als Meuchlerin; so behält die Gilde ihre Meuchlerin
+  const tausch = (name: RaidAufstellungKuckuck): Aufbau => {
+    const a = aufbauDrei('anker20', name);
+    a.helden.find(h => h.name === 'Sina')!.spezialisierung = 'assassin_schattentaenzerin';
+    a.helden.find(h => h.name === 'Nix')!.spezialisierung = MEUCHLERIN;
+    return a;
+  };
+  const tauschProfi = fasse(laeufe(tausch('profi')), KUCKUCK);
+  let tauschGesucht: Messung | null = null;
+  if (tauschProfi.sieg < 0.90) {
+    const start = tausch('profi');
+    const gefunden: Aufbau = { ...start, aufstellung: aufstellungsSuche(start, WEG_SUCHE_SCHRITTE_ZWEI) };
+    tauschGesucht = fasse(laeufe(gefunden), KUCKUCK);
+    console.log(`\nTausch: Sina als Schattentänzerin, Nix als Meuchlerin, gefunden ab «Profi»: Sieg ${prozent(tauschGesucht.sieg)}, `
+      + `Zenit-Rest ${prozent(tauschGesucht.rest)}, Ø Runde ${komma(tauschGesucht.siegRunde)}\n`);
+    for (const zeile of raster(gefunden.helden, gefunden.aufstellung, KUCKUCK)) console.log(zeile);
+  } else {
+    console.log(`\nTausch: Sina als Schattentänzerin, Nix als Meuchlerin: Profi ${prozent(tauschProfi.sieg)}`);
+  }
+  band('Stufe III · Tausch (Sina Schattentänzerin, Nix Meuchlerin): Profi oder mit Aufstellungssuche mindestens 90 %',
+    Math.max(tauschProfi.sieg, tauschGesucht?.sieg ?? 0), 0.90, 1,
+    tauschGesucht ? `${prozent(tauschProfi.sieg)}, mit Aufstellungssuche ${prozent(tauschGesucht.sieg)}` : prozent(tauschProfi.sieg));
 }
 
 // ── Die besten zehn neu suchen (--suche zehn) ──

@@ -132,6 +132,11 @@ const tagstein = (def: RaidDef): number => def.kostenJeVersuch.mat_tagstein ?? 0
 const bildschirm = (): HTMLElement | null => document.getElementById('s-raid');
 const hatGegenzeiger = (def: RaidDef): boolean => def.regeln.gegenzeiger !== undefined;
 const hatKuckuck = (def: RaidDef): boolean => def.regeln.kuckuck !== undefined;
+/** «ES SCHLÄGT ZWÖLF · AB HIER ALLES × 1,5» in zwei Teilen: Wird die Leiste schmal, fällt der zweite weg (raid.css) */
+const mittagTeile = (text: string): string => {
+  const [zwoelf, ...rest] = text.split(' · ');
+  return `<span>${zwoelf}</span>${rest.length > 0 ? `<span>· ${rest.join(' · ')}</span>` : ''}`;
+};
 /** Stufe III: die Spalten links und rechts der Gänge (C/D, F/G, I/J) mit dem Namen ihres Gangs */
 const amGang = (def: RaidDef): Map<number, string> => {
   const spalten = new Map<number, string>();
@@ -454,7 +459,7 @@ function leisteHtml(lage: RaidLage, def: RaidDef): string {
     ? `<span><i class="r-lg-kk"></i> ${g.kuckuck} <span class="r-legende-lang">${g.gangLang}</span><span class="r-legende-kurz">${g.gangKurz}</span></span>`
     : '';
   return `<section class="r-panel r-leiste${gegen ? ' r-zwei-zeiger' : ''}${mitTruppKlassen(def)}">
-    <div class="r-leiste-kopf"><span class="r-lk-vm">${t.vormittag}</span><span class="r-lk-mt">${t.mittag}</span><span class="r-lk-mn" title="${t.legendeTag}">${t.mitternacht}</span></div>
+    <div class="r-leiste-kopf"><span class="r-lk-vm">${t.vormittag}</span><span class="r-lk-mt">${mittagTeile(t.mittag)}</span><span class="r-lk-mn" title="${t.legendeTag}">${t.mitternacht}</span></div>
     <div class="r-runden">${runden}</div>
     <div class="r-legende">
       <span class="c-funken">${ic('funken')}<span class="r-mut">${g.funken}</span></span>

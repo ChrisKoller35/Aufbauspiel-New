@@ -157,6 +157,7 @@ Leben geteilt durch den Schaden eines Treffers, aufgerundet, bei Flächenschaden
 | Glocke | die vollste Reihe mit Namen | dort stehen 4 oder mehr; jemand dort hält ab Mittag keine 2 Glockenschläge (165) |
 | Funken | wer sie wohl bekommt: Probelauf bis Runde 3 mit dem Samen der ersten Kriegsrat-Probe (1000) | das Ziel hat Nachbarn im Trupp (nach Feld, auch wer im Probelauf schon fiel) |
 | Trupp (je Trupp) | Teamwirkungen und Heiler | kein Heiler; dieselbe Teamwirkung zweimal, von der nur die stärkere zählt |
+| Klinge (nur Stufe III) | nur als Warnung | oben steht keine Meisterin der Meuchlerinnen (Weg Meuchlerin, Stufe 15); siehe «Je ein Weg anders» bei Stufe III |
 | Zahl | wie viele hinaufgehen | weniger als vier, oder weniger, als die Gilde Helden hat (höchstens zehn) |
 
 Die Liste der Muster-Gilde mit «Gut» (67 % Siege):
@@ -928,7 +929,8 @@ nicht dreizehn. XP: 600 beim Sieg, 200 bei der Niederlage, je Teilnehmer.
 
 ### Eichung von Stufe III
 
-`npm run raid-eichung -- --stufe III` (ohne `--stufe` nach Stufe I und II); mit `--leben` das Leben dieser Stufe.
+`npm run raid-eichung -- --stufe III` (ohne `--stufe` nach Stufe I und II); mit `--leben` das Leben dieser Stufe, mit
+`--wege` je ein Weg anders (siehe unten).
 `tests/raidKuckuck.test.ts` prüft die Bänder mit den 20 Samen.
 
 **Muster-Gilde «anker20»:** `anker15` und die übrigen fünf Lehrlinge auf Stufe 15 mit Weg, ohne Schmiede-Stufen, in
@@ -985,12 +987,61 @@ Lehrbuch ≤ 10 % (0 %), K4 Naiv 0 %, K5 fünfzehn ≤ 10 % (0 %), K6 Mitternach
 Kuckuck Gut mindestens 15 Punkte mehr (+31), K8 ohne Heilregel Gut ≤ 5 % (0 %), K9 Das Nest 1,2- bis 1,6-mal die
 dreizehnte Truhe (1,3).
 
+**Je ein Weg anders** (`--stufe III --wege`, 400 Läufe; jeder der zwanzig aus anker20 einzeln mit dem anderen Weg
+seiner Klasse; bleibt «Profi» unter 90 %, sucht das Werkzeug ab «Profi» eine Aufstellung, 600 Schritte zu 40 Proben,
+in drei von zehn Schritten zwei Helden):
+
+| Held | Weg | anker20 · Gut | anker20 · Profi | mit Aufstellungssuche |
+|---|---|---|---|---|
+| Brom | Vergelter | 74 % | 93 % | – |
+| Grimm | Schlächter | 59 % | 96 % | – |
+| Lia | Fährtenleserin | 100 % | 100 % | – |
+| Sina | Schattentänzerin | 0 % | 2 % | 64 % |
+| Ansgar | Kreuzritter | 60 % | 57 % | 100 % |
+| Ewin | Kriegspriester | 68 % | 95 % | – |
+| Moos | Bärengestalt | 59 % | 98 % | – |
+| Liedra | Schmählied | 96 % | 98 % | – |
+| Ysra | Sturmhexe | 19 % | 88 % | 94 % |
+| Morn | Knochenherr | 62 % | 96 % | – |
+| Bertram (Lehrling) | Vergelter | 69 % | 96 % | – |
+| Pirmin (Lehrling) | Lichtbringer | 1 % | 97 % | – |
+| Wenna (Lehrling) | Fährtenleserin | 100 % | 100 % | – |
+| Benno (Lehrling) | Schmählied | 97 % | 99 % | – |
+| Mirabell (Lehrling) | Fluchweberin | 63 % | 97 % | – |
+| Ragna (Lehrling) | Schlächter | 59 % | 96 % | – |
+| Nix (Lehrling) | Meuchlerin | 78 % | 97 % | – |
+| Gerlinde (Lehrling) | Schutzherr | 67 % | 98 % | – |
+| Edgar (Lehrling) | Knochenherr | 63 % | 96 % | – |
+| Farn (Lehrling) | Hüterin des Hains | 40 % | 93 % | – |
+
+Neunzehn von zwanzig Wegen kommen auf 93 bis 100 %, zwei davon erst mit der Suche (Ansgar als Kreuzritter 100 %, Ysra
+als Sturmhexe 94 %). **Stufe III braucht eine Meuchlerin.** Sina als Schattentänzerin heisst in anker20: keine
+Meuchlerin mehr, denn Nix ist schon Schattentänzerin. Dann findet die Suche ab «Profi» nur 64 % (Zenit-Rest 2 %, Ø Runde
+13,2), eine Probesuche ab «Gut» mit 1000 Schritten 78 %; 90 % erreichte keine. Der Meister-Effekt der Meuchlerin
+(2,5-facher Schaden, sobald Zenit unter 60 % ist) trägt auf Stufe III mehr als auf Stufe II, wo dieselbe Gilde ohne
+Meuchlerin 96 % fand. Nimmt Nix als Lehrling den Weg der Meuchlerin (**Tausch**: Sina Schattentänzerin, Nix
+Meuchlerin), kommt «Profi» nur auf 4 %, aber die Suche findet ab dort 97 %:
+
+```
+  Ysra     Moos     .        | .        Pirmin   .        | .        Ansgar   .        | .        Morn     .
+  .        Lia      Wenna    | Mirabell .        .        | Nix      Liedra   Benno    | Ragna    .        .
+  Sina     Brom     Farn     | Gerlinde .        Bertram  | Ewin     .        Edgar    | .        .        Grimm
+```
+
+Das Werkzeug prüft darum zwei Bänder anders: Lässt ein Wechsel die Gilde ohne Meuchlerin, gilt mindestens 60 % statt
+90 % (Sina 64 %), und der Tausch braucht 90 % (97 %). Annahme: Das ist gewollt. Wer seiner Meisterin den Schattentanz
+gegeben hat, gibt dem Lehrling die Meuchlerin; 64 bis 78 % mit drei freien Versuchen in der Woche sind auch ohne sie
+noch ein Sieg in den meisten Wochen. Alrunas Liste warnt auf Stufe III, wenn oben keine Meisterin der Meuchlerinnen steht
+(Zeichen Klinge): «Oben steht keine Meisterin der Meuchlerinnen. Unter sechzig Prozent trifft sie Zenit zweieinhalbmal
+so hart, und hier oben fehlt genau dieser Schaden am Schluss.»
+
 ### Grenzen von Stufe III
 
 - **Nur mit Lehrlingen:** Zwanzig Helden gibt es nur mit allen zehn Lehrlingen; mit fünfzehn kommt keine gesuchte
   Ordnung durch. Das ist gewollt, heisst aber: Stufe III ist das Ziel für eine voll ausgebildete Gilde.
-- **Wege nicht einzeln gemessen:** Anders als auf Stufe I und II gibt es für Stufe III noch keine Messung «je ein Weg
-  anders» (`--wege`). Annahme: Wie auf Stufe II findet die Suche für jeden Weg eine Ordnung; geprüft ist das nicht.
+- **Eine Meuchlerin gehört dazu:** Ohne Meuchlerin in der Gilde (Meisterin und Lehrling beide Schattentänzerin) fanden
+  die Suchen 64 und 78 %, keine 90 %. Alle anderen Wege kommen auf 93 bis 100 % (siehe «Je ein Weg anders»). Alrunas
+  Liste warnt dann; einen anderen Weg wählen kann ein Held nicht mehr, die Wahl gilt für immer.
 - **Handy:** vier Trupps untereinander, das Feld ist rund ein Drittel höher als auf Stufe II.
 - **Keine Erfolge** für Stufe III (siehe oben).
 
