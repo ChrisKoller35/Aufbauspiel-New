@@ -487,6 +487,20 @@ body {
   text-shadow: 0 1px 4px rgba(0,0,0,.8);
 }
 
+/* Lehrlinge (ui/heldBild.ts): das Bild der Klasse, gespiegelt. Bei Karten trägt eine Ebene hinter dem Inhalt
+   das Bild aus --held-bild, mit Grösse und Lage der Karte. */
+img.lehrling-bild { transform: scaleX(-1); }
+.lehrling-bild:not(img) { position: relative; isolation: isolate; }
+.lehrling-bild:not(img)::before {
+  content: ''; position: absolute; inset: 0; z-index: -1; pointer-events: none;
+  background-image: var(--held-bild); background-size: inherit; background-position: inherit;
+  background-repeat: no-repeat; border-radius: inherit; transform: scaleX(-1);
+}
+.hc-lehrling {
+  font-size: 0.62rem; letter-spacing: 1px; text-transform: uppercase; color: var(--gold);
+  text-shadow: 0 1px 4px rgba(0,0,0,.9);
+}
+
 /* Hero hire card wrapper: image + footer below */
 .hcard-wrap { display: flex; flex-direction: column; }
 .hcard-wrap .hcard { border-bottom-left-radius: 0; border-bottom-right-radius: 0; }

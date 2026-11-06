@@ -27,6 +27,11 @@ export interface GuildFighter {
   spezialisierung?: string;
   /** Was sein Weg in allen Expeditionen zusammen bewirkt hat (Heldenfenster) */
   wegBilanz?: WegWirkung;
+  /**
+   * Zweitbesetzung: der Lehrling seiner Klasse (data/lehrlinge.ts, systems/Lehrlinge.ts). Je Klasse gibt es
+   * höchstens einen; Name und Hintergrund kommen aus LEHRLINGE, das Bild ist das der Klasse, gespiegelt.
+   */
+  lehrling?: boolean;
 }
 
 let nextFighterId = 1;

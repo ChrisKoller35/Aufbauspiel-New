@@ -701,6 +701,8 @@ export class CombatEngine {
       lootTableId: null,
       spriteKey: cls?.spriteKey,
       specialEffects,
+      // nur beim Lehrling, damit Kampfeinheiten (und der Schlüssel des Kriegsrats) sonst gleich bleiben
+      ...(fighter.lehrling ? { lehrling: true } : {}),
     };
   }
 

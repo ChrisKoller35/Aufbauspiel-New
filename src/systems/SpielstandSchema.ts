@@ -42,7 +42,7 @@ const HELD = objekt({
   id: ZAHL, classId: TEXT, name: TEXT,
   baseStats: objekt({ hp: ZAHL, maxHp: ZAHL, atk: ZAHL, def: ZAHL, spd: ZAHL, critChance: ZAHL, critMult: ZAHL }, ['maxHp']),
   gear: tabelle(oderNull(TEXT)), // mainHand, offHand, armor, trinket
-  xp: ZAHL, level: ZAHL, spezialisierung: TEXT, wegBilanz: ZAEHLER,
+  xp: ZAHL, level: ZAHL, spezialisierung: TEXT, wegBilanz: ZAEHLER, lehrling: JA_NEIN,
 }, ['id', 'baseStats', 'gear']);
 
 const BESTENLISTE_EINTRAG = objekt({
