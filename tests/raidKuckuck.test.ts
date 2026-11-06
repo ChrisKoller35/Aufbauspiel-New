@@ -17,13 +17,13 @@ import {
 import { setVonItem } from '../src/data/dungeonSets';
 import { LEHRLINGE } from '../src/data/lehrlinge';
 import {
-  RAID_AUFSTELLUNGEN_KUCKUCK, RaidAufstellungKuckuck, baueRaidGilde, raidMusterAufstellungKuckuck,
+  RAID_AUFSTELLUNGEN_KUCKUCK, RaidAufstellungKuckuck, baueRaidGilde, raidMusterAufstellungDreizehn, raidMusterAufstellungKuckuck,
 } from '../src/data/raidMuster';
 import {
   RaidEreignis, RaidErgebnis, gangSpalten, hauptursache, kuckuckGang, raidKampf, spaltenZahl, treffpunkte,
 } from '../src/systems/RaidKampf';
 import {
-  ErnstkampfErgebnis, ernstkampf, raidKartenZustand, raidOffen, raidStand, setzeHeld, versuchsLage,
+  ErnstkampfErgebnis, ernstkampf, hinweise, raidKartenZustand, raidOffen, raidStand, setzeHeld, versuchsLage,
 } from '../src/systems/Raid';
 import { merkeBezwungen } from '../src/systems/Bezwungen';
 import { TAG_MS } from '../src/systems/Rangliste';
@@ -300,6 +300,29 @@ describe('Stufe III im Spielstand', () => {
     vi.setSystemTime(START + WOCHE);
     for (let i = 0; i < 3 && !raidStand(state, Date.now(), KUCKUCK).woche.truhe; i++) ernstkampf(state, Date.now(), KUCKUCK);
     expect(state.statistics.raid3_wochen).toBe(2);
+  });
+
+  test('Alrunas Liste: ohne Meisterin der Meuchlerinnen oben eine Warnung, nur auf Stufe III', () => {
+    const warnt = (state: GameState, def = KUCKUCK): boolean =>
+      hinweise(state, def).some(h => !h.ok && h.text === RAID_TEXTE.liste.ohneMeuchlerin);
+    const state = stufeDreiSpielstand('gut');
+    const sina = state.fighters.find(f => f.name === 'Sina')!;
+    const nix = state.fighters.find(f => f.name === 'Nix')!;
+    expect([sina.spezialisierung, nix.spezialisierung]).toEqual(['assassin_meuchlerin', 'assassin_schattentaenzerin']);
+    expect(warnt(state)).toBe(false);
+    // Beide Schattentänzerin: Warnung, mit dem Klingen-Zeichen
+    sina.spezialisierung = 'assassin_schattentaenzerin';
+    expect(warnt(state)).toBe(true);
+    expect(hinweise(state, KUCKUCK).find(h => h.text === RAID_TEXTE.liste.ohneMeuchlerin)?.art).toBe('klinge');
+    // Der Tausch: Nix (Stufe 15, also Meisterin) als Meuchlerin, keine Warnung
+    nix.spezialisierung = 'assassin_meuchlerin';
+    expect(warnt(state)).toBe(false);
+    // Unter Stufe 15 fehlt der Meister-Effekt: wieder die Warnung
+    nix.level = 14;
+    expect(warnt(state)).toBe(true);
+    // Auf Stufe II nicht (dort fand die Suche auch ohne Meuchlerin 96 %)
+    raidStand(state, Date.now(), DREIZEHN).aufstellung = raidMusterAufstellungDreizehn('profi', state.fighters);
+    expect(warnt(state, DREIZEHN)).toBe(false);
   });
 
   test('Stufe III kommt nach dem Speichern unverändert zurück', () => {

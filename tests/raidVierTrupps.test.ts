@@ -80,6 +80,11 @@ describe('Mehr als zwei Stufen: Uhr, Kartenknoten, Umschalter', () => {
     expect(css).toContain('.r-gitter.r-viele > * { grid-row: var(--hr, var(--gr)); grid-column: var(--hc, var(--gc)); }');
   });
 
+  test('Bank am PC: läuft mit und rollt für sich, damit man bei zwanzig Helden auch von unten ins Feld ziehen kann', () => {
+    const css = quelle('src/ui/html/raid.css');
+    expect(css).toMatch(/@media \(min-width: 701px\) \{\s*\.r-bank \{\s*position: sticky; top: 12px; max-height: calc\(100vh - 80px\); overflow-y: auto;/);
+  });
+
   test('Umschalter: ab drei Stufen zu dritt nebeneinander (Handy und Fenster einer Stufe, die zu ist)', () => {
     const bildschirm = quelle('src/ui/screens/RaidScreen.ts');
     expect(bildschirm).toContain("RAID_STUFEN.length >= 3 ? ' r-stufen-drei' : ''");

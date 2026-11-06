@@ -25,6 +25,7 @@ import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { erfolgePruefen } from './AchievementSystem';
 import { besitz, getrageneSets, setTeilHinweis } from './DungeonSets';
 import { schmiedeStufen } from './Schmiede';
+import { istMeister } from './Spezialisierung';
 import { wocheVon } from './Rangliste';
 import {
   RaidErgebnis, RaidGefallen, Regel, hauptursache, heilFaehigkeit, raidKampf, schlaege, sindNachbarn, spaltenZahl,
@@ -533,7 +534,7 @@ export function raidRolle(classId: string): RaidRolle {
 }
 
 export interface RaidHinweis {
-  art: 'pendel' | 'zeiger' | 'glocke' | 'funken' | 'trupp' | 'zahl';
+  art: 'pendel' | 'zeiger' | 'glocke' | 'funken' | 'trupp' | 'klinge' | 'zahl';
   ok: boolean;
   text: string;
   /** Felder, die beim Darüberfahren aufleuchten */
@@ -726,6 +727,12 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
     if (heiler.length > 0 && doppelt.length === 0) {
       hinweise.push({ art: 'trupp', ok: true, text: L.truppOk(seite, [...traeger.keys()].map(id => TRUPP_WIRKUNGEN[id]), heiler), felder: felder(imTrupp) });
     }
+  }
+
+  // Stufe III braucht eine Meisterin der Meuchlerinnen: Ohne sie fanden die Suchen 64 und 78 %, keine 90 % (docs/RAID.md)
+  if (def.regeln.kuckuck !== undefined && helden.length > 0
+    && !helden.some(h => istMeister(h.held) && h.held.spezialisierung === 'assassin_meuchlerin')) {
+    hinweise.push({ art: 'klinge', ok: false, text: L.ohneMeuchlerin, felder: [] });
   }
 
   // Zahl: wie viele hinaufgehen (in Ordnung, wenn alle oben sind, die es gibt)

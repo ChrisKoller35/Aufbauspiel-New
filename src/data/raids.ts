@@ -412,6 +412,9 @@ export const RAID_TEXTE = {
     truppOk: (seite: string, wirkungen: string[], heiler: string[]) =>
       `${seite}: ${wirkungen.length > 0 ? `${wirkungen.join(', ')}. ` : ''}Heiler: ${liste(heiler)}.`,
     truppOhneHeiler: (seite: string) => `${seite} hat keinen Heiler. Bei uns stand der Salbentopf auch auf der falschen Seite.`,
+    /** Nur Stufe III: oben steht keine Meisterin der Meuchlerinnen (docs/RAID.md, «Je ein Weg anders») */
+    ohneMeuchlerin: 'Oben steht keine Meisterin der Meuchlerinnen. Unter sechzig Prozent trifft sie Zenit zweieinhalbmal '
+      + 'so hart, und hier oben fehlt genau dieser Schaden am Schluss.',
     truppDoppelt: (seite: string, wirkung: string) => `${seite}: zweimal ${wirkung}. Es zählt nur die stärkere.`,
     zahl: (n: number, max: number) => {
       if (n >= max) return 'Zehn gehen hinauf. Dafür hat die Liste keinen Punkt. Alruna hat nachgesehen.';

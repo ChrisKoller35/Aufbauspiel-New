@@ -40,6 +40,7 @@
 #s-raid .i { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex-shrink: 0; }
 #s-raid .c-pendel { color: var(--pendel-t); } #s-raid .c-funken { color: var(--funken); } #s-raid .c-glocke { color: var(--glocke); }
 #s-raid .c-zeiger { color: var(--zeiger); } #s-raid .c-trupp { color: var(--stuetze); } #s-raid .c-zahl { color: var(--gold); }
+#s-raid .c-klinge { color: var(--funken); }
 #s-raid .r-handy { display: none; }
 
 /* ── Gerüst am PC ── */
@@ -116,9 +117,15 @@
 /* ── Uhrleiste ── */
 .r-leiste { padding: 7px 14px 8px; }
 .r-leiste-kopf, .r-runden { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); column-gap: 3px; }
-.r-leiste-kopf { font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: 1.5px; color: var(--mut); margin-bottom: 10px; }
+.r-leiste-kopf { font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: 1.5px; color: var(--mut); margin-bottom: 10px; line-height: 1.25; }
 .r-lk-vm { grid-column: 1 / 12; border-bottom: 1px solid var(--bdr); padding-bottom: 2px; }
-.r-lk-mt { grid-column: 12 / 21; color: var(--gl); border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap; }
+/* Zwei Teile, «Es schlägt zwölf» und «· ab hier alles × 1,5»: Ist die Leiste schmal (Stufe I am kleineren Bildschirm),
+   bricht der zweite in eine zweite Zeile um, und die ist abgeschnitten, statt in «Mitternacht» zu laufen (6px
+   Abstand, damit nichts von ihr im unteren Rand durchscheint). Die Legende darunter sagt «ab Mittag × 1,5» ohnehin. */
+.r-lk-mt {
+  grid-column: 12 / 21; color: var(--gl); border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap;
+  display: flex; flex-wrap: wrap; gap: 6px .4em; height: calc(1.25em + 3px); box-sizing: border-box; overflow: hidden;
+}
 .r-lk-mn { grid-column: 21 / 25; text-align: right; border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap; }
 .r-rd {
   position: relative; height: 38px; border-radius: 4px; background: var(--s2); border: 1px solid var(--bdr);
@@ -285,6 +292,15 @@
 .r-bank.r-drueber { border-color: var(--gl); background: rgba(40, 32, 12, .9); }
 .r-bank-tipp { font-size: .8rem; color: var(--mut); margin: 2px 0 8px; line-height: 1.32; }
 .r-bank-fuss { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--bdr); font-size: .8rem; color: var(--mut); line-height: 1.32; font-style: italic; }
+/* Am PC läuft die Bank mit und rollt für sich: Mit 15 bis 20 Helden reicht sie sonst weit unter das Feld, und wer
+   einen Helden von unten auf der Bank zieht, sieht das Feld nicht mehr. Die 80px lassen beim Öffnen Platz für die
+   Kopfzeile darüber, damit die Bank ganz zu sehen ist. */
+@media (min-width: 701px) {
+  .r-bank {
+    position: sticky; top: 12px; max-height: calc(100vh - 80px); overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--bdr) transparent;
+  }
+}
 .r-karten { display: flex; flex-direction: column; gap: 6px; }
 .r-karte {
   display: grid; grid-template-columns: 46px minmax(0, 1fr); column-gap: 9px; align-items: center; position: relative;
