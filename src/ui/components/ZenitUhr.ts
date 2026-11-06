@@ -3,8 +3,10 @@
 // Strichen, zwei Zeiger, oben die Glocke, unten das Pendel, dahinter Zahnräder und Strahlen. Kein Bild, keine
 // Kosten. Sie steht kurz vor zwölf, bis Zenit in dieser Woche besiegt ist, dann auf zwölf (am Montag zieht er
 // sich wieder auf). In der Wiedergabe zeigt der grosse Zeiger nach unten auf die Spalte, die er drückt (A links
-// bis F rechts), der kleine auf die Stunde, und das Pendel schwingt zum Trupp, den es trifft; Glocke und Funken
-// leuchten über die Klassen .zu-glocke und .zu-funken. Regeln: docs/RAID.md.
+// bis F rechts, auf Stufe II bis I), der kleine auf die Stunde, und das Pendel schwingt zum Trupp, den es trifft;
+// Glocke und Funken leuchten über die Klassen .zu-glocke und .zu-funken. Auf Stufe II («Zenit, aufgezogen») läuft
+// ein dritter, dünner Zeiger mit: der Gegenzeiger (.zu-gegen), rückwärts; kurz vor dreizehn stehen beide
+// spiegelbildlich vor der Zwölf. Regeln: docs/RAID.md.
 // ────────────────────────────────────────────────────────────────
 
 export interface UhrStellung {
@@ -18,12 +20,18 @@ export interface UhrStellung {
   glocke?: boolean;
   /** Funken springen (diese Runde) */
   funken?: boolean;
+  /** Stufe II: der Gegenzeiger in Grad (ohne: kein Gegenzeiger) */
+  gegen?: number;
 }
 
 /** Solange Zenit steht: kurz vor zwölf, das Pendel links */
 export const KURZ_VOR_ZWOELF: UhrStellung = { minute: -32, stunde: -4, pendel: 16, funken: true };
 /** Diese Woche besiegt: beide Zeiger auf zwölf, das Pendel steht */
 export const AUF_ZWOELF: UhrStellung = { minute: 0, stunde: 0, pendel: 0 };
+/** Stufe II, solange Zenit steht: Zeiger und Gegenzeiger spiegelbildlich kurz vor zwölf, der kleine kurz vor eins */
+export const KURZ_VOR_DREIZEHN: UhrStellung = { minute: -32, gegen: 32, stunde: 24, pendel: -16, funken: true };
+/** Stufe II, diese Woche angehalten: beide langen Zeiger auf zwölf, der kleine zwischen zwölf und eins */
+export const ANGEHALTEN: UhrStellung = { minute: 0, gegen: 0, stunde: 15, pendel: 0 };
 
 /** Grosser Zeiger auf eine Spalte: nach unten, Spalte 0 links unten bis zur letzten rechts unten */
 export function zeigerAufSpalte(spalte: number, spalten = 6): number {
@@ -109,6 +117,7 @@ export function zenitUhrSvg(stellung: UhrStellung, id: string, label: string, at
   <g stroke="#e6c060" stroke-linecap="round">${striche}</g>
   <text x="100" y="64" text-anchor="middle" font-family="Cinzel, serif" font-weight="700" font-size="17" fill="#f3d27a">XII</text>
   <g class="zu-minute" transform="rotate(${stellung.minute} 100 100)"><path d="M100 105 L100 53" stroke="#f3d27a" stroke-width="3" stroke-linecap="round"/><path d="M100 47 L104 55 L100 60 L96 55Z" fill="#f3d27a"/></g>
+  ${stellung.gegen === undefined ? '' : `<g class="zu-gegen" transform="rotate(${stellung.gegen} 100 100)"><path d="M100 112 L100 50" stroke="#5eead4" stroke-width="1.8" stroke-linecap="round"/><path d="M100 44 L103 51 L97 51Z" fill="#5eead4"/><circle cx="100" cy="114" r="3" fill="#5eead4"/></g>`}
   <g class="zu-stunde" transform="rotate(${stellung.stunde} 100 100)"><path d="M100 107 L100 79" stroke="#c8a227" stroke-width="5.5" stroke-linecap="round"/><path d="M100 70 L106 79 L100 84 L94 79Z" fill="#c8a227"/></g>
   <circle cx="100" cy="100" r="6.5" fill="url(#${g('gold')})" stroke="#3a2c12" stroke-width="1.2"/>
   ${funken}

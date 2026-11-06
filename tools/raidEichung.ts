@@ -1,4 +1,4 @@
-// ─── Magic City – Eichung des Raids «Über dem Tag» ──────────────
+// ─── Magic City – Eichung der Raids «Über dem Tag» und «Die dreizehnte Stunde» ──────────────
 // Rechnet Zenit (src/data/raids.ts) gegen die Muster-Gilde (src/data/raidMuster.ts) in ihren Aufstellungen,
 // je Zeile 400 Kämpfe mit den Samen i · 7919; die ersten 20 sind die von tests/raid.test.ts. Die erste
 // Tabelle zeigt Siege, Siegrunde, Zenits Rest, wie oft Zenit unter die Hälfte kam, Siege bis Runde 12,
@@ -7,7 +7,9 @@
 // endet das Werkzeug mit 1. Zum Schluss vergleicht es Zenits Truhe mit einem Lauf bei Orm (Gold und Grundwert
 // der Gegenstände). Nach Änderungen an Kampf, Klassen, Wegen, Sets, Schmiede, Beute oder an Zenit neu laufen
 // lassen und die Tabellen in docs/RAID.md nachführen. Stellschraube zuerst Zenits Leben, in Schritten von 250,
-// erst danach Wuchten oder Heilfaktor.
+// erst danach Wuchten oder Heilfaktor. Danach dasselbe für Stufe II (Zenit mit Gegenzeiger, die Muster-Gilde mit
+// fünf Lehrlingen, anker15, auf neun Spalten): Tabelle, je eine Regel aus und ihre Bänder, die dreizehnte Truhe
+// gegen Zenits Truhe.
 // Aufruf: npm run raid-eichung
 //         mehr Läufe:                  npm run raid-eichung -- --laeufe 1000
 //         Zenits Leben durchprobieren: npm run raid-eichung -- --leben 13500,14000,14500   (ohne Bänder)
@@ -15,11 +17,18 @@
 //         je ein Weg anders:           npm run raid-eichung -- --wege                     (Profi ≥ 90 %, sonst
 //                                      eine Aufstellungssuche ab «Gut», 300 Schritte, mit ≥ 90 %)
 //         Aufstellungssuche:           npm run raid-eichung -- --suche t4                 (T4 ≤ 65 %)
+//         nur eine Stufe:              npm run raid-eichung -- --stufe II                 (I oder II; mit --leben:
+//                                      das Leben dieser Stufe durchprobieren)
+//         die besten zehn neu suchen:  npm run raid-eichung -- --suche zehn               (Stufe II ohne Lehrlinge,
+//                                      600 Schritte ab «zehn»: ≤ 15 %)
 // ────────────────────────────────────────────────────────────────
 
 import { ITEM_DEFS } from '../src/data/items';
-import { ZENIT } from '../src/data/raids';
-import { RaidAufstellungName, RaidMusterName, baueRaidGilde, raidMusterAufstellung } from '../src/data/raidMuster';
+import { DREIZEHN, RaidDef, ZENIT } from '../src/data/raids';
+import {
+  RaidAufstellungDreizehn, RaidAufstellungName, RaidMusterName, baueRaidGilde, raidMusterAufstellung,
+  raidMusterAufstellungDreizehn,
+} from '../src/data/raidMuster';
 import { wegeDerKlasse } from '../src/data/spezialisierungen';
 import { createNewGameState } from '../src/models/GameState';
 import type { GuildFighter } from '../src/models/GuildRoster';
@@ -35,8 +44,8 @@ type Abschaltbar = NonNullable<RaidOptionen['ohne']>[number];
 /** Was sich abschalten lässt (Rundenende und Mitternacht nicht); Zeiger aus nimmt den Durchschlag mit */
 const REGELN: Abschaltbar[] = ['pendel', 'zeiger', 'durchschlag', 'glocke', 'funken', 'mittag', 'heilung'];
 const REGEL_NAME: Record<Abschaltbar, string> = {
-  pendel: 'Pendel', zeiger: 'Zeiger (mit Durchschlag)', durchschlag: 'Durchschlag', glocke: 'Glocke', funken: 'Funken',
-  mittag: 'Mittag', heilung: 'Heilregel', rest: 'Rundenende', mitternacht: 'Mitternacht',
+  pendel: 'Pendel', zeiger: 'Zeiger (mit Durchschlag)', gegenzeiger: 'Gegenzeiger (mit Durchschlag)', durchschlag: 'Durchschlag',
+  glocke: 'Glocke', funken: 'Funken', mittag: 'Mittag', heilung: 'Heilregel', rest: 'Rundenende', mitternacht: 'Mitternacht',
 };
 const GILDEN: RaidMusterName[] = ['anker', 'sets5', 'sets0', 't4', 'kern'];
 const DIE_SECHS = ['Ansgar', 'Ewin', 'Moos', 'Liedra', 'Ysra', 'Morn'];
@@ -44,11 +53,12 @@ const DIE_SECHS = ['Ansgar', 'Ewin', 'Moos', 'Liedra', 'Ysra', 'Morn'];
 // ── Aufruf ──
 
 const ARGUMENTE = process.argv.slice(2);
-const MIT_WERT = ['--laeufe', '--leben', '--ohne'];
+const MIT_WERT = ['--laeufe', '--leben', '--ohne', '--stufe'];
 
 function abbruch(text: string): never {
   console.error(text);
-  console.error('Aufruf: npm run raid-eichung -- [--laeufe 400] [--leben 13500,14500] [--ohne glocke,funken] [--wege] [--suche t4]');
+  console.error('Aufruf: npm run raid-eichung -- [--laeufe 400] [--leben 13500,14500] [--ohne glocke,funken] [--wege] '
+    + '[--suche t4|zehn] [--stufe I|II]');
   process.exit(1);
 }
 
@@ -58,7 +68,7 @@ for (let i = 0; i < ARGUMENTE.length; i++) {
     if (ARGUMENTE[i + 1] === undefined) abbruch(`${a} braucht einen Wert.`);
     i++;
   } else if (a === '--suche') {
-    if (GILDEN.includes(ARGUMENTE[i + 1] as RaidMusterName)) i++;
+    if (GILDEN.includes(ARGUMENTE[i + 1] as RaidMusterName) || ARGUMENTE[i + 1] === 'zehn') i++;
   } else if (a !== '--wege') {
     abbruch(`Unbekannt: ${a}`);
   }
@@ -76,9 +86,15 @@ const OHNE = (wertVon('--ohne')?.split(',') ?? []) as Abschaltbar[];
 const unbekannteRegeln = OHNE.filter(r => !REGELN.includes(r));
 if (unbekannteRegeln.length > 0) abbruch(`--ohne: ${unbekannteRegeln.join(', ')} gibt es nicht (abschaltbar: ${REGELN.join(', ')}).`);
 const WEGE = ARGUMENTE.includes('--wege');
-const SUCHE: RaidMusterName | null = ARGUMENTE.includes('--suche')
+const ZEHN_SUCHE = ARGUMENTE.includes('--suche') && wertVon('--suche') === 'zehn';
+const SUCHE: RaidMusterName | null = ARGUMENTE.includes('--suche') && !ZEHN_SUCHE
   ? (GILDEN.find(g => g === wertVon('--suche')) ?? 't4')
   : null;
+const STUFE = wertVon('--stufe');
+if (STUFE !== undefined && STUFE !== 'I' && STUFE !== 'II') abbruch(`--stufe: I oder II, nicht «${STUFE}».`);
+/** Welche Stufen gerechnet werden (ohne --stufe beide) */
+const STUFE_EINS = STUFE !== 'II';
+const STUFE_ZWEI = STUFE !== 'I';
 
 // ── Messen ──
 
@@ -86,6 +102,8 @@ interface Aufbau {
   helden: GuildFighter[];
   stufen: SchmiedeStufen;
   aufstellung: Record<string, Feld>;
+  /** Welche Stufe (fehlt: Zenit, Stufe I) */
+  def?: RaidDef;
 }
 
 interface Lauf {
@@ -118,11 +136,17 @@ function aufbau(gilde: RaidMusterName, aufstellung: RaidAufstellungName, ohneHel
   return { helden, stufen, aufstellung: raidMusterAufstellung(aufstellung, helden, ohneHelden) };
 }
 
+/** Die Muster-Gilde `anker15` (oder `anker`) in einer Aufstellung von Stufe II */
+function aufbauZwei(gilde: RaidMusterName, aufstellung: RaidAufstellungDreizehn, ohneHelden: string[] = []): Aufbau {
+  const { helden, stufen } = baueRaidGilde(gilde);
+  return { helden, stufen, aufstellung: raidMusterAufstellungDreizehn(aufstellung, helden, ohneHelden), def: DREIZEHN };
+}
+
 /** `anzahl` Kämpfe mit den Samen (versatz + i) · 7919 */
 function laeufe(a: Aufbau, optionen: RaidOptionen = {}, anzahl = LAEUFE, versatz = 0): Lauf[] {
   const t0 = performance.now();
   const liste = Array.from({ length: anzahl }, (_, i) => {
-    const r = raidKampf(ZENIT, a.helden, a.stufen, a.aufstellung, (versatz + i) * 7919, { knapp: true, ...optionen });
+    const r = raidKampf(a.def ?? ZENIT, a.helden, a.stufen, a.aufstellung, (versatz + i) * 7919, { knapp: true, ...optionen });
     return { sieg: r.sieg, runden: r.runden, rest: r.zenitRest, stehend: r.stehend, mitternacht: r.mitternacht };
   });
   rechenzeit += performance.now() - t0;
@@ -130,7 +154,7 @@ function laeufe(a: Aufbau, optionen: RaidOptionen = {}, anzahl = LAEUFE, versatz
   return liste;
 }
 
-function fasse(liste: Lauf[]): Messung {
+function fasse(liste: Lauf[], def: RaidDef = ZENIT): Messung {
   const n = liste.length;
   const siege = liste.filter(l => l.sieg);
   const schnitt = (werte: number[]): number | null => (werte.length > 0 ? werte.reduce((s, w) => s + w, 0) / werte.length : null);
@@ -139,8 +163,8 @@ function fasse(liste: Lauf[]): Messung {
     sieg: siege.length / n,
     siegRunde: schnitt(siege.map(l => l.runden)),
     rest: schnitt(liste.map(l => l.rest)) ?? 0,
-    unterHalb: liste.filter(l => l.rest < ZENIT.halbUnter).length / n,
-    bisZwoelf: siege.filter(l => l.runden <= ZENIT.regeln.mittagAb).length / n,
+    unterHalb: liste.filter(l => l.rest < def.halbUnter).length / n,
+    bisZwoelf: siege.filter(l => l.runden <= def.regeln.mittagAb).length / n,
     fuenf: siege.filter(l => l.stehend >= 5).length / n,
     stehend: schnitt(siege.map(l => l.stehend)),
     mitternacht: liste.filter(l => l.mitternacht).length / n,
@@ -167,6 +191,24 @@ function band(text: string, wert: number, von: number, bis: number, anzeige = pr
 }
 
 // ── Zenits Leben durchprobieren (ohne Bänder) ──
+
+if (LEBEN.length > 0 && !STUFE_EINS) {
+  console.log(`\nRaid-Eichung Stufe II: Zenits Leben, ${LAEUFE} Läufe je Feld (die Bänder gelten für `
+    + `${DREIZEHN.werte.hp.toLocaleString('de-CH')} Leben)\n`);
+  console.log('| Leben | anker15 · Gut | anker15 · Profi | anker15 · Lehrbuch | anker15 · Naiv | Anker · die besten zehn |');
+  console.log('|---|---|---|---|---|---|');
+  for (const hp of LEBEN) {
+    const mit = { werte: { hp } };
+    const [gut, profi, lehrbuch, naiv, zehn] = [
+      aufbauZwei('anker15', 'gut'), aufbauZwei('anker15', 'profi'), aufbauZwei('anker15', 'lehrbuch'), aufbauZwei('anker15', 'naiv'),
+      aufbauZwei('anker', 'zehn'),
+    ].map(a => fasse(laeufe(a, mit), DREIZEHN));
+    console.log(`| ${hp.toLocaleString('de-CH')} | ${prozent(gut.sieg)} | ${prozent(profi.sieg)} | ${prozent(lehrbuch.sieg)} | `
+      + `${prozent(naiv.sieg)} | ${prozent(zehn.sieg)} |`);
+  }
+  console.log(`\nRechenzeit: ${komma(rechenzeit / kaempfe, 2)} ms je Kampf (${kaempfe} Kämpfe)\n`);
+  process.exit(0);
+}
 
 if (LEBEN.length > 0) {
   console.log(`\nRaid-Eichung: Zenits Leben, ${LAEUFE} Läufe je Feld (die Bänder gelten für ${ZENIT.werte.hp.toLocaleString('de-CH')} Leben)\n`);
@@ -203,67 +245,69 @@ const ZEILEN: { id: string; titel: string; gilde: RaidMusterName; aufstellung: R
   { id: 't4', titel: 'T4 · Gut', gilde: 't4', aufstellung: 'gut' },
 ];
 
-const w = ZENIT.werte;
-console.log(`\nRaid-Eichung: Zenit ${w.hp.toLocaleString('de-CH')} Leben, Angriff ${w.atk}, Abwehr ${w.def}; `
-  + `${LAEUFE} Läufe je Zeile (Samen i · 7919)\n`);
-console.log('| Gilde · Aufstellung | Sieg | Ø Runde | Zenit-Rest | Zenit < 50 % | Sieg ≤ R12 | ≥ 5 stehen | Ø stehend | Mitternacht |');
-console.log('|---|---|---|---|---|---|---|---|---|');
 const roh = new Map<string, Lauf[]>();
 const m = new Map<string, Messung>();
-for (const zeile of ZEILEN) {
-  const liste = laeufe(aufbau(zeile.gilde, zeile.aufstellung, zeile.ohneHelden));
-  const x = fasse(liste);
-  roh.set(zeile.id, liste);
-  m.set(zeile.id, x);
-  console.log(`| ${zeile.titel} | ${prozent(x.sieg)} | ${komma(x.siegRunde)} | ${prozent(x.rest)} | ${prozent(x.unterHalb)} | `
-    + `${prozent(x.bisZwoelf)} | ${prozent(x.fuenf)} | ${komma(x.stehend)} | ${prozent(x.mitternacht)} |`);
-}
-console.log('\nØ Runde und Ø stehend im Schnitt der Siege; Sieg ≤ R12 und ≥ 5 stehen als Anteil aller Läufe.');
-
-if (LAEUFE >= 20) {
-  const r = (id: string): Lauf[] => roh.get(id)!;
-  const rest20 = (id: string): string => prozent(fasse(r(id).slice(0, 20)).rest);
-  console.log(`\nMit den 20 Samen des Tests: Gut ${vonZwanzig(r('gut'), l => l.sieg)} (Ø Runde ${komma(fasse(r('gut').slice(0, 20)).siegRunde)}), `
-    + `Profi ${vonZwanzig(r('profi'), l => l.sieg)}, Lehrbuch ${vonZwanzig(r('lehrbuch'), l => l.sieg)} (Rest ${rest20('lehrbuch')}), `
-    + `Naiv ${vonZwanzig(r('naiv'), l => l.sieg)} (Rest ${rest20('naiv')}, unter 50 % in ${vonZwanzig(r('naiv'), l => l.rest < 0.5)}), `
-    + `T4 ${vonZwanzig(r('t4'), l => l.sieg)} (Rest ${rest20('t4')}, unter 50 % in ${vonZwanzig(r('t4'), l => l.rest < 0.5)}), `
-    + `Sets +5 Gut ${vonZwanzig(r('sets5gut'), l => l.sieg)} (≥ 5 stehen ${vonZwanzig(r('sets5gut'), l => l.sieg && l.stehend >= 5)}), `
-    + `Sets +5 Profi bis R12 ${vonZwanzig(r('sets5profi'), l => l.sieg && l.runden <= 12)}, `
-    + `Sets +0 Profi ${vonZwanzig(r('sets0profi'), l => l.sieg)}, Kern ${vonZwanzig(r('kern'), l => l.sieg)} (Rest ${rest20('kern')}).`);
-}
-
 const g = (id: string): Messung => m.get(id)!;
-band('Anker · Gut: Siege 60 bis 75 %', g('gut').sieg, 0.60, 0.75);
-band('Anker · Profi: Siege mindestens 90 %', g('profi').sieg, 0.90, 1);
-band('Anker · Profi: Sieg bis Runde 12 in 20 bis 45 %', g('profi').bisZwoelf, 0.20, 0.45);
-band('Anker · Lehrbuch: Siege höchstens 10 %', g('lehrbuch').sieg, 0, 0.10);
-band('Anker · Naiv: Zenit unter 50 % in 30 bis 70 %', g('naiv').unterHalb, 0.30, 0.70);
-band('Sets +5 · Gut: Siege mindestens 95 %', g('sets5gut').sieg, 0.95, 1);
-band('Sets +5 · Profi: Sieg bis Runde 12 in mindestens 60 %', g('sets5profi').bisZwoelf, 0.60, 1);
-band('Sets +0 · Profi: Siege 25 bis 55 %', g('sets0profi').sieg, 0.25, 0.55);
-const spaetesteZeile = ZEILEN.reduce((a, b) => (g(b.id).mitternacht > g(a.id).mitternacht ? b : a));
-const spaeteste = g(spaetesteZeile.id).mitternacht;
-band('Mitternacht höchstens 2 % in jeder Zeile', spaeteste, 0, 0.02,
-  spaeteste > 0 ? `${prozent(spaeteste)} (höchste: ${spaetesteZeile.titel})` : 'in keiner Zeile');
+if (STUFE_EINS) {
+  const w = ZENIT.werte;
+  console.log(`\nRaid-Eichung: Zenit ${w.hp.toLocaleString('de-CH')} Leben, Angriff ${w.atk}, Abwehr ${w.def}; `
+    + `${LAEUFE} Läufe je Zeile (Samen i · 7919)\n`);
+  console.log('| Gilde · Aufstellung | Sieg | Ø Runde | Zenit-Rest | Zenit < 50 % | Sieg ≤ R12 | ≥ 5 stehen | Ø stehend | Mitternacht |');
+  console.log('|---|---|---|---|---|---|---|---|---|');
+  for (const zeile of ZEILEN) {
+    const liste = laeufe(aufbau(zeile.gilde, zeile.aufstellung, zeile.ohneHelden));
+    const x = fasse(liste);
+    roh.set(zeile.id, liste);
+    m.set(zeile.id, x);
+    console.log(`| ${zeile.titel} | ${prozent(x.sieg)} | ${komma(x.siegRunde)} | ${prozent(x.rest)} | ${prozent(x.unterHalb)} | `
+      + `${prozent(x.bisZwoelf)} | ${prozent(x.fuenf)} | ${komma(x.stehend)} | ${prozent(x.mitternacht)} |`);
+  }
+  console.log('\nØ Runde und Ø stehend im Schnitt der Siege; Sieg ≤ R12 und ≥ 5 stehen als Anteil aller Läufe.');
 
-// ── Zweite Tabelle: je eine Regel aus ──
+  if (LAEUFE >= 20) {
+    const r = (id: string): Lauf[] => roh.get(id)!;
+    const rest20 = (id: string): string => prozent(fasse(r(id).slice(0, 20)).rest);
+    console.log(`\nMit den 20 Samen des Tests: Gut ${vonZwanzig(r('gut'), l => l.sieg)} (Ø Runde ${komma(fasse(r('gut').slice(0, 20)).siegRunde)}), `
+      + `Profi ${vonZwanzig(r('profi'), l => l.sieg)}, Lehrbuch ${vonZwanzig(r('lehrbuch'), l => l.sieg)} (Rest ${rest20('lehrbuch')}), `
+      + `Naiv ${vonZwanzig(r('naiv'), l => l.sieg)} (Rest ${rest20('naiv')}, unter 50 % in ${vonZwanzig(r('naiv'), l => l.rest < 0.5)}), `
+      + `T4 ${vonZwanzig(r('t4'), l => l.sieg)} (Rest ${rest20('t4')}, unter 50 % in ${vonZwanzig(r('t4'), l => l.rest < 0.5)}), `
+      + `Sets +5 Gut ${vonZwanzig(r('sets5gut'), l => l.sieg)} (≥ 5 stehen ${vonZwanzig(r('sets5gut'), l => l.sieg && l.stehend >= 5)}), `
+      + `Sets +5 Profi bis R12 ${vonZwanzig(r('sets5profi'), l => l.sieg && l.runden <= 12)}, `
+      + `Sets +0 Profi ${vonZwanzig(r('sets0profi'), l => l.sieg)}, Kern ${vonZwanzig(r('kern'), l => l.sieg)} (Rest ${rest20('kern')}).`);
+  }
 
-console.log(`\nJe eine Regel aus (${LAEUFE} Läufe; Zeiger aus nimmt den Durchschlag mit, Rundenende und Mitternacht bleiben)\n`);
-console.log('| Ohne | Anker · Gut | gegenüber Gut | Zenit-Rest | Anker · Lehrbuch | gegenüber Lehrbuch | Mitternacht |');
-console.log('|---|---|---|---|---|---|---|');
-const zusammen = OHNE.length > 0 ? [OHNE] : [];
-for (const ohne of [...REGELN.map(r => [r]), ...zusammen]) {
-  const gut = fasse(laeufe(aufbau('anker', 'gut'), { ohne }));
-  const lehrbuch = fasse(laeufe(aufbau('anker', 'lehrbuch'), { ohne }));
-  console.log(`| ${ohne.map(r => REGEL_NAME[r]).join(' und ')} | ${prozent(gut.sieg)} | ${punkte(gut.sieg - g('gut').sieg)} | `
-    + `${prozent(gut.rest)} | ${prozent(lehrbuch.sieg)} | ${punkte(lehrbuch.sieg - g('lehrbuch').sieg)} | `
-    + `${prozent(gut.mitternacht)} / ${prozent(lehrbuch.mitternacht)} |`);
-  if (ohne.length !== 1) continue;
-  if (ohne[0] === 'heilung') {
-    band('ohne Heilregel: Anker · Gut höchstens 5 % Siege', gut.sieg, 0, 0.05);
-  } else {
-    band(`ohne ${REGEL_NAME[ohne[0]]}: Anker · Gut mindestens 20 Punkte mehr Siege`, gut.sieg - g('gut').sieg, 0.20, 1,
-      `${punkte(gut.sieg - g('gut').sieg)} Punkte`);
+  band('Anker · Gut: Siege 60 bis 75 %', g('gut').sieg, 0.60, 0.75);
+  band('Anker · Profi: Siege mindestens 90 %', g('profi').sieg, 0.90, 1);
+  band('Anker · Profi: Sieg bis Runde 12 in 20 bis 45 %', g('profi').bisZwoelf, 0.20, 0.45);
+  band('Anker · Lehrbuch: Siege höchstens 10 %', g('lehrbuch').sieg, 0, 0.10);
+  band('Anker · Naiv: Zenit unter 50 % in 30 bis 70 %', g('naiv').unterHalb, 0.30, 0.70);
+  band('Sets +5 · Gut: Siege mindestens 95 %', g('sets5gut').sieg, 0.95, 1);
+  band('Sets +5 · Profi: Sieg bis Runde 12 in mindestens 60 %', g('sets5profi').bisZwoelf, 0.60, 1);
+  band('Sets +0 · Profi: Siege 25 bis 55 %', g('sets0profi').sieg, 0.25, 0.55);
+  const spaetesteZeile = ZEILEN.reduce((a, b) => (g(b.id).mitternacht > g(a.id).mitternacht ? b : a));
+  const spaeteste = g(spaetesteZeile.id).mitternacht;
+  band('Mitternacht höchstens 2 % in jeder Zeile', spaeteste, 0, 0.02,
+    spaeteste > 0 ? `${prozent(spaeteste)} (höchste: ${spaetesteZeile.titel})` : 'in keiner Zeile');
+
+  // ── Zweite Tabelle: je eine Regel aus ──
+
+  console.log(`\nJe eine Regel aus (${LAEUFE} Läufe; Zeiger aus nimmt den Durchschlag mit, Rundenende und Mitternacht bleiben)\n`);
+  console.log('| Ohne | Anker · Gut | gegenüber Gut | Zenit-Rest | Anker · Lehrbuch | gegenüber Lehrbuch | Mitternacht |');
+  console.log('|---|---|---|---|---|---|---|');
+  const zusammen = OHNE.length > 0 ? [OHNE] : [];
+  for (const ohne of [...REGELN.map(r => [r]), ...zusammen]) {
+    const gut = fasse(laeufe(aufbau('anker', 'gut'), { ohne }));
+    const lehrbuch = fasse(laeufe(aufbau('anker', 'lehrbuch'), { ohne }));
+    console.log(`| ${ohne.map(r => REGEL_NAME[r]).join(' und ')} | ${prozent(gut.sieg)} | ${punkte(gut.sieg - g('gut').sieg)} | `
+      + `${prozent(gut.rest)} | ${prozent(lehrbuch.sieg)} | ${punkte(lehrbuch.sieg - g('lehrbuch').sieg)} | `
+      + `${prozent(gut.mitternacht)} / ${prozent(lehrbuch.mitternacht)} |`);
+    if (ohne.length !== 1) continue;
+    if (ohne[0] === 'heilung') {
+      band('ohne Heilregel: Anker · Gut höchstens 5 % Siege', gut.sieg, 0, 0.05);
+    } else {
+      band(`ohne ${REGEL_NAME[ohne[0]]}: Anker · Gut mindestens 20 Punkte mehr Siege`, gut.sieg - g('gut').sieg, 0.20, 1,
+        `${punkte(gut.sieg - g('gut').sieg)} Punkte`);
+    }
   }
 }
 
@@ -273,24 +317,25 @@ for (const ohne of [...REGELN.map(r => [r]), ...zusammen]) {
 const SUCH_PROBEN = 40;
 
 /** Ein Held auf ein zufälliges Feld; steht dort schon jemand, tauschen die beiden */
-function mutiere(aufstellung: Record<string, Feld>, rng: SeededRNG): Record<string, Feld> {
+function mutiere(aufstellung: Record<string, Feld>, rng: SeededRNG, def: RaidDef = ZENIT): Record<string, Feld> {
   const neu = Object.fromEntries(Object.entries(aufstellung).map(([id, f]) => [id, { ...f }]));
   const ids = Object.keys(neu);
   const id = rng.pick(ids);
-  const ziel = { reihe: rng.nextInt(0, ZENIT.reihen - 1), spalte: rng.nextInt(0, spaltenZahl(ZENIT) - 1) };
+  const ziel = { reihe: rng.nextInt(0, def.reihen - 1), spalte: rng.nextInt(0, spaltenZahl(def) - 1) };
   const besetzer = ids.find(k => k !== id && neu[k].reihe === ziel.reihe && neu[k].spalte === ziel.spalte);
   if (besetzer) neu[besetzer] = { ...neu[id] };
   neu[id] = ziel;
   return neu;
 }
 
-/** Die Aufstellung als Raster wie in data/raidMuster.ts (Reihe 1 vorn) */
-function raster(helden: GuildFighter[], aufstellung: Record<string, Feld>): string[] {
-  return Array.from({ length: ZENIT.reihen }, (_, reihe) => {
-    const zellen = Array.from({ length: spaltenZahl(ZENIT) }, (_, spalte) =>
+/** Die Aufstellung als Raster wie in data/raidMuster.ts (Reihe 1 vorn), mit «|» zwischen den Trupps */
+function raster(helden: GuildFighter[], aufstellung: Record<string, Feld>, def: RaidDef = ZENIT): string[] {
+  return Array.from({ length: def.reihen }, (_, reihe) => {
+    const zellen = Array.from({ length: spaltenZahl(def) }, (_, spalte) =>
       (helden.find(h => aufstellung[String(h.id)]?.reihe === reihe && aufstellung[String(h.id)]?.spalte === spalte)?.name ?? '.')
-        .padEnd(7));
-    return `  ${zellen.slice(0, 3).join('')}| ${zellen.slice(3).join('')}`.trimEnd();
+        .padEnd(def.truppZahl > 2 ? 9 : 7));
+    const trupps = Array.from({ length: def.truppZahl }, (_, t) => zellen.slice(3 * t, 3 * t + 3).join(''));
+    return `  ${trupps.join('| ')}`.trimEnd();
   });
 }
 
@@ -306,7 +351,7 @@ function aufstellungsSuche(start: Aufbau, schritte: number): Record<string, Feld
   let beste = start.aufstellung;
   let wertung = bewerte(beste);
   for (let schritt = 0; schritt < schritte; schritt++) {
-    const neu = mutiere(beste, rng);
+    const neu = mutiere(beste, rng, start.def);
     const neuWertung = bewerte(neu);
     if (besser(neuWertung, wertung)) {
       beste = neu;
@@ -321,7 +366,7 @@ function aufstellungsSuche(start: Aufbau, schritte: number): Record<string, Feld
 /** Schritte der Suche für einen Weg, mit dem «Profi» unter 90 % bleibt */
 const WEG_SUCHE_SCHRITTE = 300;
 
-if (WEGE) {
+if (WEGE && STUFE_EINS) {
   // Bleibt «Profi» mit dem anderen Weg unter 90 %, passt vielleicht nur die Aufstellung nicht: dann sucht das Werkzeug
   // ab «Gut» eine für diese Gilde, und das Band gilt als getroffen, wenn die gefundene mindestens 90 % schafft.
   console.log(`\nJe ein Weg anders als im Anker (${LAEUFE} Läufe; bleibt «Profi» unter 90 %, sucht das Werkzeug ab «Gut» `
@@ -358,7 +403,7 @@ if (WEGE) {
 
 // ── Aufstellungssuche mit einer Gilde (--suche) ──
 
-if (SUCHE) {
+if (SUCHE && STUFE_EINS) {
   const SCHRITTE = 200;
   const start = aufbau(SUCHE, 'gut');
   const beste = aufstellungsSuche(start, SCHRITTE);
@@ -399,15 +444,21 @@ function beuteSchnitt(liste: Beute[]): Beute {
   return { gold: schnitt('gold'), wert: schnitt('wert'), ausruestung: schnitt('ausruestung') };
 }
 
-{
-  const ZIEHUNGEN = 4000;
-  const ORM_LAEUFE = 40;
-  // Die Gilde hat kein Set-Teil, es fehlt also immer eins (Samen i · 7919 + 3)
-  const truhe = beuteSchnitt(Array.from({ length: ZIEHUNGEN }, (_, i) => {
+/** Eine Truhe `ZIEHUNGEN`-mal gezogen, für eine Gilde ohne Set-Teile (es fehlt also immer eins; Samen i · 7919 + 3) */
+const ZIEHUNGEN = 4000;
+function truhenSchnitt(def: RaidDef, art: 'halb' | 'sieg'): Beute {
+  return beuteSchnitt(Array.from({ length: ZIEHUNGEN }, (_, i) => {
     const spiel = createNewGameState();
     spiel.globalStock = {};
-    return beute(truheZiehen(spiel, 'sieg', ZENIT.truhen.sieg, [], new SeededRNG(i * 7919 + 3)).inhalt);
+    return beute(truheZiehen(spiel, art, def.truhen[art], [], new SeededRNG(i * 7919 + 3)).inhalt);
   }));
+}
+const ganz = (zahl: number): string => String(Math.round(zahl));
+const beuteZeile = (b: Beute): string => `Ø ${ganz(b.wert)} (Gold ${ganz(b.gold)}, Ausrüstung ${komma(b.ausruestung)} Stück)`;
+
+if (STUFE_EINS) {
+  const ORM_LAEUFE = 40;
+  const truhe = truhenSchnitt(ZENIT, 'sieg');
   // Das Musterteam «Stark» in tagwerk0 durch die Pfeiler des Tages, mit den Samen des Kriegsrats (1000 + i · 7919)
   let siege = 0;
   const lauf = beuteSchnitt(Array.from({ length: ORM_LAEUFE }, (_, i) => {
@@ -416,13 +467,106 @@ function beuteSchnitt(liste: Beute[]): Beute {
     if (gewonnen(run)) siege++;
     return beute({ ...run.loot, gold: (run.loot.gold ?? 0) + run.goldEarned });
   }));
-  const ganz = (zahl: number): string => String(Math.round(zahl));
-  const zeile = (b: Beute): string => `Ø ${ganz(b.wert)} (Gold ${ganz(b.gold)}, Ausrüstung ${komma(b.ausruestung)} Stück)`;
   console.log('\nZenits Truhe gegen einen Lauf bei Orm (Gold und Grundwert der Gegenstände, ohne Set-Teile und Tagstein)\n');
-  console.log(`  Truhe, ${ZIEHUNGEN}-mal gezogen (die Gilde ohne Set-Teile): ${zeile(truhe)}`);
-  console.log(`  Lauf, «Stark» in tagwerk0 (${ORM_LAEUFE} Läufe, ${siege} Siege): ${zeile(lauf)}`);
+  console.log(`  Truhe, ${ZIEHUNGEN}-mal gezogen (die Gilde ohne Set-Teile): ${beuteZeile(truhe)}`);
+  console.log(`  Lauf, «Stark» in tagwerk0 (${ORM_LAEUFE} Läufe, ${siege} Siege): ${beuteZeile(lauf)}`);
   const wieViele = truhe.wert / lauf.wert;
   band('Zenits Truhe: Wert 1,7 bis 3 Läufe bei Orm', wieViele, 1.7, 3, `${komma(wieViele)} Läufe`);
+}
+
+// ── Stufe II: «Die dreizehnte Stunde» (Zenit mit Gegenzeiger, drei Trupps auf neun Spalten) ──
+
+/** Zeilen von Stufe II: die Muster-Gilde mit fünf Lehrlingen (anker15), dazu die besten zehn ohne Lehrlinge */
+const ZEILEN_ZWEI: { id: string; titel: string; gilde: RaidMusterName; aufstellung: RaidAufstellungDreizehn }[] = [
+  { id: 'gut', titel: 'anker15 · Gut', gilde: 'anker15', aufstellung: 'gut' },
+  { id: 'profi', titel: 'anker15 · Profi', gilde: 'anker15', aufstellung: 'profi' },
+  { id: 'lehrbuch', titel: 'anker15 · Lehrbuch', gilde: 'anker15', aufstellung: 'lehrbuch' },
+  { id: 'naiv', titel: 'anker15 · Naiv (vorne voll)', gilde: 'anker15', aufstellung: 'naiv' },
+  { id: 'zehn', titel: 'Anker (10, ohne Lehrlinge) · die besten zehn', gilde: 'anker', aufstellung: 'zehn' },
+];
+/** Was sich auf Stufe II abschalten lässt: dazu der Gegenzeiger */
+const REGELN_ZWEI: Abschaltbar[] = ['pendel', 'zeiger', 'gegenzeiger', 'durchschlag', 'glocke', 'funken', 'mittag', 'heilung'];
+
+if (STUFE_ZWEI) {
+  const w2 = DREIZEHN.werte;
+  console.log(`\nStufe II, «${DREIZEHN.name}»: ${DREIZEHN.bossName} ${w2.hp.toLocaleString('de-CH')} Leben, Angriff ${w2.atk}, `
+    + `Abwehr ${w2.def}, Gegenzeiger × ${komma(DREIZEHN.regeln.gegenzeiger ?? 0)}; ${LAEUFE} Läufe je Zeile (Samen i · 7919)\n`);
+  console.log('| Gilde · Aufstellung | Sieg | Ø Runde | Zenit-Rest | Zenit < 50 % | Sieg ≤ R12 | alle 15 stehen | Ø stehend | Mitternacht |');
+  console.log('|---|---|---|---|---|---|---|---|---|');
+  const roh2 = new Map<string, Lauf[]>();
+  const m2 = new Map<string, Messung>();
+  for (const zeile of ZEILEN_ZWEI) {
+    const liste = laeufe(aufbauZwei(zeile.gilde, zeile.aufstellung));
+    const x = fasse(liste, DREIZEHN);
+    roh2.set(zeile.id, liste);
+    m2.set(zeile.id, x);
+    const alle = liste.filter(l => l.sieg && l.stehend >= DREIZEHN.maxHelden).length / liste.length;
+    console.log(`| ${zeile.titel} | ${prozent(x.sieg)} | ${komma(x.siegRunde)} | ${prozent(x.rest)} | ${prozent(x.unterHalb)} | `
+      + `${prozent(x.bisZwoelf)} | ${prozent(alle)} | ${komma(x.stehend)} | ${prozent(x.mitternacht)} |`);
+  }
+  console.log('\nØ Runde und Ø stehend im Schnitt der Siege; Sieg ≤ R12 und alle 15 stehen als Anteil aller Läufe.');
+  if (LAEUFE >= 20) {
+    const r = (id: string): Lauf[] => roh2.get(id)!;
+    const rest20 = (id: string): string => prozent(fasse(r(id).slice(0, 20), DREIZEHN).rest);
+    console.log(`\nMit den 20 Samen des Tests: Gut ${vonZwanzig(r('gut'), l => l.sieg)} `
+      + `(Ø Runde ${komma(fasse(r('gut').slice(0, 20), DREIZEHN).siegRunde)}), Profi ${vonZwanzig(r('profi'), l => l.sieg)}, `
+      + `Lehrbuch ${vonZwanzig(r('lehrbuch'), l => l.sieg)} (Rest ${rest20('lehrbuch')}), `
+      + `Naiv ${vonZwanzig(r('naiv'), l => l.sieg)} (Rest ${rest20('naiv')}, unter 50 % in ${vonZwanzig(r('naiv'), l => l.rest < 0.5)}), `
+      + `die besten zehn ${vonZwanzig(r('zehn'), l => l.sieg)} (Rest ${rest20('zehn')}).`);
+  }
+  const g2 = (id: string): Messung => m2.get(id)!;
+  band('Stufe II · anker15 · Gut: Siege 55 bis 75 %', g2('gut').sieg, 0.55, 0.75);
+  band('Stufe II · anker15 · Profi: Siege mindestens 90 %', g2('profi').sieg, 0.90, 1);
+  band('Stufe II · anker15 · Lehrbuch: Siege höchstens 10 %', g2('lehrbuch').sieg, 0, 0.10);
+  band('Stufe II · anker15 · Naiv: keine Siege', g2('naiv').sieg, 0, 0);
+  band('Stufe II · die besten zehn ohne Lehrlinge: Siege höchstens 15 %', g2('zehn').sieg, 0, 0.15);
+  const spaet2 = ZEILEN_ZWEI.reduce((a, b) => (g2(b.id).mitternacht > g2(a.id).mitternacht ? b : a));
+  const spaeteste2 = g2(spaet2.id).mitternacht;
+  band('Stufe II · Mitternacht höchstens 2 % in jeder Zeile', spaeteste2, 0, 0.02,
+    spaeteste2 > 0 ? `${prozent(spaeteste2)} (höchste: ${spaet2.titel})` : 'in keiner Zeile');
+
+  // Je eine Regel aus, mit «Gut»: Der Gegenzeiger muss zählen
+  console.log(`\nStufe II, je eine Regel aus (${LAEUFE} Läufe, anker15 · Gut; Zeiger aus nimmt nur den Durchschlag des Zeigers mit)\n`);
+  console.log('| Ohne | anker15 · Gut | gegenüber Gut | Zenit-Rest | Mitternacht |');
+  console.log('|---|---|---|---|---|');
+  for (const regel of REGELN_ZWEI) {
+    const gut = fasse(laeufe(aufbauZwei('anker15', 'gut'), { ohne: [regel] }), DREIZEHN);
+    console.log(`| ${REGEL_NAME[regel]} | ${prozent(gut.sieg)} | ${punkte(gut.sieg - g2('gut').sieg)} | ${prozent(gut.rest)} | `
+      + `${prozent(gut.mitternacht)} |`);
+    if (regel === 'gegenzeiger') {
+      band('Stufe II · ohne Gegenzeiger: anker15 · Gut mindestens 20 Punkte mehr Siege', gut.sieg - g2('gut').sieg, 0.20, 1,
+        `${punkte(gut.sieg - g2('gut').sieg)} Punkte`);
+    } else if (regel === 'heilung') {
+      band('Stufe II · ohne Heilregel: anker15 · Gut höchstens 5 % Siege', gut.sieg, 0, 0.05);
+    }
+  }
+
+  // Die dreizehnte Truhe gegen Zenits Truhe (Stufe I)
+  const truheEins = truhenSchnitt(ZENIT, 'sieg');
+  const truheZwei = truhenSchnitt(DREIZEHN, 'sieg');
+  const halbEins = truhenSchnitt(ZENIT, 'halb');
+  const halbZwei = truhenSchnitt(DREIZEHN, 'halb');
+  console.log('\nTruhen von Stufe II gegen die von Stufe I (Gold und Grundwert der Gegenstände, ohne Set-Teile und Tagstein)\n');
+  console.log(`  ${DREIZEHN.truhen.sieg.name}: ${beuteZeile(truheZwei)} · ${ZENIT.truhen.sieg.name}: ${beuteZeile(truheEins)}`);
+  console.log(`  ${DREIZEHN.truhen.halb.name}: ${beuteZeile(halbZwei)} · ${ZENIT.truhen.halb.name}: ${beuteZeile(halbEins)}`);
+  const mal = truheZwei.wert / truheEins.wert;
+  band(`Stufe II · ${DREIZEHN.truhen.sieg.name}: Wert 1,4- bis 2-mal ${ZENIT.truhen.sieg.name}`, mal, 1.4, 2, `${komma(mal)}-mal`);
+}
+
+// ── Die besten zehn neu suchen (--suche zehn) ──
+
+if (ZEHN_SUCHE && STUFE_ZWEI) {
+  const SCHRITTE = 600;
+  const start = aufbauZwei('anker', 'zehn');
+  const beste = aufstellungsSuche(start, SCHRITTE);
+  const vorher = fasse(laeufe(start), DREIZEHN);
+  const nachher = fasse(laeufe({ ...start, aufstellung: beste }), DREIZEHN);
+  console.log(`\nStufe II, Aufstellungssuche mit den zehn des Ankers (${SCHRITTE} Schritte zu ${SUCH_PROBEN} Proben, ab «zehn»; `
+    + `gemessen mit ${LAEUFE} Läufen)\n`);
+  for (const zeile of raster(start.helden, beste, DREIZEHN)) console.log(zeile);
+  console.log(`\nVorher («zehn»): Sieg ${prozent(vorher.sieg)}, Zenit-Rest ${prozent(vorher.rest)} · `
+    + `nach der Suche: Sieg ${prozent(nachher.sieg)}, Zenit-Rest ${prozent(nachher.rest)}`);
+  band('Stufe II · Suche mit den zehn des Ankers: Siege höchstens 15 %', nachher.sieg, 0, 0.15);
 }
 
 // ── Ergebnis ──

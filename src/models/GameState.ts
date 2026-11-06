@@ -126,6 +126,10 @@ export interface GameState {
   // Aufstellung, Woche, Bestversuch, Verlauf. Fehlt in älteren Spielständen und bis zum ersten Besuch;
   // Raid.raidStand legt es an.
   raid?: RaidStand;
+  // ── Höhere Stufen des Raids, nach Id («dreizehn»: Stufe II, «Die dreizehnte Stunde») ──
+  // Je Stufe ein eigener Stand wie `raid` (Stufe I bleibt dort). Fehlt in älteren Spielständen und bis zum
+  // ersten Besuch einer höheren Stufe; Raid.raidStand legt den Eintrag an.
+  raidStufen?: Record<string, RaidStand>;
 }
 
 export function createNewGameState(): GameState {

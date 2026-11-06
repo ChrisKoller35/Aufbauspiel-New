@@ -130,7 +130,10 @@ Set des Dungeons, einer für das Prunkstück aus der Kette. `gipfel_spitze` setz
 Expedition, wenn die Gilde danach die Gipfel-Rangliste anführt. `total_haendler_kaeufe` zählt
 `systems/Haendler.ts` bei jedem Kauf (nicht beim Verkauf). Die Zähler des Raids (`raid_versuche`, `raid_siege`,
 `raid_punkt_zwoelf`, `raid_mehr_als_vier`, `raid_wochen`, `raid_zu_viert`) zählt `ernstkampf` in `systems/Raid.ts`
-bei jedem Ernstkampf hoch; Probeläufe und der Kriegsrat zählen nicht (`docs/RAID.md`).
+bei jedem Ernstkampf hoch; Probeläufe und der Kriegsrat zählen nicht (`docs/RAID.md`). Sie zählen nur Stufe I
+(«Über dem Tag»): Auf Stufe II gewinnt die Muster-Aufstellung «Profi» fast immer bis Runde 12 und mit mehr als
+vier Stehenden, dort wären «Punkt zwölf» und «Mehr als vier» geschenkt. Stufe II («Die dreizehnte Stunde») zählt
+ihre Siege (`raid2_siege`) und die Wochen mit offener dreizehnter Truhe (`raid2_wochen`) eigens.
 
 ## Aus dem Spielstand nachgeholt
 
@@ -154,7 +157,7 @@ ist sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
 
 ## Liste
 
-55 Erfolge, die sechs versteckten stehen im Abschnitt «Das System schaut zu». Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
+56 Erfolge, die sieben versteckten stehen im Abschnitt «Das System schaut zu» (zusammen 63). Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
 Die IDs stehen in Spielständen (`state.achievements`) und dürfen sich nicht ändern. Unbekannte IDs (wie die
 gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `bauplan_1`) überspringt das Spiel.
 
@@ -197,6 +200,8 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Dungeons | 🔔 | Punkt zwölf (neu) | Zenit in Runde 12 oder früher besiegt, bevor es Mittag schlägt | `raid_punkt_zwoelf` ≥ 1 | `raid_punkt_zwoelf` |
 | Dungeons | 🪑 | Mehr als vier (neu) | Zenit besiegt, und am Ende stehen mindestens fünf | `raid_mehr_als_vier` ≥ 1 | `raid_mehr_als_vier` |
 | Dungeons | 📅 | Jeden Montag (neu) | Zenits Truhe in vier verschiedenen Wochen (der erste Sieg der Woche öffnet sie) | `raid_wochen` ≥ 4 | `raid_montage` |
+| Dungeons | 🕐 | Es schlägt nicht dreizehn (neu) | Zenit auf Stufe II besiegt («Die dreizehnte Stunde», offen nach dem ersten Sieg auf Stufe I) | `raid2_siege` ≥ 1 | `raid_dreizehn` |
+| Dungeons | 🗓️ | Doppelschicht (neu) | die dreizehnte Truhe in vier verschiedenen Wochen (der erste Sieg der Woche auf Stufe II öffnet sie) | `raid2_wochen` ≥ 4 | `raid_doppelschicht` |
 | Gipfel-Taten | 🪙 | Ehrlicher Finder (neu) | Drachenhort: dreimal das Risiko, Ignarax besiegt | `tat_hort` ≥ 1 | `gipfel_hort` |
 | Gipfel-Taten | 📕 | Ohne Leseausweis (neu) | Himmelsarchiv: dreimal das Risiko, Oberarchivar besiegt | `tat_archiv` ≥ 1 | `gipfel_archiv` |
 | Gipfel-Taten | ☄️ | Nicht anfassen (neu) | Sternenschmiede: dreimal das Risiko, Korrund besiegt | `tat_esse` ≥ 1 | `gipfel_esse` |
@@ -283,7 +288,7 @@ zählt `raid_zu_viert` bei jedem Ernstkampf mit genau vier Helden (dem Mindestma
 
 `tests/erfolgeErreichbar.test.ts` spielt ein Musterspiel mit den echten Regeln (beim Händler kaufen, Bauen,
 Ausbauen, Stadtweg, Anheuern, Expeditionen, Auftragsbrett, Schmiede, Rangliste), ohne einen Zähler von Hand
-zu setzen: Eine starke Gilde schafft alle 61 Erfolge in 29 Tagen, 129 Expeditionen und 4 Ernstkämpfen im Raid
+zu setzen: Eine starke Gilde schafft alle 63 Erfolge in 29 Tagen, 129 Expeditionen und 8 Ernstkämpfen im Raid
 (Grenze im Test: unter 60 Tagen und unter 400 Expeditionen). Für die Schmiede nimmt sie das Teil, das bis +5 am
 wenigsten Material braucht, alle Stufen zusammengezählt; bis zum Raid zählte der Test nur die nächste Stufe, dann
 zog jedes neue Set-Teil vor, und «Meisterstück» kam erst nach 41 Tagen und 255 Expeditionen. In Wahl-Räumen nimmt sie immer das Risiko, für «Kleingedrucktes» kehrt sie einmal
@@ -291,7 +296,9 @@ im Mondhof am letzten Kontrollpunkt um, für «Einsturzgefahr» einmal bei den P
 «Ohne Hose» (von selbst beim ersten Boss), «Kalte Füsse», «Keine Zeugen», «Unentschieden» und «Schlafstörung», an
 Tag 2 «Wörtlich genommen» (ein frisch angeheuerter Held). Für «Unentschieden» kämpft der Guardian einmal ohne
 Angriff (für eine Gruppe, die den Boss nicht klein kriegt). Im Raid (offen ab Tag 8) werden die Aufgestellten so stark
-wie der Trupp; einmal kämpfen genau vier («Zu viert»), danach alle, bis Zenits Truhe in vier Wochen offen war.
+wie der Trupp; einmal kämpfen genau vier («Zu viert»), danach alle, bis Zenits Truhe in vier Wochen offen war. Nach
+dem ersten Sieg ist Stufe II offen; dort kämpfen alle zehn (einer je Klasse), bis die dreizehnte Truhe in vier Wochen
+offen war.
 «Jeden Montag» braucht darum mindestens drei Wochen und einen Tag nach dem ersten Sieg; fehlt nur noch der Raid,
 zieht die Gilde nicht mehr aus und wartet auf den Montag. Dazu hat
 jeder Zähler eine Obergrenze aus den Daten, kein Ziel liegt darüber, und ein neuer Zähler braucht

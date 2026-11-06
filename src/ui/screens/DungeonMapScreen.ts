@@ -21,9 +21,9 @@ import { auftraegeFuerDungeon } from '../../systems/Auftragsbrett';
 import { GildenStand, gildenAufKarte, gipfelRangliste } from '../../systems/Rangliste';
 import { haertegradName } from '../../systems/Haertegrade';
 import { haertegradMarke } from '../components/HaertegradAnzeige';
-import { RAID_TEXTE, ZENIT } from '../../data/raids';
-import { raidKartenZustand } from '../../systems/Raid';
-import { AUF_ZWOELF, KURZ_VOR_ZWOELF, zenitUhrSvg } from '../components/ZenitUhr';
+import { DREIZEHN, RAID_TEXTE, ZENIT, stufenTexte } from '../../data/raids';
+import { RaidKartenZustand, raidKartenZustand } from '../../systems/Raid';
+import { ANGEHALTEN, AUF_ZWOELF, KURZ_VOR_DREIZEHN, KURZ_VOR_ZWOELF, zenitUhrSvg } from '../components/ZenitUhr';
 
 
 
@@ -429,6 +429,7 @@ function buildDungeonSVG(state: GameState): string {
   const minY = Math.min(0, ...DUNGEON_GRAPH.map(n => n.y), raid.y);
   const oben = minY < 0 ? GIPFEL_RAND - minY : 0;
   const raidZustand = raidKartenZustand(state);
+  const raidZwei = raidKartenZustand(state, Date.now(), DREIZEHN);
 
   let bgHtml = '';
   let pathsHtml = '';
@@ -684,7 +685,7 @@ function buildDungeonSVG(state: GameState): string {
         <g class="dmap-paths" mask="url(#dmap-wege-maske)">${pathsHtml}</g>
         ${buildUnerforscht(WIDTH, raid, raid.r)}
         ${buildRaidLeiter(raidZustand.offen)}
-        <g class="dmap-nodes">${nodesHtml}${buildRaidKnoten(raidZustand)}</g>
+        <g class="dmap-nodes">${nodesHtml}${buildRaidKnoten(raidZustand, raidZwei)}</g>
       </g>
     </svg>`;
 }
@@ -771,25 +772,33 @@ function buildRaidLeiter(offen: boolean): string {
 /**
  * Der Raid-Knoten: goldenes Sechseck mit Zenits Uhr, die oben (Glocke) und unten (Pendel) darüber hinausragt. Name und
  * Zustand stehen rechts daneben: Links unten lehnt die Leiter, darüber geht es ins Unerforschte. Klick: Raid-Bildschirm,
- * auch solange er noch zu ist (dort steht, was fehlt).
+ * auch solange er noch zu ist (dort steht, was fehlt). Ist Stufe II offen (`zwei`), zeigt die Uhr ihren Gegenzeiger,
+ * oben steht «4 bis 15 Helden» und unter dem Namen eine Zeile je Stufe; der Goldpunkt, solange eine Truhe wartet.
  */
-function buildRaidKnoten(zustand: ReturnType<typeof raidKartenZustand>): string {
+function buildRaidKnoten(zustand: RaidKartenZustand, zwei: RaidKartenZustand): string {
   const { x, y, r } = raidPunkte();
   const k = RAID_TEXTE.karte;
+  const beide = zwei.offen;
   // Uhr: Zifferblatt (Radius 66 im Uhr-Bild) mittig im Sechseck, gut drei Viertel seines Innenkreises
   const s = (r * 0.87 * 0.8) / 66;
-  const uhr = zenitUhrSvg(zustand.zwoelf ? AUF_ZWOELF : KURZ_VOR_ZWOELF, 'dmap-zenit',
-    zustand.zwoelf ? k.zwoelf : RAID_TEXTE.bildschirm.uhr.vor,
+  const stellung = beide ? (zwei.zwoelf ? ANGEHALTEN : KURZ_VOR_DREIZEHN) : zustand.zwoelf ? AUF_ZWOELF : KURZ_VOR_ZWOELF;
+  const uhrText = beide ? stufenTexte(DREIZEHN).uhr[zwei.zwoelf ? 'auf' : 'vor'] : zustand.zwoelf ? k.zwoelf : RAID_TEXTE.bildschirm.uhr.vor;
+  const uhr = zenitUhrSvg(stellung, 'dmap-zenit', uhrText,
     `x="${r1(x - 100 * s)}" y="${r1(y - 106 * s)}" width="${r1(200 * s)}" height="${r1(246 * s)}" class="dmap-raid-uhr"`
       + (zustand.offen ? '' : ' opacity=".3"'));
   const textX = r1(x + r * 0.87 + 22);
   const offen = zustand.offen;
-  const punkt = zustand.truheWartet
+  const punkt = zustand.truheWartet || zwei.truheWartet
     ? `<circle cx="${r1(x + r * 0.87 + 4)}" cy="${r1(y - r * 0.5 - 4)}" r="5.5" fill="#c8a227" class="dmap-pulse-dot"><title>${k.truhenPunkt}</title></circle>`
+    : '';
+  const zeile = beide ? k.stufeZeile(stufenTexte(ZENIT).stufe, zustand.zeile) : zustand.zeile;
+  const zweiteZeile = beide
+    ? `<text class="dmap-raid-t dmap-raid-zeile" x="${textX}" y="${y + 35}" font-size="9.5" font-family="Cinzel, serif"
+        fill="${zwei.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="0.95">${k.stufeZeile(stufenTexte(DREIZEHN).stufe, zwei.zeile)}</text>`
     : '';
   return `
     <g class="dmap-nd dmap-raid ${offen ? 'dmap-node-open' : 'dmap-node-locked'}" data-raid style="cursor:pointer">
-      <title>${k.tooltip}</title>
+      <title>${beide ? k.tooltipBeide : k.tooltip}</title>
       <polygon points="${hexPoints(x, y, r + 12, 30)}" fill="#fbbf24" opacity="0.1" class="dmap-glow-ring"/>
       <polygon points="${hexPoints(x, y, r + 6, 0)}" fill="none" stroke="#e6c060" stroke-width="1.2" opacity="0.3"/>
       <polygon points="${hexPoints(x, y, r, 30)}" fill="#0c1233" class="dmap-shape"/>
@@ -798,11 +807,12 @@ function buildRaidKnoten(zustand: ReturnType<typeof raidKartenZustand>): string 
       <polygon points="${hexPoints(x, y, r, 30)}" fill="none" stroke="${zustand.zwoelf ? '#f3d27a' : '#c8a227'}" stroke-width="3" class="dmap-shape"/>
       ${offen ? '' : `<text x="${x}" y="${y + 7}" text-anchor="middle" font-size="20" fill="#555" style="user-select:none">🔒</text>`}
       <text class="dmap-t-klein dmap-raid-t dmap-raid-klein" x="${textX}" y="${y - 17}" font-size="9" font-family="Cinzel, serif" letter-spacing="2"
-        fill="#c8a227" opacity="${offen ? 0.95 : 0.55}">${k.klein(ZENIT.minHelden, ZENIT.maxHelden)}</text>
+        fill="#c8a227" opacity="${offen ? 0.95 : 0.55}">${k.klein(ZENIT.minHelden, (beide ? DREIZEHN : ZENIT).maxHelden)}</text>
       <text class="dmap-raid-t dmap-raid-name" x="${textX}" y="${y + 3}" font-size="15" font-family="Cinzel, serif" font-weight="700"
         letter-spacing="1.5" fill="#fde68a" opacity="${offen ? 1 : 0.55}">${k.name}</text>
       <text class="dmap-raid-t dmap-raid-zeile" x="${textX}" y="${y + 20}" font-size="9.5" font-family="Cinzel, serif"
-        fill="${zustand.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="${offen ? 0.95 : 0.55}">${zustand.zeile}</text>
+        fill="${zustand.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="${offen ? 0.95 : 0.55}">${zeile}</text>
+      ${zweiteZeile}
       ${punkt}
     </g>`;
 }
