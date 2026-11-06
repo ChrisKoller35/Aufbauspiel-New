@@ -35,7 +35,7 @@ export interface TruhenDef {
   text: string;
   /** Festes Gold (zusätzlich zum Gold der Würfe) */
   gold?: number;
-  /** Beutetabellen: je Tabelle ihr garantiertes Gold und ein Eintrag */
+  /** Beutetabellen, je Nennung ein Wurf: ihr garantiertes Gold und ein Eintrag (zweimal genannt, zweimal gewürfelt) */
   wuerfeAus: string[];
   /**
    * Ein Set-Teil, das der Gilde fehlt, aus diesem Stufenbereich; zuerst aus Sets, die ein Teilnehmer zum Teil trägt.
@@ -44,7 +44,7 @@ export interface TruhenDef {
    */
   setTeil: { stufeVon: number; stufeBis: number; getrageneAusJederStufe: boolean; sonstJedeStufe: boolean };
   dinge: Record<string, number>;
-  /** Statt des Set-Teils, wenn keins mehr fehlt */
+  /** Statt des Set-Teils, wenn keins mehr fehlt (kommt zu `dinge` dazu) */
   ersatz: Record<string, number>;
 }
 
@@ -110,7 +110,11 @@ export const RAID_DEFS: Record<string, RaidDef> = {
         name: 'Zenits Truhe',
         text: 'Hinter dem Zifferblatt liegt, was die Vorigen nicht mehr abholen konnten. Alruna sagt, es gehöre den '
           + 'Nächsten, und sieht dabei auf die Uhr.',
-        wuerfeAus: ['loot_boss_alruna', 'loot_boss_orm'],
+        // je Tabelle viermal: Zenits Truhe soll etwa zwei Läufe bei Orm wert sein
+        wuerfeAus: [
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+        ],
         setTeil: { stufeVon: 9, stufeBis: 12, getrageneAusJederStufe: true, sonstJedeStufe: true },
         dinge: { mat_tagstein: 10, crystal_shard: 15 },
         ersatz: { crystal_shard: 20 },

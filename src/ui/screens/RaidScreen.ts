@@ -23,13 +23,13 @@ import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { setTeilIds, setVonItem } from '../../data/dungeonSets';
 import { getrageneSets } from '../../systems/DungeonSets';
-import { erfolgBilanzZeile } from '../../systems/AchievementSystem';
+import { erfolgBilanzZeile, erfolgePruefen } from '../../systems/AchievementSystem';
 import { CombatEngine } from '../../systems/CombatEngine';
 import { GearSystem } from '../../systems/GearSystem';
 import { SchmiedeStufen, schmiedeStufen } from '../../systems/Schmiede';
 import {
   ErnstkampfErgebnis, KRIEGSRAT_PROBEN, RaidLage, RaidRat, RaidRolle, VersuchsLage, aufstellungLeeren,
-  aufstellungSchluessel, ernstkampf, montagSatz, raidKriegsrat, raidLage, raidOffen, raidRolle, raidStand, restProzent,
+  ernstkampf, montagSatz, raidKriegsrat, raidLage, raidOffen, raidRolle, raidStand, ratSchluessel, restProzent,
   setzeHeld, versuchsLage,
 } from '../../systems/Raid';
 import {
@@ -41,6 +41,7 @@ import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../c
 import { haeppchenweise, rechneImHintergrund } from '../components/KriegsratFenster';
 import { geschichtsText } from '../components/GeschichtsAnzeige';
 import { showChestReveal } from '../components/ChestRevealOverlay';
+import { TruheAnlegen } from '../components/TruheAnlegen';
 import { AUF_ZWOELF, KURZ_VOR_ZWOELF, UhrStellung, stundeAufRunde, zeigerAufSpalte, zenitUhrSvg } from '../components/ZenitUhr';
 
 const t = RAID_TEXTE.bildschirm;
@@ -214,7 +215,7 @@ function zeichne(el: HTMLElement): void {
   const bankLinks = haupt.querySelector<HTMLElement>('.r-karten')?.scrollLeft ?? 0;
   const lage = raidLage(state);
   const versuch = versuchsLage(state);
-  const schluessel = aufstellungSchluessel(stand.aufstellung);
+  const schluessel = ratSchluessel(state, stand.aufstellung);
   haupt.innerHTML = `
     <div class="r-links">${listeHtml(lage)}<aside class="r-panel r-rat" data-rat-inhalt>${ratInhalt(state, schluessel)}</aside></div>
     <div class="r-mitte">${kopfHtml(state, stand, versuch)}${leisteHtml(lage)}${feldHtml(state, stand, lage)}${wahlHinweisHtml(state, stand)}${knoepfeHtml(state, stand, versuch, schluessel)}</div>
@@ -844,7 +845,7 @@ function kriegsrat(el: HTMLElement): void {
   if (!state) return;
   const stand = raidStand(state);
   if (Object.keys(stand.aufstellung).length < ZENIT.minHelden) return;
-  const schluessel = aufstellungSchluessel(stand.aufstellung);
+  const schluessel = ratSchluessel(state, stand.aufstellung);
   if (istHandy() && !el.querySelector('.r-rat-fenster')) zeigeRatFenster(el);
   if (letzterRat?.schluessel === schluessel || ratLauf?.schluessel === schluessel) return;
   ratLauf = { schluessel };
@@ -855,7 +856,7 @@ function kriegsrat(el: HTMLElement): void {
     for (const b of Array.from(document.querySelectorAll<HTMLElement>('#s-raid [data-rat-balken]'))) b.style.width = `${(100 * k) / KRIEGSRAT_PROBEN}%`;
     for (const z of Array.from(document.querySelectorAll<HTMLElement>('#s-raid [data-rat-zahl]'))) z.textContent = t.ratSiege(k, KRIEGSRAT_PROBEN);
   };
-  rechneImHintergrund(naechstes, () => ratLauf === lauf && aufstellungSchluessel(raidStand(state).aufstellung) === schluessel, {
+  rechneImHintergrund(naechstes, () => ratLauf === lauf && ratSchluessel(state, raidStand(state).aufstellung) === schluessel, {
     zwischen: fortschritt,
     fertig: rat => {
       letzterRat = rat;
@@ -875,7 +876,7 @@ function kriegsrat(el: HTMLElement): void {
 function zeigeRatFenster(el: HTMLElement): void {
   const state = gameState;
   if (!state) return;
-  const schluessel = aufstellungSchluessel(raidStand(state).aufstellung);
+  const schluessel = ratSchluessel(state, raidStand(state).aufstellung);
   const f = oeffneFenster(el, `<div class="r-rat-inhalt" data-rat-inhalt>${ratInhalt(state, schluessel)}</div>
     ${knopfZeile(`<button type="button" class="r-zweit" data-zu>${t.schliessen}</button>`)}`, { klasse: 'r-rat-fenster', label: t.kriegsratKurz });
   f.ov.addEventListener('click', e => {
@@ -894,7 +895,7 @@ function zeigeRatFenster(el: HTMLElement): void {
 function probelauf(el: HTMLElement): void {
   const state = gameState;
   if (!state || !letzterRat || el.querySelector('.r-ov')) return;
-  if (letzterRat.schluessel !== aufstellungSchluessel(raidStand(state).aufstellung)) return;
+  if (letzterRat.schluessel !== ratSchluessel(state, raidStand(state).aufstellung)) return;
   zeigeWiedergabe(el, letzterRat.probe, teilnehmerBild(state), 'probe', () => undefined);
 }
 
@@ -972,8 +973,20 @@ function nachDemKampf(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[]
     }
     Object.assign(hinweise, truhe.hinweise);
   }
-  void showChestReveal(beute, gold, hinweise, E.truhenTitel(erg.truhen.map(x => x.name)), schmiedeStufen(state))
-    .then(() => zeigeErgebnis(el, erg, helden));
+  // Gleich anlegen wie in der Ruhmestruhe: Die Beute liegt schon im Lager (truheZiehen), angelegt wird höchstens die
+  // Menge der Truhe. Danach Erfolge zählen (ein ganzes Set) und das Angelegte sichern; der Ernstkampf ist schon gesichert.
+  const anlegen = new TruheAnlegen(state, beute, 'ruhm');
+  void showChestReveal(beute, gold, hinweise, E.truhenTitel(erg.truhen.map(x => x.name)), schmiedeStufen(state), anlegen)
+    .then(() => {
+      if (anlegen.angelegt.size > 0) {
+        erfolgePruefen(state);
+        aktualisiereErfolgKnoepfe(state);
+        speichern(true);
+        // Neue Ausrüstung: die Werte auf der Bank und der Schlüssel des Kriegsrats (ratSchluessel) sind neu
+        zeichne(el);
+      }
+      zeigeErgebnis(el, erg, helden);
+    });
 }
 
 // ── Wiedergabe ──
@@ -1223,8 +1236,11 @@ function zeigeErgebnis(el: HTMLElement, erg: ErnstkampfErgebnis, helden: WgHeld[
   let schluss = '';
   if (erg.ersterSieg) {
     schluss = `<div class="r-erg-abschnitt">${geschichtsText(RAID_TEXTE.schluss)}<div class="gs-sig">${RAID_TEXTE.unterschrift}</div></div>`;
-    stand.schlussGelesen = true;
-    speichern();
+    // Gelesen erst, wenn der Raid auch zu sehen ist: sonst kommt der Schluss beim nächsten Hinaufsteigen (beimOeffnen)
+    if (el.isConnected && el.getClientRects().length > 0) {
+      stand.schlussGelesen = true;
+      speichern();
+    }
   }
 
   let lager = '';

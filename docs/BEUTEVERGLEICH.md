@@ -43,6 +43,12 @@ Code: `src/ui/components/TruheAnlegen.ts`, Tests: `tests/truheAnlegen.test.ts`.
 - **Ruhmestruhe:** Die Beute liegt schon im Lager (`belohnungenAbholen` vor der Truhe). Angelegt wird direkt aus dem
   Lager, höchstens so viele Stücke, wie die Truhe gebracht hat. Nach dem Schliessen `erfolgePruefen(state)` (wie ANLEGEN
   im Heldenfenster) und `mc:speichern`.
+- **Raid (Zenits Truhen):** wie die Ruhmestruhe, die Beute legt `truheZiehen` schon im Ernstkampf ins Lager
+  (`RaidScreen.nachDemKampf`). Wurde etwas angelegt: `erfolgePruefen`, speichern und den Raid-Bildschirm neu zeichnen
+  (neue Werte auf der Bank, der Kriegsrat davor gilt nicht mehr).
+- **Tasten:** Die Truhe ist modal wie ein Fenster (`bindeFensterTasten`): Escape überspringt das Video und sammelt
+  danach ein, Tab bleibt in der Truhe, die Tastenkürzel dahinter (Escape ins Hauptmenü, K, A, G) kommen nicht durch.
+  Der Fokus liegt in der Truhe, mit der Beute auf «Einsammeln».
 - **Sperre:** Ein zweites Anlegen innerhalb von 600 ms (`ANLEGEN_SPERRE_MS`) gibt `false`. Die Sperre liegt im Modul,
   nicht im DOM, und ist mit Fake-Timern getestet.
 - **Knopf:** mindestens 44 px hoch bei `pointer: coarse`, 32 px am PC, in der Karte (nicht im Fuss), Name über `escapeAttr`.

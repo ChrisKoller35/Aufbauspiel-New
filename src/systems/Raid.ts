@@ -94,6 +94,8 @@ export function raidStand(state: GameState, jetzt = Date.now(), def: RaidDef = Z
     };
   }
   const stand = state.raid;
+  // Eine geladene Datei darf den Bestversuch weglassen (SpielstandSchema): dann gibt es noch keinen
+  if (stand.bestRest === undefined) stand.bestRest = null;
   const woche = wocheVon(jetzt);
   if (woche.id !== stand.woche.id && woche.start > stand.woche.start) stand.woche = neueWoche(jetzt);
   stand.aufstellung = bereinigt(state, stand.aufstellung, def);
@@ -125,7 +127,7 @@ export function raidKartenZustand(state: GameState, jetzt = Date.now(), def: Rai
   const zwoelf = !!stand && stand.woche.id === wocheVon(jetzt).id && stand.woche.truhe;
   let zeile: string;
   if (zwoelf) zeile = k.besiegtDieseWoche;
-  else if (!stand || stand.bestRest === null) zeile = k.keinVersuch;
+  else if (!stand || stand.bestRest == null) zeile = k.keinVersuch; // fehlt er in einer Datei: wie null (raidStand)
   else if (stand.siege > 0) zeile = k.aufgezogen;
   else zeile = k.best(restProzent(stand.bestRest));
   return { offen: true, zeile, zwoelf, truheWartet: !zwoelf };
@@ -136,9 +138,21 @@ export function raidTeilnehmer(state: GameState, stand: RaidStand): GuildFighter
   return state.fighters.filter(f => stand.aufstellung[String(f.id)]);
 }
 
-/** Text-Schlüssel einer Aufstellung (der letzte Kriegsrat gilt, solange er gleich bleibt) */
+/** Text-Schlüssel einer Aufstellung: nur Helden und Felder (für den Kriegsrat: ratSchluessel) */
 export function aufstellungSchluessel(aufstellung: Record<string, Feld>): string {
   return Object.entries(aufstellung).map(([id, f]) => `${id}@${f.reihe}${f.spalte}`).sort().join(',');
+}
+
+/**
+ * Schlüssel des Kriegsrats: die Felder und die Kampfwerte der Aufgestellten in der Reihenfolge der Gilde, genau was
+ * raidKampf liest. Der letzte Rat gilt, solange er gleich bleibt; neue Ausrüstung, Schmiede, Stufe oder Weg eines
+ * Aufgestellten ändern ihn, wer auf der Bank sitzt, nicht.
+ */
+export function ratSchluessel(state: GameState, aufstellung: Record<string, Feld>): string {
+  const engine = new CombatEngine(new GearSystem());
+  const stufen = schmiedeStufen(state);
+  const einheiten = state.fighters.filter(f => aufstellung[String(f.id)]).map(f => engine.fighterToCombatUnit(f, stufen));
+  return `${aufstellungSchluessel(aufstellung)}|${JSON.stringify(einheiten)}`;
 }
 
 // ── Aufstellen ──
@@ -292,7 +306,7 @@ export function truheZiehen(
   const inhalt: Record<string, number> = {};
   const dazu = (itemId: string, menge: number): void => { inhalt[itemId] = (inhalt[itemId] ?? 0) + menge; };
   if (truhe.gold) dazu('gold', truhe.gold);
-  // Je Beutetabelle ihr garantiertes Gold und ein Eintrag, wie die Ruhmestruhe der Rangliste
+  // Je Nennung einer Beutetabelle ihr garantiertes Gold und ein Eintrag, wie die Ruhmestruhe der Rangliste
   for (const id of truhe.wuerfeAus) {
     const tabelle = LOOT_TABLE_DEFS[id];
     if (!tabelle) continue;
@@ -303,7 +317,9 @@ export function truheZiehen(
   }
   const teil = fehlendesSetTeil(state, teilnehmer, truhe.setTeil, rng);
   if (teil) dazu(teil, 1);
-  for (const [itemId, menge] of Object.entries(teil ? truhe.dinge : { ...truhe.dinge, ...truhe.ersatz })) dazu(itemId, menge);
+  for (const [itemId, menge] of Object.entries(truhe.dinge)) dazu(itemId, menge);
+  // Fehlt kein Teil mehr, kommt der Ersatz zu den Dingen dazu (Zenits Truhe: 15 und 20 Kristallsplitter)
+  if (!teil) for (const [itemId, menge] of Object.entries(truhe.ersatz)) dazu(itemId, menge);
   const hinweise = teil ? { [teil]: setTeilHinweis(state, teil) } : {};
   gutschreiben(state, inhalt);
   return { art, name: truhe.name, text: truhe.text, inhalt, hinweise };
@@ -390,7 +406,7 @@ export interface RaidRat {
   funken: { heldId: number; anzahl: number } | null;
   /** Die erste Probe mit Wiedergabe, für «Einen Probelauf ansehen» */
   probe: RaidErgebnis;
-  /** Für welche Aufstellung der Rat gilt */
+  /** Für welche Aufstellung und welche Kampfwerte der Rat gilt (ratSchluessel) */
   schluessel: string;
 }
 
@@ -407,6 +423,8 @@ function haeufigster(zaehler: Map<number, number>): { heldId: number; anzahl: nu
 export function* raidKriegsrat(state: GameState, def: RaidDef = ZENIT, proben = KRIEGSRAT_PROBEN): Generator<number, RaidRat> {
   const stand = raidStand(state, Date.now(), def);
   const aufstellung = Object.fromEntries(Object.entries(stand.aufstellung).map(([id, f]) => [id, { ...f }]));
+  // Der Stand, für den der Rat gilt: zu Beginn genommen (ändert sich unterwegs etwas, ist er danach schon alt)
+  const schluessel = ratSchluessel(state, aufstellung);
   const teilnehmer = raidTeilnehmer(state, stand);
   const stufen = { ...schmiedeStufen(state) };
   let siege = 0;
@@ -431,8 +449,7 @@ export function* raidKriegsrat(state: GameState, def: RaidDef = ZENIT, proben = 
   return {
     proben, siege, schnittRest: proben > 0 ? rest / proben : 1,
     ursache: hauptursache(gefallen, namen, mitternacht > proben / 2),
-    meistGefallen: haeufigster(meist), funken: haeufigster(funken), probe: probe!,
-    schluessel: aufstellungSchluessel(aufstellung),
+    meistGefallen: haeufigster(meist), funken: haeufigster(funken), probe: probe!, schluessel,
   };
 }
 

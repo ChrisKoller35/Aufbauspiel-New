@@ -308,11 +308,21 @@ export function raidKampf(
         const e = ereignis({ art: 'pendel', trupp, reihe: vorn, treffer });
         for (const ziel of l.filter(h => feld.get(h)!.reihe === vorn)) {
           if (zenit.hp <= 0) break;
-          const vorher = ziel.hp;
+          // Schutzherr und Deckung lenken den Schlag auf einen anderen im Trupp: gebucht wird, wer Leben verlor
+          const vorher = new Map(trupps[trupp].map(u => [u, u.hp]));
           engine.grundangriff(zenit, ziel, trupps[trupp], gegner, run, rng);
-          treffer.push({ heldId: ziel.id, wert: Math.max(0, vorher - ziel.hp) });
-          merkeFall(ziel, vorher, 'pendel', ort);
-          if (!mittag && schlaege(def.werte.atk, ziel, false) < 3) {
+          let getroffen = false;
+          for (const [u, hp] of vorher) {
+            if (u.hp >= hp) continue;
+            getroffen = true;
+            const schon = treffer.find(x => x.heldId === u.id);
+            if (schon) schon.wert += hp - u.hp;
+            else treffer.push({ heldId: u.id, wert: hp - u.hp });
+            merkeFall(u, hp, 'pendel', ort);
+          }
+          // Niemand verlor Leben (ausgewichen, abgeschirmt): das Ziel steht mit 0 da, einmal je Held und Schwung
+          if (!getroffen && !treffer.some(x => x.heldId === ziel.id)) treffer.push({ heldId: ziel.id, wert: 0 });
+          if (!mittag && schlaege(werte.atk, ziel, false) < 3) {
             ansage('pendelZerbrechlich', RAID_TEXTE.ansage.pendelZerbrechlich(ziel.name), e);
           }
         }
