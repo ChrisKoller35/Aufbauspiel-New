@@ -738,6 +738,50 @@ describe('Heldenfenster im kleinen DOM: Tastenhörer, Doppelklick und Sperren', 
     expect(trainiert).toBe(12);
   });
 
+  test('Lager: Karte antippen öffnet das Fenster mit dem Teil; nach ANLEGEN und ✕ ist sie weg, ein langsamer zweiter Druck öffnet keine Kachel', async () => {
+    const { state, held: f } = stand();
+    const KETTE = 'wolf_fang_necklace';
+    state.globalStock[KETTE] = 1;
+    await heldenseite(state);
+    klick('#s-heroes .tab[data-tab="inventar"]');
+    vi.advanceTimersByTime(800);
+    const karte = el(`#s-heroes [data-lager-teil="${SCHWERT}"]`);
+    expect(karte).toBeInstanceOf(Knopf);
+    expect(karte.dataset.held).toBe(String(f.id));
+    expect(karte.dataset.platz).toBe('mainHand');
+    expect(karte.getAttribute('aria-label')).toBe(ITEM_DEFS[SCHWERT].name);
+    // Antippen: Fenster des Helden, Inventar offen, das Schwert gewählt und fokussiert (nicht ANLEGEN), ANLEGEN im Bild
+    klick(karte);
+    const teil = el(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${SCHWERT}"]`);
+    expect(teil.getAttribute('aria-pressed')).toBe('true');
+    expect(teil.disabled).toBe(false);
+    expect(fokus).toBe(teil);
+    expect(schlucktZweitenKlick()).toBe(true);
+    const aktion = el('#hero-detail-ov .hdm2-aktion');
+    expect(aktion.dataset.aktion).toBe('anlegen');
+    expect(aktion.gescrollt).toEqual([{ block: 'nearest', behavior: 'smooth' }]);
+    klick(aktion);
+    expect(f.gear.mainHand).toBe(SCHWERT);
+    vi.advanceTimersByTime(800);
+    // ✕: Lager neu gezeichnet, die Karte des Schwerts ist weg, Fokus auf dem Reiter
+    const hier: Ort = { x: 1150, y: 40 };
+    druck('#hero-detail-close', hier);
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+    expect(seite.querySelector(`#s-heroes [data-lager-teil="${SCHWERT}"]`)).toBeNull();
+    expect(fokus).toBe(el('#s-heroes .tab.active'));
+    expect(el('#s-heroes .tab.active').dataset.tab).toBe('inventar');
+    // Ein langsamer zweiter Druck an derselben Stelle öffnet nicht die Kette, die dort jetzt liegen mag; nach 0,8 s schon
+    vi.advanceTimersByTime(400);
+    druck(`#s-heroes [data-lager-teil="${KETTE}"]`, hier);
+    expect(seite.querySelector('#hero-detail-ov')).toBeNull();
+    vi.advanceTimersByTime(400);
+    druck(`#s-heroes [data-lager-teil="${KETTE}"]`, hier);
+    expect(fokus).toBe(el(`#hero-detail-ov .hdm2-inv-slot[data-item-id="${KETTE}"]`));
+    // Schliessen ohne Anlegen: Fokus zurück auf die Kachel
+    klick('#hero-detail-close');
+    expect(fokus).toBe(el(`#s-heroes [data-lager-teil="${KETTE}"]`));
+  });
+
   test('Fenster über den dunklen Rand geschlossen: Ein langsamer zweiter Druck dorthin trifft nicht «Lernen», TRAINIEREN oder eine Karte dahinter', async () => {
     const state = createNewGameState();
     const lehrer = held('guardian', 'Brom', 15);
