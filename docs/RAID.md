@@ -156,6 +156,7 @@ Leben geteilt durch den Schaden eines Treffers, aufgerundet, bei Flächenschaden
 | Zeiger (je Spalte) | «Jede Spalte ist besetzt», wenn keine Spalte warnt | eine Spalte ist leer (mit den Runden, in denen er dort durchschlägt); ein Einzelner hält weniger als 3 ganze Zeiger-Schläge (110) |
 | Glocke | die vollste Reihe mit Namen | dort stehen 4 oder mehr; jemand dort hält ab Mittag keine 2 Glockenschläge (165) |
 | Funken | wer sie wohl bekommt: Probelauf bis Runde 3 mit dem Samen der ersten Kriegsrat-Probe (1000) | das Ziel hat Nachbarn im Trupp (nach Feld, auch wer im Probelauf schon fiel) |
+| Kuckuck (je Gang, nur Stufe III) | wen er zuerst pickt (die wenigsten Leben direkt am Gang, Gleichstand vorn, dann links, wie im Kampf) und wie viele Schnabelhiebe (66, ab Mittag 99) der hält, ob er ausweicht; am leeren Gang «geht beleidigt wieder hinein» | der Erste hält ab Mittag nur einen Hieb und weicht nicht aus (Ausweichen oder Schattentanz). Wen er im Kampf wirklich fällt, hängt an Pendel, Zeiger und Heilung; das misst der Kriegsrat |
 | Trupp (je Trupp) | Teamwirkungen und Heiler | kein Heiler; dieselbe Teamwirkung zweimal, von der nur die stärkere zählt |
 | Klinge (nur Stufe III) | nur als Warnung | oben steht keine Meisterin der Meuchlerinnen (Weg Meuchlerin, Stufe 15); siehe «Je ein Weg anders» bei Stufe III |
 | Zahl | wie viele hinaufgehen | weniger als vier, oder weniger, als die Gilde Helden hat (höchstens zehn) |
@@ -893,6 +894,12 @@ nicht dreizehn. XP: 600 beim Sieg, 200 bei der Niederlage, je Teilnehmer.
 - **Was er verlangt:** Jede Spalte bleibt besetzt (sonst schlägt der Zeiger durch), aber an den sechs Gang-Spalten
   stehen Zähe, Ausweichende oder Geheilte, keine Zerbrechlichen. Die Ordnung von Stufe II, auf vier Trupps verlängert
   («Lehrbuch»), gewinnt nie, auch ohne Kuckuck nicht.
+- **Alrunas Liste** nennt je Gang, wen er zuerst pickt und wie viele Schnabelhiebe der hält. Gemessen (300 Kämpfe je
+  Aufstellung, anker20): Auch in den besten Aufstellungen fällt er je Kampf im Schnitt 1,5 («Profi») bis 1,7 («Gut»)
+  Helden, meist Wenna (54 und 66 % der Kämpfe). Wer zuerst dran ist, ist nicht immer, wer fällt: Mit «Lehrbuch» pickt
+  er am Gang rechts zuerst Gerlinde, es fällt aber Mirabell (84 %), die allein Spalte I trägt und in der Reihe der
+  Glocke steht. Darum warnt die Liste nur im klaren Fall (ab Mittag ein Hieb und kein Ausweichen); den Rest zeigt der
+  Kriegsrat.
 
 ### Truhen und erster Sieg
 

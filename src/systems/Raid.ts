@@ -28,8 +28,8 @@ import { schmiedeStufen } from './Schmiede';
 import { istMeister } from './Spezialisierung';
 import { wocheVon } from './Rangliste';
 import {
-  RaidErgebnis, RaidGefallen, Regel, hauptursache, heilFaehigkeit, raidKampf, schlaege, sindNachbarn, spaltenZahl,
-  treffpunkte, truppVon, vollsteReihe, zeigerRunden,
+  RaidErgebnis, RaidGefallen, Regel, gangSpalten, hauptursache, heilFaehigkeit, raidKampf, schlaege, sindNachbarn,
+  spaltenZahl, treffpunkte, truppVon, vollsteReihe, zeigerRunden,
 } from './RaidKampf';
 import { grundSchaden } from './Kampfeffekte';
 import { hasEffect } from './CombatEngine';
@@ -534,7 +534,7 @@ export function raidRolle(classId: string): RaidRolle {
 }
 
 export interface RaidHinweis {
-  art: 'pendel' | 'zeiger' | 'glocke' | 'funken' | 'trupp' | 'klinge' | 'zahl';
+  art: 'pendel' | 'zeiger' | 'glocke' | 'funken' | 'kuckuck' | 'trupp' | 'klinge' | 'zahl';
   ok: boolean;
   text: string;
   /** Felder, die beim Darüberfahren aufleuchten */
@@ -565,7 +565,7 @@ export const namenListe = (namen: string[]): string =>
 
 /**
  * Was an der Aufstellung gefährlich ist: Pendel je Trupp, Zeiger je Spalte, Glocke, Funken (Probelauf bis Runde 3),
- * Trupps (Heiler, doppelte Teamwirkungen) und die Zahl. Warnungen zuerst. Ändert nichts.
+ * Kuckuck je Gang (Stufe III), Trupps (Heiler, doppelte Teamwirkungen) und die Zahl. Warnungen zuerst. Ändert nichts.
  */
 export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
   const stand = raidStand(state, Date.now(), def);
@@ -702,6 +702,32 @@ export function raidLage(state: GameState, def: RaidDef = ZENIT): RaidLage {
       hinweise.push(nachbarn.length === 0
         ? { art: 'funken', ok: true, text: L.funkenOk(ziel.held.name), felder: [ziel.feld] }
         : { art: 'funken', ok: false, text: L.funkenNachbarn(ziel.held.name, nachbarn.map(h => h.held.name)), felder: felder([ziel, ...nachbarn]) });
+    }
+  }
+
+  // Kuckuck (Stufe III): je Gang, wen er zuerst pickt (die wenigsten Leben direkt am Gang; Gleichstand vorn, dann links,
+  // wie in RaidKampf). Warnung nur, wenn der Erste ab Mittag keinen zweiten Schnabelhieb hält und nicht ausweicht:
+  // Wen er im Kampf wirklich fällt, hängt an allem anderen (Pendel, Zeiger, Heilung) und misst der Kriegsrat
+  const kuckuck = def.regeln.kuckuck;
+  if (kuckuck !== undefined && helden.length > 0) {
+    for (let gang = 0; gang < def.truppZahl - 1; gang++) {
+      const name = RAID_TEXTE.gangName(gang, def.truppZahl);
+      const amGang = helden.filter(h => gangSpalten(gang).includes(h.feld.spalte));
+      if (amGang.length === 0) {
+        hinweise.push({ art: 'kuckuck', ok: true, text: L.kuckuckLeer(name), felder: [] });
+        continue;
+      }
+      const ziel = amGang.reduce((a, b) => {
+        if (b.einheit.maxHp !== a.einheit.maxHp) return b.einheit.maxHp < a.einheit.maxHp ? b : a;
+        if (b.feld.reihe !== a.feld.reihe) return b.feld.reihe < a.feld.reihe ? b : a;
+        return b.feld.spalte < a.feld.spalte ? b : a;
+      });
+      const vor = schlaege(atk * kuckuck, ziel.einheit, false);
+      const nach = schlaege(mittag * kuckuck, ziel.einheit, false);
+      const weicht = (ziel.einheit.specialEffects ?? []).some(e => e.id === 'dodge' || e.id === 'schattentanz');
+      hinweise.push(nach <= 1 && !weicht
+        ? { art: 'kuckuck', ok: false, text: L.kuckuckZerbrechlich(name, ziel.held.name, vor), felder: [ziel.feld] }
+        : { art: 'kuckuck', ok: true, text: L.kuckuckOk(name, ziel.held.name, vor, nach, weicht), felder: [ziel.feld] });
     }
   }
 
