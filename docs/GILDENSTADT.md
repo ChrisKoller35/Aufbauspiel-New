@@ -111,6 +111,22 @@ sie nicht mitskaliert; `run.trankWirkungen: { stat, wert, bisRaum }[]` für die 
 abgelaufene Wirkungen zurücknehmen. Protokollzeile je Trank in Spielersprache («Krafttrank: +3 Angriff bis zum Ende»).
 Die Kampf-Vorschau zeigt die Werte sofort (Preis/Wirkung sofort sichtbar, wie bei der Hort-Gier).
 
+### Vorräte in der Kampf-Vorschau (`ui/components/KampfVorraete.ts`, `CombatScreen.buildItemSection`)
+
+- **Eine Zeile je Vorrat:** gleiche Vorräte stehen zusammen (eigenes Brot ×3 und Brot der Wegzehrung ×1 → «Brot ×4»).
+  «Nutzen» verbraucht zuerst die **Wegzehrung der Gilde** (`gifted`), denn sie verfällt nach dem Lauf; der eigene
+  Vorrat geht danach ins Lager zurück.
+- **Am Handy** (bis 700 px) stehen die Vorräte **vor den Fähigkeiten** (Vorräte gelten in jedem Kampf, Fähigkeiten
+  einmal je Mission), damit sie beim Öffnen ohne Scrollen ganz sichtbar sind: je Vorrat eine Zeile mit Bild, Name,
+  Wirkung (`wirkungText` aus `items.ts`), Menge und «Nutzen» (mindestens 72 × 44 px). Nach dem Nutzen steht über den
+  Zeilen eine Meldung in einer Zeile (zu lang: gekürzt mit …), z. B. «Brot: Die Gruppe heilt 8 Leben.»; das ist die
+  Protokollzeile, die sonst unter der Knopfleiste läge. Nach dem letzten Vorrat bleibt der Bereich mit Titel und
+  Meldung stehen.
+- **Am PC** bleibt die kleine Karte (Bild, Menge, «Nutzen»); der Tooltip heisst «Name: Wirkung», die Meldung steht
+  im Protokoll. Nach dem Nutzen passt `passeKartenAn()` die Heldenkarten neu ein, weil das Protokoll wächst.
+- **Manatrank:** nach dem Nutzen werden die Fähigkeiten neu gezeichnet, ihre Knöpfe sind sofort wieder wählbar
+  (vorher erst im nächsten Raum).
+
 ## Der Stadtweg ohne Bewohner
 
 `steuerProzent` wird `haendlerRabatt` (Prozent beim Händler). `grenzen` nur noch `{ werkstatt }`. Neue Aufgabenart

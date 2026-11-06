@@ -7,6 +7,7 @@ import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
 import { SchmiedeStufen, werteMitStufe } from '../../systems/Schmiede';
 import { nameMitStufe, stufeAbzeichen } from './SchmiedeAnzeige';
 import { istStumm } from '../../systems/Klang';
+import { TruheAnlegen, truheAnlegenHtml } from './TruheAnlegen';
 
 export interface LootEntry {
   itemId: string;
@@ -44,6 +45,7 @@ export function truhenEintraege(loot: Record<string, number>, goldEarned: number
  * hinweise: extra line per item, e.g. the set of a set piece («🐺 Rudel des Waldpfads · Teil 2 von 3»).
  * untertitel: line under «Schatztruhe» instead of the expedition default (e.g. the weekly Ruhmestruhe).
  * stufen: Stufen der Schmiede, damit verbesserte Set-Teile mit Stufe und ihren echten Werten erscheinen.
+ * anlegen: Knopf «‹Held›: anlegen» in den Karten (TruheAnlegen); die grüne Zeile kommt dann von dort, mit Lager-Abgleich.
  */
 export function showChestReveal(
   loot: Record<string, number>,
@@ -51,6 +53,7 @@ export function showChestReveal(
   hinweise: Record<string, string> = {},
   untertitel?: string,
   stufen?: SchmiedeStufen,
+  anlegen?: TruheAnlegen,
 ): Promise<void> {
   return new Promise(resolve => {
     const entries = truhenEintraege(loot, goldEarned);
@@ -150,11 +153,33 @@ export function showChestReveal(
           ${rarCls === 'rar-set' ? '<span class="chest-item-setlabel">✦ SET-TEIL</span>' : ''}
           <span class="chest-item-name ${rarCls}">${name}</span>
           ${hinweis ? `<span class="chest-item-hinweis">${hinweis}</span>` : ''}
+          ${anlegen && isGear ? `<div class="truhe-anlegen" data-truhe="${entry.itemId}"></div>` : ''}
           ${statsHtml}
           <span class="chest-item-qty">${isGold ? '💰' : '×'}${entry.qty}</span>
         </div>
       `;
+      // Mit Anlegen kommt die grüne Zeile aus TruheAnlegen (mit Lager-Abgleich, neu nach jedem Anlegen)
+      if (anlegen) {
+        const hinweisEl = card.querySelector('.chest-item-hinweis');
+        hinweisEl?.querySelector('.truhe-besser')?.remove();
+        if (hinweisEl && !hinweisEl.textContent?.trim()) hinweisEl.remove();
+      }
       grid.appendChild(card);
+    });
+
+    // Alle Karten neu rechnen: Nach jedem Anlegen ändert sich, wem was am meisten bringt
+    const anlegenZeichnen = (): void => {
+      if (!anlegen) return;
+      const karten = anlegen.karten();
+      grid.querySelectorAll<HTMLElement>('.truhe-anlegen').forEach(feld => {
+        const itemId = feld.dataset.truhe ?? '';
+        feld.innerHTML = truheAnlegenHtml(itemId, karten.get(itemId));
+      });
+    };
+    anlegenZeichnen();
+    grid.addEventListener('click', e => {
+      const knopf = (e.target as HTMLElement).closest<HTMLElement>('[data-anlegen]');
+      if (knopf && anlegen?.anlegen(knopf.dataset.anlegen ?? '')) anlegenZeichnen();
     });
 
     // Collect button

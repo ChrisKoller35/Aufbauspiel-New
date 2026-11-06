@@ -11,7 +11,9 @@ Unter jedem Ausrüstungsteil, das einen Helden der Gilde stärker macht, steht i
 - **Hände:** Platz nach `resolveEquipSlot` wie ANLEGEN. Eine Einhandwaffe wird in Haupt- und Nebenhand
   probiert (grösserer Zugewinn, bei Gleichstand die Haupthand), die Zeile nennt die Hand. Eine Zweihandwaffe
   leert die Nebenhand, ein Schild braucht eine Einhandwaffe.
-- **Zählt nicht:** was schon im Lager liegt, Abwägungen (mehr ATK, aber weniger DEF: bleibt im Heldenfenster),
+- **Lager:** `truhenHinweise` allein kennt das Lager nicht. Die Truhe im Spiel gleicht aber ab: Ihre grüne Zeile
+  und der Knopf kommen aus `TruheAnlegen` (`besserFuerAlle` über Lager ∪ Truhe, siehe «Gleich anlegen aus der Truhe»).
+- **Zählt nicht:** Abwägungen (mehr ATK, aber weniger DEF: bleibt im Heldenfenster),
   Luft (`airBonus`) für Unterwasser-Dungeons.
 - **Aufruf-Regel:** `truhenHinweise` vor dem Leeren von `state.activeExpedition` aufrufen (so macht es
   `finishExpedition` heute). Ohne viertes Argument nimmt es dessen Beute; ruft man es erst nach dem Leeren auf,
@@ -22,6 +24,28 @@ Unter jedem Ausrüstungsteil, das einen Helden der Gilde stärker macht, steht i
 Gemessen (26.10.2026, alle 138 Ausrüstungsteile aus `ITEM_DEFS`): im neuen Spiel (Guardian ohne Ausrüstung)
 bekommen 120 die Zeile, in `?probe=sterne` 23, alle für die leere Nebenhand von Grimm oder Sina:
 21 Einhandwaffen mit «(Nebenhand)», 2 Schilde (ohne Handangabe).
+
+## Gleich anlegen aus der Truhe
+
+Code: `src/ui/components/TruheAnlegen.ts`, Tests: `tests/truheAnlegen.test.ts`.
+
+- **Regel:** Der Knopf «‹Held›: anlegen» steht in der Karte nur, wenn das Teil über Lager ∪ Truhe die beste Wahl ist
+  (`besserFuerAlle(...).besteWahl`, wie die breite Karte im Lager), nie nach `besserFuer` allein: In alten Dungeons
+  legte er sonst das Schlechtere an. Er nennt den Helden dieser besten Wahl.
+- **Sonst:** unter der grünen Zeile «Noch besser für Sina: Wyrmzahnklinge (im Lager)» bzw. «(in der Truhe)»: gleicher Held
+  und Platz, grösster Zugewinn (`nochBesserAls`). Hellgelb #fde68a auf #111828, Kontrast etwa 13 : 1.
+- **Nach jedem Anlegen** rechnet die Truhe alle Karten neu. Angelegte Teile zeigen «✓ Grimm trägt es jetzt», ihre grüne
+  Zeile verschwindet. Bei zwei Stück bekommt erst der beste Held eins, dann der nächste (Knopf «Sina: anlegen»).
+- **Expedition:** Die Beute kommt erst nach «Einsammeln» ins Lager (`beuteEinlagern` in `applyLootAndFinish`).
+  `anlegen` legt ein Stück aus `loot` ins Lager, legt an (`equip`) und zieht es von `loot` ab, sonst läge es doppelt
+  vor. Misslingt `equip`, wird das Einlagern zurückgenommen. Während dieser Truhe kein `mc:speichern`: Der Spielstand
+  hätte weder Expedition noch Beute. Erfolge prüft `applyLootAndFinish` wie bisher, danach speichert es.
+- **Ruhmestruhe:** Die Beute liegt schon im Lager (`belohnungenAbholen` vor der Truhe). Angelegt wird direkt aus dem
+  Lager, höchstens so viele Stücke, wie die Truhe gebracht hat. Nach dem Schliessen `erfolgePruefen(state)` (wie ANLEGEN
+  im Heldenfenster) und `mc:speichern`.
+- **Sperre:** Ein zweites Anlegen innerhalb von 600 ms (`ANLEGEN_SPERRE_MS`) gibt `false`. Die Sperre liegt im Modul,
+  nicht im DOM, und ist mit Fake-Timern getestet.
+- **Knopf:** mindestens 44 px hoch bei `pointer: coarse`, 32 px am PC, in der Karte (nicht im Fuss), Name über `escapeAttr`.
 
 ## Heldenfenster und Lager (dieselbe Regel)
 

@@ -12,7 +12,7 @@ import { GameState } from '../../models/GameState';
 import { ROUTE_DEFS, ROUTE_IMAGE_MAP } from '../../data/routes';
 import { CLASS_DEFS, HERO_IMAGE_MAP } from '../../data/classes';
 import { ENEMY_DEFS } from '../../data/enemies';
-import { ITEM_DEFS, getItemSpriteKey } from '../../data/items';
+import { getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
 import { hpAnzeige, rundeLogZahlen } from '../hpAnzeige';
@@ -20,6 +20,7 @@ import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
 import { klangKnopfHtml } from '../components/KlangSchalter';
+import { vorratZeilen, vorratTitel, zeigeVorratBereich, nutzeVorrat } from '../components/KampfVorraete';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -71,6 +72,9 @@ export class CombatScreen {
 
   // Länge des Kampfprotokolls vor diesem Raum: was danach dazukommt, gehört zu diesem Kampf
   private logStart = 0;
+
+  // Was der zuletzt genutzte Vorrat bewirkt hat (Meldungszeile über den Vorräten, am Handy)
+  private vorratMeldung = '';
 
   // Unit entries (DOM refs)
   private partyEntries: UnitEntry[] = [];
@@ -225,6 +229,7 @@ export class CombatScreen {
     this.roomInfoEl.textContent = `Raum ${roomIndex + 1} / ${run.rooms.length}`;
 
     this.logStart = run.combatLog.length;
+    this.vorratMeldung = '';
 
     // HP snapshot
     this.preHpMap.clear();
@@ -754,9 +759,9 @@ export class CombatScreen {
       }
     }
 
-    // Provisions in left column
-    const active = run.provisions.filter(p => p.qty > 0);
-    if (active.length === 0) return;
+    // Vorräte: gleiche in einer Zeile. Nach dem letzten bleibt der Bereich mit Titel und Meldung stehen
+    const zeilen = vorratZeilen(run.provisions);
+    if (!zeigeVorratBereich(zeilen, this.vorratMeldung)) return;
 
     const area = document.createElement('div');
     area.className = 'mc-co-items-area';
@@ -769,45 +774,58 @@ export class CombatScreen {
     provDivider.textContent = 'Vorräte — vor Kampf nutzbar';
     area.appendChild(provDivider);
 
+    // Meldungszeile über den Zeilen, ohne Scrollen (nur am Handy, am PC steht es im Protokoll)
+    if (this.vorratMeldung) {
+      const meldung = document.createElement('div');
+      meldung.className = 'mc-co-item-meldung';
+      meldung.textContent = meldung.title = this.vorratMeldung;
+      area.appendChild(meldung);
+    }
+
     const row = document.createElement('div');
     row.className = 'mc-co-items-row';
     area.appendChild(row);
 
-    run.provisions.forEach((prov, idx) => {
-      if (prov.qty <= 0) return;
-      const itemDef = ITEM_DEFS[prov.itemId as keyof typeof ITEM_DEFS];
-      const name = (itemDef as { name?: string })?.name ?? prov.itemId;
-
+    for (const zeile of zeilen) {
       const card = document.createElement('div');
       card.className = 'mc-co-item-card';
 
       const itemImg = document.createElement('img');
-      itemImg.src = `assets/sprites/final/${getItemSpriteKey(prov.itemId)}.png`;
+      itemImg.src = `assets/sprites/final/${getItemSpriteKey(zeile.itemId)}.png`;
       itemImg.width = 22;
       itemImg.height = 22;
       itemImg.style.objectFit = 'contain';
       itemImg.onerror = () => { itemImg.style.display = 'none'; };
 
+      // Name und Wirkung: am Handy sichtbar, am PC im Tooltip (magic-city.css, «Items row»)
+      const text = document.createElement('div');
+      text.className = 'mc-co-item-text';
+      const name = document.createElement('span');
+      name.className = 'mc-co-item-name';
+      name.textContent = zeile.name;
+      const wirkung = document.createElement('span');
+      wirkung.className = 'mc-co-item-wirkung';
+      wirkung.textContent = zeile.wirkung;
+      text.append(name, wirkung);
+
       const itemQty = document.createElement('span');
       itemQty.className = 'mc-co-item-qty';
-      itemQty.textContent = `×${prov.qty}`;
+      itemQty.textContent = `×${zeile.menge}`;
 
       const useBtn = document.createElement('button');
       useBtn.className = 'mc-btn success mc-co-use-btn';
       useBtn.textContent = 'Nutzen';
-      useBtn.title = name;
+      useBtn.title = vorratTitel(zeile);
       useBtn.addEventListener('click', () => {
         if (this.phase !== 'preview') return;
         if (!this.expSystem || !this.expState) return;
-        this.expSystem.useProvision(this.expState, idx);
+        this.vorratMeldung = nutzeVorrat(this.expSystem, this.expState, zeile);
         this.refreshAfterProvision();
       });
 
-      card.appendChild(itemImg);
-      card.appendChild(itemQty);
-      card.appendChild(useBtn);
+      card.append(itemImg, text, itemQty, useBtn);
       row.appendChild(card);
-    });
+    }
   }
 
   private refreshAfterProvision(): void {
@@ -829,7 +847,11 @@ export class CombatScreen {
     }
     // Was der Vorrat bewirkt hat («Krafttrank: +3 Angriff bis zum Ende des Dungeons», «wirkt schon») steht im Protokoll
     this.updateLog(run.combatLog.slice(this.logStart).slice(-8));
+    // Manatrank gibt die Fähigkeiten frei: Knöpfe gleich neu zeichnen, nicht erst im nächsten Raum
+    if (this.previewRoom) this.buildAbilitySection(run, this.previewRoom);
     this.buildItemSection(run, this.previewRoom ?? undefined);
+    // Protokoll und Meldung sind gewachsen: am PC die Karten neu einpassen, sonst werden sie unten abgeschnitten
+    this.passeKartenAn();
   }
 
   // ─── Combat Log ───────────────────────────────────────────
