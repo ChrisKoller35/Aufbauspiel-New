@@ -1,5 +1,6 @@
 // ─── Magic City – Main Menu Screen ──────────────────────────────
 // Default landing screen with hero section, 4 navigation tiles and the wide Gildenhaus tile.
+// Die Kacheln sind für Maus und Finger ganze Flächen; Tab und Enter gehen über ihren Deckknopf (ui/fokus.ts).
 // ────────────────────────────────────────────────────────────────
 
 import { navigateTo, ScreenId } from '../ScreenRouter';
@@ -12,6 +13,7 @@ import { brettKurz } from '../../systems/Auftragsbrett';
 import { zeigeGildenhaus } from './GildenhausScreen';
 import { oeffneSpielstand } from '../components/SpielstandFenster';
 import { oeffneFundbuch } from '../components/FundbuchFenster';
+import { deckknopf } from '../fokus';
 
 /** Chosen background; survives re-renders of the main menu on navigation. */
 let chosenBg = 1;
@@ -65,23 +67,28 @@ export function renderMainMenu(app: HTMLElement, state: GameState): void {
 
     <div class="main-grid">
       <div class="tile" data-nav="expeditions" style="background-image:url('assets/tiles/tile_expeditions.png')">
+        ${deckknopf('Expeditionen', 'kachel-expeditions')}
         <span class="tile-name">Expeditionen</span>
         <span class="tile-desc">Erkunde gef\u00e4hrliche Routen und finde Beute</span>
       </div>
       <div class="tile" data-nav="heroes" style="background-image:url('assets/tiles/tile_heroes.png')">
+        ${deckknopf('Helden', 'kachel-heroes')}
         <span class="tile-name">Helden</span>
         <span class="tile-desc">Rekrutiere, r\u00fcste aus und level deine K\u00e4mpfer</span>
       </div>
       <div class="tile" data-nav="buildings" style="background-image:url('assets/tiles/tile_buildings.png')">
+        ${deckknopf('Gebäude & Crafting', 'kachel-buildings')}
         <span class="tile-name">Geb\u00e4ude &amp; Crafting</span>
         <span class="tile-desc">Errichte Geb\u00e4ude und stelle m\u00e4chtige Items her</span>
       </div>
       <div class="tile" data-nav="ranking" style="background-image:url('assets/tiles/tile_ranking.png')">
+        ${deckknopf(rang.offen > 0 ? 'Rangliste, Truhe bereit' : 'Rangliste', 'kachel-ranking')}
         ${rangAbzeichen}
         <span class="tile-name">Rangliste</span>
         <span class="tile-desc">Gipfel: Platz ${rang.platz} von ${rang.gilden} \u00b7 Woche: Platz ${rang.wochePlatz}</span>
       </div>
       <div class="tile tile-gildenhaus" data-gildenhaus="brett" style="background-image:url('assets/buildings/bld_guild_hall.png')">
+        ${deckknopf(brettAbzeichen ? `Gildenhaus, ${brett.abgeben ? 'Abgeben möglich' : 'Neue Zettel'}` : 'Gildenhaus', 'kachel-gildenhaus')}
         ${brettAbzeichen}
         <span class="tile-name">Gildenhaus</span>
         <span class="tile-desc">Auftragsbrett: ${brettText} \u00b7 ${brett.siegel} Siegel \u00b7 Troph\u00e4ensaal</span>

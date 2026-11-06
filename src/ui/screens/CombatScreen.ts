@@ -16,6 +16,7 @@ import { getItemSpriteKey } from '../../data/items';
 import { SPECIAL_EFFECT_DEFS } from '../../data/specialEffects';
 import { getSet } from '../../data/dungeonSets';
 import { hpAnzeige, rundeLogZahlen } from '../hpAnzeige';
+import { tastaturZuletzt } from '../fokus';
 import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
@@ -295,6 +296,17 @@ export class CombatScreen {
       this.el.style.backgroundColor = '#060810';
     }
     this.passeKartenAn();
+    this.fokusAufHauptknopf();
+  }
+
+  /**
+   * Tastatur: Der Hauptknopf der Aktionen («Kampf starten!», «Nächste Runde →», «Weiter») nimmt den Fokus, Enter
+   * führt weiter. Die Aktionen werden in jeder Phase neu gebaut, der Fokus fiele sonst auf die Seite. Maus und
+   * Finger: nichts (ui/fokus.ts).
+   */
+  private fokusAufHauptknopf(): void {
+    const knopf = this.actionsEl.querySelector<HTMLButtonElement>('.mc-co-fight-btn, .mc-co-continue-btn');
+    if (knopf && tastaturZuletzt()) knopf.focus({ preventScroll: true });
   }
 
   hide(): void {
@@ -1304,6 +1316,7 @@ export class CombatScreen {
     btnRow.appendChild(this.createRetreatButton());
     btnRow.appendChild(btn);
     this.actionsEl.appendChild(btnRow);
+    this.fokusAufHauptknopf();
   }
 
   // ─── State: Result ────────────────────────────────────────
@@ -1357,6 +1370,7 @@ export class CombatScreen {
       this.onComplete?.();
     });
     this.actionsEl.appendChild(btn);
+    this.fokusAufHauptknopf();
   }
 
   // ─── Cleanup ──────────────────────────────────────────────

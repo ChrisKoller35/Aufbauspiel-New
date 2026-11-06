@@ -21,6 +21,7 @@ import { letzterRatHtml, zeigeKriegsrat } from '../components/KriegsratFenster';
 import { haertegradMarke, haertegradWahlHtml, startKnopfHaerte } from '../components/HaertegradAnzeige';
 import { HAERTEGRADE, Haertegrad, haertegradWaehlbar } from '../../systems/Haertegrade';
 import { standVon } from '../../systems/Lehrlinge';
+import { deckknopf, fokusMerken, fokusZurueck } from '../fokus';
 
 // ── Module state ──
 
@@ -138,8 +139,12 @@ function buildExpeditionListHTML(): string {
         + `<span class="exp-mat">${materialZeile(route.id)}</span>`
         + haertegradMarke(gameState, route.id)
         + (auftraege.length > 0 ? `<span class="exp-auftrag" title="${escapeAttr(auftraege.join(' · '))}">📜 ${auftraege.join(' · ')}</span>` : '');
+    // Tastatur: Name, Ebene und Räume; eine gesperrte Karte nennt den Sperrgrund, ihr Enter tut nichts
+    const label = `${route.name}, Ebene ${route.tier}, ${routeDescription(route)}`
+      + (locked ? `, gesperrt: ${getRouteLockReasons(route, gameState).join(', ')}` : '');
     return `
       <div class="exp-card${locked ? ' locked' : ''}" data-route="${route.id}" style="${getRouteImageStyle(route.id)}">
+        ${deckknopf(label, `route-${route.id}`, locked)}
         <div class="exp-card-info">
           <span class="exp-tag ${biome.cls}">${biome.label}</span>
           <span class="exp-name">${route.name}</span>
@@ -213,11 +218,15 @@ export function refreshExpeditionsScreens(): void {
 function refreshTeamScreen(): void {
   const el = document.getElementById('s-team');
   if (!el) return;
+  // Tastatur: Der Fokus bleibt beim gleichwertigen Knopf (± desselben Proviants, gewählter Härtegrad) und folgt
+  // einem Helden vom Team in die Liste und zurück (Deckknopf «held-<id>»), sonst begänne Tab wieder oben
+  const fokus = fokusMerken(el);
   el.innerHTML = buildTeamHTML();
   if (teamNachOben && el.style.display !== 'none') {
     el.scrollTop = 0;
     teamNachOben = false;
   }
+  fokusZurueck(el, fokus);
   // Do NOT re-bind events — the delegated listener on el persists across innerHTML rebuilds
 }
 
@@ -240,6 +249,7 @@ function buildTeamHTML(): string {
       const spriteKey = cls ? cls.spriteKey : 'HERO_GUARDIAN';
       slotsHTML += `
         <div class="exp-slot exp-slot-filled hcard-img ${bild.klasse}" data-slot="${i}" style="${bild.stil}">
+          ${deckknopf(`${hero.name} aus dem Team nehmen`, `held-${hero.id}`)}
           ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
           <div class="hcard-overlay">
             <div class="hc-nm">${escapeAttr(hero.name)}</div>
@@ -269,6 +279,7 @@ function buildTeamHTML(): string {
     const hpColor = hpPct > 60 ? 'var(--grn,#16a34a)' : hpPct > 30 ? '#ca8a04' : 'var(--red,#dc2626)';
     return `
       <div class="hsm hcard-img ${bild.klasse}" data-hero-id="${f.id}" style="${bild.stil}">
+        ${deckknopf(`${f.name} ins Team`, `held-${f.id}`)}
         ${!heroImg ? `<img src="assets/sprites/final/${spriteKey}.png" class="hc-sprite" onerror="this.style.display='none'">` : ''}
         <div class="hcard-overlay">
           <div class="hc-nm">${escapeAttr(f.name)}</div>

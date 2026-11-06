@@ -1,0 +1,15 @@
+/* ─── Tastatur (ui/fokus.ts, docs/TASTATUR.md) ─────────────────────────────
+   Deckknopf: unsichtbarer Knopf über einer ganzen Kachel oder Karte (Hauptmenü, Routen, Team). Tab erreicht ihn,
+   Enter und Leertaste lösen den Klick der Karte aus. Maus und Finger gehen durch ihn hindurch (pointer-events: none),
+   Hover, Klick und Aussehen der Karte bleiben, wie sie waren. Mit dem Fokus zeigt die Karte innen einen goldenen
+   Rahmen, wie die Heldenkarten (.hcard-oeffnen). */
+.deckknopf {
+  position: absolute; inset: 0; z-index: 4; pointer-events: none;
+  margin: 0; padding: 0; background: none; border: none; border-radius: inherit; color: inherit;
+}
+.deckknopf:focus { outline: none; }
+.deckknopf:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+
+/* Nach einem Bildschirmwechsel mit der Tastatur hält der Bildschirm selbst den Fokus (bildschirmFokussieren):
+   ohne Rahmen um die ganze Seite, der nächste Tab zeigt ihn am ersten Knopf. */
+.screen:focus { outline: none; }

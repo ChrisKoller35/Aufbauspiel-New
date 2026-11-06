@@ -60,7 +60,7 @@ export function startExpeditionFlow(routeId: string, heroIds: number[], provisio
   const geschichte = ungeleseneEinleitung(state, routeId);
   if (geschichte) {
     showExpeditionDialog('📜', geschichte.titel, einleitungHtml(geschichte), [
-      { label: 'ZURÜCK', onClick: () => {} },
+      { label: 'ZURÜCK', abbrechen: true, onClick: () => {} },
       {
         label: 'AUFBRECHEN', primary: true, onClick: () => {
           einleitungGelesen(state, routeId);

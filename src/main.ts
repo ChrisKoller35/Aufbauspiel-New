@@ -16,6 +16,7 @@ import { CombatScreen } from './ui/screens/CombatScreen';
 import { initExpeditionFlow, startExpeditionFlow } from './ui/screens/ExpeditionFlow';
 import { vorratsZeileHtml, zeigeKopfHinweis } from './ui/screens/HeaderRenderer';
 import { navigateTo, initScreenStyles, ScreenId, setzeNavigationsSperre } from './ui/ScreenRouter';
+import { eingabeBeobachten } from './ui/fokus';
 import { ExpeditionSystem } from './systems/ExpeditionSystem';
 import { GearSystem } from './systems/GearSystem';
 import { ProvisionSystem } from './systems/ProvisionSystem';
@@ -190,6 +191,9 @@ document.addEventListener('DOMContentLoaded', () => {
   hebeSperreNachLadenAuf();
 
   // ─── Keyboard Shortcuts ──────────────────────────────────────
+
+  // Tastatur oder Zeiger? Nach einem Wechsel mit der Tastatur beginnt Tab oben im neuen Bildschirm (ui/fokus.ts)
+  eingabeBeobachten();
 
   window.addEventListener('keydown', (e: KeyboardEvent) => {
     // F5 speichert statt neu zu laden, auch in einem Eingabefeld (Suche im Fundbuch, Auswahl im Gildenhaus)

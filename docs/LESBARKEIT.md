@@ -26,6 +26,8 @@ Die Rangfolge bleibt: Titel `--gl`/`--txt` sind heller als `--mut`, Beschreibung
 4. **Schrift auf Bildern nur mit Schild** `rgba(6,8,16,a)`, a ≥ .70: --txt hat dann auch vor reinem Weiss
    ≥ 5,1 : 1 (.72 → 5,53; .78 → 6,99). Alternativ ein dichter Verlauf unten (Kacheln).
 5. **Finger ≥ 44 px** Tippfläche bei `(max-width: 700px)` bzw. `(pointer: coarse)`.
+6. **Tastatur:** Was man antippt, erreicht auch Tab (Deckknopf über Karten, Fokus bleibt beim Neuzeichnen);
+   siehe `docs/TASTATUR.md`.
 
 ## Ausnahmen
 
