@@ -412,6 +412,19 @@ export const RAID_TEXTE = {
     truppOk: (seite: string, wirkungen: string[], heiler: string[]) =>
       `${seite}: ${wirkungen.length > 0 ? `${wirkungen.join(', ')}. ` : ''}Heiler: ${liste(heiler)}.`,
     truppOhneHeiler: (seite: string) => `${seite} hat keinen Heiler. Bei uns stand der Salbentopf auch auf der falschen Seite.`,
+    /**
+     * Nur Stufe III: der Kuckuck je Gang. Er pickt den mit den wenigsten Leben direkt am Gang; die Zahlen sind
+     * Schnabelhiebe (`schlaege` mit Angriff × kuckuck), vor und ab Mittag
+     */
+    kuckuckOk: (gang: string, name: string, vor: number, nach: number, weicht: boolean) =>
+      `Am Gang ${gang} pickt der Kuckuck zuerst ${name}. ${name} hält etwa ${vor} Schnabelhiebe, ab Mittag ${nach}`
+      + `${weicht ? ', und weicht manchmal aus' : ''}. Er kommt alle drei Runden wieder.`,
+    kuckuckZerbrechlich: (gang: string, name: string, vor: number) =>
+      `Am Gang ${gang} pickt der Kuckuck zuerst ${name}. `
+      + (vor <= 1 ? `${name} fällt schon beim ersten Schnabelhieb. `
+        : `Vor Mittag hält ${name} ${vor} Schnabelhiebe, ab Mittag fällt ${name} beim ersten. `)
+      + 'Er sucht sich immer den Kleinsten aus. Wir wissen das aus Erfahrung.',
+    kuckuckLeer: (gang: string) => `Am Gang ${gang} steht niemand. Der Kuckuck geht beleidigt wieder hinein, der Zeiger leider nicht.`,
     /** Nur Stufe III: oben steht keine Meisterin der Meuchlerinnen (docs/RAID.md, «Je ein Weg anders») */
     ohneMeuchlerin: 'Oben steht keine Meisterin der Meuchlerinnen. Unter sechzig Prozent trifft sie Zenit zweieinhalbmal '
       + 'so hart, und hier oben fehlt genau dieser Schaden am Schluss.',

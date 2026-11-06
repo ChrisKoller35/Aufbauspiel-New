@@ -325,6 +325,35 @@ describe('Stufe III im Spielstand', () => {
     expect(warnt(state, DREIZEHN)).toBe(false);
   });
 
+  test('Alrunas Liste: je Gang, wen der Kuckuck zuerst pickt; Warnung nur bei einem Hieb ab Mittag ohne Ausweichen', () => {
+    const L = RAID_TEXTE.liste;
+    const zeilen = (state: GameState) => hinweise(state, KUCKUCK).filter(h => h.art === 'kuckuck');
+    // «Gut» hält die Daumenregel: am Gang die Kleinsten, aber alle weichen manchmal aus (Morn 106, Liedra 106, Wenna 95)
+    const gut = stufeDreiSpielstand('gut');
+    const feldVon = (state: GameState, name: string) =>
+      raidStand(state, Date.now(), KUCKUCK).aufstellung[String(state.fighters.find(f => f.name === name)!.id)];
+    expect(zeilen(gut)).toEqual([
+      { art: 'kuckuck', ok: true, text: L.kuckuckOk('links', 'Morn', 2, 2, true), felder: [feldVon(gut, 'Morn')] },
+      { art: 'kuckuck', ok: true, text: L.kuckuckOk('Mitte', 'Liedra', 2, 2, true), felder: [feldVon(gut, 'Liedra')] },
+      { art: 'kuckuck', ok: true, text: L.kuckuckOk('rechts', 'Wenna', 2, 2, true), felder: [feldVon(gut, 'Wenna')] },
+    ]);
+    // Wie im Kampf: die wenigsten Leben am Gang (C und D), nicht die vorderste Reihe
+    const naiv = stufeDreiSpielstand('naiv');
+    expect(zeilen(naiv)[0].text).toBe(L.kuckuckOk('links', 'Lia', 3, 2, true));
+    // Eine schwache Gilde (Stufe 1): Benno weicht nicht aus und fällt ab Mittag beim ersten Hieb; Warnungen vorn
+    const schwach = stufeDreiSpielstand('profi', 1);
+    const warnung = hinweise(schwach, KUCKUCK).find(h => h.art === 'kuckuck' && !h.ok)!;
+    expect(warnung).toEqual({ art: 'kuckuck', ok: false, text: L.kuckuckZerbrechlich('Mitte', 'Benno', 2), felder: [feldVon(schwach, 'Benno')] });
+    expect(warnung.text).toContain('ab Mittag fällt Benno beim ersten');
+    // Leerer Gang: er geht wieder hinein (der Zeiger warnt eigens für die leeren Spalten)
+    const stand = raidStand(gut, Date.now(), KUCKUCK);
+    for (const [id, feld] of Object.entries(stand.aufstellung)) if (gangSpalten(0).includes(feld.spalte)) delete stand.aufstellung[id];
+    expect(zeilen(gut)[0]).toEqual({ art: 'kuckuck', ok: true, text: L.kuckuckLeer('links'), felder: [] });
+    // Nur auf Stufe III
+    raidStand(gut, Date.now(), DREIZEHN).aufstellung = raidMusterAufstellungDreizehn('profi', gut.fighters);
+    expect(hinweise(gut, DREIZEHN).some(h => h.art === 'kuckuck')).toBe(false);
+  });
+
   test('Stufe III kommt nach dem Speichern unverändert zurück', () => {
     const daten = new Map<string, string>();
     vi.stubGlobal('localStorage', {
