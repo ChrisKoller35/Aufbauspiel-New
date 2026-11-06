@@ -119,7 +119,7 @@ zurück, und die Expedition hing bis zum Neuladen (dann brach das Spiel sie ab).
 
 Was niemand von selbst zählt, schreibt `kennzahlenAktualisieren(state)` vor jeder Prüfung in
 `state.statistics` (jeweils der höchste je erreichte Wert, kein Balken fällt zurück):
-`stadtstufe`, `helden_anzahl`, `helden_mit_weg`, `helden_meister`, `ganze_sets`,
+`stadtstufe`, `helden_anzahl`, `helden_mit_weg`, `helden_meister`, `lehrlinge`, `lehrlinge_ausgelernt`, `ganze_sets`,
 `monsterbuch_entdeckt`, `gildenrang`, `werkstaetten` (stehende Werkstätten), `werkstatt_hoechste_stufe`,
 `zettel_erledigt`, `saal_prunkstuecke`, `anbau_prunkstuecke`, `saal_sterne`, `rangliste_pokale`, `schmiede_hoechste_stufe`.
 
@@ -181,6 +181,9 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Helden | 🛡️ | Armeeführer | 10 Helden in der Gilde | `helden_anzahl` ≥ 10 | `army_builder` |
 | Helden | 🧭 | Wegbereiter (neu) | ein Held hat seinen Weg gewählt (ab Stufe 10) | `helden_mit_weg` ≥ 1 | `erster_weg` |
 | Helden | 🥋 | Meister seines Wegs (neu) | ein Held ist Meister (Stufe 15) | `helden_meister` ≥ 1 | `erster_meister` |
+| Helden | 🎓 | Lehrjahre (neu) | der erste Lehrling ist aufgenommen (sein Meister braucht Stufe 15, docs/AUSBILDUNG.md) | `lehrlinge` ≥ 1 | `erster_lehrling` |
+| Helden | 📜 | Ausgelernt (neu) | ein Lehrling hat Stufe 15 | `lehrlinge_ausgelernt` ≥ 1 | `lehrling_ausgelernt` |
+| Helden | 👥 | Doppelt besetzt (neu) | alle zehn Klassen haben ihren Lehrling | `lehrlinge` ≥ 10 | `doppelt_besetzt` |
 | Dungeons | 🗺️ | Abenteuerlust | 1 Expedition gestartet | `total_expeditions` ≥ 1 | `first_expedition` |
 | Dungeons | 🏆 | Siegreich | 1 Expedition gewonnen | `total_victories` ≥ 1 | `first_victory` |
 | Dungeons | ⚔️ | Veteran | 10 Expeditionen beendet (Sieg, Niederlage oder Rückzug) | `total_victories` + `total_defeats` + `total_retreats` ≥ 10 | `veteran_explorer` |

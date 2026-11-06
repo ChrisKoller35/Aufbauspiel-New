@@ -3,7 +3,9 @@
 // anheuerKosten), gesperrte mit Rolle, Grundwerten und jeder Bedingung samt
 // Fortschritt («Besiege «Kristallgolem» in der Tiefen Höhle: 0/1»). Der
 // Fortschritt kommt aus fortschritt() in systems/ClassUnlockSystem.ts, mit
-// derselben Rechnung, mit der checkUnlocks freischaltet. Doku: docs/AUSBILDUNG.md.
+// derselben Rechnung, mit der checkUnlocks freischaltet. Darunter (oder darüber,
+// wenn keine Klasse mehr anzuheuern ist) die Lehrlinge: je Klasse in der Gilde
+// eine Karte aus systems/Lehrlinge.ts. Doku: docs/AUSBILDUNG.md.
 // ────────────────────────────────────────────────────────────────
 
 import '../html/ausbildung.css';
@@ -14,6 +16,11 @@ import { ROUTE_DEFS } from '../../data/routes';
 import { DUNGEON_IM_SATZ } from '../../data/dungeonNamen';
 import { FreischaltSchritt, fortschritt } from '../../systems/ClassUnlockSystem';
 import { anheuerKosten } from '../../systems/Empfehlung';
+import { LEHRLINGE } from '../../data/lehrlinge';
+import { LEHRLING_AB_STUFE, LehrlingLage, lehrlingLage } from '../../systems/Lehrlinge';
+import { lehrbuchVorschau } from '../../systems/Ausbildung';
+import { bildKarte } from '../heldBild';
+import { escapeAttr } from './SchmiedeAnzeige';
 
 const ROLLEN: Record<ClassDef['role'], string> = {
   tank: 'Tank', dps: 'Schaden', healer: 'Heiler', support: 'Unterstützer',
@@ -79,9 +86,79 @@ export function klassenTafelHtml(state: GameState, anheuerKarte: (c: ClassDef, k
     : freiAnzahl === klassen.length ? 'Alle Klassen sind schon in deiner Gilde'
     : 'Alle freien Klassen sind schon in deiner Gilde';
 
+  // Gibt es keine Klasse mehr anzuheuern, sind die Lehrlinge das, was man hier tun kann: dann zuerst
+  const lehrlinge = lehrlingTafelHtml(state);
+  const tafel = `<div class="hcards">${[...frei, ...gesperrt, ...vorhanden].join('')}</div>`;
   return `
     <div class="klassentafel">
       <p class="kt-kopf">${freiAnzahl} von ${klassen.length} Klassen freigeschaltet · ${anheuern}</p>
-      <div class="hcards">${[...frei, ...gesperrt, ...vorhanden].join('')}</div>
+      ${frei.length === 0 ? lehrlinge + tafel : tafel + lehrlinge}
     </div>`;
+}
+
+/** Was unter der Lehrlings-Karte steht, je nach Lage (frei, zu früh, schon da) */
+function lehrlingInfo(lage: LehrlingLage, klasse: string): string {
+  if (lage.art === 'frei') {
+    return `<p class="kt-hinweis">Lehrling von ${escapeAttr(lage.meister.name)} · beginnt auf Stufe 1</p>`;
+  }
+  if (lage.art === 'zu_frueh') {
+    return `<p class="kt-hinweis">Kommt, sobald ${escapeAttr(lage.meister.name)} Stufe ${LEHRLING_AB_STUFE} erreicht `
+      + `(jetzt Stufe ${lage.meister.level}).</p>`;
+  }
+  if (lage.art !== 'da') return '';
+  const { lehrling, meister } = lage;
+  const vorschau = meister ? lehrbuchVorschau(meister, lehrling) : null;
+  const lehrbuch = vorschau && vorschau.nachStufe > vorschau.vonStufe
+    ? `<p class="kt-hinweis">Im Lehrbuch (Reiter «Training») kommt ${escapeAttr(lehrling.name)} mit dem Überschuss von `
+      + `${escapeAttr(meister!.name)} auf Stufe ${vorschau.nachStufe}.</p>`
+    : '';
+  return `<p class="kt-hinweis">✓ In deiner Gilde · ${escapeAttr(klasse)} · Stufe ${lehrling.level}</p>${lehrbuch}`;
+}
+
+/**
+ * Je Klasse, von der die Gilde einen Helden hat, eine Karte für ihren Lehrling: aufnehmen (mit Preis und
+ * Knopf, den renderHeroesScreen bindet), «kommt ab Stufe 15» oder «schon da». Leer, solange die Gilde
+ * keinen Helden hat.
+ */
+export function lehrlingTafelHtml(state: GameState): string {
+  const reihenfolge: LehrlingLage['art'][] = ['frei', 'zu_frueh', 'da'];
+  const karten = Object.values(CLASS_DEFS)
+    .filter(c => LEHRLINGE[c.id])
+    .map(c => ({ c, lage: lehrlingLage(state, c.id) }))
+    .filter(({ lage }) => lage.art !== 'ohne_meister')
+    .sort((a, b) => reihenfolge.indexOf(a.lage.art) - reihenfolge.indexOf(b.lage.art));
+  if (karten.length === 0) return '';
+  const imHaus = karten.filter(k => k.lage.art === 'da').length;
+
+  const html = karten.map(({ c, lage }) => {
+    const def = LEHRLINGE[c.id];
+    const bild = bildKarte({ classId: c.id, lehrling: true });
+    const art = lage.art === 'frei' ? 'frei' : lage.art === 'zu_frueh' ? 'wartet' : 'in-gilde';
+    const knopf = lage.art === 'frei'
+      ? `<div class="hcard-footer">
+          <span class="hc-cost">\uD83D\uDCB0 ${lage.kosten} Gold</span>
+          <button class="btn btn-sm btn-hire btn-lehrling" data-lehrling-klasse="${c.id}" data-cost="${lage.kosten}"
+                  aria-label="${escapeAttr(def.name)} als Lehrling aufnehmen, ${lage.kosten} Gold">AUFNEHMEN</button>
+        </div>`
+      : '';
+    return `
+      <article class="kt-karte kt-lehrling ${art}" data-kt-lehrling="${c.id}">
+        <div class="kt-bild ${bild.klasse}" style="${bild.stil}">
+          <span class="kt-name">${escapeAttr(def.name)}<small class="kt-unter">Lehrling · ${escapeAttr(c.name)}</small></span>
+        </div>
+        <div class="kt-info">
+          <p class="kt-zitat">${escapeAttr(def.kurz)}</p>
+          ${lehrlingInfo(lage, c.name)}
+        </div>
+        ${knopf}
+      </article>`;
+  }).join('');
+
+  return `
+    <section class="kt-lehrlinge" aria-labelledby="kt-lehrlinge-titel">
+      <h3 class="kt-titel" id="kt-lehrlinge-titel">Lehrlinge · ${imHaus} von ${Object.keys(LEHRLINGE).length}</h3>
+      <p class="kt-kopf">Wer Stufe ${LEHRLING_AB_STUFE} erreicht, nimmt einen Lehrling seiner Klasse auf: einen zweiten
+        Helden mit eigenem Namen. Das Lehrbuch im Reiter «Training» gibt ihm den Überschuss seines Meisters.</p>
+      <div class="hcards">${html}</div>
+    </section>`;
 }

@@ -25,6 +25,8 @@ import { xpProgress, ueberschuss, MAX_HERO_LEVEL } from '../../systems/HeroProgr
 import { trainieren, trainingsKosten, ueberschussText } from '../../systems/Ausbildung';
 import { bindLehrbuch, lehrbuchHtml } from '../components/Lehrbuch';
 import { klassenTafelHtml } from '../components/KlassenTafel';
+import { hintergrundVon, kartenName, lehrlingAufnehmen } from '../../systems/Lehrlinge';
+import { bildKarte } from '../heldBild';
 import { bindeFensterTasten, hintergrundKlick, schluckeZweitenKlick } from '../components/FensterHilfen';
 import { gedruecktUm } from '../components/Druckzeit';
 import '../html/beutevergleich.css';
@@ -121,15 +123,18 @@ export function renderHeroCard(fighter: GuildFighter, mode: 'my' | 'train'): str
   const oeffnen = `<button type="button" class="hcard-oeffnen" aria-label="Heldenfenster: ${escapeAttr(fighter.name)}, ${className}, Stufe ${fighter.level}"></button>`;
 
   const hasImage = !!HERO_IMAGE_MAP[fighter.classId];
-  const bgStyle = getHeroImageStyle(fighter.classId);
+  // Der Lehrling zeigt seinen Namen und das Bild der Klasse gespiegelt (ui/heldBild.ts)
+  const bild = bildKarte(fighter);
+  const lehrlingZeile = fighter.lehrling ? `<span class="hc-lehrling">Lehrling · ${className}</span>` : '';
 
   if (hasImage) {
     // Image card: full illustration background, name overlay at bottom
     return `
-      <div class="hcard hcard-img" data-fighter-id="${fighter.id}" style="${bgStyle}">
+      <div class="hcard hcard-img ${bild.klasse}" data-fighter-id="${fighter.id}" style="${bild.stil}">
         ${oeffnen}
         <div class="hcard-overlay">
-          <div class="hc-nm">${className}</div>
+          <div class="hc-nm">${escapeAttr(kartenName(fighter))}</div>
+          ${lehrlingZeile}
           <span class="hc-lv">Lv ${fighter.level}</span>
           ${fighter.level >= MAX_HERO_LEVEL ? `<span class="hc-ueberschuss">${ueberschuss(fighter)} XP Überschuss</span>` : ''}
           ${wegAbzeichen(fighter)}
@@ -543,9 +548,12 @@ function renderDetailModal(fighter: GuildFighter): string {
       <div class="hdm2-skill-desc">${sk.description}</div>
     </div>`).join('') : '';
 
-  const bgHtml = classDef?.background
-    ? `<div class="hdm2-sidebar"><div class="lbl">Hintergrund</div><p>${classDef.background.replace(/\n/g, '<br>')}</p></div>`
+  // Der Lehrling hat seinen eigenen Hintergrund (data/lehrlinge.ts)
+  const hintergrund = hintergrundVon(fighter);
+  const bgHtml = hintergrund
+    ? `<div class="hdm2-sidebar"><div class="lbl">Hintergrund</div><p>${hintergrund.replace(/\n/g, '<br>')}</p></div>`
     : '';
+  const portrait = bildKarte(fighter);
 
   // Die ID des Namens ist fest: Es gibt immer nur ein Heldenfenster. Der Name nimmt beim Öffnen den Fokus (tabindex -1)
   return `
@@ -565,7 +573,7 @@ function renderDetailModal(fighter: GuildFighter): string {
         <button type="button" class="hdm2-inv-btn${inventarOffen ? ' active' : ''}" id="hdm2-inv-toggle" aria-expanded="${inventarOffen}">🎒 Inventar</button>
         <div class="hdm2-header">
           <div class="hdm2-name" id="hdm2-name" tabindex="-1">${escapeAttr(fighter.name)}</div>
-          <div class="hdm2-sub">${className} · Lv ${fighter.level}</div>
+          <div class="hdm2-sub">${className}${fighter.lehrling ? ' · Lehrling' : ''} · Lv ${fighter.level}</div>
         </div>
         <div class="hdm2-portrait-area">
           <div class="hdm2-gear-col hdm2-gear-left">
@@ -574,7 +582,7 @@ function renderDetailModal(fighter: GuildFighter): string {
             ${gearSlotIconHtml(gearSlots[2])}
             <span class="hdm2-slot-label">${gearSlots[2].label}</span>
           </div>
-          <div class="hdm2-portrait" style="background-image:url('${portraitUrl}')"></div>
+          <div class="hdm2-portrait ${portrait.klasse}" style="${portraitUrl ? portrait.stil : ''}"></div>
           <div class="hdm2-gear-col hdm2-gear-right">
             ${gearSlotIconHtml(gearSlots[1])}
             <span class="hdm2-slot-label">${gearSlots[1].label}</span>
@@ -923,13 +931,22 @@ export function renderHeroesScreen(container: HTMLElement): void {
     });
   }
 
-  // Hire buttons
-  const hireBtns = el.querySelectorAll('.btn-hire');
+  // Hire buttons (die Knöpfe der Lehrlinge tragen auch .btn-hire, für das Aussehen)
+  const hireBtns = el.querySelectorAll('.btn-hire:not(.btn-lehrling)');
   for (let i = 0; i < hireBtns.length; i++) {
     hireBtns[i].addEventListener('click', () => {
       const classId = hireBtns[i].getAttribute('data-class-id') ?? '';
       const btn = hireBtns[i] as HTMLElement;
       handleHire(classId, container, btn);
+    });
+  }
+
+  // Lehrling aufnehmen (Reiter «Anheuern», KlassenTafel.lehrlingTafelHtml)
+  const lehrlingBtns = el.querySelectorAll('.btn-lehrling');
+  for (let i = 0; i < lehrlingBtns.length; i++) {
+    lehrlingBtns[i].addEventListener('click', () => {
+      const classId = lehrlingBtns[i].getAttribute('data-lehrling-klasse') ?? '';
+      handleLehrling(classId, container, lehrlingBtns[i] as HTMLElement);
     });
   }
 
@@ -1244,6 +1261,34 @@ function handleHire(classId: string, container: HTMLElement, btn: HTMLElement): 
 
   // Show success feedback, then re-render
   btn.textContent = '\u2713 Rekrutiert!';
+  btn.style.background = '#166534';
+  btn.setAttribute('disabled', 'true');
+  setTimeout(() => {
+    renderHeroesScreen(container);
+  }, 600);
+}
+
+/** Nimmt den Lehrling einer Klasse auf (systems/Lehrlinge.ts); reicht das Gold nicht, sagt es der Knopf */
+function handleLehrling(classId: string, container: HTMLElement, btn: HTMLElement): void {
+  if (!gameState || btn.hasAttribute('disabled')) return;
+  const lehrling = lehrlingAufnehmen(gameState, classId);
+  if (!lehrling) {
+    const originalText = btn.textContent ?? 'AUFNEHMEN';
+    const originalBg = btn.style.background;
+    btn.textContent = 'Nicht genug Gold!';
+    btn.style.background = '#991b1b';
+    btn.setAttribute('disabled', 'true');
+    setTimeout(() => {
+      btn.textContent = originalText;
+      btn.style.background = originalBg;
+      btn.removeAttribute('disabled');
+    }, 1500);
+    return;
+  }
+  erfolgePruefen(gameState); // Lehrlings-Erfolge gleich zählen
+  window.dispatchEvent(new Event('mc:speichern')); // Lehrling und Gold gleich sichern
+
+  btn.textContent = '\u2713 Aufgenommen!';
   btn.style.background = '#166534';
   btn.setAttribute('disabled', 'true');
   setTimeout(() => {

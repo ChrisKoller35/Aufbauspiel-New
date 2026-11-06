@@ -51,6 +51,9 @@ import { erfolgePruefen, saalSterne } from '../src/systems/AchievementSystem';
 import { bossTrophaeen, saalGlanz } from '../src/systems/Trophaeensaal';
 import { placeStartingLayout, STARTING_BUILDING_TYPES } from '../src/scenes/CityStartingLayout';
 import { ernstkampf, raidOffen, raidStand, setzeHeld } from '../src/systems/Raid';
+import { lehrlingAufnehmen } from '../src/systems/Lehrlinge';
+import { lehrbuchLernen } from '../src/systems/Ausbildung';
+import { MAX_HERO_LEVEL } from '../src/systems/HeroProgression';
 
 /** Montag, 19. Oktober 2026, 9 Uhr: Auftragsbrett (Tage) und Rangliste (Wochen) gehen nach dieser Uhr */
 const START = new Date(2026, 9, 19, 9, 0).getTime();
@@ -157,6 +160,16 @@ function anheuern(state: GameState): void {
   for (const klasse of [...STARTING_CLASSES, ...state.classesUnlocked]) {
     if (state.fighters.some(f => f.classId === klasse)) continue;
     state.fighters.push(createGuildFighter(klasse, CLASS_DEFS[klasse].name, { ...CLASS_DEFS[klasse].baseStats }));
+  }
+  // Lehrlinge aufnehmen, sobald ihr Meister Stufe 15 hat und das Gold reicht
+  for (const klasse of Object.keys(CLASS_DEFS)) lehrlingAufnehmen(state, klasse);
+  // Lehrbuch: Wer auf Stufe 15 Überschuss hat, gibt ihn den anderen, zuerst den Meistern, dann den Lehrlingen
+  const lehrer = state.fighters.filter(f => f.level >= MAX_HERO_LEVEL);
+  const schueler = [...state.fighters].sort((a, b) => Number(!!a.lehrling) - Number(!!b.lehrling));
+  for (const s of schueler) {
+    for (const l of lehrer) {
+      if (s.level < MAX_HERO_LEVEL) lehrbuchLernen(state, l.id, s.id);
+    }
   }
   for (const held of state.fighters) {
     if (kannWegWaehlen(held)) waehleWeg(held, wegeDerKlasse(held.classId)[0].id);
@@ -394,10 +407,12 @@ describe('Erfolge: Ziele innerhalb dessen, was die Daten hergeben', () => {
       saal_sterne: 3 * alleKapitel().length,
       rangliste_pokale: Infinity,
       gipfel_spitze: 1,
-      // Je Klasse ein Held (Anheuern), Wege und Meister unter ihnen
-      helden_anzahl: helden,
-      helden_mit_weg: helden,
-      helden_meister: helden,
+      // Je Klasse ein Held (Anheuern) und sein Lehrling, Wege und Meister unter ihnen
+      helden_anzahl: 2 * helden,
+      helden_mit_weg: 2 * helden,
+      helden_meister: 2 * helden,
+      lehrlinge: helden,
+      lehrlinge_ausgelernt: helden,
       total_expeditions: Infinity,
       total_victories: Infinity,
       total_defeats: Infinity,

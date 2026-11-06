@@ -440,7 +440,8 @@ export class CombatScreen {
       ?? '';
     const heroImg = unit.classId ? HERO_IMAGE_MAP[unit.classId] : undefined;
     const spriteEl = document.createElement('img');
-    spriteEl.className = 'mc-co-sprite';
+    // Der Lehrling einer Klasse steht gespiegelt (ui/heldBild.ts)
+    spriteEl.className = heroImg && unit.lehrling ? 'mc-co-sprite lehrling-bild' : 'mc-co-sprite';
     spriteEl.src = heroImg
       ? `assets/heroes/${heroImg}.png`
       : `assets/sprites/final/${resolvedSpriteKey}.png`;

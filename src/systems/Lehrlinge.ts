@@ -10,7 +10,7 @@
 import { CLASS_DEFS } from '../data/classes';
 import { LEHRLINGE } from '../data/lehrlinge';
 import { GameState } from '../models/GameState';
-import { GuildFighter } from '../models/GuildRoster';
+import { GuildFighter, resetFighterIdCounter } from '../models/GuildRoster';
 import { anheuerKosten } from './Empfehlung';
 import { MAX_HERO_LEVEL } from './HeroProgression';
 
@@ -76,6 +76,8 @@ export function lehrlingAufnehmen(state: GameState, classId: string): GuildFight
     lehrling: true,
   };
   state.fighters.push(lehrling);
+  // createGuildFighter zählt eigene Ids (Start, Probespiel): danach nie eine, die es schon gibt
+  resetFighterIdCounter(id + 1);
   return lehrling;
 }
 

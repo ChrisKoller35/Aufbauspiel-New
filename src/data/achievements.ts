@@ -12,6 +12,7 @@
 import { ANBAU_AB_EBENE } from './auftragsbrett';
 import { DUNGEON_GRAPH, ROUTE_DEFS } from './routes';
 import { MAX_SCHMIEDE_STUFE } from './schmiede';
+import { LEHRLINGE } from './lehrlinge';
 
 export type ErfolgGruppe = 'Stadt' | 'Gilde' | 'Helden' | 'Dungeons' | 'Gipfel-Taten' | 'Sammeln' | 'Das System schaut zu';
 
@@ -90,6 +91,10 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('army_builder', 'Helden', '🛡️', 'Armeeführer', 'Habe 10 Helden in der Gilde.', 'helden_anzahl', 10),
   erfolg('erster_weg', 'Helden', '🧭', 'Wegbereiter', 'Ein Held wählt seinen Weg (ab Stufe 10).', 'helden_mit_weg', 1),
   erfolg('erster_meister', 'Helden', '🥋', 'Meister seines Wegs', 'Ein Held wird Meister seines Wegs (Stufe 15).', 'helden_meister', 1),
+  // Lehrlinge (systems/Lehrlinge.ts): je Klasse einer, sobald ihr Held Stufe 15 erreicht
+  erfolg('erster_lehrling', 'Helden', '🎓', 'Lehrjahre', 'Nimm den ersten Lehrling auf. Er hat dreimal nach dem Weg zur Wachstube gefragt und ist trotzdem pünktlich.', 'lehrlinge', 1),
+  erfolg('lehrling_ausgelernt', 'Helden', '📜', 'Ausgelernt', 'Ein Lehrling erreicht Stufe 15. Seither sagt er «wir Veteranen».', 'lehrlinge_ausgelernt', 1),
+  erfolg('doppelt_besetzt', 'Helden', '👥', 'Doppelt besetzt', `Alle ${Object.keys(LEHRLINGE).length} Klassen haben ihren Lehrling. Alruna hat für die Wachstube neue Hocker bestellt, diesmal genug.`, 'lehrlinge', Object.keys(LEHRLINGE).length),
 
   // ── Dungeons ──
   erfolg('first_expedition', 'Dungeons', '🗺️', 'Abenteuerlust', 'Starte deine erste Expedition.', 'total_expeditions', 1),

@@ -11,6 +11,7 @@ import { kapitelDesTeils, alleKapitel } from './Auftragsbrett';
 import { gesammelteTeile, getrageneSets } from './DungeonSets';
 import { getGildenrang } from './GebaeudeStatus';
 import { istMeister, wegVon } from './Spezialisierung';
+import { MAX_HERO_LEVEL } from './HeroProgression';
 
 /** Anzahl der Erfolge, die der Spieler beim letzten Öffnen des Erfolge-Bildschirms gesehen hat */
 export const ERFOLGE_GESEHEN = 'erfolge_gesehen';
@@ -98,6 +99,8 @@ export function kennzahlenAktualisieren(state: GameState): void {
   hoechstens('helden_anzahl', helden.length);
   hoechstens('helden_mit_weg', helden.filter(h => wegVon(h)).length);
   hoechstens('helden_meister', helden.filter(h => istMeister(h)).length);
+  hoechstens('lehrlinge', helden.filter(h => h?.lehrling).length);
+  hoechstens('lehrlinge_ausgelernt', helden.filter(h => h?.lehrling && h.level >= MAX_HERO_LEVEL).length);
   hoechstens('ganze_sets', ganzeSets.size);
   hoechstens('monsterbuch_entdeckt', new Set(state.bestiarium?.discovered ?? []).size);
   hoechstens('gildenrang', getGildenrang(state));
