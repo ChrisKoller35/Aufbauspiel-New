@@ -42,7 +42,8 @@
 }
 .lb-lernen {
   flex: none; min-height: 44px; min-width: 44px; padding: 8px 22px; border-radius: 8px; cursor: pointer;
-  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
+  /* Schrift --gl-knopf: auf dem Goldverlauf ≥ 5,4 : 1 (mit --gl nur 4,2) */
+  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl-knopf);
   font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1px;
 }
 .lb-lernen:disabled { opacity: .45; cursor: not-allowed; }
@@ -61,9 +62,15 @@
   aspect-ratio: 4 / 3; background-size: cover; background-position: center top; background-color: var(--s3);
   display: flex; align-items: flex-end; position: relative;
 }
-.kt-karte.gesperrt .kt-bild { filter: grayscale(1) brightness(.55); }
+/* Gesperrt / schon in der Gilde: gedimmt wird nur das Bild über ein ::before (erbt das Bild des .kt-bild), nie der
+   Name darauf – vorher lag der Filter auf .kt-bild und dunkelte auch den Namen ab. */
+.kt-karte.gesperrt .kt-bild::before, .kt-karte.in-gilde .kt-bild::before {
+  content: ''; position: absolute; inset: 0; background: inherit;
+}
+.kt-karte.gesperrt .kt-bild::before { filter: grayscale(1) brightness(.55); }
+/* position: relative legt den Namen über das ::before */
 .kt-name {
-  width: 100%; padding: 10px 14px; font-family: 'Cinzel', serif; font-size: 1rem; color: var(--txt);
+  position: relative; width: 100%; padding: 10px 14px; font-family: 'Cinzel', serif; font-size: 1rem; color: var(--txt);
   background: linear-gradient(to top, rgba(6, 8, 16, .92), transparent);
 }
 .kt-info { padding: 10px 14px 12px; display: flex; flex-direction: column; gap: 6px; }
@@ -72,7 +79,7 @@
 .kt-bedingungen .offen { color: var(--txt); }
 .kt-bedingungen .fertig { color: #86efac; }
 /* Schon in der Gilde: nur das Bild tritt zurück, die Schrift bleibt gut lesbar */
-.kt-karte.in-gilde .kt-bild { filter: brightness(.7); }
+.kt-karte.in-gilde .kt-bild::before { filter: brightness(.7); }
 
 @media (max-width: 700px) {
   .lehrbuch { margin: 0 10px 14px; padding: 12px; }

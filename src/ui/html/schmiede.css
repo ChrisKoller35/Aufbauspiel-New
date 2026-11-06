@@ -52,8 +52,10 @@
 .mat-chip .mat-bild { grid-row: 1 / 3; }
 .mat-chip-zahl { font-family: 'Cinzel', serif; font-size: 0.92rem; color: var(--gl); line-height: 1.1; }
 .mat-chip-name { font-size: 0.7rem; color: var(--mut); line-height: 1.2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.mat-chip.leer { opacity: .45; }
-.mat-chip.leer .mat-bild { filter: grayscale(.8); }
+/* Leeres Material: gedimmt wird nur das Bild, die Schrift bleibt lesbar (vorher opacity .45 auf dem ganzen Chip,
+   Name und Zahl unter 2 : 1). Die Zahl tritt mit --mut zurück (≥ 5,9 : 1 auf --s2). */
+.mat-chip.leer .mat-bild { opacity: .45; filter: grayscale(.8); }
+.mat-chip.leer .mat-chip-zahl { color: var(--mut); }
 
 .schm-set { background: var(--s1); border: 1px solid var(--bdr); border-radius: 10px; padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 .schm-set.meister { border-color: #f59e0b88; box-shadow: 0 0 14px rgba(245, 158, 11, .15); }

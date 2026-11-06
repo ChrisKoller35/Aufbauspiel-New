@@ -15,7 +15,11 @@
   --gl: #e6c060;
   --gd: #6e5710;
   --txt: #ddd0b8;
-  --mut: #6b6050;
+  /* Gedämpfte Schrift: vorher #6b6050 (2,6–3,3 : 1), jetzt ≥ 6 : 1 auf --s3 und ≥ 5 : 1 auf der goldenen
+     Ranglisten-Zeile #343122 (Messwerte in docs/LESBARKEIT.md) */
+  --mut: #a69882;
+  /* Schrift auf dem goldbraunen Knopf-Verlauf (--gd → #7a5c08): --gl hatte dort nur 4,2–4,6 : 1 */
+  --gl-knopf: #ffe9a8;
   --pur: #7c3aed;
   --red: #991b1b;
   --grn: #166534;
@@ -117,9 +121,10 @@ body {
 }
 .btn-back:hover { border-color: var(--gold); color: var(--gold); }
 
+/* Goldknöpfe: Schrift var(--gl-knopf) statt --gl (EXPEDITION STARTEN gemessen 5,40 : 1, Hover gerechnet 4,58) */
 .btn-go {
   background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold);
-  color: var(--gl); padding: 11px 20px; font-family: 'Cinzel', serif;
+  color: var(--gl-knopf); padding: 11px 20px; font-family: 'Cinzel', serif;
   font-size: 0.8rem; letter-spacing: 2px; cursor: pointer; border-radius: 4px;
   width: 100%; margin-top: 13px; transition: .2s;
 }
@@ -141,7 +146,7 @@ body {
 
 /* TRAINIEREN auf der Heldenkarte (Reiter Training): wie die übrigen Spielknöpfe statt Browser-Knopf */
 .btn-train {
-  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
+  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl-knopf);
   font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 1px; padding: 7px 12px;
   border-radius: 4px; cursor: pointer; margin-top: 4px; transition: .2s; width: 100%; max-width: 220px;
 }
@@ -195,7 +200,8 @@ body {
   transition: .2s;
 }
 .bg-btn:hover { border-color: var(--gd); color: var(--gold); }
-.bg-btn.active { background: var(--gd); color: var(--gold); border-color: var(--gold); }
+/* Aktiver Hintergrund: --gold auf --gd hatte nur 3 : 1, --gl-knopf hat ≥ 5,9 : 1 */
+.bg-btn.active { background: var(--gd); color: var(--gl-knopf); border-color: var(--gold); }
 /* Finger und Handy: Tippfläche mindestens 44 × 44 px über ::after, mittig über dem Knopf, ohne dass Knopf oder Leiste
    wachsen (wie .ss-oeffnen und .fb-oeffnen). Die Knöpfe sind mindestens 40 px breit: Bei 4 px Abstand (Handy)
    stossen ihre Flächen aneinander, ohne sich zu überdecken. */
@@ -236,9 +242,11 @@ body {
   position: relative; overflow: hidden; aspect-ratio: 16 / 9;
   background-size: cover; background-position: center;
 }
+/* Schatten nur unten, dafür dichter: Kachel-Namen (jetzt --gl) auch auf hellen Bildstellen ≥ 4,5 : 1 (p10, PC und
+   Handy). Ab 60 % Höhe kein Schatten mehr – die obere Bildhälfte bleibt unverändert. */
 .tile::before {
   content: ''; position: absolute; inset: 0; z-index: 1;
-  background: linear-gradient(to top, rgba(0,0,0,.85) 0%, rgba(0,0,0,.3) 40%, transparent 100%);
+  background: linear-gradient(to top, rgba(0,0,0,.92) 0%, rgba(0,0,0,.72) 30%, rgba(0,0,0,0) 60%);
 }
 .tile::after {
   content: ''; position: absolute; inset: 0; opacity: 0; transition: .25s; z-index: 2;
@@ -247,7 +255,7 @@ body {
 .tile:hover { border-color: var(--gd); transform: translateY(-3px); }
 .tile:hover::after { opacity: 1; }
 .tile-name {
-  font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gold); letter-spacing: 2px;
+  font-family: 'Cinzel', serif; font-size: 1.15rem; color: var(--gl); letter-spacing: 2px;
   z-index: 3; text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.6);
 }
 .tile-desc {
@@ -293,7 +301,14 @@ body {
   display: flex; flex-direction: column;
 }
 .exp-card:hover { border-color: var(--gd); transform: translateY(-2px); }
-.exp-card.locked { cursor: not-allowed; filter: grayscale(.85); opacity: .55; }
+/* Gesperrte Route: gedimmt wird nur das Bild, nie die Schrift. Vorher drückten opacity .55 und grayscale auch den
+   Sperrgrund unter 3 : 1, jetzt 5,26 : 1. Das ::before erbt das Hintergrundbild der Karte; .exp-card-info liegt
+   (absolut positioniert, z-index 1) darüber. */
+.exp-card.locked { cursor: not-allowed; }
+.exp-card.locked::before {
+  content: ''; position: absolute; inset: 0; background: inherit; filter: grayscale(.85) brightness(.5);
+}
+.exp-card.locked .exp-card-info { z-index: 1; }
 .exp-card.locked:hover { border-color: var(--bdr); transform: none; }
 .exp-lock { font-size: 0.7rem; color: #ef4444; text-shadow: 0 1px 4px rgba(0,0,0,.8); }
 .exp-tag {
@@ -480,8 +495,12 @@ body {
   background: linear-gradient(to top, rgba(6,8,16,.92) 0%, rgba(6,8,16,.6) 60%, transparent 100%);
   display: flex; flex-direction: column; align-items: center; gap: 6px; width: 100%;
 }
+/* Namensschild: Auf hellen Bildern (Lia im Mondlicht) reichte der Schatten am Handy nicht. Mit Deckkraft .72 hat
+   der Name auch vor reinem Weiss ≥ 5 : 1; ein langer Name bricht um statt abgeschnitten zu werden. */
 .hcard-img .hc-nm {
   font-size: 1.1rem; text-shadow: 0 2px 8px rgba(0,0,0,.9), 0 0 20px rgba(0,0,0,.6);
+  background: rgba(6,8,16,.72); border-radius: 4px; padding: 1px 8px;
+  max-width: 100%; white-space: normal; overflow-wrap: anywhere; text-align: center;
 }
 .hcard-img .hc-lv {
   text-shadow: 0 1px 4px rgba(0,0,0,.8);
@@ -500,8 +519,10 @@ body {
   font-family: 'Cinzel', serif; font-size: 0.85rem; color: var(--gold);
   letter-spacing: 1px;
 }
+/* ANHEUERN: Der Verlauf beginnt heller (#a8861c statt --gd), damit die dunkle Schrift schon am Anfang ≥ 5,8 : 1 hat
+   (auf --gd waren es 2,9 : 1) */
 .hcard-footer .btn-hire {
-  background: linear-gradient(135deg, var(--gd), var(--gold));
+  background: linear-gradient(135deg, #a8861c, var(--gold));
   color: var(--bg); border: none; border-radius: 6px;
   padding: 6px 16px; font-family: 'Cinzel', serif; font-size: 0.75rem;
   font-weight: 700; letter-spacing: 1px; cursor: pointer; transition: .2s;
@@ -1080,9 +1101,12 @@ html:has(#hero-detail-ov) { overflow: hidden; padding-right: var(--hdm2-balken, 
 .hdm2-inv-slot.rar-epic:hover { border-color: #a78bfa; }
 .hdm2-inv-slot.rar-legendary { border-color: #f59e0b44; }
 .hdm2-inv-slot.rar-legendary:hover { border-color: #f59e0b; box-shadow: 0 0 12px rgba(245,158,11,.3); }
+/* Anzahl auf dem Gegenstandsbild: kleines Schild (Deckkraft .78), die winzige Zahl hat so auch auf hellen Bildern
+   ≥ 5 : 1 */
 .hdm2-inv-qty {
   position: absolute; bottom: 2px; right: 4px; font-size: 0.6rem;
   color: var(--txt); text-shadow: 0 1px 2px rgba(0,0,0,.9);
+  background: rgba(6,8,16,.78); border-radius: 3px; padding: 0 3px;
 }
 .hdm2-inv-empty {
   padding: 20px; text-align: center; color: var(--mut); font-size: 0.8rem;
@@ -1158,7 +1182,7 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .hdm2-aktion {
   flex-shrink: 0; cursor: pointer; border-radius: 4px; transition: .2s; padding: 7px 14px;
   font-family: 'Cinzel', serif; font-size: 0.7rem; letter-spacing: 1px;
-  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
+  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl-knopf);
 }
 .hdm2-aktion:hover { filter: brightness(1.2); }
 .hdm2-aktion[data-aktion="ablegen"] { background: none; border-color: var(--bdr); color: var(--mut); }
@@ -1220,7 +1244,7 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 .weg-knopf {
   align-self: flex-start; cursor: pointer; border-radius: 4px; transition: .2s; padding: 6px 12px; margin-top: 2px;
   font-family: 'Cinzel', serif; font-size: 0.68rem; letter-spacing: .5px;
-  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl);
+  background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl-knopf);
 }
 .weg-knopf:hover { filter: brightness(1.2); }
 .weg-knopf.nein { background: none; border-color: var(--mut); color: var(--txt); }
@@ -1395,7 +1419,7 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 
 .dmap-btn-go {
   background: linear-gradient(135deg, var(--gd), #7a5c08);
-  border: 1px solid var(--gold); color: var(--gl);
+  border: 1px solid var(--gold); color: var(--gl-knopf);
   padding: 10px 18px; font-family: 'Cinzel', serif;
   font-size: .78rem; letter-spacing: 2px; cursor: pointer;
   border-radius: 4px; width: 100%; transition: .2s;
@@ -1557,7 +1581,7 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 }
 .mc-btn {
   background: linear-gradient(135deg, #6e5710, #7a5c08); border: 1px solid #c8a227;
-  color: #e6c060; padding: 9px 20px; font-family: 'Cinzel', serif; font-size: 0.8rem;
+  color: var(--gl-knopf); padding: 9px 20px; font-family: 'Cinzel', serif; font-size: 0.8rem;
   letter-spacing: 2px; cursor: pointer; border-radius: 4px; transition: .2s;
 }
 .mc-btn:hover { filter: brightness(1.2); }
