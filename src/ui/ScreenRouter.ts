@@ -13,7 +13,8 @@ export type ScreenId =
   | 'achievements'
   | 'combat'
   | 'dungeon'
-  | 'gildenhaus';
+  | 'gildenhaus'
+  | 'raid';
 
 const SCREEN_STYLE_ACTIVE = 'display:flex;flex-direction:column;width:100vw;height:100vh;overflow-y:auto;overflow-x:hidden;background:#060810;';
 const SCREEN_STYLE_HIDDEN = 'display:none;';

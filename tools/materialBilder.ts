@@ -5,7 +5,7 @@
 // speichert sie mit sharp als PNG (128 × 128, durchsichtig) unter
 // public/assets/sprites/final/. Keine KI, kein Netz, kostet nichts.
 // Dazu einige Gegenstände, für die kein vorhandenes Bild passt (Schlussstein,
-// Alrunas Kelle, Glut der Vorigen, Ring aus dem Schlussring).
+// Alrunas Kelle, Glut der Vorigen, Ring aus dem Schlussring, die Unruh aus dem Raid).
 //
 // Nutzung:
 //   npm run material-bilder            # alle Materialien
@@ -41,6 +41,32 @@ function defs(id: string, leuchten: string): string {
 function funkeln(x: number, y: number, r: number, farbe = '#ffffff'): string {
   return `<path d="M${x} ${y - r} Q${x + r * 0.18} ${y - r * 0.18} ${x + r} ${y} Q${x + r * 0.18} ${y + r * 0.18} ${x} ${y + r}
     Q${x - r * 0.18} ${y + r * 0.18} ${x - r} ${y} Q${x - r * 0.18} ${y - r * 0.18} ${x} ${y - r}Z" fill="${farbe}"/>`;
+}
+
+/** Archimedische Spirale um (cx, cy) von Radius r0 nach r1 in `windungen` Umdrehungen, ab Winkel `start` (Grad) */
+function spirale(cx: number, cy: number, r0: number, r1: number, windungen: number, start = 0): string {
+  const schritte = Math.ceil(windungen * 48);
+  const punkte: string[] = [];
+  for (let i = 0; i <= schritte; i++) {
+    const t = i / schritte;
+    const w = (start + t * windungen * 360) * Math.PI / 180;
+    const r = r0 + (r1 - r0) * t;
+    punkte.push(`${(cx + r * Math.cos(w)).toFixed(1)} ${(cy + r * Math.sin(w)).toFixed(1)}`);
+  }
+  return `M${punkte.join(' L')}`;
+}
+
+/** Punkt auf dem Kreis um (cx, cy) beim Winkel `grad` (0 = rechts, im Uhrzeigersinn) */
+function aufKreis(cx: number, cy: number, r: number, grad: number): [number, number] {
+  const w = grad * Math.PI / 180;
+  return [+(cx + r * Math.cos(w)).toFixed(1), +(cy + r * Math.sin(w)).toFixed(1)];
+}
+
+/** Kreisbogen um (cx, cy) von Winkel `von` bis `bis` (Grad, im Uhrzeigersinn) */
+function bogen(cx: number, cy: number, r: number, von: number, bis: number): string {
+  const [x0, y0] = aufKreis(cx, cy, r, von);
+  const [x1, y1] = aufKreis(cx, cy, r, bis);
+  return `M${x0} ${y0} A${r} ${r} 0 0 1 ${x1} ${y1}`;
 }
 
 const BILDER: Record<string, string> = {
@@ -459,6 +485,47 @@ const BILDER: Record<string, string> = {
       <path d="M46 19 L70 19" stroke="#ffffff" stroke-width="3" stroke-linecap="round" opacity="0.8"/>
     </g>
     ${funkeln(104, 26, 7, '#fef9c3')}${funkeln(18, 34, 5, '#ffffff')}${funkeln(110, 106, 4, '#fde68a')}`,
+
+  // Die Unruh (Erstsieg-Beute im Raid «Über dem Tag»): das Schwungrad aus Zenits Uhrwerk. Goldener Reif mit
+  // Schrauben, vier Speichen, eine blau angelassene Spirale und ein Rubin in der Mitte; die Bögen aussen
+  // zeigen, dass sie nie stillhält. Dasselbe Bild wie die kleine Unruh in der Truhenleiste des Raids.
+  ITEM_DIE_UNRUH: `
+    <defs>${defs('un', '#fbbf24')}
+      <linearGradient id="un-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#fef3c7"/><stop offset="45%" stop-color="#f59e0b"/><stop offset="100%" stop-color="#92400e"/>
+      </linearGradient>
+      <linearGradient id="un-stahl" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#bfdbfe"/><stop offset="50%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e3a8a"/>
+      </linearGradient>
+      <radialGradient id="un-rubin" cx="40%" cy="38%" r="65%">
+        <stop offset="0%" stop-color="#fecaca"/><stop offset="45%" stop-color="#dc2626"/><stop offset="100%" stop-color="#7f1d1d"/>
+      </radialGradient>
+    </defs>
+    <circle cx="64" cy="64" r="60" fill="url(#un-schein)"/>
+    <g fill="none" stroke-linecap="round">
+      <path d="${bogen(64, 64, 56, 196, 236)}" stroke="#fde68a" stroke-width="3" opacity="0.8"/>
+      <path d="${bogen(64, 64, 60.5, 206, 228)}" stroke="#fde68a" stroke-width="2" opacity="0.5"/>
+      <path d="${bogen(64, 64, 56, 16, 56)}" stroke="#fde68a" stroke-width="3" opacity="0.8"/>
+      <path d="${bogen(64, 64, 60.5, 26, 48)}" stroke="#fde68a" stroke-width="2" opacity="0.5"/>
+    </g>
+    <g filter="url(#un-schatten)">
+      <path d="M64 27 L64 101 M27 64 L101 64" stroke="${LINIE}" stroke-width="9" stroke-linecap="round"/>
+      <path d="M64 27 L64 101 M27 64 L101 64" stroke="url(#un-gold)" stroke-width="4.5" stroke-linecap="round"/>
+      <circle cx="64" cy="64" r="41" fill="none" stroke="${LINIE}" stroke-width="15"/>
+      <circle cx="64" cy="64" r="41" fill="none" stroke="url(#un-gold)" stroke-width="9"/>
+      ${[22.5, 67.5, 112.5, 157.5, 202.5, 247.5, 292.5, 337.5].map(g => {
+        const [x, y] = aufKreis(64, 64, 48.5, g);
+        return `<circle cx="${x}" cy="${y}" r="4" fill="url(#un-gold)" stroke="${LINIE}" stroke-width="2.2"/>`;
+      }).join('')}
+      <path d="${bogen(64, 64, 41, 198, 252)}" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" opacity="0.75" fill="none"/>
+      <path d="${spirale(64, 64, 8, 28, 2.6, -90)}" stroke="${LINIE}" stroke-width="3.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <path d="${spirale(64, 64, 8, 28, 2.6, -90)}" stroke="url(#un-stahl)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <circle cx="${aufKreis(64, 64, 28, -90 + 2.6 * 360)[0]}" cy="${aufKreis(64, 64, 28, -90 + 2.6 * 360)[1]}" r="2.6" fill="#334155" stroke="${LINIE}" stroke-width="1.5"/>
+      <circle cx="64" cy="64" r="8.5" fill="url(#un-gold)" stroke="${LINIE}" stroke-width="3"/>
+      <circle cx="64" cy="64" r="4.8" fill="url(#un-rubin)" stroke="#7f1d1d" stroke-width="1.2"/>
+      <circle cx="62.4" cy="62.2" r="1.5" fill="#ffffff" opacity="0.9"/>
+    </g>
+    ${funkeln(108, 18, 7, '#fef9c3')}${funkeln(18, 108, 5, '#ffffff')}`,
 };
 
 async function zeichne(key: string): Promise<void> {

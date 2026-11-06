@@ -5,6 +5,7 @@ import { ScoreboardEntry } from './ScoreboardEntry';
 import { WeeklyChallengeState } from './WeeklyChallengeState';
 import { RanglisteStand } from './RanglisteStand';
 import { AuftragsbrettStand, TrophaeenStand } from './AuftragsbrettStand';
+import { RaidStand } from './RaidStand';
 
 /** Guild stats for rank progression. */
 export interface GuildStats {
@@ -120,6 +121,11 @@ export interface GameState {
   // ── Härtegrade (systems/Haertegrade.ts) ──
   // Dungeon → höchster bezwungener Grad über Normal. Fehlt in älteren Spielständen.
   haertegrade?: Record<string, 'hard' | 'nightmare'>;
+
+  // ── Raid «Über dem Tag» (systems/Raid.ts) ──
+  // Aufstellung, Woche, Bestversuch, Verlauf. Fehlt in älteren Spielständen und bis zum ersten Besuch;
+  // Raid.raidStand legt es an.
+  raid?: RaidStand;
 }
 
 export function createNewGameState(): GameState {

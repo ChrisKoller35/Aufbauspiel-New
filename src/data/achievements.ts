@@ -103,6 +103,12 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('gold_hoarder', 'Dungeons', '💰', 'Goldhamster', 'Erbeute insgesamt 500 Gold auf Expeditionen.', 'total_gold_earned', 500),
   erfolg('kill_100', 'Dungeons', '💠', 'Hundertfacher Tod', 'Besiege 100 Gegner.', 'total_enemies_killed', 100),
   erfolg('kill_1000', 'Dungeons', '🗡️', 'Tausendfacher Tod', 'Besiege 1000 Gegner.', 'total_enemies_killed', 1000),
+  // Der Raid «Über dem Tag» (systems/Raid.ts zählt nach jedem Ernstkampf, docs/RAID.md)
+  erfolg('raid_versuch', 'Dungeons', '🪜', 'Zehn Sprossen', 'Den ersten Ernstkampf gegen Zenit gewagt. Die Leiter hat zehn Sprossen; Jorinde hat sie gezählt, auf dem Rückweg noch einmal.', 'raid_versuche', 1),
+  erfolg('raid_sieg', 'Dungeons', '🕰️', 'Der Tag hängt gerade', 'Zenit besiegt. Orm hat zum ersten Mal nach oben geschaut.', 'raid_siege', 1),
+  erfolg('raid_punkt_zwoelf', 'Dungeons', '🔔', 'Punkt zwölf', 'Zenit in der zwölften Runde oder früher besiegt. Er wollte gerade Mittag machen.', 'raid_punkt_zwoelf', 1),
+  erfolg('raid_mehr_als_vier', 'Dungeons', '🪑', 'Mehr als vier', 'Zenit besiegt, und am Ende standen mindestens fünf. Für die Vorigen gab es vier Hocker. Alruna hat einen fünften dazugestellt.', 'raid_mehr_als_vier', 1),
+  erfolg('raid_montage', 'Dungeons', '📅', 'Jeden Montag', 'Zenit in vier verschiedenen Wochen besiegt. Er zieht sich trotzdem jeden Montag wieder auf. Er nennt es Pflicht, Orm nennt es Sturheit.', 'raid_wochen', 4),
 
   // ── Gipfel-Taten (in allen drei Wahl-Räumen das Risiko, Boss trotzdem besiegt; docs/ERFOLGE.md) ──
   erfolg('gipfel_hort', 'Gipfel-Taten', '🪙', 'Ehrlicher Finder', 'Im Drachenhort Goldhaufen, Edelsteinschale und Drachenkrone eingesteckt und Ignarax trotzdem besiegt. Er hat bis zuletzt nachgezählt.', 'tat_hort', 1),
@@ -132,4 +138,5 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('schlafstoerung', 'Das System schaut zu', '🛌', 'Schlafstörung', 'Drei Dungeons auf ☠ Albtraum bezwungen. Das System hat dreimal vermerkt, dass diese Gilde nicht aufhört, wenn es reicht. Es führt dafür jetzt eine eigene Liste.', 'albtraum_dungeons', 3, 'Das System schläft nie. Manche Gilden offenbar auch nicht.'),
   erfolg('keine_zeugen', 'Das System schaut zu', '👤', 'Keine Zeugen', 'Mit einem einzigen Helden einen Boss besiegt. Keine Zeugen, ausser dem System. Das erzählt es jetzt allen.', 'keine_zeugen', 1, 'Das System sieht auch, was sonst niemand sieht. Gerade dann.'),
   erfolg('ohne_hose', 'Das System schaut zu', '🩲', 'Ohne Hose', 'Einen Boss besiegt, während ein Held keine Rüstung trug. Das System hat sich die Stelle mehrmals angesehen.', 'ohne_hose', 1, 'Das System achtet auf Kleidung. Vor allem auf fehlende.'),
+  erfolg('raid_zu_viert', 'Das System schaut zu', '4️⃣', 'Zu viert', 'Einen Ernstkampf mit genau vier Helden gewagt. Alruna hat eine neue Seite angefangen und oben euren Namen hingeschrieben.', 'raid_zu_viert', 1, 'Das System kennt die Liste. Es weiss auch, wer sie nicht liest.'),
 ];

@@ -11,6 +11,7 @@ import { renderBestiariumScreen, initBestiariumScreen } from './ui/screens/Besti
 import { renderAchievementsScreen, initAchievementsScreen } from './ui/screens/AchievementsScreen';
 import { renderDungeonMapScreen, initDungeonMapScreen } from './ui/screens/DungeonMapScreen';
 import { renderGildenhausScreen, initGildenhausScreen } from './ui/screens/GildenhausScreen';
+import { renderRaidScreen, initRaidScreen } from './ui/screens/RaidScreen';
 import { CombatScreen } from './ui/screens/CombatScreen';
 import { initExpeditionFlow, startExpeditionFlow } from './ui/screens/ExpeditionFlow';
 import { vorratsZeileHtml, zeigeKopfHinweis } from './ui/screens/HeaderRenderer';
@@ -93,6 +94,7 @@ document.addEventListener('DOMContentLoaded', () => {
   initAchievementsScreen(state);
   initDungeonMapScreen(state);
   initGildenhausScreen(state);
+  initRaidScreen(state);
 
   // Redraw the target screen on every navigation so numbers (XP, gold, rank, unlocks) are current.
   // Registered before the screens render, so screen-own mc:navigate listeners
@@ -106,6 +108,7 @@ document.addEventListener('DOMContentLoaded', () => {
     achievements: () => replaceScreen('s-achievements', () => renderAchievementsScreen(app)),
     dungeon: () => replaceScreen('s-dungeon', () => renderDungeonMapScreen(app)),
     gildenhaus: () => replaceScreen('s-gildenhaus', () => renderGildenhausScreen(app)),
+    raid: () => replaceScreen('s-raid', () => renderRaidScreen(app)),
     // List + team screen keep their delegated listeners and the current team selection
     expeditions: refreshExpeditionsScreens,
     team: refreshExpeditionsScreens,
@@ -160,6 +163,7 @@ document.addEventListener('DOMContentLoaded', () => {
     ['Achievements', () => renderAchievementsScreen(app)],
     ['DungeonMap', () => renderDungeonMapScreen(app)],
     ['Gildenhaus', () => renderGildenhausScreen(app)],
+    ['Raid', () => renderRaidScreen(app)],
   ] as const;
 
   for (const [name, render] of screens) {

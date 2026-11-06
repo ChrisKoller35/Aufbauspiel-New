@@ -1,0 +1,574 @@
+/* ============================================================
+   Magic City – Raid «Über dem Tag» (ui/screens/RaidScreen.ts)
+   Farben, Schriften, Rahmen aus magic-city.css (--s1 … --gold, --gl, --gd, --txt, --mut, --bdr, --bdr2).
+   Markierungen: Pendel rot, Funken orange, Glocke hellgold, Zeiger blassblau, in Ordnung grün.
+   Am PC drei Spalten (Liste und Kriegsrat | Zenit, Uhrleiste, Feld, Knöpfe | Bank), am Handy (bis 700 px)
+   alles untereinander, die Knopfleiste klebt unten. Docs: docs/RAID.md.
+   ============================================================ */
+#s-raid {
+  --pendel: #dc2626; --pendel-t: #f87171;
+  --funken: #f08a24; --funken-t: #fdba74;
+  --glocke: #e6c060;
+  --zeiger: #7aa2f7;
+  --ok: #16a34a; --ok-t: #4ade80;
+  --warn: #f59e0b; --warn-t: #fcd34d;
+  --stuetze: #a78bfa;
+}
+/* Grund mit Sternen: über dem Tag ist es wieder Nacht (die Hintergrundfarbe des Bildschirms setzt der Router) */
+.raid-grund {
+  flex: 1 0 auto; display: flex; flex-direction: column; position: relative;
+  background:
+    radial-gradient(ellipse 46% 38% at 50% 2%, rgba(251, 191, 36, .13), transparent 70%),
+    linear-gradient(180deg, #101a3f 0%, #0b1129 34%, #060810 100%);
+}
+.raid-grund::before {
+  content: ''; position: absolute; inset: 0; pointer-events: none; opacity: .55;
+  background-image:
+    radial-gradient(1.2px 1.2px at 7% 14%, #f3e7c4, transparent), radial-gradient(1px 1px at 18% 31%, #f3e7c4, transparent),
+    radial-gradient(1.4px 1.4px at 29% 9%, #fde68a, transparent), radial-gradient(1px 1px at 41% 22%, #f3e7c4, transparent),
+    radial-gradient(1px 1px at 63% 12%, #f3e7c4, transparent), radial-gradient(1.4px 1.4px at 74% 27%, #fde68a, transparent),
+    radial-gradient(1px 1px at 86% 8%, #f3e7c4, transparent), radial-gradient(1.2px 1.2px at 94% 33%, #f3e7c4, transparent),
+    radial-gradient(1px 1px at 12% 58%, #f3e7c4, transparent), radial-gradient(1px 1px at 91% 61%, #f3e7c4, transparent);
+}
+.raid-grund > * { position: relative; }
+#s-raid .hdr { background: rgba(12, 18, 32, .94); }
+
+/* Symbole */
+#s-raid .i { width: 1em; height: 1em; display: inline-block; vertical-align: -0.14em; flex-shrink: 0; }
+#s-raid .c-pendel { color: var(--pendel-t); } #s-raid .c-funken { color: var(--funken); } #s-raid .c-glocke { color: var(--glocke); }
+#s-raid .c-zeiger { color: var(--zeiger); } #s-raid .c-trupp { color: var(--stuetze); } #s-raid .c-zahl { color: var(--gold); }
+#s-raid .r-handy { display: none; }
+
+/* ── Gerüst am PC ── */
+.raid {
+  flex: 1; display: grid; grid-template-columns: 300px minmax(0, 1fr) 272px;
+  gap: 16px; padding: 14px 22px 16px; align-items: start;
+}
+.r-links, .r-mitte { display: flex; flex-direction: column; gap: 12px; min-width: 0; }
+.r-panel { background: rgba(12, 18, 32, .93); border: 1px solid var(--bdr); border-radius: 10px; padding: 12px 14px; }
+.r-h2 {
+  margin: 0; font-family: 'Cinzel', serif; font-size: .86rem; letter-spacing: 2px; color: var(--gl);
+  font-weight: 600; text-transform: uppercase;
+}
+.r-kopfzeile { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.r-info { font-family: 'Cinzel', serif; font-size: .7rem; letter-spacing: 1px; color: var(--mut); }
+.r-klein-knopf {
+  background: var(--s2); border: 1px solid var(--bdr); color: var(--txt); border-radius: 4px; cursor: pointer;
+  font-family: 'Cinzel', serif; font-size: .7rem; letter-spacing: 1px; padding: 0 10px; height: 28px; line-height: 1;
+  position: relative;
+}
+.r-klein-knopf:hover { border-color: var(--gd); }
+.r-klein-knopf.rund { width: 28px; padding: 0; color: var(--gold); border-color: var(--gd); font-size: .8rem; }
+.r-mut { color: var(--mut); }
+.r-nw { white-space: nowrap; }
+
+/* ── Zenit-Kopf ── */
+.r-kopf {
+  display: grid; grid-template-columns: 134px minmax(0, 1fr) 228px; column-gap: 16px; align-items: center;
+  padding: 8px 16px 10px 10px; border-color: var(--bdr2);
+  background:
+    radial-gradient(ellipse 30% 95% at 11% 50%, rgba(251, 191, 36, .17), transparent 70%),
+    linear-gradient(180deg, rgba(38, 64, 106, .55) 0%, rgba(26, 30, 62, .85) 55%, rgba(58, 42, 16, .55) 100%), #0c1330;
+}
+.r-uhr { width: 134px; height: 144px; }
+.r-uhr svg { width: 100%; height: 100%; display: block; overflow: visible; }
+.r-kopf-mitte { min-width: 0; }
+.r-titelzeile { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+.r-kicker { font-family: 'Cinzel', serif; font-size: .7rem; letter-spacing: 3px; color: var(--gold); opacity: .9; }
+.r-titel {
+  font-family: 'Cinzel', serif; font-weight: 700; font-size: 1.36rem; letter-spacing: 2.5px; color: var(--gl);
+  line-height: 1.15; margin: 1px 0 0; text-shadow: 0 0 22px rgba(230, 192, 96, .35); white-space: nowrap;
+}
+.r-werte { display: flex; gap: 14px; font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: 1px; color: var(--mut); margin-top: 3px; }
+.r-werte b { color: var(--txt); font-weight: 600; letter-spacing: .5px; }
+/* Lebensbalken wie in einem Raid: voll, mit Marken, wo die bisherigen Ernstkämpfe Zenit gelassen haben */
+.r-leben { position: relative; margin: 21px 0 5px; }
+.r-leben-spur { height: 12px; border-radius: 6px; background: linear-gradient(180deg, #ef4444, #991b1b); box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5), 0 0 10px rgba(220, 38, 38, .25); }
+.r-leben-zahl { position: absolute; inset: 0; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; font-family: 'Cinzel', serif; font-size: .68rem; font-weight: 700; letter-spacing: 1px; color: #fff1f1; text-shadow: 0 1px 2px #000; }
+.r-marke-v { position: absolute; top: -4px; width: 2px; height: 20px; background: rgba(255, 255, 255, .55); border-radius: 1px; transform: translateX(-1px); }
+.r-marke-v.best { background: var(--gl); width: 3px; box-shadow: 0 0 6px var(--gl); }
+.r-marke-v span { position: absolute; bottom: 21px; left: 50%; transform: translateX(-50%); white-space: nowrap; font-size: .76rem; font-style: normal; color: var(--mut); line-height: 1; }
+.r-marke-v.best span { color: var(--gl); font-weight: 600; }
+.r-marke-v.links span { left: 0; transform: none; }
+.r-marke-v.rechts span { left: auto; right: 0; transform: none; }
+.r-zeile { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: .9rem; line-height: 1.4; }
+.r-zeile b { color: var(--gl); font-weight: 600; }
+.r-tagstein { width: 18px; height: 18px; vertical-align: -4px; }
+
+.r-truhen { display: flex; flex-direction: column; gap: 5px; padding: 7px 9px 8px; border-radius: 8px;
+  background: rgba(6, 8, 16, .55); border: 1px solid rgba(110, 87, 16, .55); }
+.r-truhen-kopf { font-family: 'Cinzel', serif; font-size: .66rem; letter-spacing: 2px; color: var(--gold); display: flex; justify-content: space-between; }
+.r-truhe { display: grid; grid-template-columns: 34px minmax(0, 1fr); column-gap: 8px; align-items: center; }
+.r-truhe img { width: 34px; height: 34px; object-fit: contain; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, .6)); }
+.r-truhe.geholt img { filter: grayscale(.6) brightness(.7); }
+.r-truhe.geholt .r-truhe-name { color: var(--mut); }
+.r-truhe-name { font-family: 'Cinzel', serif; font-size: .7rem; color: var(--txt); letter-spacing: .5px; line-height: 1.25; }
+.r-truhe-inhalt { font-size: .76rem; color: var(--mut); line-height: 1.2; }
+.r-truhe-status { display: inline-block; font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: 1px; margin-left: 3px; white-space: nowrap; color: var(--gl); }
+.r-truhe-geholt { font-size: .76rem; color: var(--ok-t); line-height: 1.2; }
+.r-truhe-bild { position: relative; width: 34px; height: 34px; }
+.r-truhe-haken { position: absolute; right: -4px; bottom: -3px; width: 15px; height: 15px; border-radius: 50%; background: var(--ok); color: #dcfce7;
+  font-size: 10px; font-weight: 700; display: flex; align-items: center; justify-content: center; border: 1px solid #0a0f22; }
+
+/* ── Uhrleiste ── */
+.r-leiste { padding: 7px 14px 8px; }
+.r-leiste-kopf, .r-runden { display: grid; grid-template-columns: repeat(24, minmax(0, 1fr)); column-gap: 3px; }
+.r-leiste-kopf { font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: 1.5px; color: var(--mut); margin-bottom: 10px; }
+.r-lk-vm { grid-column: 1 / 12; border-bottom: 1px solid var(--bdr); padding-bottom: 2px; }
+.r-lk-mt { grid-column: 12 / 21; color: var(--gl); border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap; }
+.r-lk-mn { grid-column: 21 / 25; text-align: right; border-bottom: 1px solid var(--gd); padding-bottom: 2px; white-space: nowrap; }
+.r-rd {
+  position: relative; height: 38px; border-radius: 4px; background: var(--s2); border: 1px solid var(--bdr);
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-end; padding-bottom: 4px;
+}
+.r-rd.r-nach { background: linear-gradient(180deg, rgba(200, 162, 39, .16), rgba(110, 87, 16, .2)); border-color: #4a3a12; }
+.r-rd.r-mittag { background: linear-gradient(180deg, rgba(230, 192, 96, .38), rgba(110, 87, 16, .45)); border-color: var(--gl);
+  box-shadow: 0 0 10px rgba(230, 192, 96, .45); }
+.r-rd-nr { font-size: .66rem; color: var(--mut); line-height: 1; margin-bottom: 2px; }
+.r-mittag .r-rd-nr { color: var(--gl); font-weight: 600; }
+.r-rd-sp { font-family: 'Cinzel', serif; font-weight: 700; font-size: .82rem; color: var(--zeiger); line-height: 1; }
+.r-rd-sp.r-gelb { color: var(--warn-t); text-shadow: 0 0 6px rgba(245, 158, 11, .7); }
+.r-rd-sp.r-rot { color: var(--pendel-t); text-shadow: 0 0 6px rgba(220, 38, 38, .8); }
+.r-rd-ev { position: absolute; top: -9px; left: 50%; transform: translateX(-50%); display: flex; gap: 1px; }
+.r-rd-ev span {
+  width: 14px; height: 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: #0a0f22; border: 1px solid currentColor;
+}
+.r-rd-ev svg { width: 9px; height: 9px; }
+.r-rd-pd { position: absolute; bottom: -1px; height: 2px; width: 44%; background: var(--pendel); border-radius: 2px; opacity: .8; }
+.r-rd-pd.r-l { left: 3px; } .r-rd-pd.r-r { right: 3px; }
+.r-legende { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 6px; font-size: .8rem; color: var(--mut); }
+.r-legende > span { display: inline-flex; align-items: center; gap: 4px; }
+.r-lg-pd { width: 14px; height: 2px; background: var(--pendel); border-radius: 2px; display: inline-block; }
+.r-lg-sp { font-family: 'Cinzel', serif; font-weight: 700; color: var(--zeiger); font-size: .74rem; }
+.r-lg-mt { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--gl); background: rgba(230, 192, 96, .3); display: inline-block; }
+.r-legende-kurz { display: none; }
+
+/* ── Feld ── */
+.r-feld { padding: 9px 14px 12px; display: flex; flex-direction: column; }
+.r-feld-kopf { display: flex; align-items: center; justify-content: space-between; margin-bottom: 2px; }
+.r-feld-kopf .r-knopfgruppe { display: flex; gap: 6px; align-items: center; }
+.r-gitter {
+  display: grid; grid-template-columns: 58px repeat(3, minmax(0, 1fr)) 30px repeat(3, minmax(0, 1fr));
+  grid-template-rows: 22px 26px repeat(3, minmax(104px, auto)); column-gap: 6px; row-gap: 6px; position: relative;
+}
+.r-trupp-name {
+  font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: 3px; color: var(--txt); text-align: center;
+  align-self: end; padding-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.r-trupp-name small { font-size: .64rem; letter-spacing: 1px; color: var(--mut); margin-left: 6px; }
+.r-trupp-name small.r-warn-t { color: var(--warn-t); }
+.r-trupp-rahmen { border: 1px solid #2c2850; border-radius: 9px; background: rgba(25, 32, 53, .38); margin: -4px; }
+.r-gang { display: flex; flex-direction: column; align-items: center; justify-content: center; }
+.r-gang::before, .r-gang::after { content: ''; flex: 1; border-left: 2px dotted #3a3560; }
+.r-gang span { writing-mode: vertical-rl; font-family: 'Cinzel', serif; font-size: .6rem; letter-spacing: 3px; color: #4f4a78; padding: 6px 0; }
+.r-skopf {
+  display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 5px;
+  font-family: 'Cinzel', serif; font-weight: 700; font-size: .84rem; color: var(--zeiger);
+  background: rgba(122, 162, 247, .08); border: 1px solid rgba(122, 162, 247, .22);
+}
+.r-skopf small { font-family: 'Crimson Text', serif; font-weight: 400; font-size: .76rem; color: var(--mut); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-skopf.r-gelb { color: var(--warn-t); background: rgba(245, 158, 11, .14); border-color: rgba(245, 158, 11, .6); }
+.r-skopf.r-gelb small { color: var(--warn-t); }
+.r-skopf.r-rot { color: var(--pendel-t); background: rgba(220, 38, 38, .14); border-color: rgba(220, 38, 38, .6); }
+.r-skopf.r-rot small { color: var(--pendel-t); }
+.r-rkopf {
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+  font-family: 'Cinzel', serif; color: var(--mut); border-radius: 6px; position: relative;
+}
+.r-rkopf b { font-size: 1.05rem; color: var(--txt); font-weight: 600; line-height: 1; }
+.r-rkopf small { font-size: .58rem; letter-spacing: 1.5px; }
+.r-rkopf .r-glocke { color: var(--glocke); font-size: 1.05rem; filter: drop-shadow(0 0 5px rgba(230, 192, 96, .7)); line-height: 1; }
+.r-rkopf.r-glockenreihe { background: linear-gradient(90deg, rgba(230, 192, 96, .22), rgba(230, 192, 96, .04)); box-shadow: inset 2px 0 0 var(--glocke); }
+.r-reihenband { border-radius: 8px; background: rgba(230, 192, 96, .06); margin: -3px -4px; }
+
+.r-zelle {
+  position: relative; border-radius: 7px; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-start; padding: 6px 4px 4px; min-width: 0; z-index: 1; cursor: pointer;
+  -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
+}
+.r-zelle.r-leer { border: 1px dashed #2f2b52; background: rgba(6, 8, 16, .25); }
+.r-zelle.r-leer.r-ziel { border-color: var(--gd); background: rgba(200, 162, 39, .07); }
+.r-zelle.r-leer.r-ziel:hover, .r-zelle.r-drueber { border-color: var(--gl); background: rgba(200, 162, 39, .16); }
+.r-zelle.r-besetzt { background: linear-gradient(180deg, #172036, #111828); border: 1px solid #2c3554; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); }
+.r-zelle .r-bild {
+  width: 60px; height: 60px; border-radius: 6px; background-size: 230% auto; background-position: 50% 8%;
+  border: 1px solid #1a2540; flex-shrink: 0; pointer-events: none;
+}
+.r-zelle .r-name {
+  font-family: 'Cinzel', serif; font-size: .78rem; font-weight: 600; letter-spacing: .5px; margin-top: 3px; line-height: 1.1;
+  max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.r-zelle .r-hp { font-size: .74rem; color: var(--mut); line-height: 1.15; display: flex; align-items: center; gap: 3px; }
+.r-zelle .r-hp .i { color: #f87171; width: .8em; height: .8em; }
+.r-zelle.r-pendel { border-top: 3px solid var(--pendel); padding-top: 4px; }
+.r-zelle.r-pendel::before {
+  content: ''; position: absolute; left: 10%; right: 10%; top: -3px; height: 12px; pointer-events: none;
+  background: radial-gradient(ellipse at 50% 0%, rgba(220, 38, 38, .55), transparent 70%);
+}
+.r-marke {
+  position: absolute; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: #0a0f22; border: 1px solid currentColor; z-index: 2; pointer-events: none;
+}
+.r-marke svg { width: 11px; height: 11px; }
+.r-marke.r-m-pendel { top: -9px; left: -7px; color: var(--pendel-t); }
+.r-marke.r-m-funken { top: -9px; right: -7px; color: var(--funken); box-shadow: 0 0 10px rgba(240, 138, 36, .65); }
+.r-zelle.r-funken { border-color: rgba(240, 138, 36, .8); }
+.r-zelle.r-nachbar { border: 2px solid var(--funken); }
+.r-zelle.r-hl { border-color: var(--glocke); box-shadow: 0 0 0 1px var(--glocke), 0 0 16px rgba(230, 192, 96, .55); }
+.r-zelle.r-gewaehlt { border: 2px solid var(--gl); box-shadow: 0 0 0 2px rgba(230, 192, 96, .35), 0 0 18px rgba(230, 192, 96, .7); }
+
+/* ── Knöpfe ── */
+.r-knoepfe { display: grid; grid-template-columns: 1fr 1.25fr; gap: 12px; }
+.r-knoepfe button { margin: 0; min-height: 50px; padding-top: 7px; padding-bottom: 7px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; width: 100%; }
+.r-knoepfe small { font-family: 'Crimson Text', serif; font-size: .84rem; letter-spacing: 0; text-transform: none; opacity: .92; }
+.r-knoepfe .btn-go { font-size: .88rem; box-shadow: 0 0 18px rgba(200, 162, 39, .28); }
+.r-knoepfe .btn-go:disabled { opacity: .55; cursor: default; box-shadow: none; filter: grayscale(.4); }
+.r-knoepfe .btn-kriegsrat small { color: var(--txt); }
+.r-knoepfe .btn-go small { color: #fef3c7; }
+
+/* ── Alrunas Liste ── */
+.r-liste { border-color: var(--bdr2); background: linear-gradient(180deg, rgba(42, 30, 10, .6), rgba(12, 18, 32, .93) 30%); position: relative; padding-bottom: 10px; }
+.r-liste-kopf { display: grid; grid-template-columns: 1fr auto; column-gap: 10px; align-items: end; }
+.r-liste-kopf .r-h2 { grid-column: 1 / -1; }
+.r-liste-zitat { grid-column: 1; grid-row: 2; margin: 3px 0 0; font-style: italic; font-size: .84rem; color: #cbbd9f; line-height: 1.3; }
+.r-vorige { grid-column: 2; grid-row: 2; display: flex; flex-direction: column; align-items: center; }
+.r-vorige-bilder { display: flex; align-items: flex-end; }
+.r-vorige img { width: 21px; height: 28px; object-fit: contain; opacity: .5; filter: grayscale(1) sepia(.3) drop-shadow(0 0 3px rgba(203, 213, 225, .35)); }
+.r-vorige-lbl { font-family: 'Cinzel', serif; font-size: .62rem; letter-spacing: 1px; color: var(--mut); margin-top: 1px; white-space: nowrap; }
+.r-hinweise { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.r-hinweis {
+  display: grid; grid-template-columns: 15px 16px minmax(0, 1fr); column-gap: 6px; align-items: start;
+  font-size: .83rem; line-height: 1.3; padding: 5px 7px; border-radius: 5px; position: relative;
+}
+.r-hinweis.r-warn { background: rgba(245, 158, 11, .1); box-shadow: inset 3px 0 0 var(--warn); color: #f5e7c8; }
+.r-hinweis.r-ok { color: #c9bfa8; padding-top: 3px; padding-bottom: 3px; }
+.r-hinweis.r-mit-feldern { cursor: default; }
+.r-hinweis.r-hover { background: rgba(230, 192, 96, .2); box-shadow: inset 3px 0 0 var(--glocke), 0 0 0 1px rgba(230, 192, 96, .55); }
+.r-hinweis > .i { margin-top: 2px; width: 16px; height: 16px; }
+.r-box {
+  width: 15px; height: 15px; border-radius: 3px; margin-top: 2px; display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; line-height: 1;
+}
+.r-box.r-warn { border: 1.5px solid var(--warn); }
+.r-box.r-ok { background: var(--ok); border: 1.5px solid var(--ok); color: #dcfce7; }
+.r-liste-mehr { display: none; background: none; border: none; cursor: pointer; padding: 0; }
+
+/* ── Kriegsrat (am PC links, statt Fenster; am Handy im Fenster) ── */
+.r-rat { display: flex; flex-direction: column; gap: 1px; padding-bottom: 10px; }
+.r-rat .kr-zeile, .r-rat-fenster .kr-zeile { margin: 8px 0 3px; }
+.r-rat .kr-name, .r-rat-fenster .kr-name { width: auto; color: var(--txt); font-family: 'Cinzel', serif; font-size: .74rem; letter-spacing: 1px; }
+.r-rat .kr-spur, .r-rat-fenster .kr-spur { height: 12px; display: flex; }
+.r-rat .kr-balken.sieg, .r-rat-fenster .kr-balken.sieg { background: linear-gradient(90deg, #15803d, #4ade80); }
+.r-rat .kr-balken.niederlage, .r-rat-fenster .kr-balken.niederlage { background: #7f1d1d; }
+.r-rat .kr-balken.laeuft, .r-rat-fenster .kr-balken.laeuft { background: linear-gradient(90deg, var(--gd), var(--gl)); transition: width .2s; }
+.r-rat .kr-zahl, .r-rat-fenster .kr-zahl { width: auto; font-family: 'Cinzel', serif; font-size: .78rem; color: var(--ok-t); white-space: nowrap; }
+.r-rat-text { font-size: .84rem; color: var(--mut); line-height: 1.35; margin: 6px 0 0; }
+.r-rat-z { font-size: .84rem; line-height: 1.38; display: flex; gap: 6px; align-items: baseline; flex-wrap: wrap; }
+.r-rat-lbl { color: var(--mut); white-space: nowrap; }
+.r-rat-z b { color: var(--txt); font-weight: 600; }
+.r-rat-satz { margin: 6px 0 2px; padding: 6px 9px; border-radius: 5px; background: var(--s2); border-left: 3px solid var(--glocke);
+  font-style: italic; font-size: .84rem; line-height: 1.32; color: #e8dcc0; }
+.r-rat-satz span { display: block; font-style: normal; text-align: right; font-family: 'Cinzel', serif; font-size: .64rem; letter-spacing: 1px; color: var(--mut); margin-top: 1px; }
+.r-rat .btn-kriegsrat, .r-rat-fenster .btn-kriegsrat { margin-top: 8px; min-height: 36px; padding: 6px 12px; font-size: .74rem; }
+.r-rat .kr-hinweis, .r-rat-fenster .kr-hinweis { margin: 6px 0 0; font-size: .76rem; }
+
+/* ── Bank ── */
+.r-bank { display: flex; flex-direction: column; }
+.r-bank.r-ziel { border-color: var(--gd); }
+.r-bank.r-drueber { border-color: var(--gl); background: rgba(40, 32, 12, .9); }
+.r-bank-tipp { font-size: .8rem; color: var(--mut); margin: 2px 0 8px; line-height: 1.32; }
+.r-bank-fuss { margin: 10px 0 0; padding-top: 10px; border-top: 1px solid var(--bdr); font-size: .8rem; color: var(--mut); line-height: 1.32; font-style: italic; }
+.r-karten { display: flex; flex-direction: column; gap: 6px; }
+.r-karte {
+  display: grid; grid-template-columns: 46px minmax(0, 1fr); column-gap: 9px; align-items: center; position: relative;
+  background: var(--s2); border: 1px solid var(--bdr); border-radius: 7px; padding: 5px 8px 5px 5px; min-height: 58px;
+  cursor: pointer; text-align: left; color: var(--txt); font: inherit; width: 100%;
+  -webkit-touch-callout: none; user-select: none; -webkit-user-select: none;
+}
+.r-karte:hover { border-color: var(--gd); }
+.r-karte .r-bild { width: 46px; height: 46px; border-radius: 5px; background-size: 240% auto; background-position: 50% 8%; border: 1px solid #1a2540; pointer-events: none; }
+.r-karte.r-gesetzt .r-bild { filter: saturate(.8) brightness(.92); }
+.r-karte.r-gewaehlt { border-color: var(--gl); box-shadow: 0 0 12px rgba(230, 192, 96, .45); background: linear-gradient(90deg, rgba(200, 162, 39, .18), var(--s2)); }
+.r-karte-name { font-family: 'Cinzel', serif; font-size: .8rem; font-weight: 600; letter-spacing: .5px; line-height: 1.15; display: flex; align-items: baseline; gap: 6px; }
+.r-karte-name small { font-family: 'Crimson Text', serif; font-weight: 400; font-size: .76rem; color: var(--mut); letter-spacing: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.r-karte-zeile { font-size: .78rem; color: var(--mut); line-height: 1.25; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; padding-right: 16px; }
+.r-karte-zeile b { color: var(--txt); font-weight: 400; }
+.r-karte-werte { display: flex; gap: 8px; font-size: .78rem; color: var(--txt); line-height: 1.25; }
+.r-karte-werte span { display: inline-flex; align-items: center; gap: 2px; }
+.r-karte-werte .i { width: .85em; height: .85em; }
+.r-feldmarke {
+  position: absolute; top: 5px; right: 6px; font-family: 'Cinzel', serif; font-weight: 700; font-size: .68rem;
+  color: var(--gl); background: rgba(110, 87, 16, .45); border: 1px solid var(--gd); border-radius: 4px; padding: 1px 4px; line-height: 1.2;
+}
+.r-rolle { position: absolute; bottom: 6px; right: 7px; width: 15px; height: 15px; }
+#s-raid .rolle-tank { color: var(--pendel-t); } #s-raid .rolle-heil { color: var(--ok-t); }
+#s-raid .rolle-dps { color: var(--funken); } #s-raid .rolle-stuetze { color: var(--stuetze); }
+#s-raid .r-hp-i { color: #f87171; } #s-raid .r-def-i { color: #93c5fd; } #s-raid .r-atk-i { color: #fdba74; }
+
+.r-wahl-hinweis, .r-bank-leeren, .r-handy-hilfe { display: none; }
+.r-karte-text { display: block; min-width: 0; }
+.r-karte-zeile { display: block; }
+.r-klein-knopf.r-sicher { border-color: var(--warn); color: var(--warn-t); background: rgba(245, 158, 11, .14); }
+.r-klein-knopf:disabled { opacity: .45; cursor: default; }
+.r-knoepfe .btn-kriegsrat:disabled { opacity: .55; cursor: default; }
+.r-rat-inhalt { display: flex; flex-direction: column; gap: 1px; }
+.r-rueckfrage { font-size: 1rem; line-height: 1.5; color: var(--txt); margin: 0 0 6px; }
+.r-erg-wg { margin-top: 8px; }
+
+/* ── Noch zu (vor den Pfeilern des Tages) ── */
+.r-zu { grid-column: 1 / -1; max-width: 560px; margin: 40px auto; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 24px; }
+.r-zu .r-uhr { opacity: .55; filter: grayscale(.5); }
+.r-zu p { font-size: 1.02rem; color: var(--txt); line-height: 1.5; }
+
+/* ── Fenster über dem Raid (Geschichte, Blatt, Rückfrage, Kriegsrat, Wiedergabe, Ergebnis) ── */
+.r-ov { position: fixed; inset: 0; z-index: 120; background: rgba(2, 4, 10, .82); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.r-fenster {
+  background: linear-gradient(180deg, #121a33, #0c1220 40%); border: 1px solid var(--bdr2); border-radius: 12px;
+  width: 100%; max-width: 520px; max-height: calc(100vh - 32px); overflow-y: auto; padding: 22px 24px 0;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, .6); position: relative;
+}
+.r-fenster:focus-visible { outline: 2px solid var(--gl); outline-offset: 2px; }
+.r-fenster-titel { font-family: 'Cinzel', serif; color: var(--gl); font-size: 1.05rem; letter-spacing: 2px; margin: 0 0 10px; }
+.r-fenster-unter { font-family: 'Cinzel', serif; color: var(--mut); font-size: .72rem; letter-spacing: 1.5px; margin: -6px 0 10px; }
+.r-fenster .gs-text { font-size: 1rem; }
+.r-fenster-knoepfe {
+  position: sticky; bottom: 0; display: flex; flex-wrap: wrap; gap: 10px; justify-content: flex-end;
+  margin: 14px -24px 0; padding: 12px 24px 16px; background: linear-gradient(180deg, rgba(12, 18, 32, .9), #0c1220 30%);
+  border-top: 1px solid var(--bdr);
+}
+.r-fenster-knoepfe button { min-height: 44px; margin: 0; }
+.r-fenster-knoepfe .r-zweit { background: var(--s2); border: 1px solid var(--bdr); color: var(--txt); border-radius: 4px; padding: 8px 16px;
+  font-family: 'Cinzel', serif; font-size: .78rem; letter-spacing: 1px; cursor: pointer; }
+.r-fenster-knoepfe .r-zweit:hover { border-color: var(--gd); }
+.r-fenster-knoepfe .btn-go { padding: 8px 18px; }
+.r-fenster-knoepfe .btn-go:disabled { opacity: .5; cursor: default; }
+.r-regeln { margin: 0; padding: 0 0 0 18px; display: flex; flex-direction: column; gap: 8px; font-size: .95rem; line-height: 1.45; color: #e9ddc3; }
+
+/* Blatt eines Helden (langes Drücken auf Feld oder Karte) */
+.r-blatt-kopf { display: grid; grid-template-columns: 64px 1fr; gap: 12px; align-items: center; margin-bottom: 10px; }
+.r-blatt-kopf .r-bild { width: 64px; height: 64px; border-radius: 8px; background-size: 230% auto; background-position: 50% 8%; border: 1px solid #1a2540; }
+.r-blatt-name { font-family: 'Cinzel', serif; font-size: 1.05rem; color: var(--gl); letter-spacing: 1px; }
+.r-blatt-unter { font-size: .9rem; color: var(--mut); }
+.r-blatt-zeilen { display: flex; flex-direction: column; gap: 5px; font-size: .94rem; line-height: 1.4; }
+.r-blatt-zeilen b { color: var(--txt); font-weight: 600; }
+.r-blatt-werte { display: flex; flex-wrap: wrap; gap: 12px; font-size: .92rem; }
+.r-blatt-werte span { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Wiedergabe */
+.r-wg { max-width: 760px; padding-bottom: 0; }
+.r-wg-kopf { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.r-wg-art { font-family: 'Cinzel', serif; font-size: .72rem; letter-spacing: 2px; color: var(--gold); }
+.r-wg-art.probe { color: var(--zeiger); }
+.r-wg-runde { font-family: 'Cinzel', serif; font-size: .9rem; letter-spacing: 1.5px; color: var(--txt); }
+.r-wg-runde.mittag { color: var(--gl); }
+.r-wg-oben { display: grid; grid-template-columns: 120px 1fr; gap: 14px; align-items: center; margin-bottom: 8px; }
+.r-wg-uhr { width: 120px; height: 130px; }
+.r-wg-uhr svg { width: 100%; height: 100%; display: block; overflow: visible; }
+/* Zeiger und Pendel gleiten von Runde zu Runde (um die Mitte des Zifferblatts); Glocke und Funken leuchten auf */
+.r-wg-uhr .zu-minute, .r-wg-uhr .zu-stunde, .r-wg-uhr .zu-pendel {
+  transform-box: view-box; transform-origin: 100px 100px; transition: transform .45s ease-in-out;
+}
+.r-wg-uhr .zu-glocke, .r-wg-uhr .zu-funken { opacity: 0; transition: opacity .25s; }
+.r-wg-uhr.glocke .zu-glocke, .r-wg-uhr.funken .zu-funken { opacity: 1; }
+@media (prefers-reduced-motion: reduce) {
+  .r-wg-uhr .zu-minute, .r-wg-uhr .zu-stunde, .r-wg-uhr .zu-pendel { transition: none; }
+}
+.r-wg-zenit-name { font-family: 'Cinzel', serif; font-size: .78rem; letter-spacing: 1.5px; color: var(--gl); display: flex; justify-content: space-between; }
+.r-wg-zenit-spur { height: 12px; border-radius: 6px; background: #2a0f12; overflow: hidden; margin-top: 4px; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .5); }
+.r-wg-zenit-balken { height: 100%; background: linear-gradient(180deg, #ef4444, #991b1b); transition: width .35s ease; }
+.r-wg-legende { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: 8px; font-size: .8rem; color: var(--mut); }
+.r-wg-legende span { display: inline-flex; align-items: center; gap: 4px; }
+.r-wg-gitter { display: grid; grid-template-columns: 18px repeat(3, minmax(0, 1fr)) 10px repeat(3, minmax(0, 1fr)); gap: 4px; }
+.r-wg-kopfzeile { font-family: 'Cinzel', serif; font-size: .74rem; font-weight: 700; color: var(--zeiger); text-align: center; border-radius: 4px; }
+.r-wg-kopfzeile.an { background: rgba(122, 162, 247, .25); }
+.r-wg-kopfzeile.durch { background: rgba(220, 38, 38, .3); color: var(--pendel-t); }
+.r-wg-reihe { font-family: 'Cinzel', serif; font-size: .74rem; color: var(--mut); display: flex; align-items: center; justify-content: center; border-radius: 4px; }
+.r-wg-reihe.an { color: var(--glocke); background: rgba(230, 192, 96, .2); }
+.r-wg-zelle {
+  position: relative; min-height: 64px; border-radius: 6px; border: 1px dashed #2f2b52; background: rgba(6, 8, 16, .25);
+  display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 4px 3px 5px; min-width: 0;
+  transition: box-shadow .2s, border-color .2s;
+}
+.r-wg-zelle.besetzt { border: 1px solid #2c3554; background: linear-gradient(180deg, #172036, #111828); }
+.r-wg-zelle .r-bild { width: 34px; height: 34px; border-radius: 4px; background-size: 250% auto; background-position: 50% 8%; }
+.r-wg-zelle .r-name { font-family: 'Cinzel', serif; font-size: .7rem; line-height: 1.1; margin-top: 2px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.r-wg-hp { width: 90%; height: 4px; border-radius: 2px; background: #2a0f12; margin-top: 3px; overflow: hidden; }
+.r-wg-hp i { display: block; height: 100%; background: var(--ok-t); transition: width .35s ease; }
+.r-wg-hp i.mittel { background: var(--warn-t); } .r-wg-hp i.wenig { background: var(--pendel-t); }
+.r-wg-zelle.tot { filter: grayscale(1) brightness(.55); }
+.r-wg-zelle.tot::after { content: '✝'; position: absolute; top: 2px; right: 4px; color: #cbd5e1; font-size: .8rem; }
+.r-wg-zelle.wg-pendel { border-color: var(--pendel); box-shadow: 0 0 0 1px var(--pendel), 0 0 14px rgba(220, 38, 38, .6); }
+.r-wg-zelle.wg-zeiger { border-color: var(--zeiger); box-shadow: 0 0 0 1px var(--zeiger), 0 0 12px rgba(122, 162, 247, .55); }
+.r-wg-zelle.wg-glocke { border-color: var(--glocke); box-shadow: 0 0 0 1px var(--glocke), 0 0 14px rgba(230, 192, 96, .6); }
+.r-wg-zelle.wg-funken { border-color: var(--funken); box-shadow: 0 0 0 1px var(--funken), 0 0 14px rgba(240, 138, 36, .7); }
+.r-wg-zelle.wg-heil { box-shadow: 0 0 0 1px var(--ok-t), 0 0 14px rgba(74, 222, 128, .55); }
+.r-wg-zahl { position: absolute; top: 0; left: 3px; font-family: 'Cinzel', serif; font-size: .66rem; font-weight: 700; color: var(--pendel-t); text-shadow: 0 1px 2px #000; }
+.r-wg-zahl.plus { left: auto; right: 3px; color: var(--ok-t); }
+.r-wg-lauf { min-height: 92px; margin-top: 10px; padding: 8px 10px; border-radius: 6px; background: var(--s2); border-left: 3px solid var(--gd); font-size: .88rem; line-height: 1.38; }
+.r-wg-lauf div { color: #d8ccb2; }
+.r-wg-lauf .ansage { color: #f3e7c9; font-style: italic; margin-top: 3px; }
+.r-wg-lauf .gefallen { color: var(--pendel-t); }
+.r-wg-knoepfe { justify-content: space-between; }
+.r-wg-tempo { display: flex; gap: 6px; }
+.r-wg-tempo button { min-width: 48px; }
+.r-wg-tempo button.an { border-color: var(--gl); color: var(--gl); }
+
+/* Ergebnis */
+.r-erg-kopf { text-align: center; margin-bottom: 10px; }
+.r-erg-titel { font-family: 'Cinzel', serif; font-size: 1.4rem; letter-spacing: 2.5px; color: var(--gl); text-shadow: 0 0 22px rgba(230, 192, 96, .4); }
+.r-erg-titel.niederlage { color: #f3d9b0; text-shadow: none; }
+.r-erg-zeile { font-size: .98rem; color: var(--txt); margin-top: 2px; }
+.r-erg-vorher { font-size: .88rem; color: var(--mut); }
+.r-erg-best { display: inline-block; margin-left: 6px; font-family: 'Cinzel', serif; font-size: .7rem; letter-spacing: 1px; color: #1a1205; background: var(--gl); border-radius: 4px; padding: 1px 6px; }
+.r-erg-abschnitt { margin-top: 14px; }
+.r-erg-abschnitt h3 { font-family: 'Cinzel', serif; font-size: .74rem; letter-spacing: 2px; color: var(--gold); margin: 0 0 6px; padding-bottom: 3px; border-bottom: 1px solid var(--bdr2); font-weight: 600; }
+.r-erg-truhe { margin-bottom: 8px; }
+.r-erg-truhe-name { font-family: 'Cinzel', serif; font-size: .86rem; color: var(--txt); }
+.r-erg-truhe-text { font-size: .86rem; color: var(--mut); font-style: italic; line-height: 1.35; margin: 2px 0 4px; }
+.r-erg-dinge { display: flex; flex-wrap: wrap; gap: 6px 12px; }
+.r-erg-ding { display: inline-flex; align-items: center; gap: 5px; font-size: .9rem; }
+.r-erg-ding img { width: 28px; height: 28px; object-fit: contain; }
+.r-erg-unruh { display: flex; gap: 12px; align-items: center; margin-top: 4px; }
+.r-erg-unruh img { width: 64px; height: 64px; object-fit: contain; filter: drop-shadow(0 0 10px rgba(251, 191, 36, .5)); }
+.r-erg-liste { display: flex; flex-direction: column; gap: 3px; font-size: .92rem; line-height: 1.35; }
+.r-erg-satz { margin-top: 12px; }
+
+/* ═══════════ Handy (bis 700 px): alles untereinander, Knopfleiste klebt unten ═══════════ */
+@media (max-width: 700px) {
+  #s-raid .r-handy { display: inline; }
+  #s-raid .r-pc { display: none; }
+  .raid-grund { background:
+    radial-gradient(ellipse 60% 18% at 18% 15%, rgba(251, 191, 36, .14), transparent 70%),
+    linear-gradient(180deg, #101a3f 0%, #0b1129 30%, #060810 100%); }
+  .raid { display: flex; flex-direction: column; align-items: stretch; gap: 6px; padding: 7px 16px 0; }
+  .r-links, .r-mitte { display: contents; }
+  .r-kopf { order: 1; } .r-leiste { order: 2; } .r-feld { order: 3; } .r-wahl-hinweis { order: 4; }
+  .r-liste { order: 5; } .r-bank { order: 6; } .r-rat { display: none; } .r-knoepfe { order: 9; }
+  .r-panel { padding: 8px 10px; }
+  .r-info { font-size: 11px; letter-spacing: .5px; }
+
+  .r-kopf {
+    grid-template-columns: 72px minmax(0, 1fr); column-gap: 10px; padding: 5px 10px 6px 6px;
+    background:
+      radial-gradient(ellipse 30% 80% at 12% 55%, rgba(251, 191, 36, .2), transparent 70%),
+      linear-gradient(180deg, rgba(38, 64, 106, .5) 0%, rgba(26, 30, 62, .85) 55%, rgba(58, 42, 16, .5) 100%), #0c1330;
+  }
+  .r-truhen, .r-werte { display: none; }
+  .r-uhr { width: 72px; height: 80px; }
+  .r-kicker { font-size: 11px; letter-spacing: 1.5px; }
+  .r-titel { font-size: 16px; letter-spacing: 1.6px; margin: 0; }
+  .r-klein-knopf { font-size: 11px; height: 30px; }
+  .r-klein-knopf.rund { width: 30px; font-size: 13px; }
+  .r-klein-knopf::after { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: max(100%, 44px); height: 44px; }
+  .r-leben { margin: 15px 0 3px; }
+  .r-leben-spur { height: 10px; }
+  .r-leben-zahl { font-size: 11px; letter-spacing: .5px; }
+  .r-marke-v { height: 16px; top: -3px; }
+  .r-marke-v span { font-size: 11px; bottom: 17px; }
+  .r-zeile { font-size: 13px; line-height: 1.3; gap: 4px; }
+  .r-tagstein { width: 15px; height: 15px; vertical-align: -3px; }
+
+  .r-leiste { padding: 12px 8px 5px; }
+  .r-leiste-kopf { display: none; }
+  .r-runden { grid-template-columns: repeat(12, minmax(0, 1fr)); column-gap: 2px; row-gap: 13px; }
+  .r-rd { height: 32px; padding-bottom: 3px; }
+  .r-rd-nr { font-size: 11px; margin-bottom: 1px; }
+  .r-rd-sp { font-size: 12px; }
+  .r-rd-ev { top: -11px; }
+  .r-rd-ev span { width: 13px; height: 13px; }
+  .r-rd-ev svg { width: 8px; height: 8px; }
+  .r-legende { font-size: 11px; gap: 0 8px; margin-top: 5px; line-height: 1.25; flex-wrap: nowrap; white-space: nowrap; overflow: hidden; }
+  .r-legende .r-legende-lang { display: none; }
+  .r-legende .r-legende-kurz { display: inline; }
+  .r-lg-sp { font-size: 11px; }
+
+  .r-feld { padding: 6px 6px 7px; }
+  .r-feld-kopf { display: none; }
+  .r-gitter { grid-template-columns: 16px repeat(3, minmax(0, 1fr)) 12px repeat(3, minmax(0, 1fr));
+    grid-template-rows: 15px 18px repeat(3, 54px); column-gap: 2px; row-gap: 3px; }
+  .r-trupp-name { font-size: 11px; letter-spacing: 2px; padding-bottom: 0; }
+  .r-trupp-name small { display: none; }
+  .r-trupp-rahmen { margin: -2px; border-radius: 7px; }
+  .r-gang span { display: none; }
+  .r-skopf { font-size: 12px; border-radius: 4px; }
+  .r-skopf small { display: none; }
+  .r-rkopf b { font-size: 12px; }
+  .r-rkopf small { display: none; }
+  .r-rkopf .r-glocke { font-size: 12px; }
+  .r-zelle { padding: 2px 1px 1px; border-radius: 5px; }
+  .r-zelle .r-bild { width: 36px; height: 36px; border-radius: 4px; background-size: 250% auto; }
+  .r-zelle .r-name { font-size: 11px; margin-top: 1px; letter-spacing: 0; line-height: 1.1; flex-shrink: 0; }
+  .r-zelle .r-hp { display: none; }
+  .r-zelle.r-pendel { border-top-width: 3px; padding-top: 0; }
+  .r-zelle.r-gewaehlt { border: 1px solid var(--gl); box-shadow: 0 0 0 2px var(--gl), 0 0 16px rgba(230, 192, 96, .75); }
+  .r-marke { width: 16px; height: 16px; }
+  .r-marke svg { width: 9px; height: 9px; }
+  .r-marke.r-m-pendel { top: -7px; left: -5px; }
+  .r-marke.r-m-funken { top: -7px; right: -5px; }
+
+  .r-wahl-hinweis { display: flex; align-items: center; gap: 6px; font-size: 12.5px; color: var(--gl); padding: 0 2px; margin: -1px 0; line-height: 1.3; }
+  .r-wahl-hinweis.r-ruhig { color: var(--mut); }
+  #s-raid .r-handy-hilfe { display: inline-flex; align-items: center; justify-content: center; }
+  .r-wahl-hinweis .r-punkt { width: 8px; height: 8px; border-radius: 50%; background: var(--gl); box-shadow: 0 0 6px var(--gl); flex-shrink: 0; }
+
+  .r-liste { padding: 6px 10px 6px; }
+  .r-liste-kopf { grid-template-columns: 1fr auto; align-items: baseline; }
+  .r-liste-kopf .r-h2 { grid-column: 1; grid-row: 1; }
+  .r-liste-zitat, .r-vorige { display: none; }
+  .r-liste .r-h2 { font-size: 12px; letter-spacing: 2px; }
+  .r-liste-mehr { grid-column: 2; grid-row: 1; display: block; font-family: 'Cinzel', serif; font-size: 11px; letter-spacing: 1px; color: var(--gold);
+    position: relative; min-height: 24px; }
+  .r-liste-mehr::after { content: ''; position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 100%; height: 44px; }
+  .r-hinweise { margin-top: 4px; gap: 3px; }
+  .r-hinweis { font-size: 12.5px; line-height: 1.28; padding: 4px 6px; grid-template-columns: 14px 15px minmax(0, 1fr); column-gap: 5px; }
+  .r-liste:not(.r-alle) .r-hinweis.r-ok { display: none; }
+  .r-hinweis > .i { width: 15px; height: 15px; margin-top: 1px; }
+  .r-box { width: 14px; height: 14px; margin-top: 1px; }
+  .r-hinweis.r-hover { background: rgba(245, 158, 11, .1); box-shadow: inset 3px 0 0 var(--warn); }
+
+  .r-bank { padding: 5px 0 6px 10px; }
+  .r-bank .r-kopfzeile { padding-right: 8px; align-items: center; }
+  .r-bank .r-h2 { font-size: 12px; }
+  .r-bank-tipp, .r-bank-fuss { display: none; }
+  .r-bank .r-klein-knopf { height: 26px; }
+  .r-bank-leeren { display: inline-flex; align-items: center; margin-left: 8px; }
+  .r-karten { flex-direction: row; gap: 6px; overflow-x: auto; margin-top: 4px; padding: 0 10px 4px 0; scrollbar-width: none; }
+  .r-karten::-webkit-scrollbar { display: none; }
+  .r-karte { flex: 0 0 58px; grid-template-columns: 1fr; justify-items: center; padding: 4px 3px 3px; min-height: 64px; row-gap: 1px; }
+  .r-karte .r-bild { width: 38px; height: 38px; background-size: 250% auto; }
+  .r-karte-name { font-size: 11px; justify-content: center; }
+  .r-karte-name small, .r-karte-zeile, .r-karte-werte { display: none; }
+  .r-karte .r-feldmarke { top: 2px; right: 2px; font-size: 11px; padding: 0 3px; }
+  .r-karte .r-rolle { bottom: auto; top: 28px; left: 4px; right: auto; width: 13px; height: 13px; }
+  .r-karte.r-gesetzt { opacity: .62; }
+  .r-karte.r-gewaehlt { opacity: 1; }
+
+  .r-knoepfe {
+    position: sticky; bottom: 0; z-index: 10; margin: 4px -16px 0; padding: 8px 16px 10px; gap: 10px; grid-template-columns: 1fr 1.2fr;
+    background: rgba(12, 18, 32, .97); border-top: 1px solid var(--bdr); box-shadow: 0 -8px 18px rgba(0, 0, 0, .45);
+  }
+  .r-knoepfe button { min-height: 48px; padding: 4px 8px; font-size: 12.5px; letter-spacing: 1.5px; }
+  .r-knoepfe .btn-go { font-size: 12.5px; }
+  .r-knoepfe small { font-size: 12px; }
+
+  .r-ov { padding: 0; align-items: flex-end; }
+  .r-fenster { max-width: none; max-height: 92vh; border-radius: 14px 14px 0 0; padding: 16px 16px 0; }
+  .r-fenster-knoepfe { margin: 12px -16px 0; padding: 10px 16px 14px; }
+  .r-fenster-knoepfe button { flex: 1 1 auto; }
+  /* Wiedergabe füllt den Bildschirm: die Laufzeilen wachsen mit, die Knöpfe stehen unten (Daumen) */
+  .r-wg { max-height: 100vh; height: 100vh; max-height: 100dvh; height: 100dvh; border-radius: 0; display: flex; flex-direction: column; }
+  .r-wg .r-wg-lauf { flex: 1 1 auto; overflow-y: auto; }
+  .r-wg-oben { grid-template-columns: 84px 1fr; gap: 10px; }
+  .r-wg-uhr { width: 84px; height: 92px; }
+  .r-wg-gitter { grid-template-columns: 14px repeat(3, minmax(0, 1fr)) 6px repeat(3, minmax(0, 1fr)); gap: 3px; }
+  .r-wg-zelle { min-height: 58px; padding: 3px 1px 4px; }
+  .r-wg-zelle .r-bild { width: 30px; height: 30px; }
+  .r-wg-zelle .r-name { font-size: 11px; }
+  .r-wg-lauf { font-size: 13px; min-height: 84px; }
+  .r-wg-tempo button { min-width: 44px; }
+  .r-erg-titel { font-size: 1.15rem; }
+}
+@media (pointer: coarse) {
+  .r-zelle, .r-karte { touch-action: manipulation; }
+}

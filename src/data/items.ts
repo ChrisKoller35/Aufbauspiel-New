@@ -379,6 +379,14 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['gear', 'trinket', 'tier12', 'legendary', 'special:druckwelle'],
     flavorText: 'Wer ihn aus dem Bogen zieht, bringt das Gewölbe zum Einsturz. Wer ihn trägt, nur die Gegner, alle 4 Runden. Orm hat ihn freiwillig hergegeben, mit dem Hinweis, er habe ohnehin nichts mehr getragen.',
   },
+  // Zum ersten Sieg über Zenit (systems/Raid.ts, docs/RAID.md): einmal, nicht aus einer Beutetabelle
+  die_unruh: {
+    id: 'die_unruh', name: 'Die Unruh', type: 'gear',
+    stackSize: 1, baseValue: 275, gearSlot: 'trinket', tier: 12,
+    statBonuses: { def: 10, hp: 52, spd: 0.1 },
+    tags: ['gear', 'trinket', 'tier12', 'legendary', 'special:aoe_resist', 'special:regen'],
+    flavorText: 'Das Teil, das eine Uhr am Laufen hält, weil es nie stillhält. Zenit läuft jetzt ohne, und zwar gar nicht. Wer sie trägt, steckt Schläge auf alle leichter weg und kommt jede Runde ein wenig zu Atem.',
+  },
 
   // --- Special (expedition-only) ---
   crystal_shard: {

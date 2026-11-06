@@ -112,12 +112,12 @@ describe('Das System schaut zu: der Erfolge-Bildschirm verrät nichts', () => {
     const state = createNewGameState();
     const html = inhaltHtml(state, []);
     expect(html).toContain(`🏅 Freigeschaltet: 0/${ACHIEVEMENT_DEFS.length}`);
-    expect(ACHIEVEMENT_DEFS.length).toBe(55);
-    expect(html).toContain('👁️ Das System verschweigt noch 6 Erfolge.');
-    expect(html).toContain('Das System schaut zu<span class="erf-gruppe-zahl">0/6</span>');
-    expect(html.match(/ach-versteckt/g)).toHaveLength(6);
-    expect(html.match(/<div class="ach-ico">👁️<\/div>/g)).toHaveLength(6);
-    expect(html.match(/<div class="ach-title">\?\?\?<\/div>/g)).toHaveLength(6);
+    expect(ACHIEVEMENT_DEFS.length).toBe(61);
+    expect(html).toContain('👁️ Das System verschweigt noch 7 Erfolge.');
+    expect(html).toContain('Das System schaut zu<span class="erf-gruppe-zahl">0/7</span>');
+    expect(html.match(/ach-versteckt/g)).toHaveLength(7);
+    expect(html.match(/<div class="ach-ico">👁️<\/div>/g)).toHaveLength(7);
+    expect(html.match(/<div class="ach-title">\?\?\?<\/div>/g)).toHaveLength(7);
     const kopf = renderHeader(state);
     for (const d of VERSTECKT) {
       expect(html).toContain(`<div class="ach-desc">${d.versteckt}</div>`);
@@ -133,10 +133,10 @@ describe('Das System schaut zu: der Erfolge-Bildschirm verrät nichts', () => {
     state.achievements = ['kalte_fuesse'];
     let html = inhaltHtml(state, []);
     expect(html).toMatch(/ach-unlocked">\s*<div class="ach-ico">🐔<\/div>\s*<div class="ach-info">\s*<div class="ach-title">Kalte Füsse</);
-    expect(html).toContain('Das System verschweigt noch 5 Erfolge.');
-    expect(html.match(/\?\?\?/g)).toHaveLength(5);
+    expect(html).toContain('Das System verschweigt noch 6 Erfolge.');
+    expect(html.match(/\?\?\?/g)).toHaveLength(6);
 
-    state.achievements = VERSTECKT.slice(0, 5).map(d => d.id);
+    state.achievements = VERSTECKT.slice(0, 6).map(d => d.id);
     expect(inhaltHtml(state, [])).toContain('Das System verschweigt noch 1 Erfolg.');
 
     state.achievements = VERSTECKT.map(d => d.id);

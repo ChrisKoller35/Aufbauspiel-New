@@ -76,7 +76,8 @@ describe('Erfolge: Liste', () => {
     expect(new Set(ids).size).toBe(ids.length);
     for (const id of ALTE_IDS) expect(ids, id).toContain(id);
     expect(ids.length).toBeGreaterThanOrEqual(25);
-    expect(ids.length).toBeLessThanOrEqual(60);
+    // Obergrenze, damit die Liste nicht ausufert; mit dem Raid sind es 61
+    expect(ids.length).toBeLessThanOrEqual(70);
   });
 
   test('jeder Erfolg hat Gruppe, Zeichen, Ziel und Texte mit Umlauten, ohne ß', () => {

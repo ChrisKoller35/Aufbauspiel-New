@@ -73,6 +73,19 @@ const AUFTRAGSBRETT = objekt({
   kette: objekt({ routeId: TEXT, stand: ZAHL, fertig: TEXTE }, ['routeId', 'stand', 'fertig']),
 }, ['samen', 'tag', 'auftraege', 'getauscht', 'tagesbonus', 'siegel', 'erledigt', 'siegelGesamt', 'kette']);
 
+/** models/RaidStand.ts */
+const FELD = objekt({ reihe: ZAHL, spalte: ZAHL }, ['reihe', 'spalte']);
+const RAID_VERSUCH = objekt({
+  zeit: ZAHL, woche: TEXT, sieg: JA_NEIN, rest: ZAHL, runden: ZAHL, helden: ZAHL, stehend: ZAHL,
+}, ['woche', 'sieg', 'rest']);
+const RAID = objekt({
+  aufstellung: tabelle(FELD),
+  woche: objekt({ id: TEXT, start: ZAHL, versuche: ZAHL, halbeTruhe: JA_NEIN, truhe: JA_NEIN },
+    ['id', 'start', 'versuche', 'halbeTruhe', 'truhe']),
+  bestRest: oderNull(ZAHL), versucheGesamt: ZAHL, siege: ZAHL, verlauf: liste(RAID_VERSUCH),
+  einleitungGelesen: JA_NEIN, schlussGelesen: JA_NEIN, montagGesehen: TEXT,
+}, ['aufstellung', 'woche', 'versucheGesamt', 'siege', 'verlauf']);
+
 /** models/GameState.ts: die Gildenstadt (sechs Gebäude, ein Lager, Helden, Expeditionen). */
 export const SPIELSTAND = objekt({
   buildings: liste(GEBAEUDE),
@@ -102,6 +115,7 @@ export const SPIELSTAND = objekt({
   auftragsbrett: AUFTRAGSBRETT,
   trophaeen: objekt({ siege: ZAEHLER }, ['siege']),
   haertegrade: tabelle(einerVon('hard', 'nightmare')),
+  raid: RAID,
 }, ['buildings', 'globalStock', 'fighters', 'day']);
 
 /**

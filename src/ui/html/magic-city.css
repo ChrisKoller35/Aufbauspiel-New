@@ -1726,6 +1726,9 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   opacity: 0; transition: opacity .3s ease;
 }
 .chest-ov.on { opacity: 1; }
+/* Der Fokus liegt nur geparkt auf der Truhe (ChestRevealOverlay): kein Rahmen um den ganzen Bildschirm */
+.chest-ov:focus { outline: none; }
+.chest-collect-btn:focus-visible { outline: 2px solid var(--gold); outline-offset: 3px; }
 
 /* Video phase */
 .chest-video-wrap {

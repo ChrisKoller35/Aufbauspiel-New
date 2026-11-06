@@ -84,7 +84,7 @@ function renderAchievementCard(def: AchievementDef, unlocked: boolean, stats: Re
     </div>`;
 }
 
-/** «Das System verschweigt noch 6 Erfolge.»: wie viele versteckte noch fehlen, ohne einen zu verraten */
+/** «Das System verschweigt noch 7 Erfolge.»: wie viele versteckte noch fehlen, ohne einen zu verraten */
 function verschwiegenText(unlockedIds: Set<string>): string {
   const fehlen = ACHIEVEMENT_DEFS.filter(d => d.versteckt && !unlockedIds.has(d.id)).length;
   if (fehlen === 0) return 'Das System verschweigt nichts mehr. Behauptet es.';

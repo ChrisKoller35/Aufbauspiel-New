@@ -8,6 +8,7 @@ import { SchmiedeStufen, werteMitStufe } from '../../systems/Schmiede';
 import { nameMitStufe, stufeAbzeichen } from './SchmiedeAnzeige';
 import { istStumm } from '../../systems/Klang';
 import { TruheAnlegen, truheAnlegenHtml } from './TruheAnlegen';
+import { bindeFensterTasten } from './FensterHilfen';
 
 export interface LootEntry {
   itemId: string;
@@ -42,6 +43,8 @@ export function truhenEintraege(loot: Record<string, number>, goldEarned: number
 /**
  * Opens a fullscreen chest reveal: video plays → loot items fade in → user collects.
  * Returns a Promise that resolves when user clicks "Einsammeln".
+ * Tasten wie bei einem Fenster (FensterHilfen): Escape überspringt das Video und sammelt danach ein, die
+ * Tastenkürzel dahinter (Escape ins Hauptmenü, K, A, G) kommen nicht durch, solange die Truhe offen ist.
  * hinweise: extra line per item, e.g. the set of a set piece («🐺 Rudel des Waldpfads · Teil 2 von 3»).
  * untertitel: line under «Schatztruhe» instead of the expedition default (e.g. the weekly Ruhmestruhe).
  * stufen: Stufen der Schmiede, damit verbesserte Set-Teile mit Stufe und ihren echten Werten erscheinen.
@@ -61,6 +64,10 @@ export function showChestReveal(
     // ── Build overlay ──
     const overlay = document.createElement('div');
     overlay.className = 'chest-ov';
+    overlay.setAttribute('role', 'dialog');
+    overlay.setAttribute('aria-modal', 'true');
+    overlay.setAttribute('aria-label', 'Schatztruhe');
+    overlay.tabIndex = -1;
 
     // ── Phase 1: Video ──
     const videoWrap = document.createElement('div');
@@ -198,17 +205,32 @@ export function showChestReveal(
     overlay.appendChild(lootPanel);
     document.body.appendChild(overlay);
 
+    // Die Truhe ist modal: Ohne diesen Hörer brächte Escape das Hauptmenü, und die Truhe stünde darüber; was nach
+    // «Einsammeln» kommt (Bilanz, Ergebnis des Raids), liefe dann auf einem versteckten Bildschirm
+    const tastenLoesen = bindeFensterTasten(overlay, overlay, () => {
+      if (lootPanel.style.display === 'none') showLoot();
+      else collect();
+    });
+    // Der Fokus kommt in die Truhe: Enter und Leertaste träfen sonst einen Knopf, der dahinter noch den Fokus hat
+    overlay.focus({ preventScroll: true });
+
     // Force reflow then show
     requestAnimationFrame(() => overlay.classList.add('on'));
 
     // ── Event handlers ──
+    let eingesammelt = false;
     function showLoot(): void {
+      if (eingesammelt || lootPanel.style.display !== 'none') return;
       video.pause();
       videoWrap.style.display = 'none';
       lootPanel.style.display = 'flex';
+      collectBtn.focus({ preventScroll: true });
     }
 
     function collect(): void {
+      if (eingesammelt) return;
+      eingesammelt = true;
+      tastenLoesen();
       overlay.classList.remove('on');
       setTimeout(() => overlay.remove(), 300);
       resolve();

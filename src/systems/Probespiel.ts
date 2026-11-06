@@ -11,14 +11,16 @@
 // vor der Ersten Stadt: dazu Sina in Sunnas Morgengabe (morgen5), alle Bosse bis Sunna.
 // ?probe=pfeiler beginnt vor den Pfeilern des Tages: dazu Grimm in Alrunas Wachfeuer
 // (stadt5), alle Bosse bis Alruna, und Alrunas Kelle liegt im Lager, nicht angelegt,
-// damit der Vergleich mit Broms Amtsstab zu sehen ist.
+// damit der Vergleich mit Broms Amtsstab zu sehen ist. ?probe=raid beginnt unter dem Raid
+// «Über dem Tag»: alle Bosse bis Orm besiegt (die Leiter steht), dazu die zehn Helden der
+// Muster-Gilde des Raids (data/raidMuster.ts, Variante «anker») und 40 Tagstein.
 // Das Gildenhaus ist ausgebaut, damit alle vier Helden mitgehen. Es hat einen eigenen
 // Speicherplatz (SaveSystem.nutzeProbespiel), der richtige Spielstand bleibt unberührt.
 // Hinweis im Hauptmenü: ui/components/ProbespielHinweis.ts.
 // ────────────────────────────────────────────────────────────────
 
 import { GameState } from '../models/GameState';
-import { createGuildFighter } from '../models/GuildRoster';
+import { createGuildFighter, resetFighterIdCounter } from '../models/GuildRoster';
 import { HERZSTEINE } from '../data/stadtstufen';
 import { GUILD_RANK_DEFS } from '../data/guildRanks';
 import { ROUTE_DEFS } from '../data/routes';
@@ -26,20 +28,28 @@ import { BUILDING_UPGRADE_DEFS } from '../data/buildingUpgrades';
 import { MUSTER_SETS, MUSTER_TEAMS, musterWerte } from '../data/musterteams';
 import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { MAX_SCHMIEDE_STUFE } from '../data/schmiede';
+import { baueRaidGilde } from '../data/raidMuster';
 import { totalXpForLevel } from './HeroProgression';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { SPLITTER, istSchmiedbar, schmiedeKosten } from './Schmiede';
+import { bezwungeneDungeons } from './Bezwungen';
 
-/** Wo das Probespiel beginnt: vor dem Drachenhort, der Sternenschmiede, dem Mondhof, dem Morgentor, der Ersten Stadt oder den Pfeilern */
-export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen' | 'stadt' | 'pfeiler';
-const OBEN: ProbeStufe[] = ['sterne', 'mond', 'morgen', 'stadt', 'pfeiler'];
+/**
+ * Wo das Probespiel beginnt: vor dem Drachenhort, der Sternenschmiede, dem Mondhof, dem Morgentor, der Ersten Stadt,
+ * den Pfeilern oder unter dem Raid
+ */
+export type ProbeStufe = 'neu' | 'sterne' | 'mond' | 'morgen' | 'stadt' | 'pfeiler' | 'raid';
+const OBEN: ProbeStufe[] = ['sterne', 'mond', 'morgen', 'stadt', 'pfeiler', 'raid'];
+
+/** ?probe=raid: alle Bosse bis Ebene 12, zehn Helden aus der Muster-Gilde des Raids, Tagstein für bezahlte Ernstkämpfe */
+const RAID_PROBE = { bisEbene: 12, gilde: 'anker', tagstein: 40 } as const;
 
 /**
  * Die Stufen über dem Drachenhort: bis zu welcher Ebene die Bosse besiegt sind, welche Sets
  * der Eichung das Team trägt und welcher Dungeon das nächste Set bringt (sein Material liegt
  * zum Schmieden bis +5 im Lager).
  */
-const STUFEN: Record<Exclude<ProbeStufe, 'neu'>, {
+const STUFEN: Record<Exclude<ProbeStufe, 'neu' | 'raid'>, {
   bisEbene: number; sets: 'sterne3' | 'mond5' | 'pfand5' | 'morgen5' | 'stadt5'; naechstesSet: string; lager?: Record<string, number>;
 }> = {
   sterne: { bisEbene: 6, sets: 'sterne3', naechstesSet: 'sternenschmiede' },
@@ -64,7 +74,7 @@ export function istProbespiel(search: string): boolean {
   return new URLSearchParams(search).has('probe');
 }
 
-/** ?probe=neu oder eine Stufe weiter oben (?probe=sterne … ?probe=pfeiler): das Probespiel von vorn beginnen */
+/** ?probe=neu oder eine Stufe weiter oben (?probe=sterne … ?probe=raid): das Probespiel von vorn beginnen */
 export function probespielNeu(search: string): boolean {
   const wert = new URLSearchParams(search).get('probe');
   return wert === 'neu' || OBEN.includes(wert as ProbeStufe);
@@ -73,7 +83,7 @@ export function probespielNeu(search: string): boolean {
 /**
  * Wo das Probespiel beginnt: ?probe=sterne vor der Sternenschmiede, ?probe=mond vor dem Mondhof,
  * ?probe=morgen vor dem Morgentor, ?probe=stadt vor der Ersten Stadt, ?probe=pfeiler vor den Pfeilern
- * des Tages, sonst vor dem Drachenhort
+ * des Tages, ?probe=raid unter dem Raid, sonst vor dem Drachenhort
  */
 export function probespielStufe(search: string): ProbeStufe {
   const wert = new URLSearchParams(search).get('probe') as ProbeStufe;
@@ -87,13 +97,14 @@ export function probespielStufe(search: string): ProbeStufe {
  * dazu Vorräte und ein Set für die Schmiede.
  * Die Gilde hat den höchsten Rang und alle Bosse bis Ebene 4 besiegt: Als Nächstes
  * warten die Dungeons über dem Vulkankern (Drachenhort, dann Himmelsarchiv).
- * Mit `stufe` 'sterne', 'mond', 'morgen', 'stadt' oder 'pfeiler' die Varianten weiter oben (richteStufeEin).
+ * Mit `stufe` 'sterne', 'mond', 'morgen', 'stadt' oder 'pfeiler' die Varianten weiter oben (richteStufeEin),
+ * mit 'raid' die Gilde unter dem Raid (richteRaidEin).
  */
 export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu'): void {
   state.stadtweg = { stufe: 7, herzsteine: HERZSTEINE.map(h => h.id), gelesen: 7 };
 
-  const oben = stufe === 'neu' ? undefined : STUFEN[stufe];
-  const bisEbene = oben?.bisEbene ?? 4;
+  const oben = stufe === 'neu' || stufe === 'raid' ? undefined : STUFEN[stufe];
+  const bisEbene = stufe === 'raid' ? RAID_PROBE.bisEbene : oben?.bisEbene ?? 4;
   const bosse = new Set(Object.values(ROUTE_DEFS).filter(r => r.tier <= bisEbene && r.bossId).map(r => r.bossId!));
   state.guildStats.rank = GUILD_RANK_DEFS.length;
   state.guildStats.bossesDefeatedIds = [...bosse];
@@ -125,6 +136,23 @@ export function richteProbespielEin(state: GameState, stufe: ProbeStufe = 'neu')
     state.globalStock[itemId] = (state.globalStock[itemId] ?? 0) + qty;
   }
   if (oben) richteStufeEin(state, oben);
+  if (stufe === 'raid') richteRaidEin(state);
+}
+
+/**
+ * Probespiel unter dem Raid: Statt der vier aus dem Musterteam stehen die zehn Helden der Muster-Gilde da (Ids 1 bis
+ * 10, die Set-Teile in der Schmiede auf ihrer Stufe), dazu Tagstein für bezahlte Ernstkämpfe. Der Merker der
+ * bezwungenen Dungeons entsteht gleich aus den besiegten Bossen: Erst damit steht die Leiter auf den Pfeilern.
+ */
+function richteRaidEin(state: GameState): void {
+  const gilde = baueRaidGilde(RAID_PROBE.gilde, { ersteId: 1 });
+  state.fighters = gilde.helden;
+  resetFighterIdCounter(gilde.helden.length + 1);
+  state.schmiede = { stufen: { ...gilde.stufen } };
+  new ClassUnlockSystem().checkUnlocks(state);
+  state.globalStock.mat_tagstein = (state.globalStock.mat_tagstein ?? 0) + RAID_PROBE.tagstein;
+  state.bezwungen = undefined;
+  bezwungeneDungeons(state);
 }
 
 /**

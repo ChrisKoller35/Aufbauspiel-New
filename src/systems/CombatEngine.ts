@@ -40,6 +40,26 @@ export function bossWut(defId?: string): { afterRound: number; atkMult: number; 
 /**
  * Auto-battler combat engine: processCombat, unit factories, loot rolling.
  */
+/**
+ * Rundenende: Spott und Stärkungen laufen eine Runde ab, abgelaufene Stärkungen nehmen ihren Wert zurück.
+ * Gemeinsam für den normalen Kampf, die Belagerung und den Raid (RaidKampf).
+ */
+export function buffsAblaufen(units: CombatUnit[]): void {
+  for (const unit of units) {
+    if (unit.tauntRounds > 0) unit.tauntRounds--;
+    for (let i = unit.buffs.length - 1; i >= 0; i--) {
+      const buff = unit.buffs[i];
+      buff.remainingRounds--;
+      if (buff.remainingRounds <= 0) {
+        if (buff.stat === 'atk') unit.atk -= buff.value;
+        if (buff.stat === 'def') unit.def -= buff.value;
+        if (buff.stat === 'spd') unit.spd -= buff.value;
+        unit.buffs.splice(i, 1);
+      }
+    }
+  }
+}
+
 export class CombatEngine {
   constructor(private gearSystem: GearSystem) {}
 
@@ -266,19 +286,7 @@ export class CombatEngine {
       // ── End of round effects ──
 
       // Decay buffs and taunt (Spott gilt für ganze Runden)
-      for (const unit of [...party.filter(u => u.hp > 0), ...enemies.filter(u => u.hp > 0)]) {
-        if (unit.tauntRounds > 0) unit.tauntRounds--;
-        for (let i = unit.buffs.length - 1; i >= 0; i--) {
-          const buff = unit.buffs[i];
-          buff.remainingRounds--;
-          if (buff.remainingRounds <= 0) {
-            if (buff.stat === 'atk') unit.atk -= buff.value;
-            if (buff.stat === 'def') unit.def -= buff.value;
-            if (buff.stat === 'spd') unit.spd -= buff.value;
-            unit.buffs.splice(i, 1);
-          }
-        }
-      }
+      buffsAblaufen([...party.filter(u => u.hp > 0), ...enemies.filter(u => u.hp > 0)]);
 
       this.regeneration([...party, ...enemies], run);
 
@@ -543,19 +551,7 @@ export class CombatEngine {
       // End-of-Round: Buff- und Spott-Decay
       const allLiving = [...run.party.filter(u => u.hp > 0), ...enemies.filter(u => u.hp > 0)];
       if (warMachine && warMachine.hp > 0) allLiving.push(warMachine);
-      for (const unit of allLiving) {
-        if (unit.tauntRounds > 0) unit.tauntRounds--;
-        for (let i = unit.buffs.length - 1; i >= 0; i--) {
-          const buff = unit.buffs[i];
-          buff.remainingRounds--;
-          if (buff.remainingRounds <= 0) {
-            if (buff.stat === 'atk') unit.atk -= buff.value;
-            if (buff.stat === 'def') unit.def -= buff.value;
-            if (buff.stat === 'spd') unit.spd -= buff.value;
-            unit.buffs.splice(i, 1);
-          }
-        }
-      }
+      buffsAblaufen(allLiving);
 
       this.regeneration([...run.party, ...enemies], run);
       rundenEnde(run.party, enemies, round, rng, log);
@@ -766,7 +762,8 @@ export class CombatEngine {
    * Gewürfelt wird immer in derselben Reihenfolge: Ausweichen (nur wenn das Ziel es kann),
    * Krit, Doppelschlag (nur mit dem Effekt). Einheiten ohne Effekte würfeln darum wie früher.
    */
-  private grundangriff(
+  /** Ein Grundangriff mit allem, was dazugehört (Krit, Ausweichen, Deckung, Treffer-Effekte); auch für RaidKampf */
+  grundangriff(
     unit: CombatUnit, target: CombatUnit, gegner: CombatUnit[], verbuendete: CombatUnit[],
     run: ExpeditionRun, rng: SeededRNG,
   ): void {
@@ -855,7 +852,8 @@ export class CombatEngine {
   }
 
   /** Regeneration am Rundenende (Gegenstände mit Regeneration, Set-Fähigkeit Wurzelkraft) */
-  private regeneration(units: CombatUnit[], run: ExpeditionRun): void {
+  /** Regeneration am Rundenende; auch für RaidKampf */
+  regeneration(units: CombatUnit[], run: ExpeditionRun): void {
     for (const unit of units) {
       if (unit.hp <= 0 || !hasEffect(unit, 'regen')) continue;
       const prevHp = unit.hp;
