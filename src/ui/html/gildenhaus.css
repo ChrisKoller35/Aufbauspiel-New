@@ -10,7 +10,7 @@
   padding: 9px 20px; min-height: 44px; transition: .2s;
 }
 .gh-reiter-knopf:hover { color: var(--gl); border-color: var(--gd); }
-/* Goldknöpfe (aktiver Reiter, Kette): Schrift --gl-knopf, ≥ 5,4 : 1 auf dem Verlauf (mit --gl nur 4,2) */
+/* Goldknöpfe (aktiver Reiter, Kette): Schrift --gl-knopf, 5,2–5,8 : 1 auf dem Verlauf (mit --gl nur 3,6–4,0) */
 .gh-reiter-knopf.aktiv { background: linear-gradient(135deg, var(--gd), #7a5c08); color: var(--gl-knopf); border-color: var(--gold); }
 
 .gh-inhalt {
@@ -167,8 +167,8 @@
 }
 .gh-ware img { grid-row: 1 / 4; width: 44px; height: 44px; object-fit: contain; }
 .gh-ware:hover:not(:disabled) { border-color: var(--gd); transform: translateY(-1px); }
-/* Nicht leistbar: gedimmt wird nur das Bild, Name/Preis/Info treten mit --mut zurück und bleiben ≥ 5,9 : 1
-   lesbar (vorher opacity .45 auf der ganzen Ware, unter 2,5 : 1) */
+/* Nicht leistbar: gedimmt wird nur das Bild, Name/Preis/Info treten mit --mut zurück und bleiben 6,3 : 1
+   lesbar auf --s2 (vorher opacity .45 auf der ganzen Ware, Info und Preis weit unter 4,5 : 1) */
 .gh-ware:disabled { cursor: not-allowed; }
 .gh-ware:disabled img { opacity: .45; filter: grayscale(.8); }
 .gh-ware:disabled .gh-ware-name, .gh-ware:disabled .gh-preis, .gh-ware:disabled .gh-ware-info { color: var(--mut); }

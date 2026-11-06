@@ -31,7 +31,7 @@
 .rl-platz { font-family: 'Cinzel', serif; font-size: 0.95rem; text-align: center; color: var(--mut); }
 .rl-zeile.r1 .rl-platz { color: #fbbf24; }
 .rl-zeile.r2 .rl-platz { color: #e5e7eb; }
-/* Bronze heller: #d97706 hatte auf der goldenen Zeile nur 4,0 : 1, #e8954a hat ≥ 5,3 */
+/* Bronze heller: #d97706 hatte auf der goldenen Zeile nur 4,1 : 1, #e8954a hat 5,5 */
 .rl-zeile.r3 .rl-platz { color: #e8954a; }
 .rl-wappen {
   width: 30px; height: 30px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;

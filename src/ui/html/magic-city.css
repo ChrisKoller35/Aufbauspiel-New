@@ -15,10 +15,11 @@
   --gl: #e6c060;
   --gd: #6e5710;
   --txt: #ddd0b8;
-  /* Gedämpfte Schrift: vorher #6b6050 (2,6–3,3 : 1), jetzt ≥ 6 : 1 auf --s3 und ≥ 5 : 1 auf der goldenen
+  /* Gedämpfte Schrift: vorher #6b6050 (2,6–3,3 : 1), jetzt 5,7 : 1 auf --s3 und 4,6 : 1 auf der goldenen
      Ranglisten-Zeile #343122 (Messwerte in docs/LESBARKEIT.md) */
   --mut: #a69882;
-  /* Schrift auf dem goldbraunen Knopf-Verlauf (--gd → #7a5c08): --gl hatte dort nur 4,2–4,6 : 1 */
+  /* Schrift auf dem goldbraunen Knopf-Verlauf (--gd → #7a5c08): --gl hatte dort nur 3,6–4,0 : 1
+     (gerechnet an Anfang und Ende des Verlaufs), --gl-knopf hat 5,2–5,8 */
   --gl-knopf: #ffe9a8;
   --pur: #7c3aed;
   --red: #991b1b;
@@ -200,7 +201,7 @@ body {
   transition: .2s;
 }
 .bg-btn:hover { border-color: var(--gd); color: var(--gold); }
-/* Aktiver Hintergrund: --gold auf --gd hatte nur 3 : 1, --gl-knopf hat ≥ 5,9 : 1 */
+/* Aktiver Hintergrund: --gold auf --gd hatte nur 2,9 : 1, --gl-knopf hat 5,8 : 1 */
 .bg-btn.active { background: var(--gd); color: var(--gl-knopf); border-color: var(--gold); }
 /* Finger und Handy: Tippfläche mindestens 44 × 44 px über ::after, mittig über dem Knopf, ohne dass Knopf oder Leiste
    wachsen (wie .ss-oeffnen und .fb-oeffnen). Die Knöpfe sind mindestens 40 px breit: Bei 4 px Abstand (Handy)
@@ -302,7 +303,7 @@ body {
 }
 .exp-card:hover { border-color: var(--gd); transform: translateY(-2px); }
 /* Gesperrte Route: gedimmt wird nur das Bild, nie die Schrift. Vorher drückten opacity .55 und grayscale auch den
-   Sperrgrund unter 3 : 1, jetzt 5,26 : 1. Das ::before erbt das Hintergrundbild der Karte; .exp-card-info liegt
+   Sperrgrund deutlich unter 4,5 : 1, jetzt 5,26 : 1 (Recherche). Das ::before erbt das Hintergrundbild der Karte; .exp-card-info liegt
    (absolut positioniert, z-index 1) darüber. */
 .exp-card.locked { cursor: not-allowed; }
 .exp-card.locked::before {

@@ -42,7 +42,7 @@
 }
 .lb-lernen {
   flex: none; min-height: 44px; min-width: 44px; padding: 8px 22px; border-radius: 8px; cursor: pointer;
-  /* Schrift --gl-knopf: auf dem Goldverlauf ≥ 5,4 : 1 (mit --gl nur 4,2) */
+  /* Schrift --gl-knopf: auf dem Goldverlauf 5,2–5,8 : 1 (mit --gl nur 3,6–4,0) */
   background: linear-gradient(135deg, var(--gd), #7a5c08); border: 1px solid var(--gold); color: var(--gl-knopf);
   font-family: 'Cinzel', serif; font-size: 0.85rem; letter-spacing: 1px;
 }
