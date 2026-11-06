@@ -3,7 +3,8 @@
 // und die Gilde des Probespiels ?probe=raid. Der Kern sind die vier aus dem Musterteam «Stark» in ihren Sets
 // wie in MUSTER_SETS.tagwerk0 (Lia ohne Stufen, die übrigen +5); die zweite Reihe trägt die Sets, die der Kern
 // unterwegs abgelegt hat. Für Stufe II («Die dreizehnte Stunde») kommen fünf Lehrlinge dazu (`anker15`, die Gilde
-// von ?probe=raid2). Aufstellungen nach Heldennamen, gezeichnet wie auf dem Feld (Reihe 1 vorn). docs/RAID.md.
+// von ?probe=raid2), für Stufe III («Das Kuckucksei») die übrigen fünf (`anker20`, ?probe=raid3). Aufstellungen nach
+// Heldennamen, gezeichnet wie auf dem Feld (Reihe 1 vorn). docs/RAID.md.
 // ────────────────────────────────────────────────────────────────
 
 import { GuildFighter, createGuildFighter } from '../models/GuildRoster';
@@ -74,15 +75,34 @@ const LEHRLINGE_15: RaidMusterHeld[] = [
 ];
 
 /**
+ * Die fünf weiteren Lehrlinge für Stufe III, wieder aus dem Lager: Ragna (Berserkerin) mit Schild im Obsidianpanzer
+ * für den Gang, Nix (Assassine) im Frostwanderer, Gerlinde (Paladin) im Eid des Gefallenen Ritters, Edgar
+ * (Nekromant) im Aschewanderer, Farn (Druide) in den Schuppen des Leviathan. Stufe 15 mit Weg, ohne Schmiede.
+ */
+const LEHRLINGE_20: RaidMusterHeld[] = [
+  { classId: 'berserker', name: LEHRLINGE.berserker.name, weg: 'berserker_zorn', stufe: 0, lehrling: true,
+    gear: { mainHand: 'soulbreaker', offHand: 'set_obsidian_schild', armor: 'set_obsidian_platte', trinket: 'set_obsidian_talisman' } },
+  { classId: 'assassin', name: LEHRLINGE.assassin.name, weg: 'assassin_schattentaenzerin', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_frost_klinge', offHand: null, armor: 'set_frost_leder', trinket: 'set_frost_amulett' } },
+  { classId: 'paladin', name: LEHRLINGE.paladin.name, weg: 'paladin_kreuzritter', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_ritter_klinge', offHand: 'set_ritter_schild', armor: 'set_ritter_platte', trinket: 'arcane_amulet' } },
+  { classId: 'necromancer', name: LEHRLINGE.necromancer.name, weg: 'necromancer_seuchenbringer', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_asche_hammer', offHand: null, armor: 'set_asche_robe', trinket: 'set_asche_talisman' } },
+  { classId: 'druid', name: LEHRLINGE.druid.name, weg: 'druid_baerengestalt', stufe: 0, lehrling: true,
+    gear: { mainHand: 'set_leviathan_stab', offHand: null, armor: 'set_leviathan_platte', trinket: 'set_leviathan_amulett' } },
+];
+
+/**
  * Die Varianten der Gilde: `anker` ist der Eichanker (zweite Reihe +3), `sets5`/`sets0` dieselben Sets auf +5 und
  * ohne Stufen, `t4` die zweite Reihe frisch hochgezogen in gewöhnlicher T4-Ausrüstung, `kern` nur die vier.
- * `anker15` ist der Anker mit den fünf Lehrlingen (Stufe II).
+ * `anker15` ist der Anker mit den fünf Lehrlingen (Stufe II), `anker20` mit allen zehn (Stufe III).
  */
-export type RaidMusterName = 'anker' | 'sets5' | 'sets0' | 't4' | 'kern' | 'anker15';
+export type RaidMusterName = 'anker' | 'sets5' | 'sets0' | 't4' | 'kern' | 'anker15' | 'anker20';
 
 export function raidMusterHelden(name: RaidMusterName): RaidMusterHeld[] {
   if (name === 'kern') return KERN.map(h => ({ ...h }));
   if (name === 'anker15') return [...raidMusterHelden('anker'), ...LEHRLINGE_15.map(h => ({ ...h, gear: { ...h.gear } }))];
+  if (name === 'anker20') return [...raidMusterHelden('anker15'), ...LEHRLINGE_20.map(h => ({ ...h, gear: { ...h.gear } }))];
   if (name === 't4') {
     return [...KERN, ...ZWEITE_REIHE.map(h => ({
       ...h, stufe: 0, gear: { ...(h.classId === 'paladin' ? T4_TANK : h.classId === 'bard' ? T4_BOW : T4_DPS) },
@@ -116,7 +136,7 @@ export function baueRaidGilde(
   return { helden, stufen };
 }
 
-/** Feld aus Text: je Reihe sechs (Stufe II: neun) Namen oder «.», die Gänge «|» zählen nicht */
+/** Feld aus Text: je Reihe sechs (Stufe II: neun, Stufe III: zwölf) Namen oder «.», die Gänge «|» zählen nicht */
 function raster(...reihen: string[]): Record<string, Feld> {
   const felder: Record<string, Feld> = {};
   reihen.forEach((zeile, reihe) => {
@@ -225,4 +245,46 @@ export function raidMusterAufstellungDreizehn(
   name: RaidAufstellungDreizehn, helden: GuildFighter[], ohne: string[] = [],
 ): Record<string, Feld> {
   return nachPlan(RAID_AUFSTELLUNGEN_DREIZEHN[name], helden, ohne);
+}
+
+/**
+ * Muster-Aufstellungen für Stufe III (zwölf Spalten, vier Trupps; anker20). `gut`: die Daumenregeln mit Kuckuck (je
+ * Trupp ein Tank allein vorn in B, E, H, K; jede Spalte besetzt; am Gang, in C/D, F/G und I/J, keiner, der wenig
+ * Leben hat und nicht ausweicht); `profi`: Fund der Aufstellungssuche; `lehrbuch`: die Daumenregeln von Stufe II auf
+ * vier Trupps, ohne Rücksicht auf den Kuckuck; `naiv`: wie die Startaufstellung; `fuenfzehn`: die Gilde von Stufe II
+ * (anker15), die beste gesuchte Ordnung für fünfzehn auf vier Trupps. Sie kommt nicht durch: Stufe III braucht mehr.
+ */
+export const RAID_AUFSTELLUNGEN_KUCKUCK = {
+  gut: raster(
+    '.      Brom   .      | .      Bertram .        | .        Grimm  .      | .      Ragna  .',
+    '.      Benno  Lia    | Morn   .       Gerlinde | Liedra   .      Nix    | Wenna  .      Mirabell',
+    'Sina   .      Pirmin | Ansgar .       Ewin     | Ysra     .      Moos   | Farn   .      Edgar',
+  ),
+  profi: raster(
+    '.      Ysra   .      | .      Ewin    Bertram  | .        Grimm  .        | .      Liedra .',
+    '.      Morn   Lia    | Edgar  .       Mirabell | Benno    .      Nix      | Pirmin .      .',
+    'Sina   Brom   Farn   | Ansgar .       .        | .        .      Gerlinde | Wenna  Moos   Ragna',
+  ),
+  lehrbuch: raster(
+    '.      Brom   .      | .      Bertram .      | .      Grimm  .        | .        Ragna  .',
+    'Liedra Ewin   .      | Ansgar Moos    .      | Benno  Pirmin .        | Gerlinde Farn   .',
+    '.      Lia    Morn   | .      Sina    Ysra   | .      Wenna  Mirabell | .        Nix    Edgar',
+  ),
+  naiv: raster(
+    'Brom   Grimm  Lia      | Sina   Ansgar Ewin     | Moos  Liedra Ysra | Morn Bertram Pirmin',
+    'Wenna  Benno  Mirabell | Ragna  Nix    Gerlinde | Edgar Farn   .    | .    .       .',
+  ),
+  fuenfzehn: raster(
+    '.      Brom   .      | .      Pirmin .      | .        Grimm  .      | .      .       .',
+    '.      Moos   Lia    | Morn   .      .      | Mirabell .      .      | .      .       Liedra',
+    'Sina   Benno  Ysra   | .      .      Ansgar | .        .      Ewin   | Wenna  Bertram .',
+  ),
+} satisfies Record<string, Record<string, Feld>>;
+export type RaidAufstellungKuckuck = keyof typeof RAID_AUFSTELLUNGEN_KUCKUCK;
+
+/** Aufstellung für Stufe III (wie raidMusterAufstellung) */
+export function raidMusterAufstellungKuckuck(
+  name: RaidAufstellungKuckuck, helden: GuildFighter[], ohne: string[] = [],
+): Record<string, Feld> {
+  return nachPlan(RAID_AUFSTELLUNGEN_KUCKUCK[name], helden, ohne);
 }

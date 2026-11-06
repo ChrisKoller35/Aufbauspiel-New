@@ -37,8 +37,8 @@ import {
   raidRolle, raidStand, ratSchluessel, restProzent, setzeHeld, versuchsLage,
 } from '../../systems/Raid';
 import {
-  RaidErgebnis, RaidEreignis, RaidRunde, Regel, gegenzeigerSpalte, hauptursache, pendelTrupp, spaltenZahl, treffpunkte,
-  truppVon, zeigerSpalte,
+  RaidErgebnis, RaidEreignis, RaidRunde, Regel, gangSpalten, gegenzeigerSpalte, hauptursache, kuckuckGang, pendelTrupp,
+  spaltenZahl, treffpunkte, truppVon, zeigerSpalte,
 } from '../../systems/RaidKampf';
 import { ScreenId, navigateTo } from '../ScreenRouter';
 import { aktualisiereErfolgKnoepfe, renderHeader, zeigeKopfHinweis } from './HeaderRenderer';
@@ -50,7 +50,7 @@ import { geschichtsText } from '../components/GeschichtsAnzeige';
 import { showChestReveal } from '../components/ChestRevealOverlay';
 import { TruheAnlegen } from '../components/TruheAnlegen';
 import {
-  ANGEHALTEN, AUF_ZWOELF, KURZ_VOR_DREIZEHN, KURZ_VOR_ZWOELF, UhrStellung, stundeAufRunde, zeigerAufSpalte, zenitUhrSvg,
+  UhrStellung, pendelAufTrupp, stundeAufRunde, uhrStellungFuer, zeigerAufSpalte, zenitUhrSvg,
 } from '../components/ZenitUhr';
 import { BildTraeger, bildKarte } from '../heldBild';
 import { gesellenSatz } from '../../systems/Lehrlinge';
@@ -111,7 +111,7 @@ const ROLLE_IC: Record<RaidRolle, string> = { tank: 'schild', heil: 'kreuz', dps
 const ROLLEN_FOLGE: RaidRolle[] = ['tank', 'heil', 'stuetze', 'dps'];
 const REGEL_IC: Partial<Record<Regel, string>> = {
   pendel: 'pendel', zeiger: 'zeiger', gegenzeiger: 'gegen', durchschlag: 'zeiger', glocke: 'glocke', funken: 'funken',
-  mitternacht: 'zeiger',
+  kuckuck: 'kuckuck', mitternacht: 'zeiger',
 };
 const feldName = (f: Feld): string => `${spaltenName(f.spalte)}${f.reihe + 1}`;
 /** Bild eines Helden als Hintergrund (der Lehrling gespiegelt: heldBild.ts); `klasse` kommt dazu */
@@ -131,14 +131,28 @@ const gitterSpalte = (spalte: number): number => spalte + 2 + truppVon({ reihe: 
 const tagstein = (def: RaidDef): number => def.kostenJeVersuch.mat_tagstein ?? 0;
 const bildschirm = (): HTMLElement | null => document.getElementById('s-raid');
 const hatGegenzeiger = (def: RaidDef): boolean => def.regeln.gegenzeiger !== undefined;
-/** Name im Feld; lange Namen rücken in den schmalen Spalten von Stufe II am Handy enger zusammen (raid.css) */
-const nameKlasse = (name: string, def: RaidDef): string => (def.truppZahl === 3 && name.length >= 7 ? 'r-name r-lang' : 'r-name');
+const hatKuckuck = (def: RaidDef): boolean => def.regeln.kuckuck !== undefined;
+/** Stufe III: die Spalten links und rechts der Gänge (C/D, F/G, I/J) mit dem Namen ihres Gangs */
+const amGang = (def: RaidDef): Map<number, string> => {
+  const spalten = new Map<number, string>();
+  if (!hatKuckuck(def)) return spalten;
+  for (let gang = 0; gang < def.truppZahl - 1; gang++) {
+    for (const s of gangSpalten(gang)) spalten.set(s, RAID_TEXTE.gangName(gang, def.truppZahl));
+  }
+  return spalten;
+};
+/** Name im Feld; lange Namen rücken in den schmalen Spalten ab drei Trupps enger zusammen (raid.css) */
+const nameKlasse = (name: string, def: RaidDef): string => (def.truppZahl >= 3 && name.length >= 7 ? 'r-name r-lang' : 'r-name');
+/**
+ * Klassen für Bildschirm, Uhrleiste, Feld und Wiedergabe: ab drei Trupps «r-viele» (schmale Spalten, am Handy die
+ * Trupps untereinander), dazu «r-drei» oder «r-vier» für das Raster (raid.css)
+ */
+const truppKlassen = (def: RaidDef): string[] =>
+  def.truppZahl >= 3 ? ['r-viele', def.truppZahl >= 4 ? 'r-vier' : 'r-drei'] : [];
+const mitTruppKlassen = (def: RaidDef): string => truppKlassen(def).map(k => ` ${k}`).join('');
 
 /** Die Uhr: kurz vor zwölf, diese Woche besiegt auf zwölf; auf Stufe II mit dem Gegenzeiger (vor dreizehn, angehalten) */
-function uhrStellung(def: RaidDef, besiegt: boolean): UhrStellung {
-  if (hatGegenzeiger(def)) return besiegt ? ANGEHALTEN : KURZ_VOR_DREIZEHN;
-  return besiegt ? AUF_ZWOELF : KURZ_VOR_ZWOELF;
-}
+const uhrStellung = uhrStellungFuer;
 
 /** Die gezeigte Stufe: die gewählte, sonst die höchste offene */
 function aktuelleStufe(state: GameState): RaidDef {
@@ -179,6 +193,7 @@ const SYMBOLE = `<svg width="0" height="0" style="position:absolute" aria-hidden
 <symbol id="i-kreuz" viewBox="0 0 16 16"><path d="M6 1.5h4v4.5h4.5v4H10v4.5H6V10H1.5V6H6z" fill="currentColor"/></symbol>
 <symbol id="i-klinge" viewBox="0 0 16 16"><path d="M14.6 1.4 6.9 9.1l-1.1-1.1-1 1 1.6 1.6-3.2 3.2 1.1 1.1 3.2-3.2 1.6 1.6 1-1-1.1-1.1 7.7-7.7z" fill="currentColor"/></symbol>
 <symbol id="i-note" viewBox="0 0 16 16"><path d="M6 2.5 14 1v9.6a2.4 2.1 0 1 1-1.6-2V4.2L7.6 5.1v7.5a2.4 2.1 0 1 1-1.6-2z" fill="currentColor"/></symbol>
+<symbol id="i-kuckuck" viewBox="0 0 16 16"><path d="M.9 12.8 4 10.1C4.3 7.6 6.2 5.6 8.6 5.2 9 3.4 10.3 2.3 11.9 2.3c1.2 0 2.2.7 2.6 1.8l1.4.6-1.4.6c-.1 4.4-2.9 7.6-7 7.6-1.4 0-2.6-.3-3.5-.9z" fill="currentColor"/></symbol>
 <symbol id="i-abwehr" viewBox="0 0 16 16"><path d="M8 1 2.5 3v4.4c0 3.6 2.5 6.1 5.5 7.6 3-1.5 5.5-4 5.5-7.6V3z" fill="none" stroke="currentColor" stroke-width="1.6"/></symbol>
 </defs></svg>`;
 
@@ -257,12 +272,13 @@ function zeichne(el: HTMLElement): void {
   if (!state || !haupt) return;
   // Vor den Pfeilern des Tages ist schon Stufe I zu: kein Umschalter
   if (!raidOffen(state)) {
-    haupt.classList.remove('r-drei');
+    haupt.classList.remove('r-viele', 'r-drei', 'r-vier');
     haupt.innerHTML = zuHtml(ZENIT);
     return;
   }
   const def = aktuelleStufe(state);
-  haupt.classList.toggle('r-drei', def.truppZahl === 3);
+  haupt.classList.remove('r-viele', 'r-drei', 'r-vier');
+  haupt.classList.add(...truppKlassen(def));
   if (!raidOffen(state, def)) {
     haupt.innerHTML = zuHtml(def, stufenHtml(state, def));
     return;
@@ -306,7 +322,8 @@ function stufenHtml(state: GameState, def: RaidDef): string {
       + `${neu ? `<i class="r-stufe-neu">${t.stufeNeuMarke}</i>` : ''}`
       + `<span class="r-stufe-status">${status}</span><span class="r-stufe-zahl">${t.stufeHelden(d.minHelden, d.maxHelden)}</span></button>`;
   }).join('');
-  return `<nav class="r-stufen" aria-label="${t.stufenNav}">${knoepfe}</nav>`;
+  // Ab drei Stufen stehen sie am Handy (und im Fenster einer Stufe, die zu ist) zu dritt nebeneinander, schmaler
+  return `<nav class="r-stufen${RAID_STUFEN.length >= 3 ? ' r-stufen-drei' : ''}" aria-label="${t.stufenNav}">${knoepfe}</nav>`;
 }
 
 /**
@@ -324,7 +341,7 @@ function zuHtml(def: RaidDef, stufen = ''): string {
     <div class="r-kicker">${RAID_TEXTE.karte.klein(def.minHelden, def.maxHelden)}</div>
     <h1 class="r-titel">${texte.titel}</h1>
     <p>${esc(texte.nochZu)}</p>
-    <p class="r-mut">${esc(davor ? RAID_TEXTE.karte.tooltipBeide : RAID_TEXTE.karte.tooltip)}</p>
+    <p class="r-mut">${esc(RAID_TEXTE.karte.tooltipStufen(davor ? RAID_STUFEN.indexOf(def) + 1 : 1))}</p>
     ${knopf}
   </section>`;
 }
@@ -397,8 +414,9 @@ function leisteHtml(lage: RaidLage, def: RaidDef): string {
     const warnung = lage.spalten[spalte]?.warnung;
     return warnung === 'leer' ? ' r-rot' : warnung === 'einzeln' ? ' r-gelb' : '';
   };
-  // Lage des Pendelstrichs: links und rechts, mit drei Trupps auch die Mitte
-  const pendelLage = (trupp: number): string => (def.truppZahl === 3 ? ['r-l', 'r-m', 'r-r'][trupp] : trupp === 0 ? 'r-l' : 'r-r');
+  // Lage des Pendelstrichs: links und rechts, mit drei Trupps auch die Mitte, mit vier halblinks und halbrechts
+  const lagen = def.truppZahl >= 4 ? ['r-l', 'r-hl', 'r-hr', 'r-r'] : def.truppZahl === 3 ? ['r-l', 'r-m', 'r-r'] : ['r-l', 'r-r'];
+  const pendelLage = (trupp: number): string => lagen[trupp] ?? 'r-l';
   let runden = '';
   for (let runde = 1; runde <= r.mitternacht; runde++) {
     const s = zeigerSpalte(runde, spalten);
@@ -414,21 +432,28 @@ function leisteHtml(lage: RaidLage, def: RaidDef): string {
     const trupp = lage.helden.length > 0 ? pendelTrupp(runde, def.truppZahl, hatHelden) : (runde - 1) % def.truppZahl;
     const seite = trupp === null ? '' : truppKlein(trupp, def.truppZahl);
     const pendel = trupp === null ? '' : `<i class="r-rd-pd ${pendelLage(trupp)}"></i>`;
-    const titel = t.rundeTitel(runde, spaltenName(s), seite, extra, gs === null ? undefined : spaltenName(gs));
+    // Stufe III: Über diesem Gang schaut der Kuckuck heraus (Punkt zwischen den Trupps, links, Mitte, rechts)
+    const kg = hatKuckuck(def) ? kuckuckGang(runde, def.truppZahl) : null;
+    const kuckuck = kg === null ? '' : `<i class="r-rd-kk r-g${kg}"></i>`;
+    const titel = t.rundeTitel(runde, spaltenName(s), seite, extra, gs === null ? undefined : spaltenName(gs),
+      kg === null ? undefined : RAID_TEXTE.gangName(kg, def.truppZahl));
     runden += `<div class="r-rd${zeit}${treffen.has(runde) ? ' r-dreizehn' : ''}" title="${esc(titel)}">`
       + `${zeichen.length > 0 ? `<div class="r-rd-ev">${zeichen.join('')}</div>` : ''}`
       + `<span class="r-rd-nr">${runde}</span><b class="r-rd-sp${farbe(s)}">${spaltenName(s)}</b>`
-      + `${gs === null ? '' : `<b class="r-rd-gg${farbe(gs)}">${spaltenName(gs)}</b>`}${pendel}</div>`;
+      + `${gs === null ? '' : `<b class="r-rd-gg${farbe(gs)}">${spaltenName(gs)}</b>`}${pendel}${kuckuck}</div>`;
   }
   const g = t.legende;
-  const seiten = def.truppZahl === 3
-    ? `<span class="r-legende-lang">${g.seitenDreiLang}</span><span class="r-legende-kurz">${g.seitenDreiKurz}</span>`
-    : `<span class="r-legende-lang">${g.seitenLang}</span><span class="r-legende-kurz">${g.seitenKurz}</span>`;
+  const [seitenLang, seitenKurz] = def.truppZahl >= 4 ? [g.seitenVierLang, g.seitenVierKurz]
+    : def.truppZahl === 3 ? [g.seitenDreiLang, g.seitenDreiKurz] : [g.seitenLang, g.seitenKurz];
+  const seiten = `<span class="r-legende-lang">${seitenLang}</span><span class="r-legende-kurz">${seitenKurz}</span>`;
   const gegenLegende = gegen
     ? `<span><b class="r-lg-gg">${spaltenName(spalten - 1)}–${spaltenName(0)}</b> ${g.gegenzeiger}</span>
       <span><span class="r-lg-13">13</span> <span class="r-legende-lang">${g.dreizehnLang}</span><span class="r-legende-kurz">${g.dreizehnKurz}</span></span>`
     : '';
-  return `<section class="r-panel r-leiste${gegen ? ' r-zwei-zeiger' : ''}${def.truppZahl === 3 ? ' r-drei' : ''}">
+  const kuckuckLegende = hatKuckuck(def)
+    ? `<span><i class="r-lg-kk"></i> ${g.kuckuck} <span class="r-legende-lang">${g.gangLang}</span><span class="r-legende-kurz">${g.gangKurz}</span></span>`
+    : '';
+  return `<section class="r-panel r-leiste${gegen ? ' r-zwei-zeiger' : ''}${mitTruppKlassen(def)}">
     <div class="r-leiste-kopf"><span class="r-lk-vm">${t.vormittag}</span><span class="r-lk-mt">${t.mittag}</span><span class="r-lk-mn" title="${t.legendeTag}">${t.mitternacht}</span></div>
     <div class="r-runden">${runden}</div>
     <div class="r-legende">
@@ -437,6 +462,7 @@ function leisteHtml(lage: RaidLage, def: RaidDef): string {
       <span><b class="r-lg-sp">${spaltenName(0)}–${spaltenName(spalten - 1)}</b> ${g.zeiger}</span>
       ${gegenLegende}
       <span><i class="r-lg-pd"></i> ${g.pendel} ${seiten}</span>
+      ${kuckuckLegende}
       <span><i class="r-lg-mt"></i> <span class="r-legende-lang">${g.mittagLang}</span><span class="r-legende-kurz">${g.mittagKurz}</span></span>
       <span class="r-legende-lang r-lg-tag r-mut">· ${t.legendeTag}</span>
     </div>
@@ -453,10 +479,11 @@ function leerenKnopf(anzahl: number): string {
 function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidDef): string {
   const spalten = spaltenZahl(def);
   const treffen = new Set(treffpunkte(def).map(x => x.spalte));
-  // Lage im Gitter als Variablen, raid.css setzt sie: --gr/--gc nebeneinander (PC, und Stufe I auch am Handy). Mit drei
+  const gaenge = amGang(def);
+  // Lage im Gitter als Variablen, raid.css setzt sie: --gr/--gc nebeneinander (PC, und Stufe I auch am Handy). Ab drei
   // Trupps stehen die Trupps am Handy untereinander (--hr/--hc), je Trupp Name, Spaltenköpfe und Reihen über die ganze
   // Breite: Felder gut 100 statt 34 Pixel breit. Reihenköpfe und Glockenband gibt es dafür je Trupp (.r-nur-stapel).
-  const stapel = def.truppZahl === 3;
+  const stapel = def.truppZahl >= 3;
   const block = 2 + def.reihen;
   const T = (reihe: number | string, spalte: number | string, handy?: [number | string, number | string]): string =>
     `--gr:${reihe};--gc:${spalte}${stapel && handy ? `;--hr:${handy[0]};--hc:${handy[1]}` : ''}`;
@@ -473,7 +500,10 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidD
     h += `<div class="r-trupp-name" style="${T(1, `${von} / ${bis}`, [handyZeile(trupp.trupp, 1), handyBreite])}">${truppName(trupp.trupp, def.truppZahl).toUpperCase()}`
       + `<small${ohneHeiler ? ' class="r-warn-t"' : ''}>${esc(t.truppZeile(trupp.anzahl, trupp.heiler))}</small></div>`;
     h += `<div class="r-trupp-rahmen" style="${T(`2 / ${unten}`, `${von} / ${bis}`, [`${handyZeile(trupp.trupp, 2)} / ${handyZeile(trupp.trupp, 3 + def.reihen)}`, handyBreite])}"></div>`;
-    if (trupp.trupp > 0) h += `<div class="r-gang" style="${T(`2 / ${unten}`, von - 1)}"><span>${t.gang}</span></div>`;
+    if (trupp.trupp > 0) {
+      const vogel = hatKuckuck(def) ? `<b class="r-gang-kk c-kuckuck">${ic('kuckuck')}</b>` : '';
+      h += `<div class="r-gang" style="${T(`2 / ${unten}`, von - 1)}">${vogel}<span>${t.gang}</span></div>`;
+    }
   }
   if (lage.glockenReihe !== null) {
     h += `<div class="r-reihenband" style="${T(lage.glockenReihe + 3, `2 / ${rechts}`, [lage.glockenReihe + 3, handyBreite])}"></div>`;
@@ -489,9 +519,13 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidD
     // Stufe II: Auf dieser Spalte treffen sich Zeiger und Gegenzeiger. Die schmalen Spalten kürzen den kleinen Text,
     // ganz steht er dann im Titel.
     const dreizehn = treffen.has(sp.spalte) ? `<span class="r-13" title="${esc(t.legende.dreizehnLang)}">13</span>` : '';
-    const titel = def.truppZahl === 3 ? ` title="${esc(`${spaltenName(sp.spalte)}: ${klein}`)}"` : '';
+    // Stufe III: Am Gang pickt der Kuckuck; der Vogel steht auf der Seite zum Gang hin
+    const gang = gaenge.get(sp.spalte);
+    const vogel = gang ? `<span class="r-kk c-kuckuck${sp.spalte % SPALTEN_JE_TRUPP === 0 ? ' r-kk-l' : ''}">${ic('kuckuck')}</span>` : '';
+    const titelText = `${spaltenName(sp.spalte)}: ${klein}${gang ? `. ${t.amGang(gang)}` : ''}`;
+    const titel = def.truppZahl >= 3 ? ` title="${esc(titelText)}"` : '';
     const handy: [number, number] = [handyZeile(Math.floor(sp.spalte / SPALTEN_JE_TRUPP), 2), handySpalte(sp.spalte)];
-    h += `<div class="r-skopf${farbe}${dreizehn ? ' r-treff' : ''}" style="${T(2, gitterSpalte(sp.spalte), handy)}"${titel}>${spaltenName(sp.spalte)}<small>${esc(klein)}</small>${dreizehn}</div>`;
+    h += `<div class="r-skopf${farbe}${dreizehn ? ' r-treff' : ''}${gang ? ' r-amgang' : ''}" style="${T(2, gitterSpalte(sp.spalte), handy)}"${titel}>${spaltenName(sp.spalte)}<small>${esc(klein)}</small>${dreizehn}${vogel}</div>`;
   }
   for (let r = 0; r < def.reihen; r++) {
     const glocke = r === lage.glockenReihe;
@@ -539,7 +573,7 @@ function feldHtml(state: GameState, stand: RaidStand, lage: RaidLage, def: RaidD
       <div class="r-knopfgruppe"><span class="r-info">${auswahl ? esc(t.gewaehltKurz(auswahl.name)) : t.tippen}</span>${zurueck}
         <button type="button" class="r-klein-knopf rund" data-hilfe aria-label="${t.hilfe}" title="${t.hilfe}">?</button>
         ${leerenKnopf(Object.keys(stand.aufstellung).length)}</div></div>
-    <div class="r-gitter${def.truppZahl === 3 ? ' r-drei' : ''}">${h}</div>
+    <div class="r-gitter${mitTruppKlassen(def)}">${h}</div>
   </section>`;
 }
 
@@ -1185,8 +1219,12 @@ function zeigeWiedergabe(
   const proHeld = new Map(helden.map(h => [h.id, h]));
   const name = (id: number | undefined): string => (id === undefined ? '?' : proHeld.get(id)?.name ?? '?');
   const gang = (s: number): string => (s > 0 && s % SPALTEN_JE_TRUPP === 0 ? '<div></div>' : '');
+  // Kopfzeile: Über den Gängen schaut auf Stufe III der Kuckuck heraus, wenn er an der Reihe ist
+  const gangKopf = (s: number): string => (s > 0 && s % SPALTEN_JE_TRUPP === 0
+    ? `<div class="r-wg-gang" data-wg-gang="${s / SPALTEN_JE_TRUPP - 1}">${hatKuckuck(def) ? `<span class="c-kuckuck">${ic('kuckuck')}</span>` : ''}</div>`
+    : '');
   let gitter = '<div></div>';
-  for (let s = 0; s < spalten; s++) gitter += `${gang(s)}<div class="r-wg-kopfzeile" data-wg-spalte="${s}">${spaltenName(s)}</div>`;
+  for (let s = 0; s < spalten; s++) gitter += `${gangKopf(s)}<div class="r-wg-kopfzeile" data-wg-spalte="${s}">${spaltenName(s)}</div>`;
   for (let reihe = 0; reihe < def.reihen; reihe++) {
     gitter += `<div class="r-wg-reihe" data-wg-reihe="${reihe}">${reihe + 1}</div>`;
     for (let s = 0; s < spalten; s++) {
@@ -1208,11 +1246,12 @@ function zeigeWiedergabe(
         <div class="r-wg-zenit-spur"><div class="r-wg-zenit-balken" data-wg-balken style="width:100%"></div></div>
         <div class="r-wg-legende"><span class="c-pendel">${ic('pendel')}${g.pendel}</span><span class="c-zeiger">${ic('zeiger')}${g.zeiger}</span>
           ${gegen ? `<span class="c-gegen">${ic('gegen')}${g.gegenzeiger}</span>` : ''}
+          ${hatKuckuck(def) ? `<span class="c-kuckuck">${ic('kuckuck')}${g.kuckuck}</span>` : ''}
           <span class="c-glocke">${ic('glocke')}${g.glocke}</span><span class="c-funken">${ic('funken')}${g.funken}</span>
           <span class="rolle-heil">${ic('kreuz')}${g.heilung}</span></div>
       </div>
     </div>
-    <div class="r-wg-gitter${def.truppZahl === 3 ? ' r-drei' : ''}">${gitter}</div>
+    <div class="r-wg-gitter${mitTruppKlassen(def)}">${gitter}</div>
     <div class="r-wg-lauf" data-wg-lauf aria-live="polite"></div>
     <div class="r-fenster-knoepfe r-wg-knoepfe">
       <div class="r-wg-tempo">${[1, 2, 4].map(n => `<button type="button" class="r-zweit${tempo === n ? ' an' : ''}" data-tempo="${n}">${W.tempo(n)}</button>`).join('')}
@@ -1228,7 +1267,7 @@ function zeigeWiedergabe(
     timer = null;
   };
   const f = oeffneFenster(el, html, {
-    klasse: `r-wg${def.truppZahl === 3 ? ' r-drei' : ''}`, label: W.dialog, hintergrund: false,
+    klasse: `r-wg${mitTruppKlassen(def)}`, label: W.dialog, hintergrund: false,
     beimSchliessen: () => {
       halt();
       fertig();
@@ -1272,10 +1311,10 @@ function zeigeWiedergabe(
     rundeEl.textContent = W.runde(rd.runde, regeln.mitternacht, zeit);
     rundeEl.classList.toggle('mittag', rd.runde >= regeln.mittagAb);
     for (const z of zellen.values()) {
-      z.classList.remove('wg-pendel', 'wg-zeiger', 'wg-gegen', 'wg-glocke', 'wg-funken', 'wg-heil');
+      z.classList.remove('wg-pendel', 'wg-zeiger', 'wg-gegen', 'wg-glocke', 'wg-funken', 'wg-kuckuck', 'wg-heil');
       for (const n of Array.from(z.querySelectorAll('.r-wg-zahl'))) n.remove();
     }
-    for (const k of Array.from(f.fenster.querySelectorAll('.r-wg-kopfzeile, .r-wg-reihe'))) k.classList.remove('an', 'gegen', 'durch');
+    for (const k of Array.from(f.fenster.querySelectorAll('.r-wg-kopfzeile, .r-wg-reihe, .r-wg-gang'))) k.classList.remove('an', 'gegen', 'durch');
     const schaden = new Map<number, number>();
     const heilung = new Map<number, number>();
     const plus = (karte: Map<number, number>, id: number, wert: number): void => { karte.set(id, (karte.get(id) ?? 0) + wert); };
@@ -1288,8 +1327,8 @@ function zeigeWiedergabe(
       const treffer = e.treffer ?? [];
       switch (e.art) {
         case 'pendel':
-          // Nach links oder rechts; mit drei Trupps hängt es für die Mitte gerade
-          uhr.pendel = def.truppZahl === 3 ? [18, 0, -18][e.trupp ?? 0] ?? 0 : e.trupp === 0 ? 18 : -18;
+          // Nach links oder rechts; mit drei Trupps hängt es für die Mitte gerade, mit vier schwingt es halb aus
+          uhr.pendel = pendelAufTrupp(e.trupp ?? 0, def.truppZahl);
           for (const x of treffer) { markiere(x.heldId, 'wg-pendel'); plus(schaden, x.heldId, x.wert); }
           if (treffer.length > 0) zeilen.push(`<div>${esc(W.pendel(truppKlein(e.trupp ?? 0, def.truppZahl), trefferText(e)))}</div>`);
           break;
@@ -1322,6 +1361,14 @@ function zeigeWiedergabe(
           for (const x of treffer) { markiere(x.heldId, 'wg-funken'); plus(schaden, x.heldId, x.wert); }
           zeilen.push(`<div>${esc(W.funken(trefferText(e)))}</div>`);
           break;
+        case 'kuckuck': {
+          // Stufe III: Über dem Gang geht die Tür auf; ohne Treffer stand dort niemand
+          const gangName = RAID_TEXTE.gangName(e.gang ?? 0, def.truppZahl);
+          f.fenster.querySelector(`[data-wg-gang="${e.gang}"]`)?.classList.add('an');
+          for (const x of treffer) { markiere(x.heldId, 'wg-kuckuck'); plus(schaden, x.heldId, x.wert); }
+          zeilen.push(`<div>${esc(treffer.length > 0 ? W.kuckuck(gangName, trefferText(e)) : W.kuckuckLeer(gangName))}</div>`);
+          break;
+        }
         case 'heilung':
           for (const x of treffer) {
             markiere(x.heldId, 'wg-heil');

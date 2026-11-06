@@ -12,7 +12,7 @@ import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { heldenJeExpedition } from './Ausbau';
 import { ClassUnlockSystem } from './ClassUnlockSystem';
 import { raidOffen, raidStand, versuchsLage } from './Raid';
-import { DREIZEHN, ZENIT } from '../data/raids';
+import { DREIZEHN, KUCKUCK, ZENIT } from '../data/raids';
 import { LEHRLINGE } from '../data/lehrlinge';
 import { createGuildFighter } from '../models/GuildRoster';
 
@@ -58,6 +58,8 @@ describe('Probespiel', () => {
     expect(probespielStufe('?probe=raid')).toBe('raid');
     expect(probespielNeu('?probe=raid2')).toBe(true);
     expect(probespielStufe('?probe=raid2')).toBe('raid2');
+    expect(probespielNeu('?probe=raid3')).toBe(true);
+    expect(probespielStufe('?probe=raid3')).toBe('raid3');
     expect(probespielStufe('?probe=stadt')).toBe('stadt');
     expect(probespielStufe('?probe=pfeiler')).toBe('pfeiler');
     expect(probespielStufe('?probe=sterne')).toBe('sterne');
@@ -268,6 +270,38 @@ describe('Probespiel', () => {
     expect(versuchsLage(state, jetzt, DREIZEHN).moeglich).toBe(true);
     expect(state.raidStufen?.dreizehn?.siege).toBe(0);
     expect(createGuildFighter('ranger', 'Neu', { ...state.fighters[0].baseStats }).id).toBe(16);
+    // Stufe III bleibt zu, bis Zenit auf Stufe II einmal angehalten ist
+    expect(raidOffen(state, KUCKUCK)).toBe(false);
+  });
+
+  it('?probe=raid3: zwanzig mit allen zehn Lehrlingen, Zenit auf Stufe I und II je einmal angehalten, Stufe III offen', () => {
+    const jetzt = Date.now();
+    const state = probespiel('raid3');
+    expect(state.fighters).toHaveLength(20);
+    expect(state.fighters.map(f => f.id)).toEqual(Array.from({ length: 20 }, (_, i) => i + 1));
+    const lehrlinge = state.fighters.filter(f => f.lehrling);
+    expect(lehrlinge).toHaveLength(10);
+    expect(lehrlinge.every(f => LEHRLINGE[f.classId]?.name === f.name)).toBe(true);
+    expect(new Set(lehrlinge.map(f => f.classId)).size).toBe(10);
+    for (const f of state.fighters) {
+      for (const itemId of Object.values(f.gear)) {
+        if (itemId) expect(ITEM_DEFS[itemId], itemId).toBeTruthy();
+      }
+    }
+    // Stufe I und II: je einmal gewonnen, in der Woche davor; die Unruh liegt zweimal im Lager
+    expect(state.raid?.siege).toBe(1);
+    expect(state.raidStufen?.dreizehn?.siege).toBe(1);
+    expect(raidStand(state, jetzt, DREIZEHN).woche.versuche).toBe(0);
+    expect(state.globalStock[ZENIT.ersterSiegBeute]).toBe(2);
+    expect(state.statistics).toMatchObject({ raid_siege: 1, raid2_siege: 1, raid2_wochen: 1 });
+    // Stufe III: offen, zwanzig auf dem Feld, drei Ernstkämpfe frei, Tagstein für bezahlte
+    expect(raidOffen(state, KUCKUCK)).toBe(true);
+    expect(state.globalStock.mat_tagstein).toBeGreaterThanOrEqual(80);
+    expect(Object.keys(raidStand(state, jetzt, KUCKUCK).aufstellung)).toHaveLength(20);
+    expect(versuchsLage(state, jetzt, KUCKUCK).moeglich).toBe(true);
+    expect(state.raidStufen?.kuckuck?.siege).toBe(0);
+    expect(state.statistics.raid3_siege ?? 0).toBe(0);
+    expect(createGuildFighter('ranger', 'Neu', { ...state.fighters[0].baseStats }).id).toBe(21);
   });
 
   it('speichert auf einem eigenen Platz, der richtige Spielstand bleibt unberührt', () => {

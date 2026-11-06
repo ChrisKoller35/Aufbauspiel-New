@@ -36,6 +36,12 @@ export interface RaidRegeln {
   heilUnter: number;
   /** Flächenschutz (aoe_resist) auf Glocke, Zeiger, Durchschlag und Funken */
   flaechenschutz: number;
+  /**
+   * Kuckuck (fehlt: gibt es nicht; Stufe III): jede Runde über einem Gang, reihum von links. Er pickt den mit den
+   * wenigsten Leben unter denen, die direkt am Gang stehen (die zwei Spalten daneben), mit Angriff × kuckuck, wie ein
+   * Schlag des Pendels (Abwehr, Ausweichen, Schutzherr und Deckung wirken). Steht dort niemand, geht er wieder hinein.
+   */
+  kuckuck?: number;
 }
 
 export interface TruhenDef {
@@ -183,14 +189,66 @@ export const RAID_DEFS: Record<string, RaidDef> = {
     freiNachRaid: 'zenit',
     karte: { x: 390, y: -4120, radius: 72 },
   },
+  // Stufe III: Zenit mit beiden Zeigern und einem Kuckuck, der über den Gängen pickt; vier Trupps auf zwölf Spalten (A
+  // bis L), 15 bis 20 Helden. Eigene Woche, eigene Truhen; offen nach dem ersten Sieg auf Stufe II. Eichung: docs/RAID.md.
+  kuckuck: {
+    id: 'kuckuck',
+    name: 'Das Kuckucksei',
+    bossName: 'Zenit, mit Kuckuck',
+    werte: { hp: 19000, atk: 110, def: 12, spd: 1.0, critChance: 0.1, critMult: 1.5 },
+    regeln: {
+      zeiger: 1.0, gegenzeiger: 1.0, kuckuck: 0.6, durchschlag: 0.6, glocke: 1.0, glockeAlle: 4, funken: 1.0, funkenAlle: 3,
+      mittagAb: 12, mittagMal: 1.5, mitternacht: 24, heilFaktor: 2, heilUnter: 0.9, flaechenschutz: 0.7,
+    },
+    reihen: 3,
+    truppZahl: 4,
+    minHelden: 15,
+    maxHelden: 20,
+    freieVersucheJeWoche: 3,
+    kostenJeVersuch: { mat_tagstein: 10 },
+    xp: { sieg: 600, niederlage: 200 },
+    halbUnter: 0.5,
+    truhen: {
+      halb: {
+        name: 'Was aus dem Nest fiel',
+        text: 'Zenit kam unter die Hälfte, und aus dem Nest fiel etwas, das nicht hineingehörte. Jorinde hat es '
+          + 'aufgefangen, bevor der Kuckuck es zurückholt.',
+        gold: 350,
+        wuerfeAus: [],
+        setTeil: { stufeVon: 8, stufeBis: 12, getrageneAusJederStufe: false, sonstJedeStufe: false },
+        dinge: { mat_tagstein: 10 },
+        ersatz: { crystal_shard: 15 },
+      },
+      sieg: {
+        name: 'Das Nest',
+        text: 'Hinter der Kuckuckstür liegt ein Nest, und darin alles, was der Kuckuck hinausgeworfen hat, nur nicht '
+          + 'hinaus. Orm sagt, das Nest habe er nie gesehen. Es ist aus seinen Socken.',
+        // je Tabelle achtmal: mehr als die dreizehnte Truhe (sechsmal), dazu Set-Teile der Stufen 10 bis 12
+        wuerfeAus: [
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+          'loot_boss_alruna', 'loot_boss_orm', 'loot_boss_alruna', 'loot_boss_orm',
+        ],
+        setTeil: { stufeVon: 10, stufeBis: 12, getrageneAusJederStufe: true, sonstJedeStufe: true },
+        dinge: { mat_tagstein: 20, crystal_shard: 35 },
+        ersatz: { crystal_shard: 40 },
+      },
+    },
+    ersterSiegBeute: 'die_unruh',
+    freiAb: 'tagespfeiler',
+    freiNachRaid: 'dreizehn',
+    karte: { x: 390, y: -4120, radius: 72 },
+  },
 };
 
 /** Stufe I: «Über dem Tag» (der Spielstand heisst dafür weiter `raid`) */
 export const ZENIT = RAID_DEFS.zenit;
 /** Stufe II: «Die dreizehnte Stunde» (Spielstand: `raidStufen.dreizehn`) */
 export const DREIZEHN = RAID_DEFS.dreizehn;
+/** Stufe III: «Das Kuckucksei» (Spielstand: `raidStufen.kuckuck`) */
+export const KUCKUCK = RAID_DEFS.kuckuck;
 /** Die Stufen in ihrer Reihenfolge (Umschalter im Raid-Bildschirm, Knoten auf der Karte) */
-export const RAID_STUFEN: RaidDef[] = [ZENIT, DREIZEHN];
+export const RAID_STUFEN: RaidDef[] = [ZENIT, DREIZEHN, KUCKUCK];
 
 /** Teamwirkungen, die nur im eigenen Trupp wirken (Alrunas Liste nennt sie je Trupp) */
 export const TRUPP_WIRKUNGEN: Record<string, string> = {
@@ -208,21 +266,22 @@ export const TRUPP_WIRKUNGEN: Record<string, string> = {
 };
 
 const SPALTEN_NAMEN = 'ABCDEFGHIJKL';
-/** «A» bis «F» (Stufe II: bis «I») */
+/** «A» bis «F» (Stufe II: bis «I», mit vier Trupps bis «L») */
 export function spaltenName(spalte: number): string {
   return SPALTEN_NAMEN[spalte] ?? '?';
 }
-/** «Links», «Rechts»; mit drei Trupps «Links», «Mitte», «Rechts» */
+/** «Links», «Rechts»; mit drei Trupps «Links», «Mitte», «Rechts»; mit vier «Links», «Halblinks», «Halbrechts», «Rechts» */
 export function truppName(trupp: number, truppZahl = 2): string {
   if (truppZahl === 2) return trupp === 0 ? 'Links' : 'Rechts';
-  return ['Links', 'Mitte', 'Rechts', 'Aussen'][trupp] ?? `Trupp ${trupp + 1}`;
+  const namen = truppZahl === 4 ? ['Links', 'Halblinks', 'Halbrechts', 'Rechts'] : ['Links', 'Mitte', 'Rechts'];
+  return namen[trupp] ?? `Trupp ${trupp + 1}`;
 }
-/** «links», «rechts» für Sätze («Pendel links»); die Mitte bleibt ein Hauptwort («Pendel Mitte») */
+/** «links», «halblinks», «rechts» für Sätze («Pendel links»); die Mitte bleibt ein Hauptwort («Pendel Mitte») */
 export function truppKlein(trupp: number, truppZahl = 2): string {
   const name = truppName(trupp, truppZahl);
   return name === 'Mitte' ? name : name.toLowerCase();
 }
-/** «nach links», «in die Mitte», «nach rechts» */
+/** «nach links», «in die Mitte», «nach halbrechts», «nach rechts» */
 export function truppRichtung(trupp: number, truppZahl = 2): string {
   const name = truppName(trupp, truppZahl);
   return name === 'Mitte' ? 'in die Mitte' : `nach ${name.toLowerCase()}`;
@@ -262,6 +321,11 @@ export const RAID_TEXTE = {
   montagNachSieg: 'Montag. Zenit hat sich wieder aufgezogen, mit einer Ersatz-Unruh. Jemand muss sie ihm gebracht haben, '
     + 'und Orm sagt, er sei es nicht gewesen.',
   unterschrift: 'Ottokar, Stadtschreiber',
+  /** Stufe III: der Gang zwischen zwei Trupps (0 = der linke); mit vier Trupps «links», «Mitte», «rechts» */
+  gangName: (gang: number, truppZahl: number): string => {
+    const namen = truppZahl === 4 ? ['links', 'Mitte', 'rechts'] : truppZahl === 3 ? ['links', 'rechts'] : ['Mitte'];
+    return namen[gang] ?? `${gang + 1}`;
+  },
 
   karte: {
     name: 'ÜBER DEM TAG',
@@ -271,9 +335,11 @@ export const RAID_TEXTE = {
     besiegtDieseWoche: 'Diese Woche besiegt',
     aufgezogen: 'Zenit hat sich wieder aufgezogen',
     zwoelf: 'Zenit steht auf zwölf',
-    tooltip: 'Zenit, das Uhrwerk über dem Tag. Ein Kampf für bis zu zehn Helden.',
-    /** Sobald Stufe II offen ist */
-    tooltipBeide: 'Zenit, das Uhrwerk über dem Tag. Stufe I für bis zu zehn Helden, Stufe II für bis zu fünfzehn.',
+    /** Titel des Knotens: je offene Stufe ein Satzteil (eine offen: Stufe I allein, auch solange alles zu ist) */
+    tooltipStufen: (offen: number) => offen <= 1
+      ? 'Zenit, das Uhrwerk über dem Tag. Ein Kampf für bis zu zehn Helden.'
+      : `Zenit, das Uhrwerk über dem Tag. Stufe I für bis zu zehn Helden, Stufe II für bis zu fünfzehn${offen >= 3
+        ? ', Stufe III für bis zu zwanzig' : ''}.`,
     /** Zweite Zeile am Knoten, sobald Stufe II offen ist */
     stufeZeile: (stufe: string, zeile: string) => `Stufe ${stufe} · ${zeile}`,
     leiter: 'Jorindes Leiter. Zehn Sprossen.',
@@ -374,6 +440,7 @@ export const RAID_TEXTE = {
     durchschlag: (spalte: string) => `Durchschlag (Spalte ${spalte} leer)`,
     glocke: (reihe: number) => `Glocke (Reihe ${reihe})`,
     funken: (name: string) => `Funken (um ${name})`,
+    kuckuck: (gang: string) => `Kuckuck (Gang ${gang})`,
     rest: 'Rundenende',
     mitternacht: 'Mitternacht',
   },
@@ -395,6 +462,10 @@ export const RAID_TEXTE = {
     pendel: (seite: string, k: number) => `Das Pendel traf die Front ${seite === 'Mitte' ? 'in der Mitte' : seite} ${k}-mal. `
       + 'Am Ende stand dort niemand mehr, der dafür gebaut war.',
     funken: (name: string) => `Die Funken trafen ${name} und wer daneben stand. Danach stand niemand mehr daneben.`,
+    kuckuck: (gang: string, name: string) => `Der Kuckuck pickte am Gang ${gang}, und ${name} war dort jedes Mal der `
+      + 'Kleinste im Nest.',
+    kuckuckViele: (gang: string, k: number) => `Der Kuckuck pickte am Gang ${gang} ${k}-mal den Kleinsten aus dem Nest. `
+      + 'Am Gang standen die Falschen.',
     rest: (name: string) => `${name} fiel am Rundenende. Das System hat es trotzdem Zenit angeschrieben.`,
     mitternacht: 'Mitternacht. Der Tag ist um, und Zenit stellt die Gilde vor die Tür, wie man Stühle hochstellt.',
     keiner: 'Niemand ist gefallen. Alruna hat die Liste trotzdem mitgebracht, für alle Fälle.',
@@ -408,12 +479,17 @@ export const RAID_TEXTE = {
     durchschlagLeer: (spalte: string) => `Spalte ${spalte} war leer. Der Zeiger hat das als Einladung verstanden.`,
     durchschlagGefallen: (name: string, spalte: string) => `${name} fiel, und Spalte ${spalte} stand leer. Der Zeiger merkt `
       + 'so etwas sofort.',
+    /** Stufe III: der Kuckuck, zum ersten Mal mit einem Ziel, und zum ersten Mal vor einem leeren Gang */
+    kuckuck: (gang: string, name: string) => `Über dem Gang ${gang} geht eine Tür auf. Der Kuckuck schaut, wer am Gang am `
+      + `kleinsten ist, und pickt ${name}. So machen es Kuckucke, sagt Alruna.`,
+    kuckuckLeer: (gang: string) => `Über dem Gang ${gang} geht die Tür auf, aber am Gang steht niemand. Der Kuckuck schaut `
+      + 'beleidigt und geht wieder hinein.',
     /** Stufe II: Zeiger und Gegenzeiger stehen auf derselben Spalte */
     dreizehn: (spalte: string) => `Es schlägt dreizehn: Beide Zeiger stehen auf Spalte ${spalte}. Zenit tut, als sei das Absicht.`,
     glocke: (reihe: number, n: number) => `Die Glocke schlägt, wo am meisten los ist. In Reihe ${reihe} standen ${n}. Sie hat `
       + 'nachgezählt.',
     funken: (name: string, nachbarn: string[]) => `Zenit merkt sich, wer ihm am meisten wehtut. ${name} hat gewonnen.`
-      + (nachbarn.length > 0 ? ` ${liste(nachbarn)} standen daneben.` : ''),
+      + (nachbarn.length > 0 ? ` ${liste(nachbarn)} ${nachbarn.length === 1 ? 'stand' : 'standen'} daneben.` : ''),
     pendelZerbrechlich: (name: string) => `${name} stand vorn. Das Pendel fragt nicht, wer eingeteilt war.`,
     mittag: 'Es schlägt zwölf. Zenit hat Mittag und nimmt ihn sich nicht frei.',
     bardin: (name: string, runde: number) => `Zuerst fiel ${name}, in Runde ${runde}. Das Heldenlied lief trotzdem weiter, bis zum Ende.`,
@@ -527,15 +603,17 @@ export const RAID_TEXTE = {
     freiWert: (frei: number, max: number) => `${frei} von ${max}`,
     freiDanach: (kosten: number) => `diese Woche · danach je ${kosten}`,
     lager: (n: number) => `Tagstein · im Lager ${n}`,
-    rundeTitel: (runde: number, spalte: string, seite: string, extra: string[], gegen?: string) =>
+    rundeTitel: (runde: number, spalte: string, seite: string, extra: string[], gegen?: string, gang?: string) =>
       `Runde ${runde}: Zeiger ${spalte}${gegen ? `, Gegenzeiger ${gegen}` : ''}${seite ? `, Pendel ${seite}` : ''}`
-      + `${extra.length > 0 ? `, ${extra.join(', ')}` : ''}`,
+      + `${gang ? `, Kuckuck am Gang ${gang}` : ''}${extra.length > 0 ? `, ${extra.join(', ')}` : ''}`,
     /** Stufe II: Runde, in der beide Zeiger auf derselben Spalte stehen (Markierung in der Rundenleiste) */
     dreizehnMarke: 'es schlägt dreizehn',
     legende: {
       funken: 'Funken', glocke: 'Glocke', zeiger: 'Zeiger', pendel: 'Pendel', seitenLang: 'links / rechts', seitenKurz: 'l / r',
       mittagLang: 'ab Mittag × 1,5', mittagKurz: 'Mittag × 1,5', heilung: 'Heilung',
       gegenzeiger: 'Gegenzeiger', seitenDreiLang: 'links / Mitte / rechts', seitenDreiKurz: 'l / m / r',
+      seitenVierLang: 'links / halblinks / halbrechts / rechts', seitenVierKurz: 'l / hl / hr / r',
+      kuckuck: 'Kuckuck', gangLang: 'am Gang links / Mitte / rechts', gangKurz: 'Gang l / m / r',
       dreizehnLang: 'beide Zeiger auf einer Spalte', dreizehnKurz: 'dreizehn',
     },
     /** Umschalter zwischen den Stufen */
@@ -557,6 +635,8 @@ export const RAID_TEXTE = {
     vorn: 'VORN',
     hinten: 'HINTEN',
     gang: 'GANG',
+    /** Stufe III: Spaltenkopf am Gang (C/D, F/G, I/J) */
+    amGang: (gang: string) => `Am Gang ${gang} pickt der Kuckuck den mit den wenigsten Leben.`,
     feldLabel: (feld: string) => `Feld ${feld}, leer`,
     zelleTitel: (name: string, klasse: string, feld: string) => `${name} · ${klasse} · Feld ${feld}`,
     karteTitel: (name: string, klasse: string, rolle: string, feld: string | null) =>
@@ -620,8 +700,11 @@ export const RAID_TEXTE = {
       `Durchschlag ${spalte}, Gegenzeiger: alle ${min === max ? `−${min}` : `−${min} bis −${max}`}`,
     glocke: (reihe: number, treffer: string) => `Glocke, Reihe ${reihe}: ${treffer}`,
     funken: (treffer: string) => `Funken: ${treffer}`,
+    kuckuck: (gang: string, treffer: string) => `Kuckuck am Gang ${gang}: ${treffer}`,
+    kuckuckLeer: (gang: string) => `Kuckuck am Gang ${gang}: niemand da, er geht wieder hinein`,
     heilung: (heiler: string, name: string, n: number) => `${heiler} heilt ${name} +${n}`,
-    gefallen: (name: string, ursache: string) => `${name} fällt (${ursache})`,
+    /** Die Ursache trägt oft schon eine Klammer («Zeiger (Spalte G)»), darum mit Doppelpunkt */
+    gefallen: (name: string, ursache: string) => `${name} fällt: ${ursache}`,
     angriff: (summe: number) => `Die Gilde trifft Zenit: −${summe}`,
     mittag: 'Es schlägt zwölf!',
     /** Zenit ist betäubt: sein Zug, das Pendel, fällt aus */
@@ -802,7 +885,91 @@ export const STUFEN_TEXTE: Record<string, StufenTexte> = {
         + 'hat «Nicht zurückgeben.» daran gebunden.',
     },
   },
+
+  kuckuck: {
+    stufe: 'III',
+    name: KUCKUCK.name,
+    titel: 'ZENIT, MIT KUCKUCK',
+    einleitung:
+      'Zenit stand still, zwischen zwölf und dreizehn, bis am Montag jemand ein Ei in sein Gehäuse gelegt hat. Seither '
+      + 'geht über jedem Gang eine kleine Tür auf, und ein Kuckuck schaut heraus. Er ruft nicht. Er schaut, wer am Gang am '
+      + 'kleinsten ist, und pickt. Alruna sagt, so machen es Kuckucke: Wer im Nest am wenigsten hat, fliegt zuerst hinaus. '
+      + 'Das Feld ist wieder breiter geworden, vier Trupps auf zwölf Spalten, und die beiden Zeiger treffen sich darauf nie '
+      + 'mehr. Jorinde findet das schade, sie hatte sich an dreizehn gewöhnt. Orm sagt, er habe kein Ei gelegt. Gefragt hat '
+      + 'ihn diesmal Jorinde. Ich habe die Bänke in der Wachstube gezählt, mit allen Lehrlingen: zwanzig. Es reicht genau.',
+    schluss:
+      'Der Kuckuck ist still. Er sitzt in seiner Tür und schaut niemanden mehr an, und Zenit steht wieder zwischen zwölf '
+      + 'und dreizehn, diesmal mit offenem Deckel. Jorinde hat die Tür mit Draht zugebunden, Alruna hat einen Zettel daran '
+      + 'gehängt: «Nicht füttern.» Orm hat beim Aufräumen geholfen, ungefragt, und hatte dabei Federn am Ärmel. Gefragt hat '
+      + 'ihn niemand. Ich habe die Federn trotzdem aufgeschrieben.',
+    montagVorSieg: 'Montag. Drei neue Ernstkämpfe auf Stufe III. Der Kuckuck hat die alten aus dem Nest geworfen.',
+    montagNachSieg: 'Montag. Der Draht ist ab, die Tür ist auf, der Kuckuck schaut wieder. Orm sagt, er habe keinen Draht '
+      + 'gebraucht. Gefragt hat ihn diesmal Alruna.',
+    zu: 'Erst Zenit auf Stufe II anhalten',
+    nochZu: 'Erst Zenit auf Stufe II anhalten. Solange er zwei Zeiger hat, legt ihm niemand ein Ei hinein, sagt Alruna, '
+      + 'und sie klingt dabei nicht ganz sicher.',
+    aufgezogen: 'Der Kuckuck ist wieder da',
+    uhr: { vor: 'Zenit mit Kuckuck, gleich geht die Tür auf', auf: 'Zenit mit Kuckuck, still' },
+    regelBlatt: [
+      'Pendel: jede Runde einen Trupp weiter, links, halblinks, halbrechts, rechts. Es trifft alle in der vordersten '
+        + 'besetzten Reihe des Trupps. Spott hilft nicht: Zenit zielt nicht, Zenit schwingt.',
+      'Zeiger: jede Runde eine Spalte weiter, A bis L und wieder A. Seine Last teilt sich auf alle in der Spalte. Ist die '
+        + 'Spalte leer, schlägt er durch, auf alle.',
+      'Gegenzeiger: rückwärts, L bis A und wieder L, sonst wie der Zeiger. Auf zwölf Spalten treffen sich die beiden nie, '
+        + 'dreizehn schlägt es hier nicht.',
+      'Kuckuck: jede Runde über einem Gang, reihum links, Mitte, rechts. Er pickt den, der in den zwei Spalten am Gang '
+        + '(C und D, F und G, I und J) die wenigsten Leben hat, etwas mehr als halb so hart wie das Pendel. Ausweichen, '
+        + 'Schutz und Deckung wirken. Steht am Gang niemand, geht er wieder hinein.',
+      'Glocke: alle vier Runden, auf jeden in der vollsten Reihe. Bei Gleichstand die hintere.',
+      'Funken: alle drei Runden, auf den, der bisher am meisten Schaden gemacht hat, und auf seine Nachbarn im Trupp: oben, '
+        + 'unten, links, rechts. Über die Gänge springen sie nicht.',
+      'Mittag: Ab Runde 12 schlägt alles anderthalbmal so hart, auch der Kuckuck. Mitternacht: Nach Runde 24 ist der Tag um.',
+      'Trupps: Links sind die Spalten A bis C, Halblinks D bis F, Halbrechts G bis I, Rechts J bis L. Lieder, Segen, '
+        + 'Schilde und Heilung wirken nur im eigenen Trupp.',
+      'Hier oben heilen Kleriker, Druiden und Paladine mitten im Kampf: Steht im eigenen Trupp jemand unter neun Zehnteln, '
+        + 'heilen sie den Schwächsten statt anzugreifen und warten dann ihre Abklingzeit.',
+      'Fünfzehn bis zwanzig Helden. Stufe III hat ihre eigene Woche: drei freie Ernstkämpfe, danach je zehn Tagstein, und '
+        + 'ihre eigenen zwei Truhen.',
+      'Ein Ernstkampf wird beim Klick gerechnet und gebucht. Die Wiedergabe zeigt nur, was geschah.',
+    ],
+    zahl: (n: number, max: number) => {
+      if (n >= max) return 'Zwanzig gehen hinauf. Alruna hat die Liste auf zwei Seiten geschrieben, Jorinde hat die Bänke '
+        + 'gezählt. Es reicht genau.';
+      if (n >= 15) return `${n} gehen hinauf. Vier Trupps, drei Gänge: Wer am Gang steht, sollte nicht der Kleinste sein.`;
+      return 'Mindestens fünfzehn. Vier Trupps wollen gefüllt sein, und der Kuckuck sucht sich an jedem Gang den Kleinsten.';
+    },
+    ansage: {
+      vier: 'Vier gehen hinauf, einer je Trupp. Alruna schlägt die erste Seite auf, der Kuckuck schaut schon heraus.',
+      viele: (n: number) => `${n} gehen hinauf, auf vier Trupps. Alruna zählt mit, der Kuckuck auch.`,
+      zwoelf: 'Zenit fiel, als es zwölf schlug. Der Kuckuck ist vor Schreck in seiner Tür sitzen geblieben.',
+      vorZwoelf: 'Zenit fiel vor zwölf. Der Kuckuck ist in seiner Tür sitzen geblieben und schaut beleidigt.',
+      niederlageSpaet: (runde: number) => `Ihr kamt bis Runde ${runde}. Der Kuckuck hat am Schluss noch einmal `
+        + 'herausgeschaut. Alruna schreibt auf, wen er gepickt hat.',
+      niederlageFrueh: (runde: number) => `Ihr kamt bis Runde ${runde}. Alruna sagt nichts und malt neben die Zahl einen `
+        + 'kleinen Vogel.',
+    },
+    sieg: 'DER KUCKUCK SCHWEIGT',
+    keineTruheHalb: 'Unter der Hälfte öffnet sich «Was aus dem Nest fiel». Diesmal blieb sie zu.',
+    halbSchonGeholt: '«Was aus dem Nest fiel» ist diese Woche schon geholt. Beim Sieg wartet noch das Nest.',
+    nachWochensieg: 'Das Nest ist diese Woche geleert. Am Montag geht die Tür wieder auf. Ernstkämpfe zählen weiter für '
+      + 'die Erfahrung.',
+    halbInhalt: 'Set-Teil, Gold, Tagstein',
+    siegInhalt: 'Beute von Alruna und Orm, je achtmal, Set-Teil, Tagstein',
+    ersterZeile: 'Erster Sieg: das Kuckucksei',
+    ersterInhalt: 'Schmuck, Stufe 12, nur einmal',
+    erster: {
+      name: 'Das Kuckucksei',
+      text: 'Zum ersten Sieg auf Stufe III: das Ei, das jemand in Zenit gelegt hat. Jorinde hat es aufgeklopft. Drin war '
+        + 'kein Küken, sondern eine Unruh, und Alruna sagt, das erkläre einiges.',
+    },
+  },
 };
+
+/** 1 für Stufe I, 2 für Stufe II, 3 für Stufe III (unbekannt: 1); Zähler raid2_…, raid3_… (Raid.ernstkampf) */
+export function stufenNummer(def: RaidDef): number {
+  const i = RAID_STUFEN.findIndex(d => d.id === def.id);
+  return i >= 0 ? i + 1 : 1;
+}
 
 /** Die Texte einer Stufe (unbekannt: die von Stufe I) */
 export function stufenTexte(def: RaidDef): StufenTexte {

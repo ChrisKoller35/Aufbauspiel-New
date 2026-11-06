@@ -1,4 +1,4 @@
-// ─── Magic City – Eichung der Raids «Über dem Tag» und «Die dreizehnte Stunde» ──────────────
+// ─── Magic City – Eichung der Raids «Über dem Tag», «Die dreizehnte Stunde» und «Das Kuckucksei» ──────
 // Rechnet Zenit (src/data/raids.ts) gegen die Muster-Gilde (src/data/raidMuster.ts) in ihren Aufstellungen,
 // je Zeile 400 Kämpfe mit den Samen i · 7919; die ersten 20 sind die von tests/raid.test.ts. Die erste
 // Tabelle zeigt Siege, Siegrunde, Zenits Rest, wie oft Zenit unter die Hälfte kam, Siege bis Runde 12,
@@ -9,7 +9,8 @@
 // lassen und die Tabellen in docs/RAID.md nachführen. Stellschraube zuerst Zenits Leben, in Schritten von 250,
 // erst danach Wuchten oder Heilfaktor. Danach dasselbe für Stufe II (Zenit mit Gegenzeiger, die Muster-Gilde mit
 // fünf Lehrlingen, anker15, auf neun Spalten): Tabelle, je eine Regel aus und ihre Bänder, die dreizehnte Truhe
-// gegen Zenits Truhe.
+// gegen Zenits Truhe. Und für Stufe III (Zenit mit Kuckuck, die Muster-Gilde mit allen zehn Lehrlingen, anker20,
+// auf zwölf Spalten; dazu anker15 in der besten gesuchten Ordnung für fünfzehn): Tabelle, Regeln, Bänder, das Nest.
 // Aufruf: npm run raid-eichung
 //         mehr Läufe:                  npm run raid-eichung -- --laeufe 1000
 //         Zenits Leben durchprobieren: npm run raid-eichung -- --leben 13500,14000,14500   (ohne Bänder)
@@ -19,17 +20,17 @@
 //                                      mit anker15, jeder der fünfzehn einzeln, 600 Schritte; die Suche setzt
 //                                      dort in drei von zehn Schritten zwei Helden)
 //         Aufstellungssuche:           npm run raid-eichung -- --suche t4                 (T4 ≤ 65 %)
-//         nur eine Stufe:              npm run raid-eichung -- --stufe II                 (I oder II; mit --leben:
+//         nur eine Stufe:              npm run raid-eichung -- --stufe II                 (I, II oder III; mit --leben:
 //                                      das Leben dieser Stufe durchprobieren)
 //         die besten zehn neu suchen:  npm run raid-eichung -- --suche zehn               (Stufe II ohne Lehrlinge,
 //                                      600 Schritte ab «zehn»: ≤ 15 %)
 // ────────────────────────────────────────────────────────────────
 
 import { ITEM_DEFS } from '../src/data/items';
-import { DREIZEHN, RaidDef, ZENIT } from '../src/data/raids';
+import { DREIZEHN, KUCKUCK, RaidDef, ZENIT } from '../src/data/raids';
 import {
-  RaidAufstellungDreizehn, RaidAufstellungName, RaidMusterName, baueRaidGilde, raidMusterAufstellung,
-  raidMusterAufstellungDreizehn,
+  RaidAufstellungDreizehn, RaidAufstellungKuckuck, RaidAufstellungName, RaidMusterName, baueRaidGilde, raidMusterAufstellung,
+  raidMusterAufstellungDreizehn, raidMusterAufstellungKuckuck,
 } from '../src/data/raidMuster';
 import { wegeDerKlasse } from '../src/data/spezialisierungen';
 import { createNewGameState } from '../src/models/GameState';
@@ -47,7 +48,8 @@ type Abschaltbar = NonNullable<RaidOptionen['ohne']>[number];
 const REGELN: Abschaltbar[] = ['pendel', 'zeiger', 'durchschlag', 'glocke', 'funken', 'mittag', 'heilung'];
 const REGEL_NAME: Record<Abschaltbar, string> = {
   pendel: 'Pendel', zeiger: 'Zeiger (mit Durchschlag)', gegenzeiger: 'Gegenzeiger (mit Durchschlag)', durchschlag: 'Durchschlag',
-  glocke: 'Glocke', funken: 'Funken', mittag: 'Mittag', heilung: 'Heilregel', rest: 'Rundenende', mitternacht: 'Mitternacht',
+  glocke: 'Glocke', funken: 'Funken', kuckuck: 'Kuckuck', mittag: 'Mittag', heilung: 'Heilregel', rest: 'Rundenende',
+  mitternacht: 'Mitternacht',
 };
 const GILDEN: RaidMusterName[] = ['anker', 'sets5', 'sets0', 't4', 'kern'];
 const DIE_SECHS = ['Ansgar', 'Ewin', 'Moos', 'Liedra', 'Ysra', 'Morn'];
@@ -60,7 +62,7 @@ const MIT_WERT = ['--laeufe', '--leben', '--ohne', '--stufe'];
 function abbruch(text: string): never {
   console.error(text);
   console.error('Aufruf: npm run raid-eichung -- [--laeufe 400] [--leben 13500,14500] [--ohne glocke,funken] [--wege] '
-    + '[--suche t4|zehn] [--stufe I|II]');
+    + '[--suche t4|zehn] [--stufe I|II|III]');
   process.exit(1);
 }
 
@@ -93,10 +95,11 @@ const SUCHE: RaidMusterName | null = ARGUMENTE.includes('--suche') && !ZEHN_SUCH
   ? (GILDEN.find(g => g === wertVon('--suche')) ?? 't4')
   : null;
 const STUFE = wertVon('--stufe');
-if (STUFE !== undefined && STUFE !== 'I' && STUFE !== 'II') abbruch(`--stufe: I oder II, nicht «${STUFE}».`);
-/** Welche Stufen gerechnet werden (ohne --stufe beide) */
-const STUFE_EINS = STUFE !== 'II';
-const STUFE_ZWEI = STUFE !== 'I';
+if (STUFE !== undefined && STUFE !== 'I' && STUFE !== 'II' && STUFE !== 'III') abbruch(`--stufe: I, II oder III, nicht «${STUFE}».`);
+/** Welche Stufen gerechnet werden (ohne --stufe alle) */
+const STUFE_EINS = STUFE === undefined || STUFE === 'I';
+const STUFE_ZWEI = STUFE === undefined || STUFE === 'II';
+const STUFE_DREI = STUFE === undefined || STUFE === 'III';
 
 // ── Messen ──
 
@@ -142,6 +145,12 @@ function aufbau(gilde: RaidMusterName, aufstellung: RaidAufstellungName, ohneHel
 function aufbauZwei(gilde: RaidMusterName, aufstellung: RaidAufstellungDreizehn, ohneHelden: string[] = []): Aufbau {
   const { helden, stufen } = baueRaidGilde(gilde);
   return { helden, stufen, aufstellung: raidMusterAufstellungDreizehn(aufstellung, helden, ohneHelden), def: DREIZEHN };
+}
+
+/** Eine Muster-Gilde (anker20, für fünfzehn anker15) in einer Aufstellung von Stufe III */
+function aufbauDrei(gilde: RaidMusterName, aufstellung: RaidAufstellungKuckuck, ohneHelden: string[] = []): Aufbau {
+  const { helden, stufen } = baueRaidGilde(gilde);
+  return { helden, stufen, aufstellung: raidMusterAufstellungKuckuck(aufstellung, helden, ohneHelden), def: KUCKUCK };
 }
 
 /** `anzahl` Kämpfe mit den Samen (versatz + i) · 7919 */
@@ -194,7 +203,25 @@ function band(text: string, wert: number, von: number, bis: number, anzeige = pr
 
 // ── Zenits Leben durchprobieren (ohne Bänder) ──
 
-if (LEBEN.length > 0 && !STUFE_EINS) {
+if (LEBEN.length > 0 && STUFE === 'III') {
+  console.log(`\nRaid-Eichung Stufe III: Zenits Leben, ${LAEUFE} Läufe je Feld (die Bänder gelten für `
+    + `${KUCKUCK.werte.hp.toLocaleString('de-CH')} Leben)\n`);
+  console.log('| Leben | anker20 · Gut | anker20 · Profi | anker20 · Lehrbuch | anker20 · Naiv | anker15 · die beste für fünfzehn |');
+  console.log('|---|---|---|---|---|---|');
+  for (const hp of LEBEN) {
+    const mit = { werte: { hp } };
+    const [gut, profi, lehrbuch, naiv, fuenfzehn] = [
+      aufbauDrei('anker20', 'gut'), aufbauDrei('anker20', 'profi'), aufbauDrei('anker20', 'lehrbuch'), aufbauDrei('anker20', 'naiv'),
+      aufbauDrei('anker15', 'fuenfzehn'),
+    ].map(a => fasse(laeufe(a, mit), KUCKUCK));
+    console.log(`| ${hp.toLocaleString('de-CH')} | ${prozent(gut.sieg)} | ${prozent(profi.sieg)} | ${prozent(lehrbuch.sieg)} | `
+      + `${prozent(naiv.sieg)} | ${prozent(fuenfzehn.sieg)} |`);
+  }
+  console.log(`\nRechenzeit: ${komma(rechenzeit / kaempfe, 2)} ms je Kampf (${kaempfe} Kämpfe)\n`);
+  process.exit(0);
+}
+
+if (LEBEN.length > 0 && STUFE === 'II') {
   console.log(`\nRaid-Eichung Stufe II: Zenits Leben, ${LAEUFE} Läufe je Feld (die Bänder gelten für `
     + `${DREIZEHN.werte.hp.toLocaleString('de-CH')} Leben)\n`);
   console.log('| Leben | anker15 · Gut | anker15 · Profi | anker15 · Lehrbuch | anker15 · Naiv | Anker · die besten zehn |');
@@ -604,6 +631,86 @@ if (WEGE && STUFE_ZWEI) {
     }
   }
   if (funde.length > 0) console.log(`\n${funde.join('\n').trimEnd()}`);
+}
+
+// ── Stufe III: «Das Kuckucksei» (Zenit mit Kuckuck, vier Trupps auf zwölf Spalten) ──
+
+/** Zeilen von Stufe III: die Muster-Gilde mit allen zehn Lehrlingen (anker20), dazu die fünfzehn von Stufe II */
+const ZEILEN_DREI: { id: string; titel: string; gilde: RaidMusterName; aufstellung: RaidAufstellungKuckuck }[] = [
+  { id: 'gut', titel: 'anker20 · Gut', gilde: 'anker20', aufstellung: 'gut' },
+  { id: 'profi', titel: 'anker20 · Profi', gilde: 'anker20', aufstellung: 'profi' },
+  { id: 'lehrbuch', titel: 'anker20 · Lehrbuch (Ordnung von Stufe II)', gilde: 'anker20', aufstellung: 'lehrbuch' },
+  { id: 'naiv', titel: 'anker20 · Naiv (vorne voll)', gilde: 'anker20', aufstellung: 'naiv' },
+  { id: 'fuenfzehn', titel: 'anker15 (15) · die beste gesuchte Ordnung', gilde: 'anker15', aufstellung: 'fuenfzehn' },
+];
+/** Was sich auf Stufe III abschalten lässt: dazu der Kuckuck */
+const REGELN_DREI: Abschaltbar[] = ['pendel', 'zeiger', 'gegenzeiger', 'kuckuck', 'glocke', 'funken', 'mittag', 'heilung'];
+
+if (STUFE_DREI) {
+  const w3 = KUCKUCK.werte;
+  console.log(`\nStufe III, «${KUCKUCK.name}»: ${KUCKUCK.bossName} ${w3.hp.toLocaleString('de-CH')} Leben, Angriff ${w3.atk}, `
+    + `Abwehr ${w3.def}, Kuckuck × ${komma(KUCKUCK.regeln.kuckuck ?? 0)}; ${LAEUFE} Läufe je Zeile (Samen i · 7919)\n`);
+  console.log('| Gilde · Aufstellung | Sieg | Ø Runde | Zenit-Rest | Zenit < 50 % | Sieg ≤ R12 | alle 20 stehen | Ø stehend | Mitternacht |');
+  console.log('|---|---|---|---|---|---|---|---|---|');
+  const roh3 = new Map<string, Lauf[]>();
+  const m3 = new Map<string, Messung>();
+  for (const zeile of ZEILEN_DREI) {
+    const liste = laeufe(aufbauDrei(zeile.gilde, zeile.aufstellung));
+    const x = fasse(liste, KUCKUCK);
+    roh3.set(zeile.id, liste);
+    m3.set(zeile.id, x);
+    const alle = liste.filter(l => l.sieg && l.stehend >= KUCKUCK.maxHelden).length / liste.length;
+    console.log(`| ${zeile.titel} | ${prozent(x.sieg)} | ${komma(x.siegRunde)} | ${prozent(x.rest)} | ${prozent(x.unterHalb)} | `
+      + `${prozent(x.bisZwoelf)} | ${prozent(alle)} | ${komma(x.stehend)} | ${prozent(x.mitternacht)} |`);
+  }
+  console.log('\nØ Runde und Ø stehend im Schnitt der Siege; Sieg ≤ R12 und alle 20 stehen als Anteil aller Läufe.');
+  if (LAEUFE >= 20) {
+    const r = (id: string): Lauf[] => roh3.get(id)!;
+    const rest20 = (id: string): string => prozent(fasse(r(id).slice(0, 20), KUCKUCK).rest);
+    console.log(`\nMit den 20 Samen des Tests: Gut ${vonZwanzig(r('gut'), l => l.sieg)} `
+      + `(Ø Runde ${komma(fasse(r('gut').slice(0, 20), KUCKUCK).siegRunde)}), Profi ${vonZwanzig(r('profi'), l => l.sieg)}, `
+      + `Lehrbuch ${vonZwanzig(r('lehrbuch'), l => l.sieg)} (Rest ${rest20('lehrbuch')}), `
+      + `Naiv ${vonZwanzig(r('naiv'), l => l.sieg)} (Rest ${rest20('naiv')}), `
+      + `fünfzehn ${vonZwanzig(r('fuenfzehn'), l => l.sieg)} (Rest ${rest20('fuenfzehn')}).`);
+  }
+  const g3 = (id: string): Messung => m3.get(id)!;
+  band('Stufe III · anker20 · Gut: Siege 55 bis 75 %', g3('gut').sieg, 0.55, 0.75);
+  band('Stufe III · anker20 · Profi: Siege mindestens 90 %', g3('profi').sieg, 0.90, 1);
+  band('Stufe III · anker20 · Lehrbuch: Siege höchstens 10 %', g3('lehrbuch').sieg, 0, 0.10);
+  band('Stufe III · anker20 · Naiv: keine Siege', g3('naiv').sieg, 0, 0);
+  band('Stufe III · fünfzehn (anker15) in der besten gesuchten Ordnung: Siege höchstens 10 %', g3('fuenfzehn').sieg, 0, 0.10);
+  const spaet3 = ZEILEN_DREI.reduce((a, b) => (g3(b.id).mitternacht > g3(a.id).mitternacht ? b : a));
+  const spaeteste3 = g3(spaet3.id).mitternacht;
+  band('Stufe III · Mitternacht höchstens 2 % in jeder Zeile', spaeteste3, 0, 0.02,
+    spaeteste3 > 0 ? `${prozent(spaeteste3)} (höchste: ${spaet3.titel})` : 'in keiner Zeile');
+
+  // Je eine Regel aus, mit «Gut»: Der Kuckuck muss zählen
+  console.log(`\nStufe III, je eine Regel aus (${LAEUFE} Läufe, anker20 · Gut; Zeiger aus nimmt nur den Durchschlag des Zeigers mit)\n`);
+  console.log('| Ohne | anker20 · Gut | gegenüber Gut | anker20 · Lehrbuch | Zenit-Rest | Mitternacht |');
+  console.log('|---|---|---|---|---|---|');
+  for (const regel of REGELN_DREI) {
+    const gut = fasse(laeufe(aufbauDrei('anker20', 'gut'), { ohne: [regel] }), KUCKUCK);
+    const lehrbuch = fasse(laeufe(aufbauDrei('anker20', 'lehrbuch'), { ohne: [regel] }), KUCKUCK);
+    console.log(`| ${REGEL_NAME[regel]} | ${prozent(gut.sieg)} | ${punkte(gut.sieg - g3('gut').sieg)} | ${prozent(lehrbuch.sieg)} | `
+      + `${prozent(gut.rest)} | ${prozent(gut.mitternacht)} |`);
+    if (regel === 'kuckuck') {
+      band('Stufe III · ohne Kuckuck: anker20 · Gut mindestens 15 Punkte mehr Siege', gut.sieg - g3('gut').sieg, 0.15, 1,
+        `${punkte(gut.sieg - g3('gut').sieg)} Punkte`);
+    } else if (regel === 'heilung') {
+      band('Stufe III · ohne Heilregel: anker20 · Gut höchstens 5 % Siege', gut.sieg, 0, 0.05);
+    }
+  }
+
+  // Das Nest gegen die dreizehnte Truhe (Stufe II)
+  const truheZwei = truhenSchnitt(DREIZEHN, 'sieg');
+  const truheDrei = truhenSchnitt(KUCKUCK, 'sieg');
+  const halbZwei = truhenSchnitt(DREIZEHN, 'halb');
+  const halbDrei = truhenSchnitt(KUCKUCK, 'halb');
+  console.log('\nTruhen von Stufe III gegen die von Stufe II (Gold und Grundwert der Gegenstände, ohne Set-Teile und Tagstein)\n');
+  console.log(`  ${KUCKUCK.truhen.sieg.name}: ${beuteZeile(truheDrei)} · ${DREIZEHN.truhen.sieg.name}: ${beuteZeile(truheZwei)}`);
+  console.log(`  ${KUCKUCK.truhen.halb.name}: ${beuteZeile(halbDrei)} · ${DREIZEHN.truhen.halb.name}: ${beuteZeile(halbZwei)}`);
+  const mal3 = truheDrei.wert / truheZwei.wert;
+  band(`Stufe III · ${KUCKUCK.truhen.sieg.name}: Wert 1,2- bis 1,6-mal ${DREIZEHN.truhen.sieg.name}`, mal3, 1.2, 1.6, `${komma(mal3)}-mal`);
 }
 
 // ── Die besten zehn neu suchen (--suche zehn) ──

@@ -9,6 +9,8 @@
 // spiegelbildlich vor der Zwölf. Regeln: docs/RAID.md.
 // ────────────────────────────────────────────────────────────────
 
+import type { RaidDef } from '../../data/raids';
+
 export interface UhrStellung {
   /** Grosser Zeiger in Grad, 0 = zwölf, im Uhrzeigersinn */
   minute: number;
@@ -33,10 +35,24 @@ export const KURZ_VOR_DREIZEHN: UhrStellung = { minute: -32, gegen: 32, stunde: 
 /** Stufe II, diese Woche angehalten: beide langen Zeiger auf zwölf, der kleine zwischen zwölf und eins */
 export const ANGEHALTEN: UhrStellung = { minute: 0, gegen: 0, stunde: 15, pendel: 0 };
 
+/**
+ * Die Uhr einer Stufe im Kopf des Raid-Bildschirms und am Knoten der Karte: kurz vor zwölf, diese Woche besiegt auf
+ * zwölf; mit Gegenzeiger kurz vor dreizehn und angehalten
+ */
+export function uhrStellungFuer(def: RaidDef, besiegt: boolean): UhrStellung {
+  if (def.regeln.gegenzeiger !== undefined) return besiegt ? ANGEHALTEN : KURZ_VOR_DREIZEHN;
+  return besiegt ? AUF_ZWOELF : KURZ_VOR_ZWOELF;
+}
+
 /** Grosser Zeiger auf eine Spalte: nach unten, Spalte 0 links unten bis zur letzten rechts unten */
 export function zeigerAufSpalte(spalte: number, spalten = 6): number {
   const breite = 100;
   return 180 + breite / 2 - (spalten <= 1 ? breite / 2 : (spalte * breite) / (spalten - 1));
+}
+
+/** Pendel auf einen Trupp: ganz links 18 Grad, ganz rechts −18, dazwischen gleichmässig (bei drei Trupps die Mitte gerade) */
+export function pendelAufTrupp(trupp: number, truppZahl: number): number {
+  return truppZahl <= 1 ? 0 : 18 - (36 * trupp) / (truppZahl - 1);
 }
 
 /** Kleiner Zeiger auf die Stunde (Runde 12 = zwölf) */

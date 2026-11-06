@@ -11,8 +11,8 @@ import type { GuildFighter } from '../models/GuildRoster';
 import type { CombatUnit } from '../models/ExpeditionRun';
 import type { Feld, RaidStand } from '../models/RaidStand';
 import {
-  RAID_DEFS, RAID_TEXTE, RaidDef, TRUPP_WIRKUNGEN, TruhenDef, ZENIT, spaltenName, stufenTexte, truppKlein, truppName,
-  truppRichtung,
+  RAID_DEFS, RAID_TEXTE, RaidDef, TRUPP_WIRKUNGEN, TruhenDef, ZENIT, spaltenName, stufenNummer, stufenTexte, truppKlein,
+  truppName, truppRichtung,
 } from '../data/raids';
 import { DUNGEON_SETS, setTeilIds } from '../data/dungeonSets';
 import { LOOT_TABLE_DEFS } from '../data/lootTables';
@@ -405,9 +405,11 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
   const neueKlassen = new ClassUnlockSystem().checkUnlocks(state);
 
   // Zähler je Stufe (docs/ERFOLGE.md): die von Stufe I zählen nur dort (auf Stufe II wären «Punkt zwölf» und
-  // «Mehr als vier» geschenkt), Stufe II zählt ihre Siege und Wochen eigens (raid2_…)
+  // «Mehr als vier» geschenkt), jede höhere Stufe zählt ihre Siege und Wochen eigens (raid2_…, raid3_…; ausgeschrieben,
+  // damit tests/erfolge.test.ts jeden Zähler eines Erfolgs findet)
   const stats = state.statistics;
   const stufeEins = def.id === ZENIT.id;
+  const stufeZwei = stufenNummer(def) === 2;
   if (stufeEins) {
     stats.raid_versuche = plus(stats.raid_versuche);
     if (ergebnis.helden === 4) stats.raid_zu_viert = plus(stats.raid_zu_viert);
@@ -418,8 +420,10 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
       stats.raid_siege = plus(stats.raid_siege);
       if (ergebnis.runden <= def.regeln.mittagAb) stats.raid_punkt_zwoelf = plus(stats.raid_punkt_zwoelf);
       if (ergebnis.stehend >= 5) stats.raid_mehr_als_vier = plus(stats.raid_mehr_als_vier);
-    } else {
+    } else if (stufeZwei) {
       stats.raid2_siege = plus(stats.raid2_siege);
+    } else {
+      stats.raid3_siege = plus(stats.raid3_siege);
     }
   }
 
@@ -432,7 +436,8 @@ export function ernstkampf(state: GameState, jetzt = Date.now(), def: RaidDef = 
   if (ergebnis.sieg && !stand.woche.truhe) {
     stand.woche.truhe = true;
     if (stufeEins) stats.raid_wochen = plus(stats.raid_wochen);
-    else stats.raid2_wochen = plus(stats.raid2_wochen);
+    else if (stufeZwei) stats.raid2_wochen = plus(stats.raid2_wochen);
+    else stats.raid3_wochen = plus(stats.raid3_wochen);
     truhen.push(truheZiehen(state, 'sieg', def.truhen.sieg, teilnehmer, rng));
   }
   const ersterSieg = ergebnis.sieg && stand.siege === 1;

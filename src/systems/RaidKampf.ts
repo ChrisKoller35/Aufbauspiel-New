@@ -24,7 +24,8 @@ import type { SchmiedeStufen } from './Schmiede';
 /** Eigene Id für den Boss, damit nichts mit Helden-Ids zusammenfällt */
 export const ZENIT_ID = 900000;
 
-export type Regel = 'pendel' | 'zeiger' | 'gegenzeiger' | 'durchschlag' | 'glocke' | 'funken' | 'rest' | 'mitternacht';
+export type Regel =
+  'pendel' | 'zeiger' | 'gegenzeiger' | 'durchschlag' | 'glocke' | 'funken' | 'kuckuck' | 'rest' | 'mitternacht';
 
 export interface RaidTreffer {
   heldId: number;
@@ -47,6 +48,8 @@ export interface RaidEreignis {
   grund?: string;
   /** 'durchschlag': ausgelöst vom Gegenzeiger (Stufe II), nicht vom Zeiger */
   gegen?: boolean;
+  /** 'kuckuck' (Stufe III): über welchem Gang die Tür aufging (0 = der linke); ohne `quelle` stand dort niemand */
+  gang?: number;
 }
 
 export interface RaidRunde {
@@ -156,6 +159,20 @@ export function vollsteReihe(felder: Feld[], reihen: number): number {
     if (k > anzahl) { anzahl = k; beste = r; }
   }
   return beste;
+}
+
+/**
+ * Kuckuck (Stufe III): über welchem Gang er in dieser Runde aus der Tür kommt, reihum von links (0 = zwischen dem
+ * ersten und dem zweiten Trupp). Mit einem Trupp gibt es keinen Gang: null.
+ */
+export function kuckuckGang(runde: number, truppZahl: number): number | null {
+  const gaenge = truppZahl - 1;
+  return gaenge > 0 ? (runde - 1) % gaenge : null;
+}
+
+/** Die zwei Spalten am Gang: die letzte des Trupps links davon und die erste rechts davon (Gang 0: C und D) */
+export function gangSpalten(gang: number): [number, number] {
+  return [SPALTEN_JE_TRUPP * (gang + 1) - 1, SPALTEN_JE_TRUPP * (gang + 1)];
 }
 
 /** Trupp, auf den das Pendel in dieser Runde schwingt: reihum; ist er leer oder gefallen, der nächste */
@@ -313,6 +330,44 @@ export function raidKampf(
     return e;
   };
 
+  /** Der Kuckuck über dem Gang dieser Runde: Wucht = Angriff × faktor auf den Schwächsten am Gang */
+  const kuckuckPickt = (faktor: number): void => {
+    const gang = kuckuckGang(runde, def.truppZahl);
+    if (gang === null || zenit.hp <= 0 || lebend(party).length === 0) return;
+    const name = RAID_TEXTE.gangName(gang, def.truppZahl);
+    const amGang = gangSpalten(gang);
+    const nest = lebend(party).filter(h => amGang.includes(feld.get(h)!.spalte));
+    if (nest.length === 0) {
+      const e = ereignis({ art: 'kuckuck', gang, treffer: [] });
+      ansage('kuckuckLeer', RAID_TEXTE.ansage.kuckuckLeer(name), e);
+      return;
+    }
+    // Der Kleinste im Nest: die wenigsten Leben; bei Gleichstand der weiter vorn, dann der weiter links
+    const ziel = nest.reduce((a, b) => {
+      if (b.hp !== a.hp) return b.hp < a.hp ? b : a;
+      const fa = feld.get(a)!, fb = feld.get(b)!;
+      return fb.reihe !== fa.reihe ? (fb.reihe < fa.reihe ? b : a) : (fb.spalte < fa.spalte ? b : a);
+    });
+    const ort = RAID_TEXTE.ort.kuckuck(name);
+    const trupp = truppDes(ziel);
+    const vorher = new Map(trupp.map(u => [u, u.hp]));
+    const atk = zenit.atk;
+    const wucht = Math.max(1, Math.round(atk * faktor));
+    zenit.atk = wucht;
+    engine.grundangriff(zenit, ziel, trupp, gegner, run, rng);
+    // Was der Schlag am Angriff änderte (Schwächen beim Treffer), bleibt; die Wucht des Kuckucks nicht
+    zenit.atk = atk + (zenit.atk - wucht);
+    const treffer: RaidTreffer[] = [];
+    for (const [u, hp] of vorher) {
+      if (u.hp >= hp) continue;
+      treffer.push({ heldId: u.id, wert: hp - u.hp });
+      merkeFall(u, hp, 'kuckuck', ort);
+    }
+    if (treffer.length === 0) treffer.push({ heldId: ziel.id, wert: 0 });
+    const e = ereignis({ art: 'kuckuck', gang, quelle: ziel.id, spalte: feld.get(ziel)!.spalte, treffer });
+    ansage('kuckuck', RAID_TEXTE.ansage.kuckuck(name, ziel.name), e);
+  };
+
   // Ansagen zur Grösse der Gruppe (Texte der Stufe)
   const stufe = stufenTexte(def);
   if (party.length === 4) ansage('zahl', stufe.ansage.vier);
@@ -452,6 +507,12 @@ export function raidKampf(
         const e = zeigerSchlag(s, regeln.gegenzeiger, true);
         if (s === zeigerSpalte(runde, spalten)) ansage('dreizehn', RAID_TEXTE.ansage.dreizehn(spaltenName(s)), e ?? undefined);
       }
+      // Kuckuck (Stufe III): über einem Gang, reihum; pickt den mit den wenigsten Leben, der direkt am Gang steht
+      // (die zwei Spalten daneben). Ein Schlag wie das Pendel (Schutzherr und Deckung lenken ihn um, Ausweichen hilft)
+      if (regeln.kuckuck !== undefined && !ohne.has('kuckuck')) {
+        toteMelden();
+        kuckuckPickt(regeln.kuckuck);
+      }
       toteMelden();
     }
 
@@ -521,6 +582,11 @@ export function hauptursache(
     case 'durchschlag': satz = zweiZeiger ? t.durchschlagBeide(spalte(top.ort)) : t.durchschlag(spalte(top.ort)); break;
     case 'pendel': satz = t.pendel(seite(top.ort), top.anzahl); break;
     case 'funken': satz = t.funken(top.ort.match(/um (.+)\)/)?.[1] ?? name); break;
+    case 'kuckuck': {
+      const gang = top.ort.match(/Gang (\S+)\)/)?.[1] ?? '';
+      satz = new Set(top.helden).size === 1 ? t.kuckuck(gang, name) : t.kuckuckViele(gang, top.anzahl);
+      break;
+    }
     default: satz = t.rest(name);
   }
   return { regel: top.regel, ort: top.ort, satz };
