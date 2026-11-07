@@ -21,7 +21,7 @@ import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
 import { klangKnopfHtml } from '../components/KlangSchalter';
-import { vorratZeilen, vorratTitel, zeigeVorratBereich, nutzeVorrat } from '../components/KampfVorraete';
+import { vorratZeilen, vorratTitel, zeigeVorratBereich, nutzeVorrat, aktiveWirkungen, vorratKnopf } from '../components/KampfVorraete';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -793,7 +793,10 @@ export class CombatScreen {
 
     // Vorräte: gleiche in einer Zeile. Nach dem letzten bleibt der Bereich mit Titel und Meldung stehen
     const zeilen = vorratZeilen(run.provisions);
-    if (!zeigeVorratBereich(zeilen, this.vorratMeldung)) return;
+    const aktiv = aktiveWirkungen(run);
+    // «Wirkt gerade» gibt es nur am Handy: am PC kommt der Bereich dafür nicht dazu (der Streifen bliebe sonst höher)
+    const wirktAmHandy = aktiv.length > 0 && !window.matchMedia(PC_BREITE).matches;
+    if (!zeigeVorratBereich(zeilen, this.vorratMeldung) && !wirktAmHandy) return;
 
     const area = document.createElement('div');
     area.className = 'mc-co-items-area';
@@ -847,8 +850,10 @@ export class CombatScreen {
       const useBtn = document.createElement('button');
       useBtn.className = 'mc-btn success mc-co-use-btn';
       useBtn.dataset.fokus = `vorrat-${zeile.itemId}`;
-      useBtn.textContent = 'Nutzen';
-      useBtn.title = vorratTitel(zeile);
+      // «Wirkt» (gesperrt), solange die Wirkung bis zum Ende des Dungeons läuft; der Tooltip nennt die Restdauer
+      useBtn.textContent = vorratKnopf(zeile, aktiv);
+      useBtn.disabled = useBtn.textContent === 'Wirkt';
+      useBtn.title = vorratTitel(zeile, aktiv);
       useBtn.addEventListener('click', () => {
         if (this.phase !== 'preview') return;
         if (!this.expSystem || !this.expState) return;
@@ -858,6 +863,23 @@ export class CombatScreen {
 
       card.append(itemImg, text, itemQty, useBtn);
       row.appendChild(card);
+    }
+
+    // Am Handy unter den Vorräten: was gerade wirkt und wie lange noch (am PC per CSS weg, dort im Tooltip)
+    if (aktiv.length > 0) {
+      const wirkt = document.createElement('div');
+      wirkt.className = 'mc-co-wirkt';
+      const titel = document.createElement('div');
+      titel.className = 'mc-co-wirkt-titel';
+      titel.textContent = 'Wirkt gerade';
+      wirkt.appendChild(titel);
+      for (const w of aktiv) {
+        const zeileEl = document.createElement('div');
+        zeileEl.className = 'mc-co-wirkt-zeile';
+        zeileEl.textContent = zeileEl.title = w.text;
+        wirkt.appendChild(zeileEl);
+      }
+      area.appendChild(wirkt);
     }
   }
 
