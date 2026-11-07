@@ -121,3 +121,7 @@
 @media (prefers-reduced-motion: reduce) {
   .ach-card.ach-neu { animation: none; box-shadow: 0 0 0 2px var(--gold); }
 }
+/* Belohnung: was der Erfolg an Kristallsplittern bringt (einmalig), freigeschaltet «erhalten» */
+.ach-lohn { font-size: 0.7rem; color: #93c5fd; margin-top: 4px; opacity: 0.75; }
+.ach-lohn.ach-lohn-da { opacity: 1; }
+.erf-kopf .erf-lohn { color: #93c5fd; }

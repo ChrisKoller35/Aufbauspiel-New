@@ -66,11 +66,11 @@ export const GIPFEL_TATEN = ['tat_hort', 'tat_archiv', 'tat_esse', 'tat_schlund'
 
 export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   // ── Stadt (die Gildenstadt: Händler und vier Werkstätten, docs/GILDENSTADT.md) ──
-  erfolg('haendler_1', 'Stadt', '🛒', 'Erster Kauf', 'Kaufe zum ersten Mal beim Händler ein: Proviant oder Ausrüstung.', 'total_haendler_kaeufe', 1),
+  erfolg('haendler_1', 'Stadt', '🛒', 'Erster Kauf', 'Kaufe zum ersten Mal beim Händler in der Stadt ein: Proviant oder Ausrüstung.', 'total_haendler_kaeufe', 1),
   erfolg('first_building', 'Stadt', '🏗️', 'Grundsteinlegung', 'Errichte dein erstes Gebäude.', 'total_buildings_built', 1),
   erfolg('werkstaetten_4', 'Stadt', '🏘️', 'Gildenstadt', 'Alle vier Werkstätten stehen: Schmiede, Kräuterküche, Arkanschmiede und Kriegsmaschinen-Werkstatt.', 'werkstaetten', 4),
   erfolg('mass_builder', 'Stadt', '🏛️', 'Baumeister', 'Baue 10 Mal (Neubauten und Ausbauten zählen).', 'total_buildings_built', 10),
-  erfolg('ausbau_5', 'Stadt', '🔨', 'Ausbauer', 'Baue Werkstätten 5 Mal aus.', 'total_upgrades', 5),
+  erfolg('ausbau_5', 'Stadt', '🔨', 'Ausbauer', 'Baue 5 Mal aus (Werkstätten und Gildenhaus zählen).', 'total_upgrades', 5),
   erfolg('werkstatt_3', 'Stadt', '🏰', 'Meisterwerkstatt', 'Baue eine Werkstatt auf Stufe 3 aus.', 'werkstatt_hoechste_stufe', 3),
   erfolg('stadtstufe_3', 'Stadt', '🛖', 'Dorf', 'Erreiche die Stadtstufe «Dorf» (3).', 'stadtstufe', 3),
   erfolg('stadtstufe_5', 'Stadt', '🏙️', 'Stadtrecht', 'Erreiche die Stadtstufe «Stadt» (5).', 'stadtstufe', 5),
@@ -148,3 +148,25 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('ohne_hose', 'Das System schaut zu', '🩲', 'Ohne Hose', 'Einen Boss besiegt, während ein Held keine Rüstung trug. Das System hat sich die Stelle mehrmals angesehen.', 'ohne_hose', 1, 'Das System achtet auf Kleidung. Vor allem auf fehlende.'),
   erfolg('raid_zu_viert', 'Das System schaut zu', '4️⃣', 'Zu viert', 'Einen Ernstkampf mit genau vier Helden gewagt. Alruna hat eine neue Seite angefangen und oben euren Namen hingeschrieben.', 'raid_zu_viert', 1, 'Das System kennt die Liste. Es weiss auch, wer sie nicht liest.'),
 ];
+
+/** Erste Schritte: je 1 Kristallsplitter */
+const LOHN_1 = new Set(['haendler_1', 'first_building', 'stadtstufe_3', 'first_expedition', 'first_victory',
+  'veteran_explorer', 'perfectionist', 'first_boss', 'gold_hoarder', 'schmiede_1']);
+/** Grosse Ziele: je 6 Kristallsplitter (dazu die Gipfel-Taten mit besiegtem Boss) */
+const LOHN_6 = new Set(['stadtstufe_7', 'gildenrang_5', 'saal_kette', 'saal_glanz', 'gipfel_1', 'erster_meister',
+  'bosse_25', 'kill_1000', 'ganze_sets_3', 'schmiede_5', 'monsterbuch_50']);
+/** Gipfel-Taten ohne besiegten Boss: nur 3 */
+const GIPFEL_OHNE_BOSS = new Set(['gipfel_kleingedrucktes', 'gipfel_einsturz']);
+
+/**
+ * Kristallsplitter, die ein Erfolg einmalig bringt (systems/AchievementSystem.ts, belohnungAuszahlen):
+ * versteckt 2, «Hat alles» 12, erste Schritte 1, grosse Ziele und Gipfel-Taten mit Boss 6, sonst 3.
+ */
+export function erfolgBelohnung(def: Pick<AchievementDef, 'id' | 'gruppe' | 'versteckt'>): number {
+  if (def.versteckt) return 2;
+  if (def.id === 'gipfel_alle') return 12;
+  if (LOHN_1.has(def.id)) return 1;
+  if (LOHN_6.has(def.id)) return 6;
+  if (def.gruppe === 'Gipfel-Taten' && !GIPFEL_OHNE_BOSS.has(def.id)) return 6;
+  return 3;
+}

@@ -135,7 +135,8 @@ export function finalizeExpeditionProgress(
   const add = (key: string, n: number): void => { stats[key] = (stats[key] ?? 0) + n; };
   add('total_enemies_killed', entry.enemiesKilled);
   add('total_bosses_killed', entry.bossesKilled);
-  add('total_gold_earned', run.goldEarned ?? 0);
+  // Goldhamster zählt alles Gold der Truhe: goldEarned (Kämpfe, Geschichte, Fundstellen) und loot.gold (Beutetabellen)
+  add('total_gold_earned', (run.goldEarned ?? 0) + (run.loot?.gold ?? 0));
   if (victory) {
     add('total_victories', 1);
     // Wie «ohne Gefallene» am Auftragsbrett: Wer fiel und wieder aufstand (Wachfeuer, Wiedergeburt), ist gefallen

@@ -155,6 +155,32 @@ Stadtstufe, Gildenrang, Helden, Sets, Monsterbuch, Werkstätten, Auftragsbrett, 
 Schmiede liest die Funktion ohnehin aus dem Spielstand. Die Bestenliste behält nur die 100 besten Läufe, darum
 ist sie nur die untere Grenze. Ein neues Spiel bekommt nichts geschenkt.
 
+## Belohnung
+
+Jeder Erfolg bringt einmalig Kristallsplitter (`erfolgBelohnung(def)` in `data/achievements.ts`):
+
+| Splitter | Erfolge |
+|---|---|
+| 1 | erste Schritte: `haendler_1`, `first_building`, `stadtstufe_3`, `first_expedition`, `first_victory`, `veteran_explorer`, `perfectionist`, `first_boss`, `gold_hoarder`, `schmiede_1` (10) |
+| 3 | alle übrigen (29), auch `gipfel_kleingedrucktes` und `gipfel_einsturz` (Boss nicht besiegt) |
+| 6 | grosse Ziele: `stadtstufe_7`, `gildenrang_5`, `saal_kette`, `saal_glanz`, `gipfel_1`, `erster_meister`, `bosse_25`, `kill_1000`, `ganze_sets_3`, `schmiede_5`, `monsterbuch_50` und die acht Gipfel-Taten mit besiegtem Boss (19) |
+| 12 | «Hat alles» (`gipfel_alle`) |
+| 2 | jeder versteckte Erfolg (7) |
+
+Zusammen 237. Ausgezahlt wird nie je neuer ID, sondern über die Summe: `belohnungAuszahlen(state)` in
+`systems/AchievementSystem.ts` legt `verdienteSplitter(state)` (nur bekannte, freigeschaltete IDs) minus die schon
+gezahlte Summe in `statistics.erfolg_splitter` ins Lager (`crystal_shard`). `erfolgePruefen` ruft es nach dem
+Eintragen neuer Erfolge auf. So zahlt jeder Erfolg genau einmal, egal wie oft geprüft wird.
+
+**Nachzahlung:** Ein Stand aus der Zeit vor der Belohnung hat noch kein `erfolg_splitter`. `main.ts` zahlt beim
+Laden einmal nach, speichert gleich und zeigt in der Kopfzeile «💎 Nachzahlung für deine Erfolge: +N
+Kristallsplitter». Beim nächsten Laden fehlt nichts mehr, also kein Hinweis.
+
+**Wo man sie sieht:** In der Bilanz nach der Expedition steht nach den 🏅-Zeilen «💎 Belohnung: +N Kristallsplitter»
+(hellblau; `ExpeditionFlow.ts` merkt den Stand vor `finalizeExpeditionProgress`). Auf dem Erfolge-Bildschirm zeigt
+jede Karte «💎 N», freigeschaltet «💎 N erhalten»; gesperrte versteckte verraten auch die Belohnung nicht. Der Kopf
+nennt «💎 X Kristallsplitter erhalten».
+
 ## Liste
 
 59 Erfolge, die sieben versteckten stehen im Abschnitt «Das System schaut zu» (zusammen 66). Seit Oktober 2026 neue sind mit «neu» markiert, die der Gildenstadt (22.10.2026) mit «Gildenstadt».
@@ -163,11 +189,11 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 
 | Gruppe | Zeichen | Name | Bedingung | Zähler | ID |
 |---|---|---|---|---|---|
-| Stadt | 🛒 | Erster Kauf (Gildenstadt) | zum ersten Mal beim Händler kaufen: Proviant oder Ausrüstung | `total_haendler_kaeufe` ≥ 1 | `haendler_1` |
+| Stadt | 🛒 | Erster Kauf (Gildenstadt) | zum ersten Mal beim Händler in der Stadt kaufen: Proviant oder Ausrüstung (der Händler im Dungeon zählt nicht) | `total_haendler_kaeufe` ≥ 1 | `haendler_1` |
 | Stadt | 🏗️ | Grundsteinlegung | 1 Gebäude gebaut | `total_buildings_built` ≥ 1 | `first_building` |
 | Stadt | 🏘️ | Gildenstadt (Gildenstadt) | alle vier Werkstätten stehen | `werkstaetten` ≥ 4 | `werkstaetten_4` |
 | Stadt | 🏛️ | Baumeister | 10 Mal gebaut (Neubauten und Ausbauten) | `total_buildings_built` ≥ 10 | `mass_builder` |
-| Stadt | 🔨 | Ausbauer (Gildenstadt) | 5 Ausbauten | `total_upgrades` ≥ 5 | `ausbau_5` |
+| Stadt | 🔨 | Ausbauer (Gildenstadt) | 5 Ausbauten (Werkstätten und Gildenhaus zählen) | `total_upgrades` ≥ 5 | `ausbau_5` |
 | Stadt | 🏰 | Meisterwerkstatt (Gildenstadt) | eine Werkstatt auf Stufe 3 | `werkstatt_hoechste_stufe` ≥ 3 | `werkstatt_3` |
 | Stadt | 🛖 | Dorf (neu) | Stadtstufe 3 «Dorf» | `stadtstufe` ≥ 3 | `stadtstufe_3` |
 | Stadt | 🏙️ | Stadtrecht (neu) | Stadtstufe 5 «Stadt» | `stadtstufe` ≥ 5 | `stadtstufe_5` |
@@ -195,7 +221,7 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Dungeons | 🔥 | Bosskiller | 5 Bosse besiegt | `total_bosses_killed` ≥ 5 | `boss_slayer` |
 | Dungeons | 🐉 | Bossjäger (neu) | 10 Bosse besiegt | `total_bosses_killed` ≥ 10 | `bosse_10` |
 | Dungeons | ☠️ | Schrecken der Tiefe (neu) | 25 Bosse besiegt | `total_bosses_killed` ≥ 25 | `bosse_25` |
-| Dungeons | 💰 | Goldhamster | 500 Gold auf Expeditionen erbeutet | `total_gold_earned` ≥ 500 | `gold_hoarder` |
+| Dungeons | 💰 | Goldhamster | 500 Gold auf Expeditionen erbeutet (alles Gold der Truhe: `goldEarned` und `loot.gold`) | `total_gold_earned` ≥ 500 | `gold_hoarder` |
 | Dungeons | 💠 | Hundertfacher Tod | 100 Gegner besiegt | `total_enemies_killed` ≥ 100 | `kill_100` |
 | Dungeons | 🗡️ | Tausendfacher Tod (neu) | 1000 Gegner besiegt | `total_enemies_killed` ≥ 1000 | `kill_1000` |
 | Dungeons | 🪜 | Zehn Sprossen (neu) | der erste Ernstkampf im Raid «Über dem Tag» | `raid_versuche` ≥ 1 | `raid_versuch` |
@@ -286,6 +312,10 @@ zählt `raid_zu_viert` bei jedem Ernstkampf mit genau vier Helden (dem Mindestma
 - **Veteran** zählte auch bloss gestartete Expeditionen. Jetzt nur beendete.
 - **Goldhamster** meint Gold aus Expeditionen (`total_gold_earned` zählt nur dort), der Text sagt das jetzt.
 - Gildenrang, Kette und Gipfel zählen am Ende der Expedition sofort, nicht erst beim nächsten Tageswechsel.
+- **Belohnung (7.11.2026):** Erfolge bringen Kristallsplitter (Abschnitt «Belohnung»), ältere Stände bekommen sie
+  beim ersten Laden nachgezahlt. **Goldhamster** zählt jetzt alles Gold der Truhe: früher nur `goldEarned`, das
+  Gold aus den Beutetabellen (`loot.gold`) fehlte. Texte von «Erster Kauf» (Händler in der Stadt) und «Ausbauer»
+  (Gildenhaus zählt mit) sagen jetzt, was zählt.
 
 ## Ziele und Grenzen
 
