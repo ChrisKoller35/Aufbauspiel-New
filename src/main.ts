@@ -23,6 +23,7 @@ import { ProvisionSystem } from './systems/ProvisionSystem';
 import { ProductionSystem } from './systems/ProductionSystem';
 import { STADT_TAKT_SEKUNDEN, TAG_SEKUNDEN, neuerTag } from './systems/Tag';
 import { placeStartingLayout } from './scenes/CityStartingLayout';
+import { belohnungAuszahlen } from './systems/AchievementSystem';
 import './klang';
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -62,6 +63,11 @@ document.addEventListener('DOMContentLoaded', () => {
     placeStartingLayout(state);
     if (probe) richteProbespielEin(state, probeStufe);
   }
+
+  // Kristallsplitter für Erfolge, die ein älterer Stand noch nicht ausgezahlt bekam: einmal nachzahlen und gleich
+  // speichern, damit das nächste Laden nichts mehr findet (Hinweis unten, sobald es eine Kopfzeile gibt)
+  const nachzahlung = belohnungAuszahlen(state);
+  if (nachzahlung > 0) saveSystem.save(state);
 
   // Initialize game systems
   const gearSystem = new GearSystem();
@@ -188,6 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // Ein alter Stand wurde beim Start verworfen: das einmal sagen, jetzt, wo es eine Kopfzeile gibt
   // (10 Sekunden: der Satz ist lang, und wer ihn verpasst, findet ihn nur noch im Fenster «Spielstand»)
   if (alterStandVerworfenBeimStart()) zeigeKopfHinweis(VOR_GILDENSTADT, 10_000);
+  if (nachzahlung > 0) zeigeKopfHinweis(`💎 Nachzahlung für deine Erfolge: +${nachzahlung} Kristallsplitter`, 8_000);
   hebeSperreNachLadenAuf();
 
   // ─── Keyboard Shortcuts ──────────────────────────────────────

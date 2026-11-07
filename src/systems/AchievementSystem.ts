@@ -1,4 +1,4 @@
-import { ACHIEVEMENT_DEFS } from '../data/achievements';
+import { ACHIEVEMENT_DEFS, erfolgBelohnung } from '../data/achievements';
 import { BUILDING_DEFS } from '../data/buildings';
 import { setFuerRoute, setTeilIds } from '../data/dungeonSets';
 import { isRouteCompleted } from '../data/routes';
@@ -15,6 +15,31 @@ import { MAX_HERO_LEVEL } from './HeroProgression';
 
 /** Anzahl der Erfolge, die der Spieler beim letzten Öffnen des Erfolge-Bildschirms gesehen hat */
 export const ERFOLGE_GESEHEN = 'erfolge_gesehen';
+
+/** Kristallsplitter, die für Erfolge schon ausgezahlt sind (Schlüssel in state.statistics) */
+export const ERFOLG_SPLITTER = 'erfolg_splitter';
+
+/** Kristallsplitter, die alle freigeschalteten bekannten Erfolge zusammen bringen (unbekannte IDs zählen nicht) */
+export function verdienteSplitter(state: GameState): number {
+  const ids = new Set(state.achievements ?? []);
+  return ACHIEVEMENT_DEFS.filter(d => ids.has(d.id)).reduce((summe, d) => summe + erfolgBelohnung(d), 0);
+}
+
+/**
+ * Zahlt aus, was an Kristallsplittern für Erfolge noch fehlt (verdient − schon gezahlt), legt es ins Lager und
+ * merkt die gezahlte Summe. Immer über die Summe, nie je neuer ID: So zahlt jeder Erfolg genau einmal, auch
+ * nachträglich für ältere Spielstände. Gibt den Betrag zurück (0, wenn nichts fehlt).
+ */
+export function belohnungAuszahlen(state: GameState): number {
+  const stats = state.statistics ?? (state.statistics = {});
+  const gezahlt = Number.isFinite(stats[ERFOLG_SPLITTER]) ? stats[ERFOLG_SPLITTER] : 0;
+  const betrag = verdienteSplitter(state) - gezahlt;
+  if (betrag <= 0) return 0;
+  const lager = state.globalStock ?? (state.globalStock = {});
+  lager.crystal_shard = (lager.crystal_shard ?? 0) + betrag;
+  stats[ERFOLG_SPLITTER] = gezahlt + betrag;
+  return betrag;
+}
 
 /**
  * Achievement-System: Prüft, ob neue Erfolge freigeschaltet wurden.
@@ -191,6 +216,7 @@ export function erfolgePruefen(state: GameState, { hinweis = true }: { hinweis?:
   const neu = new AchievementSystem().checkAchievements(state.statistics, state.achievements);
   if (neu.length === 0) return neu;
   state.achievements.push(...neu);
+  belohnungAuszahlen(state);
   for (const fn of hoerer) fn(neu, state, hinweis);
   return neu;
 }

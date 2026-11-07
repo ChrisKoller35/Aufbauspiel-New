@@ -11,7 +11,7 @@ import { EncounterChoice } from '../../models/ExpeditionRun';
 import { ITEM_DEFS } from '../../data/items';
 import { ExpeditionSystem, MERCHANT_PRICES, MERCHANT_MAX_PURCHASES } from '../../systems/ExpeditionSystem';
 import { finalizeExpeditionProgress, ExpeditionProgress } from '../../systems/ExpeditionFinalizer';
-import { erfolgName, erfolgePruefen } from '../../systems/AchievementSystem';
+import { ERFOLG_SPLITTER, erfolgName, erfolgePruefen } from '../../systems/AchievementSystem';
 import { setBeute, setTeilHinweise } from '../../systems/DungeonSets';
 import { bereiteTeile, neuBereit, schmiedeBeute, schmiedeStufen } from '../../systems/Schmiede';
 import {
@@ -289,7 +289,9 @@ function finishExpedition(): void {
   const schonBereit = bereiteTeile(state);
 
   // XP, score + scoreboard, statistics, guild rank, bestiarium, achievements
-  // (before returning provisions: leftover provisions count towards the score)
+  // (before returning provisions: leftover provisions count towards the score).
+  // Kristallsplitter für Erfolge vorher merken: finalizeExpeditionProgress zahlt sie schon aus
+  const splitterVorher = state.statistics?.[ERFOLG_SPLITTER] ?? 0;
   const progress = finalizeExpeditionProgress(state, run, expeditionSystem);
   const { entry } = progress;
   const haerte = haertegradBilanz(run, merkeHaertegrad(state, run), albtraum);
@@ -309,12 +311,13 @@ function finishExpedition(): void {
     beuteEinlagern(state.globalStock, loot, goldEarned);
     // Erfolge, die erst mit der Beute im Lager zählen (ganzes Set: Stern im Trophäensaal), auch in die Bilanz
     progress.newAchievements.push(...erfolgePruefen(state, { hinweis: false }).map(erfolgName));
+    const splitter = (state.statistics?.[ERFOLG_SPLITTER] ?? 0) - splitterVorher;
 
     // Save
     speichern();
     console.log(`Expedition finished: ${entry.status}, Score: ${entry.score}`);
 
-    showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), haerte, () => {
+    showExpeditionSummary(progress, geschichte, neuBereit(state, schonBereit), haerte, splitter, () => {
       // Reset expedition screen state and navigate back
       initExpeditionsScreen(state);
       navigateTo('expeditions');
@@ -334,7 +337,7 @@ function finishExpedition(): void {
  * Result dialog after the chest: score, hero XP, everything newly unlocked, what the Schmiede can
  * now do (schmiede: «Rudelreisser auf +2») and the chronicle of the story.
  */
-function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], haerte: string[], onClose: () => void): void {
+function showExpeditionSummary(progress: ExpeditionProgress, geschichte: GeschichtsBilanz | null, schmiede: string[], haerte: string[], splitter: number, onClose: () => void): void {
   const { entry, xp, rankUp, newClasses, newAchievements } = progress;
   const title = entry.status === 'victory' ? 'SIEG' : entry.status === 'defeat' ? 'NIEDERLAGE' : 'RÜCKZUG';
   const line = (text: string, color = '#e5e7eb'): string =>
@@ -365,6 +368,8 @@ function showExpeditionSummary(progress: ExpeditionProgress, geschichte: Geschic
   }
   for (const c of newClasses) body += line(`Neue Klasse: ${c}`, '#4ade80');
   for (const a of newAchievements) body += line(`🏅 Erfolg: ${a}`, '#4ade80');
+  // Kristallsplitter der neuen Erfolge (belohnungAuszahlen, schon im Lager)
+  if (splitter > 0) body += line(`💎 Belohnung: +${splitter} Kristallsplitter`, '#93c5fd');
   for (const z of ranglistenZeilen(progress.rangliste)) {
     body += z.stimme
       ? `<div class="bericht-stimme" style="color:${z.farbe};font-size:.82rem;margin-bottom:6px;font-style:italic;border-left:3px solid ${z.rand ?? z.farbe};padding-left:8px;">${z.text}</div>`

@@ -4,9 +4,9 @@
 // ────────────────────────────────────────────────────────────────
 
 import '../html/erfolge.css';
-import { AchievementDef, ACHIEVEMENT_DEFS, ERFOLG_GRUPPEN, zaehlerWert } from '../../data/achievements';
+import { AchievementDef, ACHIEVEMENT_DEFS, ERFOLG_GRUPPEN, erfolgBelohnung, zaehlerWert } from '../../data/achievements';
 import { GameState } from '../../models/GameState';
-import { beiNeuenErfolgen, erfolgeAngeschaut, erfolgePruefen, ungeseheneErfolgIds } from '../../systems/AchievementSystem';
+import { beiNeuenErfolgen, erfolgeAngeschaut, erfolgePruefen, ungeseheneErfolgIds, verdienteSplitter } from '../../systems/AchievementSystem';
 import { getCurrentScreen, getPreviousScreen, goBack, ScreenId } from '../ScreenRouter';
 import { aktualisiereErfolgKnoepfe, renderHeader } from './HeaderRenderer';
 
@@ -71,6 +71,10 @@ function renderAchievementCard(def: AchievementDef, unlocked: boolean, stats: Re
         <span class="ach-prog-text">${current}/${def.ziel}</span>
       </div>`
     : '';
+  // Was der Erfolg bringt (einmalig, belohnungAuszahlen); gesperrte versteckte verraten auch das nicht
+  const lohn = erfolgBelohnung(def);
+  const lohnHtml = versteckt ? ''
+    : unlocked ? `<div class="ach-lohn ach-lohn-da">💎 ${lohn} erhalten</div>` : `<div class="ach-lohn">💎 ${lohn}</div>`;
 
   return `
     <div class="ach-card ${unlocked ? 'ach-unlocked' : 'ach-locked'}${versteckt ? ' ach-versteckt' : ''}${frisch ? ' ach-neu' : ''}">
@@ -79,6 +83,7 @@ function renderAchievementCard(def: AchievementDef, unlocked: boolean, stats: Re
         <div class="ach-title">${versteckt ? '???' : def.name}</div>
         <div class="ach-desc">${versteckt || def.description}</div>
         ${progressHtml}
+        ${lohnHtml}
       </div>
       ${unlocked ? '<div class="ach-check">✅</div>' : ''}
     </div>`;
@@ -117,6 +122,7 @@ export function inhaltHtml(state: GameState | null, frisch: string[]): string {
         <div class="erf-kopf">
           <span>🏅 Freigeschaltet: ${unlockedCount}/${totalCount}</span>
           <span>👁️ ${verschwiegenText(unlockedIds)}</span>
+          <span class="erf-lohn">💎 ${state ? verdienteSplitter(state) : 0} Kristallsplitter erhalten</span>
         </div>
         ${gruppen}`;
 }
