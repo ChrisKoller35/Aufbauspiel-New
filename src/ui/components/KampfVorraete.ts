@@ -3,7 +3,7 @@
 // nach dem Lauf verfällt, der eigene Vorrat aber ins Lager zurückgeht (docs/GILDENSTADT.md, «Tränke mit Wirkung»).
 import type { ExpeditionRun } from '../../models/ExpeditionRun';
 import type { GameState } from '../../models/GameState';
-import type { ExpeditionSystem } from '../../systems/ExpeditionSystem';
+import { trankWertText, type ExpeditionSystem } from '../../systems/ExpeditionSystem';
 import { ITEM_DEFS } from '../../data/items';
 import { rundeLogZahlen } from '../hpAnzeige';
 
@@ -36,8 +36,52 @@ export function vorratZeilen(provisions: ExpeditionRun['provisions']): VorratZei
   return zeilen;
 }
 
-/** Tooltip am PC: «Name: Wirkung» */
-export function vorratTitel(zeile: VorratZeile): string {
+/** Eine Wirkung, die gerade gilt (run.trankWirkungen), für den Block «Wirkt gerade» und den Knopfzustand */
+export interface AktiveWirkung {
+  itemId: string;
+  /** «Kraft-Brot: +2 Angriff, noch 3 Räume», «Krafttrank: +3 Angriff bis zum Ende des Dungeons» */
+  text: string;
+  /** Räume, die sie noch gilt (dieser zählt mit); undefined = bis zum Ende des Dungeons */
+  restRaeume?: number;
+}
+
+/** «noch 3 Räume», «noch 1 Raum» oder «bis zum Ende des Dungeons» */
+function dauerText(restRaeume: number | undefined): string {
+  if (restRaeume === undefined) return 'bis zum Ende des Dungeons';
+  return `noch ${restRaeume} ${restRaeume === 1 ? 'Raum' : 'Räume'}`;
+}
+
+/**
+ * Was gerade wirkt, mit Restdauer = bisRaum − currentRoom (direkt nach dem Essen zählt dieser Raum mit).
+ * Abgelaufene Wirkungen fehlen, auch wenn ExpeditionSystem.traenkeVerdauen sie noch nicht weggeräumt hat.
+ */
+export function aktiveWirkungen(run: Pick<ExpeditionRun, 'trankWirkungen' | 'currentRoom'>): AktiveWirkung[] {
+  const aktiv: AktiveWirkung[] = [];
+  for (const w of run.trankWirkungen ?? []) {
+    const restRaeume = w.bisRaum === undefined ? undefined : w.bisRaum - run.currentRoom;
+    if (restRaeume !== undefined && restRaeume <= 0) continue;
+    const name = ITEM_DEFS[w.itemId]?.name ?? w.itemId;
+    const trenner = restRaeume === undefined ? ' ' : ', ';
+    aktiv.push({ itemId: w.itemId, restRaeume, text: `${name}: ${trankWertText(w)}${trenner}${dauerText(restRaeume)}` });
+  }
+  return aktiv;
+}
+
+/**
+ * Knopf der Vorrats-Zeile: «Wirkt» (gesperrt), wenn die Wirkung schon bis zum Ende des Dungeons läuft
+ * (useProvision liesse den Vorrat ohnehin liegen); ein Trank mit Raum-Dauer darf nachgetrunken werden.
+ */
+export function vorratKnopf(zeile: VorratZeile, aktiv: AktiveWirkung[]): 'Nutzen' | 'Wirkt' {
+  return aktiv.some(w => w.itemId === zeile.itemId && w.restRaeume === undefined) ? 'Wirkt' : 'Nutzen';
+}
+
+/**
+ * Tooltip am PC: «Name: Wirkung». Wirkt der Vorrat gerade, steht dort die Restdauer statt der Dauer aus items.ts
+ * («Kraft-Brot: +2 Angriff, noch 3 Räume»), sonst hiesse es «für die nächsten 3 Räume, noch 3 Räume».
+ */
+export function vorratTitel(zeile: VorratZeile, aktiv: AktiveWirkung[] = []): string {
+  const w = aktiv.find(a => a.itemId === zeile.itemId);
+  if (w) return w.text;
   return zeile.wirkung ? `${zeile.name}: ${zeile.wirkung}` : zeile.name;
 }
 

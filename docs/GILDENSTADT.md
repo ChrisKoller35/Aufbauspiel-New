@@ -126,6 +126,18 @@ Die Kampf-Vorschau zeigt die Werte sofort (Preis/Wirkung sofort sichtbar, wie be
   im Protokoll. Nach dem Nutzen passt `passeKartenAn()` die Heldenkarten neu ein, weil das Protokoll wächst.
 - **Manatrank:** nach dem Nutzen werden die Fähigkeiten neu gezeichnet, ihre Knöpfe sind sofort wieder wählbar
   (vorher erst im nächsten Raum).
+- **Was gerade wirkt** (`KampfVorraete.aktiveWirkungen`, aus `run.trankWirkungen`): Restdauer = `bisRaum − currentRoom`,
+  direkt nach dem Essen zählt dieser Raum mit (Kraft-Brot: «noch 3 Räume», im letzten Raum «noch 1 Raum», danach
+  nichts mehr). Tränke ohne `bisRaum` wirken «bis zum Ende des Dungeons». Der Wert kommt aus
+  `ExpeditionSystem.trankWertText`, wie in der Protokollzeile.
+  - **Am Handy** steht unter den Vorrats-Zeilen der Block «Wirkt gerade» mit einer Zeile je Wirkung, z. B.
+    «Kraft-Brot: +2 Angriff, noch 3 Räume» (12 px, zu lang gekürzt mit …). Wirkt nichts, fehlt der Block ganz.
+  - **Am PC** kommt nichts in den Streifen (er würde sonst höher und verschöbe die Heldenkarten): die Restdauer steht
+    im Tooltip des Knopfs («Kraft-Brot: +2 Angriff, noch 3 Räume»).
+  - **Knopf «Wirkt»** (gesperrt) statt «Nutzen», solange ein Trank bis zum Ende des Dungeons wirkt (Krafttrank,
+    Titan-Gebräu); Kraft-Brot und Schnelligkeitstrank bleiben nutzbar, nachtrinken setzt die Dauer neu.
+  - Neu gezeichnet wird nach jedem «Nutzen» (`refreshAfterProvision`) und beim Betreten eines Raums (`show`), danach
+    `passeKartenAn()`.
 
 ## Der Stadtweg ohne Bewohner
 

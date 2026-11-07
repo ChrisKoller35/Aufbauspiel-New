@@ -2039,3 +2039,17 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
   }
   .dmap-btn-go, .dmap-btn-replay { min-height: 44px; }
 }
+
+/* Tränke mit Restdauer (KampfVorraete.aktiveWirkungen): «Wirkt» ist gesperrt, solange der Trank bis zum Ende des
+   Dungeons wirkt. Der Block «Wirkt gerade» steht nur am Handy unter den Vorräten (je Wirkung eine Zeile, 12 px,
+   zu lang gekürzt mit …); am PC fehlt er, der Streifen darf nicht höher werden (Restdauer dort im Tooltip). */
+.mc-co-use-btn:disabled { opacity: 0.55; filter: grayscale(0.6); cursor: default; }
+.mc-co-wirkt { display: none; }
+@media (max-width: 700px) {
+  .mc-co-wirkt { display: block; padding: 0 0 4px; min-width: 0; }
+  .mc-co-wirkt-titel { font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--mc-gold-bright); letter-spacing: 1px; }
+  .mc-co-wirkt-zeile {
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    font-size: 0.75rem; line-height: 1.3; color: #c4b5fd;
+  }
+}
