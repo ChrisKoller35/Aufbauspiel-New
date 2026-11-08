@@ -641,6 +641,7 @@ const TAKT: { routeId: string; gegner: string; faehigkeit: string; text: string;
   { routeId: 'erste_stadt', gegner: 'wachfeuerwicht', faehigkeit: 'Funkenregen', text: 'Funkenregen jede vierte Runde', runden: [1, 5, 9, 13, 17] },
   { routeId: 'erste_stadt', gegner: 'boss_alruna', faehigkeit: 'Alte Gildenregel', text: 'nur in Runde 3 und 12', runden: [3, 12] },
   { routeId: 'tagespfeiler', gegner: 'fugenspinne', faehigkeit: 'Fugenbiss', text: 'Fugenbiss jede dritte Runde', runden: [1, 4, 7, 10, 13, 16, 19] },
+  { routeId: 'nichts_da_oben', gegner: 'staubhase', faehigkeit: 'Niesanfall', text: 'Niesanfall jede vierte Runde', runden: [1, 5, 9, 13, 17] },
 ];
 
 /**
@@ -664,6 +665,7 @@ const WUT: { routeId: string; gegner: string; text: string; sonnenuhren?: number
   { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'wütet ab Runde 10, Angriff mal 1,85' },
   { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'zieht seine Wut um 2 Runden vor, dreimal gebrochen wütet er schon ab Runde 4', sonnenuhren: 3 },
   { routeId: 'tagespfeiler', gegner: 'boss_orm', text: 'schiebt sie um 1 Runde hinaus, dreimal gestützt erst ab Runde 13', gestuetzt: 3 },
+  { routeId: 'nichts_da_oben', gegner: 'boss_niemand', text: 'wütet ab Runde 10, Angriff mal 1,85' },
 ];
 
 /**

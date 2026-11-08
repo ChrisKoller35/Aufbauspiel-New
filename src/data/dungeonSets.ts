@@ -581,7 +581,7 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     teile: [
       { art: 'stab', name: 'Besenstiel des Hausmeisters', bild: 'ITEM_WORLDEND_STAFF', text: 'Er fegt. Er fegt auch Gegner. Niemand hat ihn ungern hergegeben, und das war das erste Mal, dass Niemand etwas hergab.' },
       { art: 'robe', name: 'Staubmantel', bild: 'ITEM_MAGIARCH_ROBE', text: 'Aus tausend Jahren Staub gewebt. Man sieht ihn nicht, wenn man nicht hinschaut, und genau das ist der Zweck.' },
-      { art: 'amulett', name: 'Schlüsselbund für alles', bild: 'ITEM_ARCANE_AMULET', text: 'Siebzehn Schlüssel. Keiner passt irgendwo. Zusammen klingen sie, als käme Niemand.' },
+      { art: 'amulett', name: 'Schlüsselbund für alles', bild: 'ITEM_ARCANE_AMULET', text: 'Siebzehn Schlüssel. Keiner passt irgendwo. Zusammen klingen sie, als käme Niemand.', eigenschaft: 'regen' },
     ],
     zweiTeile: { atk: 13, critChance: 0.13 },
     dreiTeile: {
