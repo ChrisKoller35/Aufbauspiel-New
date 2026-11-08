@@ -25,7 +25,22 @@ haben («Siegreich» 🏆), nur 🏅 trägt keiner selbst.
 - **Gleich nach der Tat**, mit Hinweis in der Kopfzeile: Gebäude bauen oder ausbauen, beim Händler kaufen,
   Held anwerben, Weg wählen, Gegenstand anlegen (ein ganzes Set), Stadt aufsteigen (Stadtweg),
   in der Schmiede verbessern, Zettel liefern und Set-Teil einlösen (Gildenhaus). Kommen zwei Hinweise fast
-  gleichzeitig («📜 Zettel erledigt» und der Erfolg dazu), stehen sie nebeneinander.
+  gleichzeitig («📜 Zettel erledigt» und der Erfolg dazu), stehen sie nebeneinander, der Erfolg vorne
+  («🏅 Erfolg: Fleissige Gilde · 📜 Tränke … erledigt …»): So bleibt sein Name auch in den drei Handy-Zeilen
+  der Kopfzeile zu sehen. Andere Hinweise kommen wie bisher hinten dazu.
+
+**Hinweis bei offenem Fenster oder weggescrollter Kopfzeile.** Liegt ein Fenster über der Kopfzeile (`.ov.on` oder
+`aria-modal="true"`: Heldenfenster, Händler, Gebäudefenster, Stadtweg, Kriegsrat, Spielstand, Fundbuch …) oder ist
+sie am Handy ganz nach oben weggescrollt (Gildenhaus, Erfolge, Rangliste, Team), steht derselbe Hinweis zusätzlich
+schwebend unten in der Mitte (`.hdr-note-schwebend` in `erfolge.css`, `kopfzeileVerdeckt` in `HeaderRenderer.ts`):
+z-index 400 über allen Fenstern, ohne Zeilenbegrenzung, mit derselben Lebensdauer. Er ist nicht anklickbar (Klicks
+gehen durch) und für Vorleser stumm (`aria-hidden`); angesagt wird nur die Kopfzeile (`role="status"`). Höchstens
+einer steht zugleich; kommt innerhalb von 600 ms ein zweiter Hinweis, ändert sich nur sein Text, auch wenn das Fenster
+inzwischen zu ist. Ohne sichtbare Kopfzeile (Kampf, Truhe, Bilanz) kommt keiner, die Erfolge warten wie oben.
+Gemessen (Bericht «lesbarkeit», 27.10.2026): 100 Zeichen auf zwei Zeilen brauchen am Handy (390 px) 358 × 53 px, am
+PC (1400 px) 520 × 53 px. Der Kopfzeilen-Hinweis hatte unter dem Händler 1,44 : 1 und unter dem Heldenfenster 1,34 : 1
+Kontrast (verdeckt), der schwebende hat 10,73 : 1. Unten deckt er für rund 4 s eine Zeile Fensterinhalt zu (am Handy
+im Kriegsrat die Knöpfe unten), ✕ und «Schliessen» oben bleiben frei.
 
 Jeder Erfolg wird genau einmal gemeldet: `erfolgePruefen()` trägt ihn in `state.achievements` ein
 und meldet ihn den Hörern (`beiNeuenErfolgen`). Pokale der Rangliste zählen am Ende der Expedition

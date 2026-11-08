@@ -9,6 +9,8 @@ class Kopfzeile {
   klassen = new Set<string>();
   classList = { add: (k: string) => this.klassen.add(k), remove: (k: string) => this.klassen.delete(k) };
   constructor(public offsetParent: object | null) {}
+  /** Oben auf der Seite, nicht weggescrollt (sonst käme der schwebende Hinweis dazu) */
+  getBoundingClientRect() { return { bottom: 53 }; }
   querySelector(sel: string) { return sel === '.hdr-note' ? this.note : null; }
   insertBefore(n: Kopfzeile['note']) { this.note = n; if (n) n.remove = () => { this.note = null; }; }
 }

@@ -15,6 +15,8 @@ let hinweisTimer: number | null = null;
 /** Kommt ein zweiter Hinweis so kurz nach dem ersten (z. B. ein Erfolg nach «Zettel erledigt»), steht er daneben */
 const ZUSAMMEN_MS = 600;
 let letzterHinweis = { text: '', zeit: 0, ende: 0, zusammen: false };
+/** Derselbe Hinweis unten in der Mitte, solange er läuft und die Kopfzeile verdeckt war (höchstens einer) */
+let schwebend: HTMLElement | null = null;
 /**
  * Wie viel Platz ein Hinweis für zwei Zeilen braucht, nach seiner Länge (gemessen an allen Hinweisen, die das Spiel
  * hier zeigen kann): bis 60 Zeichen (fertige Aufträge der Werkstätten, Erfolge, Set-Teile …) höchstens 158 px, bis
@@ -36,7 +38,10 @@ function hinweisKlasse(text: string, zusammen: boolean): string {
  * (4 Sekunden; ein langer Satz wie der zum alten Spielstand bekommt mehr). Er steht in .hdr-platz hinter dem
  * Bildschirm-Namen, auf höchstens zwei Zeilen: bis 1000 px Breite über Logo und Name, breiter daneben, wenn er dort
  * Platz hat (hinweisKlasse, erfolge.css). Die Kopfzeile wird nicht höher, und sonst verschiebt sich nichts.
- * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist.
+ * Zwei Hinweise kurz nacheinander stehen nebeneinander und bleiben, bis der längere abgelaufen ist; ein Erfolg
+ * (beginnt mit «🏅») steht dabei vorne, damit sein Name auch am Handy sichtbar bleibt.
+ * Ist die Kopfzeile verdeckt (Fenster offen oder weggescrollt), steht derselbe Text zusätzlich schwebend unten in
+ * der Mitte (.hdr-note-schwebend, erfolge.css), nicht anklickbar und für Vorleser stumm (die Kopfzeile sagt ihn an).
  */
 export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
   if (typeof document === 'undefined') return;
@@ -44,7 +49,7 @@ export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
   let ende = jetzt + dauerMs;
   let zusammen = false;
   if (hinweisTimer !== null && jetzt - letzterHinweis.zeit < ZUSAMMEN_MS && !letzterHinweis.text.includes(text)) {
-    text = `${letzterHinweis.text} · ${text}`;
+    text = text.startsWith('🏅') ? `${text} · ${letzterHinweis.text}` : `${letzterHinweis.text} · ${text}`;
     ende = Math.max(ende, letzterHinweis.ende);
     zusammen = true;
   }
@@ -62,10 +67,20 @@ export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
     note.textContent = text;
     hdr.classList.add('hdr-mit-hinweis');
   }
+  // Ein schon stehender schwebender Hinweis bleibt bis zum Ablauf, auch wenn die Kopfzeile wieder frei ist
+  if (!schwebend && kopfzeileVerdeckt()) {
+    schwebend = document.createElement('div');
+    schwebend.className = 'hdr-note-schwebend';
+    schwebend.setAttribute('aria-hidden', 'true');
+    document.body.appendChild(schwebend);
+  }
+  if (schwebend) schwebend.textContent = text;
   if (hinweisTimer !== null) window.clearTimeout(hinweisTimer);
   hinweisTimer = window.setTimeout(() => {
     document.querySelectorAll('.hdr-note').forEach(n => n.remove());
     document.querySelectorAll('.hdr-mit-hinweis').forEach(h => h.classList.remove('hdr-mit-hinweis'));
+    schwebend?.remove();
+    schwebend = null;
     hinweisTimer = null;
   }, ende - jetzt);
 }
@@ -107,6 +122,19 @@ let wartendeErfolge: string[] = [];
 
 function kopfzeileSichtbar(): boolean {
   return Array.from(document.querySelectorAll<HTMLElement>('.hdr')).some(h => h.offsetParent !== null);
+}
+
+/**
+ * Kopfzeile da, aber nicht zu sehen: ein Fenster liegt darüber (.ov.on oder aria-modal) oder sie ist ganz nach
+ * oben weggescrollt (am Handy). Ohne sichtbare Kopfzeile (Kampf, Truhe, Bilanz) nie: Dort warten die Erfolge.
+ */
+function kopfzeileVerdeckt(): boolean {
+  if (!kopfzeileSichtbar()) return false;
+  const offen = document.querySelector<HTMLElement>('.ov.on, [aria-modal="true"]');
+  if (offen && offen.getClientRects().length > 0) return true;
+  return Array.from(document.querySelectorAll<HTMLElement>('.hdr'))
+    .filter(h => h.offsetParent !== null)
+    .every(h => h.getBoundingClientRect().bottom <= 0);
 }
 
 beiNeuenErfolgen((ids, state, hinweis) => {

@@ -3,12 +3,27 @@
 // ein Hinweis nichts verschiebt, prüft der Playwright-Lauf (docs/ERFOLGE.md).
 import { describe, test, expect, vi, beforeAll, afterAll, afterEach } from 'vitest';
 import { createNewGameState } from '../src/models/GameState';
+import type { GameState } from '../src/models/GameState';
 
-type Hinweis = { className: string; textContent: string; setAttribute: () => void; remove: () => void };
+// Den Hörer für neue Erfolge abfangen, den die Kopfzeile beim Laden anmeldet
+const erfolge = vi.hoisted(() => ({ hoerer: null as null | ((ids: string[], s: GameState, h: boolean) => void) }));
+vi.mock('../src/systems/AchievementSystem', async (original) => ({
+  ...(await original<typeof import('../src/systems/AchievementSystem')>()),
+  beiNeuenErfolgen: (fn: (ids: string[], s: GameState, h: boolean) => void) => { erfolge.hoerer = fn; return () => {}; },
+}));
+
+type Hinweis = {
+  className: string; textContent: string; attribute: Record<string, string>;
+  setAttribute: (n: string, w: string) => void; getAttribute: (n: string) => string | undefined; remove: () => void;
+};
 
 /** Kopfzeile mit .hdr-platz: Dort hinein legt zeigeKopfHinweis den Hinweis */
 class Kopfzeile {
   hinweis: Hinweis | null = null;
+  /** null: nicht zu sehen (Kampf, Truhe, Bilanz) */
+  offsetParent: object | null = {};
+  unterkante = 53;
+  getBoundingClientRect() { return { bottom: this.unterkante }; }
   klassen = new Set<string>();
   classList = { add: (k: string) => this.klassen.add(k), remove: (k: string) => this.klassen.delete(k) };
   platz = {
@@ -27,9 +42,26 @@ const fenster = Object.assign(new EventTarget(), {
   setTimeout: (f: () => void, ms: number) => globalThis.setTimeout(f, ms),
   clearTimeout: (t: number) => globalThis.clearTimeout(t),
 });
+/** Was zeigeKopfHinweis in document.body legt (der schwebende Hinweis) */
+let schwebende: Hinweis[] = [];
+/** Liegt ein Fenster über der Kopfzeile (.ov.on oder aria-modal)? */
+let fensterOffen = false;
 const seite = {
   addEventListener: () => {},
-  createElement: (): Hinweis => ({ className: '', textContent: '', setAttribute: () => {}, remove: () => {} }),
+  body: { appendChild: (n: Hinweis) => { schwebende.push(n); } },
+  querySelector: (sel: string) => {
+    if (sel === '.ov.on, [aria-modal="true"]') return fensterOffen ? { getClientRects: () => [{}] } : null;
+    return null;
+  },
+  createElement: (): Hinweis => {
+    const n: Hinweis = {
+      className: '', textContent: '', attribute: {},
+      setAttribute: (name, wert) => { n.attribute[name] = wert; },
+      getAttribute: name => n.attribute[name],
+      remove: () => { schwebende = schwebende.filter(s => s !== n); },
+    };
+    return n;
+  },
   querySelectorAll: (sel: string) => {
     if (sel === '.hdr') return kopfzeilen;
     if (sel === '.hdr-note') return kopfzeilen.map(k => k.hinweis).filter(Boolean);
@@ -48,8 +80,8 @@ beforeAll(async () => {
   kopf = await import('../src/ui/screens/HeaderRenderer');
 });
 
-// Jeder Test beginnt ohne Hinweis
-afterEach(() => { vi.runAllTimers(); });
+// Jeder Test beginnt ohne Hinweis, ohne Fenster
+afterEach(() => { vi.runAllTimers(); fensterOffen = false; });
 
 afterAll(() => {
   vi.useRealTimers();
@@ -126,7 +158,8 @@ describe('lange Hinweise und zwei nebeneinander liegen früher über Logo und Na
     kopf.zeigeKopfHinweis('📜 Kuchen für alle erledigt: +2 Siegel · +45 Gold');
     expect(k.hinweis?.className).toBe('hdr-note');
     kopf.zeigeKopfHinweis('🏅 Erfolg: Dorf');
-    expect(k.hinweis?.textContent).toBe('📜 Kuchen für alle erledigt: +2 Siegel · +45 Gold · 🏅 Erfolg: Dorf');
+    // Der Erfolg steht vorne, sein Name bleibt so auch in den drei Handy-Zeilen
+    expect(k.hinweis?.textContent).toBe('🏅 Erfolg: Dorf · 📜 Kuchen für alle erledigt: +2 Siegel · +45 Gold');
     expect(k.hinweis?.className).toBe('hdr-note hdr-note-sehr-lang');
     vi.runAllTimers();
 
@@ -137,5 +170,76 @@ describe('lange Hinweise und zwei nebeneinander liegen früher über Logo und Na
     expect(k.hinweis?.className).toBe('hdr-note hdr-note-sehr-lang');
     expect(kopf.renderHeader(state, 'gildenhaus', 'GILDENHAUS'))
       .toContain('<span class="hdr-note hdr-note-sehr-lang" role="status">⚒️ +12 Festungseisen · ✦ Kommandantenharnisch liegt im Lager</span>');
+  });
+});
+
+describe('schwebender Hinweis, wenn die Kopfzeile verdeckt ist', () => {
+  const zettel = '📜 Kuchen für alle erledigt: +2 Siegel · +45 Gold';
+
+  test('Kopfzeile sichtbar, kein Fenster: kein schwebender Hinweis, die Kopfzeile wie bisher', () => {
+    const k = new Kopfzeile();
+    kopfzeilen = [k];
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende).toEqual([]);
+    expect(k.hinweis?.textContent).toBe(zettel);
+    expect(k.hinweis?.className).toBe('hdr-note');
+  });
+
+  test('Fenster offen: genau ein schwebender Hinweis mit demselben Text, stumm für Vorleser, nach Ablauf weg', () => {
+    const k = new Kopfzeile();
+    kopfzeilen = [k];
+    fensterOffen = true;
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende).toHaveLength(1);
+    expect(schwebende[0].className).toBe('hdr-note-schwebend');
+    expect(schwebende[0].textContent).toBe(zettel);
+    expect(schwebende[0].getAttribute('aria-hidden')).toBe('true');
+    expect(k.hinweis?.textContent).toBe(zettel);
+    vi.runAllTimers();
+    expect(schwebende).toEqual([]);
+    expect(k.hinweis).toBeNull();
+  });
+
+  test('Kopfzeile weggescrollt: schwebender Hinweis', () => {
+    const k = new Kopfzeile();
+    k.unterkante = -10;
+    kopfzeilen = [k];
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende.map(s => s.textContent)).toEqual([zettel]);
+  });
+
+  test('keine sichtbare Kopfzeile (Kampf): kein Hinweis, nichts im body, der Erfolg wartet', () => {
+    const k = new Kopfzeile();
+    k.offsetParent = null;
+    kopfzeilen = [k];
+    fensterOffen = true;
+    expect(erfolge.hoerer).not.toBeNull();
+    erfolge.hoerer?.(['dorf'], createNewGameState(), true);
+    expect(k.hinweis).toBeNull();
+    expect(schwebende).toEqual([]);
+    // Den wartenden Erfolg nicht in die nächsten Tests mitnehmen (auf dem Erfolge-Bildschirm kommt kein Hinweis)
+    fenster.dispatchEvent(Object.assign(new Event('mc:navigate'), { detail: { screen: 'achievements' } }));
+    vi.runAllTimers();
+    expect(k.hinweis).toBeNull();
+  });
+
+  test('zwei Hinweise kurz nacheinander bei offenem Fenster: weiterhin einer, der Erfolg vorne', () => {
+    const k = new Kopfzeile();
+    kopfzeilen = [k];
+    fensterOffen = true;
+    kopf.zeigeKopfHinweis(zettel);
+    const erster = schwebende[0];
+    // Fenster inzwischen zu: Der schwebende Hinweis bleibt bis zum Ablauf stehen (kein Flackern)
+    fensterOffen = false;
+    vi.advanceTimersByTime(300);
+    kopf.zeigeKopfHinweis('🏅 Erfolg: Dorf');
+    const text = '🏅 Erfolg: Dorf · 📜 Kuchen für alle erledigt: +2 Siegel · +45 Gold';
+    expect(schwebende).toHaveLength(1);
+    expect(schwebende[0]).toBe(erster);
+    expect(schwebende[0].textContent).toBe(text);
+    expect(k.hinweis?.textContent).toBe(text);
+    expect(k.hinweis?.className).toBe('hdr-note hdr-note-sehr-lang');
+    vi.runAllTimers();
+    expect(schwebende).toEqual([]);
   });
 });
