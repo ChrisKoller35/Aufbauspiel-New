@@ -4,7 +4,7 @@ Christoph (19.10.2026): «Endlos» heisst, dass es auf der Dungeon-Karte immer w
 mit immer neuen, verschiedenen Dungeons. Ab und zu kommen ein oder zwei dazu. Diese Datei hält fest,
 was es schon gibt und wie der nächste Dungeon dazukommt.
 
-## Was es gibt (Stand 5.11.2026)
+## Was es gibt (Stand 8.11.2026)
 
 | Ebene | Dungeon | Gebiet | Räume | Boss | Besonderheit | Erster Sieg bringt |
 |---|---|---|---|---|---|---|
@@ -16,10 +16,11 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 | 10 | Das Morgentor | Mond | 16 | Sunna, die Tagwächterin | Die Sonnenuhr: Dreimal (Raum 2, 8, 14) kann die Gruppe sie vorstellen; jedes Mal kommt Sunnas Wut-Runde 2 Runden früher (ab Runde 10, dreimal gewählt ab Runde 4), und erst mit dem Sieg kommen Mondsilber (6, dann 10) oder ein Set-Teil mehr. Ihre Werte ändern sich nie, nur ihre Geduld; die Kampf-Vorschau zeigt «Wut ab Runde X». Wer am letzten Kontrollpunkt umkehrt, lässt die ganze Morgengabe liegen | Der Morgenstern |
 | 11 | Die Erste Stadt | Taglicht | 16 | Alruna, die erste Gildenmeisterin | Die Wachfeuer: kein Rastplatz im ganzen Dungeon. Dreimal (Raum 2, 8, 14) kann die Gruppe ins Feuer greifen (Tagstein 5, dann ein Set-Teil, dann Tagstein 9, alles erst mit dem Sieg; jedes Mal 8 % Leben, die keine Rast zurückbringt) oder sich wärmen: 5, 5, dann 10 % Leben, und wer am Boden liegt, steht mit 30 % wieder auf (`wecken`) | Alrunas Kelle |
 | 12 | Die Pfeiler des Tages | Taglicht | 16 | Orm, der Träger des Tages | Die Pfeiler: Dreimal (Raum 2, 6, 14) kann die Gruppe einen Pfeiler brechen (Tagstein 6, dann ein Set-Teil, dann Tagstein 10, erst mit dem Sieg; Orms Wut 2 Runden früher) oder stützen (6 % Leben, Orms Wut 1 Runde später, in Raum 6 dazu 2 Tagstein sofort). Seine Wut wandert so zwischen Runde 4 und 13. Der zweite Pfeiler steht vor dem Rastplatz | Der Schlussstein |
+| 13 | Das Nichts da oben | Taglicht | 12 | Niemand, der Hausmeister | Der Dachboden: Raum 2 die Kiste «Nicht öffnen» (4 Magitech-Komponenten erst mit dem Sieg, 7 % Leben) oder darauf ausruhen (+6 % Leben); Raum 8 die Leiter ganz hinauf (ein Set-Teil mehr erst mit dem Sieg, 7 % Leben) oder unten Staub wischen (4 Kristallsplitter) | Der Generalschlüssel |
 
 - **Freischaltung:** Gildenrang V und der Boss des Dungeons darunter (Drachenhort: Magmawyrm,
   Himmelsarchiv: Ignarax, Sternenschmiede: der Oberarchivar, Sternenschlund: Korrund, Mondhof: Nyxar,
-  Morgentor: Argentis, Erste Stadt: Sunna, Pfeiler des Tages: Alruna). Ebenen über 5 verlangen den höchsten
+  Morgentor: Argentis, Erste Stadt: Sunna, Pfeiler des Tages: Alruna, Das Nichts da oben: Orm). Ebenen über 5 verlangen den höchsten
   Rang, den es gibt (V).
 - **Gegner:** je vier Gegner und ein Boss mit eigener Beute (`loot_<route>_*`). Eigene Bilder haben
   Glutwyrmling, Hortkobold und Drachenpriester, Funkenwichtel, Ambossgolem und Korrund, Lichtmotte,
@@ -579,11 +580,14 @@ kein Sieg vor Orms Wut (dort stand 1).
   Sockeln, dazu kommt die Kette «Der Anbau des Saals» mit zwei Sockeln. Gipfel-Taten «Mit blossen Händen»,
   «Abrissunternehmen» und «Einsturzgefahr», Erfolg «Angebaut». Bilder: keine neuen, nur Leihbilder (oben).
   Raum 8 der Ersten Stadt ist eine Wachstube (das Set-Teil liegt im Feuer), der Wachfeuerwicht steht ab Raum 3.
+- **Das Nichts da oben** (8.11.2026): Ebene 13 aus «Später», nur Daten. 12 Räume, zwei Wachen (Staubhase,
+  Listengeist) und Niemand, der Hausmeister, Werte Pfeiler ×1,06; Set «Hausrat der Vorigen» (Stab, Staubschicht
+  mit der vorhandenen `mondwall`), Tagstein wie im übrigen Taglicht, dritter Sockel im Anbau. Platzhalter-Bilder
+  (Wildschwein, Geistermagier, Festungswächter, Routenbild der Pfeiler). Eichung offen: kein Musterlauf, auch
+  `OHNE_MAKELLOS` ist nur angenommen.
 
 ## Später
 
 - **Zwei Routenbilder** für die Erste Stadt und die Pfeiler des Tages (Kosten-Regel: nur mit Christophs Okay).
   Die Leihbilder sind die sichtbarste Schwäche des Taglichts (oben, «Routenbilder»). Vorschlag: eine helle Stadt
   aus Sandstein mit Wachfeuern in den Gassen, und eine Halle aus honiggelben Pfeilern, über der der Himmel hell ist.
-- **Ebene 13:** Die Geschichte der Pfeiler endet mit der Karte des Händlers («Hier geht es weiter …») und einer
-  Leiter. Was oben liegt, steht noch nicht fest; der Anbau des Saals hat Platz für mehr Sockel.
