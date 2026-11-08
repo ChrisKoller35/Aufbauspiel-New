@@ -205,7 +205,7 @@ describe('Schmiede-Material (Mondsilber, Sternenstahl und die anderen zehn)', ()
     expect(fundorte('mat_sternenstahl').jedenSieg.map(s => s.routeId).sort()).toEqual(['sternenschlund', 'sternenschmiede']);
     expect(fundorte('mat_mondsilber').jedenSieg.map(s => s.routeId).sort()).toEqual(['mondhof', 'morgentor']);
     // Tagstein bringt jeder Sieg im Taglicht, dazu die Wachfeuer und Pfeiler unterwegs
-    expect(fundorte('mat_tagstein').jedenSieg.map(s => s.routeId).sort()).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(fundorte('mat_tagstein').jedenSieg.map(s => s.routeId).sort()).toEqual(['erste_stadt', 'nichts_da_oben', 'tagespfeiler']);
     expect(gruppeVon('mat_tagstein')).toBe('material');
   });
 

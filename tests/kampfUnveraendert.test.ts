@@ -5,6 +5,7 @@
 // Aufgenommen auf master 2061d8d vor dem Raid und gleich auf dem Raid-Stand.
 // Neu eingetragen am 6.11.2026: Die Pfeiler des Tages haben den zweiten Pfeiler vor dem Rastplatz und Stützen kostet
 // 6 % Leben (docs/NEUE-DUNGEONS.md, «Im Taglicht»); ohne diese Route ist die Prüfsumme gleich geblieben.
+// Neu eingetragen am 8.11.2026: Ebene 13 «Das Nichts da oben» kam dazu; ohne sie bleibt es f8635e5e (31 Routen).
 //
 // Schlägt der Test fehl, hat sich ein Kampf verändert. Ist das gewollt (neue Route, Gegner, Ausrüstung,
 // Balance), den Hash aus der Fehlermeldung hier eintragen. Sonst ist etwas im Kampf ungewollt anders.
@@ -12,7 +13,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import { ROUTE_DEFS } from '../src/data/routes';
 import { musterStand, spieleRoute } from '../src/systems/Musterlauf';
 
-const ERWARTET = { hash: 'f8635e5e', routen: 31, zeilen: 12021 };
+const ERWARTET = { hash: '6df15eb9', routen: 32, zeilen: 12897 };
 const SAMEN = [1, 7919, 15838];
 
 /** FNV-1a über die Zeichen eines Texts, fortgesetzt ab `h` */

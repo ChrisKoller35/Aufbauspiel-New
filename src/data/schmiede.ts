@@ -85,7 +85,7 @@ export const SCHMIEDE_MATERIALIEN: SchmiedeMaterialDef[] = [
   },
   {
     id: 'mat_tagstein', name: 'Tagstein', ausGebiet: 'aus dem Taglicht', bild: 'MAT_TAGSTEIN',
-    routen: ['erste_stadt', 'tagespfeiler'],
+    routen: ['erste_stadt', 'tagespfeiler', 'nichts_da_oben'],
     text: 'Die Vorigen haben damit gebaut. Er ist warm, solange die Sonne scheint, und schwer, sobald jemand ihn wegtragen will.',
   },
 ];

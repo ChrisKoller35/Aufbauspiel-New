@@ -867,6 +867,37 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_boss_orm', xpReward: 730, goldReward: 360, spriteKey: 'BOSS_ORM',
   },
 
+  // Das Nichts da oben: Pfeiler ×1,06 beim Angriff, Leben ×1,06; nur zwei Wachen, dafür viele
+  staubhase: {
+    id: 'staubhase', name: 'Staubhase', role: 'melee',
+    hp: 365, atk: 56, def: 10, spd: 1.5, critChance: 0.18, critMult: 1.8,
+    skills: [
+      { id: 'niesanfall', name: 'Niesanfall', cooldown: 3, effectType: 'aoe', power: 0.9, target: 'all_players', description: '0.9× Schaden auf alle' },
+    ],
+    lootTableId: 'loot_nichts_common', xpReward: 95, goldReward: 36, spriteKey: 'ENEMY_WILD_BOAR',
+  },
+  listengeist: {
+    id: 'listengeist', name: 'Listengeist', role: 'support',
+    hp: 355, atk: 46, def: 11, spd: 1.3, critChance: 0.1, critMult: 1.6,
+    skills: [
+      { id: 'abhaken', name: 'Abhaken', cooldown: 3, effectType: 'damage', power: 1.6, target: 'player', description: '1.6× Schaden auf 1 Ziel' },
+      { id: 'nachtragen', name: 'Nachtragen', cooldown: 4, effectType: 'heal', power: 160, target: 'ally_lowest_hp', description: 'Heilt den schwächsten Verbündeten um 160' },
+    ],
+    lootTableId: 'loot_nichts_rare', xpReward: 92, goldReward: 34, spriteKey: 'ENEMY_GHOST_MAGE',
+  },
+  boss_niemand: {
+    id: 'boss_niemand', name: 'Niemand, der Hausmeister', role: 'boss',
+    hp: 6100, atk: 78, def: 23, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    isBoss: true,
+    enrage: { afterRound: 10, atkMult: 1.85, spdMult: 1.3 },
+    skills: [
+      { id: 'besenstiel', name: 'Besenstiel', cooldown: 3, effectType: 'aoe', power: 1.4, target: 'all_players', description: '1.4× Schaden auf alle' },
+      { id: 'hausordnung', name: 'Hausordnung', cooldown: 4, effectType: 'damage', power: 2.9, target: 'player', description: '2.9× Schaden auf 1 Ziel' },
+      { id: 'feierabend', name: 'Feierabend', cooldown: 5, effectType: 'buff', power: 10, runden: 4, target: 'self', description: '+10 ATK für 4 Runden' },
+    ],
+    lootTableId: 'loot_boss_niemand', xpReward: 760, goldReward: 380, spriteKey: 'BOSS_FORTRESS_WARDEN',
+  },
+
   // ── Ocean Enemies ──
   deep_sea_angler: {
     id: 'deep_sea_angler',
@@ -1574,6 +1605,21 @@ export const ENEMY_LORE: Record<string, { lore: string; route: string; skillDesc
     route: 'tagespfeiler',
     lore: 'Er trägt den Tag, wo die Vorigen Pfeiler gebrochen haben, seit tausend Jahren auf den Schultern. Er hat nie gefragt, wer ihn darum gebeten hat, aber er hat sich jeden gemerkt, der seither einen Pfeiler angefasst hat.',
     skillDescriptions: { tageslast: 'Das Gewicht des Tages auf alle (1.4x AOE)', schulterstoss: 'Eine Schulter, die den Tag trägt (2.8x Schaden)', nachgreifen: 'Greift nach, niemand kommt dazu (+10 ATK, 4 Runden)' },
+  },
+  staubhase: {
+    route: 'nichts_da_oben',
+    lore: 'Er ist aus allem gemacht, was die Vorigen nicht mehr brauchten, und vermehrt sich, sobald jemand sagt, hier sei doch nichts.',
+    skillDescriptions: { niesanfall: 'Staub in alle Nasen (0.9x AOE)' },
+  },
+  listengeist: {
+    route: 'nichts_da_oben',
+    lore: 'Er führt die Liste, was hier oben liegt. Sie ist vollständig, bis auf euch, und das holt er gerade nach.',
+    skillDescriptions: { abhaken: 'Ein Strich durch einen Namen (1.6x Schaden)', nachtragen: 'Trägt den Schwächsten nach, heilt 160' },
+  },
+  boss_niemand: {
+    route: 'nichts_da_oben',
+    lore: 'Orm hat gesagt, da oben sei niemand. Das stimmt: Niemand räumt hier seit tausend Jahren auf, Niemand hat den Schlüssel, und Niemand lässt sich gern beim Feierabend stören.',
+    skillDescriptions: { besenstiel: 'Ein Besen, von oben (1.4x AOE)', hausordnung: 'Paragraph eins: Füsse abtreten (2.9x Schaden)', feierabend: 'Ab jetzt wird nicht mehr gefragt (+10 ATK, 4 Runden)' },
   },
 
   // ── Ocean ──

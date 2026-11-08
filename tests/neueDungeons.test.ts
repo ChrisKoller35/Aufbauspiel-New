@@ -63,7 +63,7 @@ function boss(run: ExpeditionRun) {
 describe('Dungeons über dem Vulkankern', () => {
   it('der Weg führt vom Vulkankern über Drachenhort und Himmelsarchiv zwischen die Sterne, in den Mondhof, ans Morgentor und ins Taglicht', () => {
     expect(NEUE.map(r => r.id)).toEqual([
-      'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler',
+      'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund', 'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler', 'nichts_da_oben',
     ]);
     const knoten = (id: string) => DUNGEON_GRAPH.find(n => n.routeId === id)!;
     expect(knoten('volcano_core').leadsTo).toContain('drachenhort');
@@ -898,5 +898,32 @@ describe('Dungeons über dem Vulkankern', () => {
     const klug = messeLaeufe('tagespfeiler', 'stark', 'klug', 100, 'stadt5').siege;
     expect(klug).toBeGreaterThanOrEqual(35);
     expect(klug).toBeLessThanOrEqual(58);
+  });
+});
+
+describe('Das Nichts da oben', () => {
+  it('braucht Orm und hat feste Wahl-Räume 2 und 8, ohne Tagstein', () => {
+    const state = createNewGameState();
+    state.guildStats.rank = 5;
+    expect(getRouteLockReasons(ROUTE_DEFS.nichts_da_oben, state)).toEqual([`Besiege: ${ENEMY_DEFS.boss_orm.name}`]);
+    state.guildStats.bossesDefeatedIds.push('boss_orm');
+    expect(isRouteAvailable(ROUTE_DEFS.nichts_da_oben, state)).toBe(true);
+    const enc = ROUTE_DEFS.nichts_da_oben.encounters;
+    expect(enc[2]).toMatchObject({ type: 'find', wahl: { a: { kostetLeben: 7, nachSieg: true, itemId: 'magitech_component', value: 4 } } });
+    expect(enc[8]).toMatchObject({ type: 'find', wahl: { a: { kostetLeben: 7, setTeil: true }, b: { itemId: 'crystal_shard', value: 4 } } });
+    expect(enc[8].wahl!.b.nachSieg).toBeFalsy();
+    for (const i of [2, 8]) for (const o of [enc[i].wahl!.a, enc[i].wahl!.b]) expect(o.itemId).not.toBe('mat_tagstein');
+  });
+
+  it('wer Kiste und Leiter nimmt, bekommt mit dem Sieg Magitech und ein Set-Teil', () => {
+    const { state, held } = uebermacht();
+    const run = bisZurWahl(state, system.startExpedition(state, 'nichts_da_oben', [held])!);
+    system.resolveChoice(run, 0);
+    bisZurWahl(state, run);
+    system.resolveChoice(run, 0);
+    zuEnde(state, run);
+    expect(run.status).toBe('victory');
+    expect(run.setTeilVersprochen).toBe(true);
+    expect(run.loot.magitech_component ?? 0).toBeGreaterThanOrEqual(4);
   });
 });

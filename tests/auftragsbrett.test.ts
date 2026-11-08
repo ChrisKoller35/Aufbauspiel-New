@@ -100,10 +100,10 @@ describe('Auftragsbrett: Texte und Daten', () => {
     // Zwei Teile: der Saal bis Ebene 10, darüber der Anbau; erst der ganze Saal, dann der Anbau
     expect(saalKapitel()).toEqual(kette.filter(k => ROUTE_DEFS[k.routeId].tier < ANBAU_AB_EBENE));
     expect(saalKapitel()).toHaveLength(16);
-    expect(kapitelDesTeils('anbau').map(k => k.routeId)).toEqual(['erste_stadt', 'tagespfeiler']);
-    expect(kette.map(kettenTeil)).toEqual([...Array(16).fill('saal'), 'anbau', 'anbau']);
+    expect(kapitelDesTeils('anbau').map(k => k.routeId)).toEqual(['erste_stadt', 'tagespfeiler', 'nichts_da_oben']);
+    expect(kette.map(kettenTeil)).toEqual([...Array(16).fill('saal'), 'anbau', 'anbau', 'anbau']);
     expect(saalEinleitung()).toContain('Sechzehn leere Sockel');
-    expect(ketteEinleitung('anbau')).toContain('zwei neue Sockel');
+    expect(ketteEinleitung('anbau')).toContain('drei neue Sockel');
     // Das letzte Prunkstück des Saals bleibt Sunnas Strahl, ganz gleich, wie hoch die Karte wächst
     expect(saalKapitel().at(-1)!.routeId).toBe('morgentor');
   });
@@ -246,7 +246,7 @@ describe('Auftragsbrett: Zettel des Tages', () => {
   });
 
   test('kein Zettel «ohne Gefallene» für die Erste Stadt und die Pfeiler: dort fällt fast in jedem Sieg ein Held', () => {
-    expect(OHNE_MAKELLOS).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(OHNE_MAKELLOS).toEqual(['erste_stadt', 'tagespfeiler', 'nichts_da_oben']);
     const makellos: string[] = [];
     for (let samen = 1; samen <= 60; samen++) {
       const state = spielstand('pfeiler', samen);
@@ -261,7 +261,7 @@ describe('Auftragsbrett: Zettel des Tages', () => {
     // Die übrigen Arten hängen dort weiter
     const oben = spielstand('pfeiler');
     expect(zettelText(zettel('sieg', 'erste_stadt')).ziel).toBe('Bezwingt die Erste Stadt');
-    expect(spielbareDungeons(oben).slice(0, 2).sort()).toEqual([...OHNE_MAKELLOS].sort());
+    expect(spielbareDungeons(oben).slice(0, 2).sort()).toEqual(['erste_stadt', 'tagespfeiler']);
   });
 
   test('eine Expedition über Mitternacht zählt für die Zettel vom Aufbruch, danach hängen neue', () => {
@@ -534,17 +534,23 @@ describe('Kette: Der Saal der Gilde', () => {
     // Kein zweites Mal die Siegel für den vollen Saal
     expect(k1.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS.erste_stadt.tier / 2));
     expect(kohle).toMatchObject({ saalVoll: false, anbauVoll: false });
-    // Orm: zwei Siege, der zweite füllt den Anbau
+    // Orm: zwei Siege, dann ist Niemand dran
     expect(laufendesKapitel(stand)).toMatchObject({ routeId: 'tagespfeiler', art: 'sieg', ziel: 2 });
     auftraegeNachExpedition(state, lauf('tagespfeiler'), MITTAG);
-    const angezeigt = kapitelBelohnungVon(stand, laufendesKapitel(stand)!);
     const keil = auftraegeNachExpedition(state, lauf('tagespfeiler'), MITTAG);
-    const k2 = keil.meldungen.find(m => m.prunkstueck)!;
-    expect(k2.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS.tagespfeiler.tier / 2) + ANBAU_SCHLUSS_SIEGEL);
-    expect(angezeigt).toEqual(k2.belohnung);
-    expect(keil).toMatchObject({ saalVoll: false, anbauVoll: true });
+    expect(keil.meldungen.find(m => m.prunkstueck)!.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS.tagespfeiler.tier / 2));
+    expect(keil).toMatchObject({ saalVoll: false, anbauVoll: false });
+    // Niemand: ein Sieg füllt den Anbau
+    expect(laufendesKapitel(stand)).toMatchObject({ routeId: 'nichts_da_oben', art: 'sieg', ziel: 1 });
+    const angezeigt = kapitelBelohnungVon(stand, laufendesKapitel(stand)!);
+    const schluessel = auftraegeNachExpedition(state, lauf('nichts_da_oben'), MITTAG);
+    const k3 = schluessel.meldungen.find(m => m.prunkstueck)!;
+    expect(k3.belohnung!.siegel).toBe(3 + Math.ceil(ROUTE_DEFS.nichts_da_oben.tier / 2) + ANBAU_SCHLUSS_SIEGEL);
+    expect(angezeigt).toEqual(k3.belohnung);
+    expect(schluessel).toMatchObject({ saalVoll: false, anbauVoll: true });
     expect(laufendesKapitel(stand)).toBeNull();
-    expect(auftragsZeilen(keil, false).some(z => z.text.includes('Auch der Anbau ist voll'))).toBe(true);
+    expect(auftragsZeilen(schluessel, false).some(z => z.text.includes('Auch der Anbau ist voll'))).toBe(true);
+    expect(auftragsZeilen(keil, false).some(z => z.text.includes('voll'))).toBe(false);
     expect(auftragsZeilen(kohle, false).some(z => z.text.includes('voll'))).toBe(false);
     expect(ANBAU_SCHLUSS).toContain('«Besser.»');
     expect(SAAL_SCHLUSS).toContain('Daneben ist noch Platz');
@@ -711,8 +717,8 @@ describe('Trophäensaal', () => {
     const stand = brettStand(state, MITTAG);
     stand.kette.fertig = saalKapitel().map(k => k.routeId);
     const voll = saalAnsicht(state, MITTAG);
-    expect(voll).toMatchObject({ saalVoll: true, anbauVoll: false, glanz: { max: 54 } });
-    expect(voll.anbau.map(t => t.routeId)).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(voll).toMatchObject({ saalVoll: true, anbauVoll: false, glanz: { max: 57 } });
+    expect(voll.anbau.map(t => t.routeId)).toEqual(['erste_stadt', 'tagespfeiler', 'nichts_da_oben']);
     expect(voll.anbau[0]).toMatchObject({ bezwungen: false, teil: 'anbau', schild: 'Die Erste. Sie hat …', schildWarum: 'Der Rest ist verrusst.' });
     expect(voll.anbau[1]).toMatchObject({ schild: 'Der Träger. Er hat nie gefragt, wer ihn darum bat.' });
     expect(voll.anbau[1].schildWarum).toBeUndefined();
@@ -720,7 +726,7 @@ describe('Trophäensaal', () => {
     expect(kapitelSchild(state, laufendesKapitel(stand)!)).toEqual({ text: 'Die Erste. Sie hat …', warum: 'Der Rest ist verrusst.' });
 
     // Beide Prunkstücke im Anbau: voll
-    stand.kette.fertig.push('erste_stadt', 'tagespfeiler');
+    stand.kette.fertig.push('erste_stadt', 'tagespfeiler', 'nichts_da_oben');
     expect(saalAnsicht(state, MITTAG)).toMatchObject({ saalVoll: true, anbauVoll: true });
   });
 
@@ -728,7 +734,7 @@ describe('Trophäensaal', () => {
     const state = spielstand('pfeiler');
     const ansicht = saalAnsicht(state, MITTAG);
     expect(ansicht.saalVoll).toBe(false);
-    expect(ansicht.anbau.map(t => t.routeId)).toEqual(['erste_stadt', 'tagespfeiler']);
+    expect(ansicht.anbau.map(t => t.routeId)).toEqual(['erste_stadt', 'tagespfeiler', 'nichts_da_oben']);
     expect(ansicht.anbau[0]).toMatchObject({ bezwungen: true, schild: 'Die Erste. Sie hat diesen Saal gebaut.' });
     expect(ansicht.anbau[0].schildWarum).toBeUndefined();
     expect(ansicht.glanz).toEqual(saalGlanz(bossTrophaeen(state, MITTAG)));

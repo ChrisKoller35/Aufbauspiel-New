@@ -613,6 +613,49 @@ export const LOOT_TABLE_DEFS: Record<string, LootTableDef> = {
     guaranteedGold: { min: 400, max: 560 },
   },
 
+  // ── Das Nichts da oben (Ebene 13) ──
+  loot_nichts_common: {
+    id: 'loot_nichts_common',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 5, maxQty: 8 },
+      { itemId: 'gold', weight: 18, minQty: 24, maxQty: 36 },
+      { itemId: 'talisman_fragment', weight: 18, minQty: 3, maxQty: 6 },
+      { itemId: 'healing_potion', weight: 12, minQty: 1, maxQty: 2 },
+      { itemId: 'blade_of_thousand_shadows', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 4, minQty: 1, maxQty: 1 },
+      { itemId: 'soulbreaker', weight: 4, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 28, max: 46 },
+  },
+  loot_nichts_rare: {
+    id: 'loot_nichts_rare',
+    entries: [
+      { itemId: 'crystal_shard', weight: 22, minQty: 6, maxQty: 11 },
+      { itemId: 'talisman_fragment', weight: 20, minQty: 5, maxQty: 8 },
+      { itemId: 'magitech_component', weight: 12, minQty: 2, maxQty: 3 },
+      { itemId: 'blade_of_thousand_shadows', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shadowhunter_armor', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'aether_heart', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 6, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 6, minQty: 1, maxQty: 1 },
+    ],
+    guaranteedGold: { min: 44, max: 72 },
+  },
+  loot_boss_niemand: {
+    id: 'loot_boss_niemand',
+    entries: [
+      { itemId: 'der_generalschluessel', weight: 22, minQty: 1, maxQty: 1 },
+      { itemId: 'der_schlussstein', weight: 10, minQty: 1, maxQty: 1 },
+      { itemId: 'alrunas_kelle', weight: 8, minQty: 1, maxQty: 1 },
+      { itemId: 'shield_of_the_ancient', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'amulet_of_rebirth', weight: 12, minQty: 1, maxQty: 1 },
+      { itemId: 'crystal_shard', weight: 18, minQty: 22, maxQty: 32 },
+      { itemId: 'talisman_fragment', weight: 14, minQty: 13, maxQty: 22 },
+    ],
+    guaranteedGold: { min: 430, max: 600 },
+  },
+
   // --- T4 Legendary Loot (Nemesis-Modifier Bonus) ---
   loot_nemesis_legendary: {
     id: 'loot_nemesis_legendary',

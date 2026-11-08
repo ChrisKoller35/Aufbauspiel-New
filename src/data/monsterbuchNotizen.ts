@@ -158,4 +158,8 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
     routeId: 'tagespfeiler',
     text: 'Der Schlusssteinwächter hat 28 Abwehr, die höchste aller Wachen über dem Vulkankern, und die Fugenspinne beisst mit Fugenbiss jede dritte Runde zu. Orm, der Träger des Tages, trägt 5700 Leben, schlägt mit 74 Angriff zu und wütet ab Runde 10, Angriff mal 1,85. Jeder gebrochene Pfeiler zieht seine Wut um 2 Runden vor, dreimal gebrochen wütet er schon ab Runde 4; jeder gestützte schiebt sie um 1 Runde hinaus, dreimal gestützt erst ab Runde 13.',
   },
+  {
+    routeId: 'nichts_da_oben',
+    text: 'Der Staubhase niest mit Niesanfall jede vierte Runde auf alle, der Listengeist heilt mit Nachtragen um 160. Niemand, der Hausmeister, trägt 6100 Leben, schlägt mit 78 Angriff zu und wütet ab Runde 10, Angriff mal 1,85; seine Wut lässt sich nicht verschieben.',
+  },
 ];

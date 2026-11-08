@@ -47,6 +47,7 @@ export const DUNGEON_IM_SATZ: Record<string, DungeonImSatz> = {
   morgentor: { wo: 'am Morgentor', wen: 'das Morgentor' },
   erste_stadt: { wo: 'in der Ersten Stadt', wen: 'die Erste Stadt' },
   tagespfeiler: { wo: 'an den Pfeilern des Tages', wen: 'die Pfeiler des Tages' },
+  nichts_da_oben: { wo: 'im Nichts da oben', wen: 'das Nichts da oben' },
 };
 
 /**
