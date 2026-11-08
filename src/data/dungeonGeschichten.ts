@@ -1455,4 +1455,34 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
       + 'und der Schlussstein liegt in unserem Lager. Der Händler hat seine alte Karte ausgerollt, die mit dem leeren Rand oben und dem Satz «Hier geht es weiter. Wohin, wissen wir noch nicht.» '
       + 'Ich habe die Erste Stadt und die Pfeiler eingezeichnet und darüber eine Leiter, die Jorinde über dem Tag gefunden hat. Orm sagt, da oben sei nichts. Alruna sagt, das habe ihre Gilde auch gesagt.',
   },
+  {
+    routeId: 'nichts_da_oben', titel: 'Da oben ist Niemand',
+    einleitung: 'Über dem Tag steht Jorindes Leiter, und oben ist eine Luke, aus der es nach altem Holz und Staub riecht. '
+      + 'Orm sagt, da oben sei nichts; Alruna sagt, das habe ihre Gilde auch gesagt, kurz bevor sie hinaufstieg. '
+      + 'Wir gehen trotzdem, und ich nehme ein Staubtuch mit, weil ich nicht weiss, was man sonst zu nichts mitnimmt.',
+    wahlen: [],
+    raumWahlen: {
+      2: {
+        titel: 'Die Kiste',
+        text: 'Hinter dem ersten Dachbalken steht eine Kiste, auf der «Nicht öffnen» steht, und darunter in immer kleinerer Schrift, dass man es doch darf. '
+          + 'Drin klappert Magitech, und der Deckel schnappt nach Fingern. Wer sich daraufsetzt, ruht sich aus und hört es höflich klopfen.',
+        nachklang: {
+          a: 'Wir öffneten die Kiste, und der Deckel biss zu; ich habe ins Buch geschrieben, dass es draufstand.',
+          b: 'Wir liessen den Deckel zu und sassen darauf, bis das Klopfen aufhörte und wir wieder Atem hatten.',
+        },
+      },
+      8: {
+        titel: 'Die Leiter',
+        text: 'Mitten auf dem Dachboden lehnt eine zweite Leiter, und sie führt noch weiter hinauf, durch eine Luke in das, was Orm nichts nennt. '
+          + 'Oben liegt etwas, das zu einem Set gehört, und der Aufstieg kostet Atem. Wer unten bleibt, wischt Staub und findet Kristall darunter.',
+        nachklang: {
+          a: 'Wir stiegen die Leiter ganz hinauf, und über der Luke lag nicht nichts, sondern etwas, das ich mitgenommen habe.',
+          b: 'Wir blieben unten und wischten Staub, und ich habe zum ersten Mal sauber gemacht, wo seit tausend Jahren niemand war.',
+        },
+      },
+    },
+    ende: 'Niemand hat die Liste abgeschlossen, mit allem, was hier oben liegt, und wir stehen jetzt darauf, ganz unten, mit Datum. '
+      + 'Der Generalschlüssel liegt in unserem Lager, und keiner von uns weiss, welches Schloss er sucht. '
+      + 'Auf der Karte des Händlers ist über dem Nichts wieder leerer Rand, und jemand hat mit Kreide «Hier geht es weiter» hineingeschrieben, in Alrunas Schrift, nur jünger.',
+  },
 ];

@@ -59,26 +59,27 @@ export interface DungeonSetDef {
 // Rückschritt ist. Die Set-Boni kommen obendrauf und machen den Unterschied.
 // Ebene 7 und 8 (Sternenschmiede, Sternenschlund) setzen die Reihen im selben Schritt fort,
 // Ebene 9 und 10 (Mondhof, Morgentor) ebenso, Ebene 11 und 12 (Erste Stadt, Pfeiler des Tages) auch.
-// Ein Dungeon auf Ebene 13 braucht je eine Zahl mehr in jeder Reihe.
+// Ebene 13 (Das Nichts da oben) setzt jede Reihe mit ihrem letzten Schritt fort.
+// Ein Dungeon auf Ebene 14 braucht je eine Zahl mehr in jeder Reihe.
 
 /** Die höchste Ebene, für die es Werte gibt */
-export const HOECHSTE_EBENE = 12;
+export const HOECHSTE_EBENE = 13;
 
-type Reihe = [number, number, number, number, number, number, number, number, number, number, number, number];
+type Reihe = [number, number, number, number, number, number, number, number, number, number, number, number, number];
 
 const ART_WERTE: Record<SetTeilArt, Partial<Record<'atk' | 'def' | 'hp' | 'spd' | 'critChance', Reihe>>> = {
-  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 24, 26], def: [0, 0, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18] },
-  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17, 19, 21, 23, 25], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22, 0.23, 0.24] },
-  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37], hp: [4, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55], def: [0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10] },
-  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17, 19, 21, 23, 25], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25, 0.25, 0.3], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34] },
-  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23], hp: [5, 8, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66], def: [0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14, 0.14, 0.16] },
-  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20, 22, 24, 26, 28], hp: [2, 4, 10, 15, 26, 30, 35, 40, 45, 50, 55, 60], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
-  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20, 22, 24, 26, 28], hp: [4, 8, 15, 20, 26, 32, 38, 44, 50, 56, 62, 68], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
-  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15, 17, 19, 21, 23], hp: [5, 7, 12, 14, 18, 22, 26, 30, 34, 38, 42, 46], atk: [0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22, 0.23, 0.24] },
-  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44, 50, 56, 62, 68], atk: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26] },
-  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11], def: [0, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 7], hp: [3, 4, 5, 12, 16, 20, 24, 28, 32, 36, 40, 44], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14, 0.14, 0.16], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12, 0.12, 0.14, 0.14, 0.16] },
-  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26] },
-  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13], hp: [4, 6, 8, 15, 18, 22, 26, 30, 34, 38, 42, 46] },
+  klinge: { atk: [3, 5, 7, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28], def: [0, 0, 0, 2, 2, 3, 3, 4, 4, 5, 5, 6, 7], critChance: [0, 0, 0.05, 0.08, 0.1, 0.12, 0.13, 0.14, 0.15, 0.16, 0.17, 0.18, 0.19] },
+  dolch: { atk: [2, 4, 6, 8, 11, 13, 15, 17, 19, 21, 23, 25, 27], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25], critChance: [0.05, 0.08, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25] },
+  hammer: { atk: [4, 7, 10, 13, 16, 19, 22, 25, 28, 31, 34, 37, 40], hp: [4, 6, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60], def: [0, 1, 2, 3, 3, 4, 5, 6, 7, 8, 9, 10, 11] },
+  bogen: { atk: [2, 3, 6, 9, 11, 13, 15, 17, 19, 21, 23, 25, 27], spd: [0.1, 0.15, 0.1, 0.2, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25, 0.25, 0.3, 0.35], critChance: [0.05, 0.1, 0.12, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28, 0.3, 0.32, 0.34, 0.36] },
+  stab: { atk: [1, 2, 5, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25], hp: [5, 8, 12, 18, 24, 30, 36, 42, 48, 54, 60, 66, 72], def: [0, 0, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12], critChance: [0, 0, 0, 0.08, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14, 0.14, 0.16, 0.18] },
+  schild: { def: [4, 6, 7, 10, 14, 16, 18, 20, 22, 24, 26, 28, 30], hp: [2, 4, 10, 15, 26, 30, 35, 40, 45, 50, 55, 60, 65], spd: [-0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05, -0.05] },
+  platte: { def: [4, 5, 8, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30], hp: [4, 8, 15, 20, 26, 32, 38, 44, 50, 56, 62, 68, 74], spd: [-0.05, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0] },
+  leder: { def: [2, 3, 4, 7, 9, 11, 13, 15, 17, 19, 21, 23, 25], hp: [5, 7, 12, 14, 18, 22, 26, 30, 34, 38, 42, 46, 50], atk: [0, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11], critChance: [0, 0, 0.05, 0.12, 0.14, 0.16, 0.18, 0.2, 0.21, 0.22, 0.23, 0.24, 0.25] },
+  robe: { hp: [8, 12, 14, 22, 26, 32, 38, 44, 50, 56, 62, 68, 74], atk: [1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], spd: [0, 0, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25], critChance: [0, 0.05, 0.05, 0.1, 0.12, 0.14, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28] },
+  amulett: { atk: [1, 2, 3, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12], def: [0, 1, 2, 2, 3, 4, 5, 5, 6, 6, 7, 7, 7], hp: [3, 4, 5, 12, 16, 20, 24, 28, 32, 36, 40, 44, 48], spd: [0, 0, 0, 0.05, 0.08, 0.1, 0.1, 0.12, 0.12, 0.14, 0.14, 0.16, 0.18], critChance: [0.03, 0.05, 0.05, 0.1, 0.08, 0.1, 0.12, 0.12, 0.12, 0.14, 0.14, 0.16, 0.18] },
+  ring: { atk: [1, 2, 4, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13], spd: [0.05, 0.05, 0.1, 0.1, 0.1, 0.15, 0.15, 0.2, 0.2, 0.2, 0.25, 0.25, 0.25], critChance: [0.05, 0.06, 0.1, 0.12, 0.12, 0.15, 0.16, 0.18, 0.2, 0.22, 0.24, 0.26, 0.28] },
+  talisman: { def: [1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14], hp: [4, 6, 8, 15, 18, 22, 26, 30, 34, 38, 42, 46, 50] },
 };
 
 /**
@@ -114,7 +115,7 @@ const ART_PLATZ: Record<SetTeilArt, { slot: NonNullable<ItemDef['gearSlot']>; ha
 };
 
 /** Grundpreis je Ebene (wie die übrigen Gegenstände derselben Ebene) */
-const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160, 180, 200, 220, 240];
+const WERT_JE_EBENE: Reihe = [12, 26, 45, 72, 100, 120, 140, 160, 180, 200, 220, 240, 260];
 
 // ── Die Sets, in der Reihenfolge der Dungeon-Karte von unten nach oben ──
 
@@ -571,6 +572,22 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
       name: 'Tragkraft',
       text: 'Solange der Träger steht, hat die ganze Gruppe am Ende jeder Runde 6 Angriff mehr, bis Kampfende höchstens +42. Was einer trägt, tragen alle.',
       effekte: [{ id: 'tragkraft', power: 6, max: 42, name: 'Tragkraft' }],
+    },
+  },
+
+  // ── Über den Pfeilern (das Stab-Set für die Magierin) ──
+  {
+    id: 'hausrat', routeId: 'nichts_da_oben', name: 'Hausrat der Vorigen', zeichen: '🪜', tier: 13,
+    teile: [
+      { art: 'stab', name: 'Besenstiel des Hausmeisters', bild: 'ITEM_WORLDEND_STAFF', text: 'Er fegt. Er fegt auch Gegner. Niemand hat ihn ungern hergegeben, und das war das erste Mal, dass Niemand etwas hergab.' },
+      { art: 'robe', name: 'Staubmantel', bild: 'ITEM_MAGIARCH_ROBE', text: 'Aus tausend Jahren Staub gewebt. Man sieht ihn nicht, wenn man nicht hinschaut, und genau das ist der Zweck.' },
+      { art: 'amulett', name: 'Schlüsselbund für alles', bild: 'ITEM_ARCANE_AMULET', text: 'Siebzehn Schlüssel. Keiner passt irgendwo. Zusammen klingen sie, als käme Niemand.' },
+    ],
+    zweiTeile: { atk: 13, critChance: 0.13 },
+    dreiTeile: {
+      name: 'Staubschicht',
+      text: 'Zu Kampfbeginn legt sich Staub auf die ganze Gruppe: ein Schild von 18 für 3 Runden. Was man nicht sieht, trifft man schlechter.',
+      effekte: [{ id: 'mondwall', schild: 18, runden: 3 }],
     },
   },
 ];

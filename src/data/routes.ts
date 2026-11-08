@@ -111,7 +111,9 @@ export const DUNGEON_GRAPH: DungeonGraphNode[] = [
   { routeId: 'mondhof',            x: 400, y: -2300, leadsTo: ['morgentor'], isMainPath: true },
   { routeId: 'morgentor',          x: 530, y: -2800, leadsTo: ['erste_stadt'], isMainPath: true },
   { routeId: 'erste_stadt',        x: 400, y: -3300, leadsTo: ['tagespfeiler'], isMainPath: true },
-  { routeId: 'tagespfeiler',       x: 520, y: -3800, leadsTo: [], isMainPath: true },
+  { routeId: 'tagespfeiler',       x: 520, y: -3800, leadsTo: ['nichts_da_oben'], isMainPath: true },
+  // x 680: neben der Raid-Marke (390/−4120), nicht darauf
+  { routeId: 'nichts_da_oben',     x: 680, y: -4300, leadsTo: [], isMainPath: true },
 ];
 
 export const ROUTE_DEFS: Record<string, RouteDef> = {
@@ -606,6 +608,40 @@ export const ROUTE_DEFS: Record<string, RouteDef> = {
     unlockCondition: { bossesDefeated: ['boss_alruna'] },
   },
 
+  // Ebene 13: zwei feste Wahl-Räume (2 und 8), der Rest ist Staub
+  nichts_da_oben: {
+    id: 'nichts_da_oben',
+    name: 'Das Nichts da oben',
+    tier: 13,
+    rooms: 12,
+    gebiet: 'licht',
+    besonderheit: 'Der Dachboden: Eine Kiste «Nicht öffnen» und eine Leiter, die weiter hinaufführt. Wer die Kiste öffnet, zahlt mit Leben und bekommt Magitech, wenn Niemand fällt; wer die Leiter ganz hinaufsteigt, ein Set-Teil mehr.',
+    ersterSiegBeute: 'der_generalschluessel',
+    encounters: [
+      { type: 'combat', enemies: ['staubhase', 'staubhase'] },
+      { type: 'combat', enemies: ['listengeist', 'staubhase'] },
+      { type: 'find', wahl: {
+        a: { label: 'Die Kiste «Nicht öffnen» öffnen (+4 Magitech-Komponenten, wenn ihr siegt; −7% HP)', flavorText: 'Auf dem Deckel steht «Nicht öffnen», darunter kleiner «Wirklich nicht», darunter noch kleiner «Na gut».', effect: 'item', value: 4, itemId: 'magitech_component', nachSieg: true, kostetLeben: 7 },
+        b: { label: 'Den Deckel zulassen und ausruhen (+6% HP)', flavorText: 'Ihr setzt euch auf die Kiste. Von innen klopft es, höflich, einmal.', effect: 'heal', value: 6 },
+      } },
+      { type: 'combat', enemies: ['staubhase', 'staubhase', 'listengeist'] },
+      { type: 'hazard', damage: 27 },
+      { type: 'checkpoint' },
+      { type: 'rest', healPercent: 15 },
+      { type: 'combat', enemies: ['listengeist', 'listengeist', 'staubhase'] },
+      { type: 'find', wahl: {
+        a: { label: 'Die Leiter ganz hinaufsteigen (+1 Set-Teil, wenn ihr siegt; −7% HP)', flavorText: 'Jorindes Leiter. Oben ist eine Luke, und über der Luke ist, laut Orm, nichts. Es liegt etwas darauf.', effect: 'kein', value: 0, setTeil: true, kostetLeben: 7 },
+        b: { label: 'Unten bleiben und Staub wischen (+4 Kristallsplitter)', flavorText: 'Unter dem Staub glitzert es. Niemand hat seit tausend Jahren nicht gewischt. Das war ein Fehler.', effect: 'item', value: 4, itemId: 'crystal_shard' },
+      } },
+      { type: 'hazard', damage: 29 },
+      { type: 'combat', enemies: ['staubhase', 'listengeist', 'staubhase'] },
+      { type: 'boss', enemies: ['boss_niemand'] },
+    ],
+    bossId: 'boss_niemand',
+    recommendedLevel: 'Stufe 15, Sets auf +5 und «Was den Tag trug»',
+    unlockCondition: { bossesDefeated: ['boss_orm'] },
+  },
+
   // ── Siege Routes ──
   siege_walls: {
     id: 'siege_walls',
@@ -963,6 +999,8 @@ export const ROUTE_IMAGE_MAP: Record<string, string> = {
   // Leihbilder (tools/leihbilder.ts): Magic City in Gold und die Ruinentiefen in Gold, bis Christoph eigene zeichnet
   erste_stadt: 'exp_erste_stadt',
   tagespfeiler: 'exp_tagespfeiler',
+  // Platzhalter, bis es ein eigenes Routenbild gibt
+  nichts_da_oben: 'exp_tagespfeiler',
 };
 
 

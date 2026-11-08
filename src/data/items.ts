@@ -379,6 +379,15 @@ export const ITEM_DEFS: Record<string, ItemDef> = {
     tags: ['gear', 'trinket', 'tier12', 'legendary', 'special:druckwelle'],
     flavorText: 'Wer ihn aus dem Bogen zieht, bringt das Gewölbe zum Einsturz. Wer ihn trägt, nur die Gegner, alle 4 Runden. Orm hat ihn freiwillig hergegeben, mit dem Hinweis, er habe ohnehin nichts mehr getragen.',
   },
+  // --- Ebene 13: Niemands Beute (erster Sieg garantiert). Nur Werte, keine eigene Fähigkeit ---
+  der_generalschluessel: {
+    id: 'der_generalschluessel', name: 'Der Generalschlüssel', type: 'gear',
+    stackSize: 1, baseValue: 300, gearSlot: 'trinket', tier: 13,
+    statBonuses: { atk: 12, def: 9, hp: 50, spd: 0.17, critChance: 0.17 },
+    tags: ['gear', 'trinket', 'tier13', 'legendary'],
+    flavorText: 'Er passt in jedes Schloss hier oben, und hier oben gibt es kein Schloss. Niemand hat ihn trotzdem jeden Abend abgezogen.',
+    spriteKey: 'ITEM_AMULET_OF_REBIRTH',
+  },
   // Zum ersten Sieg über Zenit (systems/Raid.ts, docs/RAID.md): einmal, nicht aus einer Beutetabelle
   die_unruh: {
     id: 'die_unruh', name: 'Die Unruh', type: 'gear',

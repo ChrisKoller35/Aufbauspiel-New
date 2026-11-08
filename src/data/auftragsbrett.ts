@@ -37,15 +37,16 @@ export interface AuftragsVorlage {
 /** Unter Wasser, in der Glut und über den Wolken: Dort zieht keine Karawane durch, und dort gräbt niemand */
 export const FERNE_DUNGEONS = [
   'ocean_depths', 'ocean_abyss', 'volcano_core', 'magma_caverns', 'drachenhort', 'himmelsarchiv', 'sternenschmiede', 'sternenschlund',
-  'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler',
+  'mondhof', 'morgentor', 'erste_stadt', 'tagespfeiler', 'nichts_da_oben',
 ];
 
 /**
  * Dungeons ohne Zettel «ohne Gefallene»: Dort fällt fast in jedem Sieg ein Held, auch mit der besten Ausrüstung
  * (Musterlauf am 5.11.2026, 400 Läufe vorsichtig: Erste Stadt mit Sunnas Morgengabe oder Alrunas Wachfeuer kein
  * makelloser Sieg, mit «Was den Tag trug» 18; Pfeiler des Tages keiner). Kommt ein Dungeon dazu, nachmessen.
+ * Das Nichts da oben steht ohne Musterlauf hier (Annahme: wie die Pfeiler), nachmessen.
  */
-export const OHNE_MAKELLOS = ['erste_stadt', 'tagespfeiler'];
+export const OHNE_MAKELLOS = ['erste_stadt', 'tagespfeiler', 'nichts_da_oben'];
 
 /** Die Zettel für Dungeons; Lieferungen stehen bei ihrer Ware (LIEFER_WAREN) */
 export const AUFTRAGS_VORLAGEN: AuftragsVorlage[] = [
@@ -406,5 +407,13 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
       + 'oben waren und er zweimal liegen geblieben ist; einmal, sagt er, könne Zufall sein.',
     vorSieg: 'Der zweite Sockel im Anbau meint jemanden über der Ersten Stadt, der etwas trägt, das Alruna nicht beim Namen nennen will. '
       + 'Auf den Sockel gehört ein Keil aus Tagstein, und wer ihn holt, muss zweimal hinauf.',
+  },
+  {
+    routeId: 'nichts_da_oben', art: 'sieg', ziel: 1, prunkstueck: 'Ein Schlüsselbund, an dem kein Schlüssel passt',
+    schild: 'Niemand. Er hat aufgeräumt.',
+    text: 'Der dritte Sockel im Anbau meint Niemand, den Hausmeister über den Pfeilern. Alruna sagt, das Schild habe sie nicht '
+      + 'geschrieben, und diesmal glaubt es ihr der Schreiber.',
+    vorSieg: 'Der dritte Sockel im Anbau meint jemanden über den Pfeilern, von dem Orm sagt, es gebe ihn nicht. '
+      + 'Auf den Sockel gehört, was Niemand am Gürtel trägt.',
   },
 ];
