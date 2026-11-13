@@ -29,18 +29,27 @@ haben («Siegreich» 🏆), nur 🏅 trägt keiner selbst.
   («🏅 Erfolg: Fleissige Gilde · 📜 Tränke … erledigt …»): So bleibt sein Name auch in den drei Handy-Zeilen
   der Kopfzeile zu sehen. Andere Hinweise kommen wie bisher hinten dazu.
 
-**Hinweis bei offenem Fenster oder weggescrollter Kopfzeile.** Liegt ein Fenster über der Kopfzeile (`.ov.on` oder
-`aria-modal="true"`: Heldenfenster, Händler, Gebäudefenster, Stadtweg, Kriegsrat, Spielstand, Fundbuch …) oder ist
-sie am Handy ganz nach oben weggescrollt (Gildenhaus, Erfolge, Rangliste, Team), steht derselbe Hinweis zusätzlich
-schwebend unten in der Mitte (`.hdr-note-schwebend` in `erfolge.css`, `kopfzeileVerdeckt` in `HeaderRenderer.ts`):
-z-index 400 über allen Fenstern, ohne Zeilenbegrenzung, mit derselben Lebensdauer. Er ist nicht anklickbar (Klicks
-gehen durch) und für Vorleser stumm (`aria-hidden`); angesagt wird nur die Kopfzeile (`role="status"`). Höchstens
-einer steht zugleich; kommt innerhalb von 600 ms ein zweiter Hinweis, ändert sich nur sein Text, auch wenn das Fenster
-inzwischen zu ist. Ohne sichtbare Kopfzeile (Kampf, Truhe, Bilanz) kommt keiner, die Erfolge warten wie oben.
-Gemessen (Bericht «lesbarkeit», 27.10.2026): 100 Zeichen auf zwei Zeilen brauchen am Handy (390 px) 358 × 53 px, am
-PC (1400 px) 520 × 53 px. Der Kopfzeilen-Hinweis hatte unter dem Händler 1,44 : 1 und unter dem Heldenfenster 1,34 : 1
-Kontrast (verdeckt), der schwebende hat 10,73 : 1. Unten deckt er für rund 4 s eine Zeile Fensterinhalt zu (am Handy
-im Kriegsrat die Knöpfe unten), ✕ und «Schliessen» oben bleiben frei.
+**Hinweis bei offenem Fenster oder weggescrollter Kopfzeile.** Liegt irgendein sichtbares Fenster über der Kopfzeile
+(jedes `.ov.on` oder `aria-modal="true"`: Heldenfenster, Händler, Gebäudefenster, Stadtweg, Kriegsrat, Spielstand,
+Fundbuch, die Raid-Fenster …; versteckte wie das Routenfenster der Dungeonkarte zählen nicht) oder ist am Handy die
+Zeile mit dem Hinweis weggescrollt, auch wenn die Kopfzeile selbst noch halb zu sehen ist (Gildenhaus, Erfolge,
+Rangliste, Team), steht derselbe Hinweis zusätzlich schwebend unten in der Mitte (`.hdr-note-schwebend` in
+`erfolge.css`, `kopfzeileVerdeckt` in `HeaderRenderer.ts`): z-index 400 über allen Fenstern, ohne Zeilenbegrenzung,
+mit derselben Lebensdauer. Gemessen wird am Hinweis jeder sichtbaren Kopfzeile, nicht am ersten im Dokument: Auch
+versteckte Bildschirme (zuerst das Hauptmenü) haben einen, dort ist seine Lage nur Nullen. Er ist nicht anklickbar
+(Klicks gehen durch) und für Vorleser stumm (`aria-hidden`); angesagt wird nur die Kopfzeile (`role="status"`).
+Höchstens einer steht zugleich. Kommt innerhalb von 600 ms ein zweiter Hinweis, ändert sich nur sein Text, auch wenn
+das Fenster inzwischen zu ist. Ein späterer Hinweis übernimmt ihn nur, wenn die Kopfzeile weiter verdeckt ist, sonst
+ist er gleich weg (er stünde sonst über der freien Kopfzeile oder im Kampf). Ohne neuen Hinweis bleibt er bis zum
+Ablauf stehen. Ohne sichtbare Kopfzeile (Kampf, Truhe und Bilanz einer Expedition) kommt keiner, die Erfolge warten
+wie oben. In Rangliste und Raid liegt die Truhe über einer sichtbaren Kopfzeile, nur ihr dunkler Hintergrund verdeckt
+sie: Ein Hinweis in dieser Zeit steht in der Kopfzeile und schwebend unter der Truhe und ist nach dem Einsammeln bis
+zu seinem Ablauf zu sehen. In den 300 ms, in denen die Truhe nach «Einsammeln» ausblendet (noch `aria-modal`, ohne
+`.on`), zählt sie nicht mehr. Gemessen (Bericht «lesbarkeit», 27.10.2026, Prüfung vom 8.11.2026): 100 Zeichen auf
+zwei Zeilen brauchen am Handy (390 px) etwa 358 × 52 px (`width: max-content`, sonst liesse `left: 50%` nur 195 px
+Breite), am PC (1400 px) 520 × 53 px. Der Kopfzeilen-Hinweis hatte unter dem Händler 1,44 : 1 und unter dem
+Heldenfenster 1,34 : 1 Kontrast (verdeckt), der schwebende hat 10,73 : 1. Unten deckt er für rund 4 s eine Zeile
+Fensterinhalt zu (am Handy im Kriegsrat die Knöpfe unten), ✕ und «Schliessen» oben bleiben frei.
 
 Jeder Erfolg wird genau einmal gemeldet: `erfolgePruefen()` trägt ihn in `state.achievements` ein
 und meldet ihn den Hörern (`beiNeuenErfolgen`). Pokale der Rangliste zählen am Ende der Expedition

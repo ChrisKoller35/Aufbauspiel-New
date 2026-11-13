@@ -15,7 +15,10 @@ let hinweisTimer: number | null = null;
 /** Kommt ein zweiter Hinweis so kurz nach dem ersten (z. B. ein Erfolg nach «Zettel erledigt»), steht er daneben */
 const ZUSAMMEN_MS = 600;
 let letzterHinweis = { text: '', zeit: 0, ende: 0, zusammen: false };
-/** Derselbe Hinweis unten in der Mitte, solange er läuft und die Kopfzeile verdeckt war (höchstens einer) */
+/**
+ * Derselbe Hinweis unten in der Mitte, solange er läuft und die Kopfzeile verdeckt war (höchstens einer). Ein späterer
+ * Hinweis übernimmt ihn nur beim Zusammenfassen oder bei weiter verdeckter Kopfzeile.
+ */
 let schwebend: HTMLElement | null = null;
 /**
  * Wie viel Platz ein Hinweis für zwei Zeilen braucht, nach seiner Länge (gemessen an allen Hinweisen, die das Spiel
@@ -67,8 +70,11 @@ export function zeigeKopfHinweis(text: string, dauerMs = HINWEIS_MS): void {
     note.textContent = text;
     hdr.classList.add('hdr-mit-hinweis');
   }
-  // Ein schon stehender schwebender Hinweis bleibt bis zum Ablauf, auch wenn die Kopfzeile wieder frei ist
-  if (!schwebend && kopfzeileVerdeckt()) {
+  // Ohne neuen Hinweis bleibt der schwebende bis zum Ablauf stehen. Ein neuer übernimmt ihn nur beim Zusammenfassen
+  // oder bei weiter verdeckter Kopfzeile; sonst ist er gleich weg (er stünde sonst über freier Kopfzeile oder im Kampf).
+  const verdeckt = kopfzeileVerdeckt();
+  if (schwebend && !zusammen && !verdeckt) { schwebend.remove(); schwebend = null; }
+  if (!schwebend && verdeckt) {
     schwebend = document.createElement('div');
     schwebend.className = 'hdr-note-schwebend';
     schwebend.setAttribute('aria-hidden', 'true');
@@ -125,16 +131,20 @@ function kopfzeileSichtbar(): boolean {
 }
 
 /**
- * Kopfzeile da, aber nicht zu sehen: ein Fenster liegt darüber (.ov.on oder aria-modal) oder sie ist ganz nach
- * oben weggescrollt (am Handy). Ohne sichtbare Kopfzeile (Kampf, Truhe, Bilanz) nie: Dort warten die Erfolge.
+ * Kopfzeile da, aber ihr Hinweis nicht zu sehen: Irgendein sichtbares Fenster liegt darüber (jedes .ov.on oder
+ * aria-modal; versteckte wie das Routenfenster der Dungeonkarte zählen nicht, die Truhe nicht, solange sie ausblendet),
+ * oder die Zeile mit dem Hinweis ist weggescrollt (am Handy), auch wenn die Kopfzeile selbst noch halb zu sehen ist.
+ * Gemessen wird am Hinweis jeder sichtbaren Kopfzeile: Auch versteckte Bildschirme haben einen, dort ist seine Lage
+ * nur Nullen. Ohne sichtbare Kopfzeile (Kampf, Truhe, Bilanz) nie: Dort warten die Erfolge.
  */
 function kopfzeileVerdeckt(): boolean {
   if (!kopfzeileSichtbar()) return false;
-  const offen = document.querySelector<HTMLElement>('.ov.on, [aria-modal="true"]');
-  if (offen && offen.getClientRects().length > 0) return true;
+  const offen = Array.from(document.querySelectorAll<HTMLElement>('.ov.on, [aria-modal="true"]'))
+    .some(f => f.getClientRects().length > 0 && !f.matches('.chest-ov:not(.on)'));
+  if (offen) return true;
   return Array.from(document.querySelectorAll<HTMLElement>('.hdr'))
     .filter(h => h.offsetParent !== null)
-    .every(h => h.getBoundingClientRect().bottom <= 0);
+    .every(h => (h.querySelector<HTMLElement>('.hdr-note') ?? h).getBoundingClientRect().bottom <= 0);
 }
 
 beiNeuenErfolgen((ids, state, hinweis) => {

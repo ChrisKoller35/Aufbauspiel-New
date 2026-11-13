@@ -5,7 +5,7 @@ import { createNewGameState } from '../src/models/GameState';
 
 /** Kopfzeile: sichtbar oder nicht (offsetParent), mit Platz für den Hinweis */
 class Kopfzeile {
-  note: { textContent: string; remove: () => void; setAttribute: () => void } | null = null;
+  note: { textContent: string; remove: () => void; setAttribute: () => void; getBoundingClientRect: () => { bottom: number } } | null = null;
   klassen = new Set<string>();
   classList = { add: (k: string) => this.klassen.add(k), remove: (k: string) => this.klassen.delete(k) };
   constructor(public offsetParent: object | null) {}
@@ -25,7 +25,7 @@ const knopf = { innerHTML: '', label: '', setAttribute(_: string, v: string) { t
 const seite = {
   getElementById: () => ({ children: [] }),
   addEventListener: () => {},
-  createElement: () => ({ className: '', textContent: '', setAttribute: () => {}, remove: () => {} }),
+  createElement: () => ({ className: '', textContent: '', setAttribute: () => {}, remove: () => {}, getBoundingClientRect: () => ({ bottom: 40 }) }),
   querySelector: (sel: string) => (sel === '#s-achievements .erf-inhalt' ? inhalt : null),
   querySelectorAll: (sel: string) => {
     if (sel === '.hdr') return kopfzeilen;
