@@ -527,6 +527,18 @@ describe('Set-Fähigkeiten im Kampf', () => {
     expect(andere.schild).toBe(7 + 4 + 15);
   });
 
+  test('Staubschicht (Hausrat der Vorigen): Schild von 18 unter eigenem Namen, auch wenn ein Pfand-Träger zuerst steht', () => {
+    const pfand = einheit(heldMitSet('pfand'));
+    const hausrat = einheit(heldMitSet('hausrat'));
+    const { run } = lauf([pfand, hausrat], [gegner('Zöllner')]);
+    const zeilen: string[] = [];
+    kampfBeginn([pfand, hausrat], run.rooms[0].enemies, run, z => zeilen.push(z));
+    // Nur einer zählt im Team, der stärkere (power 18), egal wer zuerst gewählt wurde
+    expect(zeilen.filter(z => z.includes('Schild von'))).toEqual([`✦ ${hausrat.name} setzt Staubschicht ein → jeder im Team erhält einen Schild von 18`]);
+    expect(pfand.schild).toBe(18);
+    expect(hausrat.schild).toBe(18);
+  });
+
   test('Einfrieren: der Gegner setzt einen Zug aus, aber nie zwei hintereinander', () => {
     const traeger = einheit(heldMitSet('frost'), { spd: 5 });
     traeger.specialEffects!.find(e => e.id === 'stun_strike')!.chance = 1;

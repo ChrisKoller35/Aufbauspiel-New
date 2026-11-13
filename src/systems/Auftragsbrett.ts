@@ -282,9 +282,11 @@ function kapitelBelohnung(kapitel: SaalKapitel, letztes: boolean): AuftragsBeloh
 
 /**
  * Ist dieses Kapitel das letzte, das in seinem Teil noch fehlt? Je Teil gibt es das nur einmal: Der Anbau
- * öffnet den vollen Saal nicht wieder, also kommen die Schluss-Siegel des Saals kein zweites Mal.
+ * öffnet den vollen Saal nicht wieder, also kommen die Schluss-Siegel des Saals kein zweites Mal. Ist der Schluss
+ * des Anbaus schon bezahlt (kette.anbauSchluss, etwa vor Ebene 13 mit zwei Kapiteln), kommt er auch nicht wieder.
  */
 function letztesKapitel(stand: AuftragsbrettStand, kapitel: SaalKapitel): boolean {
+  if (kettenTeil(kapitel) === 'anbau' && stand.kette.anbauSchluss) return false;
   return kapitelDesTeils(kettenTeil(kapitel)).every(k => k.routeId === kapitel.routeId || stand.kette.fertig.includes(k.routeId));
 }
 
@@ -310,6 +312,15 @@ export function kapitelSchild(
   return kapitel.schildVorSieg && !bezwungen
     ? { text: kapitel.schildVorSieg.lesbar, warum: kapitel.schildVorSieg.warum }
     : { text: kapitel.schild };
+}
+
+/**
+ * Merker für den bezahlten Schluss des Anbaus in alten Spielständen nachtragen (einmal). «Angebaut» (anbau_kette)
+ * gab es vor Ebene 13 nur mit vollem Anbau, also mit bezahltem Schluss. kette.fertig taugt dafür nicht: Wer Orm erst
+ * mit Ebene 13 bezwungen hat, steht dort gleich da, hat den Schluss aber nie bekommen.
+ */
+function anbauSchlussNachtragen(state: GameState, stand: AuftragsbrettStand): void {
+  if (stand.kette.anbauSchluss === undefined) stand.kette.anbauSchluss = (state.achievements ?? []).includes('anbau_kette');
 }
 
 /** Stellt das laufende Kapitel ein; der Stand gilt nur für das Kapitel, zu dem er gehört */
@@ -341,6 +352,7 @@ export function brettStand(state: GameState, jetzt: number): AuftragsbrettStand 
     stand.getauscht = 0;
     stand.tagesbonus = false;
   }
+  anbauSchlussNachtragen(state, state.auftragsbrett);
   ketteNachziehen(state.auftragsbrett);
   return state.auftragsbrett;
 }
@@ -410,6 +422,7 @@ export interface AuftragsBilanz {
  */
 export function auftraegeNachExpedition(state: GameState, run: ExpeditionRun, jetzt: number): AuftragsBilanz {
   const stand = state.auftragsbrett ?? brettStand(state, jetzt);
+  anbauSchlussNachtragen(state, stand);
   ketteNachziehen(stand);
   const bilanz: AuftragsBilanz = { meldungen: [], tagesbonus: 0, saalVoll: false, anbauVoll: false };
   for (const a of stand.auftraege) {
@@ -434,13 +447,16 @@ export function auftraegeNachExpedition(state: GameState, run: ExpeditionRun, je
       const fertig = stand.kette.stand >= kapitel.ziel;
       const meldung: AuftragsMeldung = { titel: kettenTitel(kapitel), stand: stand.kette.stand, ziel: kapitel.ziel, fertig };
       if (fertig) {
-        const b = kapitelBelohnungVon(stand, kapitel);
+        const letztes = letztesKapitel(stand, kapitel);
+        const b = kapitelBelohnung(kapitel, letztes);
         stand.kette.fertig.push(kapitel.routeId);
         ketteNachziehen(stand);
         const teil = kettenTeil(kapitel);
         const voll = kapitelDesTeils(teil).every(k => stand.kette.fertig.includes(k.routeId));
         bilanz.saalVoll = voll && teil === 'saal';
-        bilanz.anbauVoll = voll && teil === 'anbau';
+        // Ein schon bezahlter Schluss des Anbaus kommt nicht wieder, auch nicht als Zeile in der Bilanz
+        bilanz.anbauVoll = voll && teil === 'anbau' && letztes;
+        if (bilanz.anbauVoll) stand.kette.anbauSchluss = true;
         gutschreiben(state, stand, b);
         meldung.belohnung = b;
         meldung.prunkstueck = kapitel.prunkstueck;

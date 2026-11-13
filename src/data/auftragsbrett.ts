@@ -44,7 +44,8 @@ export const FERNE_DUNGEONS = [
  * Dungeons ohne Zettel «ohne Gefallene»: Dort fällt fast in jedem Sieg ein Held, auch mit der besten Ausrüstung
  * (Musterlauf am 5.11.2026, 400 Läufe vorsichtig: Erste Stadt mit Sunnas Morgengabe oder Alrunas Wachfeuer kein
  * makelloser Sieg, mit «Was den Tag trug» 18; Pfeiler des Tages keiner). Kommt ein Dungeon dazu, nachmessen.
- * Das Nichts da oben steht ohne Musterlauf hier (Annahme: wie die Pfeiler), nachmessen.
+ * Das Nichts da oben (Musterlauf am 8.11.2026, Niemand mit 8100 Leben, 400 Läufe vorsichtig): mit «Was den Tag trug»
+ * ohne Stufen 0 von 19 Siegen ohne Gefallene, mit allem auf +5 0 von 258.
  */
 export const OHNE_MAKELLOS = ['erste_stadt', 'tagespfeiler', 'nichts_da_oben'];
 
@@ -245,8 +246,8 @@ export const SAAL_SCHLUSS_SIEGEL = 15;
 // ── Der Anbau des Saals (ab Ebene 11) ──
 // Die Bosse über dem Morgentor bekommen keinen Sockel im alten Saal, sondern im Anbau: eine eigene Folge der
 // Kette mit eigener Einleitung und eigenem Schluss. So zählt der Saal seine 16 Sockel weiter, und die
-// Schluss-Siegel des Saals kommen nicht ein zweites Mal, wenn oben Dungeons dazukommen. Kommt ein Dungeon
-// über Ebene 12 dazu, braucht es einen neuen Teil der Kette, sonst gäbe es die Siegel des Anbaus zweimal.
+// Schluss-Siegel des Saals kommen nicht ein zweites Mal, wenn oben Dungeons dazukommen. Auch der Schluss des Anbaus
+// kommt nur einmal (kette.anbauSchluss): Wer ihn mit zwei Kapiteln schon hatte, bekommt nach Niemand nur das Kapitel.
 
 /** Ab dieser Ebene steht der Sockel eines Bosses im Anbau */
 export const ANBAU_AB_EBENE = 11;
@@ -256,9 +257,9 @@ export const ANBAU_EINLEITUNG = 'Neben der Platte «Für die Nächsten» war noc
   + 'ist verrusst, als hätte es lange neben einem Feuer gestanden. Jorinde sagt, jemand habe angebaut. Ich sage, jemand habe uns '
   + 'zugetraut, dass wir weiter hinaufkommen als bis zum Morgentor.';
 
-export const ANBAU_SCHLUSS = 'Auch der Anbau ist voll. Alruna ist heruntergekommen, hat sich ihre Kohle und Orms Keil angesehen und mit '
-  + 'Kreide ein Wort unter die Platte «Für die Nächsten» geschrieben: «Besser.» Jorinde hat die Kreide mit Firnis überzogen, damit es '
-  + 'niemand wegwischt, auch Alruna nicht. Hinter dem Anbau ist noch Platz.';
+export const ANBAU_SCHLUSS = 'Auch der Anbau ist voll. Alruna ist heruntergekommen, hat sich ihre Kohle, Orms Keil und Niemands '
+  + 'Schlüsselbund angesehen und mit Kreide ein Wort unter die Platte «Für die Nächsten» geschrieben: «Besser.» Jorinde hat die Kreide '
+  + 'mit Firnis überzogen, damit es niemand wegwischt, auch Alruna nicht. Hinter dem Anbau ist noch Platz.';
 
 /** Siegel für das letzte Prunkstück im Anbau */
 export const ANBAU_SCHLUSS_SIEGEL = 10;
@@ -412,7 +413,7 @@ export const SAAL_KAPITEL: SaalKapitel[] = [
     routeId: 'nichts_da_oben', art: 'sieg', ziel: 1, prunkstueck: 'Ein Schlüsselbund, an dem kein Schlüssel passt',
     schild: 'Niemand. Er hat aufgeräumt.',
     text: 'Der dritte Sockel im Anbau meint Niemand, den Hausmeister über den Pfeilern. Alruna sagt, das Schild habe sie nicht '
-      + 'geschrieben, und diesmal glaubt es ihr der Schreiber.',
+      + 'geschrieben, und diesmal glaube ich es ihr.',
     vorSieg: 'Der dritte Sockel im Anbau meint jemanden über den Pfeilern, von dem Orm sagt, es gebe ihn nicht. '
       + 'Auf den Sockel gehört, was Niemand am Gürtel trägt.',
   },

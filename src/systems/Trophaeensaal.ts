@@ -115,14 +115,17 @@ export interface SaalAnsicht {
  */
 export function saalAnsicht(state: GameState, jetzt: number): SaalAnsicht {
   const alle = bossTrophaeen(state, jetzt);
-  const fertig = brettStand(state, jetzt).kette.fertig;
+  const kette = brettStand(state, jetzt).kette;
+  const fertig = kette.fertig;
   const voll = (teil: KettenTeil): boolean => kapitelDesTeils(teil).every(k => fertig.includes(k.routeId));
   const saal = alle.filter(t => t.teil === 'saal');
   const anbauSockel = alle.filter(t => t.teil === 'anbau');
   const saalVoll = voll('saal');
   const anbauDa = saalVoll || anbauSockel.some(t => t.bezwungen || t.setKomplett || t.prunk);
   const anbau = anbauDa ? anbauSockel : [];
-  return { saal, anbau, saalVoll, anbauVoll: anbau.length > 0 && voll('anbau'), glanz: saalGlanz([...saal, ...anbau]) };
+  // Einmal voll bleibt voll («Besser.» auf der Platte), auch wenn später ein Kapitel im Anbau dazukommt
+  const anbauVoll = anbau.length > 0 && (voll('anbau') || !!kette.anbauSchluss);
+  return { saal, anbau, saalVoll, anbauVoll, glanz: saalGlanz([...saal, ...anbau]) };
 }
 
 /** Glanz des Saals: gesammelte Sterne aller Sockel */

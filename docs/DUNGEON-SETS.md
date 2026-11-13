@@ -53,7 +53,7 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 - **Set-Boni:** Zwei Teile geben je Ebene etwas mehr (Ebene 1: +1 Angriff, +5 Leben; Ebene 5: +5 Angriff,
   +15 Leben; Ebene 6: +6 Angriff, +20 Leben; Ebene 7: +7 Angriff, +24 Leben; Ebene 8: +8 Angriff, +8 %
   Krit-Chance; Ebene 9: +9 Verteidigung, +30 Leben; Ebene 10: +10 Angriff, +10 % Krit-Chance; Ebene 11: +11
-  Angriff, +40 Leben; Ebene 12: +12 Angriff, +12 % Krit-Chance). Die
+  Angriff, +40 Leben; Ebene 12: +12 Angriff, +12 % Krit-Chance; Ebene 13: +13 Angriff, +13 % Krit-Chance). Die
   Drei-Teile-Fähigkeit ist das Besondere des Sets und passt zum Dungeon (Drachenhort: Drachengier, Gold macht
   stark; Sternenschmiede: Schmiedetakt, alle 3 Runden +3 Angriff fürs ganze Team; Sternenschlund: Sternenfall,
   jeder dritte Treffer trifft als Stern alle Gegner mit dem halben Schaden; Mondhof: Mondwall, zu Beginn jedes
@@ -62,7 +62,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
   vollen Leben weg, höchstens 60, also genau bis dorthin, wo die Meuchlerin 2,5-fach trifft; Erste Stadt:
   Wachfeuer, fällt ein Held, steht er sofort mit 30 % seiner Leben wieder auf, einmal je Kampf fürs ganze Team,
   auch nach einer Fähigkeit der Gegner; Pfeiler des Tages: Tragkraft, solange der Träger steht, hat die ganze
-  Gruppe am Ende jeder Runde 6 Angriff mehr, bis Kampfende höchstens +42).
+  Gruppe am Ende jeder Runde 6 Angriff mehr, bis Kampfende höchstens +42; Nichts da oben: Staubschicht, wie der
+  Mondwall, nur mit einem Schild von 18). Staubschicht und Mondwall addieren sich nicht: Im selben Team zählt nur
+  der stärkere, also die Staubschicht, solange ihr Träger steht, egal wer zuerst gewählt wurde; fällt er, gibt der
+  Pfand-Träger wieder seinen Mondwall von 15. Neben dem Pfand bringt das Set darum nur 3 Schild mehr.
 
 ## Ein Set für einen neuen Dungeon
 
@@ -71,10 +74,10 @@ wie stark sie sind und wie ein neuer Dungeon sein Set bekommt.
 2. **Drei Teile** mit verschiedenen Plätzen, damit ein Held alle drei tragen kann: eine Waffe oder ein
    Schild, eine Rüstung und ein Schmuckstück. `bild` ist ein vorhandener Sprite-Key, `text` ein Satz
    mit Witz, der zum Dungeon passt. Die Gegenstände (`set_<set>_<bauart>`) entstehen von selbst.
-3. **Ebene über 12:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
-   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 12. Die neuen Werte an den besten
+3. **Ebene über 13:** `ART_WERTE` und `WERT_JE_EBENE` um eine Spalte verlängern (Typ `Reihe`) und
+   `HOECHSTE_EBENE` erhöhen, sonst bekommt das Set die Werte von Ebene 13. Die neuen Werte an den besten
    gewöhnlichen Gegenständen der Ebene ausrichten; gibt es auf der Ebene keine, die Reihe im selben Schritt
-   fortsetzen (so sind Ebene 7 bis 12 entstanden).
+   fortsetzen (so sind Ebene 7 bis 13 entstanden).
 4. **Set-Boni:** `zweiTeile` etwas über der Ebene darunter. `dreiTeile` mit Name, Text und Effekten.
    Eine neue Fähigkeit braucht ihre Wirkung in `src/systems/Kampfeffekte.ts`, Name und Beschreibung in
    `SPECIAL_EFFECT_DEFS` und, falls ihre Kampfzeile eine eigene Farbe haben soll, `getLogLineColor` in
@@ -239,5 +242,5 @@ Die Tabelle oben ist der Stand danach.
   `SPECIAL_EFFECT_DEFS` nicht gibt und die darum nichts tun und nirgends angezeigt werden:
   `magic_resist` (T3-Platte), `piercing` (T4-Waffe), `evasion` (T4-Leder), `spell_amplify` (T4-Robe),
   `slow_on_hit` und `air_decay_resist` (Abyss-Gegenstände in `src/data/items.ts`).
-- **Eigene Set-Bilder:** 93 Teile (alle 31 Sets, die zwei des Taglichts tragen Leihbilder und Zeichnungen aus
+- **Eigene Set-Bilder:** 96 Teile (alle 32 Sets, die drei des Taglichts tragen Leihbilder und Zeichnungen aus
   Code), etwa 0.06 USD je Bild, nur mit Christophs Okay.

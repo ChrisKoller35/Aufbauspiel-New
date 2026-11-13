@@ -227,8 +227,8 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Gilde | 👑 | Gildenmeister (neu) | Gildenrang V, Titel Gildenmeister | `gildenrang` ≥ 5 | `gildenrang_5` |
 | Gilde | 📌 | Fleissige Gilde (neu) | 10 Zettel am Auftragsbrett erledigt | `zettel_erledigt` ≥ 10 | `zettel_10` |
 | Gilde | 🏺 | Alle Sockel voll (neu) | alle 16 Prunkstücke der Kette «Der Saal der Gilde» | `saal_prunkstuecke` ≥ 16 | `saal_kette` |
-| Gilde | 🧱 | Angebaut (neu) | auch die 2 Prunkstücke im Anbau des Saals (Erste Stadt, Pfeiler des Tages) | `anbau_prunkstuecke` ≥ 2 | `anbau_kette` |
-| Gilde | 🌟 | Glanz des Saals (neu) | 27 der 54 Sterne im Trophäensaal (Saal und Anbau) | `saal_sterne` ≥ 27 | `saal_glanz` |
+| Gilde | 🧱 | Angebaut (neu) | alle 3 Prunkstücke im Anbau des Saals (Erste Stadt, Pfeiler des Tages, Nichts da oben) | `anbau_prunkstuecke` ≥ 3 | `anbau_kette` |
+| Gilde | 🌟 | Glanz des Saals (neu) | 29 der 57 Sterne im Trophäensaal (Saal und Anbau) | `saal_sterne` ≥ 29 | `saal_glanz` |
 | Gilde | 🥉 | Aufs Treppchen (neu) | ein Pokal der Wochenwertung (Platz 1 bis 3) | `rangliste_pokale` ≥ 1 | `rangliste_pokal` |
 | Gilde | 🏔️ | Gipfelstürmer (neu) | Platz 1 der Gipfel-Rangliste nach einer Expedition | `gipfel_spitze` ≥ 1 | `gipfel_1` |
 | Helden | 🛡️ | Armeeführer | 10 Helden in der Gilde | `helden_anzahl` ≥ 10 | `army_builder` |
@@ -273,11 +273,13 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Sammeln | 📖 | Monsterkundler (neu) | 25 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 25 | `monsterbuch_25` |
 | Sammeln | 📚 | Monstergelehrter (neu) | 50 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 50 | `monsterbuch_50` |
 
-Die Zahlen 16 und 2 (Sockel), 27 und 54 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
+Die Zahlen 16 und 3 (Sockel), 29 und 57 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
 Boss-Dungeon der Karte, bis Ebene 10 im Saal (`SAAL_SOCKEL`), ab Ebene 11 im Anbau (`ANBAU_SOCKEL`,
 `ANBAU_AB_EBENE`), drei Sterne je Sockel in beiden, die Hälfte davon für «Glanz des Saals»,
-`MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ab Ebene 13 ändert «Angebaut» und den Glanz mit; «Alle Sockel
-voll» bleibt bei sechzehn, auch wer den Saal schon voll hatte, behält den Erfolg.
+`MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ab Ebene 11 ändert «Angebaut» und den Glanz mit (so kam mit Ebene 13
+der dritte Sockel im Anbau); wer den Erfolg schon hat, behält ihn, und der Schluss des Anbaus kommt nicht ein
+zweites Mal (`docs/AUFTRAGSBRETT.md`). «Alle Sockel voll» bleibt bei sechzehn, auch wer den Saal schon voll hatte,
+behält den Erfolg.
 
 ## Gipfel-Taten
 
@@ -365,9 +367,9 @@ dort eine Zeile.
 - Bauten: 4 Neubauten (die Werkstätten) und 9 Ausbauten, also höchstens 13 für «Baumeister»; Werkstätten höchstens
   4 auf Stufe 3.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
-- Sets: 31 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
-- Trophäensaal: 16 Sockel im Saal und 2 im Anbau, je mit 3 Sternen.
-- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 31 Dungeons der Karte.
+- Sets: 32 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
+- Trophäensaal: 16 Sockel im Saal und 3 im Anbau, je mit 3 Sternen.
+- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 32 Dungeons der Karte.
 - Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe, Ernstkämpfe im Raid), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg

@@ -1468,15 +1468,15 @@ export const DUNGEON_GESCHICHTEN: DungeonGeschichte[] = [
           + 'Drin klappert Magitech, und der Deckel schnappt nach Fingern. Wer sich daraufsetzt, ruht sich aus und hört es höflich klopfen.',
         nachklang: {
           a: 'Wir öffneten die Kiste, und der Deckel biss zu; ich habe ins Buch geschrieben, dass es draufstand.',
-          b: 'Wir liessen den Deckel zu und sassen darauf, bis das Klopfen aufhörte und wir wieder Atem hatten.',
+          b: 'Wir liessen den Deckel zu und sassen darauf, bis wir wieder Atem hatten.',
         },
       },
       8: {
         titel: 'Die Leiter',
-        text: 'Mitten auf dem Dachboden lehnt eine zweite Leiter, und sie führt noch weiter hinauf, durch eine Luke in das, was Orm nichts nennt. '
+        text: 'Mitten auf dem Dachboden geht Jorindes Leiter weiter hinauf, durch eine zweite Luke in das, was Orm nichts nennt. '
           + 'Oben liegt etwas, das zu einem Set gehört, und der Aufstieg kostet Atem. Wer unten bleibt, wischt Staub und findet Kristall darunter.',
         nachklang: {
-          a: 'Wir stiegen die Leiter ganz hinauf, und über der Luke lag nicht nichts, sondern etwas, das ich mitgenommen habe.',
+          a: 'Wir stiegen die Leiter ganz hinauf, und über der Luke lag nicht nichts, sondern etwas, das uns gehört, wenn Niemand fällt.',
           b: 'Wir blieben unten und wischten Staub, und ich habe zum ersten Mal sauber gemacht, wo seit tausend Jahren niemand war.',
         },
       },

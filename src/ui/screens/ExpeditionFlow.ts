@@ -129,7 +129,7 @@ function wartendeBeuteText(run: ActiveRun): string {
   }
   const teile = [
     ...(gold > 0 ? [`${gold} Gold`] : []),
-    ...Object.entries(dinge).map(([itemId, menge]) => `${menge} ${ITEM_DEFS[itemId]?.name ?? itemId}`),
+    ...Object.entries(dinge).map(([itemId, menge]) => `${menge}× ${ITEM_DEFS[itemId]?.name ?? itemId}`),
     ...(run.setTeilVersprochen ? ['1 Set-Teil'] : []),
   ];
   return teile.length === 0

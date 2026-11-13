@@ -59,9 +59,11 @@ export interface AuftragsbrettStand {
   siegelGesamt: number;
   /**
    * Kette «Der Saal der Gilde»: das laufende Kapitel (Boss-Dungeon), sein Stand und die
-   * Dungeons, deren Prunkstück schon im Saal steht.
+   * Dungeons, deren Prunkstück schon im Saal steht. anbauSchluss: Der Schluss des Anbaus
+   * (ANBAU_SCHLUSS_SIEGEL) ist bezahlt; er kommt nur einmal, auch wenn später ein Kapitel dazukommt.
+   * Fehlt er (Spielstand von vor dem 13.11.2026), setzt ihn das Brett beim ersten Blick (Auftragsbrett.ts).
    */
-  kette: { routeId: string; stand: number; fertig: string[] };
+  kette: { routeId: string; stand: number; fertig: string[]; anbauSchluss?: boolean };
 }
 
 /** Trophäensaal: Siege je Boss-Dungeon (systems/Trophaeensaal.ts) */

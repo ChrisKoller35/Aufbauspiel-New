@@ -70,7 +70,7 @@ const AUFTRAG = objekt({
 const AUFTRAGSBRETT = objekt({
   samen: ZAHL, tag: objekt({ id: TEXT, start: ZAHL }, ['id', 'start']), auftraege: liste(AUFTRAG),
   getauscht: ZAHL, tagesbonus: JA_NEIN, gesehen: TEXT, siegel: ZAHL, erledigt: ZAHL, siegelGesamt: ZAHL,
-  kette: objekt({ routeId: TEXT, stand: ZAHL, fertig: TEXTE }, ['routeId', 'stand', 'fertig']),
+  kette: objekt({ routeId: TEXT, stand: ZAHL, fertig: TEXTE, anbauSchluss: JA_NEIN }, ['routeId', 'stand', 'fertig']),
 }, ['samen', 'tag', 'auftraege', 'getauscht', 'tagesbonus', 'siegel', 'erledigt', 'siegelGesamt', 'kette']);
 
 /** models/RaidStand.ts */

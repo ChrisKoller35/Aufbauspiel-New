@@ -66,7 +66,7 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
   Material für die Schmiede ist Sternenstahl (`docs/SCHMIEDE.md`).
 - **Gebiet «Mond»** (Ebene 9 und 10): silbergrauer Dunst über dem Sternenfeld, Nebel und Sterne hören
   darunter auf. Material für die Schmiede ist Mondsilber (`MAT_MONDSILBER`, Bild aus Code).
-- **Gebiet «Taglicht»** (Ebene 11 und 12): Über dem Morgentor wird die Karte zum Taghimmel, ein Verlauf von
+- **Gebiet «Taglicht»** (Ebene 11 bis 13): Über dem Morgentor wird die Karte zum Taghimmel, ein Verlauf von
   Nachtblau über Dämmerviolett in Honiggold mit einem Sonnenschein; darüber gibt es keine Sterne mehr.
   Biom «Taglicht» (Klang wie Wald, `docs/KLANG.md`), Material Tagstein (`MAT_TAGSTEIN`, Bild aus Code).
 - **Nicht dabei:** Wochen-Herausforderungen (nur bis Ebene 4).
@@ -549,6 +549,37 @@ kein Sieg vor Orms Wut (dort stand 1).
 **Geschichten-Eichung:** nichts zu messen (`wahlen: []`), wie Mondhof und Morgentor; beide Geschichten erzählen
 über die festen Wahl-Räume (Wachfeuer, Pfeiler).
 
+### Das Nichts da oben (Ebene 13)
+
+**Gemessen am 8.11.2026, nachgemessen am 13.11.2026** (Musterlauf, Team «Stark» mit Wegen, 1000 Läufe je Zeile und
+Spielweise, Siege vorsichtig / klug / gierig; «+3» und «+5» ist «Was den Tag trug» auf dieser Stufe, die übrigen Sets
+auf +5). `npm run dungeon-eichung -- 1000 nichts_da_oben stark` zeigt für die Zeilen, die es kennt, dieselben Zahlen.
+Die Werte sind die der Pfeiler ×1,06, nur Niemand hat 8100 statt 6100 Leben:
+
+| Ausrüstung | Pfeiler des Tages (Ebene 12) | Nichts, Niemand 6100 Leben | Nichts, Niemand 8100 Leben (im Spiel) | Ziel, wie an den Pfeilern |
+|---|---|---|---|---|
+| ohne «Was den Tag trug» | 67 / 46 / 4,5 % | 37 / 23 / 21 % | 2 / 0 / 0 % | höchstens 15 % vorsichtig, 0 % gierig |
+| «Was den Tag trug» ohne Stufen | 90 / 85 / 31 % | 44 / 26 / 21 % | 6 / 0 / 0 % | Eintritt |
+| «Was den Tag trug» auf +3 | 94 / 91 / 53 % | 93 / 55 / 55 % | 34 / 15 / 14 % | 20–35 % vorsichtig |
+| «Was den Tag trug» auf +5 | 98 / 99 / 79 % | 98 / 87 / 87 % | 65 / 40 / 40 % | 65–75 / 35–50 / höchstens 5 % |
+| Team «Gut», +5 | 82 / 72 / 33 % | 48 / 28 / 27 % | 2 / 1 / 1 % | höchstens 5 % |
+| Team «Frisch», +5 | 0 % | 0 % | 0 % | 0 % |
+
+- Mit 6100 Leben war Ebene 13 mit dem vollen Pfeiler-Set so leicht wie die Pfeiler selbst, und Team «Gut» gewann fast
+  jeden zweiten Lauf. Mit 8100 liegen alle Ziele im Rahmen ausser «gierig höchstens 5 %». Höchstens 3 % der Läufe
+  enden am Rundenlimit, und fast jeder Sieg muss Niemands Wut ab Runde 10 überstehen.
+- **Gierig wie klug:** Kiste und Leiter kosten je 7 % Leben und machen Niemand nicht stärker (an den Pfeilern holt das
+  Brechen Orms Wut vor). Teurere Wahlen trennen die beiden, drücken klug aber unter das Ziel (je 20 % Leben: +5
+  65 / 25 / 6 %, +3 34 / 8 / 0 %). Gier lohnt sich hier für starke Teams.
+- **Verworfen:** mehr Angriff statt mehr Leben (7300 Leben und 86 Angriff, 7000 und 90, 6800 und 94) staucht die Stufen
+  zusammen (+3 41 bis 46 %, +5 49 bis 54 %).
+- **Ohne Gefallene** (`OHNE_MAKELLOS`, 400 Läufe vorsichtig): mit «Was den Tag trug» ohne Stufen 0 von 19 Siegen, mit
+  allem auf +5 0 von 258. Darum hängt dort kein Zettel «ohne Gefallene».
+- **Nicht gemessen:** der Lohn des eigenen Sets, die Musterteams haben keinen Träger für «Hausrat der Vorigen». Seine
+  Staubschicht ist der Mondwall des Pfands mit einem Schild von 18. Die beiden addieren sich nicht: Im selben Team zählt
+  nur der stärkere, also die Staubschicht, solange ihr Träger steht; fällt er, gibt der Pfand-Träger wieder seinen
+  Mondwall von 15. Neben dem Pfand bringt das Set darum nur 3 Schild mehr.
+
 ## Entschieden
 
 - **Endlose Treppe** (20.10.2026, Christoph: «Ganz weg»): entfernt. Die Karte wächst nur mit neuen Dungeons;
@@ -581,10 +612,11 @@ kein Sieg vor Orms Wut (dort stand 1).
   «Abrissunternehmen» und «Einsturzgefahr», Erfolg «Angebaut». Bilder: keine neuen, nur Leihbilder (oben).
   Raum 8 der Ersten Stadt ist eine Wachstube (das Set-Teil liegt im Feuer), der Wachfeuerwicht steht ab Raum 3.
 - **Das Nichts da oben** (8.11.2026): Ebene 13 aus «Später», nur Daten. 12 Räume, zwei Wachen (Staubhase,
-  Listengeist) und Niemand, der Hausmeister, Werte Pfeiler ×1,06; Set «Hausrat der Vorigen» (Stab, Staubschicht
-  mit der vorhandenen `mondwall`), Tagstein wie im übrigen Taglicht, dritter Sockel im Anbau. Platzhalter-Bilder
-  (Wildschwein, Geistermagier, Festungswächter, Routenbild der Pfeiler). Eichung offen: kein Musterlauf, auch
-  `OHNE_MAKELLOS` ist nur angenommen.
+  Listengeist) und Niemand, der Hausmeister, Werte Pfeiler ×1,06 (für die Wachen und Niemands Angriff; seine Leben
+  sind seit der Eichung 8100 statt 6100, oben «Das Nichts da oben»); Set «Hausrat der Vorigen» (Stab, Staubschicht
+  mit der vorhandenen `mondwall`, Schild 18), Tagstein wie im übrigen Taglicht, dritter Sockel im Anbau.
+  Platzhalter-Bilder (Wildschwein, Geistermagier, Festungswächter, Routenbild der Pfeiler). Geeicht am 8.11.2026,
+  `OHNE_MAKELLOS` gemessen; der Schluss des Anbaus kommt nur einmal (`docs/AUFTRAGSBRETT.md`).
 
 ## Später
 

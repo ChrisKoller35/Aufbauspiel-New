@@ -555,6 +555,37 @@ describe('Kette: Der Saal der Gilde', () => {
     expect(ANBAU_SCHLUSS).toContain('«Besser.»');
     expect(SAAL_SCHLUSS).toContain('Daneben ist noch Platz');
   });
+
+  test('Spielstand von vor Ebene 13 mit vollem Anbau: der Schluss des Anbaus kommt nicht ein zweites Mal', () => {
+    /** Wie gespeichert vor Ebene 13: Saal, Kohle und Keil liegen, der Merker fehlt noch */
+    const vorEbene13 = (angebaut: boolean) => {
+      const state = spielstand('pfeiler');
+      if (angebaut) state.achievements.push('anbau_kette');
+      const stand = brettStand(state, MITTAG);
+      stand.kette = { routeId: '', stand: 0, fertig: [...saalKapitel().map(k => k.routeId), 'erste_stadt', 'tagespfeiler'] };
+      return state;
+    };
+    const anbauZeile = (b: AuftragsBilanz) => auftragsZeilen(b, false).some(z => z.text.includes('Auch der Anbau ist voll'));
+    // «Angebaut» gab es nur mit vollem Anbau: «Besser.» bleibt auf der Platte, Niemand bringt nur sein Kapitel
+    const alt = vorEbene13(true);
+    expect(saalAnsicht(alt, MITTAG).anbauVoll).toBe(true);
+    const niemand = laufendesKapitel(brettStand(alt, MITTAG))!;
+    expect(niemand.routeId).toBe('nichts_da_oben');
+    expect(kapitelBelohnungVon(alt.auftragsbrett!, niemand).siegel).toBe(10);
+    const nachher = auftraegeNachExpedition(alt, lauf('nichts_da_oben'), MITTAG);
+    expect(nachher.meldungen.find(m => m.prunkstueck)!.belohnung!.siegel).toBe(10);
+    expect(nachher).toMatchObject({ saalVoll: false, anbauVoll: false });
+    expect(anbauZeile(nachher)).toBe(false);
+    expect(saalAnsicht(alt, MITTAG).anbauVoll).toBe(true);
+    // Gegenprobe: Orm erst mit Ebene 13 bezwungen, ohne «Angebaut»: Mit Niemand kommt der Schluss
+    const neu = vorEbene13(false);
+    expect(saalAnsicht(neu, MITTAG).anbauVoll).toBe(false);
+    const voll = auftraegeNachExpedition(neu, lauf('nichts_da_oben'), MITTAG);
+    expect(voll.meldungen.find(m => m.prunkstueck)!.belohnung!.siegel).toBe(10 + ANBAU_SCHLUSS_SIEGEL);
+    expect(voll.anbauVoll).toBe(true);
+    expect(anbauZeile(voll)).toBe(true);
+    expect(neu.auftragsbrett!.kette.anbauSchluss).toBe(true);
+  });
 });
 
 describe('Siegel einlösen', () => {

@@ -160,6 +160,6 @@ export const MONSTERBUCH_NOTIZEN: MonsterbuchNotiz[] = [
   },
   {
     routeId: 'nichts_da_oben',
-    text: 'Der Staubhase niest mit Niesanfall jede vierte Runde auf alle, der Listengeist heilt mit Nachtragen um 160. Niemand, der Hausmeister, trägt 6100 Leben, schlägt mit 78 Angriff zu und wütet ab Runde 10, Angriff mal 1,85; seine Wut lässt sich nicht verschieben.',
+    text: 'Der Staubhase niest mit Niesanfall jede vierte Runde auf alle, der Listengeist heilt mit Nachtragen um 160. Niemand, der Hausmeister, trägt 8100 Leben, schlägt mit 78 Angriff zu und wütet ab Runde 10, Angriff mal 1,85; seine Wut lässt sich nicht verschieben.',
   },
 ];
