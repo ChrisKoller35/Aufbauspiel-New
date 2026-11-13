@@ -1136,7 +1136,9 @@ Versuch), und die Karte liest es schon vorher so. Stufe II hat ihren eigenen Sta
 - Der Raid steht als Sechseck über «Die Pfeiler des Tages» (Ebene 12), Lage und Grösse in `ZENIT.karte`
   (x 390, y −4120, Radius 72). Im Sechseck hängt Zenits Uhr (Glocke und Pendel ragen hinaus), rechts daneben stehen
   «RAID · 4 BIS 10 HELDEN», der Name und eine Zeile. Von oben bis knapp über die Pfeiler liegt Nacht mit Sternen, die
-  nach unten verblassen, hinter dem Sechseck ein goldener Schein; darüber führt ein Weg ins Unerforschte.
+  nach unten verblassen, hinter dem Sechseck ein goldener Schein. Rechts darüber steht seit Ebene 13 das Nichts da oben;
+  der Weg dorthin läuft durch die Zeilen neben dem Raid, die Weg-Maske spart sie aus (`raidZeilenMaske`). Das Feld
+  «Noch unerforscht» steht über dem höchsten Knoten, jetzt über dem Nichts.
 - Jorindes Leiter (zehn Sprossen) führt von der Spitze der Pfeiler zur unteren rechten Kante des Sechsecks,
   am Pendel vorbei.
 - Gesperrt, solange Ebene 12 nicht besiegt ist: Leiter gestrichelt, Uhr blass, Schloss, Zeile «Erst die
