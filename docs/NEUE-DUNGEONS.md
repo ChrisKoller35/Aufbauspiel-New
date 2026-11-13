@@ -93,8 +93,9 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
 3. **Route** in `src/data/routes.ts`: `tier` = nächste Ebene, `gebiet`, `besonderheit` (ein Satz),
    `ersterSiegBeute`, `unlockCondition` mit dem Boss darunter. `rooms` = Anzahl `encounters`,
    der letzte Raum ist der Boss.
-4. **Karte:** Knoten in `DUNGEON_GRAPH` mit negativem `y` (je etwa 500 höher als der darunter) und
-   `leadsTo` vom Dungeon darunter. Die Karte wächst von selbst nach oben, das Feld «Noch unerforscht»
+4. **Karte:** Knoten in `DUNGEON_GRAPH` mit negativem `y` (je etwa 500 höher als der darunter), `leadsTo` vom
+   Dungeon darunter und `isMainPath: true`: Die Karte geht beim höchsten offenen Dungeon des Hauptpfads auf
+   (`kartenStart`). Sie wächst von selbst nach oben, das Feld «Noch unerforscht»
    (über dem höchsten Knoten, Raid oder Dungeon) und die Liste im Stadtweg-Fenster rücken mit. Läuft ein
    Weg durch Schrift, die keine Gebietsschrift ist, gehört diese in die Weg-Maske (`wegeMaske`). Ein neues Gebiet braucht
    einen Eintrag in `GEBIETE` (`src/ui/screens/DungeonMapScreen.ts`), in `getBiomeTag`
@@ -584,7 +585,8 @@ Die Werte sind die der Pfeiler ×1,06, nur Niemand hat 8100 statt 6100 Leben:
   neben dem Raid; die Weg-Maske spart sie unter den Buchstaben aus wie die Gebietsnamen (`raidZeilenMaske`), auch die
   Zeile jeder weiteren Stufe. Das Feld «Noch unerforscht» steht über dem höchsten Knoten (`hoechsterKnoten`), jetzt
   über dem Nichts bei 565 / −4530. Am Handy (Karte 1:1) liegt das Nichts zur Hälfte rechts ausserhalb, wenn man nur
-  nach oben wischt; weiter nach links gerückt liefe der Weg mitten durch die Raid-Schrift.
+  nach oben wischt; weiter nach links gerückt liefe der Weg mitten durch die Raid-Schrift. Darum geht die Karte beim
+  höchsten offenen Dungeon auf (`kartenStart`), im Endspiel also mit dem Nichts in der Mitte.
 
 ## Entschieden
 

@@ -107,7 +107,8 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
   bindDungeonEvents(el);
   container.appendChild(el);
 
-  // Scroll to bottom (start node); on narrow screens also centre horizontally.
+  // Die Karte geht beim höchsten Dungeon auf, den die Gilde betreten kann (kartenStart), in der Mitte, auch seitlich
+  // (am Handy ist die Karte breiter als der Bildschirm). Am Anfang ist das der Start ganz unten.
   // Zurück aus dem Raid: der Raid-Knoten in der Mitte. Mit der Tastatur zurück auf einem Knoten (der Fokus kam
   // mit bildschirmFokussieren auf ihn zurück): dieser Knoten in der Mitte
   requestAnimationFrame(() => {
@@ -116,28 +117,29 @@ export function renderDungeonMapScreen(container: HTMLElement): void {
     wrap.scrollTop = wrap.scrollHeight;
     wrap.scrollLeft = (wrap.scrollWidth - wrap.clientWidth) / 2;
     const fokus = document.activeElement;
-    const raid = vomRaid ? wrap.querySelector('[data-raid]') : fokus && fokus !== wrap && wrap.contains(fokus) ? fokus : null;
+    const ziel = vomRaid ? wrap.querySelector('[data-raid]')
+      : fokus && fokus !== wrap && wrap.contains(fokus) ? fokus
+      : wrap.querySelector(`[data-fokus="karte-${kartenStart(state)}"]`);
     vomRaid = false;
-    if (raid) {
-      const ort = raid.getBoundingClientRect();
+    if (ziel) {
+      const ort = ziel.getBoundingClientRect();
       const rahmen = wrap.getBoundingClientRect();
       wrap.scrollTop += ort.top + ort.height / 2 - (rahmen.top + wrap.clientHeight / 2);
       wrap.scrollLeft += ort.left + ort.width / 2 - (rahmen.left + wrap.clientWidth / 2);
     }
+    // Weniger als einen Bildschirm unter dem oberen Rand gibt es oben nichts mehr zu entdecken: kein «▲ Scroll»
+    if (wrap.scrollTop < wrap.clientHeight) hinweisWeg();
   });
 
-  // Fade scroll hint on first scroll
+  // Der Hinweis «▲ Scroll» geht weg, sobald der Spieler selbst scrollt, wischt, tippt oder eine Taste drückt. Nicht
+  // beim Scrollen, mit dem die Karte aufgeht: Auf «scroll» ging er schon beim Öffnen weg und war nie zu sehen
+  const ARTEN = ['wheel', 'touchmove', 'pointerdown', 'keydown'] as const;
   const wrap = el.querySelector('#dmap-wrap');
-  if (wrap) {
-    let hintHidden = false;
-    wrap.addEventListener('scroll', () => {
-      if (!hintHidden) {
-        hintHidden = true;
-        const hint = document.getElementById('dmap-scroll-hint');
-        if (hint) hint.classList.add('dmap-hint-gone');
-      }
-    });
+  function hinweisWeg(): void {
+    el.querySelector('#dmap-scroll-hint')?.classList.add('dmap-hint-gone');
+    for (const art of ARTEN) wrap?.removeEventListener(art, hinweisWeg);
   }
+  for (const art of ARTEN) wrap?.addEventListener(art, hinweisWeg, { passive: true });
 }
 
 // ── Biome classification ──
@@ -373,6 +375,21 @@ function buildGipfelHimmel(width: number, oben: number): string {
     html += `<circle cx="${n.x}" cy="${n.y}" r="260" fill="url(#dmap-schein-${gebiet})"/>`;
   }
   return html;
+}
+
+/**
+ * Wo die Karte aufgeht: beim höchsten Dungeon auf dem Hauptpfad, den die Gilde betreten kann (offen oder bezwungen).
+ * Am Anfang ist das der Start ganz unten wie bisher, im Endspiel das Nichts da oben (am Handy sonst zur Hälfte rechts
+ * ausserhalb). Nebenwege zählen nicht: Die Waldruine ist von Anfang an offen und läge am Handy links neben dem Start.
+ */
+export function kartenStart(state: GameState): string {
+  let ziel: DungeonGraphNode | undefined;
+  for (const n of DUNGEON_GRAPH) {
+    const route = ROUTE_DEFS[n.routeId];
+    if (!n.isMainPath || !route || !(isRouteAvailable(route, state) || isRouteCompleted(n.routeId, state))) continue;
+    if (!ziel || n.y < ziel.y) ziel = n;
+  }
+  return ziel?.routeId ?? 'forest_short';
 }
 
 /** Radius eines Dungeon-Knotens: Boss-Dungeons sind grösser */

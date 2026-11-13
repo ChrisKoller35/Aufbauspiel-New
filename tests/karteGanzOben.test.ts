@@ -1,8 +1,10 @@
 // Dungeonkarte ganz oben (Befund 4 der Prüfung von PR #78): Das Feld «Noch unerforscht» steht über dem höchsten Knoten,
 // und die Zeilen neben dem Raid sind in der Weg-Maske ausgespart, weil der Weg zum Nichts da oben durch sie läuft.
+// Die Karte geht beim höchsten Dungeon auf, den die Gilde betreten kann (am Handy sonst das Nichts rechts ausserhalb).
 import { describe, test, expect } from 'vitest';
-import { hoechsterKnoten, raidZeilenMaske, unerforschtFeld } from '../src/ui/screens/DungeonMapScreen';
-import { DUNGEON_GRAPH } from '../src/data/routes';
+import { hoechsterKnoten, kartenStart, raidZeilenMaske, unerforschtFeld } from '../src/ui/screens/DungeonMapScreen';
+import { DUNGEON_GRAPH, ROUTE_DEFS, isRouteAvailable } from '../src/data/routes';
+import { createNewGameState } from '../src/models/GameState';
 import { RAID_STUFEN, RAID_TEXTE, ZENIT, stufenTexte } from '../src/data/raids';
 import type { RaidKartenZustand } from '../src/systems/Raid';
 
@@ -54,5 +56,35 @@ describe('Dungeonkarte ganz oben', () => {
     ]);
     expect(zeilen.map(z => z.y)).toEqual([y - 17, y + 3, y + 20, ...RAID_STUFEN.slice(1).map((_, i) => y + 35 + i * 15)]);
     expect(zeilen.slice(2).every(z => z.klasse === 'dmap-raid-zeile')).toBe(true);
+  });
+});
+
+describe('Wo die Karte aufgeht', () => {
+  test('beim höchsten Dungeon des Hauptpfads, den die Gilde betreten kann: am Anfang der Start, im Endspiel das Nichts', () => {
+    const state = createNewGameState();
+    // Die Waldruine (Nebenweg) ist auch offen und liegt höher, zählt aber nicht: am Handy läge sonst der Start ausserhalb
+    expect(isRouteAvailable(ROUTE_DEFS.forest_ruins, state)).toBe(true);
+    expect(kartenStart(state)).toBe('forest_short');
+
+    // Alles bis zu den Pfeilern bezwungen: das Nichts ist offen und der höchste
+    const ohneNichts = DUNGEON_GRAPH.filter(n => n.routeId !== 'nichts_da_oben');
+    state.guildStats.rank = 99;
+    state.guildStats.bossesDefeatedIds = ohneNichts.map(n => ROUTE_DEFS[n.routeId]?.bossId).filter((b): b is string => !!b);
+    state.bezwungen = Object.fromEntries(ohneNichts.map(n => [n.routeId, 1]));
+    expect(kartenStart(state)).toBe('nichts_da_oben');
+
+    // Auch bezwungen bleibt es der höchste
+    state.bezwungen.nichts_da_oben = 1;
+    expect(kartenStart(state)).toBe('nichts_da_oben');
+  });
+
+  test('ein offener Dungeon weiter unten zieht die Karte nicht nach unten', () => {
+    const state = createNewGameState();
+    state.guildStats.rank = 99;
+    // Nur der Boss unter den Pfeilern besiegt: die Pfeiler sind offen, darunter fast nichts bezwungen
+    const pfeiler = ROUTE_DEFS.tagespfeiler;
+    state.guildStats.bossesDefeatedIds = [...(pfeiler.unlockCondition?.bossesDefeated ?? [])];
+    expect(isRouteAvailable(pfeiler, state)).toBe(true);
+    expect(kartenStart(state)).toBe('tagespfeiler');
   });
 });
