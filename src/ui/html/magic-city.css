@@ -2042,9 +2042,16 @@ button.hdm-gear-icon:hover { border-color: var(--gold); }
 
 /* Tränke mit Restdauer (KampfVorraete.aktiveWirkungen): «Wirkt» ist gesperrt, solange der Trank bis zum Ende des
    Dungeons wirkt. Der Block «Wirkt gerade» steht nur am Handy unter den Vorräten (je Wirkung eine Zeile, 12 px,
-   zu lang gekürzt mit …); am PC fehlt er, der Streifen darf nicht höher werden (Restdauer dort im Tooltip). */
+   zu lang gekürzt mit …); am PC fehlt er, der Streifen darf nicht höher werden (Restdauer dort im Tooltip).
+   Ohne Vorräte gibt es nur den Block «Wirkt gerade» (.mc-co-nur-wirkt); am PC ist er ausgeblendet, und steht
+   er allein im Streifen (Stufe 1 ohne Fähigkeiten), ist auch der Streifen ausgeblendet (eigene Regel, damit
+   ein Browser ohne :has die erste trotzdem anwendet). */
 .mc-co-use-btn:disabled { opacity: 0.55; filter: grayscale(0.6); cursor: default; }
 .mc-co-wirkt { display: none; }
+@media (min-width: 701px) {
+  .mc-co-nur-wirkt { display: none; }
+  .mc-co-preview-strip:has(> .mc-co-nur-wirkt:only-child) { display: none; }
+}
 @media (max-width: 700px) {
   .mc-co-wirkt { display: block; padding: 0 0 4px; min-width: 0; }
   .mc-co-wirkt-titel { font-family: 'Cinzel', serif; font-size: 0.7rem; color: var(--mc-gold-bright); letter-spacing: 1px; }

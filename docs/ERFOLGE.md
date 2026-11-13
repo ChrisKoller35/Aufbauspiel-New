@@ -194,7 +194,8 @@ Jeder Erfolg bringt einmalig Kristallsplitter (`erfolgBelohnung(def)` in `data/a
 Zusammen 237. Ausgezahlt wird nie je neuer ID, sondern über die Summe: `belohnungAuszahlen(state)` in
 `systems/AchievementSystem.ts` legt `verdienteSplitter(state)` (nur bekannte, freigeschaltete IDs) minus die schon
 gezahlte Summe in `statistics.erfolg_splitter` ins Lager (`crystal_shard`). `erfolgePruefen` ruft es nach dem
-Eintragen neuer Erfolge auf. So zahlt jeder Erfolg genau einmal, egal wie oft geprüft wird.
+Eintragen neuer Erfolge auf und zahlt damit auch aus, was noch fehlt, wenn kein neuer Erfolg kommt. So zahlt jeder
+Erfolg genau einmal, egal wie oft geprüft wird.
 
 **Nachzahlung:** Ein Stand aus der Zeit vor der Belohnung hat noch kein `erfolg_splitter`. `main.ts` zahlt beim
 Laden einmal nach, speichert gleich und zeigt in der Kopfzeile «💎 Nachzahlung für deine Erfolge: +N

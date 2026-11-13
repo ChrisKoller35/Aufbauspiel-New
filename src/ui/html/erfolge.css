@@ -122,8 +122,8 @@
   .ach-card.ach-neu { animation: none; box-shadow: 0 0 0 2px var(--gold); }
 }
 /* Belohnung: was der Erfolg an Kristallsplittern bringt (einmalig), freigeschaltet «erhalten» */
-.ach-lohn { font-size: 0.7rem; color: #93c5fd; margin-top: 4px; opacity: 0.75; }
-.ach-lohn.ach-lohn-da { opacity: 1; }
+.ach-lohn { font-size: 0.7rem; color: #7fa9dc; margin-top: 4px; }
+.ach-lohn.ach-lohn-da { color: #93c5fd; }
 .erf-kopf .erf-lohn { color: #93c5fd; }
 /* Derselbe Hinweis schwebend unten in der Mitte, wenn ein sichtbares Fenster über der Kopfzeile liegt (jedes .ov.on
    oder aria-modal) oder die Zeile des Hinweises weggescrollt ist (zeigeKopfHinweis). z 400: über allen Fenstern (.ov 100,

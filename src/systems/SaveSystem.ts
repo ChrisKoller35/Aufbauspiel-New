@@ -13,6 +13,7 @@ import { ranglisteKurz } from './Rangliste';
 import { brettKurz } from './Auftragsbrett';
 import { vereinigeDoppelte } from './Ausbau';
 import { SPIELSTAND, istMagicCityStand, nurSichereTexte } from './SpielstandSchema';
+import { belohnungAuszahlen } from './AchievementSystem';
 
 /** Speicherplatz aller SaveSystem-Instanzen; das Probespiel hat einen eigenen (nutzeProbespiel) */
 let saveKey = 'magic_city_save';
@@ -328,7 +329,8 @@ export class SaveSystem {
   /**
    * Probe-Laden für eine Datei (pruefeSpielstandText): dieselbe Lade-Logik wie beim Start.
    * Erst wie load() (ohne Speicher und ohne ID-Zähler), dann die Schritte aus main.ts vor dem
-   * ersten Bild: eine unterbrochene Expedition abbrechen, alle Helden mit vollen Leben. Dazu,
+   * ersten Bild: Kristallsplitter für Erfolge nachzahlen (belohnungAuszahlen, ohne Speichern),
+   * eine unterbrochene Expedition abbrechen, alle Helden mit vollen Leben. Dazu,
    * was das Hauptmenü vom Stand liest (Rangliste, Auftragsbrett), denn ohne Hauptmenü kommt
    * niemand mehr an dieses Fenster. Ändert nur `state` und wirft, wenn das Spiel mit diesem
    * Stand nicht starten würde. Kommt in main.ts ein Schritt dazu, gehört er auch hierher.
@@ -338,6 +340,7 @@ export class SaveSystem {
     // Städtische Systeme lesen BUILDING_DEFS[typeId] ungeprüft
     const unbekannt = state.buildings.find(b => !BUILDING_DEFS[b.typeId]);
     if (unbekannt) throw new Error(`Unbekannte Gebäude-Art: ${unbekannt.typeId}`);
+    belohnungAuszahlen(state);
     new ExpeditionSystem(new GearSystem(), new ProvisionSystem()).abortExpedition(state);
     for (const fighter of state.fighters) fighter.baseStats.hp = fighter.baseStats.maxHp;
     const jetzt = Date.now();

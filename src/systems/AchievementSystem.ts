@@ -207,16 +207,17 @@ export function versteckteTatenZaehlen(state: GameState, run: ExpeditionRun): vo
 
 /**
  * Kennzahlen aktualisieren, neue Erfolge in state.achievements eintragen
- * (genau einmal) und melden. Gibt die neuen IDs zurück.
+ * (genau einmal) und melden; zahlt auch aus, was noch fehlt, wenn kein neuer Erfolg kommt
+ * (belohnungAuszahlen). Gibt die neuen IDs zurück.
  * hinweis: false, wenn der Aufrufer die neuen Erfolge selbst zeigt (Bilanz nach der Expedition).
  */
 export function erfolgePruefen(state: GameState, { hinweis = true }: { hinweis?: boolean } = {}): string[] {
   kennzahlenAktualisieren(state);
   if (!Array.isArray(state.achievements)) state.achievements = [];
   const neu = new AchievementSystem().checkAchievements(state.statistics, state.achievements);
-  if (neu.length === 0) return neu;
   state.achievements.push(...neu);
   belohnungAuszahlen(state);
+  if (neu.length === 0) return neu;
   for (const fn of hoerer) fn(neu, state, hinweis);
   return neu;
 }

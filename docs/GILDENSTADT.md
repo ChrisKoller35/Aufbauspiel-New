@@ -135,7 +135,9 @@ Die Kampf-Vorschau zeigt die Werte sofort (Preis/Wirkung sofort sichtbar, wie be
   - **Am PC** kommt nichts in den Streifen (er würde sonst höher und verschöbe die Heldenkarten): die Restdauer steht
     im Tooltip des Knopfs («Kraft-Brot: +2 Angriff, noch 3 Räume»).
   - **Knopf «Wirkt»** (gesperrt) statt «Nutzen», solange ein Trank bis zum Ende des Dungeons wirkt (Krafttrank,
-    Titan-Gebräu); Kraft-Brot und Schnelligkeitstrank bleiben nutzbar, nachtrinken setzt die Dauer neu.
+    Titan-Gebräu); Kraft-Brot und Schnelligkeitstrank bleiben nutzbar, nachtrinken setzt die Dauer neu; reicht ihre
+    Dauer bis zum Schluss (Kraft-Brot in den letzten 3, Schnelligkeitstrank in den letzten 2 Räumen), wirken sie bis
+    zum Ende und zeigen ebenfalls «Wirkt».
   - Neu gezeichnet wird nach jedem «Nutzen» (`refreshAfterProvision`) und beim Betreten eines Raums (`show`), danach
     `passeKartenAn()`.
 

@@ -226,4 +226,18 @@ describe('echte Spielstände bestehen die Prüfung der Datei', () => {
 
     expect(pruefeSpielstandText(text).ok).toBe(true);
   });
+
+  it('Probe-Laden zahlt Erfolge nach wie der Start', () => {
+    const state = neuesSpiel();
+    state.achievements = ['first_building'];
+    delete state.statistics.erfolg_splitter;
+    const vorher = state.globalStock.crystal_shard ?? 0;
+    const lager = speicher();
+    const zugriffe = (['getItem', 'setItem', 'removeItem'] as const).map(f => vi.spyOn(lager, f));
+    vi.stubGlobal('localStorage', lager);
+    new SaveSystem().probeLaden(state);
+    expect(state.globalStock.crystal_shard).toBe(vorher + 1);
+    expect(state.statistics.erfolg_splitter).toBe(1);
+    for (const zugriff of zugriffe) expect(zugriff).not.toHaveBeenCalled();
+  });
 });

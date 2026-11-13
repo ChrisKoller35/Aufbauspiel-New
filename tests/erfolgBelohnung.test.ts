@@ -70,6 +70,18 @@ describe('Belohnung je Erfolg', () => {
     expect(belohnungAuszahlen(state)).toBe(0);
   });
 
+  test('erfolgePruefen zahlt auch ohne neuen Erfolg nach, was fehlt', () => {
+    const state = createNewGameState();
+    state.achievements = ['first_building'];
+    delete state.statistics[ERFOLG_SPLITTER];
+    const vorher = state.globalStock.crystal_shard ?? 0;
+    for (let mal = 0; mal < 2; mal++) {
+      expect(erfolgePruefen(state)).toEqual([]);
+      expect(state.globalStock.crystal_shard).toBe(vorher + 1);
+      expect(state.statistics[ERFOLG_SPLITTER]).toBe(1);
+    }
+  });
+
   test('älterer Stand ohne erfolg_splitter: Nachzahlung 21 einmal, danach 0', () => {
     const state = createNewGameState();
     const versteckt = ACHIEVEMENT_DEFS.find(d => d.versteckt)!.id;
