@@ -21,7 +21,9 @@ import { getSpezialisierung } from '../../data/spezialisierungen';
 import { getLogLineColor } from '../../rendering/Colors';
 import { istGeschichtsBeuteZeile } from '../../systems/Geschichten';
 import { klangKnopfHtml } from '../components/KlangSchalter';
-import { vorratZeilen, vorratTitel, zeigeVorratBereich, nutzeVorrat, aktiveWirkungen, vorratKnopf } from '../components/KampfVorraete';
+import {
+  vorratZeilen, vorratTitel, zeigeVorratBereich, nutzeVorrat, aktiveWirkungen, vorratKnopf, VorratZeile, AktiveWirkung,
+} from '../components/KampfVorraete';
 
 /** Ab dieser Breite gilt das PC-Layout des Kampfes (darunter eigene Regeln fürs Handy). */
 const PC_BREITE = '(min-width: 701px)';
@@ -794,15 +796,38 @@ export class CombatScreen {
     // Vorräte: gleiche in einer Zeile. Nach dem letzten bleibt der Bereich mit Titel und Meldung stehen
     const zeilen = vorratZeilen(run.provisions);
     const aktiv = aktiveWirkungen(run);
-    // «Wirkt gerade» gibt es nur am Handy: am PC kommt der Bereich dafür nicht dazu (der Streifen bliebe sonst höher)
-    const wirktAmHandy = aktiv.length > 0 && !window.matchMedia(PC_BREITE).matches;
-    if (!zeigeVorratBereich(zeilen, this.vorratMeldung) && !wirktAmHandy) return;
+    // Ohne Vorräte steht im Bereich nur «Wirkt gerade» (mc-co-nur-wirkt). Am PC blendet CSS den Bereich aus, nicht
+    // der Code, darum stimmt er nach jeder Fenstergrösse
+    const mitVorraeten = zeigeVorratBereich(zeilen, this.vorratMeldung);
+    if (!mitVorraeten && aktiv.length === 0) return;
 
     const area = document.createElement('div');
-    area.className = 'mc-co-items-area';
+    area.className = mitVorraeten ? 'mc-co-items-area' : 'mc-co-items-area mc-co-nur-wirkt';
     this.itemsAreaEl = area;
     this.previewStripEl.appendChild(area);
+    if (mitVorraeten) this.buildProvisionRows(area, zeilen, aktiv);
 
+    // Am Handy unter den Vorräten (ohne Vorräte allein): was gerade wirkt und wie lange noch (am PC per CSS weg,
+    // dort im Tooltip)
+    if (aktiv.length > 0) {
+      const wirkt = document.createElement('div');
+      wirkt.className = 'mc-co-wirkt';
+      const titel = document.createElement('div');
+      titel.className = 'mc-co-wirkt-titel';
+      titel.textContent = 'Wirkt gerade';
+      wirkt.appendChild(titel);
+      for (const w of aktiv) {
+        const zeileEl = document.createElement('div');
+        zeileEl.className = 'mc-co-wirkt-zeile';
+        zeileEl.textContent = zeileEl.title = w.text;
+        wirkt.appendChild(zeileEl);
+      }
+      area.appendChild(wirkt);
+    }
+  }
+
+  /** Überschrift «Vorräte — vor Kampf nutzbar», Meldung und je Vorrat eine Zeile mit Knopf (gleiche zusammen) */
+  private buildProvisionRows(area: HTMLElement, zeilen: VorratZeile[], aktiv: AktiveWirkung[]): void {
     const provDivider = document.createElement('div');
     provDivider.className = 'mc-co-section-divider';
     provDivider.style.color = 'var(--mc-gold-bright)';
@@ -863,23 +888,6 @@ export class CombatScreen {
 
       card.append(itemImg, text, itemQty, useBtn);
       row.appendChild(card);
-    }
-
-    // Am Handy unter den Vorräten: was gerade wirkt und wie lange noch (am PC per CSS weg, dort im Tooltip)
-    if (aktiv.length > 0) {
-      const wirkt = document.createElement('div');
-      wirkt.className = 'mc-co-wirkt';
-      const titel = document.createElement('div');
-      titel.className = 'mc-co-wirkt-titel';
-      titel.textContent = 'Wirkt gerade';
-      wirkt.appendChild(titel);
-      for (const w of aktiv) {
-        const zeileEl = document.createElement('div');
-        zeileEl.className = 'mc-co-wirkt-zeile';
-        zeileEl.textContent = zeileEl.title = w.text;
-        wirkt.appendChild(zeileEl);
-      }
-      area.appendChild(wirkt);
     }
   }
 

@@ -1,5 +1,7 @@
 // Tränke mit Restdauer im Vorräte-Bereich (src/ui/components/KampfVorraete.ts: aktiveWirkungen, vorratKnopf, vorratTitel)
 import { describe, it, expect } from 'vitest';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { createNewGameState } from '../src/models/GameState';
 import { createGuildFighter } from '../src/models/GuildRoster';
 import { ExpeditionSystem } from '../src/systems/ExpeditionSystem';
@@ -60,5 +62,39 @@ describe('Tränke mit Restdauer', () => {
     nutzeVorrat(system, state, zeile(run, 'bread')); // Brot heilt sofort, wirkt nicht weiter
     expect(aktiveWirkungen(run)).toEqual([]);
     for (const z of vorratZeilen(run.provisions)) expect(vorratKnopf(z, [])).toBe('Nutzen');
+  });
+});
+
+describe('Vorräte im Streifen: die Fensterbreite entscheidet das CSS', () => {
+  const lies = (datei: string) => readFileSync(join(__dirname, '../src', datei), 'utf8');
+
+  it('buildItemSection fragt kein matchMedia, am PC blendet magic-city.css den Bereich nur mit «Wirkt gerade» aus', () => {
+    const quelle = lies('ui/screens/CombatScreen.ts');
+    const start = quelle.indexOf('private buildItemSection(');
+    expect(start).toBeGreaterThan(0);
+    const rumpf = quelle.slice(start, quelle.indexOf('\n  }\n', start));
+    expect(rumpf).toContain('mc-co-nur-wirkt');
+    expect(rumpf).not.toContain('matchMedia');
+
+    // Beide Regeln im selben Block @media (min-width: 701px), aber getrennt: Ein Browser ohne :has wendet die erste an
+    const css = lies('ui/html/magic-city.css').replace(/\/\*[\s\S]*?\*\//g, '');
+    const bloecke: string[][] = [];
+    const kopf = '@media (min-width: 701px) {';
+    for (let i = css.indexOf(kopf); i >= 0; i = css.indexOf(kopf, i + 1)) {
+      const auf = css.indexOf('{', i);
+      for (let j = auf, tiefe = 0; j < css.length; j++) {
+        if (css[j] === '{') tiefe++;
+        else if (css[j] === '}' && --tiefe === 0) {
+          bloecke.push([...css.slice(auf + 1, j).matchAll(/([^{}]+)\{([^{}]*)\}/g)]
+            .map(m => `${m[1].trim()} { ${m[2].trim()} }`.replace(/\s+/g, ' ')));
+          break;
+        }
+      }
+    }
+    const regeln = [
+      '.mc-co-nur-wirkt { display: none; }',
+      '.mc-co-preview-strip:has(> .mc-co-nur-wirkt:only-child) { display: none; }',
+    ];
+    expect(bloecke.some(b => regeln.every(r => b.includes(r)))).toBe(true);
   });
 });

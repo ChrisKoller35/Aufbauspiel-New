@@ -82,7 +82,7 @@ export const ACHIEVEMENT_DEFS: AchievementDef[] = [
   erfolg('gildenrang_5', 'Gilde', '👑', 'Gildenmeister', 'Erreiche Gildenrang V und trage den Titel Gildenmeister.', 'gildenrang', 5),
   erfolg('zettel_10', 'Gilde', '📌', 'Fleissige Gilde', 'Erledige 10 Zettel am Auftragsbrett.', 'zettel_erledigt', 10),
   erfolg('saal_kette', 'Gilde', '🏺', 'Alle Sockel voll', 'Stelle alle Prunkstücke der Kette «Der Saal der Gilde» in den Trophäensaal.', 'saal_prunkstuecke', SAAL_SOCKEL),
-  erfolg('anbau_kette', 'Gilde', '🧱', 'Angebaut', 'Stelle auch die Prunkstücke im Anbau des Saals auf, die Kohle der Ersten und den Keil des Trägers.', 'anbau_prunkstuecke', ANBAU_SOCKEL),
+  erfolg('anbau_kette', 'Gilde', '🧱', 'Angebaut', 'Stelle alle Prunkstücke im Anbau des Saals auf.', 'anbau_prunkstuecke', ANBAU_SOCKEL),
   erfolg('saal_glanz', 'Gilde', '🌟', 'Glanz des Saals', `Sammle ${SAAL_HALBER_GLANZ} der ${SAAL_STERNE} Sterne im Trophäensaal.`, 'saal_sterne', SAAL_HALBER_GLANZ),
   erfolg('rangliste_pokal', 'Gilde', '🥉', 'Aufs Treppchen', 'Gewinne einen Pokal in der Wochenwertung der Rangliste (Platz 1 bis 3).', 'rangliste_pokale', 1),
   erfolg('gipfel_1', 'Gilde', '🏔️', 'Gipfelstürmer', 'Führe die Gipfel-Rangliste an, vor allen Rivalen-Gilden.', 'gipfel_spitze', 1),

@@ -120,12 +120,17 @@ describe('Schrift auf Bildern', () => {
       ['gildenhaus.css', '.gh-ware:disabled'],
       ['ausbildung.css', '.kt-karte.gesperrt .kt-bild'],
       ['ausbildung.css', '.kt-karte.in-gilde .kt-bild'],
+      ['erfolge.css', '.ach-lohn'],
     ];
     for (const [datei, selektor] of faelle) {
       for (const r of regeln(lies(datei)).filter(x => x.selektoren.includes(selektor))) {
         expect(r.inhalt, selektor).not.toMatch(/(^|[;\s])(opacity|filter)\s*:/);
       }
     }
+    // Belohnung noch nicht erhaltener Erfolge: feste gedämpfte Farbe statt opacity, ≥ 4,5 : 1 auf der Karte (--s2)
+    const m = regelnFuer(lies('erfolge.css'), '.ach-lohn')[0].inhalt.match(/color:\s*(#[0-9a-f]{6})/i);
+    expect(m).not.toBeNull();
+    expect(kontrast(rgb(m![1]), token('--s2'))).toBeGreaterThanOrEqual(4.5);
   });
 });
 

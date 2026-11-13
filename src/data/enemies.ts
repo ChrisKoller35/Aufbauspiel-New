@@ -867,7 +867,8 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
     lootTableId: 'loot_boss_orm', xpReward: 730, goldReward: 360, spriteKey: 'BOSS_ORM',
   },
 
-  // Das Nichts da oben: Pfeiler ×1,06 beim Angriff, Leben ×1,06; nur zwei Wachen, dafür viele
+  // Das Nichts da oben: Pfeiler ×1,06 beim Angriff, Leben ×1,06; nur zwei Wachen, dafür viele. Niemand hat 8100 Leben
+  // statt ×1,06 (6100): Sonst wäre Ebene 13 mit dem vollen Pfeiler-Set so leicht wie die Pfeiler (Eichung 8.11.2026)
   staubhase: {
     id: 'staubhase', name: 'Staubhase', role: 'melee',
     hp: 365, atk: 56, def: 10, spd: 1.5, critChance: 0.18, critMult: 1.8,
@@ -887,7 +888,7 @@ export const ENEMY_DEFS: Record<string, EnemyDef> = {
   },
   boss_niemand: {
     id: 'boss_niemand', name: 'Niemand, der Hausmeister', role: 'boss',
-    hp: 6100, atk: 78, def: 23, spd: 0.9, critChance: 0.12, critMult: 2.0,
+    hp: 8100, atk: 78, def: 23, spd: 0.9, critChance: 0.12, critMult: 2.0,
     isBoss: true,
     enrage: { afterRound: 10, atkMult: 1.85, spdMult: 1.3 },
     skills: [

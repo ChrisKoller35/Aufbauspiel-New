@@ -15,6 +15,7 @@ vi.mock('../src/systems/AchievementSystem', async (original) => ({
 type Hinweis = {
   className: string; textContent: string; attribute: Record<string, string>;
   setAttribute: (n: string, w: string) => void; getAttribute: (n: string) => string | undefined; remove: () => void;
+  getBoundingClientRect?: () => { bottom: number };
 };
 
 /** Kopfzeile mit .hdr-platz: Dort hinein legt zeigeKopfHinweis den Hinweis */
@@ -23,11 +24,17 @@ class Kopfzeile {
   /** null: nicht zu sehen (Kampf, Truhe, Bilanz) */
   offsetParent: object | null = {};
   unterkante = 53;
+  /** Unterkante des Hinweises in dieser Kopfzeile (er steht in ihrer ersten Zeile, darum höher als ihre Unterkante) */
+  hinweisUnterkante = 40;
   getBoundingClientRect() { return { bottom: this.unterkante }; }
   klassen = new Set<string>();
   classList = { add: (k: string) => this.klassen.add(k), remove: (k: string) => this.klassen.delete(k) };
   platz = {
-    insertBefore: (n: Hinweis) => { this.hinweis = n; n.remove = () => { this.hinweis = null; }; },
+    insertBefore: (n: Hinweis) => {
+      this.hinweis = n;
+      n.remove = () => { this.hinweis = null; };
+      n.getBoundingClientRect = () => ({ bottom: this.hinweisUnterkante });
+    },
   };
   querySelector(sel: string) {
     if (sel === '.hdr-note') return this.hinweis;
@@ -46,11 +53,23 @@ const fenster = Object.assign(new EventTarget(), {
 let schwebende: Hinweis[] = [];
 /** Liegt ein Fenster über der Kopfzeile (.ov.on oder aria-modal)? */
 let fensterOffen = false;
+type Fenster = { getClientRects: () => object[]; matches: (sel: string) => boolean };
+const offenesFenster = (): Fenster => ({ getClientRects: () => [{}], matches: () => false });
+/** Versteckt (display: none), etwa das Routenfenster der Dungeonkarte mit aria-modal */
+const verstecktesFenster = (): Fenster => ({ getClientRects: () => [], matches: () => false });
+/** Truhe nach «Einsammeln»: ohne .on, aber 300 ms lang noch sichtbar und aria-modal */
+const ausblendendeTruhe = (): Fenster => ({ getClientRects: () => [{}], matches: sel => sel === '.chest-ov:not(.on)' });
+/** Weitere Fenster in DOM-Reihenfolge (fensterOffen legt ein offenes davor) */
+let fensterListe: Fenster[] = [];
+/** Wie im Browser: alle Treffer in DOM-Reihenfolge, querySelector gibt den ersten */
+const alleFenster = (): Fenster[] => (fensterOffen ? [offenesFenster(), ...fensterListe] : fensterListe);
+const alleHinweise = () => kopfzeilen.map(k => k.hinweis).filter(Boolean);
 const seite = {
   addEventListener: () => {},
   body: { appendChild: (n: Hinweis) => { schwebende.push(n); } },
   querySelector: (sel: string) => {
-    if (sel === '.ov.on, [aria-modal="true"]') return fensterOffen ? { getClientRects: () => [{}] } : null;
+    if (sel === '.ov.on, [aria-modal="true"]') return alleFenster()[0] ?? null;
+    if (sel === '.hdr-note') return alleHinweise()[0] ?? null;
     return null;
   },
   createElement: (): Hinweis => {
@@ -63,8 +82,9 @@ const seite = {
     return n;
   },
   querySelectorAll: (sel: string) => {
+    if (sel === '.ov.on, [aria-modal="true"]') return alleFenster();
     if (sel === '.hdr') return kopfzeilen;
-    if (sel === '.hdr-note') return kopfzeilen.map(k => k.hinweis).filter(Boolean);
+    if (sel === '.hdr-note') return alleHinweise();
     if (sel === '.hdr-mit-hinweis') return kopfzeilen.filter(k => k.klassen.has('hdr-mit-hinweis'));
     return [];
   },
@@ -81,7 +101,7 @@ beforeAll(async () => {
 });
 
 // Jeder Test beginnt ohne Hinweis, ohne Fenster
-afterEach(() => { vi.runAllTimers(); fensterOffen = false; });
+afterEach(() => { vi.runAllTimers(); fensterOffen = false; fensterListe = []; });
 
 afterAll(() => {
   vi.useRealTimers();
@@ -203,6 +223,7 @@ describe('schwebender Hinweis, wenn die Kopfzeile verdeckt ist', () => {
   test('Kopfzeile weggescrollt: schwebender Hinweis', () => {
     const k = new Kopfzeile();
     k.unterkante = -10;
+    k.hinweisUnterkante = -23;
     kopfzeilen = [k];
     kopf.zeigeKopfHinweis(zettel);
     expect(schwebende.map(s => s.textContent)).toEqual([zettel]);
@@ -241,5 +262,56 @@ describe('schwebender Hinweis, wenn die Kopfzeile verdeckt ist', () => {
     expect(k.hinweis?.className).toBe('hdr-note hdr-note-sehr-lang');
     vi.runAllTimers();
     expect(schwebende).toEqual([]);
+  });
+
+  test('verstecktes Fenster vor dem offenen (Routenfenster der Dungeonkarte): schwebender Hinweis', () => {
+    kopfzeilen = [new Kopfzeile()];
+    fensterListe = [verstecktesFenster(), offenesFenster()];
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende.map(s => s.textContent)).toEqual([zettel]);
+  });
+
+  test('Truhe blendet nach «Einsammeln» aus: kein schwebender Hinweis', () => {
+    kopfzeilen = [new Kopfzeile()];
+    fensterListe = [verstecktesFenster(), ausblendendeTruhe()];
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende).toEqual([]);
+  });
+
+  test('Kopfzeile halb weggescrollt, ihr Hinweis schon weg: schwebender Hinweis', () => {
+    const k = new Kopfzeile();
+    k.unterkante = 20;
+    k.hinweisUnterkante = -2;
+    kopfzeilen = [k];
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende.map(s => s.textContent)).toEqual([zettel]);
+  });
+
+  test('versteckte Kopfzeile mit Hinweis (Lage 0) vor der sichtbaren, nichts gescrollt: kein schwebender Hinweis', () => {
+    const versteckt = new Kopfzeile();
+    versteckt.offsetParent = null;
+    versteckt.unterkante = 0;
+    versteckt.hinweisUnterkante = 0;
+    kopfzeilen = [versteckt, new Kopfzeile()];
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende).toEqual([]);
+  });
+
+  test.each([
+    ['Kopfzeile wieder frei', false],
+    ['keine sichtbare Kopfzeile mehr (Kampf)', true],
+  ])('Fenster zu, später ein neuer Hinweis, %s: der schwebende ist gleich weg', (_, kampf) => {
+    const k = new Kopfzeile();
+    kopfzeilen = [k];
+    fensterOffen = true;
+    kopf.zeigeKopfHinweis(zettel);
+    expect(schwebende).toHaveLength(1);
+    fensterOffen = false;
+    if (kampf) k.offsetParent = null;
+    vi.advanceTimersByTime(700);
+    const zweiter = '✔ Kraft-Brot fertig (Kräuterküche)';
+    kopf.zeigeKopfHinweis(zweiter);
+    expect(schwebende).toEqual([]);
+    expect(k.hinweis?.textContent).toBe(zweiter);
   });
 });

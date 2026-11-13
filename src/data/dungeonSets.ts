@@ -586,8 +586,9 @@ export const DUNGEON_SETS: DungeonSetDef[] = [
     zweiTeile: { atk: 13, critChance: 0.13 },
     dreiTeile: {
       name: 'Staubschicht',
-      text: 'Zu Kampfbeginn legt sich Staub auf die ganze Gruppe: ein Schild von 18 für 3 Runden. Was man nicht sieht, trifft man schlechter.',
-      effekte: [{ id: 'mondwall', schild: 18, runden: 3 }],
+      // Wie der Mondwall des Pfands, nur stärker: Im selben Team zählt nur einer, mit power 18 die Staubschicht
+      text: 'Zu Beginn jedes Kampfes und danach alle 3 Runden erhält jeder im Team einen Schild von 18, der sich auf andere Schilde (Phalanx, Moospolster, Fussnote) dazulegt.',
+      effekte: [{ id: 'mondwall', schild: 18, runden: 3, power: 18, name: 'Staubschicht' }],
     },
   },
 ];

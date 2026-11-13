@@ -19,7 +19,7 @@ und was bei neuen Dungeons zu tun ist.
   - Zettel 3 aus der Stadt: meist (70 %) eine Ware aus den Werkstätten, sonst ein Dungeon weiter unten.
 - **Arten.** Am selben Tag hängt jede Art möglichst nur einmal, jeder Dungeon und jede Gegnerart nur einmal.
   Texte mit Karawane oder Grabung hängen nie für Dungeons unter Wasser, in der Glut oder über den Wolken.
-  Für die Erste Stadt und die Pfeiler des Tages hängt kein Zettel «ohne Gefallene» (`OHNE_MAKELLOS`): Dort
+  Für die Erste Stadt, die Pfeiler des Tages und das Nichts da oben hängt kein Zettel «ohne Gefallene» (`OHNE_MAKELLOS`): Dort
   fällt fast in jedem Sieg ein Held, auch mit der besten Ausrüstung (siehe [Der Anbau](#der-anbau-und-alle-heim)).
 
   | Art | verlangt | zählt |
@@ -52,7 +52,7 @@ und was bei neuen Dungeons zu tun ist.
   Schatten mit «???» da, das Messingschild ist schon lesbar. Jede Trophäe hat drei Sterne: Boss
   bezwungen, Set des Dungeons komplett, Prunkstück aus der Kette. Die Summe ist der «Glanz des Saals», der
   Rahmen wird mit den Sternen bronzen, silbern, golden. Der Saal zeigt seine 16 Sockel (48 Sterne). Der **Anbau**
-  steht darunter als eigene Abteilung (heller Stein, 2 Sockel, 54 Sterne zusammen), sobald das letzte Prunkstück
+  steht darunter als eigene Abteilung (heller Stein, 3 Sockel, 57 Sterne zusammen), sobald das letzte Prunkstück
   des Saals liegt; dazwischen die Platte «Für die Nächsten. Macht es besser als wir.», nach dem letzten Prunkstück
   im Anbau mit Alrunas Kreide «Besser.». Hat die Gilde dort oben schon gesiegt, bevor der Saal voll ist, steht der
   Anbau schon früher da (eine verdiente Trophäe bleibt nie unsichtbar), mit einer Zeile von Ottokar statt der
@@ -79,9 +79,9 @@ Alles in `src/data/auftragsbrett.ts`.
   Ebene gleich; kein Material. Warum: [Lieferung](#lieferung).
 - **Kapitel der Kette:** 3 + Ebene/2 (aufgerundet) Siegel, das Gold eines ganzen Laufs, das Material von
   zwei Siegen; das letzte Kapitel des Saals 15 Siegel dazu (`SAAL_SCHLUSS_SIEGEL`), das letzte des Anbaus
-  10 (`ANBAU_SCHLUSS_SIEGEL`). Jeder Teil zahlt seinen Schluss genau einmal.
-- **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 16 (Ebene 11
-  und 12). Material 3 Siegel für die Menge eines Siegs im höchsten bezwungenen Dungeon seines Gebiets.
+  10 (`ANBAU_SCHLUSS_SIEGEL`). Jeder Teil zahlt seinen Schluss genau einmal, der Anbau auch dann, wenn oben ein
+  Kapitel dazukommt (`kette.anbauSchluss`, siehe «Erweitern»).
+- **Einlösen:** Set-Teil 4 + 2 × Ebene/2 (aufgerundet) Siegel, also 6 (Ebene 1 und 2) bis 18 (Ebene 13). Material 3 Siegel für die Menge eines Siegs im höchsten bezwungenen Dungeon seines Gebiets.
   Kristallsplitter 2 Siegel für 3 Stück.
 - **Warum Material 3 Siegel kostet:** Mit 2 hätte ein voller Tag (10 Siegel) das Material von 5 Siegen gebracht,
   dazu das Material der Zettel selbst; wer am Tag 3 bis 5 Läufe macht, hätte in der Schmiede etwa dreimal so
@@ -108,6 +108,7 @@ Alles in `src/data/auftragsbrett.ts`.
 | 16 | Das Morgentor | 10 | 1 Set-Teil | 605 | 8 · 1010 · 24 Mondsilber | 14 |
 | 17 (Anbau) | Die Erste Stadt | 11 | 1× alle heim | 695 | 9 · 1160 · 26 Tagstein | 16 |
 | 18 (Anbau) | Die Pfeiler des Tages | 12 | 2× Sieg | 745 | 9 · 1240 · 28 Tagstein | 16 |
+| 19 (Anbau) | Das Nichts da oben | 13 | 1× Sieg | 660 | 10 · 1100 · 30 Tagstein | 18 |
 
 «Zettel: Gold» ist das Gold eines Zettels für diesen Dungeon; dazu kommt immer das Material eines Siegs.
 
@@ -139,7 +140,9 @@ dritten vorsichtigen Sieg alle heim. Das Kapitel ist damit ein Ziel für das Set
 bringt (wie Sunnas Strahl am Morgentor ein Teil ihrer Morgengabe verlangt). Andere Wege: das Amulett der
 Wiedergeburt (fällt ab dem Drachenhort, auch in der Ersten Stadt und bei Alruna), das Leere Phylakterium, das Set
 «Eid des Gefallenen Ritters» («Unbeugsam»). Der Zettel «ohne Gefallene»
-bleibt streng und hängt in den beiden Dungeons nicht (`OHNE_MAKELLOS` in `src/data/auftragsbrett.ts`).
+bleibt streng und hängt in den beiden Dungeons nicht, auch nicht im Nichts da oben (dort mit Niemands 8100 Leben
+0 von 19 Siegen ohne Gefallene mit «Was den Tag trug», 0 von 258 mit allem auf +5; `OHNE_MAKELLOS` in
+`src/data/auftragsbrett.ts`).
 
 ### Lieferung
 
@@ -204,8 +207,11 @@ Hängende Zettel behalten ihr Gold, denn die Belohnung steht im Zettel, seit er 
   `art: 'makellos'` nur, wenn der Musterlauf dort Siege ohne Gefallene findet; sonst `'heimkehr'` oder Sieg.
   Gelingt im neuen Dungeon fast nie ein Sieg ohne Gefallene, gehört er auch in `OHNE_MAKELLOS`.
   Kapitel ab Ebene 11 (`ANBAU_AB_EBENE`) gehören zum Anbau: Die Einleitung zählt seine Sockel von selbst, der
-  Schluss des Anbaus kommt nach seinem letzten Kapitel. Kommt eine Ebene 13 dazu, steht sie im Anbau; der
-  Schluss des Anbaus spricht von Alruna und Orm und wäre dann neu zu schreiben.
+  Schluss des Anbaus (10 Siegel, die Zeile «Auch der Anbau ist voll» und Alrunas «Besser.») kommt nach seinem
+  letzten Kapitel, aber nur einmal: Wer ihn schon hat (`kette.anbauSchluss`), bekommt für ein neues Kapitel oben
+  nur dessen Belohnung, und «Besser.» bleibt auf der Platte. Spielstände ohne Merker bekommen ihn beim ersten
+  Blick aufs Brett nach dem Erfolg «Angebaut»: Den gab es vor Ebene 13 nur mit bezahltem Schluss. `ANBAU_SCHLUSS`
+  zählt die Prunkstücke auf (Kohle, Keil, Schlüsselbund); ein neues Kapitel im Anbau gehört dort dazu.
 - **Neuer Dungeon ohne Boss:** nichts zu tun; Zettel für ihn entstehen von selbst (Jagd, wenn eine
   Gegnerart mindestens zweimal pro Lauf kommt; Set, wenn er ein Set hat). Liegt er unter Wasser, in der Glut
   oder über den Wolken, gehört er in `FERNE_DUNGEONS`.

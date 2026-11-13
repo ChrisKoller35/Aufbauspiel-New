@@ -115,10 +115,10 @@ nichts, ändert keinen ID-Zähler und wirft nie. Ergebnis `{ ok: true, zusammenf
 4. **Probe-Laden** auf dem gelesenen Stand (`SaveSystem.probeLaden`), mit derselben Logik wie beim
    Start: fehlende Felder anlegen, unverbaute Baupläne alter Stände zum alten Händlerpreis in Gold tauschen
    (`tauscheBauplaeneInGold`, seit 23.10.2026), unbekannte Gebäude-Arten ablehnen, doppelte
-   Gebäude derselben Art zu einem verschmelzen (`vereinigeDoppelte`), eine
-   unterbrochene Expedition abbrechen, Leben auffüllen, dazu was das Hauptmenü liest (Rangliste,
-   Auftragsbrett). Wirft ein Schritt, startet das Spiel mit diesem Stand nicht. **Kommt in `main.ts` beim
-   Start ein Schritt dazu, gehört er auch in `probeLaden`.**
+   Gebäude derselben Art zu einem verschmelzen (`vereinigeDoppelte`), Kristallsplitter für Erfolge
+   nachzahlen (`belohnungAuszahlen`), eine unterbrochene Expedition abbrechen, Leben auffüllen, dazu was
+   das Hauptmenü liest (Rangliste, Auftragsbrett). Wirft ein Schritt, startet das Spiel mit diesem Stand
+   nicht. **Kommt in `main.ts` beim Start ein Schritt dazu, gehört er auch in `probeLaden`.**
 5. **Nach dem Probe-Laden** nochmals die Form, und kein Text und kein Schlüssel enthält `<`, `>` oder
    `"`. Viele Bildschirme setzen Texte aus dem Spielstand ungeschützt ins HTML, z. B. `day` in der
    Kopfzeile, Name und Klasse der Helden, IDs von Gegenständen, Gebäuden und Rezepten (auch in

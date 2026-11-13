@@ -105,12 +105,13 @@ Beispiele: Ebene 1 (Rudel des Waldpfads) +1 kostet 6 Waldharz und 20 Gold. Ebene
 | Himmelstinte | Himmelsarchiv | Das Himmelsarchiv |
 | Sternenstahl | Sterne | Die Sternenschmiede, Der Sternenschlund |
 | Mondsilber | Mond | Der Mondhof, Das Morgentor |
-| Tagstein | Taglicht | Die Erste Stadt, Die Pfeiler des Tages |
+| Tagstein | Taglicht | Die Erste Stadt, Die Pfeiler des Tages, Das Nichts da oben |
 
 Die Dungeon-IDs stehen in `SCHMIEDE_MATERIALIEN` (`src/data/schmiede.ts`). Das Pfand des Mondvogts auf +5
 kostet 990 Mondsilber (Grundmenge 11), Sunnas Morgengabe auf +5 1080 (Grundmenge 12); `?probe=mond` bzw.
 `?probe=morgen` legt das ins Lager. Alrunas Wachfeuer auf +5 kostet 1170 Tagstein (Grundmenge 13), «Was den Tag
-trug» 1260 (Grundmenge 14); das legt `?probe=stadt` bzw. `?probe=pfeiler` ins Lager.
+trug» 1260 (Grundmenge 14); das legt `?probe=stadt` bzw. `?probe=pfeiler` ins Lager. Der Hausrat der Vorigen
+(Das Nichts da oben) kostet auf +5 1350 Tagstein (Grundmenge 15); dafür gibt es kein eigenes Probespiel.
 
 ## Wo es steht
 

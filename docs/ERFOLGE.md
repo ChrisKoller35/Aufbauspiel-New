@@ -29,18 +29,27 @@ haben («Siegreich» 🏆), nur 🏅 trägt keiner selbst.
   («🏅 Erfolg: Fleissige Gilde · 📜 Tränke … erledigt …»): So bleibt sein Name auch in den drei Handy-Zeilen
   der Kopfzeile zu sehen. Andere Hinweise kommen wie bisher hinten dazu.
 
-**Hinweis bei offenem Fenster oder weggescrollter Kopfzeile.** Liegt ein Fenster über der Kopfzeile (`.ov.on` oder
-`aria-modal="true"`: Heldenfenster, Händler, Gebäudefenster, Stadtweg, Kriegsrat, Spielstand, Fundbuch …) oder ist
-sie am Handy ganz nach oben weggescrollt (Gildenhaus, Erfolge, Rangliste, Team), steht derselbe Hinweis zusätzlich
-schwebend unten in der Mitte (`.hdr-note-schwebend` in `erfolge.css`, `kopfzeileVerdeckt` in `HeaderRenderer.ts`):
-z-index 400 über allen Fenstern, ohne Zeilenbegrenzung, mit derselben Lebensdauer. Er ist nicht anklickbar (Klicks
-gehen durch) und für Vorleser stumm (`aria-hidden`); angesagt wird nur die Kopfzeile (`role="status"`). Höchstens
-einer steht zugleich; kommt innerhalb von 600 ms ein zweiter Hinweis, ändert sich nur sein Text, auch wenn das Fenster
-inzwischen zu ist. Ohne sichtbare Kopfzeile (Kampf, Truhe, Bilanz) kommt keiner, die Erfolge warten wie oben.
-Gemessen (Bericht «lesbarkeit», 27.10.2026): 100 Zeichen auf zwei Zeilen brauchen am Handy (390 px) 358 × 53 px, am
-PC (1400 px) 520 × 53 px. Der Kopfzeilen-Hinweis hatte unter dem Händler 1,44 : 1 und unter dem Heldenfenster 1,34 : 1
-Kontrast (verdeckt), der schwebende hat 10,73 : 1. Unten deckt er für rund 4 s eine Zeile Fensterinhalt zu (am Handy
-im Kriegsrat die Knöpfe unten), ✕ und «Schliessen» oben bleiben frei.
+**Hinweis bei offenem Fenster oder weggescrollter Kopfzeile.** Liegt irgendein sichtbares Fenster über der Kopfzeile
+(jedes `.ov.on` oder `aria-modal="true"`: Heldenfenster, Händler, Gebäudefenster, Stadtweg, Kriegsrat, Spielstand,
+Fundbuch, die Raid-Fenster …; versteckte wie das Routenfenster der Dungeonkarte zählen nicht) oder ist am Handy die
+Zeile mit dem Hinweis weggescrollt, auch wenn die Kopfzeile selbst noch halb zu sehen ist (Gildenhaus, Erfolge,
+Rangliste, Team), steht derselbe Hinweis zusätzlich schwebend unten in der Mitte (`.hdr-note-schwebend` in
+`erfolge.css`, `kopfzeileVerdeckt` in `HeaderRenderer.ts`): z-index 400 über allen Fenstern, ohne Zeilenbegrenzung,
+mit derselben Lebensdauer. Gemessen wird am Hinweis jeder sichtbaren Kopfzeile, nicht am ersten im Dokument: Auch
+versteckte Bildschirme (zuerst das Hauptmenü) haben einen, dort ist seine Lage nur Nullen. Er ist nicht anklickbar
+(Klicks gehen durch) und für Vorleser stumm (`aria-hidden`); angesagt wird nur die Kopfzeile (`role="status"`).
+Höchstens einer steht zugleich. Kommt innerhalb von 600 ms ein zweiter Hinweis, ändert sich nur sein Text, auch wenn
+das Fenster inzwischen zu ist. Ein späterer Hinweis übernimmt ihn nur, wenn die Kopfzeile weiter verdeckt ist, sonst
+ist er gleich weg (er stünde sonst über der freien Kopfzeile oder im Kampf). Ohne neuen Hinweis bleibt er bis zum
+Ablauf stehen. Ohne sichtbare Kopfzeile (Kampf, Truhe und Bilanz einer Expedition) kommt keiner, die Erfolge warten
+wie oben. In Rangliste und Raid liegt die Truhe über einer sichtbaren Kopfzeile, nur ihr dunkler Hintergrund verdeckt
+sie: Ein Hinweis in dieser Zeit steht in der Kopfzeile und schwebend unter der Truhe und ist nach dem Einsammeln bis
+zu seinem Ablauf zu sehen. In den 300 ms, in denen die Truhe nach «Einsammeln» ausblendet (noch `aria-modal`, ohne
+`.on`), zählt sie nicht mehr. Gemessen (Bericht «lesbarkeit», 27.10.2026, Prüfung vom 8.11.2026): 100 Zeichen auf
+zwei Zeilen brauchen am Handy (390 px) etwa 358 × 52 px (`width: max-content`, sonst liesse `left: 50%` nur 195 px
+Breite), am PC (1400 px) 520 × 53 px. Der Kopfzeilen-Hinweis hatte unter dem Händler 1,44 : 1 und unter dem
+Heldenfenster 1,34 : 1 Kontrast (verdeckt), der schwebende hat 10,73 : 1. Unten deckt er für rund 4 s eine Zeile
+Fensterinhalt zu (am Handy im Kriegsrat die Knöpfe unten), ✕ und «Schliessen» oben bleiben frei.
 
 Jeder Erfolg wird genau einmal gemeldet: `erfolgePruefen()` trägt ihn in `state.achievements` ein
 und meldet ihn den Hörern (`beiNeuenErfolgen`). Pokale der Rangliste zählen am Ende der Expedition
@@ -185,7 +194,8 @@ Jeder Erfolg bringt einmalig Kristallsplitter (`erfolgBelohnung(def)` in `data/a
 Zusammen 237. Ausgezahlt wird nie je neuer ID, sondern über die Summe: `belohnungAuszahlen(state)` in
 `systems/AchievementSystem.ts` legt `verdienteSplitter(state)` (nur bekannte, freigeschaltete IDs) minus die schon
 gezahlte Summe in `statistics.erfolg_splitter` ins Lager (`crystal_shard`). `erfolgePruefen` ruft es nach dem
-Eintragen neuer Erfolge auf. So zahlt jeder Erfolg genau einmal, egal wie oft geprüft wird.
+Eintragen neuer Erfolge auf und zahlt damit auch aus, was noch fehlt, wenn kein neuer Erfolg kommt. So zahlt jeder
+Erfolg genau einmal, egal wie oft geprüft wird.
 
 **Nachzahlung:** Ein Stand aus der Zeit vor der Belohnung hat noch kein `erfolg_splitter`. `main.ts` zahlt beim
 Laden einmal nach, speichert gleich und zeigt in der Kopfzeile «💎 Nachzahlung für deine Erfolge: +N
@@ -218,8 +228,8 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Gilde | 👑 | Gildenmeister (neu) | Gildenrang V, Titel Gildenmeister | `gildenrang` ≥ 5 | `gildenrang_5` |
 | Gilde | 📌 | Fleissige Gilde (neu) | 10 Zettel am Auftragsbrett erledigt | `zettel_erledigt` ≥ 10 | `zettel_10` |
 | Gilde | 🏺 | Alle Sockel voll (neu) | alle 16 Prunkstücke der Kette «Der Saal der Gilde» | `saal_prunkstuecke` ≥ 16 | `saal_kette` |
-| Gilde | 🧱 | Angebaut (neu) | auch die 2 Prunkstücke im Anbau des Saals (Erste Stadt, Pfeiler des Tages) | `anbau_prunkstuecke` ≥ 2 | `anbau_kette` |
-| Gilde | 🌟 | Glanz des Saals (neu) | 27 der 54 Sterne im Trophäensaal (Saal und Anbau) | `saal_sterne` ≥ 27 | `saal_glanz` |
+| Gilde | 🧱 | Angebaut (neu) | alle 3 Prunkstücke im Anbau des Saals (Erste Stadt, Pfeiler des Tages, Nichts da oben) | `anbau_prunkstuecke` ≥ 3 | `anbau_kette` |
+| Gilde | 🌟 | Glanz des Saals (neu) | 29 der 57 Sterne im Trophäensaal (Saal und Anbau) | `saal_sterne` ≥ 29 | `saal_glanz` |
 | Gilde | 🥉 | Aufs Treppchen (neu) | ein Pokal der Wochenwertung (Platz 1 bis 3) | `rangliste_pokale` ≥ 1 | `rangliste_pokal` |
 | Gilde | 🏔️ | Gipfelstürmer (neu) | Platz 1 der Gipfel-Rangliste nach einer Expedition | `gipfel_spitze` ≥ 1 | `gipfel_1` |
 | Helden | 🛡️ | Armeeführer | 10 Helden in der Gilde | `helden_anzahl` ≥ 10 | `army_builder` |
@@ -264,11 +274,13 @@ gestrichenen `wohnviertel_6`, `bewohner_25`, `gebaeude_max`, `ausbau_10`, `baupl
 | Sammeln | 📖 | Monsterkundler (neu) | 25 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 25 | `monsterbuch_25` |
 | Sammeln | 📚 | Monstergelehrter (neu) | 50 Monster im Monsterbuch | `monsterbuch_entdeckt` ≥ 50 | `monsterbuch_50` |
 
-Die Zahlen 16 und 2 (Sockel), 27 und 54 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
+Die Zahlen 16 und 3 (Sockel), 29 und 57 (Sterne) und +5 (Schmiede) kommen aus den Daten: ein Sockel je
 Boss-Dungeon der Karte, bis Ebene 10 im Saal (`SAAL_SOCKEL`), ab Ebene 11 im Anbau (`ANBAU_SOCKEL`,
 `ANBAU_AB_EBENE`), drei Sterne je Sockel in beiden, die Hälfte davon für «Glanz des Saals»,
-`MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ab Ebene 13 ändert «Angebaut» und den Glanz mit; «Alle Sockel
-voll» bleibt bei sechzehn, auch wer den Saal schon voll hatte, behält den Erfolg.
+`MAX_SCHMIEDE_STUFE`. Ein neuer Boss-Dungeon ab Ebene 11 ändert «Angebaut» und den Glanz mit (so kam mit Ebene 13
+der dritte Sockel im Anbau); wer den Erfolg schon hat, behält ihn, und der Schluss des Anbaus kommt nicht ein
+zweites Mal (`docs/AUFTRAGSBRETT.md`). «Alle Sockel voll» bleibt bei sechzehn, auch wer den Saal schon voll hatte,
+behält den Erfolg.
 
 ## Gipfel-Taten
 
@@ -356,9 +368,9 @@ dort eine Zeile.
 - Bauten: 4 Neubauten (die Werkstätten) und 9 Ausbauten, also höchstens 13 für «Baumeister»; Werkstätten höchstens
   4 auf Stufe 3.
 - Monsterbuch: In den Routen kommen etwa 65 verschiedene Gegner vor, darum höchstens 50 statt 75.
-- Sets: 31 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
-- Trophäensaal: 16 Sockel im Saal und 2 im Anbau, je mit 3 Sternen.
-- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 31 Dungeons der Karte.
+- Sets: 32 Dungeon-Sets; 3 ganze Sets gleichzeitig getragen statt 5.
+- Trophäensaal: 16 Sockel im Saal und 3 im Anbau, je mit 3 Sternen.
+- Gipfel-Taten und versteckte Erfolge: je Tat höchstens 1; Albtraum höchstens in allen 32 Dungeons der Karte.
 - Was mit der Zeit wächst (Tage, Expeditionen, Gegner, Zettel, Pokale, Käufe, Ernstkämpfe im Raid), hat keine Grenze.
 
 ## Gildenrang: Text beim Aufstieg
