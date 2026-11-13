@@ -95,7 +95,8 @@ was es schon gibt und wie der nächste Dungeon dazukommt.
    der letzte Raum ist der Boss.
 4. **Karte:** Knoten in `DUNGEON_GRAPH` mit negativem `y` (je etwa 500 höher als der darunter) und
    `leadsTo` vom Dungeon darunter. Die Karte wächst von selbst nach oben, das Feld «Noch unerforscht»
-   und die Liste im Stadtweg-Fenster rücken mit. Ein neues Gebiet braucht
+   (über dem höchsten Knoten, Raid oder Dungeon) und die Liste im Stadtweg-Fenster rücken mit. Läuft ein
+   Weg durch Schrift, die keine Gebietsschrift ist, gehört diese in die Weg-Maske (`wegeMaske`). Ein neues Gebiet braucht
    einen Eintrag in `GEBIETE` (`src/ui/screens/DungeonMapScreen.ts`), in `getBiomeTag`
    (`src/ui/screens/ExpeditionsScreen.ts`) und eine Klasse `.tag-<gebiet>` in `src/ui/html/magic-city.css`.
 5. **Set:** Jeder Dungeon lässt ein eigenes Set aus drei Teilen fallen. Anleitung in
@@ -579,6 +580,11 @@ Die Werte sind die der Pfeiler ×1,06, nur Niemand hat 8100 statt 6100 Leben:
   Staubschicht ist der Mondwall des Pfands mit einem Schild von 18. Die beiden addieren sich nicht: Im selben Team zählt
   nur der stärkere, also die Staubschicht, solange ihr Träger steht; fällt er, gibt der Pfand-Träger wieder seinen
   Mondwall von 15. Neben dem Pfand bringt das Set darum nur 3 Schild mehr.
+- **Karte:** Das Nichts steht rechts über dem Raid (680 / −4300). Der Weg von den Pfeilern läuft durch die Zeilen
+  neben dem Raid; die Weg-Maske spart sie unter den Buchstaben aus wie die Gebietsnamen (`raidZeilenMaske`), auch die
+  Zeile jeder weiteren Stufe. Das Feld «Noch unerforscht» steht über dem höchsten Knoten (`hoechsterKnoten`), jetzt
+  über dem Nichts bei 565 / −4530. Am Handy (Karte 1:1) liegt das Nichts zur Hälfte rechts ausserhalb, wenn man nur
+  nach oben wischt; weiter nach links gerückt liefe der Weg mitten durch die Raid-Schrift.
 
 ## Entschieden
 

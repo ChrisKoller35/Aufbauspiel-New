@@ -375,14 +375,35 @@ function buildGipfelHimmel(width: number, oben: number): string {
   return html;
 }
 
+/** Radius eines Dungeon-Knotens: Boss-Dungeons sind grösser */
+function knotenRadius(node: DungeonGraphNode): number {
+  return ROUTE_DEFS[node.routeId]?.bossId ? 80 : 64;
+}
+
 /**
- * Über dem obersten Knoten (heute der Raid, raidPunkte): ein Weg, der in den Sternen verblasst, und ein leeres
+ * Der höchste Knoten der Karte: der Raid (raidPunkte) oder ein Dungeon darüber (seit Ebene 13 «Das Nichts da oben»).
+ * Über ihm steht das Feld «Noch unerforscht» (buildUnerforscht).
+ */
+export function hoechsterKnoten(): { x: number; y: number; r: number } {
+  const raid = raidPunkte();
+  const dungeon = DUNGEON_GRAPH.reduce<DungeonGraphNode | undefined>((a, n) => (!a || n.y < a.y ? n : a), undefined);
+  if (!dungeon || raid.y <= dungeon.y) return { x: raid.x, y: raid.y, r: raid.r };
+  return { x: dungeon.x, y: dungeon.y, r: knotenRadius(dungeon) };
+}
+
+/** Mitte des Felds «Noch unerforscht»: 230 über dem höchsten Knoten, auf halbem Weg zur Mitte der Karte */
+export function unerforschtFeld(width: number, oberster: { x: number; y: number }): { x: number; y: number } {
+  return { x: Math.round((oberster.x + width / 2) / 2), y: oberster.y - 230 };
+}
+
+/**
+ * Über dem höchsten Knoten (hoechsterKnoten): ein Weg, der in den Sternen verblasst, und ein leeres
  * Feld mit Fragezeichen. Die Karte wächst nach oben, sobald neue Dungeons dazukommen
  * (docs/NEUE-DUNGEONS.md); dieser Teil rückt dann von selbst mit.
  */
-function buildUnerforscht(width: number, oberster: { x: number; y: number }, radius: number): string {
-  const feld = { x: Math.round((oberster.x + width / 2) / 2), y: oberster.y - 230 };
-  const vonY = oberster.y - radius - 8;
+function buildUnerforscht(width: number, oberster: { x: number; y: number; r: number }): string {
+  const feld = unerforschtFeld(width, oberster);
+  const vonY = oberster.y - oberster.r - 8;
   const bisY = feld.y + 52;
   return `
     <defs>
@@ -420,13 +441,14 @@ function gebietsSchriftzuege(width: number): Schriftzug[] {
 /**
  * Die Wege laufen oft mitten durch die Schriftzüge. Diese Maske spart sie unter den Buchstaben
  * (mit etwas Rand) aus, so bleibt die Schrift lesbar. Am Handy setzt dungeonkarte.css die
- * Maske gleich gross wie die Schrift.
+ * Maske gleich gross wie die Schrift. `weitere`: Aussparungen für andere Schrift, etwa die
+ * Zeilen neben dem Raid (raidZeilenMaske), durch die der Weg zum Nichts da oben läuft.
  */
-function wegeMaske(schriftzuege: Schriftzug[], width: number, von: number, bis: number): string {
+function wegeMaske(schriftzuege: Schriftzug[], width: number, von: number, bis: number, weitere = ''): string {
   const flaeche = `x="-50" y="${von}" width="${width + 100}" height="${bis - von}"`;
   const buchstaben = schriftzuege.map(s =>
     `<text class="dmap-t-region-maske" x="${s.x}" y="${s.y}" ${SCHRIFT_ART} fill="black" stroke="black" stroke-width="6" stroke-linejoin="round">${s.text}</text>`).join('');
-  return `<mask id="dmap-wege-maske" maskUnits="userSpaceOnUse" ${flaeche}><rect ${flaeche} fill="white"/>${buchstaben}</mask>`;
+  return `<mask id="dmap-wege-maske" maskUnits="userSpaceOnUse" ${flaeche}><rect ${flaeche} fill="white"/>${buchstaben}${weitere}</mask>`;
 }
 
 // ── SVG World Map ──
@@ -568,7 +590,7 @@ function buildDungeonSVG(state: GameState): string {
     const isAvailable = isRouteAvailable(route, state);
     const isLocked = !isAvailable && !isCompleted;
     const hasBoss = !!route.bossId;
-    const r = hasBoss ? 80 : 64;
+    const r = knotenRadius(graphNode);
     const isDeadEnd = graphNode.leadsTo.length === 0 && !graphNode.isMainPath;
     const isStart = graphNode.routeId === 'forest_short';
     const hasImage = route.id in ROUTE_IMAGE_MAP;
@@ -699,9 +721,9 @@ function buildDungeonSVG(state: GameState): string {
          style="width:${WIDTH}px;height:${totalHeight}px;">
       <g transform="translate(0 ${oben})">
         ${bgHtml}
-        <defs>${clipDefsHtml}${wegeMaske(schriftzuege, WIDTH, -oben, HEIGHT)}</defs>
+        <defs>${clipDefsHtml}${wegeMaske(schriftzuege, WIDTH, -oben, HEIGHT, raidZeilenMaske(raidStufen))}</defs>
         <g class="dmap-paths" mask="url(#dmap-wege-maske)">${pathsHtml}</g>
-        ${buildUnerforscht(WIDTH, raid, raid.r)}
+        ${buildUnerforscht(WIDTH, hoechsterKnoten())}
         ${buildRaidLeiter(raidZustand.offen)}
         <g class="dmap-nodes">${nodesHtml}${buildRaidKnoten(raidStufen)}</g>
       </g>
@@ -772,7 +794,7 @@ function buildRaidHimmel(width: number, oben: number): string {
 function buildRaidLeiter(offen: boolean): string {
   const { x, y, r, unten } = raidPunkte();
   if (!unten) return '';
-  const a = { x: unten.x, y: unten.y - (ROUTE_DEFS[unten.routeId]?.bossId ? 80 : 64) - 4 };
+  const a = { x: unten.x, y: unten.y - knotenRadius(unten) - 4 };
   // Mitte der Kante zwischen der rechten unteren Ecke und der unteren Spitze, 4 px davor
   const b = { x: x + r * 0.433 + 2, y: y + r * 0.75 + 3.5 };
   const dx = b.x - a.x;
@@ -797,12 +819,54 @@ function buildRaidLeiter(offen: boolean): string {
     </g>`;
 }
 
+/** Eine Zeile rechts neben dem Raid-Knoten: buildRaidKnoten schreibt sie, raidZeilenMaske spart die Wege darunter aus */
+interface RaidZeile { klasse: string; y: number; schrift: string; farbe: string; deckkraft: number; text: string }
+
+/**
+ * Die Zeilen rechts neben dem Raid-Knoten: «RAID · 4 BIS … HELDEN», der Name, der Zustand und eine Zeile je weitere
+ * offene Stufe, 15 Einheiten tiefer als die davor. Die Klassen setzen am Handy grössere Schrift (dungeonkarte.css),
+ * in der Maske genauso.
+ */
+function raidZeilen(stufen: { def: RaidDef; zustand: RaidKartenZustand }[]): { x: number; zeilen: RaidZeile[] } {
+  const { x, y, r } = raidPunkte();
+  const k = RAID_TEXTE.karte;
+  const zustand = stufen[0].zustand;
+  const offen = zustand.offen;
+  const offeneStufen = stufen.filter(st => st.zustand.offen);
+  const hoechste = offeneStufen[offeneStufen.length - 1] ?? stufen[0];
+  const mehrere = offeneStufen.length > 1;
+  const farbe = (zwoelf: boolean): string => (zwoelf ? '#4ade80' : '#ddd0b8');
+  const weitere: RaidZeile[] = mehrere
+    ? offeneStufen.slice(1).map((st, i) => ({ klasse: 'dmap-raid-zeile', y: y + 35 + i * 15, schrift: 'font-size="9.5"',
+      farbe: farbe(st.zustand.zwoelf), deckkraft: 0.95, text: k.stufeZeile(stufenTexte(st.def).stufe, st.zustand.zeile) }))
+    : [];
+  const zeilen: RaidZeile[] = [
+    { klasse: 'dmap-t-klein dmap-raid-klein', y: y - 17, schrift: 'font-size="9" letter-spacing="2"', farbe: '#c8a227',
+      deckkraft: offen ? 0.95 : 0.55, text: k.klein(ZENIT.minHelden, hoechste.def.maxHelden) },
+    { klasse: 'dmap-raid-name', y: y + 3, schrift: 'font-size="15" font-weight="700" letter-spacing="1.5"', farbe: '#fde68a',
+      deckkraft: offen ? 1 : 0.55, text: k.name },
+    { klasse: 'dmap-raid-zeile', y: y + 20, schrift: 'font-size="9.5"', farbe: farbe(zustand.zwoelf),
+      deckkraft: offen ? 0.95 : 0.55, text: mehrere ? k.stufeZeile(stufenTexte(ZENIT).stufe, zustand.zeile) : zustand.zeile },
+    ...weitere,
+  ];
+  return { x: r1(x + r * 0.87 + 22), zeilen };
+}
+
+/**
+ * Die Raid-Zeilen als Aussparung in der Weg-Maske (wegeMaske): Der Weg von den Pfeilern zum Nichts da oben läuft durch
+ * sie hindurch. Schwarz mit Rand wie die Gebietsnamen, gleiche Klassen wie die Schrift, also am Handy gleich gross.
+ */
+export function raidZeilenMaske(stufen: { def: RaidDef; zustand: RaidKartenZustand }[]): string {
+  const { x, zeilen } = raidZeilen(stufen);
+  return zeilen.map(z => `<text class="${z.klasse}" x="${x}" y="${z.y}" ${z.schrift} font-family="Cinzel, serif" fill="black" stroke="black" stroke-width="6" stroke-linejoin="round">${z.text}</text>`).join('');
+}
+
 /**
  * Der Raid-Knoten: goldenes Sechseck mit Zenits Uhr, die oben (Glocke) und unten (Pendel) darüber hinausragt. Name und
- * Zustand stehen rechts daneben: Links unten lehnt die Leiter, darüber geht es ins Unerforschte. Klick: Raid-Bildschirm,
- * auch solange er noch zu ist (dort steht, was fehlt). Ist eine höhere Stufe offen, zeigt die Uhr die höchste (Stufe II:
- * mit Gegenzeiger), oben steht «4 bis 15 Helden» (bis zu ihrer Zahl) und unter dem Namen eine Zeile je offene Stufe;
- * der Goldpunkt, solange in einer Stufe eine Truhe wartet.
+ * Zustand stehen rechts daneben (raidZeilen): Links unten lehnt die Leiter, rechts darüber steht das Nichts da oben.
+ * Klick: Raid-Bildschirm, auch solange er noch zu ist (dort steht, was fehlt). Ist eine höhere Stufe offen, zeigt die
+ * Uhr die höchste (Stufe II: mit Gegenzeiger), oben steht «4 bis 15 Helden» (bis zu ihrer Zahl) und unter dem Namen
+ * eine Zeile je offene Stufe; der Goldpunkt, solange in einer Stufe eine Truhe wartet.
  */
 function buildRaidKnoten(stufen: { def: RaidDef; zustand: RaidKartenZustand }[]): string {
   const { x, y, r } = raidPunkte();
@@ -811,6 +875,7 @@ function buildRaidKnoten(stufen: { def: RaidDef; zustand: RaidKartenZustand }[])
   const offeneStufen = stufen.filter(st => st.zustand.offen);
   const hoechste = offeneStufen[offeneStufen.length - 1] ?? stufen[0];
   const mehrere = offeneStufen.length > 1;
+  const { x: textX, zeilen } = raidZeilen(stufen);
   // Uhr: Zifferblatt (Radius 66 im Uhr-Bild) mittig im Sechseck, gut drei Viertel seines Innenkreises
   const s = (r * 0.87 * 0.8) / 66;
   const stellung = uhrStellungFuer(hoechste.def, hoechste.zustand.zwoelf);
@@ -819,17 +884,12 @@ function buildRaidKnoten(stufen: { def: RaidDef; zustand: RaidKartenZustand }[])
   const uhr = zenitUhrSvg(stellung, 'dmap-zenit', uhrText,
     `x="${r1(x - 100 * s)}" y="${r1(y - 106 * s)}" width="${r1(200 * s)}" height="${r1(246 * s)}" class="dmap-raid-uhr"`
       + (zustand.offen ? '' : ' opacity=".3"'));
-  const textX = r1(x + r * 0.87 + 22);
   const offen = zustand.offen;
   const punkt = stufen.some(st => st.zustand.truheWartet)
     ? `<circle cx="${r1(x + r * 0.87 + 4)}" cy="${r1(y - r * 0.5 - 4)}" r="5.5" fill="#c8a227" class="dmap-pulse-dot"><title>${k.truhenPunkt}</title></circle>`
     : '';
-  const zeile = mehrere ? k.stufeZeile(stufenTexte(ZENIT).stufe, zustand.zeile) : zustand.zeile;
-  // Eine Zeile je weitere offene Stufe, 15 Einheiten tiefer als die davor
-  const weitereZeilen = mehrere
-    ? offeneStufen.slice(1).map((st, i) => `<text class="dmap-raid-t dmap-raid-zeile" x="${textX}" y="${y + 35 + i * 15}" font-size="9.5"
-        font-family="Cinzel, serif" fill="${st.zustand.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="0.95">${k.stufeZeile(stufenTexte(st.def).stufe, st.zustand.zeile)}</text>`).join('')
-    : '';
+  const schrift = zeilen.map(z => `<text class="${z.klasse} dmap-raid-t" x="${textX}" y="${z.y}" ${z.schrift} font-family="Cinzel, serif"
+        fill="${z.farbe}" opacity="${z.deckkraft}">${z.text}</text>`).join('\n      ');
   return `
     <g class="dmap-nd dmap-raid ${offen ? 'dmap-node-open' : 'dmap-node-locked'}" data-raid style="cursor:pointer" tabindex="0"
        role="button" data-fokus="karte-raid" aria-label="${escapeAttr(`${k.name}, Raid${offen ? '' : ', gesperrt'}`)}">
@@ -842,13 +902,7 @@ function buildRaidKnoten(stufen: { def: RaidDef; zustand: RaidKartenZustand }[])
       ${uhr}
       <polygon points="${hexPoints(x, y, r, 30)}" fill="none" stroke="${zustand.zwoelf ? '#f3d27a' : '#c8a227'}" stroke-width="3" class="dmap-shape"/>
       ${offen ? '' : `<text x="${x}" y="${y + 7}" text-anchor="middle" font-size="20" fill="#555" style="user-select:none">🔒</text>`}
-      <text class="dmap-t-klein dmap-raid-t dmap-raid-klein" x="${textX}" y="${y - 17}" font-size="9" font-family="Cinzel, serif" letter-spacing="2"
-        fill="#c8a227" opacity="${offen ? 0.95 : 0.55}">${k.klein(ZENIT.minHelden, hoechste.def.maxHelden)}</text>
-      <text class="dmap-raid-t dmap-raid-name" x="${textX}" y="${y + 3}" font-size="15" font-family="Cinzel, serif" font-weight="700"
-        letter-spacing="1.5" fill="#fde68a" opacity="${offen ? 1 : 0.55}">${k.name}</text>
-      <text class="dmap-raid-t dmap-raid-zeile" x="${textX}" y="${y + 20}" font-size="9.5" font-family="Cinzel, serif"
-        fill="${zustand.zwoelf ? '#4ade80' : '#ddd0b8'}" opacity="${offen ? 0.95 : 0.55}">${zeile}</text>
-      ${weitereZeilen}
+      ${schrift}
       ${punkt}
     </g>`;
 }
